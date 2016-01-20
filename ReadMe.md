@@ -48,7 +48,7 @@ Par exemple, le déploiement de *libcreact* dans un projet *C#* est implémenté
 
 > On ne peut malheureusement pas partager les macros d'un projet *C++* avec un projet *C#* (certaines macros C++ écraseraient les macros C# existantes). Dans cet exemple on a du hardcoder la platforme et le tool set (`Win32\v140_xp`).
 
-### Importation d'une feuille de propriétés dans un projet C#
+### Importation d'une feuille de propriétés dans un projet ***C#***
 
 Le gestionnaire de feuilles de propriétés n'est pas disponoble pour les projets C#. L'importation doit donc se faire manuellement en éditant le projet C# en question.
 
@@ -58,8 +58,8 @@ L'importation se fait comme ceci:
 
 - ouvrir le fichier *.csproj* avec un éditeur ou directement depuis Visual Studio (*Unload project, Edit `project`.csproj*).
 - insérer à la fin du fichier, juste avant le tag de fin du projet la ligne d'importation suivante:
->
 
-		...
-		<Import Project="..\libcreact\Deploy.props" />
-	</Project>
+	    	...
+		    <Import Project="..\libcreact\Deploy.props" />
+	    </Project>
+	
