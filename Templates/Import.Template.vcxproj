@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+Use this template to create a project that builds and imports one or more external solutions.
+
+- Copy this file into your solution directory.
+- Rename it to Import.'external-solutions-name'.vcxproj.
+- Include the 'MsBuild' submodule (https://git.epsitec.ch/Build/MsBuild) into the root of your main repository.
+- Create a new 'ProjectGUID' value.
+- Parameterize the export of the external project.
+- Include this modified project into the importing solution.
+
+-->
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="Globals">
+    <!-- The ProjectGUID property value should be redefined. -->
+    <ProjectGuid>{B78D246D-F9C7-4635-81EF-6B5C25D1D8E8}</ProjectGuid>
+    <!-- The 'PlatformToolSet" property can be modified from within the Visual Studio Project Properties dialog. -->
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  
+  <!-- Assume that the path of the MsBuild submodule is relative to this file directory -->
+  <Import Project="MsBuild\Cpp.Utility.Import.targets" />
+  <ImportGroup Label="PropertySheets">
+    <!-- Define C++ output directories (OutDir, IntDir) -->
+    <Import Project="MsBuild\Cpp.OutDir.props" />
+    <!-- Redirect build log file -->
+    <Import Project="MsBuild\Cpp.BuildLog.props" />
+  </ImportGroup>
+
+  <!-- Export external solutions into this project -->
+  <PropertyGroup>
+    <!-- For example: $(OutDir)swissdec -->
+    <ExportDir>external-solution-export-path</ExportDir>
+    <!-- For example: 'Any CPU' -->
+    <ExportPlatform>external-solution-platform</ExportPlatform>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- The external solution path relative to this project file.
+    For example: Swissdec\Swissdec.sln -->
+    <ExportProjects Include="external-solution-relative-path" />
+  </ItemGroup>
+  
+  <Import Project="MsBuild\Export.targets" />
+</Project>
