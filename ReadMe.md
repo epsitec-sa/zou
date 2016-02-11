@@ -9,22 +9,15 @@ On peut importer une feuille de propriétés dans un projet C++ directement depu
 - dans le menu contextuel du projet ou de l'une de ses configurations cliquer *Add existing property sheet...*.
 - choisir un fichier *.props* et le tour est joué.
 
-### [*Cpp.default.props*](Cpp.Default.props)
+### [*Cpp.OutDir.props*](Cpp.OutDir.props)
 
 Cette feuille de propriétés a été créée avec l'éditeur de propriétés de Visual Studio.
 Elle définit (et normalise) les macros ***$(OutDir)*** et ***$(IntDir)***.
 
-    <?xml version="1.0" encoding="utf-8"?>
-    <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-      <ImportGroup Label="PropertySheets" />
-      <PropertyGroup Label="UserMacros" />
-      <PropertyGroup>
-    	<OutDir>$(SolutionDir)$(Platform)\$(PlatformToolset)\$(Configuration)\</OutDir>
-    	<IntDir>$(Platform)\$(PlatformToolset)\$(Configuration)Tmp\</IntDir>
-      </PropertyGroup>
-      <ItemDefinitionGroup />
-      <ItemGroup />
-    </Project>
+  <PropertyGroup>
+    <OutDir>$(SolutionDir)$(Platform)\$(PlatformToolset)\$(Configuration)\</OutDir>
+    <IntDir>$(Platform)\$(PlatformToolset)\$(Configuration)Tmp\</IntDir>
+  </PropertyGroup>
 
 ## Opérations
 
