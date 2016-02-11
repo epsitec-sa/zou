@@ -1,0 +1,84 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!--
+The Export.targets can be used to build and export the output of one or many projects or solutions.
+Input parameters:
+- $(ExportDir)
+- $(ExportConfiguration)
+- $(ExportPlatform)
+- @(ExportProjects)
+
+Targets
+- ExportClean
+- ExportBuild
+- ExportRebuild
+-->
+<Project ToolsVersion="4.0" DefaultTargets="ExportBuild" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- Configuration and Platform -->
+  <PropertyGroup>
+    <ExportConfiguration Condition="'$(ExportConfiguration)' == ''">Debug</ExportConfiguration>
+    <ExportPlatform Condition="'$(ExportPlatform)' == ''">Any CPU</ExportPlatform>
+  </PropertyGroup>
+
+  <!-- MSBuild properties -->
+  <ItemGroup>
+    <!--
+	  WARNING: do not move the 'OutDir' property at the end of the collection group.
+	  When used with the command line of the 'Exec' task (see '_ExportCommand'
+	  later),	the ending backslash of its value escapes the end quote character
+	  of the enclosing argument - msbuild ... "/p:...;...\Debug\" "solution.sln".
+	  The escaped quote will break the shell unquoting process. 
+	  -->
+    <ExportProperties Include="OutDir=$(ExportDir)" />
+    <ExportProperties Include="Platform=$(ExportPlatform)" />
+    <ExportProperties Include="Configuration=$(ExportConfiguration)" />
+  </ItemGroup>
+
+  <!-- ExportClean -->
+  <Target Name="ExportClean">
+    <MSBuild Projects="@(ExportProjects)" Targets="Clean" Properties="@(ExportProperties)" />
+  </Target>
+  
+  <!-- ExportBuild -->
+  <Target Name="ExportBuild">
+    <!-- Check parameters -->
+    <Error Text="the 'ExportProjects' item group is missing." Condition="'@(ExportProjects)' == ''" />
+    <Error Text="the 'ExportDir' property should be defined with /p:ExportDir=..." Condition="'$(ExportDir)'     == ''" />
+	
+    <!--
+	  The MSBuild task does not determine the build order but MSBuild.exe and Visual Studio do:
+    https://maximelabelle.wordpress.com/2011/11/29/building-multiple-projects-in-order-with-msbuild/
+    We cannot use the following MSBuild task:
+        <MSBuild Projects="@(ExportProjects)" Targets="Build" Properties="@(ExportProperties) " />
+    Instead with use the Exec task which starts the MSBuild process.
+	  -->
+    <PropertyGroup>
+      <_ExportCommands>@(ExportProjects -> '"$(MSBuildToolsPath)\msbuild" /nologo /v:m /t:Build "/p:@(ExportProperties)" "%(Identity)"', '%0A')</_ExportCommands>
+    </PropertyGroup>
+    <Exec Command="$(_ExportCommands)" />
+  </Target>
+  
+  <!-- ExportRebuild -->
+  <Target Name="ExportRebuild" DependsOnTargets="ExportClean;ExportBuild" />
+  
+  <!-- ExportTrace -->
+  <Target Name="ExportTrace">
+    <Message Text="ExportProjects=@(ExportProjects)" />
+    <Message Text="ExportDir=$(ExportDir)" />
+    <Message Text="ExportConfiguration=$(ExportConfiguration)" />
+    <Message Text="ExportPlatform=$(ExportPlatform)" />
+    <Message Text="Configuration=$(Configuration)" />
+    <Message Text="Platform=$(Platform)" />
+    <Message Text="PlatformToolset=$(PlatformToolset)" />
+    <Message Text="SolutionDir=$(SolutionDir)" />
+    <Message Text="ProjectDir=$(ProjectDir)" />
+    <Message Text="OutDir=$(OutDir)" />
+    <Message Text="MSBuildProjectFile=$(MSBuildProjectFile)" />
+    <Message Text="MSBuildFrameworkToolsPath=$(MSBuildFrameworkToolsPath)" />
+    <Message Text="MSBuildToolsVersion=$(MSBuildToolsVersion)" />
+    <Message Text="MSBuildToolsPath=$(MSBuildToolsPath)" />
+    <Message Text="MSBuildProjectDirectory=$(MSBuildProjectDirectory)" />
+    <Message Text="MSBuildExtensionsPath=$(MSBuildExtensionsPath)" />
+    <Message Text="MSBuildThisFileFullPath=$(MSBuildThisFileFullPath)" />
+    <Message Text="MSBuildThisFileDirectory=$(MSBuildThisFileDirectory)" />
+  </Target>
+</Project>
