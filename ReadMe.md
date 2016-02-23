@@ -43,7 +43,7 @@ Par exemple, le déploiement de *libcreact* dans un projet *C#* est implémenté
 
 ### Importation d'une feuille de propriétés dans un projet ***C#***
 
-Le gestionnaire de feuilles de propriétés n'est pas disponoble pour les projets C#. L'importation doit donc se faire manuellement en éditant le projet C# en question.
+Le gestionnaire de feuilles de propriétés n'est pas disponible pour les projets C#. L'importation doit donc se faire manuellement en éditant le projet C# en question.
 
 Par exemple, le projet *Activation.Engine.Test* utilise la DLL *libcreact* pour l'exécution des tests unitaires.
 
