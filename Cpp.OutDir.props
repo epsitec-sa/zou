@@ -14,6 +14,10 @@ For example:
   </PropertyGroup>
   <PropertyGroup>
     <OutDir>$(SolutionDir)$(Platform)\$(PlatformToolset)\$(Configuration)\</OutDir>
-    <IntDir>$(Platform)\$(PlatformToolset)\$(Configuration)Tmp\</IntDir>
+    <!--
+    The IntDir property ends with the project name to avoid mixing intermediate files
+    when projects are located in the same folder and to suppress some build warnings.
+    -->
+    <IntDir>$(Platform)\$(PlatformToolset)\$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
 </Project>
