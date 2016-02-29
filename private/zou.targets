@@ -1,0 +1,247 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!--
+Import this script at the beginning of other scripts to define global zou properties:
+
+  <Project ... >
+    <ImportGroup Condition="'$(Zou)' == ''">
+      <Import Project="private\zou.targets"/>
+    </ImportGroup>
+    ...
+  </Project>
+
+
+ZouDir     : the path of the 'zou' folder.
+BundleName : the bundle name.
+BundleDir  : the path of the bundle root folder.
+  
+The bundle folder is the one where `zou` and `git` repositories are located.
+    
+MSBuildThisFileDirectory = $(BundleDir)zou\private\zou.props
+
+Fallback:
+                Bundle Solution Project
+  ZouBSPDir :      1       1       1
+  ZouBPDir  :      1       *       1
+  ZouBSDir  :      1       1       *
+  ZouBDir   :      1       *       *
+  ZouSPDir  :      *       1       1
+  ZouPDir   :      *       *       1
+  ZouSDir   :      *       1       *
+  ZouDir    :      *       *       *
+
+-->
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- Import semaphore -->
+  <PropertyGroup> <Zou>zou</Zou> </PropertyGroup>
+  
+  <!-- Separators used for project and solution IDs generation (see ZouProjectId and ZouSolutionId). -->
+  <PropertyGroup>
+    <_ZouIdDirSep>@</_ZouIdDirSep>
+    <_ZouIdSep>+</_ZouIdSep>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <ZouDir>$([System.IO.Directory]::GetParent($(MSBuildThisFileDirectory)).Parent.FullName)\</ZouDir>
+    <BundleName>$([System.IO.Directory]::GetParent($(MSBuildThisFileDirectory)).Parent.Parent.Name)</BundleName>
+    <BundleDir>$([System.IO.Directory]::GetParent($(MSBuildThisFileDirectory)).Parent.Parent.FullName)\</BundleDir>
+  </PropertyGroup>
+
+  <!-- ZouBundleDir -->
+  <PropertyGroup Condition="'$(ZouBundleDir)' == '' And Exists('$(BundleDir)zou.$(BundleName)\')" >
+    <ZouBundleDir>$(BundleDir)zou.$(BundleName)\</ZouBundleDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(ZouBundleDir)' == ''" >
+    <ZouBundleDir>$(BundleDir)zou.bundle\</ZouBundleDir>
+  </PropertyGroup>
+
+  <!-- Project properties -->
+  <Choose>
+    <When Condition="'$(ProjectName)' != '' And '$(ProjectName)' != '*Undefined*'">
+      <!-- ZouProjectDir -->
+      <PropertyGroup Condition="'$(ZouProjectDir)' == '' And Exists('$(ProjectDir)zou.$(ProjectFileName)\')" >
+        <ZouProjectDir>$(ProjectDir)zou.$(ProjectFileName)\</ZouProjectDir>
+      </PropertyGroup>
+      <PropertyGroup Condition="'$(ZouProjectDir)' == '' And Exists('$(ProjectDir)zou.$(ProjectName)\')" >
+        <ZouProjectDir>$(ProjectDir)zou.$(ProjectName)\</ZouProjectDir>
+      </PropertyGroup>
+      <PropertyGroup Condition="'$(ZouProjectDir)' == '' And Exists('$(ProjectDir)zou.project\')" >
+        <ZouProjectDir>$(ProjectDir)zou.project\</ZouProjectDir>
+      </PropertyGroup>
+      <PropertyGroup Condition="'$(ZouProjectDir)' == ''" >
+        <ZouProjectDir>$(ProjectDir)zou.$(ProjectFileName)\</ZouProjectDir>
+      </PropertyGroup>
+
+      <PropertyGroup>
+        <BundleRelativeProjectPath>$([MSBuild]::MakeRelative($(BundleDir), $(ProjectPath)))</BundleRelativeProjectPath>
+        <ZouProjectId>$(BundleRelativeProjectPath.Replace('\', $(_ZouIdDirSep)).Replace('/', $(_ZouIdDirSep)))</ZouProjectId>
+        <ZouBPDir>$(ZouBundleDir)$(ZouProjectId)\</ZouBPDir>
+        <ZouPDir>$(ZouProjectDir)</ZouPDir>
+      </PropertyGroup>
+    </When>
+  </Choose>
+
+  <!-- Solution properties -->
+  <Choose>
+    <When Condition="'$(SolutionName)' != '' And '$(SolutionName)' != '*Undefined*'">
+      <!-- ZouSolutionDir -->
+      <PropertyGroup Condition="'$(ZouSolutionDir)' == '' And Exists('$(SolutionDir)zou.$(SolutionFileName)\')" >
+        <ZouSolutionDir>$(SolutionDir)zou.$(SolutionFileName)\</ZouSolutionDir>
+      </PropertyGroup>
+      <PropertyGroup Condition="'$(ZouSolutionDir)' == '' And Exists('$(SolutionDir)zou.$(SolutionName)\')" >
+        <ZouSolutionDir>$(SolutionDir)zou.$(SolutionName)\</ZouSolutionDir>
+      </PropertyGroup>
+      <PropertyGroup Condition="'$(ZouSolutionDir)' == '' And Exists('$(SolutionDir)zou.solution\')" >
+        <ZouSolutionDir>$(SolutionDir)zou.solution\</ZouSolutionDir>
+      </PropertyGroup>
+      <PropertyGroup Condition="'$(ZouSolutionDir)' == ''" >
+        <ZouSolutionDir>$(SolutionDir)zou.$(SolutionFileName)\</ZouSolutionDir>
+      </PropertyGroup>
+      
+      <PropertyGroup>
+        <BundleRelativeSolutionPath>$([MSBuild]::MakeRelative($(BundleDir), $(SolutionPath)))</BundleRelativeSolutionPath>
+        <ZouSolutionId>$(BundleRelativeSolutionPath.Replace('\', $(_ZouIdDirSep)).Replace('/', $(_ZouIdDirSep)))</ZouSolutionId>
+        <ZouBSDir>$(ZouBundleDir)$(ZouSolutionId)\</ZouBSDir>
+        <ZouSDir>$(ZouSolutionDir)</ZouSDir>
+      </PropertyGroup>
+    </When>
+  </Choose>
+
+  <Choose>
+    <When Condition="'$(SolutionName)' != '' And '$(SolutionName)' != '*Undefined*' And '$(ProjectName)' != '' And '$(ProjectName)' != '*Undefined*'">
+      <PropertyGroup>
+        <ZouBSPDir>$(ZouBundleDir)$(ZouSolutionId)$(_ZouIdSep)$(ZouProjectId)\</ZouBSPDir>
+        <ZouSPDir>$(ZouSolutionDir)$(ZouProjectId)\</ZouSPDir>
+      </PropertyGroup>
+    </When>
+  </Choose>
+
+  <PropertyGroup>
+    <ZouBDir>$(ZouBundleDir)</ZouBDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <_ZouLocalDirs Include="$(ZouBSPDir)" Condition="'$(ZouBSPDir)' != ''" />
+    <_ZouLocalDirs Include="$(ZouBPDir)"  Condition="'$(ZouBPDir)' != ''" />
+    <_ZouLocalDirs Include="$(ZouBSDir)"  Condition="'$(ZouBSDir)' != ''" />
+    <_ZouLocalDirs Include="$(ZouSPDir)"  Condition="'$(ZouSPDir)' != ''" />
+    <_ZouLocalDirs Include="$(ZouPDir)"   Condition="'$(ZouPDir)' != ''" />
+  </ItemGroup>
+
+  <Target Name="ZouMakeDirs">
+    <MakeDir Directories="@(_ZouLocalDirs)" />
+  </Target>
+  
+  <Target Name="ZouTraceGlobals">
+    <Message Text="BundleName   = $(BundleName)" />
+    <Message Text="SolutionName = $(SolutionName)" Condition="'$(SolutionName)' != ''" />
+    <Message Text="ProjectName  = $(ProjectName)"  Condition="'$(ProjectName)' != ''" />
+
+    <Message Text="%0A" />
+
+    <Message Text="Configuration   = $(Configuration)"   Condition="'$(Configuration)' != ''" />
+    <Message Text="Platform        = $(Platform)"        Condition="'$(Platform)' != ''"  />
+    <Message Text="PlatformToolset = $(PlatformToolset)" Condition="'$(PlatformToolset)' != ''"  />
+    <Message Text="OutDir          = $(OutDir)"          Condition="'$(OutDir)' != ''"  />
+    <Message Text="IntDir          = $(IntDir)"          Condition="'$(IntDir)' != ''"  />
+
+    <Message Text="%0A" />
+
+    <Message Text="BundleDir    = $(BundleDir)" />
+    <Message Text="SolutionDir  = $(SolutionDir)"  Condition="'$(SolutionDir)' != ''" />
+    <Message Text="ProjectDir   = $(ProjectDir)"   Condition="'$(ProjectDir)' != ''" />
+    <Message Text="SolutionPath = $(SolutionPath)" Condition="'$(SolutionPath)' != ''" />
+    <Message Text="ProjectPath  = $(ProjectPath)"  Condition="'$(ProjectPath)' != ''" />
+
+    <Message Text="%0A" />
+
+    <Message Text="BundleRelativeSolutionPath = $(BundleRelativeSolutionPath)" Condition="'$(BundleRelativeSolutionPath)' != ''" />
+    <Message Text="BundleRelativeProjectPath  = $(BundleRelativeProjectPath)"  Condition="'$(BundleRelativeProjectPath)' != ''" />
+
+    <Message Text="%0A" />
+    
+    <Message Text="MSBuildBinPath                 = $(MSBuildBinPath)" />
+    <Message Text="MSBuildExtensionsPath          = $(MSBuildExtensionsPath)" />
+    <Message Text="MSBuildExtensionsPath32        = $(MSBuildExtensionsPath32)" />
+    <Message Text="MSBuildExtensionsPath64        = $(MSBuildExtensionsPath64)" />
+    <Message Text="MSBuildFrameworkToolsPath      = $(MSBuildFrameworkToolsPath)" />
+    <Message Text="MSBuildLastTaskResult          = $(MSBuildLastTaskResult)" />
+    <Message Text="MSBuildProjectDirectory        = $(MSBuildProjectDirectory)" />
+    <Message Text="MSBuildProjectFile             = $(MSBuildProjectFile)" />
+    <Message Text="MSBuildThisFile                = $(MSBuildThisFile)" />
+    <Message Text="MSBuildThisFileDirectory       = $(MSBuildThisFileDirectory)" />
+    <Message Text="MSBuildThisFileExtension       = $(MSBuildThisFileExtension)" />
+    <Message Text="MSBuildThisFileFullPath        = $(MSBuildThisFileFullPath)" />
+    <Message Text="MSBuildThisFileName            = $(MSBuildThisFileName)" />
+    <Message Text="MSBuildToolsVersion            = $(MSBuildToolsVersion)" />
+    <Message Text="MSBuildToolsPath               = $(MSBuildToolsPath)" />
+    <Message Text="MSBuildThisFileDirectoryNoRoot = $(MSBuildThisFileDirectoryNoRoot)" />
+  </Target>
+  
+  <Target Name="ZouTraceFallback">
+    <Message Text="ZouDir         = $(ZouDir)" />
+    <Message Text="ZouBundleDir   = $(ZouBundleDir)" />
+    <Message Text="ZouSolutionDir = $(ZouSolutionDir)" />
+    <Message Text="ZouProjectDir  = $(ZouProjectDir)" />
+    <Message Text="ZouSolutionId  = $(ZouSolutionId)" Condition="'$(ZouSolutionId)' != ''" />
+    <Message Text="ZouProjectId   = $(ZouProjectId)"  Condition="'$(ZouProjectId)' != ''" />
+
+    <Message Text="%0A" />
+
+    <Message Text="ZouBSPDir = $(ZouBSPDir)" />
+    <Message Text="ZouBPDir  = $(ZouBPDir)" />
+    <Message Text="ZouBSDir  = $(ZouBSDir)" />
+    <Message Text="ZouBDir   = $(ZouBDir)" />
+    <Message Text="ZouSPDir  = $(ZouSPDir)" />
+    <Message Text="ZouPDir   = $(ZouPDir)" />
+    <Message Text="ZouSDir   = $(ZouSDir)" />
+    <Message Text="ZouDir    = $(ZouDir)" />
+  </Target>
+
+  <Target Name="ZouTrace" DependsOnTargets="ZouTraceGlobals;ZouTraceFallback"/>
+
+    <!--
+    ZouResolveFallback task.
+  
+    <Target Name="Test">
+      <ZouResolveFallback File="Cpp.NTVersion.props" ZouProjectDir="$(ZouProjectDir)" ZouSolutionDir="$(ZouSolutionDir)" ZouBundleDir="$(ZouBundleDir)" ZouDir="$(ZouDir)">
+        <Output PropertyName="ZouVersionFullPath" TaskParameter="FullPath" />
+      </ZouResolveFallback>
+    </Target>
+  
+  -->
+  <UsingTask TaskName="ZouResolveFallback" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll" >
+    <ParameterGroup>
+      <File Required="true" />
+      <ZouProjectDir />
+      <ZouSolutionDir />
+      <ZouBundleDir />
+      <ZouDir Required="true" />
+
+      <FullPath Output="true" />
+    </ParameterGroup>
+    <Task>
+      <Using Namespace="System.IO"/>
+      <Code Type="Fragment" Language="cs">
+        <![CDATA[
+			  if (!string.IsNullOrEmpty (ZouProjectDir) && Directory.Exists (ZouProjectDir))
+			  {
+				  FullPath = Path.Combine (ZouProjectDir, File);
+			  }
+			  else if (!string.IsNullOrEmpty (ZouSolutionDir) && Directory.Exists (ZouSolutionDir))
+			  {
+				  FullPath = Path.Combine (ZouSolutionDir, File);
+			  }
+			  else if (!string.IsNullOrEmpty (ZouBundleDir) && Directory.Exists (ZouBundleDir))
+			  {
+				  FullPath = Path.Combine (ZouBundleDir, File);
+			  }
+			  else
+			  {
+				  FullPath = Path.Combine (ZouDir, Path.GetFileNameWithoutExtension(File) + ".Default" + Path.GetExtension(File));
+			  }
+        ]]>
+      </Code>
+    </Task>
+  </UsingTask>
+
+</Project>

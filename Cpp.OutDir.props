@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <!--
-Import this MSBuild property sheet into your project to define the default 'OutDir' and 'IntDir' properties.
+Import this MSBuild property sheet into your project to resolve the 'OutDir' and 'IntDir' properties (supports override in zou.local folder).
 For example:
 
   <ImportGroup Label="PropertySheets">
@@ -8,18 +8,47 @@ For example:
   </ImportGroup>
 
 -->
-<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="4.0" InitialTargets="CppOutDirTrace" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Condition="'$(Zou)' == ''">
+    <Import Project="private\zou.targets"/>
+  </ImportGroup>
+
   <PropertyGroup>
-    <_PropertySheetDisplayName>zou - Output Directories</_PropertySheetDisplayName>
+    <_PropertySheetDisplayName>zou - Output Directories...</_PropertySheetDisplayName>
   </PropertyGroup>
-  <PropertyGroup>
-    <OutDir>$(SolutionDir)$(Platform)\$(PlatformToolset)\$(Configuration)\</OutDir>
-    <!--
-    The IntDir property ends with the project name to avoid mixing intermediate files
-    when projects are located in the same folder and to suppress some build warnings.
-    The IntDir configurations folders are rooted in the obj folder to avoid mixing
-    with output folders.
-    -->
-    <IntDir>$(Platform)\$(PlatformToolset)\obj\$(Configuration)\$(ProjectName)\</IntDir>
+
+  <PropertyGroup Condition="'$(ZouOutDirPath)' == '' And '$(ZouBSPDir)' != '' And Exists('$(ZouBSPDir)$(MSBuildThisFile)')">
+    <ZouOutDirPath>$(ZouBSPDir)$(MSBuildThisFile)</ZouOutDirPath>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(ZouOutDirPath)' == '' And '$(ZouBPDir)' != '' And Exists('$(ZouBPDir)$(MSBuildThisFile)')">
+    <ZouOutDirPath>$(ZouBPDir)$(MSBuildThisFile)</ZouOutDirPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(ZouOutDirPath)' == '' And '$(ZouBSDir)' != '' And Exists('$(ZouBSDir)$(MSBuildThisFile)')">
+    <ZouOutDirPath>$(ZouBSDir)$(MSBuildThisFile)</ZouOutDirPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(ZouOutDirPath)' == '' And '$(ZouBDir)' != '' And Exists('$(ZouBDir)$(MSBuildThisFile)')">
+    <ZouOutDirPath>$(ZouBDir)$(MSBuildThisFile)</ZouOutDirPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(ZouOutDirPath)' == '' And '$(ZouSPDir)' != '' And Exists('$(ZouSPDir)$(MSBuildThisFile)')">
+    <ZouOutDirPath>$(ZouSPDir)$(MSBuildThisFile)</ZouOutDirPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(ZouOutDirPath)' == '' And '$(ZouPDir)' != '' And Exists('$(ZouPDir)$(MSBuildThisFile)')">
+    <ZouOutDirPath>$(ZouPDir)$(MSBuildThisFile)</ZouOutDirPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(ZouOutDirPath)' == '' And '$(ZouSDir)' != '' And Exists('$(ZouSDir)$(MSBuildThisFile)')">
+    <ZouOutDirPath>$(ZouSDir)$(MSBuildThisFile)</ZouOutDirPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(ZouOutDirPath)' == '' And '$(ZouDir)' != '' And Exists('$(ZouDir)$(MSBuildThisFile)')">
+    <ZouOutDirPath>$(ZouDir)$(MSBuildThisFileName).Default$(MSBuildThisFileExtension)</ZouOutDirPath>
+  </PropertyGroup>
+
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(ZouOutDirPath)" />
+  </ImportGroup>
+
+  <Target Name="CppOutDirTrace">
+    <Message Text="ZouOutDirPath=$(ZouOutDirPath)" />
+    <Message Text="OutDir=$(OutDir)" />
+    <Message Text="IntDir=$(IntDir)" />
+  </Target>
 </Project>

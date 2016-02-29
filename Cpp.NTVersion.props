@@ -1,0 +1,60 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!--
+Import this MSBuild property sheet into your project to resolve the NT Version (supports override in zou.local folder).
+For example:
+
+  <ImportGroup Label="PropertySheets">
+    <Import Project="zou\Cpp.NTVersion.props" />
+  </ImportGroup>
+
+-->
+<Project ToolsVersion="4.0" InitialTargets="CppNTVersionTrace" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Condition="'$(Zou)' == ''">
+    <Import Project="private\zou.targets"/>
+  </ImportGroup>
+
+  <PropertyGroup>
+    <_PropertySheetDisplayName>zou - NT Version...</_PropertySheetDisplayName>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(ZouNTVersionPath)' == '' And '$(ZouBSPDir)' != '' And Exists('$(ZouBSPDir)$(MSBuildThisFile)')">
+    <ZouNTVersionPath>$(ZouBSPDir)$(MSBuildThisFile)</ZouNTVersionPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(ZouNTVersionPath)' == '' And '$(ZouBPDir)' != '' And Exists('$(ZouBPDir)$(MSBuildThisFile)')">
+    <ZouNTVersionPath>$(ZouBPDir)$(MSBuildThisFile)</ZouNTVersionPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(ZouNTVersionPath)' == '' And '$(ZouBSDir)' != '' And Exists('$(ZouBSDir)$(MSBuildThisFile)')">
+    <ZouNTVersionPath>$(ZouBSDir)$(MSBuildThisFile)</ZouNTVersionPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(ZouNTVersionPath)' == '' And '$(ZouBDir)' != '' And Exists('$(ZouBDir)$(MSBuildThisFile)')">
+    <ZouNTVersionPath>$(ZouBDir)$(MSBuildThisFile)</ZouNTVersionPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(ZouNTVersionPath)' == '' And '$(ZouSPDir)' != '' And Exists('$(ZouSPDir)$(MSBuildThisFile)')">
+    <ZouNTVersionPath>$(ZouSPDir)$(MSBuildThisFile)</ZouNTVersionPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(ZouNTVersionPath)' == '' And '$(ZouPDir)' != '' And Exists('$(ZouPDir)$(MSBuildThisFile)')">
+    <ZouNTVersionPath>$(ZouPDir)$(MSBuildThisFile)</ZouNTVersionPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(ZouNTVersionPath)' == '' And '$(ZouSDir)' != '' And Exists('$(ZouSDir)$(MSBuildThisFile)')">
+    <ZouNTVersionPath>$(ZouSDir)$(MSBuildThisFile)</ZouNTVersionPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(ZouNTVersionPath)' == '' And '$(ZouDir)' != '' And Exists('$(ZouDir)$(MSBuildThisFile)')">
+    <ZouNTVersionPath>$(ZouDir)$(MSBuildThisFileName).Default$(MSBuildThisFileExtension)</ZouNTVersionPath>
+  </PropertyGroup>
+
+  
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(ZouNTVersionPath)" />
+  </ImportGroup>
+  
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <PreprocessorDefinitions>_WIN32_WINNT=$(NTVersion);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
+
+  <Target Name="CppNTVersionTrace">
+    <Message Text="ZouNTVersionPath=$(ZouNTVersionPath)" />
+    <Message Text="NTVersion=$(NTVersion)" />
+  </Target>
+</Project>

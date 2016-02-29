@@ -13,13 +13,19 @@ Targets
 - ExportRebuild
 -->
 <Project ToolsVersion="4.0" DefaultTargets="ExportBuild" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- Zou targets -->
+  <ImportGroup Condition="'$(Zou)' == ''">
+    <Import Project="private\zou.targets"/>
+  </ImportGroup>
+  
+  
   <!-- Configuration and Platform -->
   <PropertyGroup>
     <ExportConfiguration Condition="'$(ExportConfiguration)' == ''">Debug</ExportConfiguration>
     <ExportPlatform Condition="'$(ExportPlatform)' == ''">Any CPU</ExportPlatform>
   </PropertyGroup>
 
-  <!-- MSBuild properties -->
+  <!-- MSBuild tool|task properties -->
   <ItemGroup>
     <!--
 	  WARNING: do not move the 'OutDir' property at the end of the collection group.
@@ -61,24 +67,11 @@ Targets
   <Target Name="ExportRebuild" DependsOnTargets="ExportClean;ExportBuild" />
   
   <!-- ExportTrace -->
-  <Target Name="ExportTrace">
-    <Message Text="ExportProjects=@(ExportProjects)" />
-    <Message Text="ExportDir=$(ExportDir)" />
-    <Message Text="ExportConfiguration=$(ExportConfiguration)" />
-    <Message Text="ExportPlatform=$(ExportPlatform)" />
-    <Message Text="Configuration=$(Configuration)" />
-    <Message Text="Platform=$(Platform)" />
-    <Message Text="PlatformToolset=$(PlatformToolset)" />
-    <Message Text="SolutionDir=$(SolutionDir)" />
-    <Message Text="ProjectDir=$(ProjectDir)" />
-    <Message Text="OutDir=$(OutDir)" />
-    <Message Text="MSBuildProjectFile=$(MSBuildProjectFile)" />
-    <Message Text="MSBuildFrameworkToolsPath=$(MSBuildFrameworkToolsPath)" />
-    <Message Text="MSBuildToolsVersion=$(MSBuildToolsVersion)" />
-    <Message Text="MSBuildToolsPath=$(MSBuildToolsPath)" />
-    <Message Text="MSBuildProjectDirectory=$(MSBuildProjectDirectory)" />
-    <Message Text="MSBuildExtensionsPath=$(MSBuildExtensionsPath)" />
-    <Message Text="MSBuildThisFileFullPath=$(MSBuildThisFileFullPath)" />
-    <Message Text="MSBuildThisFileDirectory=$(MSBuildThisFileDirectory)" />
+  <Target Name="ExportTraceLocals">
+    <Message Text="ExportProjects=@(ExportProjects)" Condition="'$(ExportProjects)' != ''" />
+    <Message Text="ExportDir=$(ExportDir)" Condition="'$(ExportDir)' != ''" />
+    <Message Text="ExportConfiguration=$(ExportConfiguration)" Condition="'$(ExportConfiguration)' != ''" />
+    <Message Text="ExportPlatform=$(ExportPlatform)" Condition="'$(ExportPlatform)' != ''" />
   </Target>
+  <Target Name="ExportTrace" DependsOnTargets="ExportTraceLocals;ZouTraceGlobals" />
 </Project>
