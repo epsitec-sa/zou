@@ -20,14 +20,14 @@ MSBuildThisFileDirectory = $(BundleDir)zou\private\zou.props
 
 Fallback:
                 Bundle Solution Project
-  ZouBSPDir :      1       1       1
-  ZouBPDir  :      1       *       1
-  ZouBSDir  :      1       1       *
-  ZouBDir   :      1       *       *
-  ZouSPDir  :      *       1       1
-  ZouPDir   :      *       *       1
-  ZouSDir   :      *       1       *
-  ZouDir    :      *       *       *
+  Zou1Dir :      1       1       1
+  Zou2Dir :      1       *       1
+  Zou3Dir :      1       1       *
+  Zou4Dir :      1       *       *
+  Zou5Dir :      *       1       1
+  Zou6Dir :      *       *       1
+  Zou7Dir :      *       1       *
+  ZouDir  :      *       *       *
 
 -->
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
@@ -59,23 +59,23 @@ Fallback:
     <When Condition="'$(ProjectName)' != '' And '$(ProjectName)' != '*Undefined*'">
       <!-- ZouProjectDir -->
       <PropertyGroup Condition="'$(ZouProjectDir)' == '' And Exists('$(ProjectDir)zou.$(ProjectFileName)\')" >
-        <ZouProjectDir>$(ProjectDir)zou.$(ProjectFileName)\</ZouProjectDir>
+        <ZouProjectDir>$(ProjectDir)zou\$(ProjectFileName)\</ZouProjectDir>
       </PropertyGroup>
       <PropertyGroup Condition="'$(ZouProjectDir)' == '' And Exists('$(ProjectDir)zou.$(ProjectName)\')" >
-        <ZouProjectDir>$(ProjectDir)zou.$(ProjectName)\</ZouProjectDir>
+        <ZouProjectDir>$(ProjectDir)zou\$(ProjectName)\</ZouProjectDir>
       </PropertyGroup>
       <PropertyGroup Condition="'$(ZouProjectDir)' == '' And Exists('$(ProjectDir)zou.project\')" >
-        <ZouProjectDir>$(ProjectDir)zou.project\</ZouProjectDir>
+        <ZouProjectDir>$(ProjectDir)zou\</ZouProjectDir>
       </PropertyGroup>
       <PropertyGroup Condition="'$(ZouProjectDir)' == ''" >
-        <ZouProjectDir>$(ProjectDir)zou.$(ProjectFileName)\</ZouProjectDir>
+        <ZouProjectDir>$(ProjectDir)zou\$(ProjectFileName)\</ZouProjectDir>
       </PropertyGroup>
 
       <PropertyGroup>
         <BundleRelativeProjectPath>$([MSBuild]::MakeRelative($(BundleDir), $(ProjectPath)))</BundleRelativeProjectPath>
         <ZouProjectId>$(BundleRelativeProjectPath.Replace('\', $(_ZouIdDirSep)).Replace('/', $(_ZouIdDirSep)))</ZouProjectId>
-        <ZouBPDir>$(ZouBundleDir)$(ZouProjectId)\</ZouBPDir>
-        <ZouPDir>$(ZouProjectDir)</ZouPDir>
+        <Zou2Dir>$(ZouBundleDir)$(ZouProjectId)\</Zou2Dir>
+        <Zou6Dir>$(ZouProjectDir)</Zou6Dir>
       </PropertyGroup>
     </When>
   </Choose>
@@ -85,23 +85,23 @@ Fallback:
     <When Condition="'$(SolutionName)' != '' And '$(SolutionName)' != '*Undefined*'">
       <!-- ZouSolutionDir -->
       <PropertyGroup Condition="'$(ZouSolutionDir)' == '' And Exists('$(SolutionDir)zou.$(SolutionFileName)\')" >
-        <ZouSolutionDir>$(SolutionDir)zou.$(SolutionFileName)\</ZouSolutionDir>
+        <ZouSolutionDir>$(SolutionDir)zou\$(SolutionFileName)\</ZouSolutionDir>
       </PropertyGroup>
       <PropertyGroup Condition="'$(ZouSolutionDir)' == '' And Exists('$(SolutionDir)zou.$(SolutionName)\')" >
-        <ZouSolutionDir>$(SolutionDir)zou.$(SolutionName)\</ZouSolutionDir>
+        <ZouSolutionDir>$(SolutionDir)zou\$(SolutionName)\</ZouSolutionDir>
       </PropertyGroup>
       <PropertyGroup Condition="'$(ZouSolutionDir)' == '' And Exists('$(SolutionDir)zou.solution\')" >
-        <ZouSolutionDir>$(SolutionDir)zou.solution\</ZouSolutionDir>
+        <ZouSolutionDir>$(SolutionDir)zou\</ZouSolutionDir>
       </PropertyGroup>
       <PropertyGroup Condition="'$(ZouSolutionDir)' == ''" >
-        <ZouSolutionDir>$(SolutionDir)zou.$(SolutionFileName)\</ZouSolutionDir>
+        <ZouSolutionDir>$(SolutionDir)zou\$(SolutionFileName)\</ZouSolutionDir>
       </PropertyGroup>
       
       <PropertyGroup>
         <BundleRelativeSolutionPath>$([MSBuild]::MakeRelative($(BundleDir), $(SolutionPath)))</BundleRelativeSolutionPath>
         <ZouSolutionId>$(BundleRelativeSolutionPath.Replace('\', $(_ZouIdDirSep)).Replace('/', $(_ZouIdDirSep)))</ZouSolutionId>
-        <ZouBSDir>$(ZouBundleDir)$(ZouSolutionId)\</ZouBSDir>
-        <ZouSDir>$(ZouSolutionDir)</ZouSDir>
+        <Zou3Dir>$(ZouBundleDir)$(ZouSolutionId)\</Zou3Dir>
+        <Zou7Dir>$(ZouSolutionDir)</Zou7Dir>
       </PropertyGroup>
     </When>
   </Choose>
@@ -109,22 +109,22 @@ Fallback:
   <Choose>
     <When Condition="'$(SolutionName)' != '' And '$(SolutionName)' != '*Undefined*' And '$(ProjectName)' != '' And '$(ProjectName)' != '*Undefined*'">
       <PropertyGroup>
-        <ZouBSPDir>$(ZouBundleDir)$(ZouSolutionId)$(_ZouIdSep)$(ZouProjectId)\</ZouBSPDir>
-        <ZouSPDir>$(ZouSolutionDir)$(ZouProjectId)\</ZouSPDir>
+        <Zou1Dir>$(ZouBundleDir)$(ZouSolutionId)$(_ZouIdSep)$(ZouProjectId)\</Zou1Dir>
+        <Zou5Dir>$(ZouSolutionDir)$(ZouProjectId)\</Zou5Dir>
       </PropertyGroup>
     </When>
   </Choose>
 
   <PropertyGroup>
-    <ZouBDir>$(ZouBundleDir)</ZouBDir>
+    <Zou4Dir>$(ZouBundleDir)</Zou4Dir>
   </PropertyGroup>
 
   <ItemGroup>
-    <_ZouLocalDirs Include="$(ZouBSPDir)" Condition="'$(ZouBSPDir)' != ''" />
-    <_ZouLocalDirs Include="$(ZouBPDir)"  Condition="'$(ZouBPDir)' != ''" />
-    <_ZouLocalDirs Include="$(ZouBSDir)"  Condition="'$(ZouBSDir)' != ''" />
-    <_ZouLocalDirs Include="$(ZouSPDir)"  Condition="'$(ZouSPDir)' != ''" />
-    <_ZouLocalDirs Include="$(ZouPDir)"   Condition="'$(ZouPDir)' != ''" />
+    <_ZouLocalDirs Include="$(Zou1Dir)" Condition="'$(Zou1Dir)' != ''" />
+    <_ZouLocalDirs Include="$(Zou2Dir)"  Condition="'$(Zou2Dir)' != ''" />
+    <_ZouLocalDirs Include="$(Zou3Dir)"  Condition="'$(Zou3Dir)' != ''" />
+    <_ZouLocalDirs Include="$(Zou5Dir)"  Condition="'$(Zou5Dir)' != ''" />
+    <_ZouLocalDirs Include="$(Zou6Dir)"   Condition="'$(Zou6Dir)' != ''" />
   </ItemGroup>
 
   <Target Name="ZouMakeDirs">
@@ -175,6 +175,10 @@ Fallback:
     <Message Text="MSBuildToolsVersion            = $(MSBuildToolsVersion)" />
     <Message Text="MSBuildToolsPath               = $(MSBuildToolsPath)" />
     <Message Text="MSBuildThisFileDirectoryNoRoot = $(MSBuildThisFileDirectoryNoRoot)" />
+
+    <Message Text="%0A" />
+    
+    <Message Text="VCTargetsPath = $(VCTargetsPath)" />
   </Target>
   
   <Target Name="ZouTraceFallback">
@@ -187,61 +191,15 @@ Fallback:
 
     <Message Text="%0A" />
 
-    <Message Text="ZouBSPDir = $(ZouBSPDir)" />
-    <Message Text="ZouBPDir  = $(ZouBPDir)" />
-    <Message Text="ZouBSDir  = $(ZouBSDir)" />
-    <Message Text="ZouBDir   = $(ZouBDir)" />
-    <Message Text="ZouSPDir  = $(ZouSPDir)" />
-    <Message Text="ZouPDir   = $(ZouPDir)" />
-    <Message Text="ZouSDir   = $(ZouSDir)" />
+    <Message Text="Zou1Dir = $(Zou1Dir)" />
+    <Message Text="Zou2Dir  = $(Zou2Dir)" />
+    <Message Text="Zou3Dir  = $(Zou3Dir)" />
+    <Message Text="Zou4Dir   = $(Zou4Dir)" />
+    <Message Text="Zou5Dir  = $(Zou5Dir)" />
+    <Message Text="Zou6Dir   = $(Zou6Dir)" />
+    <Message Text="Zou7Dir   = $(Zou7Dir)" />
     <Message Text="ZouDir    = $(ZouDir)" />
   </Target>
 
   <Target Name="ZouTrace" DependsOnTargets="ZouTraceGlobals;ZouTraceFallback"/>
-
-    <!--
-    ZouResolveFallback task.
-  
-    <Target Name="Test">
-      <ZouResolveFallback File="Cpp.NTVersion.props" ZouProjectDir="$(ZouProjectDir)" ZouSolutionDir="$(ZouSolutionDir)" ZouBundleDir="$(ZouBundleDir)" ZouDir="$(ZouDir)">
-        <Output PropertyName="ZouVersionFullPath" TaskParameter="FullPath" />
-      </ZouResolveFallback>
-    </Target>
-  
-  -->
-  <UsingTask TaskName="ZouResolveFallback" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll" >
-    <ParameterGroup>
-      <File Required="true" />
-      <ZouProjectDir />
-      <ZouSolutionDir />
-      <ZouBundleDir />
-      <ZouDir Required="true" />
-
-      <FullPath Output="true" />
-    </ParameterGroup>
-    <Task>
-      <Using Namespace="System.IO"/>
-      <Code Type="Fragment" Language="cs">
-        <![CDATA[
-			  if (!string.IsNullOrEmpty (ZouProjectDir) && Directory.Exists (ZouProjectDir))
-			  {
-				  FullPath = Path.Combine (ZouProjectDir, File);
-			  }
-			  else if (!string.IsNullOrEmpty (ZouSolutionDir) && Directory.Exists (ZouSolutionDir))
-			  {
-				  FullPath = Path.Combine (ZouSolutionDir, File);
-			  }
-			  else if (!string.IsNullOrEmpty (ZouBundleDir) && Directory.Exists (ZouBundleDir))
-			  {
-				  FullPath = Path.Combine (ZouBundleDir, File);
-			  }
-			  else
-			  {
-				  FullPath = Path.Combine (ZouDir, Path.GetFileNameWithoutExtension(File) + ".Default" + Path.GetExtension(File));
-			  }
-        ]]>
-      </Code>
-    </Task>
-  </UsingTask>
-
 </Project>
