@@ -6,7 +6,7 @@ Use this template to create a project that builds and imports one or more extern
 - Rename it to 'importing-project'.Import[s | .exporting-project].vcxproj, for exemple:
   Salaires.Imports.vcxproj,
   Salaires.Import.Swissdec.vcxproj
-- Include the 'zou' submodule (https://git.epsitec.ch/Build/zou) into the root of your main repository.
+- Include the 'zou' submodule (https://git.epsitec.ch/Build/zou) into the root of your bundle repository.
 - Create a new 'ProjectGUID' value.
 - Parameterize the export of the external project.
   Modify the ExportDir and ExportPlatform properties and the ExportProjects items
@@ -24,10 +24,10 @@ Use this template to create a project that builds and imports one or more extern
   <!-- Assume that the path of the zou submodule is relative to this file directory -->
   <Import Project="zou\Cpp.Utility.Import.targets" />
   <ImportGroup Label="PropertySheets">
-    <!-- Define C++ output directories (OutDir, IntDir) -->
+    <!-- Redirect C++ output directories (OutDir, IntDir) -->
     <Import Project="zou\Cpp.OutDir.props" />
-    <!-- Redirect build log file -->
-    <Import Project="zou\Cpp.BuildLog.props" />
+    <!-- Redirect C++ NT Version -->
+    <Import Project="zou\Cpp.NTVersion.props" />
   </ImportGroup>
 
   <!-- Export external solutions into this project -->
