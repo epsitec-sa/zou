@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Test1" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="4.0" DefaultTargets="Test3" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   
   <!-- Simulates default msbuild variables -->
   <PropertyGroup Condition="'$(SolutionDir)' == ''">
@@ -10,18 +10,16 @@
   </PropertyGroup>
   
   <PropertyGroup Condition="'$(ProjectDir)' == ''">
-    <ProjectDir>$([System.IO.Directory]::GetParent($(MSBuildProjectDirectory)).FullName)\libefx\</ProjectDir>
-    <ProjectName>Efx</ProjectName>
-    <ProjectFileName>$(ProjectName).vcxproj</ProjectFileName>
+    <ProjectDir>$([System.IO.Directory]::GetParent($(MSBuildProjectDirectory)).FullName)\swissdec\Net\Transmitter\Host\</ProjectDir>
+    <ProjectName>Swissdec.Transmitter.Host</ProjectName>
+    <ProjectFileName>$(ProjectName).csproj</ProjectFileName>
     <ProjectPath>$(ProjectDir)$(ProjectFileName)</ProjectPath>
     
     <Platform>Win32</Platform>
     <Configuration>Debug</Configuration>
-    <PlatformToolSet>vc140</PlatformToolSet>
+    <PlatformToolset>vc140</PlatformToolset>
   </PropertyGroup>
 
-  
-  
   <!-- Global targets -->
   <ImportGroup Condition="'$(Zou)' == ''">
     <Import Project="private\zou.targets"/>
@@ -32,14 +30,17 @@
     <Import Project="Cpp.OutDir.props"/>
   </ImportGroup>
   
-  <Target Name="Test1" DependsOnTargets="ZouTraceGlobals;ZouTraceFallback">
+  <Target Name="Test1" DependsOnTargets="ZouTrace">
   </Target>
- 
-  <!-- Test2 -->
-  <Target Name="Test2">
-    <ZouResolveFallback File="Cpp.NTVersion.props" ZouProjectDir="$(ZouProjectDir)" ZouSolutionDir="$(ZouSolutionDir)" ZouBundleDir="$(ZouBundleDir)" ZouDir="$(ZouDir)">
-      <Output PropertyName="ZouVersionFullPath" TaskParameter="FullPath" />
-    </ZouResolveFallback>
-    <Message Text="ZouVersionFullPath=$(ZouVersionFullPath)" />
+
+  <ImportGroup>
+    <Import Project="$(ZouDir)Cs.CppOutDir.props" />
+  </ImportGroup>
+
+  <Target Name="Test3" DependsOnTargets="ZouTrace">
+    <Message Text="Projects:%0A@(Projects->'  %(Identity)', '%0A')" />
+    <Message Text="Solutions:%0A@(Solutions-> '  %(Identity)', '%0A')" />
+    <Message Text="SolutionMatch = $(SolutionMatch)" />
+    <Message Text="ProjectMatch  = $(ProjectMatch)" />
   </Target>
 </Project>

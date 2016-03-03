@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  
+  <ItemGroup>
+    <Solutions Include="$(BundleDir)sal\*.sln"/>
+    
+    <Projects  Include="$(BundleDir)pain\Epsitec.Pain.Converter\Epsitec.Pain.Converter.csproj"/>
+    <Projects  Include="$(BundleDir)partout\SecureFormClient\SecureFormClient.csproj"/>
+    <Projects  Include="$(BundleDir)swissdec\Net\Transmitter\Host\Swissdec.Transmitter.Host.csproj"/>
+    <Projects  Include="$(BundleDir)xgen\Epsitec.XGen\Epsitec.XGen.csproj"/>
+  </ItemGroup>
+
+  <PropertyGroup>
+    <ProjectMatch>@(Projects->AnyHaveMetadataValue('Identity', $(ProjectPath)))</ProjectMatch>
+    <SolutionMatch>@(Solutions->AnyHaveMetadataValue('Identity', $(SolutionPath)))</SolutionMatch>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(ProjectMatch)' == 'true' and '$(SolutionMatch)' == 'true'">
+    <CppOutDir>$(SolutionDir)Win32\v120_xp\$(Configuration)\</CppOutDir>
+  </PropertyGroup>
+</Project>

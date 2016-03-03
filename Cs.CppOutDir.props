@@ -1,0 +1,28 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!--
+Import this MSBuild property sheet into your project to resolve the 'OutDir' property (supports override in zou.local folder).
+For example:
+
+    <Import Project="zou\Cs.CppOutDir.props" />
+-->
+<Project ToolsVersion="4.0" InitialTargets="CsCppOutDirTrace" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Condition="'$(Zou)' == ''">
+    <Import Project="private\zou.targets"/>
+  </ImportGroup>
+
+  <ImportGroup Label="PropertySheets">
+    <Import Condition="'$(CppOutDir)' == ''" Project="$(ZouBundleDir)**\$(MSBuildThisFile)" />
+    <Import Condition="'$(CppOutDir)' == ''" Project="$(ZouSolutionDir)**\$(MSBuildThisFile)" />
+    <Import Condition="'$(CppOutDir)' == ''" Project="$(ZouProjectDir)**\$(MSBuildThisFile)" />
+    <Import Condition="'$(CppOutDir)' == ''" Project="$(ZouDir)$(MSBuildThisFileName).Default$(MSBuildThisFileExtension)" />
+  </ImportGroup>
+
+  <PropertyGroup>
+    <OutDir>$(CppOutDir)</OutDir>
+    <OutputPath>$(CppOutDir)</OutputPath>
+  </PropertyGroup>
+
+  <Target Name="CsCppOutDirTrace">
+    <Message Text="CppOutDir=$(CppOutDir)" />
+  </Target>
+</Project>
