@@ -17,34 +17,11 @@ For example:
     <_PropertySheetDisplayName>zou - NT Version...</_PropertySheetDisplayName>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(ZouNTVersionPath)' == '' And '$(Zou1Dir)' != '' And Exists('$(Zou1Dir)$(MSBuildThisFile)')">
-    <ZouNTVersionPath>$(Zou1Dir)$(MSBuildThisFile)</ZouNTVersionPath>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(ZouNTVersionPath)' == '' And '$(Zou2Dir)' != '' And Exists('$(Zou2Dir)$(MSBuildThisFile)')">
-    <ZouNTVersionPath>$(Zou2Dir)$(MSBuildThisFile)</ZouNTVersionPath>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(ZouNTVersionPath)' == '' And '$(Zou3Dir)' != '' And Exists('$(Zou3Dir)$(MSBuildThisFile)')">
-    <ZouNTVersionPath>$(Zou3Dir)$(MSBuildThisFile)</ZouNTVersionPath>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(ZouNTVersionPath)' == '' And '$(Zou4Dir)' != '' And Exists('$(Zou4Dir)$(MSBuildThisFile)')">
-    <ZouNTVersionPath>$(Zou4Dir)$(MSBuildThisFile)</ZouNTVersionPath>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(ZouNTVersionPath)' == '' And '$(Zou5Dir)' != '' And Exists('$(Zou5Dir)$(MSBuildThisFile)')">
-    <ZouNTVersionPath>$(Zou5Dir)$(MSBuildThisFile)</ZouNTVersionPath>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(ZouNTVersionPath)' == '' And '$(Zou6Dir)' != '' And Exists('$(Zou6Dir)$(MSBuildThisFile)')">
-    <ZouNTVersionPath>$(Zou6Dir)$(MSBuildThisFile)</ZouNTVersionPath>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(ZouNTVersionPath)' == '' And '$(Zou7Dir)' != '' And Exists('$(Zou7Dir)$(MSBuildThisFile)')">
-    <ZouNTVersionPath>$(Zou7Dir)$(MSBuildThisFile)</ZouNTVersionPath>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(ZouNTVersionPath)' == '' And '$(ZouDir)' != '' And Exists('$(ZouDir)$(MSBuildThisFile)')">
-    <ZouNTVersionPath>$(ZouDir)$(MSBuildThisFileName).Default$(MSBuildThisFileExtension)</ZouNTVersionPath>
-  </PropertyGroup>
-
-  
   <ImportGroup Label="PropertySheets">
-    <Import Project="$(ZouNTVersionPath)" />
+    <Import Condition="'$(NTVersion)' == ''" Project="$(ZouBundleDir)**\$(MSBuildThisFile)" />
+    <Import Condition="'$(NTVersion)' == ''" Project="$(ZouSolutionDir)**\$(MSBuildThisFile)" />
+    <Import Condition="'$(NTVersion)' == ''" Project="$(ZouProjectDir)**\$(MSBuildThisFile)" />
+    <Import Condition="'$(NTVersion)' == ''" Project="$(ZouDir)$(MSBuildThisFileName).Default$(MSBuildThisFileExtension)" />
   </ImportGroup>
   
   <ItemDefinitionGroup>
@@ -54,7 +31,6 @@ For example:
   </ItemDefinitionGroup>
 
   <Target Name="CppNTVersionTrace">
-    <Message Text="ZouNTVersionPath=$(ZouNTVersionPath)" />
     <Message Text="NTVersion=$(NTVersion)" />
   </Target>
 </Project>
