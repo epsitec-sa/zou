@@ -1,12 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <!--
-Import this MSBuild property sheet into your project to define the default 'OutDir' and 'IntDir' properties.
-For example:
-
-  <ImportGroup Label="PropertySheets">
-    <Import Project="zou\Cpp.OutDir.props" />
-  </ImportGroup>
-
+This property sheet define the default 'OutDir' and 'IntDir' properties for C++ projects.
 -->
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
@@ -14,12 +8,7 @@ For example:
   </PropertyGroup>
   <PropertyGroup>
     <OutDir>$(SolutionDir)$(Platform)\$(PlatformToolset)\$(Configuration)\</OutDir>
-    <!--
-    The IntDir property ends with the project name to avoid mixing intermediate files
-    when projects are located in the same folder and to suppress some build warnings.
-    The IntDir configurations folders are rooted in the obj folder to avoid mixing
-    with output folders.
-    -->
+    <!-- Avoid to share the intermediate folder between projects located int he same folder -->
     <IntDir>$(Platform)\$(PlatformToolset)\obj\$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
 </Project>
