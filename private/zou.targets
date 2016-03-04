@@ -51,7 +51,10 @@ MSBuildThisFileDirectory = $(BundleDir)zou\private\zou.props
 
       <PropertyGroup>
         <BundleRelativeProjectPath>$([MSBuild]::MakeRelative($(BundleDir), $(ProjectPath)))</BundleRelativeProjectPath>
-        <BundleProjectAnchor>$(BundleRelativeProjectPath.Substring(0, $(BundleRelativeProjectPath.IndexOf('\'))))</BundleProjectAnchor>
+        <_ZouTmp>$(BundleRelativeProjectPath.IndexOf('\'))</_ZouTmp>
+      </PropertyGroup>
+      <PropertyGroup Condition="'$(_ZouTmp)' &gt; '0'" >
+        <BundleProjectAnchor>$(BundleRelativeProjectPath.Substring(0, $(_ZouTmp)))\</BundleProjectAnchor>
       </PropertyGroup>
     </When>
   </Choose>
@@ -63,10 +66,13 @@ MSBuildThisFileDirectory = $(BundleDir)zou\private\zou.props
       <PropertyGroup Condition="'$(ZouSolutionDir)' == ''" >
         <ZouSolutionDir>$(SolutionDir)$(_ZouCfgSubdir)</ZouSolutionDir>
       </PropertyGroup>
-      
+
       <PropertyGroup>
         <BundleRelativeSolutionPath>$([MSBuild]::MakeRelative($(BundleDir), $(SolutionPath)))</BundleRelativeSolutionPath>
-        <BundleSolutionAnchor>$(BundleRelativeSolutionPath.Substring(0, $(BundleRelativeSolutionPath.IndexOf('\'))))</BundleSolutionAnchor>
+        <_ZouTmp>$(BundleRelativeSolutionPath.IndexOf('\'))</_ZouTmp>
+      </PropertyGroup>
+      <PropertyGroup Condition="'$(_ZouTmp)' &gt; '0'" >
+        <BundleSolutionAnchor>$(BundleRelativeSolutionPath.Substring(0, $(_ZouTmp)))\</BundleSolutionAnchor>
       </PropertyGroup>
     </When>
   </Choose>
