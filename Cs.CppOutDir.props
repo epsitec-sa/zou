@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <!--
-Import this MSBuild property sheet into your project to resolve the 'OutDir' property (supports override in zou.local folder).
+Import this MSBuild property sheet into your project to resolve the 'OutDir' property (supports override in zou.cfg folders).
 For example:
 
     <Import Project="zou\Cs.CppOutDir.props" />
@@ -10,19 +10,21 @@ For example:
     <Import Project="private\zou.targets"/>
   </ImportGroup>
 
-  <ImportGroup Label="PropertySheets">
+  <ImportGroup>
     <Import Condition="'$(CppOutDir)' == ''" Project="$(ZouBundleDir)**\$(MSBuildThisFile)" />
     <Import Condition="'$(CppOutDir)' == ''" Project="$(ZouSolutionDir)**\$(MSBuildThisFile)" />
     <Import Condition="'$(CppOutDir)' == ''" Project="$(ZouProjectDir)**\$(MSBuildThisFile)" />
-    <Import Condition="'$(CppOutDir)' == ''" Project="$(ZouDir)$(MSBuildThisFileName).Default$(MSBuildThisFileExtension)" />
   </ImportGroup>
 
-  <PropertyGroup>
+  <PropertyGroup Condition="'$(CppOutDir)' != ''">
     <OutDir>$(CppOutDir)</OutDir>
     <OutputPath>$(CppOutDir)</OutputPath>
   </PropertyGroup>
 
   <Target Name="CsCppOutDirTrace">
-    <Message Text="CppOutDir=$(CppOutDir)" />
+    <Message Text="$(MSBuildThisFileFullPath):" />
+    <Message Text="  CppOutDir  = $(CppOutDir)" />
+    <Message Text="  OutDir     = $(OutDir)" />
+    <Message Text="  OutputPath = $(OutputPath)" />
   </Target>
 </Project>

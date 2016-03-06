@@ -6,9 +6,9 @@ This property sheet define the default 'OutDir' and 'IntDir' properties for C++ 
   <PropertyGroup>
     <_PropertySheetDisplayName>zou - Output Directories (default)</_PropertySheetDisplayName>
   </PropertyGroup>
-  <PropertyGroup>
-    <OutDir>$(SolutionDir)$(Platform)\$(PlatformToolset)\$(Configuration)\</OutDir>
+  <PropertyGroup Condition="'$(CppOutDir)' == ''">
+    <CppOutDir>$(SolutionDir)$(Platform)\$(PlatformToolset)\$(Configuration)\</CppOutDir>
     <!-- Avoid to share the intermediate folder between projects located int he same folder -->
-    <IntDir>$(Platform)\$(PlatformToolset)\obj\$(Configuration)\$(ProjectName)\</IntDir>
+    <CppIntDir>$(Platform)\$(PlatformToolset)\obj\$(Configuration)\$(ProjectName)\</CppIntDir>
   </PropertyGroup>
 </Project>

@@ -10,21 +10,18 @@ Use the Property Manager to import  it into your project.
 
   <PropertyGroup>
     <_PropertySheetDisplayName>zou - Output Directories...</_PropertySheetDisplayName>
-    
-    <!-- Save and empty OutDir -->
-    <_PrevOutDir>$(OutDir)</_PrevOutDir>
-    <OutDir></OutDir>
   </PropertyGroup> 
 
   <ImportGroup Label="PropertySheets">
-    <Import Condition="'$(OutDir)' == ''" Project="$(ZouBundleDir)**\$(MSBuildThisFile)" />
-    <Import Condition="'$(OutDir)' == ''" Project="$(ZouSolutionDir)**\$(MSBuildThisFile)" />
-    <Import Condition="'$(OutDir)' == ''" Project="$(ZouProjectDir)**\$(MSBuildThisFile)" />
-    <Import Condition="'$(OutDir)' == ''" Project="$(ZouDir)$(MSBuildThisFileName).Default$(MSBuildThisFileExtension)" />
+    <Import Condition="'$(CppOutDir)' == ''" Project="$(ZouBundleDir)**\$(MSBuildThisFile)" />
+    <Import Condition="'$(CppOutDir)' == ''" Project="$(ZouSolutionDir)**\$(MSBuildThisFile)" />
+    <Import Condition="'$(CppOutDir)' == ''" Project="$(ZouProjectDir)**\$(MSBuildThisFile)" />
+    <Import Condition="'$(CppOutDir)' == ''" Project="$(ZouDir)$(MSBuildThisFileName).Default$(MSBuildThisFileExtension)" />
   </ImportGroup>
 
-  <PropertyGroup Condition="'$(OutDir)' == ''">
-    <OutDir>$(_PrevOutDir)</OutDir>
+  <PropertyGroup Condition="'$(CppOutDir)' != ''">
+    <OutDir>$(CppOutDir)</OutDir>
+    <IntDir>$(CppIntDir)</IntDir>
   </PropertyGroup>
   
   <Target Name="CppOutDirTrace">
