@@ -1,77 +1,88 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <!--
-The Export.targets can be used to build and export the output of one or many projects or solutions.
+The Import.targets can be used to build and export the output of one or many projects or solutions.
 Input parameters:
-- $(ExportDir)
-- $(ExportConfiguration)
-- $(ExportPlatform)
-- @(ExportProjects)
+- @(ImportProjects)
+  - %(ImportDir)
+  - %(ImportPlatform)
+  - %(ImportConfiguration)
 
 Targets
-- ExportClean
-- ExportBuild
-- ExportRebuild
+- ImportClean
+- ImportBuild
+- ImportRebuild
+
+	WARNING: MSBuild tool|task properties
+  Do not move the 'OutDir' property definition at the end of the properties definition.
+	When used with the command line of the 'Exec' task (see '_ImportCommand'
+	later),	the ending backslash of its value escapes the end quote character
+	of the enclosing argument - msbuild ... "/p:...;...\Debug\" "solution.sln".
+	The escaped quote will break the shell unquoting process. 
 -->
-<Project ToolsVersion="4.0" DefaultTargets="ExportBuild" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="4.0" InitialTargets="ImportTrace" DefaultTargets="ImportBuild" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <!-- Zou targets -->
   <ImportGroup Condition="'$(Zou)' == ''">
     <Import Project="private\zou.targets"/>
   </ImportGroup>
   
+  <!-- Define imported projects default metadata -->
+  <ItemDefinitionGroup>
+    <ImportProjects>
+      <ImportConfiguration Condition="'%(ImportConfiguration)' == ''">$(Configuration)</ImportConfiguration>
+      <ImportPlatform      Condition="'%(ImportPlatform)' == ''">Any CPU</ImportPlatform>
+      <ImportDir           Condition="'%(ImportDir)' == ''">$(OutDir)</ImportDir>
+    </ImportProjects>
+    <ImportFiles>
+      <ImportDir           Condition="'%(ImportDir)' == ''">$(OutDir)</ImportDir>
+      <ImportFile          Condition="'%(ImportFile)' == ''">%(FileName)%(Extension)</ImportFile>
+    </ImportFiles>
+  </ItemDefinitionGroup>
+
+  <!-- ================ ImportProjectsClean ================ -->
   
-  <!-- Configuration and Platform -->
-  <PropertyGroup>
-    <ExportConfiguration Condition="'$(ExportConfiguration)' == ''">Debug</ExportConfiguration>
-    <ExportPlatform Condition="'$(ExportPlatform)' == ''">Any CPU</ExportPlatform>
-  </PropertyGroup>
+  <Target Name="ImportProjectsClean">
+    <MSBuild Projects="@(ImportProjects)" Targets="Clean" Properties="OutDir=%(ImportDir);Platform=%(ImportPlatform);Configuration=%(ImportConfiguration)" />
+  </Target>
 
-  <!-- MSBuild tool|task properties -->
-  <ItemGroup>
-    <!--
-	  WARNING: do not move the 'OutDir' property at the end of the collection group.
-	  When used with the command line of the 'Exec' task (see '_ExportCommand'
-	  later),	the ending backslash of its value escapes the end quote character
-	  of the enclosing argument - msbuild ... "/p:...;...\Debug\" "solution.sln".
-	  The escaped quote will break the shell unquoting process. 
-	  -->
-    <ExportProperties Include="OutDir=$(ExportDir)" />
-    <ExportProperties Include="Platform=$(ExportPlatform)" />
-    <ExportProperties Include="Configuration=$(ExportConfiguration)" />
-  </ItemGroup>
+  <!-- ================ ImportFilesClean ================ -->
 
-  <!-- ExportClean -->
-  <Target Name="ExportClean">
-    <MSBuild Projects="@(ExportProjects)" Targets="Clean" Properties="@(ExportProperties)" />
+  <Target Name="ImportFilesClean">
+    <Delete  Files="%(ImportFiles.ImportDir)%(RecursiveDir)%(ImportFile)" />
+    <Message Text="  [-] %(ImportFiles.ImportDir)%(RecursiveDir)%(ImportFile)" Importance="high" />
   </Target>
   
-  <!-- ExportBuild -->
-  <Target Name="ExportBuild">
-    <!-- Check parameters -->
-    <Error Text="the 'ExportProjects' item group is missing." Condition="'@(ExportProjects)' == ''" />
-    <Error Text="the 'ExportDir' property should be defined with /p:ExportDir=..." Condition="'$(ExportDir)'     == ''" />
-	
+  <!-- ================ ImportProjects ================ -->
+  
+  <Target Name="ImportProjects" >
     <!--
 	  The MSBuild task does not determine the build order but MSBuild.exe and Visual Studio do:
     https://maximelabelle.wordpress.com/2011/11/29/building-multiple-projects-in-order-with-msbuild/
     We cannot use the following MSBuild task:
-        <MSBuild Projects="@(ExportProjects)" Targets="Build" Properties="@(ExportProperties) " />
+        <MSBuild Projects="%(ImportProjects.Identity)" Targets="Build" Properties="OutDir=%(ImportDir);Platform=%(ImportPlatform);Configuration=%(ImportConfiguration) " />
     Instead with use the Exec task which starts the MSBuild process.
 	  -->
-    <PropertyGroup>
-      <_ExportCommands>@(ExportProjects -> '"$(MSBuildToolsPath)\msbuild" /nologo /v:m /t:Build "/p:@(ExportProperties)" "%(Identity)"', '%0A')</_ExportCommands>
-    </PropertyGroup>
-    <Exec Command="$(_ExportCommands)" />
+    <Exec Command="&quot;$(MSBuildToolsPath)\msbuild&quot; /nologo /v:m /t:Build &quot;/p:OutDir=%(ImportDir);Platform=%(ImportPlatform);Configuration=%(ImportConfiguration)&quot; &quot;%(ImportProjects.Identity)&quot;" />
+  </Target>
+
+  <!-- ================ ImportFiles ================ -->
+
+  <Target Name="ImportFiles"
+          Inputs="@(ImportFiles)"
+          Outputs="@(ImportFiles -> '%(ImportDir)%(RecursiveDir)%(ImportFile)')">
+    <Copy SourceFiles="%(ImportFiles.Identity)" DestinationFiles="%(ImportDir)%(RecursiveDir)%(ImportFile)" />
+    <Message Text="  [+] %(ImportFiles.Identity) =&gt; %(ImportDir)%(RecursiveDir)%(ImportFile)" Importance="high" />
   </Target>
   
-  <!-- ExportRebuild -->
-  <Target Name="ExportRebuild" DependsOnTargets="ExportClean;ExportBuild" />
+  <!-- ================ Main targets ================ -->
+
+  <Target Name="ImportClean"   DependsOnTargets="ImportFilesClean;ImportProjectsClean" />
+  <Target Name="ImportBuild"   DependsOnTargets="ImportProjects;ImportFiles" />  
+  <Target Name="ImportRebuild" DependsOnTargets="ImportClean;ImportBuild" />
   
-  <!-- ExportTrace -->
-  <Target Name="ExportTraceLocals">
-    <Message Text="ExportProjects=@(ExportProjects)" Condition="'$(ExportProjects)' != ''" />
-    <Message Text="ExportDir=$(ExportDir)" Condition="'$(ExportDir)' != ''" />
-    <Message Text="ExportConfiguration=$(ExportConfiguration)" Condition="'$(ExportConfiguration)' != ''" />
-    <Message Text="ExportPlatform=$(ExportPlatform)" Condition="'$(ExportPlatform)' != ''" />
+  <!-- ================ ImportTrace ================ -->
+  
+  <Target Name="ImportTrace">
+    <Message Text="[%(ImportConfiguration)|%(ImportPlatform)] %(ImportProjects.Identity) =&gt; %(ImportDir)" />
+    <Message Text="[+] %(ImportFiles.Identity) =&gt; %(ImportDir)%(ImportFile)" />
   </Target>
-  <Target Name="ExportTrace" DependsOnTargets="ExportTraceLocals" />
 </Project>

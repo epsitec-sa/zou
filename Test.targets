@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Test1" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="4.0" DefaultTargets="Test2" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   
   <!-- Simulates default msbuild variables -->
   <PropertyGroup Condition="'$(SolutionDir)' == ''">
@@ -7,23 +7,20 @@
     <SolutionName>Salaires</SolutionName>
     <SolutionFileName>$(SolutionName).sln</SolutionFileName>
     <SolutionPath>$(SolutionDir)$(SolutionFileName)</SolutionPath>
+  
+    <Platform>Win32</Platform>
+    <Configuration>Debug</Configuration>
+    <PlatformToolset>vc140</PlatformToolset>
   </PropertyGroup>
 
-  <!--<PropertyGroup Condition="'$(ProjectDir)' == ''">
+  <PropertyGroup Condition="'$(ProjectDir)' == ''">
     <ProjectDir>$([System.IO.Directory]::GetParent($(MSBuildProjectDirectory)).FullName)\swissdec\Net\Transmitter\Host\</ProjectDir>
     <ProjectName>Swissdec.Transmitter.Host</ProjectName>
     <ProjectFileName>$(ProjectName).csproj</ProjectFileName>
     <ProjectPath>$(ProjectDir)$(ProjectFileName)</ProjectPath>
-
-    <Platform>Win32</Platform>
-    <Configuration>Debug</Configuration>
-    <PlatformToolset>vc140</PlatformToolset>
-
-    <OutDir>bin\$(Configuration)</OutDir>
-    <OutputPath>$(OutDir)</OutputPath>
-  </PropertyGroup>-->
+  </PropertyGroup>
   
-  <PropertyGroup Condition="'$(ProjectDir)' == ''">
+  <!--<PropertyGroup Condition="'$(ProjectDir)' == ''">
     <ProjectDir>$([System.IO.Directory]::GetParent($(MSBuildProjectDirectory)).FullName)\libsalaires\</ProjectDir>
     <ProjectName>SalairesPlus</ProjectName>
     <ProjectFileName>$(ProjectName).vcxproj</ProjectFileName>
@@ -35,7 +32,7 @@
 
     <OutDir>bin\$(Configuration)</OutDir>
     <OutputPath>$(OutDir)</OutputPath>
-  </PropertyGroup>
+  </PropertyGroup>-->
 
   <!--<PropertyGroup Condition="'$(ProjectDir)' == ''">
     <ProjectDir>$([System.IO.Directory]::GetParent($(MSBuildProjectDirectory)).FullName)\Bcx\</ProjectDir>
@@ -54,11 +51,44 @@
   </ImportGroup>
 
   <ImportGroup>
-    <Import Project="Cpp.NTVersion.props"/>
-    <!--<Import Project="Cpp.OutDir.props"/>-->
+    <!--<Import Project="Cpp.NTVersion.props"/>-->
+    <Import Project="Cpp.OutDir.props"/>
     <!--<Import Project="Cs.CppOutDir.props" />-->
   </ImportGroup>
+
+
+  <PropertyGroup>
+    <SvnBuildDir>S:\Build\</SvnBuildDir>
+    <SvnEpsitecDir>S:\Epsitec\</SvnEpsitecDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ImportProjects Include="..\partout\SecureForms.Redist.sln">
+      <ImportDir>$(OutDir)partout\</ImportDir>
+    </ImportProjects>
+    <ImportProjects Include="..\swissdec\Net\Swissdec.Redist.sln">
+      <ImportDir>$(OutDir)swissdec\</ImportDir>
+    </ImportProjects>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ImportFiles Include="..\sal\images\*.png">
+      <ImportDir>$(OutDir)images\</ImportDir>
+    </ImportFiles>
+    <ImportFiles Include="$(SvnEpsitecDir)\solutions\Modeles\Salaires 12.5\modele12.5-officiel.salx">
+      <ImportDir>$(OutDir)</ImportDir>
+      <ImportFile>Modele12%(Extension)</ImportFile>
+    </ImportFiles>
+  </ItemGroup>
   
-  <Target Name="Test1" DependsOnTargets="ZouTrace">
+  <Import Project="Import.targets" />
+
+
+
+  <Target Name="Test1">
+    <Message Text="&quot;$(MSBuildToolsPath)\msbuild&quot; /nologo /v:m /t:Build &quot;/p:OutDir=%(ImportDir);Platform=%(ImportPlatform);Configuration=%(ImportConfiguration)&quot; &quot;%(ImportProjects.Identity)&quot;" />
+  </Target>
+  <Target Name="Test2" DependsOnTargets="ImportBuild">
+    <Message Text="%(ImportFiles.Identity) =&gt; %(ImportDir)%(ImportFile)" />
   </Target>
 </Project>

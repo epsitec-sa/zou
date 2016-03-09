@@ -20,7 +20,8 @@ Use this template to create a project that builds and imports one or more extern
     <!-- The 'PlatformToolSet" property can be modified from within the Visual Studio Project Properties dialog. -->
     <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
-  
+
+  <!-- Import zou utility project and property sheets -->
   <!-- Assume that the path of the zou submodule is relative to this file directory -->
   <Import Project="zou\Cpp.Utility.Import.targets" />
   <ImportGroup Label="PropertySheets">
@@ -30,17 +31,20 @@ Use this template to create a project that builds and imports one or more extern
     <Import Project="zou\Cpp.NTVersion.props" />
   </ImportGroup>
 
-  <!-- Export external solutions into this project -->
-  <PropertyGroup>
-    <!-- For example: $(OutDir)services -->
-    <ExportDir>local-import-path</ExportDir>
-    <!-- For example: 'Any CPU' -->
-    <ExportPlatform>external-solution-platform</ExportPlatform>
-  </PropertyGroup>
+  <!-- Import managed projects -->
   <ItemGroup>
-    <!-- The external solution path relative to this project file.
-    For example: Swissdec\Swissdec.Redist.sln -->
-    <ExportProjects Include="external-solution-relative-path" />
+    <ImportProjects Include="..\pain\Epsitec.Pain.Redist.sln">
+      <ImportDir>$(OutDir)pain\</ImportDir>
+    </ImportProjects>
+    <ImportProjects Include="..\partout\SecureForms.Redist.sln">
+      <ImportDir>$(OutDir)partout\</ImportDir>
+    </ImportProjects>
+    <ImportProjects Include="..\swissdec\Net\Swissdec.Redist.sln">
+      <ImportDir>$(OutDir)swissdec\</ImportDir>
+    </ImportProjects>
+    <ImportProjects Include="..\xgen\Epsitec.XGen.Redist.sln">
+      <ImportDir>$(OutDir)xgen\</ImportDir>
+    </ImportProjects>
   </ItemGroup>
 
   <Import Project="zou\Import.targets" />
