@@ -54,6 +54,9 @@ Targets
   <!-- ================ ImportProjects ================ -->
   
   <Target Name="ImportProjects" >
+    <!-- Restore nuget packages -->
+    <Exec Command="&quot;$(ZouDir)\nuget&quot; restore &quot;%(ImportProjects.Identity)&quot;" />
+    
     <!--
 	  The MSBuild task does not determine the build order but MSBuild.exe and Visual Studio do:
     https://maximelabelle.wordpress.com/2011/11/29/building-multiple-projects-in-order-with-msbuild/
