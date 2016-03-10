@@ -11,13 +11,6 @@ Targets
 - ImportClean
 - ImportBuild
 - ImportRebuild
-
-	WARNING: MSBuild tool|task properties
-  Do not move the 'OutDir' property definition at the end of the properties definition.
-	When used with the command line of the 'Exec' task (see '_ImportCommand'
-	later),	the ending backslash of its value escapes the end quote character
-	of the enclosing argument - msbuild ... "/p:...;...\Debug\" "solution.sln".
-	The escaped quote will break the shell unquoting process. 
 -->
 <Project ToolsVersion="4.0" InitialTargets="ImportTrace" DefaultTargets="ImportBuild" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <!-- Zou targets -->
@@ -54,8 +47,18 @@ Targets
   <!-- ================ ImportProjects ================ -->
   
   <Target Name="ImportProjects" >
-    <!-- Restore nuget packages -->
-    <Exec Command="&quot;$(ZouDir)\nuget&quot; restore &quot;%(ImportProjects.Identity)&quot;" />
+    <!-- Restore nuget packages for solutions... -->
+    <Exec
+      Command="&quot;$(ZouDir)nuget&quot; restore &quot;%(ImportProjects.Identity)&quot;"
+      Condition="'%(Extension)' == '.sln'"/>
+    <!-- ...and projects -->
+    <Message
+      Text="&quot;$(ZouDir)nuget&quot; restore &quot;%(ImportProjects.RootDir)%(Directory)packages.config&quot; -PackagesDirectory &quot;$(SolutionDir)packages\.&quot;"
+      Condition="'%(Extension)' != '.sln' And Exists('%(RootDir)%(Directory)packages.config')"
+      Importance="high"/>
+    <Exec
+      Command="&quot;$(ZouDir)nuget&quot; restore &quot;%(ImportProjects.RootDir)%(Directory)packages.config&quot; -PackagesDirectory &quot;$(SolutionDir)packages\.&quot;"
+      Condition="'%(Extension)' != '.sln' And Exists('%(RootDir)%(Directory)packages.config')"/>
     
     <!--
 	  The MSBuild task does not determine the build order but MSBuild.exe and Visual Studio do:
@@ -64,7 +67,14 @@ Targets
         <MSBuild Projects="%(ImportProjects.Identity)" Targets="Build" Properties="OutDir=%(ImportDir);Platform=%(ImportPlatform);Configuration=%(ImportConfiguration) " />
     Instead with use the Exec task which starts the MSBuild process.
 	  -->
-    <Exec Command="&quot;$(MSBuildToolsPath)\msbuild&quot; /nologo /v:m /t:Build &quot;/p:OutDir=%(ImportDir);Platform=%(ImportPlatform);Configuration=%(ImportConfiguration)&quot; &quot;%(ImportProjects.Identity)&quot;" />
+    
+    <!-- Build solutions... -->
+    <Exec
+      Command="&quot;$(MSBuildToolsPath)\msbuild&quot; /nologo /v:m /t:Build &quot;/p:OutDir=%(ImportDir);Platform=%(ImportPlatform);Configuration=%(ImportConfiguration)&quot; &quot;%(ImportProjects.Identity)&quot;"
+      Condition="'%(Extension)' == '.sln'" />
+    <!-- ...and projects -->
+    <MSBuild Projects="%(ImportProjects.Identity)" Targets="Build" Properties="OutDir=%(ImportDir);Platform=%(ImportPlatform);Configuration=%(ImportConfiguration)"
+      Condition="'%(Extension)' != '.sln'" />
   </Target>
 
   <!-- ================ ImportFiles ================ -->
