@@ -21,17 +21,24 @@ Use this template to create a project that builds and imports one or more extern
     <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
 
-  <!-- Import zou utility project and property sheets -->
   <!-- Assume that the path of the zou submodule is relative to this file directory -->
-  <Import Project="zou\Cpp.Utility.Import.targets" />
-  <ImportGroup Label="PropertySheets">
-    <!-- Redirect C++ output directories (OutDir, IntDir) -->
-    <Import Project="zou\Cpp.OutDir.props" />
+  
+  <!-- Import zou utility project and property sheets -->
+  <Import Project="zou\Cpp.Utility.props" />
+  
+  <ImportGroup Label="PropertySheets" Condition="">
     <!-- Redirect C++ NT Version -->
     <Import Project="zou\Cpp.NTVersion.props" />
+    <!-- Redirect C++ output directories (OutDir, IntDir) -->
+    <Import Project="zou\Cpp.OutDir.props" />
   </ImportGroup>
 
-  <!-- Import managed projects -->
+  <Import Project="zou\Cpp.Utility.targets" />
+
+  <!--
+  Import managed projects or solutions.
+  Exemple: salaires excerpt
+  -->
   <ItemGroup>
     <ImportProjects Include="..\pain\Epsitec.Pain.Redist.sln">
       <ImportDir>$(OutDir)pain\</ImportDir>
@@ -45,6 +52,13 @@ Use this template to create a project that builds and imports one or more extern
     <ImportProjects Include="..\xgen\Epsitec.XGen.Redist.sln">
       <ImportDir>$(OutDir)xgen\</ImportDir>
     </ImportProjects>
+  </ItemGroup>
+  
+  <!-- Import files -->
+  <ItemGroup>
+    <ImportFiles Include="images\*.png" >
+      <ImportDir>$(OutDir)images\</ImportDir>
+    </ImportFiles>
   </ItemGroup>
 
   <Import Project="zou\Import.targets" />

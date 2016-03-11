@@ -93,9 +93,9 @@ Targets
   
   <!-- ================ Main targets ================ -->
 
-  <Target Name="ImportClean"   DependsOnTargets="ImportFilesClean;ImportProjectsClean" />
-  <Target Name="ImportBuild"   DependsOnTargets="ImportProjects;ImportFiles" />  
-  <Target Name="ImportRebuild" DependsOnTargets="ImportClean;ImportBuild" />
+  <Target Name="ImportClean"   DependsOnTargets="ImportFilesClean;ImportProjectsClean" BeforeTargets="Clean" />
+  <Target Name="ImportBuild"   DependsOnTargets="ImportProjects;ImportFiles"           BeforeTargets="Build" />  
+  <Target Name="ImportDebug"   DependsOnTargets="ZouTrace"                             BeforeTargets="ImportBuild" />
   
   <!-- ================ ImportTrace ================ -->
   
