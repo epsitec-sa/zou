@@ -13,6 +13,10 @@ Targets
 - ImportRebuild
 -->
 <Project ToolsVersion="4.0" InitialTargets="ImportTrace" DefaultTargets="ImportBuild" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Condition="'$(TargetDir)' == ''" >
+    <TargetDir>$(OutDir)</TargetDir>
+  </PropertyGroup>
+  
   <!-- Zou targets -->
   <ImportGroup Condition="'$(Zou)' == ''">
     <Import Project="private\zou.targets"/>
@@ -23,10 +27,10 @@ Targets
     <ImportProjects>
       <ImportConfiguration Condition="'%(ImportConfiguration)' == ''">$(Configuration)</ImportConfiguration>
       <ImportPlatform      Condition="'%(ImportPlatform)' == ''">Any CPU</ImportPlatform>
-      <ImportDir           Condition="'%(ImportDir)' == ''">$(OutDir)</ImportDir>
+      <ImportDir           Condition="'%(ImportDir)' == ''">$(TargetDir)</ImportDir>
     </ImportProjects>
     <ImportFiles>
-      <ImportDir           Condition="'%(ImportDir)' == ''">$(OutDir)</ImportDir>
+      <ImportDir           Condition="'%(ImportDir)' == ''">$(TargetDir)</ImportDir>
       <ImportFile          Condition="'%(ImportFile)' == ''">%(FileName)%(Extension)</ImportFile>
     </ImportFiles>
   </ItemDefinitionGroup>
