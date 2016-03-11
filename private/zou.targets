@@ -3,9 +3,7 @@
 Import this script at the beginning of other scripts to define global zou properties:
 
   <Project ... >
-    <ImportGroup Condition="'$(Zou)' == ''">
-      <Import Project="private\zou.targets"/>
-    </ImportGroup>
+    <Import Condition="'$(Zou)' == ''" Project="private\zou.targets"/>
     ...
   </Project>
 
@@ -23,9 +21,6 @@ MSBuildThisFileDirectory = $(BundleDir)zou\private\zou.props
   <PropertyGroup> <Zou>zou</Zou> </PropertyGroup>
   
   <PropertyGroup>
-    <!-- Separators used for project and solution IDs generation (see ZouProjectId and ZouSolutionId). -->
-    <_ZouIdDirSep>@</_ZouIdDirSep>
-    <_ZouIdSep>+</_ZouIdSep>
     <!-- Configuration directory name -->
     <_ZouCfgSubdir>zou.cfg\</_ZouCfgSubdir>
   </PropertyGroup>
