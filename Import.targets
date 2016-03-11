@@ -72,13 +72,14 @@ Targets
     
     <!-- Build solutions... -->
     <Exec
-      Command="&quot;$(MSBuildToolsPath)\msbuild&quot; /nologo /v:m /t:Build &quot;/p:OutDir=%(ImportDir);Platform=%(ImportPlatform);Configuration=%(ImportConfiguration)&quot; &quot;%(ImportProjects.Identity)&quot;"
+      Command="&quot;$(MSBuildToolsPath)\msbuild&quot; /nologo /v:m /t:Build &quot;/p:OutDir=%(ImportDir);Platform=%(ImportPlatform);Configuration=%(ImportConfiguration);BuildInParallel=true&quot; &quot;%(ImportProjects.Identity)&quot;"
       Condition="'%(Extension)' == '.sln'" />
     <!-- ...and projects -->
     <MSBuild
       Projects="%(ImportProjects.Identity)"
       Targets="Build"
       Properties="OutDir=%(ImportDir);Platform=%(ImportPlatform);Configuration=%(ImportConfiguration)"
+      BuildInParallel="true"
       Condition="'%(Extension)' != '.sln'" />
   </Target>
 
