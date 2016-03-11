@@ -12,15 +12,13 @@ Targets
 - ImportBuild
 - ImportRebuild
 -->
-<Project ToolsVersion="4.0" InitialTargets="ImportTrace" DefaultTargets="ImportBuild" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="4.0" DefaultTargets="ImportBuild" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition="'$(TargetDir)' == ''" >
     <TargetDir>$(OutDir)</TargetDir>
   </PropertyGroup>
   
   <!-- Zou targets -->
-  <ImportGroup Condition="'$(Zou)' == ''">
-    <Import Project="private\zou.targets"/>
-  </ImportGroup>
+  <Import Condition="'$(Zou)' == ''" Project="private\zou.targets" />
   
   <!-- Define imported projects default metadata -->
   <ItemDefinitionGroup>
@@ -45,7 +43,7 @@ Targets
 
   <Target Name="ImportFilesClean">
     <Delete  Files="%(ImportFiles.ImportDir)%(RecursiveDir)%(ImportFile)" />
-    <Message Text="  [-] %(ImportFiles.ImportDir)%(RecursiveDir)%(ImportFile)" Importance="high" />
+    <Message Text="  [-] %(ImportFiles.ImportDir)%(RecursiveDir)%(ImportFile)" Condition="'%(ImportFile)' != ''"/>
   </Target>
   
   <!-- ================ ImportProjects ================ -->
@@ -77,7 +75,10 @@ Targets
       Command="&quot;$(MSBuildToolsPath)\msbuild&quot; /nologo /v:m /t:Build &quot;/p:OutDir=%(ImportDir);Platform=%(ImportPlatform);Configuration=%(ImportConfiguration)&quot; &quot;%(ImportProjects.Identity)&quot;"
       Condition="'%(Extension)' == '.sln'" />
     <!-- ...and projects -->
-    <MSBuild Projects="%(ImportProjects.Identity)" Targets="Build" Properties="OutDir=%(ImportDir);Platform=%(ImportPlatform);Configuration=%(ImportConfiguration)"
+    <MSBuild
+      Projects="%(ImportProjects.Identity)"
+      Targets="Build"
+      Properties="OutDir=%(ImportDir);Platform=%(ImportPlatform);Configuration=%(ImportConfiguration)"
       Condition="'%(Extension)' != '.sln'" />
   </Target>
 
@@ -99,7 +100,7 @@ Targets
   <!-- ================ ImportTrace ================ -->
   
   <Target Name="ImportTrace">
-    <Message Text="[%(ImportConfiguration)|%(ImportPlatform)] %(ImportProjects.Identity) =&gt; %(ImportDir)" />
-    <Message Text="[+] %(ImportFiles.Identity) =&gt; %(ImportDir)%(ImportFile)" />
+    <Message Importance="high" Text="[%(ImportConfiguration)|%(ImportPlatform)] %(ImportProjects.Identity) =&gt; %(ImportDir)" />
+    <Message Importance="high" Text="[+] %(ImportFiles.Identity) =&gt; %(ImportDir)%(ImportFile)" />
   </Target>
 </Project>
