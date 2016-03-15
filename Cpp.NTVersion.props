@@ -16,10 +16,10 @@ For example:
   </PropertyGroup>
 
   <ImportGroup Label="PropertySheets">
-    <Import Condition="'$(NTVersion)' == ''" Project="$(ZouBundleDir)**\$(MSBuildThisFile)" />
-    <Import Condition="'$(NTVersion)' == ''" Project="$(ZouSolutionDir)**\$(MSBuildThisFile)" />
-    <Import Condition="'$(NTVersion)' == ''" Project="$(ZouProjectDir)**\$(MSBuildThisFile)" />
-    <Import Condition="'$(NTVersion)' == ''" Project="$(ZouDir)$(MSBuildThisFileName).Default$(MSBuildThisFileExtension)" />
+    <Import Project="$(ZouBundleDir)**\$(MSBuildThisFile)"   Condition="'$(NTVersion)' == ''" />
+    <Import Project="$(ZouSolutionDir)**\$(MSBuildThisFile)" Condition="'$(NTVersion)' == '' And '$(ZouSolutionDir)' != '' And '$(ZouSolutionDir)' != '$(ZouBundleDir)'" />
+    <Import Project="$(ZouProjectDir)**\$(MSBuildThisFile)"  Condition="'$(NTVersion)' == '' And '$(ZouProjectDir)'  != '' And '$(ZouProjectDir)'  != '$(ZouSolutionDir)' And '$(ZouProjectDir)' != '$(ZouBundleDir)'" />
+    <Import Project="$(ZouDir)$(MSBuildThisFileName).Default$(MSBuildThisFileExtension)" Condition="'$(NTVersion)' == ''" />
   </ImportGroup>
   
   <ItemDefinitionGroup>

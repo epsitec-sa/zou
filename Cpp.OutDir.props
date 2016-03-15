@@ -11,21 +11,19 @@ Use the Property Manager to import  it into your project.
   </PropertyGroup> 
 
   <ImportGroup Label="PropertySheets">
-    <Import Condition="'$(CppOutDir)' == ''" Project="$(ZouBundleDir)**\$(MSBuildThisFile)" />
-    <Import Condition="'$(CppOutDir)' == ''" Project="$(ZouSolutionDir)**\$(MSBuildThisFile)" />
-    <Import Condition="'$(CppOutDir)' == ''" Project="$(ZouProjectDir)**\$(MSBuildThisFile)" />
-    <Import Condition="'$(CppOutDir)' == ''" Project="$(ZouDir)$(MSBuildThisFileName).Default$(MSBuildThisFileExtension)" />
+    <Import Project="$(ZouBundleDir)**\$(MSBuildThisFile)"   Condition="'$(CppOutDir)' == ''" />
+    <Import Project="$(ZouSolutionDir)**\$(MSBuildThisFile)" Condition="'$(CppOutDir)' == '' And '$(ZouSolutionDir)' != '' And '$(ZouSolutionDir)' != '$(ZouBundleDir)'" />
+    <Import Project="$(ZouProjectDir)**\$(MSBuildThisFile)"  Condition="'$(CppOutDir)' == '' And '$(ZouProjectDir)'  != '' And '$(ZouProjectDir)'  != '$(ZouSolutionDir)' And '$(ZouProjectDir)' != '$(ZouBundleDir)'" />
+    <Import Project="$(ZouDir)$(MSBuildThisFileName).Default$(MSBuildThisFileExtension)" Condition="'$(CppOutDir)' == ''" />
   </ImportGroup>
 
-  <PropertyGroup Condition="'$(CppOutDir)' != ''">
+  <PropertyGroup>
     <OutDir>$(CppOutDir)</OutDir>
     <IntDir>$(CppIntDir)</IntDir>
-    <OutputPath>$(CppOutDir)</OutputPath>
   </PropertyGroup>
   
   <Target Name="CppOutDirTrace">
     <Message Text="OutDir=$(OutDir)" />
     <Message Text="IntDir=$(IntDir)" />
-    <Message Text="OutputPath=$(OutputPath)" />
   </Target>
 </Project>
