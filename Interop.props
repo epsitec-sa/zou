@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!--
+The Interop.props can be used to import C++ project outputs.
+-->
+<Project ToolsVersion="4.0" InitialTargets="InteropTrace" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <ItemDefinitionGroup>
+    <Content>
+      <Link Condition="'%(Link)' == ''">%(RecursiveDir)%(FileName)%(Extension)</Link>
+      <CopyToOutputDirectory Condition="'%(CopyToOutputDirectory)' == ''">PreserveNewest</CopyToOutputDirectory>
+      <Visible Condition="'%(Visible)' == ''">false</Visible>
+    </Content>
+  </ItemDefinitionGroup>
+
+  <!-- ================ InteropTrace ================ -->
+  
+  <Target Name="InteropTrace">
+    <Message Text="%(Content.Identity) -&gt; %(Link)" />
+  </Target>
+</Project>
