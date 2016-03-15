@@ -13,8 +13,9 @@ Targets
 - ImportRebuild
 -->
 <Project ToolsVersion="4.0" DefaultTargets="ImportBuild" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <PropertyGroup Condition="'$(TargetDir)' == ''" >
-    <TargetDir>$(OutDir)</TargetDir>
+  <PropertyGroup >
+    <PlatformToolset Condition="'$(PlatformToolset)' == ''">v120_xp</PlatformToolset>
+    <TargetDir       Condition="'$(TargetDir)'       == ''">$(OutDir)</TargetDir>
   </PropertyGroup>
   
   <!-- Zou targets -->
@@ -23,13 +24,17 @@ Targets
   <!-- Define imported projects default metadata -->
   <ItemDefinitionGroup>
     <ImportProjects>
-      <ImportConfiguration Condition="'%(ImportConfiguration)' == ''">$(Configuration)</ImportConfiguration>
-      <ImportPlatform      Condition="'%(ImportPlatform)' == ''">Any CPU</ImportPlatform>
-      <ImportDir           Condition="'%(ImportDir)' == ''">$(TargetDir)</ImportDir>
+      <BuildInParallel       Condition="'%(BuildInParallel)' == ''">true</BuildInParallel>
+      <ImportDir             Condition="'%(ImportDir)' == ''">$(TargetDir)</ImportDir>
+      <ImportPlatform        Condition="'%(ImportPlatform)' == '' And '%(ImportCsPlatform)'  != ''">%(ImportCsPlatform)</ImportPlatform>
+      <ImportPlatform        Condition="'%(ImportPlatform)' == '' And '%(ImportCppPlatform)' != ''">%(ImportCppPlatform)</ImportPlatform>
+      <ImportPlatform        Condition="'%(ImportPlatform)' == ''">Any CPU</ImportPlatform> <!-- Default to default C# platform -->
+      <ImportPlatformToolset Condition="'%(ImportPlatformToolset)' == ''">$(PlatformToolset)</ImportPlatformToolset>
+      <ImportConfiguration   Condition="'%(ImportConfiguration)' == ''">$(Configuration)</ImportConfiguration>
     </ImportProjects>
     <ImportFiles>
-      <ImportDir           Condition="'%(ImportDir)' == ''">$(TargetDir)</ImportDir>
-      <ImportFile          Condition="'%(ImportFile)' == ''">%(FileName)%(Extension)</ImportFile>
+      <ImportDir  Condition="'%(ImportDir)' == ''">$(TargetDir)</ImportDir>
+      <ImportFile Condition="'%(ImportFile)' == ''">%(FileName)%(Extension)</ImportFile>
     </ImportFiles>
   </ItemDefinitionGroup>
 
@@ -72,14 +77,14 @@ Targets
     
     <!-- Build solutions... -->
     <Exec
-      Command="&quot;$(MSBuildToolsPath)\msbuild&quot; /nologo /v:m /t:Build &quot;/p:OutDir=%(ImportDir);Platform=%(ImportPlatform);Configuration=%(ImportConfiguration);BuildInParallel=true&quot; &quot;%(ImportProjects.Identity)&quot;"
+      Command="&quot;$(MSBuildToolsPath)\msbuild&quot; /nologo /v:m /t:Build &quot;/p:OutDir=%(ImportDir);Platform=%(ImportPlatform);PlatformToolset=%(ImportPlatformToolset);Configuration=%(ImportConfiguration);BuildInParallel=%(BuildInParallel)&quot; &quot;%(ImportProjects.Identity)&quot;"
       Condition="'%(Extension)' == '.sln'" />
     <!-- ...and projects -->
     <MSBuild
       Projects="%(ImportProjects.Identity)"
       Targets="Build"
-      Properties="OutDir=%(ImportDir);Platform=%(ImportPlatform);Configuration=%(ImportConfiguration)"
-      BuildInParallel="true"
+      Properties="OutDir=%(ImportDir);Platform=%(ImportPlatform);PlatformToolset=%(ImportPlatformToolset);Configuration=%(ImportConfiguration)"
+      BuildInParallel="%(BuildInParallel)"
       Condition="'%(Extension)' != '.sln'" />
   </Target>
 
@@ -101,7 +106,7 @@ Targets
   <!-- ================ ImportTrace ================ -->
   
   <Target Name="ImportTrace">
-    <Message Importance="high" Text="[%(ImportConfiguration)|%(ImportPlatform)] %(ImportProjects.Identity) =&gt; %(ImportDir)" />
+    <Message Importance="high" Text="[%(ImportConfiguration)|%(ImportPlatform)|%(ImportPlatformToolset)] %(ImportProjects.Identity) =&gt; %(ImportDir)" />
     <Message Importance="high" Text="[+] %(ImportFiles.Identity) =&gt; %(ImportDir)%(ImportFile)" />
   </Target>
 </Project>
