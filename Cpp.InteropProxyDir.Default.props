@@ -1,0 +1,23 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!--
+This property sheet define the default 'CppOutDir' and 'CppIntDir' properties for C++ interop proxy projects.
+-->
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <_PropertySheetDisplayName>zou - C++ Interop Proxy Directories (default)</_PropertySheetDisplayName>
+  </PropertyGroup>
+  <PropertyGroup>
+    <!-- $(CppOutDir) is based on the solution folder to gather all solution projects outputs in the same folder -->
+    <CppOutDir Condition="'$(CppOutDir)' == '' And $(SolutionDir) != '*Undefined*'">$(SolutionDir)$(Platform)\InteropProxy\bin\$(Configuration)\</CppOutDir>
+    <CppOutDir Condition="'$(CppOutDir)' == '' And $(SolutionDir) == '*Undefined*'">$(Platform)\InteropProxy\bin\$(Configuration)\</CppOutDir>
+
+    <!-- $(ProjectName) is appended to $(CppIntDir) to avoid sharing the intermediate folder
+    between projects located int he same folder -->
+    <CppIntDir Condition="'$(CppIntDir)' == ''">$(Platform)\InteropProxy\obj\$(Configuration)\$(ProjectName)\</CppIntDir>
+  </PropertyGroup>
+
+  <Target Name="CppInteropProxyDirDefaultTrace">
+    <Message Text="CppOutDir=$(CppOutDir)" />
+    <Message Text="CppIntDir=$(CppIntDir)" />
+  </Target>
+</Project>
