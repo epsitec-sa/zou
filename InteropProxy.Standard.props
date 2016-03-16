@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!--
+The InteropProxy.Standard.props defines the standard C++ interop proxy output directory relative to its project folder.
+-->
+<Project ToolsVersion="4.0" InitialTargets="InteropProxyStandardTrace" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Condition="'$(Zou)' == ''" Project="private\zou.targets" />
+
+  <PropertyGroup>
+    <CppInteropPlatform Condition="'$(CppInteropPlatform)' == ''">Win32</CppInteropPlatform>
+    <CppInteropProxyDir Condition="'$(CppInteropProxyDir)' == ''">$(CppInteropPlatform)\InteropProxy\bin\$(Configuration)\</CppInteropProxyDir>
+  </PropertyGroup>
+
+  <!-- ================ InteropTrace ================ -->
+  
+  <Target Name="InteropProxyStandardTrace">
+    <Message Text="CppInteropPlatform = $(CppInteropPlatform)" />
+    <Message Text="CppInteropProxyDir = $(CppInteropProxyDir)" />
+  </Target>
+</Project>
