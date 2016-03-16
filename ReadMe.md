@@ -28,7 +28,8 @@ Chaque noeud logique appartient à un sous-arbre et partage donc ses attributs (
 > Il est préférable de ne pas créer de fichiers dans la racine du bundle à part peut-être les fichiers communs de configuration *git*.
 
 ### 2. ***Solution***
-La *solution* est un aggrégat de *projets* interdépendants. On peut le voir comme une simple collection de références à des projets.  
+La *solution* associe et combine les configurations et plateformes de plusieurs *projets*. *Visual Studio* nous en donne une bonne représentation avec son `Solution Explorer` et son `Configuration Manager`. 
+  
 Le dossier de la solution peut être utilisé comme base pour mettre en commun les résultats de certains projets:
 
 - les paquets *nuget* sont stockés dans le sous-dossier `packages`.
@@ -55,7 +56,7 @@ Dans l'exemple ci-dessous, les projets `S1` et `S2` sont **partagés**. Les autr
 				   |.........> Projet[S2] <........|
 				   :
 
-## Paramétrisation des projets
+## Paramétrisation virtuelle des projets
 
 La paramétrisation *zou* des projets est basée sur les [feuilles de propriétés](https://msdn.microsoft.com/en-us/library/669zx6zc.aspx) de *MSBuild*.
 
@@ -68,78 +69,52 @@ La paramétrisation *zou* des projets est basée sur les [feuilles de propriét�
 > - choisir un fichier *.props* et le tour est joué.
 
 ### Principe
-Le principe de base est de toujours importer des feuilles de propriétés **génériques** fournies par *zou*. Ce lien d'importation est sérialisé dans le projet et n'est plus censé changer sauf rares exceptions.  
-Mais comment peut-on paramétriser des projets partagés différemment selon qu'ils son enfants d'un bundle ou d'un autre?
+Le principe de base est de toujours importer des feuilles de propriétés **génériques** fournies par *zou* ([zou/Cpp.NTVersion.props](Cpp.NTVersion.props), [zou/Cpp.OutDir.props](Cpp.OutDir.props), ...). Ce lien d'importation est stocké dans le projet et n'est plus censé changer sauf rares exceptions.  
+Mais comment peut-on paramétriser différemment des projets *partagés* selon qu'ils son enfants d'un bundle ou d'un autre?
 
-En fait, certaines feuilles de propriétés *intelligentes* implémentent un mécanisme de ***fallback*** sur des **feuilles de propriétés enfants** stockées dans des dossiers bien spécifiques définis par *zou*. Ces dossiers de *fallback* sont soit locaux, soit partagés et sont définis en fonction du **champ d'application désiré des feuilles de propriétés**, du plus spécifique au plus large. Si aucune feuille de propriétés enfant n'est définie, une **feuille de propriétés à défaut** est fournie par *zou*.
+En fait, certaines feuilles de propriétés *intelligentes* implémentent un mécanisme de ***fallback*** sur des **feuilles de propriétés enfants** stockées dans des dossiers bien spécifiques définis par *zou*. Ces dossiers de *fallback* sont soit locaux, soit partagés et sont définis en fonction du **champ d'application désiré des feuilles de propriétés**, du plus spécifique au plus large. Si aucune feuille de propriétés enfant n'est définie, une **feuille de propriétés par défaut** est fournie par *zou* ([zou/Cpp.NTVersion.Default.props](Cpp.NTVersion.Default.props), [zou/Cpp.OutDir.Default.props](Cpp.OutDir.Default.props), ...).
 
-Reprenons l'exemple de salaires sous *XP* et de facturation sous *Vista* cité dans l'introduction. Pour résoudre le problème de la paramétrisation des versions de *NT* avec *zou*, on va importer la feuille de propriétés intelligente `zou\Cpp.NTVersion.props` dans tous les projets contenus dans facturation et salaires. C'est cette feuille de propriétés qui implémente le *fallback*.
+### Exemple
+Reprenons l'exemple de salaires sous *XP* et de facturation sous *Vista* cité dans l'introduction. Pour résoudre le problème de la paramétrisation des versions de *NT* avec *zou*,  on va:
 
+1. Importer (à l'aide du gestionnaire de propriétés de *Visual Studio*) la feuille de propriétés *intelligente* `zou\Cpp.NTVersion.props` dans tous les projets contenus dans facturation et salaires. C'est cette feuille de propriétés qui implémente le *fallback*.
+2. Etant donné que la version de *NT* par défaut définie par *zou* est *XP*, il suffit de remplacer cette valeur par *Vista* dans le `bundle` *facturation*. Pour ce faire, on va:  
+	- créer un sous-dossier `zou.cfg` dans la racine du `bundle` *facturation*.
+	- copier la feuille de propriétés `zou/Templates/props/Cpp.NTVersion.props` dans le dossier `zou.cfg` que l'on vient de créer.
+	- éditer et modifier si nécessaire la valeur de `NTVersion` comme ceci:  `<NTVersion>0x0600</NTVersion>`
 
-## UNDER CONSTRUCTION
+###### Code d'importation d'une feuille de propriétés insérée par le gestionnaire de propriétés dans un projet *C++*. 
 
-### *Fallback*:
-- zou.Bundle.Solution.Project
-- zou.Bundle.Project
-- zou.Bundle.Solution
-- zou.Bundle
-- zou.Solution.Project
-- zou.Project
-- zou.Solution
-- zou.default
+	  	...
+	  	<ImportGroup Label="PropertySheets" >
+	    	<Import Project="..\zou\Cpp.NTVersion.props" />
+	  	</ImportGroup>
+		...
 
+###### Surcharge de la version NT dans le bundle facturation (`fact/zou.cfg/Cpp.NTVersion.props`).
 
-### [*Cpp.NTVersion.props*](Cpp.NTVersion.props)
-### [*Cpp.NTVersion.default.props*](Cpp.NTVersion.default.props)
-### [*Cpp.NTVersion.Vista.props*](Cpp.NTVersion.Vista.props)
-
-### [*Cpp.OutDir.props*](Cpp.OutDir.props)
-### [*Cpp.OutDir.Default.props*](Cpp.OutDir.Default.props)
-
-Cette feuille de propriétés a été créée avec l'éditeur de propriétés de Visual Studio.  
-Elle définit et normalise les macros ***$(OutDir)*** et ***$(IntDir)***.
-
-    <PropertyGroup>
-      <OutDir>$(SolutionDir)$(Platform)\$(PlatformToolset)\$(Configuration)\</OutDir>
-      <IntDir>$(Platform)\$(PlatformToolset)\obj\$(Configuration)\$(ProjectName)</IntDir>
-    </PropertyGroup>
-
-## Opérations
-
-Certaines opérations répétitives peuvent aussi être programmées via ces feuilles de propriétés.
-Par exemple, le déploiement de *libcreact* dans un projet *C#* est implémenté dans la feuille de propriétés
-***libcreact/Deploy.props***:
-
-    <?xml version="1.0" encoding="utf-8"?>
-    <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-      <PropertyGroup Label="libcreact">
-	    <libcreact_OutDir>$(SolutionDir)Win32\v140_xp\$(ConfigurationName)\</libcreact_OutDir>
-      </PropertyGroup>
-      <PropertyGroup>
-	    <PostBuildEvent>echo Deploying libcreact...
-    copy "$(libcreact_OutDir)libcreact.dll" "$(TargetDir)." &gt;nul
-    copy "$(libcreact_OutDir)libcreact.pdb" "$(TargetDir)." &gt;nul
-		</PostBuildEvent>
-      </PropertyGroup>
-    </Project>
+		<?xml version="1.0" encoding="utf-8"?>
+		<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+		  <PropertyGroup>
+		    <_PropertySheetDisplayName>fact - NT Version = Vista</_PropertySheetDisplayName>
+		  </PropertyGroup>
+		  
+		  <PropertyGroup Condition="'$(NTVersion)' == ''">
+		    <NTVersion>0x0600</NTVersion>
+		  </PropertyGroup>
+		</Project>
 
 
-> On ne peut malheureusement pas partager les macros d'un projet *C++* avec un projet *C#* (certaines macros C++ écraseraient les macros C# existantes). Dans cet exemple on a du hardcoder la platforme et le tool set (`Win32\v140_xp`).
+Et voici ce que ça donne dans le gestionnaire de propriétés de *Visual Studio* pour le sous-module `libefx`:
 
-### Importation d'une feuille de propriétés dans un projet ***C#***
+1. Dans *salaires*:    
+![](.Documentation/PropSheet_SalEfxNTVersion.png)  
+  
+1. Dans *facturation*:  
+![](.Documentation/PropSheet_FactEfxNTVersion.png)
 
-Le gestionnaire de feuilles de propriétés n'est pas disponible pour les projets C#. L'importation doit donc se faire manuellement en éditant le projet C# en question.
-
-Par exemple, le projet *Activation.Engine.Test* utilise la DLL *libcreact* pour l'exécution des tests unitaires.
-
-L'importation se fait comme ceci:
-
-- ouvrir le fichier *.csproj* avec un éditeur ou directement depuis Visual Studio (*Unload project, Edit `project`.csproj*).
-- insérer à la fin du fichier, juste avant le tag de fin du projet la ligne d'importation suivante:
-
-	    	...
-		    <Import Project="..\libcreact\Deploy.props" />
-	    </Project>
-
-
-## [Sous-modules facturation/salaires](.Documentation/Submodules.md)
+> ###Observations:
+> 
+> - Dans les deux cas, la première feuille de propriétés - **zou - NT Version...** - est la feuille générique fournie par *zou* qui implémente le *fallback*: `zou/Cpp.NTVersion.props`.
+> - Pour *salaires*, la feuille enfant - **zou - NT Version = XP** -  est celle par défaut fournie par *zou*: `zou/Cpp.NTVersion.Default.props`.
+> - Pour *facturation*, la feuille enfant - **fact - NT Version = Vista** -   est celle que l'on a surchargé localement dans `fact/zou.cfg/Cpp.NTVersion.props`.
