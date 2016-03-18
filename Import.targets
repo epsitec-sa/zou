@@ -48,7 +48,7 @@ Targets
 
   <Target Name="ImportFilesClean">
     <Delete  Files="%(ImportFiles.ImportDir)%(RecursiveDir)%(ImportFile)" />
-    <Message Text="  [-] %(ImportFiles.ImportDir)%(RecursiveDir)%(ImportFile)" Condition="'%(ImportFile)' != ''"/>
+    <Message Importance="high" Text="  [-] %(ImportFiles.ImportDir)%(RecursiveDir)%(ImportFile)" Condition="'%(ImportFile)' != ''"/>
   </Target>
   
   <!-- ================ ImportProjects ================ -->
@@ -94,7 +94,7 @@ Targets
           Inputs="@(ImportFiles)"
           Outputs="@(ImportFiles -> '%(ImportDir)%(RecursiveDir)%(ImportFile)')">
     <Copy SourceFiles="%(ImportFiles.Identity)" DestinationFiles="%(ImportDir)%(RecursiveDir)%(ImportFile)" />
-    <Message Text="  [+] %(ImportFiles.Identity) =&gt; %(ImportDir)%(RecursiveDir)%(ImportFile)" Importance="high" />
+    <Message Importance="high" Text="  [+] %(ImportFiles.Identity) =&gt; %(ImportDir)%(RecursiveDir)%(ImportFile)" />
   </Target>
   
   <!-- ================ Main targets ================ -->
