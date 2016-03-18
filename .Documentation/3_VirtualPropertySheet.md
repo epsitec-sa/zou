@@ -1,4 +1,4 @@
-## Feuilles de propriétés *virtuelles*
+# Feuilles de propriétés *virtuelles*
 
 La question à laquelle il nous faut répondre, c'est comment paramétriser
 différemment des projets *partagés* selon qu'ils son enfants d'un `bundle` ou
@@ -29,7 +29,7 @@ sections pour faire ressortir les similitudes avec le fichier
 	  ...
 	</Project>
 
-#### Mécanisme de *fallback*
+## Mécanisme de *fallback*
 
 Voici le code qui gère le mécanisme de *fallback*:
 
@@ -80,7 +80,7 @@ est le suivant:
 métadonnées du compilateur C++ pour tous les éléments `ClCompile`, c.à.d. tous
 les fichiers `.cpp` concernés.
 
-#### Surcharge d'une feuille de propriétés
+## Surcharge d'une feuille de propriétés
 
 Reprenons l'exemple de *salaires* sous *XP* et de *facturation* sous *Vista*
 cité dans l'introduction. Le problème revient à paramétrer différemment la macro
@@ -104,8 +104,7 @@ puisque *salaires* utilise la version *XP*. Pour ce faire, on va:
 	`Cpp.NTVersion.props`.
 	- éditer et modifier la valeur de `NTVersion` à `0x0600`
 
-###### Surcharge de la version NT dans le bundle facturation
-[zou.cfg/Cpp.NTVersion.props](https://git.epsitec.ch/cresus-suite/fact/blob/master/zou.cfg/Cpp.NTVersion.props).
+## Surcharge de la version NT dans le bundle facturation [zou.cfg/Cpp.NTVersion.props](https://git.epsitec.ch/cresus-suite/fact/blob/master/zou.cfg/Cpp.NTVersion.props).
 
 		<?xml version="1.0" encoding="utf-8"?>
 		<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
@@ -128,17 +127,20 @@ pour le sous-module [libefx](https://git.epsitec.ch/cresus-suite/libefx):
 1. Dans *facturation* (surcharge Vista):  
 ![](.Documentation/PropSheet_FactEfxNTVersion.png)
 
-###### Résumé
+### Résumé
 
 - Dans les deux cas, la première feuille de propriétés (**zou - NT Version...**)
 est la feuille générique fournie par *zou* qui implémente le *fallback*:
-[zou/Cpp.NTVersion.props](Cpp.NTVersion.props). Par convention, le titre d'une
-feuille de propriétés *virtuelle* se termine par `...`. 
+[zou/Cpp.NTVersion.props](Cpp.NTVersion.props).  
+
+> Par convention, le titre d'une feuille de propriétés *virtuelle* se
+> termine par `...`. 
 
 - Pour *salaires*, la feuille enfant (**zou - NT Version = XP**)  est le défaut
-fournie par *zou*: [zou/Cpp.NTVersion.Default.props](Cpp.NTVersion.Default.props).
+fourni par *zou* ([zou/Cpp.NTVersion.Default.props](Cpp.NTVersion.Default.props)).
 - Pour *facturation*, la feuille enfant (**fact - NT Version = Vista**)
-est la surcharge stockée localement dans `fact/zou.cfg/Cpp.NTVersion.props`.
+est la surcharge stockée *localement* dans
+[fact/zou.cfg/Cpp.NTVersion.props](https://git.epsitec.ch/cresus-suite/fact/blob/master/zou.cfg/Cpp.NTVersion.props).
 
 ### Limitations
 
