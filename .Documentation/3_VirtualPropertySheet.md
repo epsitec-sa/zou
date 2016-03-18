@@ -104,7 +104,7 @@ puisque *salaires* utilise la version *XP*. Pour ce faire, on va:
 	`Cpp.NTVersion.props`.
 	- éditer et modifier la valeur de `NTVersion` à `0x0600`
 
-## Surcharge de la version NT dans le bundle facturation [zou.cfg/Cpp.NTVersion.props](https://git.epsitec.ch/cresus-suite/fact/blob/master/zou.cfg/Cpp.NTVersion.props).
+### Surcharge de la version NT dans le bundle facturation [zou.cfg/Cpp.NTVersion.props](https://git.epsitec.ch/cresus-suite/fact/blob/master/zou.cfg/Cpp.NTVersion.props).
 
 		<?xml version="1.0" encoding="utf-8"?>
 		<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
@@ -127,22 +127,21 @@ pour le sous-module [libefx](https://git.epsitec.ch/cresus-suite/libefx):
 1. Dans *facturation* (surcharge Vista):  
 ![](.Documentation/PropSheet_FactEfxNTVersion.png)
 
+> Par convention, le titre d'une feuille de propriétés *virtuelle* se
+> termine par `...`. 
+
 ### Résumé
 
 - Dans les deux cas, la première feuille de propriétés (**zou - NT Version...**)
 est la feuille générique fournie par *zou* qui implémente le *fallback*:
 [zou/Cpp.NTVersion.props](Cpp.NTVersion.props).  
-
-> Par convention, le titre d'une feuille de propriétés *virtuelle* se
-> termine par `...`. 
-
 - Pour *salaires*, la feuille enfant (**zou - NT Version = XP**)  est le défaut
 fourni par *zou* ([zou/Cpp.NTVersion.Default.props](Cpp.NTVersion.Default.props)).
 - Pour *facturation*, la feuille enfant (**fact - NT Version = Vista**)
 est la surcharge stockée *localement* dans
 [fact/zou.cfg/Cpp.NTVersion.props](https://git.epsitec.ch/cresus-suite/fact/blob/master/zou.cfg/Cpp.NTVersion.props).
 
-### Limitations
+## Limitations
 
 Les macros de configuration `Platform` et `PlatformToolset` ne peuvent pas être
 virtualisées par zou:
