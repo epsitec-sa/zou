@@ -8,12 +8,12 @@ This property sheet define the default 'CppOutDir' and 'CppIntDir' properties fo
   </PropertyGroup>
   <PropertyGroup>
     <!-- $(CppOutDir) is based on the solution folder to gather all solution projects outputs in the same folder -->
-    <CppOutDir Condition="'$(CppOutDir)' == '' And $(SolutionDir) != '*Undefined*'">$(SolutionDir)$(Platform)\InteropProxy\bin\$(Configuration)\</CppOutDir>
-    <CppOutDir Condition="'$(CppOutDir)' == '' And $(SolutionDir) == '*Undefined*'">$(Platform)\InteropProxy\bin\$(Configuration)\</CppOutDir>
+    <CppOutDir Condition="$(SolutionDir) != '*Undefined*'">$(SolutionDir)$(Platform)\InteropProxy\bin\$(Configuration)\</CppOutDir>
+    <CppOutDir Condition="$(SolutionDir) == '*Undefined*'">$(Platform)\InteropProxy\bin\$(Configuration)\</CppOutDir>
 
     <!-- $(ProjectName) is appended to $(CppIntDir) to avoid sharing the intermediate folder
     between projects located int he same folder -->
-    <CppIntDir Condition="'$(CppIntDir)' == ''">$(Platform)\InteropProxy\obj\$(Configuration)\$(ProjectName)\</CppIntDir>
+    <CppIntDir>$(Platform)\InteropProxy\obj\$(Configuration)\$(ProjectName)\</CppIntDir>
   </PropertyGroup>
 
   <Target Name="CppInteropProxyDirDefaultTrace">

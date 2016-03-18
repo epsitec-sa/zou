@@ -8,11 +8,11 @@ This property sheet define the default 'CppOutDir' and 'CppIntDir' properties fo
   </PropertyGroup>
   <PropertyGroup>
     <!-- $(CppOutDir) is based on the solution folder to gather all solution projects outputs in the same folder -->
-    <CppOutDir Condition="'$(CppOutDir)' == '' And $(SolutionDir) != '*Undefined*'">$(SolutionDir)$(Platform)\$(PlatformToolset)\$(Configuration)\</CppOutDir>
-    <CppOutDir Condition="'$(CppOutDir)' == '' And $(SolutionDir) == '*Undefined*'">$(Platform)\$(PlatformToolset)\$(Configuration)\</CppOutDir>
+    <CppOutDir Condition="$(SolutionDir) != '*Undefined*'">$(SolutionDir)$(Platform)\$(PlatformToolset)\$(Configuration)\</CppOutDir>
+    <CppOutDir Condition="$(SolutionDir) == '*Undefined*'">$(Platform)\$(PlatformToolset)\$(Configuration)\</CppOutDir>
 
     <!-- $(ProjectName) is appended to $(CppIntDir) to avoid sharing the intermediate folder
     between projects located int he same folder -->
-    <CppIntDir Condition="'$(CppIntDir)' == ''">$(Platform)\$(PlatformToolset)\obj\$(Configuration)\$(ProjectName)\</CppIntDir>
+    <CppIntDir>$(Platform)\$(PlatformToolset)\obj\$(Configuration)\$(ProjectName)\</CppIntDir>
   </PropertyGroup>
 </Project>
