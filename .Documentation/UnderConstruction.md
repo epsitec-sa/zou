@@ -1,5 +1,11 @@
 ## UNDER CONSTRUCTION
 
+### Liens externes
+https://anubhavg.wordpress.com/2013/08/05/generate-msbuild-file-from-solution/
+MSBuildEmitSolution=1
+
+
+
 ### *Fallback*:
 - zou.Bundle.Solution.Project
 - zou.Bundle.Project
@@ -10,10 +16,6 @@
 - zou.Solution
 - zou.default
 
-
-### [*Cpp.NTVersion.props*](Cpp.NTVersion.props)
-### [*Cpp.NTVersion.default.props*](Cpp.NTVersion.default.props)
-### [*Cpp.NTVersion.Vista.props*](Cpp.NTVersion.Vista.props)
 
 ### [*Cpp.OutDir.props*](Cpp.OutDir.props)
 ### [*Cpp.OutDir.Default.props*](Cpp.OutDir.Default.props)
