@@ -13,11 +13,14 @@ sous-module git du *bundle* auquel il est attaché.
 Voici le code de la feuille de propriétés virtuelle
 [zou/Cpp.NTVersion.props](Cpp.NTVersion.props) dans laquelle on a omis quelques
 sections pour faire ressortir les similitudes avec le fichier
-`NTVersion.XP.props` généré dans l'exemple précédent.
+`NTVersion.XP.props` généré dans [l'exemple précédent](2_PropertySheet.md).
 
 	<?xml version="1.0" encoding="utf-8"?>
 	<Project ToolsVersion="4.0" ... xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 	  ...
+	  <PropertyGroup>
+		<_PropertySheetDisplayName>zou - NT Version...</_PropertySheetDisplayName>
+	  </PropertyGroup>
 	  <ImportGroup Label="PropertySheets">
 	    ...
 	  </ImportGroup>
@@ -31,7 +34,13 @@ sections pour faire ressortir les similitudes avec le fichier
 
 ## Mécanisme de *fallback*
 
-Voici le code qui gère le mécanisme de *fallback*:
+Le mécanisme de fallback visite les dossiers de configuration *zou* (`zou.cfg`) existants dans l'ordre suivant:
+
+- dans le dossier racine du `bundle`.
+- dans le même dossier que le fichier de la solution.
+- dans le même dossier que le fichier du projet.
+
+Les dossiers qui se se chevauchent ne sont pas revisités. Voici le code qui gère ce mécanisme:
 
 		...
 	(1) <Import Condition="'$(Zou)' == ''" Project="private\zou.targets" />
@@ -70,7 +79,7 @@ est le suivant:
 		  <PropertyGroup>
 		    <_PropertySheetDisplayName>zou - NT Version = XP</_PropertySheetDisplayName>
 		  </PropertyGroup>
-		  
+
 		  <PropertyGroup>
 		    <NTVersion Condition="'$(NTVersion)' == ''">0x501</NTVersion>
 		  </PropertyGroup>
@@ -79,67 +88,6 @@ est le suivant:
 4. Finalement, on applique la fonctionnalité désirée `(4)`. Ici, on modifie les
 métadonnées du compilateur C++ pour tous les éléments `ClCompile`, c.à.d. tous
 les fichiers `.cpp` concernés.
-
-## Surcharge d'une feuille de propriétés
-
-Reprenons l'exemple de *salaires* sous *XP* et de *facturation* sous *Vista*
-cité dans l'introduction. Le problème revient à paramétrer différemment la macro
-*C++* `_WIN32_WINNT` en fonction du *bundle* choisi:
-
-- `_WIN32_WINNT=0x501` pour *salaires*.
-- `_WIN32_WINNT=0x600` pour *facturation*.
-
-Les étapes sont les suivantes:
-
-1. Importer (à l'aide du gestionnaire de propriétés de *Visual Studio*) la
-feuille de propriétés virtuelle [zou/Cpp.NTVersion.props](Cpp.NTVersion.props)
-dans tous les projets des solutions facturation et salaires.
-2. Etant donné que la version de *NT* par défaut définie par *zou* est *XP*, il
-suffit de surcharger cette valeur uniquement dans le `bundle` *facturation*,
-puisque *salaires* utilise la version *XP*. Pour ce faire, on va:  
-	- créer un sous-dossier `zou.cfg` dans la racine du `bundle` *facturation*.
-	- copier la feuille de propriétés
-	[zou/Cpp.NTVersion.Default.props](Cpp.NTVersion.Default.props) dans le
-	dossier `zou.cfg` que l'on vient de créer et la renommer en
-	`Cpp.NTVersion.props`.
-	- éditer et modifier la valeur de `NTVersion` à `0x0600`
-
-### Surcharge de la version NT dans le bundle facturation [zou.cfg/Cpp.NTVersion.props](https://git.epsitec.ch/cresus-suite/fact/blob/master/zou.cfg/Cpp.NTVersion.props).
-
-		<?xml version="1.0" encoding="utf-8"?>
-		<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-		  <PropertyGroup>
-		    <_PropertySheetDisplayName>fact - NT Version = Vista</_PropertySheetDisplayName>
-		  </PropertyGroup>
-		  
-		  <PropertyGroup Condition="'$(NTVersion)' == ''">
-		    <NTVersion>0x0600</NTVersion>
-		  </PropertyGroup>
-		</Project>
-
-
-Et voici ce que ça donne dans le gestionnaire de propriétés de *Visual Studio*
-pour le sous-module [libefx](https://git.epsitec.ch/cresus-suite/libefx):
-
-1. Dans *salaires* (pas de surcharge):    
-![](.Documentation/PropSheet_SalEfxNTVersion.png)  
-  
-1. Dans *facturation* (surcharge Vista):  
-![](.Documentation/PropSheet_FactEfxNTVersion.png)
-
-> Par convention, le titre d'une feuille de propriétés *virtuelle* se
-> termine par `...`. 
-
-### Résumé
-
-- Dans les deux cas, la première feuille de propriétés (**zou - NT Version...**)
-est la feuille générique fournie par *zou* qui implémente le *fallback*:
-[zou/Cpp.NTVersion.props](Cpp.NTVersion.props).  
-- Pour *salaires*, la feuille enfant (**zou - NT Version = XP**)  est le défaut
-fourni par *zou* ([zou/Cpp.NTVersion.Default.props](Cpp.NTVersion.Default.props)).
-- Pour *facturation*, la feuille enfant (**fact - NT Version = Vista**)
-est la surcharge stockée *localement* dans
-[fact/zou.cfg/Cpp.NTVersion.props](https://git.epsitec.ch/cresus-suite/fact/blob/master/zou.cfg/Cpp.NTVersion.props).
 
 ## Limitations
 

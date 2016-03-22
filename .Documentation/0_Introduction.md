@@ -6,8 +6,8 @@ Imaginons par exemple que les versions minimales de Windows supportées soient *
 
 Une solution serait de créer plusieurs branches *git* dans chaque sous-module, une pour *salaires* et une pour *facturation* avec un paramétrage différent des projets dans chaque branche. L'inconvénient principal de cette méthode est qu'il faut maintenir plusieurs versions des projets de *build* dans chaque branche de chaque sous-module partagé, et cela pourrait vite se transformer en cauchemar...
 
-**Zou** a été créé pour essayer de résoudre ce genre de problèmes. Il réunit différents ***z*****ou**tils de gestion et de paramétrisation:
+**Zou** a été créé pour essayer de résoudre ce genre de problèmes. Il réunit différents **zou**tils de gestion et de paramétrisation:
 
 - il permet de centraliser certains paramètres et outils de *build*.
 - il permet d'unifier, de normaliser et surtout de virtualiser la paramétrisation des projets partagés.
-- il suggère une certaine organisation des différents composants. 
+- il suggère une certaine organisation des différents composants.
