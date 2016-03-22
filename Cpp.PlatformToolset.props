@@ -1,0 +1,36 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!--
+Import this MSBuild property sheet into your project to resolve the NT Version (supports override in zou.cfg folder).
+For example:
+
+  <ImportGroup Label="PropertySheets">
+    <Import Project="zou\Cpp.NTVersion.props" />
+  </ImportGroup>
+
+-->
+<Project ToolsVersion="4.0" InitialTargets="CppPlatformToolsetTrace" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Condition="'$(Zou)' == ''" Project="private\zou.targets" />
+
+  <PropertyGroup>
+    <_PropertySheetDisplayName>zou - Platform Toolset...</_PropertySheetDisplayName>
+  </PropertyGroup>
+
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(ZouBundleDir)**\$(MSBuildThisFile)"   Condition="'$(CppPlatformToolset)' == '' And '$(ZouBundleDir)'   != ''" />
+    <Import Project="$(ZouSolutionDir)**\$(MSBuildThisFile)" Condition="'$(CppPlatformToolset)' == '' And '$(ZouSolutionDir)' != '' And '$(ZouSolutionDir)' != '$(ZouBundleDir)'" />
+    <Import Project="$(ZouProjectDir)**\$(MSBuildThisFile)"  Condition="'$(CppPlatformToolset)' == '' And '$(ZouProjectDir)'  != '' And '$(ZouProjectDir)'  != '$(ZouSolutionDir)' And '$(ZouProjectDir)' != '$(ZouBundleDir)'" />
+    <Import Project="$(ZouPrivateDir)$(MSBuildThisFileName).Default$(MSBuildThisFileExtension)" Condition="'$(CppPlatformToolset)' == ''" />
+  </ImportGroup>
+
+  <PropertyGroup>
+    <PlatformToolset>$(CppPlatformToolset)</PlatformToolset>
+  </PropertyGroup>
+
+  <Target Name="CppPlatformToolsetTrace">
+    <!--<Message Text="ZouBundleDir=$(ZouBundleDir)" />
+    <Message Text="MSBuildThisFile=$(MSBuildThisFile)" />
+    <Message Text="MSBuildThisFileName=$(MSBuildThisFileName)" />
+    <Message Text="MSBuildThisFileExtension=$(MSBuildThisFileExtension)" />-->
+    <Message Text="CppPlatformToolset=$(CppPlatformToolset)" />
+  </Target>
+</Project>
