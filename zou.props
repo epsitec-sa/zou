@@ -3,7 +3,7 @@
 Import this script at the beginning of other scripts to define global zou properties:
 
   <Project ... >
-    <Import Condition="'$(Zou)' == ''" Project="private\zou.targets"/>
+    <Import Condition="'$(Zou)' == ''" Project="zou.props"/>
     ...
   </Project>
 
@@ -14,22 +14,23 @@ BundleDir  : the path of the bundle root folder.
   
 The bundle folder is the one where `zou` and `git` repositories are located.
     
-MSBuildThisFileDirectory = $(BundleDir)zou\private\zou.props
+MSBuildThisFileDirectory = $(BundleDir)zou\zou.props
 -->
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <!-- Import semaphore -->
   <PropertyGroup> <Zou>zou</Zou> </PropertyGroup>
   
   <PropertyGroup>
-    <!-- Configuration directory name -->
+    <!-- Configuration sub-directory -->
     <_ZouCfgSubdir>zou.cfg\</_ZouCfgSubdir>
   </PropertyGroup>
 
   <PropertyGroup>
-    <ZouDir>$([System.IO.Directory]::GetParent($(MSBuildThisFileDirectory)).Parent.FullName)\</ZouDir>
+    <ZouDir>$([System.IO.Directory]::GetParent($(MSBuildThisFileDirectory)).FullName)\</ZouDir>
+    <BundleName>$([System.IO.Directory]::GetParent($(MSBuildThisFileDirectory)).Parent.Name)</BundleName>
+    <BundleDir>$([System.IO.Directory]::GetParent($(MSBuildThisFileDirectory)).Parent.FullName)\</BundleDir>
+
     <ZouPrivateDir>$(ZouDir)private\</ZouPrivateDir>
-    <BundleName>$([System.IO.Directory]::GetParent($(MSBuildThisFileDirectory)).Parent.Parent.Name)</BundleName>
-    <BundleDir>$([System.IO.Directory]::GetParent($(MSBuildThisFileDirectory)).Parent.Parent.FullName)\</BundleDir>
   </PropertyGroup>
 
   <!-- ZouBundleDir -->
@@ -38,31 +39,23 @@ MSBuildThisFileDirectory = $(BundleDir)zou\private\zou.props
   </PropertyGroup>
 
   <!-- Project properties -->
-  <Choose>
-    <When Condition="'$(ProjectName)' != '' And '$(ProjectName)' != '*Undefined*'">
-      <!-- ZouProjectDir -->
-      <PropertyGroup Condition="'$(ZouProjectDir)' == ''" >
-        <ZouProjectDir>$(ProjectDir)$(_ZouCfgSubdir)</ZouProjectDir>
-      </PropertyGroup>
-
-      <PropertyGroup>
-        <BundleRelativeProjectPath>$([MSBuild]::MakeRelative($(BundleDir), $(ProjectPath)))</BundleRelativeProjectPath>
-        <_ZouTmp>$(BundleRelativeProjectPath.IndexOf('\'))</_ZouTmp>
-      </PropertyGroup>
-      <PropertyGroup Condition="'$(_ZouTmp)' &gt; '0'" >
-        <BundleProjectAnchor>$(BundleRelativeProjectPath.Substring(0, $(_ZouTmp)))\</BundleProjectAnchor>
-      </PropertyGroup>
-    </When>
-  </Choose>
+  <PropertyGroup Condition="'$(ZouProjectDir)' == ''" >
+    <ZouProjectDir>$(MSBuildProjectDirectory)\$(_ZouCfgSubdir)</ZouProjectDir>
+  </PropertyGroup>
+  <PropertyGroup>
+    <BundleRelativeProjectPath>$([MSBuild]::MakeRelative($(BundleDir), $(MSBuildProjectDirectory)\$(MSBuildProjectFile)))</BundleRelativeProjectPath>
+    <_ZouTmp>$(BundleRelativeProjectPath.IndexOf('\'))</_ZouTmp>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(_ZouTmp)' &gt; '0'" >
+    <BundleProjectAnchor>$(BundleRelativeProjectPath.Substring(0, $(_ZouTmp)))\</BundleProjectAnchor>
+  </PropertyGroup>
 
   <!-- Solution properties -->
   <Choose>
     <When Condition="'$(SolutionName)' != '' And '$(SolutionName)' != '*Undefined*'">
-      <!-- ZouSolutionDir -->
       <PropertyGroup Condition="'$(ZouSolutionDir)' == ''" >
         <ZouSolutionDir>$(SolutionDir)$(_ZouCfgSubdir)</ZouSolutionDir>
       </PropertyGroup>
-
       <PropertyGroup>
         <BundleRelativeSolutionPath>$([MSBuild]::MakeRelative($(BundleDir), $(SolutionPath)))</BundleRelativeSolutionPath>
         <_ZouTmp>$(BundleRelativeSolutionPath.IndexOf('\'))</_ZouTmp>
