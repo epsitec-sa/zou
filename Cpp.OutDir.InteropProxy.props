@@ -3,18 +3,18 @@
 This property sheet resolves the 'OutDir'and 'IntDir' properties for C++ interop proxy projects (supports override in zou.cfg folder).
 Use the Property Manager to import it into your interop project.
 -->
-<Project ToolsVersion="4.0" InitialTargets="CppInteropProxyDirTrace" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="4.0" InitialTargets="CppOutDirInteropProxyTrace" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Condition="'$(Zou)' == ''" Project="private\zou.targets" />
 
   <PropertyGroup>
-    <_PropertySheetDisplayName>zou - C++ Interop Proxy Directories...</_PropertySheetDisplayName>
+    <_PropertySheetDisplayName>zou - C++ Interop Proxy Output Directories...</_PropertySheetDisplayName>
   </PropertyGroup>
 
   <ImportGroup Label="PropertySheets">
     <Import Project="$(ZouBundleDir)**\$(MSBuildThisFile)"   Condition="'$(CppOutDir)' == '' And '$(ZouBundleDir)'   != ''" />
     <Import Project="$(ZouSolutionDir)**\$(MSBuildThisFile)" Condition="'$(CppOutDir)' == '' And '$(ZouSolutionDir)' != '' And '$(ZouSolutionDir)' != '$(ZouBundleDir)'" />
     <Import Project="$(ZouProjectDir)**\$(MSBuildThisFile)"  Condition="'$(CppOutDir)' == '' And '$(ZouProjectDir)'  != '' And '$(ZouProjectDir)'  != '$(ZouSolutionDir)' And '$(ZouProjectDir)' != '$(ZouBundleDir)'" />
-    <Import Project="$(ZouDir)$(MSBuildThisFileName).Default$(MSBuildThisFileExtension)" Condition="'$(CppOutDir)' == ''" />
+    <Import Project="$(ZouPrivateDir)$(MSBuildThisFileName).Default$(MSBuildThisFileExtension)" Condition="'$(CppOutDir)' == ''" />
   </ImportGroup>
 
   <PropertyGroup>
@@ -22,7 +22,7 @@ Use the Property Manager to import it into your interop project.
     <IntDir>$(CppIntDir)</IntDir>
   </PropertyGroup>
   
-  <Target Name="CppInteropProxyDirTrace">
+  <Target Name="CppOutDirInteropProxyTrace">
     <Message Text="OutDir=$(OutDir)" />
     <Message Text="IntDir=$(IntDir)" />
   </Target>
