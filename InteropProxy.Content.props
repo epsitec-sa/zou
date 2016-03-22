@@ -1,14 +1,16 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <!--
-The InteropProxy.props can be used to import C++ project outputs into C# interop projects.
+The InteropProxy.Content.props can be used to import C++ project outputs into C# interop projects.
 -->
 <Project ToolsVersion="4.0" InitialTargets="InteropProxyContentTrace" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
-  <!-- Set default metadata -->
+  <!-- Set default metadata for content items -->
   <ItemDefinitionGroup>
     <Content>
+      <!-- Target location for content files: link by reference and keep original layout -->
       <Link Condition="'%(Link)' == ''">%(RecursiveDir)%(FileName)%(Extension)</Link>
       <CopyToOutputDirectory Condition="'%(CopyToOutputDirectory)' == ''">PreserveNewest</CopyToOutputDirectory>
+      <!-- Avoid cluttering the project root -->
       <Visible Condition="'%(Visible)' == ''">false</Visible>
     </Content>
   </ItemDefinitionGroup>
