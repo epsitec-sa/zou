@@ -28,7 +28,7 @@ Le dossier de la solution peut être utilisé comme base pour mettre en commun l
 > - la [tâche *MSBuild*](https://msdn.microsoft.com/en-us/library/z7f65y0d.aspx) ne sait pas gérer l'ordre de *build* des projets d'une solution. Seul `msbuild.exe` et *Visual Studio* le savent.
 
 ## 3. *Projet*
-Le projet est l'unité de base de *MSBuild*. C'est lui qui définit les paramètres et les tâches à accomplir. Il est composé d'un module principal (.vcxproj, .csproj, ...) et de sous-modules (.props, .targets) dont [l'importation](https://msdn.microsoft.com/en-us/library/92x05xfs.aspx) peut être contrôlée par des [conditions](https://msdn.microsoft.com/en-us/library/7szfhaft.aspx). Le module principal d'un projet est soumis à une [structure particulière](https://blogs.msdn.microsoft.com/visualstudio/2010/05/14/a-guide-to-vcxproj-and-props-file-structure/) liée au **modèle d'évaluation séquentiel** de MSBuild. 
+Le projet est l'unité de base de *MSBuild*. C'est lui qui définit les paramètres et les tâches à accomplir. Il est composé d'un module principal (.vcxproj, .csproj, ...) et de sous-modules (.props, .targets) dont [l'importation](https://msdn.microsoft.com/en-us/library/92x05xfs.aspx) peut être contrôlée par des [conditions](https://msdn.microsoft.com/en-us/library/7szfhaft.aspx). Le module principal d'un projet est soumis à une [structure particulière](https://blogs.msdn.microsoft.com/visualstudio/2010/05/14/a-guide-to-vcxproj-and-props-file-structure/) liée au **modèle d'évaluation séquentiel** de MSBuild.
 
 # Schéma logique *bundle*-solution-projet
 Dans l'exemple ci-dessous, les projets `S1` et `S2` sont **partagés**. Les autres solutions et projets sont **locaux**.
@@ -49,11 +49,11 @@ Dans l'exemple ci-dessous, les projets `S1` et `S2` sont **partagés**. Les autr
 Comme on peut le voir dans le schéma logique précédent, un projet peut être partagé par plusieurs solutions et par plusieurs *bundles*. Le **contexte d'exécution** ***zou*** est défini par les propriétés `ZouDir`, `BundleDir`, `SolutionDir` et `ProjectDir` qui permettent de paramétrer et de relativiser l'exécution de chaque projet.
 
 > - la variable `ZouDir` pointe sur le dossier du sous-module *zou* et vaut `$(BundleDir)zou\`.
-> - la variable `BundleDir` est définie par *zou* ([private/zou.targets](private/zou.targets)).
+> - la variable `BundleDir` est définie dans [zou.props](zou.props).
 > - la propriété `SolutionDir` n'est pas définie lorsque l'on exécute un projet. Dans ce cas sa valeur est fixée par *MSBuild* et vaut `'*Undefined*'`.
 
 # Contexte de configuration
-Similairement au *contexte d'exécution*, le **contexte de configuration** ***zou*** définit les propriétés `ZouBundleDir`, `ZouSolutionDir` et `ZouProjectDir` qui pointent sur des sous-dossiers de configuration nommés `.zou` et situés respectivement dans les dossiers `BundleDir`, `SolutionDir` et `ProjectDir`. Ces dossiers de configuration vont nous permettre de stocker des informations relatives soit au projet.
+Similairement au *contexte d'exécution*, le **contexte de configuration** ***zou*** définit les propriétés `ZouBundleDir`, `ZouSolutionDir` et `ZouProjectDir` qui pointent sur des sous-dossiers de configuration nommés `zou.cfg` et situés respectivement dans les dossiers `BundleDir`, `SolutionDir` et `ProjectDir`. Ces dossiers de configuration vont nous permettre de stocker des informations relatives au projet, à la solution ou au *bundle*.
 
-> - les variables `ZouBundleDir`, `ZouSolutionDir` et `ZouProjectDir` sont définies par *zou* ([private/zou.targets](private/zou.targets)).
-> - la propriété `ZouSolutionDir` n'est pas initialisée lorsque l'on exécute un projet. Dans ce cas sa valeur est `''`.
+> - les variables `ZouBundleDir`, `ZouSolutionDir` et `ZouProjectDir` sont définies dans [zou.props](zou.props).
+> - la propriété `ZouSolutionDir` n'est pas initialisée lorsque l'on exécute un projet. Dans ce cas sa valeur est vide.
