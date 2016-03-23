@@ -14,30 +14,35 @@ Use this template to create a project that builds and imports one or more extern
 
 -->
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- zou - extension settings -->
+  <ImportGroup Label="ExtensionSettings">
+	  <!-- TODO: optionnally modify the path of the zou submodule so that it is relative to this file directory -->
+    <Import Project="..\zou\Cpp.PlatformToolset.props" />
+  </ImportGroup>
+ 
   <PropertyGroup Label="Globals">
     <!-- The ProjectGUID property value should be redefined. -->
     <ProjectGuid>{B78D246D-F9C7-4635-81EF-6B5C25D1D8E8}</ProjectGuid>
   </PropertyGroup>
 
-  <!-- Assume that the path of the zou submodule is relative to this file directory -->
   
-  <!-- Import zou utility project and property sheets -->
-  <Import Project="zou\Cpp.Utility.props" />
+  <!-- zou - utility project properties -->
+  <Import Project="$(ZouDir)Cpp.Utility.props" />
   
-  <ImportGroup Label="PropertySheets" Condition="">
-    <!-- Redirect C++ NT Version -->
+  <!-- zou - standard property sheets -->
+  <ImportGroup Label="PropertySheets">
     <Import Project="$(ZouDir)Cpp.NTVersion.props" />
-    <!-- Redirect C++ output directories (OutDir, IntDir) -->
     <Import Project="$(ZouDir)Cpp.OutDir.props" />
   </ImportGroup>
 
+  <!-- zou - utility project targets -->
   <Import Project="$(ZouDir)Cpp.Utility.targets" />
 
   <!--
   Import managed projects or solutions.
   Exemple: salaires excerpt
   -->
-  <ItemGroup>
+  <ItemGroup  Label="ExtensionTargets">
     <ImportProjects Include="..\pain\Epsitec.Pain.Redist.sln">
       <ImportDir>$(OutDir)pain\</ImportDir>
     </ImportProjects>
@@ -53,7 +58,7 @@ Use this template to create a project that builds and imports one or more extern
   </ItemGroup>
   
   <!-- Import files -->
-  <ItemGroup>
+  <ItemGroup  Label="ExtensionTargets">
     <ImportFiles Include="images\*.png" >
       <ImportDir>$(OutDir)images\</ImportDir>
     </ImportFiles>

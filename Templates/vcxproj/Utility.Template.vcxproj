@@ -5,15 +5,23 @@ Use this template to create a minimal utility project:
 - implement TODOs
 -->
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <PropertyGroup Label="Globals">
+ 
+  <!-- zou - extension settings -->
+  <ImportGroup Label="ExtensionSettings">
+	  <!-- TODO: adjust the relative path of zou -->
+    <Import Project="..\zou\Cpp.PlatformToolset.props" />
+  </ImportGroup>
+
+ <PropertyGroup Label="Globals">
     <!-- TODO: replace with a new GUID (VS/Tools/Create GUID) -->
     <ProjectGuid>{3113405F-6950-4BC6-B412-88003E60ABA0}</ProjectGuid>
   </PropertyGroup>
 
-  <!-- TODO: adjust the relative path of zou -->
-  <Import Project="..\zou\Cpp.Utility.props" />
+  <!-- zou - utility project properties -->
+  <Import Project="$(ZouDir)Cpp.Utility.props" />
   
   <!-- ... -->
   
-  <Import Project="..\zou\Cpp.Utility.targets" />
+  <!-- zou - utility project targets -->
+  <Import Project="$(ZouDir)Cpp.Utility.targets" />
 </Project>
