@@ -1,23 +1,18 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<!-- This property sheet defines the default 'CppOutDir' and 'CppIntDir' properties for C++ projects. -->
+<!-- This property sheet defines the default 'OutDir' property for C++ projects. -->
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Choose>
     <When Condition="$(SolutionDir) == '*Undefined*'">
       <PropertyGroup>
-        <_PropertySheetDisplayName>[default] CppOutDir = Platform/Toolset/Configuration</_PropertySheetDisplayName>
-        <CppOutDir Condition="$(SolutionDir) == '*Undefined*'">$(Platform)\$(PlatformToolset)\$(Configuration)\</CppOutDir>
+        <_PropertySheetDisplayName>[default] ... = $(Platform)\$(PlatformToolset)\$(Configuration)\</_PropertySheetDisplayName>
+        <OutDir>$(Platform)\$(PlatformToolset)\$(Configuration)\</OutDir>
       </PropertyGroup>
     </When>
     <Otherwise>
       <PropertyGroup>
-        <_PropertySheetDisplayName>[default] CppOutDir = Solution/Platform/Toolset/Configuration</_PropertySheetDisplayName>
-        <CppOutDir Condition="$(SolutionDir) != '*Undefined*'">$(SolutionDir)$(Platform)\$(PlatformToolset)\$(Configuration)\</CppOutDir>
+        <_PropertySheetDisplayName>[default] ... = $(SolutionDir)$(Platform)\$(PlatformToolset)\$(Configuration)\</_PropertySheetDisplayName>
+        <OutDir>$(SolutionDir)$(Platform)\$(PlatformToolset)\$(Configuration)\</OutDir>
       </PropertyGroup>
     </Otherwise>
   </Choose>
-  
-  <PropertyGroup>
-    <!-- $(ProjectName) is appended to $(CppIntDir) to avoid sharing the intermediate folder between projects located int he same folder -->
-    <CppIntDir>$(Platform)\$(PlatformToolset)\obj\$(Configuration)\$(ProjectName)\</CppIntDir>
-  </PropertyGroup>
 </Project>

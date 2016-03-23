@@ -1,8 +1,12 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<!-- Import this MSBuild property sheet into your project to resolve the NT Version (supports override in zou.cfg folder). -->
+<!-- This property sheet resolves the 'PlatformToolset'property (supports override in zou.cfg folder). -->
 <Project ToolsVersion="4.0" InitialTargets="CppPlatformToolsetTrace" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Condition="'$(Zou)' == ''" Project="zou.props" />
 
+  <PropertyGroup Label="Globals">
+    <PlatformToolset></PlatformToolset>
+  </PropertyGroup>
+  
   <ImportGroup Label="PropertySheets">
     <Import Project="$(ZouBundleDir)**\$(MSBuildThisFileName)*$(MSBuildThisFileExtension)"   Condition="'$(ZouBundleDir)'   != ''" />
     <Import Project="$(ZouSolutionDir)**\$(MSBuildThisFileName)*$(MSBuildThisFileExtension)" Condition="'$(ZouSolutionDir)' != '' And '$(ZouSolutionDir)' != '$(ZouBundleDir)'" />
@@ -12,11 +16,11 @@
 
   <ItemDefinitionGroup>
     <ClCompile>
-      <PreprocessorDefinitions>PLATFORM_TOOLSET=$(PlatformToolset);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_TOOLSET=$(PlatformToolset);%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
 
   <Target Name="CppPlatformToolsetTrace">
-    <Message Text="PLATFORM_TOOLSET= = PlatformToolset = $(PlatformToolset)" />
+    <Message Text="_TOOLSET= = PlatformToolset = $(PlatformToolset)" />
   </Target>
 </Project>
