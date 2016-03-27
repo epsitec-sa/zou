@@ -3,25 +3,24 @@
 The Import.targets can be used to build and export the output of one or many projects or solutions.
 Input parameters:
 - @(ImportProjects)
+  - %(BuildInParallel)
   - %(ImportDir)
   - %(ImportPlatform)
   - %(ImportConfiguration)
-
-Targets
-- ImportClean
-- ImportBuild
-- ImportRebuild
+  - %(ImportNTVersion)
+- @(ImportFiles)
+  - %(ImportDir)
+  - %(ImportFile)
 -->
 <Project ToolsVersion="4.0" DefaultTargets="ImportBuild" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Condition="'$(Zou)' == ''" Project="zou.props" />
+
   <PropertyGroup >
     <Platform        Condition="'$(Platform)'        == ''">Any CPU</Platform>
     <PlatformToolset Condition="'$(PlatformToolset)' == ''">v120_xp</PlatformToolset>
     <NTVersion       Condition="'$(NTVersion)'       == ''">0x501</NTVersion>
     <TargetDir       Condition="'$(TargetDir)'       == ''">$(OutDir)</TargetDir>
   </PropertyGroup>
-  
-  <!-- Zou targets -->
-  <Import Condition="'$(Zou)' == ''" Project="private\zou.targets" />
   
   <!-- Define imported projects default metadata -->
   <ItemDefinitionGroup>
