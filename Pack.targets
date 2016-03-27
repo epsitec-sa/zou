@@ -1,0 +1,41 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Condition="'$(Zou)' == ''" Project="zou.props" />
+
+  <!-- Default includes and excludes for package builder -->
+  <ItemGroup>
+    <ProdBinInclude Include="$(OutDir)**\*" />
+    <ProdBinExclude Include="$(OutDir)**\*.pdb" />
+    <ProdBinExclude Include="$(OutDir)**\*.map" />
+    <ProdBinExclude Include="$(OutDir)**\*.lib" />
+    <ProdBinExclude Include="$(OutDir)**\*.exp" />
+
+    <ProdDbgInclude Include="$(OutDir)**\*.pdb" />
+    <ProdDbgInclude Include="$(OutDir)**\*.map" />
+    <ProdDbgInclude Include="$(OutDir)**\*.cod" />
+
+    <DevBinInclude Include ="$(OutDir)**\*" />
+    <DevCodInclude Include ="$(DbgDir)**\*.cod" />
+  </ItemGroup>
+
+  <!-- Package builder -->
+  <ItemGroup>
+    <!-- Production package -->
+    <ImportFiles Include="@(ProdBinInclude)" Exclude="@(ProdBinExclude)">
+      <ImportDir>$(PkgProdBinDir)</ImportDir>
+    </ImportFiles>
+    <ImportFiles Include="@(ProdDbgInclude)">
+      <ImportDir>$(PkgProdDbgDir)</ImportDir>
+    </ImportFiles>
+
+    <!-- Developer package -->
+    <ImportFiles Include="@(DevBinInclude)">
+      <ImportDir>$(PkgDevBinDir)</ImportDir>
+    </ImportFiles>
+    <ImportFiles Include="@(DevCodInclude)">
+      <ImportDir>$(PkgDevCodDir)</ImportDir>
+    </ImportFiles>
+  </ItemGroup>
+
+  <Import Project="$(ZouDir)Import.targets" />
+</Project>

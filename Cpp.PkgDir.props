@@ -1,0 +1,33 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- This property sheet resolves the 'PkgDir'property (supports override in zou.cfg folder). -->
+<Project ToolsVersion="4.0" InitialTargets="CppPkgDirTrace" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Condition="'$(Zou)' == ''" Project="zou.props" />
+
+  <PropertyGroup>
+    <_PropertySheetDisplayName>Package Directory</_PropertySheetDisplayName>
+
+    <PkgDir></PkgDir>
+  </PropertyGroup> 
+
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(ZouBundleDir)**\$(MSBuildThisFileName)*$(MSBuildThisFileExtension)"   Condition="'$(ZouBundleDir)'   != ''" />
+    <Import Project="$(ZouSolutionDir)**\$(MSBuildThisFileName)*$(MSBuildThisFileExtension)" Condition="'$(ZouSolutionDir)' != '' And '$(ZouSolutionDir)' != '$(ZouBundleDir)'" />
+    <Import Project="$(ZouProjectDir)**\$(MSBuildThisFileName)*$(MSBuildThisFileExtension)"  Condition="'$(ZouProjectDir)'  != '' And '$(ZouProjectDir)'  != '$(ZouSolutionDir)' And '$(ZouProjectDir)' != '$(ZouBundleDir)'" />
+    <Import Project="$(ZouPrivateDir)$(MSBuildThisFileName).Default$(MSBuildThisFileExtension)" Condition="'$(PkgDir)' == ''" />
+  </ImportGroup>
+
+  <PropertyGroup>
+    <PkgProdBinDir>$(PkgDir)Prod\bin\</PkgProdBinDir>
+    <PkgProdDbgDir>$(PkgDir)Prod\dbg\</PkgProdDbgDir>
+    <PkgDevBinDir>$(PkgDir)Dev\bin\</PkgDevBinDir>
+    <PkgDevCodDir>$(PkgDir)Dev\cod\</PkgDevCodDir>
+  </PropertyGroup>
+  
+  <Target Name="CppPkgDirTrace">
+    <Message Text="PkgDir        = $(PkgDir)" />
+    <Message Text="PkgProdBinDir = $(PkgProdBinDir)" />
+    <Message Text="PkgProdDbgDir = $(PkgProdDbgDir)" />
+    <Message Text="PkgDevBinDir  = $(PkgDevBinDir)" />
+    <Message Text="PkgDevCodDir  = $(PkgDevCodDir)" />
+  </Target>
+</Project>

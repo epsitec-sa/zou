@@ -43,6 +43,7 @@ MSBuildThisFileDirectory = $(BundleDir)zou\zou.props
     <ZouProjectDir>$(MSBuildProjectDirectory)\$(_ZouCfgSubdir)</ZouProjectDir>
   </PropertyGroup>
   <PropertyGroup>
+    <BundleRelativeProjectName>$([MSBuild]::MakeRelative($(BundleDir), $(MSBuildProjectDirectory)\$(MSBuildProjectName)))</BundleRelativeProjectName>
     <BundleRelativeProjectPath>$([MSBuild]::MakeRelative($(BundleDir), $(MSBuildProjectDirectory)\$(MSBuildProjectFile)))</BundleRelativeProjectPath>
     <_ZouTmp>$(BundleRelativeProjectPath.IndexOf('\'))</_ZouTmp>
   </PropertyGroup>
@@ -87,6 +88,7 @@ MSBuildThisFileDirectory = $(BundleDir)zou\zou.props
 
     <Message Text="BundleRelativeSolutionPath = $(BundleRelativeSolutionPath)" />
     <Message Text="BundleRelativeProjectPath  = $(BundleRelativeProjectPath)"  />
+    <Message Text="BundleRelativeProjectName  = $(BundleRelativeProjectName)"  />
     <Message Text="BundleSolutionAnchor       = $(BundleSolutionAnchor)"       />
     <Message Text="BundleProjectAnchor        = $(BundleProjectAnchor)"        />
     
