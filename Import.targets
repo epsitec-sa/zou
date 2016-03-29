@@ -1,0 +1,10 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" InitialTargets="ZouTrace" DefaultTargets="ImportBuild" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Condition="'$(Zou)' == ''" Project="zou.props" />
+  <PropertyGroup>
+    <ImportProjects>@(ImportProjects)</ImportProjects>
+    <ImportFiles>@(ImportFiles)</ImportFiles>
+  </PropertyGroup>
+  <Import Condition="'$(ImportProjects)' != ''" Project="ImportProjects.targets" />
+  <Import Condition="'$(ImportFiles)' != ''" Project="ImportFiles.targets" />
+</Project>
