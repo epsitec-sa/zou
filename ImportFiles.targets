@@ -1,0 +1,43 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!--
+The ImportFiles.targets can be used to import files in the parent project.
+Input parameters:
+- @(ImportFiles)
+  - %(ImportDir)
+  - %(ImportFile)
+-->
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Condition="'$(Zou)' == ''" Project="zou.props" />
+
+  <PropertyGroup Condition="'$(ImportFiles)' == ''">
+    <ImportFiles>@(ImportFiles)</ImportFiles>
+  </PropertyGroup>
+
+  <!-- Define imported files default metadata -->
+  <ItemDefinitionGroup>
+    <ImportFiles>
+      <ImportDir  Condition="'%(ImportDir)' == ''">$(TargetDir)</ImportDir>
+      <ImportFile Condition="'%(ImportFile)' == ''">%(FileName)%(Extension)</ImportFile>
+    </ImportFiles>
+  </ItemDefinitionGroup>
+  
+  <!-- ================ ImportFilesClean ================ -->
+
+  <Target Name="ImportFilesClean"  BeforeTargets="Clean" Condition="'$(ImportFiles)' != ''">
+    <Delete  Files="%(ImportFiles.ImportDir)%(RecursiveDir)%(ImportFile)" />
+    <Message Importance="high" Text="  [-] %(ImportFiles.ImportDir)%(RecursiveDir)%(ImportFile)" Condition="'%(ImportFile)' != ''"/>
+  </Target>
+  
+  <!-- ================ ImportFiles ================ -->
+
+  <!-- Here we trig the _PrepareForClean target (which deletes the calling-project.lastbuildstate) so that Visual Studio does not skip the Inputs/Outputs check. -->
+  <Target Name="ImportFiles"
+           Condition="'$(ImportFiles)' != ''"
+          DependsOnTargets="_PrepareForClean"
+          BeforeTargets="Build"
+          Inputs="@(ImportFiles)"
+          Outputs="@(ImportFiles -> '%(ImportDir)%(RecursiveDir)%(ImportFile)')">
+    <Copy SourceFiles="%(ImportFiles.Identity)" DestinationFiles="%(ImportDir)%(RecursiveDir)%(ImportFile)" />
+    <Message Importance="high" Text="  [+] %(ImportFiles.Identity) =&gt; %(ImportDir)%(RecursiveDir)%(ImportFile)" />
+  </Target>
+</Project>

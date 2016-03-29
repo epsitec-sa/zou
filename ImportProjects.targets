@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <!--
-The Import.targets can be used to build and export the output of one or many projects or solutions.
+The ImportProjects.targets can be used to build and import the output of one or many projects or solutions.
 Input parameters:
 - @(ImportProjects)
   - %(BuildInParallel)
@@ -8,61 +8,53 @@ Input parameters:
   - %(ImportPlatform)
   - %(ImportConfiguration)
   - %(ImportNTVersion)
-- @(ImportFiles)
-  - %(ImportDir)
-  - %(ImportFile)
 -->
-<Project ToolsVersion="4.0" DefaultTargets="ImportBuild" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Condition="'$(Zou)' == ''" Project="zou.props" />
 
-  <PropertyGroup >
+  <PropertyGroup Condition="'$(ImportProjects)' == ''">
+    <ImportProjects>@(ImportProjects)</ImportProjects>
+  </PropertyGroup>
+
+  <PropertyGroup>
     <Platform        Condition="'$(Platform)'        == ''">Any CPU</Platform>
     <PlatformToolset Condition="'$(PlatformToolset)' == ''">v120_xp</PlatformToolset>
     <NTVersion       Condition="'$(NTVersion)'       == ''">0x501</NTVersion>
-    <TargetDir       Condition="'$(TargetDir)'       == ''">$(OutDir)</TargetDir>
   </PropertyGroup>
   
   <!-- Define imported projects default metadata -->
   <ItemDefinitionGroup>
     <ImportProjects>
       <BuildInParallel       Condition="'%(BuildInParallel)' == ''">true</BuildInParallel>
+      <!-- At first approximation, TargetDir is the absolute version of OutDir -->
       <ImportDir             Condition="'%(ImportDir)' == ''">$(TargetDir)</ImportDir>
       <ImportPlatform        Condition="'%(ImportPlatform)' == ''">$(Platform)</ImportPlatform>
       <ImportPlatformToolset Condition="'%(ImportPlatformToolset)' == ''">$(PlatformToolset)</ImportPlatformToolset>
       <ImportConfiguration   Condition="'%(ImportConfiguration)' == ''">$(Configuration)</ImportConfiguration>
       <ImportNTVersion       Condition="'%(ImportNTVersion)' == ''">$(NTVersion)</ImportNTVersion>
     </ImportProjects>
-    <ImportFiles>
-      <ImportDir  Condition="'%(ImportDir)' == ''">$(TargetDir)</ImportDir>
-      <ImportFile Condition="'%(ImportFile)' == ''">%(FileName)%(Extension)</ImportFile>
-    </ImportFiles>
   </ItemDefinitionGroup>
 
   <!-- ================ ImportProjectsClean ================ -->
   
-  <Target Name="ImportProjectsClean">
+  <Target Name="ImportProjectsClean" BeforeTargets="Clean" Condition="'$(ImportProjects)' != ''">
+    <!-- The clean target does not care about project dependencies. This means that we can safely use the MSBuild task for solutions too. -->
     <MSBuild Projects="@(ImportProjects)" Targets="Clean" Properties="OutDir=%(ImportDir);Platform=%(ImportPlatform);PlatformToolset=%(ImportPlatformToolset);Configuration=%(ImportConfiguration);NTVersion=%(ImportNTVersion)" />
   </Target>
 
-  <!-- ================ ImportFilesClean ================ -->
-
-  <Target Name="ImportFilesClean">
-    <Delete  Files="%(ImportFiles.ImportDir)%(RecursiveDir)%(ImportFile)" />
-    <Message Importance="high" Text="  [-] %(ImportFiles.ImportDir)%(RecursiveDir)%(ImportFile)" Condition="'%(ImportFile)' != ''"/>
-  </Target>
-  
   <!-- ================ ImportProjects ================ -->
   
-  <Target Name="ImportProjects" >
+  <Target Name="ImportProjects" BeforeTargets="Build" Condition="'$(ImportProjects)' != ''">
+    <Message Text="[%(ImportConfiguration)|%(ImportPlatform)|%(ImportPlatformToolset)|%(ImportNTVersion)] %(ImportProjects.Identity) =&gt; %(ImportDir)" />
+    <Message Text="%0A" />
     <!-- Restore nuget packages for solutions... -->
     <Exec
       Command="&quot;$(ZouDir)nuget&quot; restore &quot;%(ImportProjects.Identity)&quot;"
       Condition="'%(Extension)' == '.sln'"/>
     <!-- ...and projects -->
-    <Message
+    <!--<Message
       Text="&quot;$(ZouDir)nuget&quot; restore &quot;%(ImportProjects.RootDir)%(Directory)packages.config&quot; -PackagesDirectory &quot;$(SolutionDir)packages\.&quot;"
-      Condition="'%(Extension)' != '.sln' And Exists('%(RootDir)%(Directory)packages.config')"
-      Importance="high"/>
+      Condition="'%(Extension)' != '.sln' And Exists('%(RootDir)%(Directory)packages.config')"/>-->
     <Exec
       Command="&quot;$(ZouDir)nuget&quot; restore &quot;%(ImportProjects.RootDir)%(Directory)packages.config&quot; -PackagesDirectory &quot;$(SolutionDir)packages\.&quot;"
       Condition="'%(Extension)' != '.sln' And Exists('%(RootDir)%(Directory)packages.config')"/>
@@ -86,27 +78,5 @@ Input parameters:
       Targets="Build"
       Properties="OutDir=%(ImportDir);Platform=%(ImportPlatform);PlatformToolset=%(ImportPlatformToolset);Configuration=%(ImportConfiguration);NTVersion=%(ImportNTVersion)"
       BuildInParallel="%(BuildInParallel)" />
-  </Target>
-
-  <!-- ================ ImportFiles ================ -->
-
-  <Target Name="ImportFiles"
-          Inputs="@(ImportFiles)"
-          Outputs="@(ImportFiles -> '%(ImportDir)%(RecursiveDir)%(ImportFile)')">
-    <Copy SourceFiles="%(ImportFiles.Identity)" DestinationFiles="%(ImportDir)%(RecursiveDir)%(ImportFile)" />
-    <Message Importance="high" Text="  [+] %(ImportFiles.Identity) =&gt; %(ImportDir)%(RecursiveDir)%(ImportFile)" />
-  </Target>
-  
-  <!-- ================ Main targets ================ -->
-
-  <Target Name="ImportClean"   DependsOnTargets="ImportFilesClean;ImportProjectsClean" BeforeTargets="Clean" />
-  <Target Name="ImportBuild"   DependsOnTargets="ImportProjects;ImportFiles"           BeforeTargets="Build" />  
-  <Target Name="ImportDebug"   DependsOnTargets="ZouTrace"                             BeforeTargets="ImportBuild" />
-  
-  <!-- ================ ImportTrace ================ -->
-  
-  <Target Name="ImportTrace">
-    <Message Importance="high" Text="[%(ImportConfiguration)|%(ImportPlatform)|%(ImportPlatformToolset)|%(ImportNTVersion)] %(ImportProjects.Identity) =&gt; %(ImportDir)" />
-    <Message Importance="high" Text="[+] %(ImportFiles.Identity) =&gt; %(ImportDir)%(ImportFile)" />
   </Target>
 </Project>
