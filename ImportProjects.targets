@@ -43,8 +43,12 @@ Input parameters:
   </Target>
 
   <!-- ================ ImportProjects ================ -->
-  
-  <Target Name="ImportProjects" BeforeTargets="Build" Condition="'$(ImportProjects)' != ''">
+
+  <!-- Runs the _PrepareForClean target (which deletes the calling-project.lastbuildstate) so that Visual Studio always runs this target. -->
+  <Target Name="ImportProjects"
+          DependsOnTargets="_PrepareForClean"
+          BeforeTargets="Build"
+          Condition="'$(ImportProjects)' != ''">
     <Message Text="[%(ImportConfiguration)|%(ImportPlatform)|%(ImportPlatformToolset)|%(ImportNTVersion)] %(ImportProjects.Identity) =&gt; %(ImportDir)" />
     <Message Text="%0A" />
     <!-- Restore nuget packages for solutions... -->

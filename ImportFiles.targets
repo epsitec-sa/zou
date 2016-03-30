@@ -30,9 +30,9 @@ Input parameters:
   
   <!-- ================ ImportFiles ================ -->
 
-  <!-- Here we trig the _PrepareForClean target (which deletes the calling-project.lastbuildstate) so that Visual Studio does not skip the Inputs/Outputs check. -->
+  <!-- Runs the _PrepareForClean target (which deletes the calling-project.lastbuildstate) so that Visual Studio does not skip this target's Inputs/Outputs check. -->
   <Target Name="ImportFiles"
-           Condition="'$(ImportFiles)' != ''"
+          Condition="'$(ImportFiles)' != ''"
           DependsOnTargets="_PrepareForClean"
           BeforeTargets="Build"
           Inputs="@(ImportFiles)"
