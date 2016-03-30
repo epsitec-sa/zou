@@ -54,7 +54,7 @@ MSBuildThisFileDirectory = $(BundleDir)zou\zou.props
 
   <!-- Solution properties -->
   <Choose>
-    <When Condition="'$(SolutionName)' != '' And '$(SolutionName)' != '*Undefined*'">
+    <When Condition="'$(SolutionPath)' != '' And '$(SolutionPath)' != '*Undefined*'">
       <PropertyGroup Condition="'$(ZouSolutionDir)' == ''" >
         <ZouSolutionDir>$(SolutionDir)$(_ZouCfgSubdir)</ZouSolutionDir>
       </PropertyGroup>
@@ -68,6 +68,15 @@ MSBuildThisFileDirectory = $(BundleDir)zou\zou.props
         <BundleSolutionAnchor>$(BundleRelativeSolutionPath.Substring(0, $(_ZouBackSlashPos)))\</BundleSolutionAnchor>
       </PropertyGroup>
     </When>
+    <Otherwise>
+      <PropertyGroup>
+        <ZouSolutionDir>$(ZouProjectDir)</ZouSolutionDir>
+        <BundleRelativeSolutionDir>$(BundleRelativeProjectDir)</BundleRelativeSolutionDir>
+        <BundleRelativeSolutionName>*Undefined*</BundleRelativeSolutionName>
+        <BundleRelativeSolutionPath>*Undefined*</BundleRelativeSolutionPath>
+        <BundleSolutionAnchor>$(BundleProjectAnchor)</BundleSolutionAnchor>
+      </PropertyGroup>
+    </Otherwise>
   </Choose>
   
   <Target Name="ZouTrace">
