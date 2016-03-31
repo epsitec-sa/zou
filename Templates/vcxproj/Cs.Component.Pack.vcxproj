@@ -1,0 +1,22 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project InitialTargets="ZouTrace" DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\..\..\zou\Cs.Boot.props" />
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{C37AA165-3404-4D43-BFC2-1DBE6A101AB4}</ProjectGuid>
+  </PropertyGroup>
+  <!-- zou - import utility project and package settings -->
+  <Import Project="$(ZouDir)Cs.Utility.props" />
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(ZouDir)Cs.PkgSettings.props" />
+  </ImportGroup>
+  <Import Project="$(ZouDir)Cs.Utility.targets" />
+
+  <!-- zou - build package -->
+  <PropertyGroup>
+    <PkgSourceDir>$(ProjectDir)Console\bin\$(Configuration)\</PkgSourceDir>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProdBinExclude Include="$(PkgSourceDir)**\*.xml" />
+  </ItemGroup>
+  <Import Project="$(ZouDir)Pack.targets" />
+</Project>
