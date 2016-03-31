@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <!-- This property sheet adds custom include directories to the C++ compiler (supports override in zou.cfg folder). -->
-<Project ToolsVersion="4.0" InitialTargets="CppIncludeDirsTrace" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Condition="'$(Zou)' == ''" Project="zou.props" />
 
   <PropertyGroup>
@@ -15,8 +15,4 @@
     <Import Project="$(ZouProjectDir)**\$(MSBuildThisFileName)*$(MSBuildThisFileExtension)"  Condition="'$(ZouProjectDir)'  != '' And '$(ZouProjectDir)'  != '$(ZouSolutionDir)' And '$(ZouProjectDir)' != '$(ZouBundleDir)'" />
     <Import Project="$(ZouPrivateDir)$(MSBuildThisFileName).Default$(MSBuildThisFileExtension)" />
   </ImportGroup>
-
-  <Target Name="CppIncludeDirsTrace">
-    <Message Text="AdditionalIncludeDirectories = %(ClCompile.AdditionalIncludeDirectories)" />
-  </Target>
 </Project>

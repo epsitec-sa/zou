@@ -1,11 +1,15 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <!-- This property sheet defines the default debug settings for C++ projects. -->
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <PropertyGroup>
-    <_PropertySheetDisplayName>[zou] Debug Settings</_PropertySheetDisplayName>
+  <PropertyGroup  Condition="'$(Configuration)'=='Debug'">
+    <_PropertySheetDisplayName>[zou] PDB for Edit and Continue, Enable Browse Information</_PropertySheetDisplayName>
     <DbgSettings>true</DbgSettings>
   </PropertyGroup>
-  
+  <PropertyGroup Condition="'$(Configuration)'=='Release'">
+    <_PropertySheetDisplayName>[zou] PDB, Map File, Assembly, Machine Code and Source, No Random Base Address</_PropertySheetDisplayName>
+    <DbgSettings>true</DbgSettings>
+  </PropertyGroup>
+
   <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug'">
     <ClCompile>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>

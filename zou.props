@@ -1,5 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <!--
+This script can be imported anywhere before first MS import (Microsoft.Cpp.Default.props).
 Import this script at the beginning of other scripts to define global zou properties:
 
   <Project ... >
@@ -7,14 +8,9 @@ Import this script at the beginning of other scripts to define global zou proper
     ...
   </Project>
 
-
 ZouDir     : the path of the 'zou' folder.
 BundleName : the bundle name.
-BundleDir  : the path of the bundle root folder.
-  
-The bundle folder is the one where `zou` and `git` repositories are located.
-    
-MSBuildThisFileDirectory = $(BundleDir)zou\zou.props
+BundleDir  : the path of the bundle root folder. (The bundle folder is the one where `zou` and `git` repositories are located.)
 -->
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <!-- Import semaphore -->
@@ -60,7 +56,7 @@ MSBuildThisFileDirectory = $(BundleDir)zou\zou.props
       </PropertyGroup>
       <PropertyGroup>
         <BundleRelativeSolutionDir>$([MSBuild]::MakeRelative($(BundleDir), $(SolutionDir)))</BundleRelativeSolutionDir>
-        <BundleRelativeSolutionName>$([MSBuild]::MakeRelative($(BundleDir), $(SolutionName)))</BundleRelativeSolutionName>
+        <BundleRelativeSolutionName>$([MSBuild]::MakeRelative($(BundleDir), $(SolutionDir)$(SolutionName)))</BundleRelativeSolutionName>
         <BundleRelativeSolutionPath>$([MSBuild]::MakeRelative($(BundleDir), $(SolutionPath)))</BundleRelativeSolutionPath>
         <_ZouBackSlashPos>$(BundleRelativeSolutionPath.IndexOf('\'))</_ZouBackSlashPos>
       </PropertyGroup>
@@ -72,63 +68,87 @@ MSBuildThisFileDirectory = $(BundleDir)zou\zou.props
       <PropertyGroup>
         <ZouSolutionDir>$(ZouProjectDir)</ZouSolutionDir>
         <BundleRelativeSolutionDir>$(BundleRelativeProjectDir)</BundleRelativeSolutionDir>
-        <BundleRelativeSolutionName>*Undefined*</BundleRelativeSolutionName>
-        <BundleRelativeSolutionPath>*Undefined*</BundleRelativeSolutionPath>
         <BundleSolutionAnchor>$(BundleProjectAnchor)</BundleSolutionAnchor>
       </PropertyGroup>
     </Otherwise>
   </Choose>
+
+  <Target Name="ZouTraceMSBuild">
+    <Message Importance="high" Text="MSBuild properties" />
+    <Message Importance="high" Text="==================" />
+    <Message Importance="normal" Text="  MSBuildBinPath                 = $(MSBuildBinPath)" />
+    <Message Importance="normal" Text="  MSBuildToolsPath               = $(MSBuildToolsPath)" />
+    <Message Importance="normal" Text="  MSBuildExtensionsPath          = $(MSBuildExtensionsPath)" />
+    <Message Importance="normal" Text="  MSBuildExtensionsPath32        = $(MSBuildExtensionsPath32)" />
+    <Message Importance="normal" Text="  MSBuildExtensionsPath64        = $(MSBuildExtensionsPath64)" />
+    <Message Importance="normal" Text="  MSBuildToolsVersion            = $(MSBuildToolsVersion)" />
+    <Message Importance="normal" Text="  MSBuildFrameworkToolsPath      = $(MSBuildFrameworkToolsPath)" />
+    <Message Importance="normal" Text="  MSBuildLastTaskResult          = $(MSBuildLastTaskResult)" />
+    <Message Importance="normal" Text="  MSBuildProjectDirectory        = $(MSBuildProjectDirectory)" />
+    <Message Importance="normal" Text="  MSBuildProjectFile             = $(MSBuildProjectFile)" />
+    <Message Importance="normal" Text="  MSBuildThisFile                = $(MSBuildThisFile)" />
+    <Message Importance="normal" Text="  MSBuildThisFileDirectory       = $(MSBuildThisFileDirectory)" />
+    <Message Importance="normal" Text="  MSBuildThisFileExtension       = $(MSBuildThisFileExtension)" />
+    <Message Importance="normal" Text="  MSBuildThisFileFullPath        = $(MSBuildThisFileFullPath)" />
+    <Message Importance="normal" Text="  MSBuildThisFileName            = $(MSBuildThisFileName)" />
+    <Message Importance="normal" Text="  MSBuildThisFileDirectoryNoRoot = $(MSBuildThisFileDirectoryNoRoot)" />
+    <Message Importance="normal" Text="  VCTargetsPath                  = $(VCTargetsPath)" />
+  </Target>
   
   <Target Name="ZouTrace">
-    <Message Text="+BundleDir      = $(BundleDir)"    />
-    <Message Text=" SolutionDir    = $(SolutionDir)"  />
-    <Message Text=" ProjectDir     = $(ProjectDir)"   />
-    <Message Text="+BundleName     = $(BundleName)"   />
-    <Message Text=" SolutionName   = $(SolutionName)" />
-    <Message Text=" ProjectName    = $(ProjectName)"  />
-    <Message Text=" SolutionPath   = $(SolutionPath)" />
-    <Message Text=" ProjectPath    = $(ProjectPath)"  />
-    <Message Text="+ZouDir         = $(ZouDir)" />
-    <Message Text="+ZouPrivateDir  = $(ZouPrivateDir)" />
-    <Message Text="+ZouBundleDir   = $(ZouBundleDir)"   />
-    <Message Text="+ZouSolutionDir = $(ZouSolutionDir)" />
-    <Message Text="+ZouProjectDir  = $(ZouProjectDir)"  />
-    <Message Text="%0A" />
-
-    <Message Text="+BundleRelativeSolutionDir  = $(BundleRelativeSolutionDir)" />
-    <Message Text="+BundleRelativeSolutionName = $(BundleRelativeSolutionName)" />
-    <Message Text="+BundleRelativeSolutionPath = $(BundleRelativeSolutionPath)" />
-    <Message Text="+BundleRelativeProjectDir   = $(BundleRelativeProjectDir)"  />
-    <Message Text="+BundleRelativeProjectName  = $(BundleRelativeProjectName)"  />
-    <Message Text="+BundleRelativeProjectPath  = $(BundleRelativeProjectPath)"  />
-    <Message Text="+BundleSolutionAnchor       = $(BundleSolutionAnchor)"       />
-    <Message Text="+BundleProjectAnchor        = $(BundleProjectAnchor)"        />
-    <Message Text="%0A" />
-
-    <Message Text=" Platform        = $(Platform)"        />
-    <Message Text=" PlatformToolset = $(PlatformToolset)" />
-    <Message Text=" Configuration   = $(Configuration)"   />
-    <Message Text=" IntDir          = $(IntDir)"          />
-    <Message Text=" OutDir          = $(OutDir)"          />
-    <Message Text=" TargetDir       = $(TargetDir)"       />
-    <Message Text="%0A" />
-    
-    <Message Text=" VCTargetsPath                  = $(VCTargetsPath)" />
-    <Message Text=" MSBuildBinPath                 = $(MSBuildBinPath)" />
-    <Message Text=" MSBuildToolsPath               = $(MSBuildToolsPath)" />
-    <Message Text=" MSBuildExtensionsPath          = $(MSBuildExtensionsPath)" />
-    <Message Text=" MSBuildExtensionsPath32        = $(MSBuildExtensionsPath32)" />
-    <Message Text=" MSBuildExtensionsPath64        = $(MSBuildExtensionsPath64)" />
-    <Message Text=" MSBuildToolsVersion            = $(MSBuildToolsVersion)" />
-    <Message Text=" MSBuildFrameworkToolsPath      = $(MSBuildFrameworkToolsPath)" />
-    <Message Text=" MSBuildLastTaskResult          = $(MSBuildLastTaskResult)" />
-    <Message Text=" MSBuildProjectDirectory        = $(MSBuildProjectDirectory)" />
-    <Message Text=" MSBuildProjectFile             = $(MSBuildProjectFile)" />
-    <Message Text=" MSBuildThisFile                = $(MSBuildThisFile)" />
-    <Message Text=" MSBuildThisFileDirectory       = $(MSBuildThisFileDirectory)" />
-    <Message Text=" MSBuildThisFileExtension       = $(MSBuildThisFileExtension)" />
-    <Message Text=" MSBuildThisFileFullPath        = $(MSBuildThisFileFullPath)" />
-    <Message Text=" MSBuildThisFileName            = $(MSBuildThisFileName)" />
-    <Message Text=" MSBuildThisFileDirectoryNoRoot = $(MSBuildThisFileDirectoryNoRoot)" />
+    <Message Importance="high" Text="Zou boot properties" />
+    <Message Importance="high" Text="===================" />
+    <Message Importance="normal" Text="  SolutionName               = $(SolutionName)" />
+    <Message Importance="normal" Text="  SolutionDir                = $(SolutionDir)"  />
+    <Message Importance="normal" Text="  SolutionPath               = $(SolutionPath)" />
+    <Message Importance="normal" Text="  MSBuildProjectName         = $(MSBuildProjectName)" />
+    <Message Importance="normal" Text="  MSBuildProjectDirectory    = $(MSBuildProjectDirectory)" />
+    <Message Importance="normal" Text="  MSBuildProjectFile         = $(MSBuildProjectFile)" />
+    <Message Importance="normal" Text="+ BundleName                 = $(BundleName)"   />
+    <Message Importance="normal" Text="+ BundleDir                  = $(BundleDir)"    />
+    <Message Importance="normal" Text="+ ZouDir                     = $(ZouDir)" />
+    <Message Importance="normal" Text="+ ZouPrivateDir              = $(ZouPrivateDir)" />
+    <Message Importance="normal" Text="+ ZouBundleDir               = $(ZouBundleDir)"   />
+    <Message Importance="normal" Text="+ ZouSolutionDir             = $(ZouSolutionDir)" />
+    <Message Importance="normal" Text="+ ZouProjectDir              = $(ZouProjectDir)"  />
+    <Message Importance="normal" Text="+ BundleRelativeSolutionDir  = $(BundleRelativeSolutionDir)" />
+    <Message Importance="normal" Text="+ BundleRelativeSolutionName = $(BundleRelativeSolutionName)" />
+    <Message Importance="normal" Text="+ BundleRelativeSolutionPath = $(BundleRelativeSolutionPath)" />
+    <Message Importance="normal" Text="+ BundleRelativeProjectDir   = $(BundleRelativeProjectDir)"  />
+    <Message Importance="normal" Text="+ BundleRelativeProjectName  = $(BundleRelativeProjectName)"  />
+    <Message Importance="normal" Text="+ BundleRelativeProjectPath  = $(BundleRelativeProjectPath)"  />
+    <Message Importance="normal" Text="+ BundleSolutionAnchor       = $(BundleSolutionAnchor)"       />
+    <Message Importance="normal" Text="+ BundleProjectAnchor        = $(BundleProjectAnchor)"        />
+    <Message Importance="high" Text="Evaluation time" />
+    <Message Importance="high" Text="===============" />
+    <Message Importance="normal" Text="  Configuration              = $(Configuration0)"   />
+    <Message Importance="normal" Text="  Platform                   = $(Platform0)"        />
+    <Message Importance="normal" Text="  PlatformToolset            = $(PlatformToolset0)" />
+    <Message Importance="normal" Text="  SolutionName               = $(SolutionName0)" />
+    <Message Importance="normal" Text="  SolutionDir                = $(SolutionDir0)"  />
+    <Message Importance="normal" Text="  SolutionPath               = $(SolutionPath0)" />
+    <Message Importance="normal" Text="  ProjectName                = $(ProjectName0)"  />
+    <Message Importance="normal" Text="  ProjectDir                 = $(ProjectDir0)"   />
+    <Message Importance="normal" Text="  ProjectPath                = $(ProjectPath0)"  />
+    <Message Importance="normal" Text="  IntDir                     = $(IntDir0)"          />
+    <Message Importance="normal" Text="  OutDir                     = $(OutDir0)"          />
+    <Message Importance="normal" Text="  TargetDir                  = $(TargetDir0)"       />
+    <Message Importance="normal" Text="  OutputPath                 = $(OutputPath0)"  />
+    <Message Importance="normal" Text="%0A" />
+    <Message Importance="high" Text="Target time" />
+    <Message Importance="high" Text="===========" />
+    <Message Importance="normal" Text="  Configuration              = $(Configuration)"   />
+    <Message Importance="normal" Text="  Platform                   = $(Platform)"        />
+    <Message Importance="normal" Text="  PlatformToolset            = $(PlatformToolset)" />
+    <Message Importance="normal" Text="  SolutionName               = $(SolutionName)" />
+    <Message Importance="normal" Text="  SolutionDir                = $(SolutionDir)"  />
+    <Message Importance="normal" Text="  SolutionPath               = $(SolutionPath)" />
+    <Message Importance="normal" Text="  ProjectName                = $(ProjectName)"  />
+    <Message Importance="normal" Text="  ProjectDir                 = $(ProjectDir)"   />
+    <Message Importance="normal" Text="  ProjectPath                = $(ProjectPath)"  />
+    <Message Importance="normal" Text="  IntDir                     = $(IntDir)"          />
+    <Message Importance="normal" Text="  OutDir                     = $(OutDir)"          />
+    <Message Importance="normal" Text="  TargetDir                  = $(TargetDir)"       />
+    <Message Importance="normal" Text="  OutputPath                 = $(OutputPath)"  />
   </Target>
 </Project>
