@@ -1,11 +1,25 @@
-## UNDER CONSTRUCTION
+# UNDER CONSTRUCTION
 
-### Liens externes
-https://anubhavg.wordpress.com/2013/08/05/generate-msbuild-file-from-solution/
-MSBuildEmitSolution=1
+## Liens externes
+- [Generate msbuild file from solution](https://anubhavg.wordpress.com/2013/08/05/generate-msbuild-file-from-solution/) (MSBuildEmitSolution=1)
+- [A guide to .vcxproj and .props file structure](https://blogs.msdn.microsoft.com/visualstudio/2010/05/14/a-guide-to-vcxproj-and-props-file-structure/)
 
+## C++ Output directories
 
+### Default
 
+	Configuration = Win32
+		OutDir = $(SolutionDir)$(Configuration)\
+		IntDir = $(Configuration)\
+
+	Configuration = x64
+		OutDir = $(SolutionDir)$(Platform)\$(Configuration)\
+		IntDir = $(Platform)\$(Configuration)\
+
+	// OutDir value can be relative or absolute
+	TargetDir = SolutionDir\OutDir if IsRelative(OutDir)
+	TargetDir =             OutDir if IsAbsolute(OutDir)
+    
 ### *Fallback*:
 - zou.Bundle.Solution.Project
 - zou.Bundle.Project
