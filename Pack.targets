@@ -2,20 +2,23 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Condition="'$(Zou)' == ''" Project="zou.props" />
 
+  <PropertyGroup>
+    <PkgSourceDir Condition="'PkgSourceDir' == ''">$(TargetDir)</PkgSourceDir>
+  </PropertyGroup>
   <!-- Default includes and excludes for package builder -->
   <ItemGroup>
-    <ProdBinInclude Include="$(TargetDir)**\*" />
-    <ProdBinExclude Include="$(TargetDir)**\*.pdb" />
-    <ProdBinExclude Include="$(TargetDir)**\*.map" />
-    <ProdBinExclude Include="$(TargetDir)**\*.lib" />
-    <ProdBinExclude Include="$(TargetDir)**\*.exp" />
+    <ProdBinInclude Include="$(PkgSourceDir)**\*" />
+    <ProdBinExclude Include="$(PkgSourceDir)**\*.pdb" />
+    <ProdBinExclude Include="$(PkgSourceDir)**\*.map" />
+    <ProdBinExclude Include="$(PkgSourceDir)**\*.lib" />
+    <ProdBinExclude Include="$(PkgSourceDir)**\*.exp" />
 
-    <ProdDbgInclude Include="$(TargetDir)**\*.pdb" />
-    <ProdDbgInclude Include="$(TargetDir)**\*.map" />
-    <ProdDbgInclude Include="$(DbgDir)**\*.cod" />
+    <ProdDbgInclude Include="$(PkgSourceDir)**\*.pdb" />
+    <ProdDbgInclude Include="$(PkgSourceDir)**\*.map" />
+    <ProdDbgInclude Include="$(DbgDir)**\*.cod" Condition="'$(DbgDir)' != ''" />
 
-    <DevBinInclude Include="$(TargetDir)**\*" />
-    <DevCodInclude Include="$(DbgDir)**\*.cod" />
+    <DevBinInclude Include="$(PkgSourceDir)**\*" />
+    <DevCodInclude Include="$(DbgDir)**\*.cod" Condition="'$(DbgDir)' != ''" />
   </ItemGroup>
 
   <!-- Package builder -->
