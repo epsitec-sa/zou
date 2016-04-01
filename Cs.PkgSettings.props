@@ -5,12 +5,16 @@
 
   <PropertyGroup>
     <_PropertySheetDisplayName>[zou] Pack settings</_PropertySheetDisplayName>
+    
+    <!-- Avoid MSBuild warning MSB8028 (IntDir is not used during C# project packaging) -->
+    <OutDir>$(TMP)\$(ProjectName)\</OutDir>
+    <IntDir>$(TMP)\$(ProjectName)\</IntDir>
   </PropertyGroup>
 
   <!-- WARNING: do not change import order -->
   <ImportGroup Label="PropertySheets">
     <Import Project="$(ZouDir)WorkDir.props" />
-    <Import Project="$(ZouDir)Cs.OutDir.props" />
+    <!--<Import Project="$(ZouDir)Cs.OutDir.props" />-->
     <Import Project="$(ZouDir)Cs.PkgDir.props" />
   </ImportGroup>
 </Project>
