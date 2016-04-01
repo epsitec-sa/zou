@@ -4,17 +4,18 @@
   <Import Condition="'$(Zou)' == ''" Project="zou.props" />
 
   <PropertyGroup>
-    <_PropertySheetDisplayName>[zou] Pack settings</_PropertySheetDisplayName>
-    
-    <!-- Avoid MSBuild warning MSB8028 (IntDir is not used during C# project packaging) -->
+    <_PropertySheetDisplayName>[zou] C# Pack settings</_PropertySheetDisplayName>
+
+    <!-- Redirect OutDir and IntDir to temp folder to avoid cluttering the solution directory. -->
     <OutDir>$(TMP)\$(ProjectName)\</OutDir>
     <IntDir>$(TMP)\$(ProjectName)\</IntDir>
+    <!-- Avoid MSB8029 warning -->
+    <IgnoreWarnIntDirInTempDetected>true</IgnoreWarnIntDirInTempDetected>
   </PropertyGroup>
 
   <!-- WARNING: do not change import order -->
   <ImportGroup Label="PropertySheets">
     <Import Project="$(ZouDir)Com.WorkDir.props" />
-    <!--<Import Project="$(ZouDir)Cs.OutDir.props" />-->
     <Import Project="$(ZouDir)Cs.PkgDir.props" />
   </ImportGroup>
 </Project>
