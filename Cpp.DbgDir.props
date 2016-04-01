@@ -1,27 +1,31 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <!-- This property sheet resolves the 'AsmDir'property (supports override in zou.cfg folder). -->
-<Project ToolsVersion="4.0" InitialTargets="CppDebugTrace" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="4.0" InitialTargets="CppDebugTrace" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" TreatAsLocalProperty="DbgDir">
   <Import Condition="'$(Zou)' == ''" Project="zou.props" />
 
   <PropertyGroup>
     <_PropertySheetDisplayName>Debug Directory</_PropertySheetDisplayName>
-
-    <DbgDir></DbgDir>
   </PropertyGroup> 
 
   <ImportGroup Label="PropertySheets">
     <Import Project="$(ZouBundleDir)**\$(MSBuildThisFileName)*$(MSBuildThisFileExtension)"   Condition="'$(ZouBundleDir)'   != ''" />
     <Import Project="$(ZouSolutionDir)**\$(MSBuildThisFileName)*$(MSBuildThisFileExtension)" Condition="'$(ZouSolutionDir)' != '' And '$(ZouSolutionDir)' != '$(ZouBundleDir)'" />
     <Import Project="$(ZouProjectDir)**\$(MSBuildThisFileName)*$(MSBuildThisFileExtension)"  Condition="'$(ZouProjectDir)'  != '' And '$(ZouProjectDir)'  != '$(ZouSolutionDir)' And '$(ZouProjectDir)' != '$(ZouBundleDir)'" />
-    <Import Project="$(ZouPrivateDir)$(MSBuildThisFileName).Default$(MSBuildThisFileExtension)" Condition="'$(DbgDir)' == ''" />
+    <Import Project="$(ZouPrivateDir)$(MSBuildThisFileName).Default$(MSBuildThisFileExtension)" />
   </ImportGroup>
 
   <PropertyGroup>
-    <DbgIntDir>$(DbgDir)\$(BundleRelativeProjectName)\</DbgIntDir>
+    <DbgDir Condition="'$(DbgDir)' != '' and !HasTrailingSlash('$(DbgDir)')">$(DbgDir)\</DbgDir>
+    <DbgDir Condition="'$(BuildingInsideVisualStudio)' == 'true'">$([System.IO.Path]::Combine($(ProjectDir),$(DbgDir)))</DbgDir>
+    <DbgDir Condition="'$(BuildingInsideVisualStudio)' != 'true'">$([System.IO.Path]::Combine($(MSBuildStartupDirectory),$(DbgDir)))</DbgDir>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <DbgProjDir>$(DbgDir)\$(BundleRelativeProjectName)\</DbgProjDir>
   </PropertyGroup>
 
   <Target Name="CppDebugTrace">
     <Message Importance="normal" Text="DbgDir    = $(DbgDir)" />
-    <Message Importance="normal" Text="DbgIntDir = $(DbgIntDir)" />
+    <Message Importance="normal" Text="DbgProjDir = $(DbgProjDir)" />
   </Target>
 </Project>
