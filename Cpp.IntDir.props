@@ -3,14 +3,26 @@
 <Project ToolsVersion="4.0" InitialTargets="CppIntDirTrace" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Condition="'$(Zou)' == ''" Project="zou.props" />
 
-  <PropertyGroup>
-    <_PropertySheetDisplayName>Intermediate Directory</_PropertySheetDisplayName>
+  <Choose>
+    <When Condition="'$(ZouPack)' == 'true' Or '$(ZouImport)' == 'true'">
+      <PropertyGroup>
+        <_PropertySheetDisplayName>Intermediate Directory: $(TMP)\$(ProjectName)\</_PropertySheetDisplayName>
+        <!-- Redirect IntDir to temp folder to avoid cluttering the solution directory. -->
+        <IntDir>$(TMP)\$(ProjectName)\</IntDir>
+        <!-- Avoid MSB8029 warning -->
+        <IgnoreWarnIntDirInTempDetected>true</IgnoreWarnIntDirInTempDetected>
+      </PropertyGroup>
+    </When>
+    <Otherwise>
+      <PropertyGroup>
+        <_PropertySheetDisplayName>Intermediate Directory</_PropertySheetDisplayName>
+        <!-- Initiate zou fallback -->
+        <IntDir />
+      </PropertyGroup>
+    </Otherwise>
+  </Choose>
 
-    <!-- Overrides Microsoft.Cpp.props's default -->
-    <IntDir />
-  </PropertyGroup> 
-
-  <ImportGroup Label="PropertySheets">
+  <ImportGroup Label="PropertySheets" Condition="'$(ZouPack)' != 'true' And '$(ZouImport)' != 'true'">
     <Import Project="$(ZouBundleDir)**\$(MSBuildThisFileName)*$(MSBuildThisFileExtension)"   Condition="'$(ZouBundleDir)'   != ''" />
     <Import Project="$(ZouSolutionDir)**\$(MSBuildThisFileName)*$(MSBuildThisFileExtension)" Condition="'$(ZouSolutionDir)' != '' And '$(ZouSolutionDir)' != '$(ZouBundleDir)'" />
     <Import Project="$(ZouProjectDir)**\$(MSBuildThisFileName)*$(MSBuildThisFileExtension)"  Condition="'$(ZouProjectDir)'  != '' And '$(ZouProjectDir)'  != '$(ZouSolutionDir)' And '$(ZouProjectDir)' != '$(ZouBundleDir)'" />
