@@ -4,7 +4,9 @@
   <Import Condition="'$(Zou)' == ''" Project="zou.props" />
 
   <PropertyGroup>
-    <_PropertySheetDisplayName>[zou] Standard settings</_PropertySheetDisplayName>
+    <_PropertySheetDisplayName Condition="'$(ZouPack)' != 'true' And '$(ZouImport)' != 'true'">[zou] Standard settings</_PropertySheetDisplayName>
+    <_PropertySheetDisplayName Condition="'$(ZouPack)'   == 'true'">[zou] Pack settings</_PropertySheetDisplayName>
+    <_PropertySheetDisplayName Condition="'$(ZouImport)' == 'true'">[zou] Import settings</_PropertySheetDisplayName>
   </PropertyGroup>
 
   <!-- WARNING: do not change import order -->
@@ -12,10 +14,10 @@
     <Import Project="$(ZouDir)Cpp.NTVersion.props" />
     <Import Project="$(ZouDir)Com.WorkDir.props" />
     <Import Project="$(ZouDir)Cpp.IntDir.props" />
-    <Import Project="$(ZouDir)Cpp.IncludeDirs.props" />
-    <Import Project="$(ZouDir)Cpp.DbgSettings.props" />
-    <Import Project="$(ZouDir)Cpp.DbgDir.props" />
-    <Import Project="$(ZouDir)Cpp.PkgDir.props" />
+    <Import Project="$(ZouDir)Cpp.IncludeDirs.props" Condition="'$(ZouPack)' != 'true' And '$(ZouImport)' != 'true'" />
+    <Import Project="$(ZouDir)Cpp.DbgSettings.props" Condition="'$(ZouPack)' != 'true' And '$(ZouImport)' != 'true'" />
+    <Import Project="$(ZouDir)Cpp.DbgDir.props"      Condition="'$(ZouImport)' != 'true'" />
+    <Import Project="$(ZouDir)Cpp.PkgDir.props"      Condition="'$(ZouPack)' == 'true'" />
     <Import Project="$(ZouDir)Cpp.OutDir.props" />
   </ImportGroup>
 </Project>
