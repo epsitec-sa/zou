@@ -9,21 +9,17 @@ Input parameters:
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Condition="'$(Zou)' == ''" Project="zou.props" />
 
-  <PropertyGroup Condition="'$(ImportFiles)' == ''">
-    <ImportFiles>@(ImportFiles)</ImportFiles>
-  </PropertyGroup>
-
   <!-- Define imported files default metadata -->
   <ItemDefinitionGroup>
     <ImportFiles>
-      <ImportDir  Condition="'%(ImportDir)' == ''">$(TargetDir)</ImportDir>
-      <ImportFile Condition="'%(ImportFile)' == ''">%(FileName)%(Extension)</ImportFile>
+      <ImportDir>$(TargetDir)</ImportDir>
+      <ImportFile>%(FileName)%(Extension)</ImportFile>
     </ImportFiles>
   </ItemDefinitionGroup>
   
   <!-- ================ ImportFilesClean ================ -->
 
-  <Target Name="ImportFilesClean"  BeforeTargets="Clean" Condition="'$(ImportFiles)' != ''">
+  <Target Name="ImportFilesClean"  BeforeTargets="Clean" Condition="'@(ImportFiles)' != ''">
     <Delete  Files="%(ImportFiles.ImportDir)%(RecursiveDir)%(ImportFile)" />
     <Message Importance="high" Text="  [-] %(ImportFiles.ImportDir)%(RecursiveDir)%(ImportFile)" Condition="'%(ImportFile)' != ''"/>
   </Target>
@@ -32,7 +28,7 @@ Input parameters:
 
   <!-- Runs the _PrepareForClean target (which deletes the calling-project.lastbuildstate) so that Visual Studio does not skip this target's Inputs/Outputs check. -->
   <Target Name="ImportFiles"
-          Condition="'$(ImportFiles)' != ''"
+          Condition="'@(ImportFiles)' != ''"
           DependsOnTargets="_PrepareForClean"
           BeforeTargets="Build"
           Inputs="@(ImportFiles)"

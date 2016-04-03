@@ -12,34 +12,24 @@ Input parameters:
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Condition="'$(Zou)' == ''" Project="zou.props" />
 
-  <PropertyGroup Condition="'$(ImportProjects)' == ''">
-    <ImportProjects>@(ImportProjects)</ImportProjects>
-  </PropertyGroup>
-
-  <PropertyGroup>
-    <Platform        Condition="'$(Platform)'        == ''">Any CPU</Platform>
-    <PlatformToolset Condition="'$(PlatformToolset)' == ''">v120_xp</PlatformToolset>
-    <NTVersion       Condition="'$(NTVersion)'       == ''">0x501</NTVersion>
-  </PropertyGroup>
-  
   <!-- Define imported projects default metadata -->
   <ItemDefinitionGroup>
     <ImportProjects>
-      <BuildInParallel       Condition="'%(BuildInParallel)' == ''">true</BuildInParallel>
-      <!-- At first approximation, TargetDir is the absolute version of OutDir -->
-      <ImportDir             Condition="'%(ImportDir)' == ''">$(TargetDir)</ImportDir>
-      <ImportPlatform        Condition="'%(ImportPlatform)' == ''">$(Platform)</ImportPlatform>
-      <ImportPlatformToolset Condition="'%(ImportPlatformToolset)' == ''">$(PlatformToolset)</ImportPlatformToolset>
-      <ImportConfiguration   Condition="'%(ImportConfiguration)' == ''">$(Configuration)</ImportConfiguration>
-      <ImportNTVersion       Condition="'%(ImportNTVersion)' == ''">$(NTVersion)</ImportNTVersion>
+      <BuildInParallel>true</BuildInParallel>
+      <!-- TargetDir is the absolute version of OutDir -->
+      <ImportDir>$(TargetDir)</ImportDir>
+      <ImportPlatform>$(Platform)</ImportPlatform>
+      <ImportPlatformToolset>$(PlatformToolset)</ImportPlatformToolset>
+      <ImportConfiguration>$(Configuration)</ImportConfiguration>
+      <ImportNTVersion>$(NTVersion)</ImportNTVersion>
     </ImportProjects>
   </ItemDefinitionGroup>
 
   <!-- ================ ImportProjectsClean ================ -->
   
-  <Target Name="ImportProjectsClean" BeforeTargets="Clean" Condition="'$(ImportProjects)' != ''">
+  <Target Name="ImportProjectsClean" BeforeTargets="Clean" Condition="'@(ImportProjects)' != ''">
     <!-- The clean target does not care about project dependencies. This means that we can safely use the MSBuild task for solutions too. -->
-    <MSBuild Projects="@(ImportProjects)" Targets="Clean" Properties="OutDir=%(ImportDir);Platform=%(ImportPlatform);PlatformToolset=%(ImportPlatformToolset);Configuration=%(ImportConfiguration);NTVersion=%(ImportNTVersion)" />
+    <MSBuild Projects="@(ImportProjects)" Targets="Clean" Properties="OutDir=%(ImportDir);Configuration=%(ImportConfiguration);Platform=%(ImportPlatform);PlatformToolset=%(ImportPlatformToolset);NTVersion=%(ImportNTVersion)" />
   </Target>
 
   <!-- ================ ImportProjects ================ -->
@@ -48,7 +38,7 @@ Input parameters:
   <Target Name="ImportProjects"
           DependsOnTargets="_PrepareForClean"
           BeforeTargets="Build"
-          Condition="'$(ImportProjects)' != ''">
+          Condition="'@(ImportProjects)' != ''">
     <Message Text="[%(ImportConfiguration)|%(ImportPlatform)|%(ImportPlatformToolset)|%(ImportNTVersion)] %(ImportProjects.Identity) =&gt; %(ImportDir)" />
     <Message Text="%0A" />
     <!-- Restore nuget packages for solutions... -->
@@ -67,20 +57,20 @@ Input parameters:
 	  The MSBuild task does not determine the build order but MSBuild.exe and Visual Studio do:
     https://maximelabelle.wordpress.com/2011/11/29/building-multiple-projects-in-order-with-msbuild/
     We cannot use the following MSBuild task:
-        <MSBuild Projects="%(ImportProjects.Identity)" Targets="Build" Properties="OutDir=%(ImportDir);Platform=%(ImportPlatform);Configuration=%(ImportConfiguration) " />
+        <MSBuild Projects="%(ImportProjects.Identity)" Targets="Build" Properties="OutDir=%(ImportDir);Configuration=%(ImportConfiguration);Platform=%(ImportPlatform) " />
     Instead with use the Exec task which starts the MSBuild process.
 	  -->
     
     <!-- Build solutions... -->
     <Exec
       Condition="'%(Extension)' == '.sln'"
-      Command="&quot;$(MSBuildToolsPath)\msbuild&quot; /nologo /v:m /t:Build &quot;/p:OutDir=%(ImportDir);Platform=%(ImportPlatform);PlatformToolset=%(ImportPlatformToolset);Configuration=%(ImportConfiguration);NTVersion=%(ImportNTVersion);BuildInParallel=%(BuildInParallel)&quot; &quot;%(ImportProjects.Identity)&quot;" />
+      Command="&quot;$(MSBuildToolsPath)\msbuild&quot; /nologo /v:m /t:Build &quot;/p:OutDir=%(ImportDir);Configuration=%(ImportConfiguration);Platform=%(ImportPlatform);PlatformToolset=%(ImportPlatformToolset);NTVersion=%(ImportNTVersion);BuildInParallel=%(BuildInParallel)&quot; &quot;%(ImportProjects.Identity)&quot;" />
     <!-- ...and projects -->
     <MSBuild
       Condition="'%(Extension)' != '.sln'"
       Projects="%(ImportProjects.Identity)"
       Targets="Build"
-      Properties="OutDir=%(ImportDir);Platform=%(ImportPlatform);PlatformToolset=%(ImportPlatformToolset);Configuration=%(ImportConfiguration);NTVersion=%(ImportNTVersion)"
+      Properties="OutDir=%(ImportDir);Configuration=%(ImportConfiguration);Platform=%(ImportPlatform);PlatformToolset=%(ImportPlatformToolset);NTVersion=%(ImportNTVersion)"
       BuildInParallel="%(BuildInParallel)" />
   </Target>
 </Project>
