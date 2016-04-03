@@ -1,0 +1,35 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- This property sheet resolves the 'IntDir' property (supports override in zou.cfg folder). -->
+<Project ToolsVersion="4.0" InitialTargets="CsIntDirTrace" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Condition="'$(Zou)' == ''" Project="zou.props" />
+
+  <Choose>
+    <When Condition="'$(ZouPack)' == 'true' Or '$(ZouImport)' == 'true'">
+      <PropertyGroup>
+        <_PropertySheetDisplayName>Intermediate Directory: $(TMP)\$(ProjectName)\</_PropertySheetDisplayName>
+        <!-- Redirect IntDir to temp folder to avoid cluttering the solution directory. -->
+        <IntDir>$(TMP)\$(ProjectName)\</IntDir>
+        <!-- Avoid MSB8029 warning -->
+        <IgnoreWarnIntDirInTempDetected>true</IgnoreWarnIntDirInTempDetected>
+      </PropertyGroup>
+    </When>
+    <Otherwise>
+      <PropertyGroup>
+        <_PropertySheetDisplayName>Intermediate Directory</_PropertySheetDisplayName>
+        <!-- Initiate zou fallback -->
+        <IntDir />
+      </PropertyGroup>
+    </Otherwise>
+  </Choose>
+
+  <ImportGroup Label="PropertySheets" Condition="'$(ZouPack)' != 'true' And '$(ZouImport)' != 'true'">
+    <Import Project="$(ZouBundleDir)**\$(MSBuildThisFileName)*$(MSBuildThisFileExtension)"   Condition="'$(ZouBundleDir)'   != ''" />
+    <Import Project="$(ZouSolutionDir)**\$(MSBuildThisFileName)*$(MSBuildThisFileExtension)" Condition="'$(ZouSolutionDir)' != '' And '$(ZouSolutionDir)' != '$(ZouBundleDir)'" />
+    <Import Project="$(ZouProjectDir)**\$(MSBuildThisFileName)*$(MSBuildThisFileExtension)"  Condition="'$(ZouProjectDir)'  != '' And '$(ZouProjectDir)'  != '$(ZouSolutionDir)' And '$(ZouProjectDir)' != '$(ZouBundleDir)'" />
+    <Import Project="$(ZouPrivateDir)$(MSBuildThisFileName).Default$(MSBuildThisFileExtension)" />
+  </ImportGroup>
+
+  <Target Name="CsIntDirTrace">
+    <Message Importance="normal" Text="IntDir = $(IntDir)" />
+  </Target>
+</Project>
