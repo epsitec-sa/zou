@@ -46,15 +46,11 @@
   </PropertyGroup>-->
 
   <!-- Global targets -->
-  <ImportGroup Condition="'$(Zou)' == ''">
-    <Import Project="private\zou.targets"/>
-  </ImportGroup>
+  <Import Project="..\Cpp.Boot.props"/>
 
-  <ImportGroup Label="PropertySheets" Condition="'$(NTVersion)' == ''">
-    <Import Project="Cpp.NTVersion.props"/>
-    <Import Project="Cpp.OutDir.props"/>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(ZouDir)Cpp.Standard.props"/>
   </ImportGroup>
-
 
   <PropertyGroup>
     <SvnBuildDir>S:\Build\</SvnBuildDir>
@@ -62,27 +58,27 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ImportProjects Include="..\partout\SecureForms.Redist.sln">
-      <ImportDir>$(TargetDir)partout\</ImportDir>
+    <ImportProjects Include="$(BundleDir)partout\SecureForms.Redist.sln">
+      <ImportDir>$(OutDir)partout\</ImportDir>
+      <ImportPlatform>Any CPU</ImportPlatform>
     </ImportProjects>
-    <ImportProjects Include="..\swissdec\Net\Swissdec.Redist.sln">
-      <ImportDir>$(TargetDir)swissdec\</ImportDir>
+    <ImportProjects Include="$(BundleDir)swissdec\Net\Swissdec.Redist.sln">
+      <ImportDir>$(OutDir)swissdec\</ImportDir>
+      <ImportPlatform>Any CPU</ImportPlatform>
     </ImportProjects>
   </ItemGroup>
 
   <ItemGroup>
-    <ImportFiles Include="..\sal\images\*.png">
-      <ImportDir>$(TargetDir)images\</ImportDir>
+    <ImportFiles Include="$(BundleDir)sal\images\*.png">
+      <ImportDir>$(OutDir)images\</ImportDir>
     </ImportFiles>
     <ImportFiles Include="$(SvnEpsitecDir)\solutions\Modeles\Salaires 12.5\modele12.5-officiel.salx">
-      <ImportDir>$(TargetDir)</ImportDir>
+      <ImportDir>$(OutDir)</ImportDir>
       <ImportFile>Modele12%(Extension)</ImportFile>
     </ImportFiles>
   </ItemGroup>
   
   <Import Project="Import.targets" />
-
-
 
   <Target Name="Test1">
     <Message Text="&quot;$(MSBuildToolsPath)\msbuild&quot; /nologo /v:m /t:Build &quot;/p:OutDir=%(ImportDir);Platform=%(ImportPlatform);Configuration=%(ImportConfiguration)&quot; &quot;%(ImportProjects.Identity)&quot;" />
