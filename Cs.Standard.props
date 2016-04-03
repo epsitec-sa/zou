@@ -4,10 +4,11 @@
   <Import Condition="'$(Zou)' == ''" Project="zou.props" />
 
   <PropertyGroup>
-    <_PropertySheetDisplayName>[zou] C# Pack settings</_PropertySheetDisplayName>
-
+    <_PropertySheetDisplayName Condition="'$(ZouPack)' != 'true' And '$(ZouImport)' != 'true'">[zou] Standard settings</_PropertySheetDisplayName>
+    <_PropertySheetDisplayName Condition="'$(ZouPack)'   == 'true'">[zou] Pack settings</_PropertySheetDisplayName>
+    <_PropertySheetDisplayName Condition="'$(ZouImport)' == 'true'">[zou] Import settings</_PropertySheetDisplayName>
+    
     <!-- Redirect OutDir and IntDir to temp folder to avoid cluttering the solution directory. -->
-    <OutDir>$(TMP)\$(ProjectName)\</OutDir>
     <IntDir>$(TMP)\$(ProjectName)\</IntDir>
     <!-- Avoid MSB8029 warning -->
     <IgnoreWarnIntDirInTempDetected>true</IgnoreWarnIntDirInTempDetected>
@@ -16,6 +17,8 @@
   <!-- WARNING: do not change import order -->
   <ImportGroup Label="PropertySheets">
     <Import Project="$(ZouDir)Com.WorkDir.props" />
-    <Import Project="$(ZouDir)Cs.PkgDir.props" />
-  </ImportGroup>
+    <Import Project="$(ZouDir)Cs.IntDir.props" />
+    <Import Project="$(ZouDir)Cs.PkgDir.props" Condition="'$(ZouPack)' == 'true'" />
+    <Import Project="$(ZouDir)Cs.OutDir.props" />
+  </ImportGroup>  
 </Project>
