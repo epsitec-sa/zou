@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="ItemsToProperty" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="4.0" DefaultTargets="Spike3" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   
   <ImportGroup>
     <Import Project="..\private\**\Cpp.NTVersion*.props" />
@@ -16,7 +16,49 @@
   <PropertyGroup>
     <CppIncludeDirs>@(CppIncludeDirs)</CppIncludeDirs>
   </PropertyGroup>
+  
   <Target Name="ItemsToProperty">
     <Message Text="CppIncludeDirs=$(CppIncludeDirs)" />
+  </Target>
+
+  <ItemGroup>
+    <A Include="A1">
+      <P1>A1.P1</P1>
+      <P2>%(P1).2</P2>
+      <P3>A1.P3</P3>
+    </A>
+    <A Include="A2">
+      <P1>A2.P1</P1>
+      <P2>%(P1).2</P2>
+      <P3>A2.P3</P3>
+    </A>
+  </ItemGroup>
+  <ItemDefinitionGroup>
+    <A>
+      <P1>XX.P1</P1>
+    </A>
+  </ItemDefinitionGroup>
+
+  <Target Name="Spike1" Condition="'@(A)' != ''">
+    <Message Text="P1  = @(A -> '%(P1)')" />
+    <Message Text="P2  = @(A -> '%(P2)')" />
+    <Message Text="P3  = @(A -> '%(P3)')" />
+    <Message Text="Ps  = $(Ps)" />
+  </Target>
+  <Target Name="Spike2" Condition="'@(A)' != ''">
+    <ItemGroup>
+      <B Include="%(A.P1)" Condition="'%(A.P1)' != ''" />
+      <B Include="%(A.P2)" Condition="'%(A.P2)' != ''" />
+      <B Include="%(A.P3)" Condition="'%(A.P3)' != ''" />
+    </ItemGroup>
+    <Message Text="B = @(B)" />
+  </Target>
+  <Target Name="Spike3" Condition="'@(A)' != ''">
+    <ItemGroup>
+      <B Include="%(A.Identity)">
+        <P1 Condition="'%(A.P1)' != ''">P1=%(A.P1)</P1>
+      </B>
+    </ItemGroup>
+    <Message Text="B = @(B -> '%(P1)')" />
   </Target>
 </Project>
