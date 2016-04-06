@@ -1,14 +1,47 @@
 # UNDER CONSTRUCTION
 
+### Platforme `Any CPU` ou `AnyCPU`.
+
+- pour un `.sln` spécifier `Any CPU` (avec l'espace)
+- pour un `.csproj` spécifier `AnyCPU`  (sans l'espace)
+
+Lors de l'exécution du `.csproj`, c'est toujours `AnyCPU`, même si le `.csproj` est exécuté par une solution.
+La platforme est déclarée dans le `.csproj` lui-même aprè l'importation de `Microsoft.Common.props`.
+
+### `OutputPath` et `OutDir`
+Si on exécute un .csproj, il faut que `OutputPath` soit spécifié.
+
+## Packaging
+On ne peut pas builder une solution ou un projet et le packager dans un même projet:
+
+- la sortie du premier projet n'est pas encore créée au moment de la spécification de la source du packaging dans le .pack.
+- dans ce cas là, il faut donc deux projets:
+  - un .prepack qui builde le projet
+  - un .pack  qui s'occupe du packaging
+- il faut aussi mettre à jour les dépendences:
+  - du .prepack vers le projet principal
+  - du .pack vers le .prepack
+
+Il faut aussi créer le .pack et le .prepack dans le même dossier que le projet dont on veut packager la sortie.
+
+Deux possibilités:
+
+ 1. Le projet `.pack` est dans la même solution que les projets à packager. Il suffit de créer une dépendence du projet `.pack` vers le projet principal à packager et il faut rajouter dans le projet .pack la propriété PkgSourceDir qui pointe sur 
+ 2. Le projet `.pack` est dans une autre solution. Il faut alors créer un projet .prepack
+
+
 ## Liens externes
 - [Generate msbuild file from solution](https://anubhavg.wordpress.com/2013/08/05/generate-msbuild-file-from-solution/) (MSBuildEmitSolution=1)
 - [A guide to .vcxproj and .props file structure](https://blogs.msdn.microsoft.com/visualstudio/2010/05/14/a-guide-to-vcxproj-and-props-file-structure/)
 - [MSBuild Property Evaluation](https://blogs.msdn.microsoft.com/aaronhallberg/2007/07/16/msbuild-property-evaluation/)
-
+- [How To: Implementing Custom Tasks – Part I](https://blogs.msdn.microsoft.com/msbuild/2006/01/21/how-to-implementing-custom-tasks-part-i/)
+- [HOW TO: Writing Custom Tasks – Part II – Types and Task Parameters](https://blogs.msdn.microsoft.com/msbuild/2006/02/02/how-to-writing-custom-tasks-part-ii-types-and-task-parameters/)
+- [MSBuild Properties](https://msdn.microsoft.com/en-us/library/ms171458.aspx)
 ## C++ Output directories
 
 ### Default
 
+	OutDir is treated as a local property (
 	Configuration = Win32
 		OutDir = $(SolutionDir)$(Configuration)\
 		IntDir = $(Configuration)\
