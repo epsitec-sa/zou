@@ -1,21 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <!--
 This script can be imported anywhere before first MS import (Microsoft.Cpp.Default.props).
-Import this script at the beginning of other scripts to define global zou properties:
-
-  <Project ... >
-    <Import Condition="'$(Zou)' == ''" Project="zou.props"/>
-    ...
-  </Project>
-
-ZouDir     : the path of the 'zou' folder.
-BundleName : the bundle name.
-BundleDir  : the path of the bundle root folder. (The bundle folder is the one where `zou` and `git` repositories are located.)
 -->
-<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <!-- Import semaphore -->
-  <PropertyGroup> <Zou>zou</Zou> </PropertyGroup>
-  
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003"
+         InitialTargets="ZouTrace">
+
   <PropertyGroup>
     <!-- Configuration sub-directory -->
     <_ZouCfgSubdir>zou.cfg\</_ZouCfgSubdir>
@@ -26,7 +15,7 @@ BundleDir  : the path of the bundle root folder. (The bundle folder is the one w
     <BundleName>$([System.IO.Directory]::GetParent($(MSBuildThisFileDirectory)).Parent.Name)</BundleName>
     <BundleDir>$([System.IO.Directory]::GetParent($(MSBuildThisFileDirectory)).Parent.FullName)\</BundleDir>
 
-    <ZouPrivateDir>$(ZouDir)private\</ZouPrivateDir>
+    <ZouPrivateDir>$(ZouDir)Private\</ZouPrivateDir>
     <ZouTasksDir>$(ZouDir)Tasks\</ZouTasksDir>
   </PropertyGroup>
 
@@ -87,8 +76,8 @@ BundleDir  : the path of the bundle root folder. (The bundle folder is the one w
   </PropertyGroup>
 
   <Target Name="ZouTraceMSBuild">
-    <Message Importance="high" Text="MSBuild properties" />
-    <Message Importance="high" Text="==================" />
+    <Message Importance="normal" Text="MSBuild properties" />
+    <Message Importance="normal" Text="==================" />
     <Message Importance="normal" Text="  MSBuildBinPath                 = $(MSBuildBinPath)" />
     <Message Importance="normal" Text="  MSBuildToolsPath               = $(MSBuildToolsPath)" />
     <Message Importance="normal" Text="  MSBuildExtensionsPath          = $(MSBuildExtensionsPath)" />
@@ -112,8 +101,9 @@ BundleDir  : the path of the bundle root folder. (The bundle folder is the one w
   </Target>
   
   <Target Name="ZouTrace">
-    <Message Importance="high" Text="Zou boot properties" />
-    <Message Importance="high" Text="===================" />
+    <Message Importance="normal" Text="Zou boot properties" />
+    <Message Importance="normal" Text="===================" />
+    <Message Importance="normal" Text="  BuildingInsideVisualStudio = $(BuildingInsideVisualStudio)" />
     <Message Importance="normal" Text="  SolutionName               = $(SolutionName)" />
     <Message Importance="normal" Text="  SolutionDir                = $(SolutionDir)"  />
     <Message Importance="normal" Text="  SolutionPath               = $(SolutionPath)" />
@@ -135,8 +125,8 @@ BundleDir  : the path of the bundle root folder. (The bundle folder is the one w
     <Message Importance="normal" Text="+ BundleRelativeProjectPath  = $(BundleRelativeProjectPath)" />
     <Message Importance="normal" Text="+ BundleSolutionAnchor       = $(BundleSolutionAnchor)" />
     <Message Importance="normal" Text="+ BundleProjectAnchor        = $(BundleProjectAnchor)" />
-    <Message Importance="high" Text="Execution time" />
-    <Message Importance="high" Text="==============" />
+    <Message Importance="normal" Text="Execution time" />
+    <Message Importance="normal" Text="==============" />
     <Message Importance="normal" Text="  Configuration              = $(Configuration)" />
     <Message Importance="normal" Text="  Platform                   = $(Platform)" />
     <Message Importance="normal" Text="  PlatformToolset            = $(PlatformToolset)" />
