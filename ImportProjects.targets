@@ -6,61 +6,65 @@
   <ItemDefinitionGroup>
     <ImportProjects>
       <BuildInParallel>true</BuildInParallel>
-      <!-- TargetDir is the absolute version of OutDir -->
-      <ImportDir>$(TargetDir)</ImportDir>
-      <ImportPlatform>$(Platform)</ImportPlatform>
-      <ImportPlatformToolset>$(PlatformToolset)</ImportPlatformToolset>
-      <ImportConfiguration>$(Configuration)</ImportConfiguration>
-      <ImportNTVersion>$(NTVersion)</ImportNTVersion>
+      <Configuration>$(Configuration)</Configuration>
+      <!-- Propagate only the options specified on the command line -->
+      <WorkDir Condition="'$(WorkDirSpecified)' == 'true'">$(WorkDir)</WorkDir>
+      <PkgDir Condition="'$(PkgDirSpecified)' == 'true'">$(PkgDir)</PkgDir>
+      <DbgDir Condition="'$(DbgDirSpecified)' == 'true'">$(DbgDir)</DbgDir>
+      <OutDir Condition="'$(OutDirSpecified)' == 'true'">$(OutDir)</OutDir>
+      <Platform Condition="'$(PlatformSpecified)' == 'true'">$(Platform)</Platform>
+      <PlatformToolset Condition="'$(PlatformToolsetSpecified)' == 'true'">$(PlatformToolset)</PlatformToolset>
     </ImportProjects>
   </ItemDefinitionGroup>
 
+  <!-- Preprocess build options and add a 'Properties' metadata -->
+  <Target Name="AddBuildOptions">
+    <AddBuildOptions Projects="@(ImportProjects)">
+      <Output ItemName="ProjectsToBuild" TaskParameter="ProjectsOutput" />
+    </AddBuildOptions>
+  </Target>
+
   <!-- ================ ImportProjectsClean ================ -->
   
-  <Target Name="ImportProjectsClean" BeforeTargets="Clean" Condition="'@(ImportProjects)' != ''">
+  <Target Name="ImportProjectsClean"
+          Condition="'@(ImportProjects)' != ''"
+          BeforeTargets="Clean"
+          DependsOnTargets="AddBuildOptions">
     <!-- The clean target does not care about project dependencies. This means that we can safely use the MSBuild task for solutions too. -->
-    <MSBuild Projects="@(ImportProjects)" Targets="Clean" Properties="OutDir=%(ImportDir);Configuration=%(ImportConfiguration);Platform=%(ImportPlatform);PlatformToolset=%(ImportPlatformToolset);NTVersion=%(ImportNTVersion)" />
+    <MSBuild Projects="@(ProjectsToBuild)" Targets="Clean" Properties="%(Properties)" BuildInParallel="%(BuildInParallel)" />
   </Target>
 
   <!-- ================ ImportProjects ================ -->
 
   <!-- Runs the _PrepareForClean target (which deletes the calling-project.lastbuildstate) so that Visual Studio always runs this target. -->
   <Target Name="ImportProjects"
-          DependsOnTargets="_PrepareForClean"
-          BeforeTargets="Build"
-          Condition="'@(ImportProjects)' != ''">
-    <Message Text="[%(ImportConfiguration)|%(ImportPlatform)|%(ImportPlatformToolset)|%(ImportNTVersion)] %(ImportProjects.Identity) =&gt; %(ImportDir)" />
+          Condition="'@(ImportProjects)' != ''"
+          DependsOnTargets="_PrepareForClean;AddBuildOptions"
+          BeforeTargets="Build">
+
+    <LogItems Items="@(ProjectsToBuild)" Title="ProjectsToBuild" />
     <Message Text="%0A" />
+    
     <!-- Restore nuget packages for solutions... -->
-    <Exec
-      Command="&quot;$(ZouDir)nuget&quot; restore &quot;%(ImportProjects.Identity)&quot;"
-      Condition="'%(Extension)' == '.sln'"/>
+    <Exec Condition="'%(Extension)' == '.sln'"
+          Command="&quot;$(ZouDir)nuget&quot; restore &quot;%(ProjectsToBuild.Identity)&quot;"/>
     <!-- ...and projects -->
-    <!--<Message
-      Text="&quot;$(ZouDir)nuget&quot; restore &quot;%(ImportProjects.RootDir)%(Directory)packages.config&quot; -PackagesDirectory &quot;$(SolutionDir)packages\.&quot;"
-      Condition="'%(Extension)' != '.sln' And Exists('%(RootDir)%(Directory)packages.config')"/>-->
-    <Exec
-      Command="&quot;$(ZouDir)nuget&quot; restore &quot;%(ImportProjects.RootDir)%(Directory)packages.config&quot; -PackagesDirectory &quot;$(SolutionDir)packages\.&quot;"
-      Condition="'%(Extension)' != '.sln' And Exists('%(RootDir)%(Directory)packages.config')"/>
+    <Exec Condition="'%(Extension)' != '.sln' And Exists('%(RootDir)%(Directory)packages.config')"
+          Command="&quot;$(ZouDir)nuget&quot; restore &quot;%(ProjectsToBuild.RootDir)%(Directory)packages.config&quot; -PackagesDirectory &quot;$(SolutionDir)packages\.&quot;"/>
     
     <!--
 	  The MSBuild task does not determine the build order but MSBuild.exe and Visual Studio do:
     https://maximelabelle.wordpress.com/2011/11/29/building-multiple-projects-in-order-with-msbuild/
     We cannot use the following MSBuild task:
-        <MSBuild Projects="%(ImportProjects.Identity)" Targets="Build" Properties="OutDir=%(ImportDir);Configuration=%(ImportConfiguration);Platform=%(ImportPlatform) " />
+        <MSBuild Projects="%(ProjectsToBuild.Identity)" Targets="Build" Properties="OutDir=%(OutDir);Configuration=%(Configuration);Platform=%(Platform) " />
     Instead with use the Exec task which starts the MSBuild process.
 	  -->
     
     <!-- Build solutions... -->
-    <Exec
-      Condition="'%(Extension)' == '.sln'"
-      Command="&quot;$(MSBuildToolsPath)\msbuild&quot; /nologo /v:m /t:Build &quot;/p:OutDir=%(ImportDir);Configuration=%(ImportConfiguration);Platform=%(ImportPlatform);PlatformToolset=%(ImportPlatformToolset);NTVersion=%(ImportNTVersion);BuildInParallel=%(BuildInParallel)&quot; &quot;%(ImportProjects.Identity)&quot;" />
+    <Exec Condition="'%(Extension)' == '.sln'"
+          Command="&quot;$(MSBuildToolsPath)\msbuild&quot; /nologo /v:m /t:Build &quot;/p:%(Properties)&quot; &quot;%(ProjectsToBuild.Identity)&quot;" />
     <!-- ...and projects -->
-    <MSBuild
-      Condition="'%(Extension)' != '.sln'"
-      Projects="%(ImportProjects.Identity)"
-      Targets="Build"
-      Properties="OutDir=%(ImportDir);Configuration=%(ImportConfiguration);Platform=%(ImportPlatform);PlatformToolset=%(ImportPlatformToolset);NTVersion=%(ImportNTVersion)"
-      BuildInParallel="%(BuildInParallel)" />
+    <MSBuild Condition="'%(Extension)' != '.sln'"
+             Projects="%(ProjectsToBuild.Identity)" Targets="Build" Properties="%(Properties)" BuildInParallel="%(BuildInParallel)" />
   </Target>
 </Project>
