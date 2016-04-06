@@ -23,6 +23,7 @@
     <Message Text="CppIncludeDirs=$(CppIncludeDirs)" />
   </Target>
 
+  <!-- Experiment ItemGroup & ItemDefinitionGroup scopes -->
   <ItemGroup>
     <A Include="A1">
       <P1>A1.P1</P1>
@@ -47,6 +48,7 @@
     <Message Text="P3  = @(A -> '%(P3)')" />
     <Message Text="Ps  = $(Ps)" />
   </Target>
+  
   <Target Name="Spike2" Condition="'@(A)' != ''">
     <ItemGroup>
       <B Include="%(A.P1)" Condition="'%(A.P1)' != ''" />
@@ -62,5 +64,52 @@
       </B>
     </ItemGroup>
     <Message Text="B = @(B -> '%(P1)')" />
+  </Target>
+
+  <!-- Experiment batching metadata -->
+  <ItemGroup>
+    <ImportProject Include="..\**\*.vcxproj">
+      <Properties>OutDir=%(FileName)\;Platform=Win32</Properties>
+    </ImportProject>
+    <ImportProject Include="y.sln">
+      <Properties>OutDir=y\;Platform=x64</Properties>
+    </ImportProject>
+  </ItemGroup>
+
+  <Target Name="Spike4">
+    <Message Text="[%(ImportProject.Identity)] /p:%(Properties)" />
+  </Target>
+  
+  <!-- Experiment GetMetadata custom task -->
+  <UsingTask TaskName="GetMetadata" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll" >
+    <ParameterGroup>
+      <Source ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" />
+      <Metadata Output="true" />
+    </ParameterGroup>
+    <Task>
+      <Using Namespace="System"/>
+      <Code Type="Fragment" Language="cs">
+        <![CDATA[
+          StringBuilder command = new StringBuilder();
+          foreach (ITaskItem item in Source)
+          {
+              command.AppendFormat("ItemName={0}\r\n", item);
+              foreach (string parameter in item.MetadataNames)
+              {
+                  command.AppendFormat("  {0}={1}\r\n", parameter, item.GetMetadata(parameter));
+              }
+              command.AppendFormat("\r\n");
+          }
+          Metadata = command.ToString();
+      ]]>
+      </Code>
+    </Task>
+  </UsingTask>
+
+  <Target Name="Spike5">
+    <GetMetadata Source="@(ImportProject)">
+      <Output PropertyName="ImportProjectMetadata" TaskParameter="Metadata" />
+    </GetMetadata>
+    <Message Text="$(ImportProjectMetadata)" />
   </Target>
 </Project>
