@@ -16,8 +16,8 @@
 
   <PropertyGroup>
     <DbgDir Condition="'$(DbgDir)' != '' and !HasTrailingSlash('$(DbgDir)')">$(DbgDir)\</DbgDir>
-    <DbgDir Condition="'$(BuildingInsideVisualStudio)' == 'true'">$([System.IO.Path]::Combine($(ProjectDir),$(DbgDir)))</DbgDir>
-    <DbgDir Condition="'$(BuildingInsideVisualStudio)' != 'true'">$([System.IO.Path]::Combine($(MSBuildStartupDirectory),$(DbgDir)))</DbgDir>
+    <DbgDir Condition="'$(DbgDirSpecified)' != 'true'">$([System.IO.Path]::Combine($(ProjectDir),$(DbgDir)))</DbgDir>
+    <DbgDir Condition="'$(DbgDirSpecified)' == 'true'">$([System.IO.Path]::Combine($(MSBuildStartupDirectory),$(DbgDir)))</DbgDir>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -25,7 +25,8 @@
   </PropertyGroup>
 
   <Target Name="CppDbgDirTrace">
-    <Message Importance="normal" Text="DbgDir     = $(DbgDir)" />
-    <Message Importance="normal" Text="DbgProjDir = $(DbgProjDir)" />
+    <Message Importance="normal" Text="DbgDirSpecified = $(DbgDirSpecified)" />
+    <Message Importance="normal" Text="DbgDir          = $(DbgDir)" />
+    <Message Importance="normal" Text="DbgProjDir      = $(DbgProjDir)" />
   </Target>
 </Project>

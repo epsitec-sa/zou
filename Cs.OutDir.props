@@ -6,18 +6,27 @@
   <PropertyGroup>
     <_PropertySheetDisplayName>Output Directory</_PropertySheetDisplayName>
 
-    <!-- Overrides default -->
-    <OutDir />
+    <!-- Initialise fallback -->
+    <!-- Reset default OutDir property (defined in Microsoft.Cpp.props) if not specified on the command line -->
+    <!-- WARNING: do not use Microsoft's OutDirWasSpecified property because it is resetted in Microsoft.Cpp.targets! -->
+    <OutDir Condition="'$(OutDirSpecified)' != 'true'" />
   </PropertyGroup> 
 
   <ImportGroup Label="PropertySheets">
     <Import Project="$(ZouBundleDir)**\$(MSBuildThisFileName)*$(MSBuildThisFileExtension)"   Condition="'$(ZouBundleDir)'   != ''" />
     <Import Project="$(ZouSolutionDir)**\$(MSBuildThisFileName)*$(MSBuildThisFileExtension)" Condition="'$(ZouSolutionDir)' != '' And '$(ZouSolutionDir)' != '$(ZouBundleDir)'" />
     <Import Project="$(ZouProjectDir)**\$(MSBuildThisFileName)*$(MSBuildThisFileExtension)"  Condition="'$(ZouProjectDir)'  != '' And '$(ZouProjectDir)'  != '$(ZouSolutionDir)' And '$(ZouProjectDir)' != '$(ZouBundleDir)'" />
-    <Import Project="$(ZouPrivateDir)$(MSBuildThisFileName).Default$(MSBuildThisFileExtension)" Condition="'$(OutDir)' == ''" />
+    <Import Project="$(ZouPrivateDir)$(MSBuildThisFileName).Default$(MSBuildThisFileExtension)" />
   </ImportGroup>
 
+  <PropertyGroup>
+    <OutDir Condition="'$(OutDir)' != '' and !HasTrailingSlash('$(OutDir)')">$(OutDir)\</OutDir>
+    <OutDir Condition="'$(OutDirSpecified)' != 'true'">$([System.IO.Path]::Combine($(ProjectDir),$(OutDir)))</OutDir>
+    <OutDir Condition="'$(OutDirSpecified)' == 'true'">$([System.IO.Path]::Combine($(MSBuildStartupDirectory),$(OutDir)))</OutDir>
+  </PropertyGroup>
+
   <Target Name="CsOutDirTrace">
-    <Message Importance="normal" Text="OutDir = $(OutDir)" />
+    <Message Importance="normal" Text="OutDirSpecified = $(OutDirSpecified)" />
+    <Message Importance="normal" Text="OutDir          = $(OutDir)" />
   </Target>
 </Project>

@@ -16,9 +16,10 @@
 
   <PropertyGroup>
     <PkgDir Condition="'$(PkgDir)' != '' and !HasTrailingSlash('$(PkgDir)')">$(PkgDir)\</PkgDir>
-    <PkgDir Condition="'$(BuildingInsideVisualStudio)' == 'true'">$([System.IO.Path]::Combine($(ProjectDir),$(PkgDir)))</PkgDir>
-    <PkgDir Condition="'$(BuildingInsideVisualStudio)' != 'true'">$([System.IO.Path]::Combine($(MSBuildStartupDirectory),$(PkgDir)))</PkgDir>
+    <PkgDir Condition="'$(PkgDirSpecified)' != 'true'">$([System.IO.Path]::Combine($(ProjectDir),$(PkgDir)))</PkgDir>
+    <PkgDir Condition="'$(PkgDirSpecified)' == 'true'">$([System.IO.Path]::Combine($(MSBuildStartupDirectory),$(PkgDir)))</PkgDir>
   </PropertyGroup>
+
   <PropertyGroup>
     <PkgProdBinDir>$(PkgDir)Prod\bin\</PkgProdBinDir>
     <PkgProdDbgDir>$(PkgDir)Prod\dbg\</PkgProdDbgDir>
@@ -27,10 +28,11 @@
   </PropertyGroup>
   
   <Target Name="CsPkgDirTrace">
-    <Message Importance="normal" Text="PkgDir        = $(PkgDir)" />
-    <Message Importance="normal" Text="PkgProdBinDir = $(PkgProdBinDir)" />
-    <Message Importance="normal" Text="PkgProdDbgDir = $(PkgProdDbgDir)" />
-    <Message Importance="normal" Text="PkgDevBinDir  = $(PkgDevBinDir)" />
-    <Message Importance="normal" Text="PkgDevDbgDir  = $(PkgDevDbgDir)" />
+    <Message Importance="normal" Text="PkgDirSpecified = $(PkgDirSpecified)" />
+    <Message Importance="normal" Text="PkgDir          = $(PkgDir)" />
+    <Message Importance="normal" Text="PkgProdBinDir   = $(PkgProdBinDir)" />
+    <Message Importance="normal" Text="PkgProdDbgDir   = $(PkgProdDbgDir)" />
+    <Message Importance="normal" Text="PkgDevBinDir    = $(PkgDevBinDir)" />
+    <Message Importance="normal" Text="PkgDevDbgDir    = $(PkgDevDbgDir)" />
   </Target>
 </Project>

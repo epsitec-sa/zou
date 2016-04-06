@@ -16,11 +16,12 @@
 
   <PropertyGroup>
     <WorkDir Condition="'$(WorkDir)' != '' and !HasTrailingSlash('$(WorkDir)')">$(WorkDir)\</WorkDir>
-    <WorkDir Condition="'$(BuildingInsideVisualStudio)' == 'true'">$([System.IO.Path]::Combine($(ProjectDir),$(WorkDir)))</WorkDir>
-    <WorkDir Condition="'$(BuildingInsideVisualStudio)' != 'true'">$([System.IO.Path]::Combine($(MSBuildStartupDirectory),$(WorkDir)))</WorkDir>
+    <WorkDir Condition="'$(WorkDirSpecified)' != 'true'">$([System.IO.Path]::Combine($(ProjectDir),$(WorkDir)))</WorkDir>
+    <WorkDir Condition="'$(WorkDirSpecified)' == 'true'">$([System.IO.Path]::Combine($(MSBuildStartupDirectory),$(WorkDir)))</WorkDir>
   </PropertyGroup>
 
   <Target Name="WorkDirTrace">
-    <Message Importance="normal" Text="WorkDir = $(WorkDir)" />
+    <Message Importance="normal" Text="WorkDirSpecified = $(WorkDirSpecified)" />
+    <Message Importance="normal" Text="WorkDir          = $(WorkDir)" />
   </Target>
 </Project>
