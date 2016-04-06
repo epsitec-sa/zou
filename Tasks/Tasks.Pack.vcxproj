@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\Cs.Boot.props" />
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{CE838607-7D36-4593-93FA-EAAEF0B74148}</ProjectGuid>
+    <ZouPack>true</ZouPack>
+  </PropertyGroup>
+  <!-- zou - import utility project and package settings -->
+  <Import Project="$(ZouDir)Cs.Utility.props" />
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(ZouDir)Cs.Standard.props" />
+  </ImportGroup>
+  <Import Project="$(ZouDir)Cs.Utility.targets" />
+
+  <!-- zou - build package -->
+  <PropertyGroup>
+    <PkgProdBinDir>$(ZouPrivateDir)</PkgProdBinDir>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProdBinExclude Include="$(TargetDir)**\*.xml" />
+  </ItemGroup>
+
+  <Import Project="$(ZouDir)Pack.targets" />
+</Project>
