@@ -76,6 +76,16 @@ BundleDir  : the path of the bundle root folder. (The bundle folder is the one w
     </Otherwise>
   </Choose>
 
+  <!-- Flag properties that are defined on the command line. -->
+  <PropertyGroup>
+    <WorkDirSpecified         Condition=" '$(WorkDir)'         != '' And '$(WorkDirSpecified)'         == '' ">true</WorkDirSpecified>
+    <PkgDirSpecified          Condition=" '$(PkgDir)'          != '' And '$(PkgDirSpecified)'          == '' ">true</PkgDirSpecified>
+    <DbgDirSpecified          Condition=" '$(DbgDir)'          != '' And '$(DbgDirSpecified)'          == '' ">true</DbgDirSpecified>
+    <OutDirSpecified          Condition=" '$(OutDir)'          != '' And '$(OutDirSpecified)'          == '' ">true</OutDirSpecified>
+    <PlatformSpecified        Condition=" '$(Platform)'        != '' And '$(PlatformSpecified)'        == '' ">true</PlatformSpecified>
+    <PlatformToolsetSpecified Condition=" '$(PlatformToolset)' != '' And '$(PlatformToolsetSpecified)' == '' ">true</PlatformToolsetSpecified>
+  </PropertyGroup>
+
   <Target Name="ZouTraceMSBuild">
     <Message Importance="high" Text="MSBuild properties" />
     <Message Importance="high" Text="==================" />
@@ -141,6 +151,12 @@ BundleDir  : the path of the bundle root folder. (The bundle folder is the one w
     <Message Importance="normal" Text="  TargetDir                  = $(TargetDir)" />
     <Message Importance="normal" Text="  OutputPath                 = $(OutputPath)" />
     <Message Importance="normal" Text="  IntermediateOutputPath     = $(IntermediateOutputPath)" />
+    <Message Importance="normal" Text="+ WorkDirSpecified           = $(WorkDirSpecified)" />
+    <Message Importance="normal" Text="+ PkgDirSpecified            = $(PkgDirSpecified)" />
+    <Message Importance="normal" Text="+ DbgDirSpecified            = $(DbgDirSpecified)" />
+    <Message Importance="normal" Text="+ OutDirSpecified            = $(OutDirSpecified)" />
+    <Message Importance="normal" Text="+ PlatformSpecified          = $(PlatformSpecified)" />
+    <Message Importance="normal" Text="+ PlatformToolsetSpecified   = $(PlatformToolsetSpecified)" />
     <Message Importance="normal" Text="+ WorkDir                    = $(WorkDir)" />
     <Message Importance="normal" Text="+ DbgDir                     = $(DbgDir)" />
     <Message Importance="normal" Text="+ DbgProjDir                 = $(DbgProjDir)" />
