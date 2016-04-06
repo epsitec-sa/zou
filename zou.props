@@ -27,7 +27,10 @@ BundleDir  : the path of the bundle root folder. (The bundle folder is the one w
     <BundleDir>$([System.IO.Directory]::GetParent($(MSBuildThisFileDirectory)).Parent.FullName)\</BundleDir>
 
     <ZouPrivateDir>$(ZouDir)private\</ZouPrivateDir>
+    <ZouTasksDir>$(ZouDir)Tasks\</ZouTasksDir>
   </PropertyGroup>
+
+  <Import Project="$(ZouTasksDir)Zou.tasks"/>
 
   <!-- ZouBundleDir -->
   <PropertyGroup Condition="'$(ZouBundleDir)' == ''" >
