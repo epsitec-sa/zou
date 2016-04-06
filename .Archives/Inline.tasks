@@ -9,6 +9,7 @@
       </ZouResolveFallback>
     </Target>
   -->
+  
   <UsingTask TaskName="ZouResolveFallback" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll" >
     <ParameterGroup>
 	  <!-- Inputs -->
@@ -44,4 +45,30 @@
       </Code>
     </Task>
   </UsingTask>
+
+  <UsingTask TaskName="GetMetadata" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll" >
+    <ParameterGroup>
+      <Source ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" />
+      <Metadata Output="true" />
+    </ParameterGroup>
+    <Task>
+      <Using Namespace="System"/>
+      <Code Type="Fragment" Language="cs">
+        <![CDATA[
+          StringBuilder command = new StringBuilder();
+          foreach (ITaskItem item in Source)
+          {
+              command.AppendFormat("ItemName={0}\r\n", item);
+              foreach (string parameter in item.MetadataNames)
+              {
+                  command.AppendFormat("  {0}={1}\r\n", parameter, item.GetMetadata(parameter));
+              }
+              command.AppendFormat("\r\n");
+          }
+          Metadata = command.ToString();
+      ]]>
+      </Code>
+    </Task>
+  </UsingTask>
+  
 </Project>
