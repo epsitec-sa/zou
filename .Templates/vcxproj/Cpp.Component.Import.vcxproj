@@ -16,50 +16,42 @@ Use this template to create a project that builds and imports one or more extern
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <!-- zou - extension settings -->
 	<!-- TODO: optionnally modify the path of the zou submodule so that it is relative to this file directory -->
-  <Import Project="..\zou\Cpp.Boot.props" />
+  <Import Project="..\zou\Cpp.Import.props" />
  
   <PropertyGroup Label="Globals">
     <!-- The ProjectGUID property value should be redefined. -->
     <ProjectGuid>{B78D246D-F9C7-4635-81EF-6B5C25D1D8E8}</ProjectGuid>
   </PropertyGroup>
 
-  
-  <!-- zou - utility project properties -->
+  <!-- zou - import utility project and standard settings -->
   <Import Project="$(ZouDir)Cpp.Utility.props" />
-  
-  <!-- zou - standard property sheets -->
   <ImportGroup Label="PropertySheets">
     <Import Project="$(ZouDir)Cpp.Standard.props" />
   </ImportGroup>
-
-  <!-- zou - utility project targets -->
   <Import Project="$(ZouDir)Cpp.Utility.targets" />
 
-  <!--
-  Import managed projects or solutions.
-  Exemple: salaires excerpt
-  -->
+  <!-- zou - import managed projects/solutions. -->
   <ItemGroup  Label="ExtensionTargets">
     <ImportProjects Include="$(BundleDir)pain\Epsitec.Pain.Redist.sln">
-      <OutDir>$(TargetDir)pain\</OutDir>
+      <OutDir>$(OutDir)pain\</OutDir>
     </ImportProjects>
     <ImportProjects Include="$(BundleDir)partout\SecureForms.Redist.sln">
-      <OutDir>$(TargetDir)partout\</OutDir>
+      <OutDir>$(OutDir)partout\</OutDir>
     </ImportProjects>
     <ImportProjects Include="$(BundleDir)swissdec\Net\Swissdec.Redist.sln">
-      <OutDir>$(TargetDir)swissdec\</OutDir>
+      <OutDir>$(OutDir)swissdec\</OutDir>
     </ImportProjects>
     <ImportProjects Include="$(BundleDir)xgen\Epsitec.XGen.Redist.sln">
-      <OutDir>$(TargetDir)xgen\</OutDir>
+      <OutDir>$(OutDir)xgen\</OutDir>
     </ImportProjects>
   </ItemGroup>
   
-  <!-- Import files -->
+  <!-- zou - import files -->
   <ItemGroup  Label="ExtensionTargets">
     <ImportFiles Include="images\*.png" >
-      <OutDir>$(TargetDir)images\</OutDir>
+      <OutDir>$(OutDir)images\</OutDir>
     </ImportFiles>
   </ItemGroup>
 
-  <Import Project="$(ZouDir)Import.targets" />
+  <Import Project="$(ZouDir)Cpp.Import.targets" />
 </Project>

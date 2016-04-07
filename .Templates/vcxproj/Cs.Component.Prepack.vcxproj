@@ -1,22 +1,22 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\..\Cs.Boot.props" />
+  <Import Project="..\..\Cs.Boot.Prepack.props" />
+  
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{D80205BA-9266-489B-A565-4292B286FBD5}</ProjectGuid>
-    <ZouImport>true</ZouImport>
+    <ProjectGuid>{6B47D520-5EBD-46DE-B410-AB9E28E65642}</ProjectGuid>
   </PropertyGroup>
-  <!-- zou - import utility project and package settings -->
+  
+  <!-- zou - import utility project and standard settings -->
   <Import Project="$(ZouDir)Cs.Utility.props" />
   <ImportGroup Label="PropertySheets">
     <Import Project="$(ZouDir)Cs.Standard.props" />
   </ImportGroup>
   <Import Project="$(ZouDir)Cs.Utility.targets" />
+  
   <!-- zou - build product -->
   <ItemGroup>
-    <ImportProjects Include="$(ZouDir)Tasks\Tasks.sln">
-      <Platform>Any CPU</Platform>
-    </ImportProjects>
+    <ImportProjects Include="$(ZouDir)Tasks\Tasks.csproj" />
   </ItemGroup>
 
-  <Import Project="$(ZouDir)Import.targets" />
+  <Import Project="$(ZouDir)Cs.Prepack.targets" />
 </Project>

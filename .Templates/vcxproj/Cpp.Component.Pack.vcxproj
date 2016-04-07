@@ -1,20 +1,22 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\zou\Cpp.Boot.props" />
+  <Import Project="..\zou\Cpp.Pack.props" />
+  
   <PropertyGroup Label="Globals">
     <ProjectGuid>{4EC98D48-6BCC-4C26-90A0-3F950733FC43}</ProjectGuid>
-    <ZouPack>true</ZouPack>
   </PropertyGroup>
-  <!-- zou - import utility project and package settings -->
+
+  <!-- zou - import utility project and standard settings -->
   <Import Project="$(ZouDir)Cpp.Utility.props" />
   <ImportGroup Label="PropertySheets">
     <Import Project="$(ZouDir)Cpp.Standard.props" />
   </ImportGroup>
   <Import Project="$(ZouDir)Cpp.Utility.targets" />
+  
   <!-- zou - build package -->
   <ItemGroup>
-    <ProdBinExclude Include="$(TargetDir)test\*" />
-    <ProdBinExclude Include="$(TargetDir)**\*.xml" />
+    <ProdBinExclude Include="$(OutDir)test\*" />
+    <ProdBinExclude Include="$(OutDir)**\*.xml" />
   </ItemGroup>
-  <Import Project="$(ZouDir)Pack.targets" />
+  <Import Project="$(ZouDir)Cpp.Pack.targets" />
 </Project>
