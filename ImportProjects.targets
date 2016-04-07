@@ -7,13 +7,13 @@
     <ImportProjects>
       <BuildInParallel>true</BuildInParallel>
       <Configuration>$(Configuration)</Configuration>
-      <!-- Propagate only the options specified on the command line -->
-      <WorkDir Condition="'$(WorkDirSpecified)' == 'true'">$(WorkDir)</WorkDir>
-      <PkgDir Condition="'$(PkgDirSpecified)' == 'true'">$(PkgDir)</PkgDir>
-      <DbgDir Condition="'$(DbgDirSpecified)' == 'true'">$(DbgDir)</DbgDir>
-      <OutDir Condition="'$(OutDirSpecified)' == 'true'">$(OutDir)</OutDir>
-      <Platform Condition="'$(PlatformSpecified)' == 'true'">$(Platform)</Platform>
-      <PlatformToolset Condition="'$(PlatformToolsetSpecified)' == 'true'">$(PlatformToolset)</PlatformToolset>
+      <!-- Propagate the options specified on the command line -->
+      <WorkDir         Condition="'$(ForwardWorkDir)'         != ''">$(ForwardWorkDir)</WorkDir>
+      <PkgDir          Condition="'$(ForwardPkgDir)'          != ''">$(ForwardPkgDir)</PkgDir>
+      <DbgDir          Condition="'$(ForwardDbgDir)'          != ''">$(ForwardDbgDir)</DbgDir>
+      <OutDir          Condition="'$(ForwardOutDir)'          != ''">$(ForwardOutDir)</OutDir>
+      <Platform        Condition="'$(ForwardPlatform)'        != ''">$(ForwardPlatform)</Platform>
+      <PlatformToolset Condition="'$(ForwardPlatformToolset)' != ''">$(ForwardPlatformToolset)</PlatformToolset>
     </ImportProjects>
   </ItemDefinitionGroup>
 

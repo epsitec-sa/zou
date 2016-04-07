@@ -2,6 +2,12 @@
 <!-- The Cs.Utility.targets is used to create a minimal C# agent (see Cs.Utility.props) -->
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
+  <!-- Always forward OutDir to C# client -->
+  <Import Project="Cs.Forward.OutDir.props" />
+  
+  <!-- Forward properties specified on the command line -->
+  <Import Project="$(ZouPrivateDir)Forward.Default.props" />
+
   <!-- C++ utility targets -->
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>
