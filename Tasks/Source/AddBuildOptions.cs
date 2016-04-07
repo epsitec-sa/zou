@@ -31,11 +31,11 @@ namespace Zou
 	}
 	internal static partial class Mixins
 	{
-		public static ITaskItem				AddBuildOptions(this ITaskItem project)
+		public static ITaskItem				AddBuildOptions(this ITaskItem projectItem)
 		{
-			Mixins.PreprocessBuildOptions (project);
+			var project = new TaskItem (projectItem);
+			Mixins.PreprocessOptions (project);
 
-			var taskItem = new TaskItem (project);
 			var buildItem = new BuildItem ("Project", project);
 			var names = buildItem.CustomMetadataNames.Cast<string> ();
 
@@ -53,9 +53,9 @@ namespace Zou
 			{
 				propertiesValue += ";_=_";
 			}
-			taskItem.SetMetadata ("Properties", propertiesValue);
+			project.SetMetadata ("Properties", propertiesValue);
 
-			return taskItem;
+			return project;
 		}
 
 		private static IEnumerable<string>	NonBuildProperties
@@ -64,16 +64,24 @@ namespace Zou
 			{
 				yield return "BuildInParallel";
 				yield return "Targets";
+				yield return "OriginalItemSpec";
 			}
 		}
 		private static bool					IsBuildProperty(string name) => !Mixins.NonBuildProperties.Contains (name);
-		private static void					PreprocessBuildOptions(ITaskItem project)
+		private static void					PreprocessOptions(ITaskItem project)
+		{
+			Mixins.PreprocessPlatform (project);
+			Mixins.PreprocessOutDir (project);
+		}
+
+
+		private static void					PreprocessPlatform(ITaskItem project)
 		{
 			// Preprocess the 'Any CPU' platform property.
 			// If the item spec is a .sln use 'Any CPU' (with a space).
 			// If the item spec is a .csproj use 'AnyCPU' (without a space).
 			var platform = project.GetMetadata ("Platform");
-			if (platform != null)
+			if (!string.IsNullOrEmpty(platform))
 			{
 				platform = platform.ToLowerInvariant ();
 				if (platform == "any cpu" || platform == "anycpu")
@@ -90,6 +98,19 @@ namespace Zou
 				}
 			}
 		}
+		private static void					PreprocessOutDir(ITaskItem project)
+		{
+			if (project.IsCsProj () && string.IsNullOrEmpty(project.GetMetadata ("OutPutPath")))
+			{
+				var outDir = project.GetMetadata ("OutDir");
+				if (!string.IsNullOrEmpty(outDir))
+				{
+					project.SetMetadata ("OutputPath", outDir);
+					project.RemoveMetadata ("OutDir");
+				}
+			}
+		}
+		private static bool					IsCsProj(this ITaskItem item) => 0 == string.Compare (".csproj", Path.GetExtension (item.ItemSpec), StringComparison.OrdinalIgnoreCase);
 
 		private class BuildPropertyComparer : IComparer<Tuple<string, string>>
 		{
