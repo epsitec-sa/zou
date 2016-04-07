@@ -17,9 +17,25 @@
 
   <PropertyGroup>
     <PkgDir Condition="'$(PkgDir)' != '' and !HasTrailingSlash('$(PkgDir)')">$(PkgDir)\</PkgDir>
-    <PkgDir Condition="'$(PkgDirSpecified)' != 'true'">$([System.IO.Path]::Combine($(ProjectDir),$(PkgDir)))</PkgDir>
-    <PkgDir Condition="'$(PkgDirSpecified)' == 'true'">$([System.IO.Path]::Combine($(MSBuildStartupDirectory),$(PkgDir)))</PkgDir>
   </PropertyGroup>
+
+  <Choose>
+    <When Condition="'$(PkgDirSpecified)' == 'true'">
+      <PropertyGroup>
+        <PkgDir>$([System.IO.Path]::Combine($(MSBuildStartupDirectory),$(PkgDir)))</PkgDir>
+      </PropertyGroup>
+    </When>
+    <When Condition="'$(WorkDirSpecified)' == 'true'">
+      <PropertyGroup>
+        <PkgDir>$([System.IO.Path]::Combine($(WorkDir),$(PkgDir)))</PkgDir>
+      </PropertyGroup>
+    </When>
+    <Otherwise>
+      <PropertyGroup>
+        <PkgDir>$([System.IO.Path]::Combine($(ProjectDir),$(PkgDir)))</PkgDir>
+      </PropertyGroup>
+    </Otherwise>
+  </Choose>
 
   <PropertyGroup>
     <PkgProdBinDir>$(PkgDir)Prod\bin\</PkgProdBinDir>

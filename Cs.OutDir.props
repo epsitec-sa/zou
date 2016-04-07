@@ -21,9 +21,25 @@
 
   <PropertyGroup>
     <OutDir Condition="'$(OutDir)' != '' and !HasTrailingSlash('$(OutDir)')">$(OutDir)\</OutDir>
-    <OutDir Condition="'$(OutDirSpecified)' != 'true'">$([System.IO.Path]::Combine($(ProjectDir),$(OutDir)))</OutDir>
-    <OutDir Condition="'$(OutDirSpecified)' == 'true'">$([System.IO.Path]::Combine($(MSBuildStartupDirectory),$(OutDir)))</OutDir>
   </PropertyGroup>
+
+  <Choose>
+    <When Condition="'$(OutDirSpecified)' == 'true'">
+      <PropertyGroup>
+        <OutDir>$([System.IO.Path]::Combine($(MSBuildStartupDirectory),$(OutDir)))</OutDir>
+      </PropertyGroup>
+    </When>
+    <When Condition="'$(WorkDirSpecified)' == 'true'">
+      <PropertyGroup>
+        <OutDir>$([System.IO.Path]::Combine($(WorkDir),$(OutDir)))</OutDir>
+      </PropertyGroup>
+    </When>
+    <Otherwise>
+      <PropertyGroup>
+        <OutDir>$([System.IO.Path]::Combine($(ProjectDir),$(OutDir)))</OutDir>
+      </PropertyGroup>
+    </Otherwise>
+  </Choose>
 
   <Target Name="CsOutDirTrace">
     <Message Importance="normal" Text="OutDirSpecified = $(OutDirSpecified)" />
