@@ -1,20 +1,49 @@
-# UNDER CONSTRUCTION
+## TODOs
+- Rename InteropProxy.* scripts  to Interop
+- Rename iproxy to Interop
+- Add Swissdec.prepack to Swissdec.pack.sln
+- ImportFiles: rename metadata fields
+	- ImportDir -> TargetDir
+	- ImportFile -> TargetFile
+- Fix the OutputPath error (`msbuild Tasks.pack.sln`)
 
-### Platforme `Any CPU` ou `AnyCPU`.
+## Notes
+
+### Plateforme `Any CPU` ou `AnyCPU`.
 
 - pour un `.sln` spécifier `Any CPU` (avec l'espace)
 - pour un `.csproj` spécifier `AnyCPU`  (sans l'espace)
 
 Lors de l'exécution du `.csproj`, c'est toujours `AnyCPU`, même si le `.csproj` est exécuté par une solution.
-La platforme est déclarée dans le `.csproj` lui-même aprè l'importation de `Microsoft.Common.props`.
+La plateforme est déclarée dans le `.csproj` lui-même après l'importation de `Microsoft.Common.props`.
+**Zou** résoud ce problème durant l'importation de projets via la tâche `AddBuildOptions`.
+
+### Plateformes `x86` et `Win32`
+Dans un projet C++, le script `Microsoft.Cpp.Default` transforme la plateformwe `x86` en `Win32`.
+Dans un projet C#, il faut utiliser la plateforme `x86`: `Win32` n'est pas supportée.
 
 ### `OutputPath` et `OutDir`
-Si on exécute un .csproj, il faut que `OutputPath` soit spécifié.
+Si on exécute un .csproj via la tâche MSBuild et non l'exécutable, il faut que `OutputPath` soit spécifié.
 
 ## Packaging
-On ne peut pas builder une solution ou un projet et le packager dans un même projet:
+On ne peut pas construire un projet et le packager dans le même script *MSBuild*. En effet, la sortie du premier projet n'est pas encore créée lorsque MSBuild évalue les éléments à packager (*MSBuild evaluation time*). Le packager va donc utiliser les fichiers du build précédent (c.à.d. aucun après un *clean* par exemple).
 
-- la sortie du premier projet n'est pas encore créée au moment de la spécification de la source du packaging dans le .pack.
+### C# Packaging
+La plupart des projets C# ne nécessitent pas une *zouification*, c.à.d. qu'ils n'incluent pas le script `Cs.Boot.props` au début du projet. Il y a cependant une exception lorsqu'il s'agit d'un projet d'interopérabilité avec un composant natif.
+
+Les dossiers `OutDir` et `IntDir` sont relatifs au projet. Ce qui a l'avantage de mieux encapsuler les fichiers produits. L'assemblage des composants est intrinsèque: le composant principal tire les composants dépendants dans son dossier de sortie.
+
+#### Ancrage des composants
+On va d'abord créer un projet `.prepack` qui permet de construire les composants dans un dossier d'ancrage. Une des responsabilités de ce projet est de toujours faire suivre le chemin absolu du dossier de sortie `OutDir` aux projets/solutions imbriquées. (cf `Cs.Prepack.Targets`).
+
+
+Deux cas peuvent se présenter:
+
+### 1. Le projet `.pack` est dans la même solution que le projet à packager.
+Dans ce cas, le projet .pack doit on va créer une dépendence de build du .pack vers le projet principal et spécifier la source à packager.
+### 2. Le projet `.pack` ne peut pas être dans la même solution que le projet à packager.
+
+
 - dans ce cas là, il faut donc deux projets:
   - un .prepack qui builde le projet
   - un .pack  qui s'occupe du packaging
