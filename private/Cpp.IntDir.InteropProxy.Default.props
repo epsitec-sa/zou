@@ -2,9 +2,11 @@
 <!-- This property sheet defines the default 'IntDir' property for C++ interop proxy projects. -->
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <_PropertySheetDisplayName>[zou] IntDir = $(Platform)\iproxy\obj\$(Configuration)\$(ProjectName)\</_PropertySheetDisplayName>
+    <_PropertySheetDisplayName>[zou] IntDir = $(TMP)\_zou\$(BundleName)\$(BundleRelativeProjectPath)\</_PropertySheetDisplayName>
 
-    <!-- $(ProjectName) is appended to $(IntDir) to avoid sharing the intermediate folder between projects located int he same folder -->
-    <IntDir Condition="'$(IntDir)' == ''">$(Platform)\iproxy\obj\$(Configuration)\$(ProjectName)\</IntDir>
+    <!-- Redirect IntDir to temp folder to avoid cluttering the solution directory. -->
+    <IntDir>$(TMP)\_zou\$(BundleName)\$(BundleRelativeProjectPath)\</IntDir>
+    <!-- Avoid MSB8029 warning -->
+    <IgnoreWarnIntDirInTempDetected>true</IgnoreWarnIntDirInTempDetected>
   </PropertyGroup>
 </Project>
