@@ -1,13 +1,34 @@
 ## TODOs
-- Rename InteropProxy.* scripts  to Interop
+
 - Rename iproxy to Interop
 - Add Swissdec.prepack to Swissdec.pack.sln
 - ImportFiles: rename metadata fields
 	- ImportDir -> TargetDir
 	- ImportFile -> TargetFile
 - Fix the OutputPath error (`msbuild Tasks.pack.sln`)
+- rename C*.Utility.* to C*.Agent.*
+- **DONE** - replace `ZouPack` and `ZouImport` flags with `ZouAgentFunc` property (`Pack`, `Import`, `Interop`)
+- **DONE** - update C*.Standard.props.
+
+### Git commit comments
+
+Redirect interop proxy intermediate folder to temp folder.
+
+### Interop
+
+- rename InteropProxy.* scripts  to Interop
+- merge `Cs.Boot.props` with `InteropProxy.Default.props` into ***to be defined***
+- merge private/Cpp.IntDir.InteropProxy.props into Cpp.IntDir.props
+- create the `Interop` `ZouAgentFunc` and merge `InteropProxy.Standard.props` into  `Cpp.Standard.props`.
 
 ## Notes
+
+### Container agents
+
+Introduire la notion de ***container agent*** (zou C++ utility project)
+
+- C# container agent
+- C++ conatiner agent
 
 ### Plateforme `Any CPU` ou `AnyCPU`.
 
