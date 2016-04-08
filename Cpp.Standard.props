@@ -3,9 +3,9 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
   <PropertyGroup>
-    <_PropertySheetDisplayName Condition="'$(ZouPack)' != 'true' And '$(ZouImport)' != 'true'">[zou] C++ Standard settings</_PropertySheetDisplayName>
-    <_PropertySheetDisplayName Condition="'$(ZouPack)'   == 'true'"                           >[zou] C++ Pack settings</_PropertySheetDisplayName>
-    <_PropertySheetDisplayName Condition="'$(ZouImport)' == 'true'"                           >[zou] C++ Import settings</_PropertySheetDisplayName>
+    <_PropertySheetDisplayName Condition="'$(ZouAgentFunc)' == ''"       >[zou] C++ Standard settings</_PropertySheetDisplayName>
+    <_PropertySheetDisplayName Condition="'$(ZouAgentFunc)' == 'Pack'"   >[zou] C++ Pack settings</_PropertySheetDisplayName>
+    <_PropertySheetDisplayName Condition="'$(ZouAgentFunc)' == 'Import'" >[zou] C++ Import settings</_PropertySheetDisplayName>
   </PropertyGroup>
 
   <!-- WARNING: do not change import order -->
@@ -13,10 +13,10 @@
     <Import Project="$(ZouDir)Cpp.NTVersion.props" />
     <Import Project="$(ZouDir)Com.WorkDir.props" />
     <Import Project="$(ZouDir)Cpp.IntDir.props" />
-    <Import Project="$(ZouDir)Cpp.IncludeDirs.props" Condition="'$(ZouPack)' != 'true' And '$(ZouImport)' != 'true'" />
-    <Import Project="$(ZouDir)Cpp.DbgSettings.props" Condition="'$(ZouPack)' != 'true' And '$(ZouImport)' != 'true'" />
-    <Import Project="$(ZouDir)Cpp.DbgDir.props"      Condition="'$(ZouImport)' != 'true'" />
-    <Import Project="$(ZouDir)Cpp.PkgDir.props"      Condition="'$(ZouPack)' == 'true'" />
+    <Import Project="$(ZouDir)Cpp.IncludeDirs.props" Condition="'$(ZouAgentFunc)' == ''" />
+    <Import Project="$(ZouDir)Cpp.DbgSettings.props" Condition="'$(ZouAgentFunc)' == ''" />
+    <Import Project="$(ZouDir)Cpp.DbgDir.props"      Condition="'$(ZouAgentFunc)' == '' Or '$(ZouAgentFunc)' == 'Pack'" />
+    <Import Project="$(ZouDir)Cpp.PkgDir.props"      Condition="'$(ZouAgentFunc)' == 'Pack'" />
     <Import Project="$(ZouDir)Cpp.OutDir.props" />
   </ImportGroup>
 </Project>

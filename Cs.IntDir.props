@@ -4,25 +4,26 @@
          InitialTargets="CsIntDirTrace">
   
   <Choose>
-    <When Condition="'$(ZouPack)' == 'true' Or '$(ZouImport)' == 'true'">
+    <When Condition="'$(ZouAgentFunc)' == ''">
       <PropertyGroup>
-        <_PropertySheetDisplayName>C# Intermediate Directory: $(TMP)\_zou\$(BundleName)\$(BundleRelativeProjectPath)\</_PropertySheetDisplayName>
-        <!-- Redirect IntDir to temp folder to avoid cluttering the solution directory. -->
+        <_PropertySheetDisplayName>C# Intermediate Directory</_PropertySheetDisplayName>
+        <!-- Initialize fallback -->
+        <IntDir />
+      </PropertyGroup>
+    </When>
+    <Otherwise>
+      <!-- For agent functions, redirect IntDir to temp folder to avoid cluttering the agent folder -->
+      <PropertyGroup>
+        <_PropertySheetDisplayName>C# Intermediate Directory: $(TMP)\_zou\...</_PropertySheetDisplayName>
         <IntDir>$(TMP)\_zou\$(BundleName)\$(BundleRelativeProjectPath)\</IntDir>
         <!-- Avoid MSB8029 warning -->
         <IgnoreWarnIntDirInTempDetected>true</IgnoreWarnIntDirInTempDetected>
       </PropertyGroup>
-    </When>
-    <Otherwise>
-      <PropertyGroup>
-        <_PropertySheetDisplayName>C# Intermediate Directory</_PropertySheetDisplayName>
-        <!-- Initiate zou fallback -->
-        <IntDir />
-      </PropertyGroup>
     </Otherwise>
   </Choose>
 
-  <ImportGroup Label="PropertySheets" Condition="'$(ZouPack)' != 'true' And '$(ZouImport)' != 'true'">
+  <!-- For agent functions, no fallback -->
+  <ImportGroup Label="PropertySheets" Condition="'$(ZouAgentFunc)' == ''">
     <Import Project="$(ZouBundleDir)**\$(MSBuildThisFileName)*$(MSBuildThisFileExtension)"   Condition="'$(ZouBundleDir)'   != ''" />
     <Import Project="$(ZouSolutionDir)**\$(MSBuildThisFileName)*$(MSBuildThisFileExtension)" Condition="'$(ZouSolutionDir)' != '' And '$(ZouSolutionDir)' != '$(ZouBundleDir)'" />
     <Import Project="$(ZouProjectDir)**\$(MSBuildThisFileName)*$(MSBuildThisFileExtension)"  Condition="'$(ZouProjectDir)'  != '' And '$(ZouProjectDir)'  != '$(ZouSolutionDir)' And '$(ZouProjectDir)' != '$(ZouBundleDir)'" />
