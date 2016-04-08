@@ -3,10 +3,24 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
   <PropertyGroup>
-    <_PropertySheetDisplayName Condition="'$(ZouAgentFunc)' == ''"       >[zou] C++ Standard settings</_PropertySheetDisplayName>
-    <_PropertySheetDisplayName Condition="'$(ZouAgentFunc)' == 'Pack'"   >[zou] C++ Pack settings</_PropertySheetDisplayName>
-    <_PropertySheetDisplayName Condition="'$(ZouAgentFunc)' == 'Import'" >[zou] C++ Import settings</_PropertySheetDisplayName>
+    <_PropertySheetDisplayName Condition="'$(ZouAgentFunc)' == ''"        >[zou] C++ Standard settings</_PropertySheetDisplayName>
+    <_PropertySheetDisplayName Condition="'$(ZouAgentFunc)' == 'Pack'"    >[zou] C++ Pack settings</_PropertySheetDisplayName>
+    <_PropertySheetDisplayName Condition="'$(ZouAgentFunc)' == 'Import'"  >[zou] C++ Import settings</_PropertySheetDisplayName>
+    <_PropertySheetDisplayName Condition="'$(ZouAgentFunc)' == 'Interop'" >[zou] C++ Interop settings</_PropertySheetDisplayName>
   </PropertyGroup>
+
+  <Choose>
+    <When Condition="'$(ZouAgentFunc)' == 'Interop'">
+      <PropertyGroup>
+        <Toolset>Interop</Toolset>
+      </PropertyGroup>
+    </When>
+    <Otherwise>
+      <PropertyGroup>
+        <Toolset>$(PlatformToolset)</Toolset>
+      </PropertyGroup>
+    </Otherwise>
+  </Choose>
 
   <!-- WARNING: do not change import order -->
   <ImportGroup Label="PropertySheets">
