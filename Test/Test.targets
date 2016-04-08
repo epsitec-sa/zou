@@ -46,7 +46,7 @@
   </PropertyGroup>-->
 
   <!-- Global targets -->
-  <Import Project="..\Cpp.Boot.props"/>
+  <Import Project="..\Cpp.Import.props"/>
 
   <ImportGroup Label="PropertySheets">
     <Import Project="$(ZouDir)Cpp.Standard.props"/>
@@ -78,12 +78,12 @@
     </ImportFiles>
   </ItemGroup>
   
-  <Import Project="$(ZouDir)Import.targets" />
+  <Import Project="$(ZouDir)Cpp.Import.targets" />
 
   <Target Name="Test1">
     <Message Text="&quot;$(MSBuildToolsPath)\msbuild&quot; /nologo /v:m /t:Build &quot;/p:OutDir=%(ImportDir);Platform=%(ImportPlatform);Configuration=%(ImportConfiguration)&quot; &quot;%(ImportProjects.Identity)&quot;" />
   </Target>
-  <Target Name="Test2" DependsOnTargets="ImportBuild">
+  <Target Name="Test2" DependsOnTargets="ImportProjects">
     <Message Text="%(ImportFiles.Identity) =&gt; %(ImportDir)%(ImportFile)" />
   </Target>
 </Project>
