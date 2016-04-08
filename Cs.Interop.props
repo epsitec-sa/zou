@@ -1,18 +1,18 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<!--
-The Cs.Interop.Default.props defines the default C++ interop proxy output directory relative to its project folder.
--->
+<!-- Import this script at the beginning of the C# interop agent block, at the end of the C# interop project -->
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003"
-         InitialTargets="InteropProxyDefaultTrace">
-  
+         InitialTargets="CsInteropTrace">
+
+  <Import Project="Cs.Boot.props"/>
+
   <PropertyGroup>
     <InteropPlatform Condition="'$(InteropPlatform)' == ''">Win32</InteropPlatform>
-    <InteropDir      Condition="'$(InteropDir)'      == ''">$(InteropPlatform)\iproxy\bin\$(Configuration)\</InteropDir>
+    <InteropDir      Condition="'$(InteropDir)'      == ''">$(InteropPlatform)\Interop\bin\$(Configuration)\</InteropDir>
   </PropertyGroup>
 
   <!-- ================ InteropTrace ================ -->
   
-  <Target Name="InteropProxyDefaultTrace">
+  <Target Name="CsInteropTrace">
     <Message Text="InteropPlatform = $(InteropPlatform)" />
     <Message Text="InteropDir      = $(InteropDir)" />
   </Target>
