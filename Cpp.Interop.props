@@ -1,9 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Import this script at the beginning of a C++ .interop project -->
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <ZouAgentFunc>Interop</ZouAgentFunc>
+    <_PropertySheetDisplayName>[zou] C++ Interop Agent</_PropertySheetDisplayName>
   </PropertyGroup>
-
-  <Import Project="Cpp.Boot.props" />
+  
+  <ImportGroup Label="ZouExtensions">
+    <Import Project="Cpp.Utility.props" />
+  </ImportGroup>
+  
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(ZouDir)Cpp.NTVersion.props" />
+    <Import Project="$(ZouDir)Cpp.IntDir.props" />
+    <Import Project="$(ZouDir)Cpp.Interop.OutDir.props" />
+  </ImportGroup>
+  
+  <Import Project="Cpp.Utility.targets" />
 </Project>
