@@ -7,13 +7,12 @@
   </PropertyGroup>
 
   <ImportGroup Label="PropertySheets">
-    <Import Project="$(ZouDir)Cpp.Pack.props" />
+    <Import Project="$(ZouDir)Cpp.Prepack.props" />
   </ImportGroup>
 
-  <!-- zou - build package -->
+  <!-- build component in [root-dir]$(Platform)\$(PlatformToolset)\bin\$(Configuration) -->
   <ItemGroup>
-    <ProdBinExclude Include="$(OutDir)test\*" />
-    <ProdBinExclude Include="$(OutDir)**\*.xml" />
+    <ImportProjects Include="Component.Redist.sln" />
   </ItemGroup>
-  <Import Project="$(ZouDir)Cpp.Pack.targets" />
+  <Import Project="$(ZouDir)Cpp.Prepack.targets" />
 </Project>
