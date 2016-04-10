@@ -26,8 +26,11 @@ Example: see Templates\Cs.Component.Pack.vcxproj
     </ProjectConfiguration>
   </ItemGroup>
   
-  <!-- Translate platform before forwarding to C# client -->
-  <Import Project="Cs.Forward.Platform.props" />
+  <!-- Translate the C# agent mandatory Win32 platform to C# x86 platform -->
+  <PropertyGroup>
+    <ForwardPlatform Condition="'$(ForwardPlatform)' == '' And '$(Platform)' == 'Win32'">x86</ForwardPlatform>
+    <ForwardPlatform Condition="'$(ForwardPlatform)' == '' And '$(PlatformSpecified)' == 'true'">$(Platform)</ForwardPlatform>
+  </PropertyGroup>
 
   <!-- Default C++ properties -->
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
