@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Import this script at the end of a C++ .prepack agent -->
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <PropertyGroup>
+    <!-- Build the client project into the prepack OutDir. -->
+    <ForwardOutDir Condition="'$(ForwardOutDir)' == ''">$(OutDir)</ForwardOutDir>
+  </PropertyGroup>
+  
   <Import Project="ImportProjects.targets" />
 </Project>
