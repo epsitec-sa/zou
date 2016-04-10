@@ -3,27 +3,13 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003"
          InitialTargets="CsIntDirTrace">
   
-  <Choose>
-    <When Condition="'$(ZouAgentFunc)' == ''">
-      <PropertyGroup>
-        <_PropertySheetDisplayName>C# Intermediate Directory</_PropertySheetDisplayName>
-        <!-- Initialize fallback -->
-        <IntDir />
-      </PropertyGroup>
-    </When>
-    <Otherwise>
-      <!-- For agent functions, redirect IntDir to temp folder to avoid cluttering the agent folder -->
-      <PropertyGroup>
-        <_PropertySheetDisplayName>C# Intermediate Directory: $(TMP)\_zou\...</_PropertySheetDisplayName>
-        <IntDir>$(TMP)\_zou\$(BundleName)\$(BundleRelativeProjectPath)\</IntDir>
-        <!-- Avoid MSB8029 warning -->
-        <IgnoreWarnIntDirInTempDetected>true</IgnoreWarnIntDirInTempDetected>
-      </PropertyGroup>
-    </Otherwise>
-  </Choose>
+    <PropertyGroup>
+      <_PropertySheetDisplayName>C# Intermediate Directory</_PropertySheetDisplayName>
+      <!-- Initialize fallback -->
+      <IntDir />
+    </PropertyGroup>
 
-  <!-- For agent functions, no fallback -->
-  <ImportGroup Label="PropertySheets" Condition="'$(ZouAgentFunc)' == ''">
+  <ImportGroup Label="PropertySheets">
     <Import Project="$(ZouBundleDir)**\$(MSBuildThisFileName)*$(MSBuildThisFileExtension)"   Condition="'$(ZouBundleDir)'   != ''" />
     <Import Project="$(ZouSolutionDir)**\$(MSBuildThisFileName)*$(MSBuildThisFileExtension)" Condition="'$(ZouSolutionDir)' != '' And '$(ZouSolutionDir)' != '$(ZouBundleDir)'" />
     <Import Project="$(ZouProjectDir)**\$(MSBuildThisFileName)*$(MSBuildThisFileExtension)"  Condition="'$(ZouProjectDir)'  != '' And '$(ZouProjectDir)'  != '$(ZouSolutionDir)' And '$(ZouProjectDir)' != '$(ZouBundleDir)'" />

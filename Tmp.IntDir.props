@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- This property sheet resolves the 'IntDir' property (supports override in zou.cfg folder). -->
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003"
+         InitialTargets="CsIntDirTmpTrace">
+
+    <!-- For agent functions, redirect IntDir to temp folder to avoid cluttering the agent folder -->
+    <PropertyGroup>
+      <_PropertySheetDisplayName>C# Intermediate Directory: $(TMP)\_zou\...</_PropertySheetDisplayName>
+      <IntDir>$(TMP)\_zou\$(BundleName)\$(BundleRelativeProjectPath)\</IntDir>
+      <!-- Avoid MSB8029 warning -->
+      <IgnoreWarnIntDirInTempDetected>true</IgnoreWarnIntDirInTempDetected>
+    </PropertyGroup>
+
+  <Target Name="CsIntDirTmpTrace">
+    <Message Importance="normal" Text="IntDir = $(IntDir)" />
+  </Target>
+</Project>
