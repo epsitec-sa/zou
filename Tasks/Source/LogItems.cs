@@ -60,6 +60,7 @@ namespace Zou
 			{
 				var maxNameLength = names.Max (name => name.Length);
 				var lines = names
+					.Where (name => name != "OriginalItemSpec")
 					.OrderBy (name => name)
 					.Select (name => $"  {name.PadRight (maxNameLength)} = {getMetaData (name)}")
 					.StartWith ($"{header}:");
