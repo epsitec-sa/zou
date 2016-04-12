@@ -12,11 +12,15 @@ namespace Zou
 	{
 		public override bool Execute()
 		{
-			this.Items.ForEach (item => item.Log (this.Title, this.Log));
+			this.Items.ForEach (item => this.LogItem (item));
 			return true;
 		}
 
-		public string Title
+		public string	Title
+		{
+			get; set;
+		}
+		public bool		AllMetadata
 		{
 			get; set;
 		}
@@ -26,31 +30,41 @@ namespace Zou
 			get;
 			set;
 		}
-	}
-	internal static partial class Mixins
-	{
-		public static void Log(this ITaskItem item, string title, TaskLoggingHelper log)
-		{
-			var header = string.IsNullOrEmpty (title) ? $"{item.ItemSpec}:" : $"{title} [{item.ItemSpec}]";
 
-			var buildItem = new BuildItem ("Item", item);
-			var names = buildItem
-				.CustomMetadataNames
-				.Cast<string> ()
-				.Where (name => name != "OriginalItemSpec")
-				.OrderBy(name => name);
+		private void LogItem(ITaskItem item)
+		{
+			var header = string.IsNullOrEmpty (this.Title) ? $"{item.ItemSpec}:" : $"{this.Title} [{item.ItemSpec}]";
+
+			if (this.AllMetadata)
+			{
+				this.LogMetadata (item.MetadataNames, header, item.GetMetadata);
+			}
+			else
+			{
+				var buildItem = new BuildItem ("Item", item);
+				this.LogMetadata (buildItem.CustomMetadataNames, header, item.GetMetadata);
+			}
+		}
+
+		private void LogMetadata(System.Collections.ICollection names, string header, Func<string, string> getMetaData)
+		{
+			this.LogMetadata (names.Cast<string> (), header, getMetaData);
+		}
+		private void LogMetadata(IEnumerable<string> names, string header, Func<string, string> getMetaData)
+		{
 			if (names.IsEmpty ())
 			{
-				log.LogMessage (MessageImportance.Normal, header);
+				this.Log.LogMessage (MessageImportance.Normal, header);
 			}
 			else
 			{
 				var maxNameLength = names.Max (name => name.Length);
 				var lines = names
-					.Select (name => $"  {name.PadRight (maxNameLength)} = {buildItem.GetMetadata (name)}")
+					.OrderBy (name => name)
+					.Select (name => $"  {name.PadRight (maxNameLength)} = {getMetaData (name)}")
 					.StartWith ($"{header}:");
 
-				log.LogMessage (MessageImportance.Normal, string.Join ("\n", lines));
+				this.Log.LogMessage (MessageImportance.Normal, string.Join ("\n", lines));
 			}
 		}
 	}
