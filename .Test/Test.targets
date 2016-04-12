@@ -69,7 +69,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ImportFiles Include="$(BundleDir)sal\images\*.png">
+    <ImportFiles Include="$(ZouDir)sal\images\*.png">
       <ImportDir>$(OutDir)images\</ImportDir>
     </ImportFiles>
     <ImportFiles Include="$(SvnEpsitecDir)\solutions\Modeles\Salaires 12.5\modele12.5-officiel.salx">
@@ -81,9 +81,13 @@
   <Import Project="$(ZouDir)Cpp.Import.targets" />
 
   <Target Name="Test1">
-    <Message Text="&quot;$(MSBuildToolsPath)\msbuild&quot; /nologo /v:m /t:Build &quot;/p:OutDir=%(ImportDir);Platform=%(ImportPlatform);Configuration=%(ImportConfiguration)&quot; &quot;%(ImportProjects.Identity)&quot;" />
+    <Message Text='"$(MSBuildToolsPath)\msbuild" /nologo /v:m /t:Build "/p:OutDir=%(ImportDir);Platform=%(ImportPlatform);Configuration=%(ImportConfiguration)" "%(ImportProjects.Identity)"' />
   </Target>
   <Target Name="Test2" DependsOnTargets="ImportProjects">
+    <Message Text="%(ImportFiles.Identity) =&gt; %(ImportDir)%(ImportFile)" />
+  </Target>
+  
+  <Target Name="ImportFiles" DependsOnTargets="ImportProjects">
     <Message Text="%(ImportFiles.Identity) =&gt; %(ImportDir)%(ImportFile)" />
   </Target>
 </Project>
