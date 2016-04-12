@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\zou.props"/>
+  
+  <!-- Dummy target used by ImportFiles and provided by Microsoft.Cpp.Targets -->
+  <Target Name="_PrepareForClean" />
+  
+  <ItemGroup>
+    <ImportFiles Include="$(ZouDir)**\*.props" Exclude="$(ZouDir)tmp\**\*">
+      <ImportDir>$(ZouDir)tmp\.Test\ImportFiles\</ImportDir>
+    </ImportFiles>
+  </ItemGroup>
+  <Import Project="$(ZouDir)ImportFiles.targets" />
+
+  <Target Name="Clean" DependsOnTargets="ImportFilesClean" />
+  <Target Name="Build" DependsOnTargets="ImportFiles" />
+</Project>

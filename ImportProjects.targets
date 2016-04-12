@@ -25,32 +25,34 @@
   </Target>
 
   <!-- ================ ImportProjectsClean ================ -->
-  
+
+  <!-- Target batching -->
   <Target Name="ImportProjectsClean"
-          Condition="'@(ImportProjects)' != ''"
           BeforeTargets="Clean"
-          DependsOnTargets="AddBuildOptions">
+          DependsOnTargets="AddBuildOptions"
+          Outputs="%(ProjectsToBuild.Identity)">
     <!-- The clean target does not care about project dependencies. This means that we can safely use the MSBuild task for solutions too. -->
     <MSBuild Projects="@(ProjectsToBuild)" Targets="Clean" Properties="%(Properties)" BuildInParallel="%(BuildInParallel)" />
   </Target>
 
   <!-- ================ ImportProjects ================ -->
 
+  <!-- Target batching -->
   <!-- Runs the _PrepareForClean target (which deletes the calling-project.lastbuildstate) so that Visual Studio always runs this target. -->
   <Target Name="ImportProjects"
-          Condition="'@(ImportProjects)' != ''"
           DependsOnTargets="_PrepareForClean;AddBuildOptions"
-          BeforeTargets="Build">
+          BeforeTargets="Build"
+          Outputs="%(ProjectsToBuild.Identity)">
 
     <LogItems Items="@(ProjectsToBuild)" Title="ProjectsToBuild" />
     <Message Text="%0A" />
     
     <!-- Restore nuget packages for solutions... -->
     <Exec Condition="'%(Extension)' == '.sln'"
-          Command="&quot;$(ZouDir)nuget&quot; restore &quot;%(ProjectsToBuild.Identity)&quot;"/>
+          Command='"$(ZouDir)nuget" restore "%(ProjectsToBuild.Identity)"'/>
     <!-- ...and projects -->
     <Exec Condition="'%(Extension)' != '.sln' And Exists('%(RootDir)%(Directory)packages.config')"
-          Command="&quot;$(ZouDir)nuget&quot; restore &quot;%(ProjectsToBuild.RootDir)%(Directory)packages.config&quot; -PackagesDirectory &quot;$(SolutionDir)packages\.&quot;"/>
+          Command='"$(ZouDir)nuget" restore "%(ProjectsToBuild.RootDir)%(Directory)packages.config" -PackagesDirectory "$(SolutionDir)packages\."'/>
     
     <!--
 	  The MSBuild task does not determine the build order but MSBuild.exe and Visual Studio do:
@@ -63,7 +65,7 @@
     <!-- Build solutions... -->
     <!-- TODO: process targets and BuildInParallel (/m) for command line -->
     <Exec Condition="'%(Extension)' == '.sln'"
-          Command="&quot;$(MSBuildToolsPath)\msbuild&quot; /nologo /v:m /m /t:Build &quot;/p:%(Properties)&quot; &quot;%(ProjectsToBuild.Identity)&quot;" />
+          Command='"$(MSBuildToolsPath)\msbuild" /nologo /v:m /m /t:Build "/p:%(Properties)" "%(ProjectsToBuild.Identity)"' />
     <!-- ...and projects -->
     <MSBuild Condition="'%(Extension)' != '.sln'"
              Projects="%(ProjectsToBuild.Identity)" Targets="Build" Properties="%(Properties)" BuildInParallel="%(BuildInParallel)" />

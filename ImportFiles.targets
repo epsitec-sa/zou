@@ -17,21 +17,22 @@ Input parameters:
   
   <!-- ================ ImportFilesClean ================ -->
 
-  <Target Name="ImportFilesClean"  BeforeTargets="Clean" Condition="'@(ImportFiles)' != ''">
+  <!-- Target batching -->
+  <Target Name="ImportFilesClean"  BeforeTargets="Clean" Outputs="%(ImportFiles.ImportDir)%(RecursiveDir)%(ImportFile)">
     <Delete  Files="%(ImportFiles.ImportDir)%(RecursiveDir)%(ImportFile)" />
     <Message Importance="high" Text="  [-] %(ImportFiles.ImportDir)%(RecursiveDir)%(ImportFile)" Condition="'%(ImportFile)' != ''"/>
   </Target>
   
   <!-- ================ ImportFiles ================ -->
 
+  <!-- Target batching -->
   <!-- Runs the _PrepareForClean target (which deletes the calling-project.lastbuildstate) so that Visual Studio does not skip this target's Inputs/Outputs check. -->
   <Target Name="ImportFiles"
-          Condition="'@(ImportFiles)' != ''"
           DependsOnTargets="_PrepareForClean"
           BeforeTargets="Build"
           Inputs="@(ImportFiles)"
-          Outputs="@(ImportFiles -> '%(ImportDir)%(RecursiveDir)%(ImportFile)')">
-    <Copy SourceFiles="%(ImportFiles.Identity)" DestinationFiles="%(ImportDir)%(RecursiveDir)%(ImportFile)" />
+          Outputs="%(ImportFiles.ImportDir)%(RecursiveDir)%(ImportFile)">
+    <Copy SourceFiles="@(ImportFiles)" DestinationFiles="%(ImportDir)%(RecursiveDir)%(ImportFile)"  />
     <Message Importance="high" Text="  [+] %(ImportFiles.Identity) =&gt; %(ImportDir)%(RecursiveDir)%(ImportFile)" />
   </Target>
 </Project>
