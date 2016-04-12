@@ -1,19 +1,38 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<!-- Import this script at the beginning of the C# interop agent block, at the end of the C# interop project -->
+<!-- Import this script at the end of the C# interop project -->
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003"
          InitialTargets="CsInteropTrace">
 
   <Import Project="Cs.Boot.props"/>
-
+  <Import Project="Com.WorkDir.props"/>
+  
   <PropertyGroup>
     <InteropPlatform Condition="'$(InteropPlatform)' == ''">Win32</InteropPlatform>
-    <InteropDir>$(InteropPlatform)\Interop\$(Configuration)\</InteropDir>
+    <InteropDir>$(WorkDir)$(InteropPlatform)\Interop\$(Configuration)\</InteropDir>
   </PropertyGroup>
+
+  <!-- Import interop components -->
+  <ItemGroup>
+    <Content Include="$(InteropDir)**\*.*" />
+  </ItemGroup>
+
+  <!-- Set default metadata for content items -->
+  <ItemDefinitionGroup>
+    <Content>
+      <!-- Target location for content files: link by reference and keep original layout -->
+      <Link Condition="'%(Link)' == ''">%(RecursiveDir)%(FileName)%(Extension)</Link>
+      <CopyToOutputDirectory Condition="'%(CopyToOutputDirectory)' == ''">PreserveNewest</CopyToOutputDirectory>
+      <!-- Avoid cluttering the project root -->
+      <Visible Condition="'%(Visible)' == ''">false</Visible>
+    </Content>
+  </ItemDefinitionGroup>
 
   <!-- ================ InteropTrace ================ -->
   
   <Target Name="CsInteropTrace">
     <Message Text="InteropPlatform = $(InteropPlatform)" />
     <Message Text="InteropDir      = $(InteropDir)" />
+    <!--<Message Text="%(Content.Identity) -&gt; %(Link)" />-->
+    <LogItems Items="@(Content)" Title="Content" AllMetadata="false" />
   </Target>
 </Project>
