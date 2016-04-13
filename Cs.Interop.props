@@ -5,11 +5,8 @@
 
   <Import Project="Cs.Boot.props"/>
   <Import Project="Com.WorkDir.props"/>
-  
-  <PropertyGroup>
-    <InteropPlatform Condition="'$(InteropPlatform)' == ''">Win32</InteropPlatform>
-    <InteropDir>$(WorkDir)$(InteropPlatform)\Interop\$(Configuration)\</InteropDir>
-  </PropertyGroup>
+  <Import Project="Com.InteropPlatform.props" />
+  <Import Project="Com.InteropDir.props" />
 
   <!-- Import interop components -->
   <ItemGroup>
@@ -31,8 +28,9 @@
   
   <Target Name="CsInteropTrace">
     <Message Text="InteropPlatform = $(InteropPlatform)" />
+    <Message Text="InteropProxy     = $(InteropProxy)" />
     <Message Text="InteropDir      = $(InteropDir)" />
     <!--<Message Text="%(Content.Identity) -&gt; %(Link)" />-->
-    <LogItems Items="@(Content)" Title="Content" AllMetadata="false" />
+    <LogItems Items="@(Content)" Title="Content" />
   </Target>
 </Project>

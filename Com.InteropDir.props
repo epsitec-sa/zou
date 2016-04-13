@@ -1,0 +1,28 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- This property sheet resolves the 'InteropDir'property (supports override in zou.cfg folder). -->
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003"
+         InitialTargets="InteropDirTrace"
+         TreatAsLocalProperty="InteropDir">
+
+  <PropertyGroup>
+    <_PropertySheetDisplayName>Interop Directory</_PropertySheetDisplayName>
+  </PropertyGroup> 
+
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(ZouBundleDir)**\$(MSBuildThisFileName)*$(MSBuildThisFileExtension)"   Condition="'$(ZouBundleDir)'   != ''" />
+    <Import Project="$(ZouSolutionDir)**\$(MSBuildThisFileName)*$(MSBuildThisFileExtension)" Condition="'$(ZouSolutionDir)' != '' And '$(ZouSolutionDir)' != '$(ZouBundleDir)'" />
+    <Import Project="$(ZouProjectDir)**\$(MSBuildThisFileName)*$(MSBuildThisFileExtension)"  Condition="'$(ZouProjectDir)'  != '' And '$(ZouProjectDir)'  != '$(ZouSolutionDir)' And '$(ZouProjectDir)' != '$(ZouBundleDir)'" />
+    <Import Project="$(ZouPrivateDir)$(MSBuildThisFileName).Default$(MSBuildThisFileExtension)" />
+  </ImportGroup>
+
+  <PropertyGroup>
+    <InteropDir Condition="'$(InteropDir)' != '' and !HasTrailingSlash('$(InteropDir)')">$(InteropDir)\</InteropDir>
+    <InteropDir Condition="'$(InteropDirSpecified)' != 'true'">$([System.IO.Path]::Combine($(ProjectDir),$(InteropDir)))</InteropDir>
+    <InteropDir Condition="'$(InteropDirSpecified)' == 'true'">$([System.IO.Path]::Combine($(MSBuildStartupDirectory),$(InteropDir)))</InteropDir>
+  </PropertyGroup>
+
+  <Target Name="InteropDirTrace">
+    <Message Importance="normal" Text="InteropDirSpecified = $(InteropDirSpecified)" />
+    <Message Importance="normal" Text="InteropDir          = $(InteropDir)" />
+  </Target>
+</Project>
