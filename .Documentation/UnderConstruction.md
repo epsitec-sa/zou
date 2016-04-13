@@ -48,6 +48,27 @@ Dans un projet C#, il faut utiliser la plateforme `x86`: `Win32` n'est pas suppo
 ### `OutputPath` et `OutDir`
 Si on exécute un .csproj via la tâche MSBuild et non l'exécutable, il faut que `OutputPath` soit spécifié.
 
+## Interopérapilité C# / C++
+
+### Pseudo-code
+
+	Common
+		Com.InteropPlatform: $Platform -> $InteropPlatform	// should match with solution!
+			$InteropPlatform = x86 -> x86, x64 -> x64, ... -> Win32
+		Com.InteropDir: ($InteropPlatform, $InteropProxy) -> $InteropDir
+			$InteropDir = $WorkDir$InteropPlatform\$InteropProxy\$Configuration\
+    
+	C++ Export
+		>>Cpp.Interop.props
+		    $OutDir        = $Com.InteropDir ($Com.InteropPlatform, $ProjectName)
+			$ForwardOutDir = $OutDir
+			ImportProjects ("libcreact.vcxproj")
+		>>Cpp.Interop.targets
+			>>ImportProjects.targets
+
+	C# Import
+		@Content = $Com.InteropDir($Com.InteropPlatform(), "libcreact.iproxy")\**\*.*
+
 ## Packaging
 On ne peut pas construire un projet et le packager dans le même script *MSBuild*. En effet, la sortie du premier projet n'est pas encore créée lorsque MSBuild évalue les éléments à packager (*evaluation vs execution time*). Le packager va donc utiliser les fichiers du build précédent (c.à.d. aucun après un *clean* par exemple).
 
@@ -63,25 +84,20 @@ Le projet **`.prepack`** permet de construire les composants désirés dans un d
 
 			<?xml version="1.0" encoding="utf-8"?>
 			<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-			  <Import Project="..\..\..\zou\Cs.Prepack.props" />
+			  <Import Project="..\..\..\zou\Cs.Boot.props" />
 			  
 			  <PropertyGroup Label="Globals">
 			    <ProjectGuid>{C1845161-2D66-4B0E-A7DF-E14BC4589EE0}</ProjectGuid>
 			  </PropertyGroup>
-			  
-			  <!-- zou - import utility project and package settings -->
-			  <Import Project="$(ZouDir)Cs.Utility.props" />
-			  <ImportGroup Label="PropertySheets">
-			    <Import Project="$(ZouDir)Cs.Standard.props" />
-			  </ImportGroup>
-			  <Import Project="$(ZouDir)Cs.Utility.targets" />
-			  <!-- zou - build product -->
-			  <ItemGroup>
-			    <ImportProjects Include="Sync.Server.Redist.sln">
-			      <Platform>Any CPU</Platform>
-			    </ImportProjects>
-			  </ItemGroup>
 			
+			  <ImportGroup Label="PropertySheets">
+			    <Import Project="$(ZouDir)Cs.Prepack.props" />
+			  </ImportGroup>
+			
+			  <!-- build synchro server in [root-dir]bin\$(Configuration) -->
+			  <ItemGroup>
+			    <ImportProjects Include="Sync.Server.Redist.sln" />
+			  </ItemGroup>
 			  <Import Project="$(ZouDir)Cs.Prepack.targets" />
 			</Project>   
  
