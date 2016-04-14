@@ -19,15 +19,25 @@
   </ItemDefinitionGroup>
   
   <!-- Import interop components -->
-  <Target Name="InteropToContent" DependsOnTargets="ImportProjects" BeforeTargets="BeforeBuild">
+  <Target Name="GetInteropFiles" DependsOnTargets="ImportProjects">
     <ItemGroup>
-      <Content Include="%(ImportProjects.OutDir)**\*.*">
+      <InteropFile Include="%(ImportProjects.OutDir)**\*.*" />
+    </ItemGroup>
+    <!--<LogItems Items="@(InteropFile)" Title="InteropFile" AllMetadata="true"/>-->
+  </Target>
+  
+  <Target Name="CreateInteropContent"
+          DependsOnTargets="GetInteropFiles"
+          BeforeTargets="BeforeBuild"
+          Inputs="@(InteropFile)"
+          Outputs="@(InteropFile->'$(TargetDir)%(RecursiveDir)%(FileName)%(Extension)')">
+    <ItemGroup>
+      <Content Include="@(InteropFile)">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         <Visible>false</Visible>
       </Content>
     </ItemGroup>
-    <!--<LogItems Items="@(ImportProjects)" Title="ImportProjects"/>-->
-    <!--<LogItems Items="@(Content)" Title="Content" />-->
+    <Message Importance="high" Text="  [i] %(InteropFile.Identity) -&gt; $(TargetDir)%(RecursiveDir)%(FileName)%(Extension)" />
   </Target>
 
   <Import Project="ImportProjects.targets"/>
