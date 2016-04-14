@@ -1,0 +1,35 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- Import this script at the end of the C# interop project -->
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <!-- Make sure that ImportProjects is available in VisualStudio's Build Action combo -->
+  <ItemGroup>
+    <AvailableItemName Include="ImportProjects" />
+  </ItemGroup>
+
+  <Import Project="Cs.Boot.props"/>
+  <Import Project="Com.WorkDir.props"/>
+  <Import Project="Com.InteropPlatform.props" />
+
+  <ItemDefinitionGroup>
+    <ImportProjects>
+      <Platform>$(InteropPlatform)</Platform>
+      <OutDir>$(WorkDir)$(InteropPlatform)\Interop\%(FileName)\$(Configuration)\</OutDir>
+    </ImportProjects>
+  </ItemDefinitionGroup>
+  
+  <!-- Import interop components -->
+  <Target Name="InteropToContent" DependsOnTargets="ImportProjects" BeforeTargets="BeforeBuild">
+    <ItemGroup>
+      <Content Include="%(ImportProjects.OutDir)**\*.*">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        <Visible>false</Visible>
+      </Content>
+    </ItemGroup>
+    <!--<LogItems Items="@(ImportProjects)" Title="ImportProjects"/>-->
+    <!--<LogItems Items="@(Content)" Title="Content" />-->
+  </Target>
+
+  <Import Project="ImportProjects.targets"/>
+  
+</Project>
