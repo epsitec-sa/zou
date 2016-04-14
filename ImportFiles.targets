@@ -33,5 +33,9 @@ Input parameters:
           Outputs="%(ImportFiles.ImportDir)%(RecursiveDir)%(ImportFile)">
     <Copy SourceFiles="@(ImportFiles)" DestinationFiles="%(ImportDir)%(RecursiveDir)%(ImportFile)"  />
     <Message Importance="high" Text="  [+] %(ImportFiles.Identity) =&gt; %(ImportDir)%(RecursiveDir)%(ImportFile)" />
+    
+    <ItemGroup>
+      <FileWrites Include="%(ImportDir)%(RecursiveDir)%(ImportFile)"/>
+    </ItemGroup>
   </Target>
 </Project>
