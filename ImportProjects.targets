@@ -1,10 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<!-- The ImportProjects.targets can be used to build and import the output of one or many projects or solutions. -->
+<!-- The ImportProject.targets can be used to build and import the output of one or many projects or solutions. -->
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
   <!-- Define imported projects default metadata -->
   <ItemDefinitionGroup>
-    <ImportProjects>
+    <ImportProject>
       <BuildInParallel>true</BuildInParallel>
       <Configuration>$(Configuration)</Configuration>
       <!-- Propagate the options specified on the command line -->
@@ -14,20 +14,20 @@
       <OutDir          Condition="'$(ForwardOutDir)'          != ''">$(ForwardOutDir)</OutDir>
       <Platform        Condition="'$(ForwardPlatform)'        != ''">$(ForwardPlatform)</Platform>
       <PlatformToolset Condition="'$(ForwardPlatformToolset)' != ''">$(ForwardPlatformToolset)</PlatformToolset>
-    </ImportProjects>
+    </ImportProject>
   </ItemDefinitionGroup>
 
   <!-- Preprocess build options and add a 'Properties' metadata -->
   <Target Name="AddBuildOptions">
-    <AddBuildOptions Projects="@(ImportProjects)">
+    <AddBuildOptions Projects="@(ImportProject)">
       <Output ItemName="ProjectsToBuild" TaskParameter="ProjectsOutput" />
     </AddBuildOptions>
   </Target>
 
-  <!-- ================ ImportProjectsClean ================ -->
+  <!-- ================ ImportProjectClean ================ -->
 
   <!-- Target batching -->
-  <Target Name="ImportProjectsClean"
+  <Target Name="ImportProjectClean"
           BeforeTargets="Clean"
           DependsOnTargets="AddBuildOptions"
           Outputs="%(ProjectsToBuild.Identity)">
@@ -35,10 +35,10 @@
     <MSBuild Projects="@(ProjectsToBuild)" Targets="Clean" Properties="%(Properties)" BuildInParallel="%(BuildInParallel)" />
   </Target>
 
-  <!-- ================ ImportProjects ================ -->
+  <!-- ================ ImportProject ================ -->
 
   <!-- Target batching -->
-  <Target Name="ImportProjects"
+  <Target Name="ImportProject"
           DependsOnTargets="_DeleteLastBuildState;AddBuildOptions"
           BeforeTargets="Build"
           Outputs="%(ProjectsToBuild.Identity)">

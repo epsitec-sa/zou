@@ -1,38 +1,38 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <!--
-The ImportFiles.targets can be used to import files in the parent project.
+The ImportFile.targets can be used to import files in the parent project.
 Input parameters:
-- @(ImportFiles)
+- @(ImportFile)
   - %(ImportDir)
   - %(ImportFile)
 -->
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <!-- Define imported files default metadata -->
   <ItemDefinitionGroup>
-    <ImportFiles>
+    <ImportFile>
       <ImportDir>$(OutDir)</ImportDir>
       <ImportFile>%(FileName)%(Extension)</ImportFile>
-    </ImportFiles>
+    </ImportFile>
   </ItemDefinitionGroup>
   
-  <!-- ================ ImportFilesClean ================ -->
+  <!-- ================ ImportFileClean ================ -->
 
   <!-- Target batching -->
-  <Target Name="ImportFilesClean" BeforeTargets="Clean" Outputs="%(ImportFiles.ImportDir)%(RecursiveDir)%(ImportFile)">
-    <Delete  Files="%(ImportFiles.ImportDir)%(RecursiveDir)%(ImportFile)" />
-    <Message Importance="high" Text="  [-] %(ImportFiles.ImportDir)%(RecursiveDir)%(ImportFile)" Condition="'%(ImportFile)' != ''"/>
+  <Target Name="ImportFileClean" BeforeTargets="Clean" Outputs="%(ImportFile.ImportDir)%(RecursiveDir)%(ImportFile)">
+    <Delete  Files="%(ImportFile.ImportDir)%(RecursiveDir)%(ImportFile)" />
+    <Message Importance="high" Text="  [-] %(ImportFile.ImportDir)%(RecursiveDir)%(ImportFile)" Condition="'%(ImportFile)' != ''"/>
   </Target>
   
-  <!-- ================ ImportFiles ================ -->
+  <!-- ================ ImportFile ================ -->
 
   <!-- Target batching -->
-  <Target Name="ImportFiles"
+  <Target Name="ImportFile"
           DependsOnTargets="_DeleteLastBuildState"
           BeforeTargets="Build"
-          Inputs="@(ImportFiles)"
-          Outputs="%(ImportFiles.ImportDir)%(RecursiveDir)%(ImportFile)">
-    <Copy SourceFiles="@(ImportFiles)" DestinationFiles="%(ImportDir)%(RecursiveDir)%(ImportFile)"  />
-    <Message Importance="high" Text="  [+] %(ImportFiles.Identity) =&gt; %(ImportDir)%(RecursiveDir)%(ImportFile)" />
+          Inputs="@(ImportFile)"
+          Outputs="%(ImportFile.ImportDir)%(RecursiveDir)%(ImportFile)">
+    <Copy SourceFiles="@(ImportFile)" DestinationFiles="%(ImportDir)%(RecursiveDir)%(ImportFile)"  />
+    <Message Importance="high" Text="  [+] %(ImportFile.Identity) =&gt; %(ImportDir)%(RecursiveDir)%(ImportFile)" />
     
     <ItemGroup>
       <FileWrites Include="%(ImportDir)%(RecursiveDir)%(ImportFile)"/>

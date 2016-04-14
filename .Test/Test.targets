@@ -58,36 +58,36 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ImportProjects Include="$(BundleDir)partout\SecureForms.Redist.sln">
+    <ImportProject Include="$(BundleDir)partout\SecureForms.Redist.sln">
       <ImportDir>$(OutDir)partout\</ImportDir>
       <ImportPlatform>Any CPU</ImportPlatform>
-    </ImportProjects>
-    <ImportProjects Include="$(BundleDir)swissdec\Net\Swissdec.Redist.sln">
+    </ImportProject>
+    <ImportProject Include="$(BundleDir)swissdec\Net\Swissdec.Redist.sln">
       <ImportDir>$(OutDir)swissdec\</ImportDir>
       <ImportPlatform>Any CPU</ImportPlatform>
-    </ImportProjects>
+    </ImportProject>
   </ItemGroup>
 
   <ItemGroup>
-    <ImportFiles Include="$(ZouDir)sal\images\*.png">
+    <ImportFile Include="$(ZouDir)sal\images\*.png">
       <ImportDir>$(OutDir)images\</ImportDir>
-    </ImportFiles>
-    <ImportFiles Include="$(SvnEpsitecDir)\solutions\Modeles\Salaires 12.5\modele12.5-officiel.salx">
+    </ImportFile>
+    <ImportFile Include="$(SvnEpsitecDir)\solutions\Modeles\Salaires 12.5\modele12.5-officiel.salx">
       <ImportDir>$(OutDir)</ImportDir>
       <ImportFile>Modele12%(Extension)</ImportFile>
-    </ImportFiles>
+    </ImportFile>
   </ItemGroup>
   
   <Import Project="$(ZouDir)Cpp.Import.targets" />
 
   <Target Name="Test1">
-    <Message Text='"$(MSBuildToolsPath)\msbuild" /nologo /v:m /t:Build "/p:OutDir=%(ImportDir);Platform=%(ImportPlatform);Configuration=%(ImportConfiguration)" "%(ImportProjects.Identity)"' />
+    <Message Text='"$(MSBuildToolsPath)\msbuild" /nologo /v:m /t:Build "/p:OutDir=%(ImportDir);Platform=%(ImportPlatform);Configuration=%(ImportConfiguration)" "%(ImportProject.Identity)"' />
   </Target>
-  <Target Name="Test2" DependsOnTargets="ImportProjects">
-    <Message Text="%(ImportFiles.Identity) =&gt; %(ImportDir)%(ImportFile)" />
+  <Target Name="Test2" DependsOnTargets="ImportProject">
+    <Message Text="%(ImportFile.Identity) =&gt; %(ImportDir)%(ImportFile)" />
   </Target>
   
-  <Target Name="ImportFiles" DependsOnTargets="ImportProjects">
-    <Message Text="%(ImportFiles.Identity) =&gt; %(ImportDir)%(ImportFile)" />
+  <Target Name="ImportFile" DependsOnTargets="ImportProject">
+    <Message Text="%(ImportFile.Identity) =&gt; %(ImportDir)%(ImportFile)" />
   </Target>
 </Project>

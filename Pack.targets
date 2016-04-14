@@ -26,23 +26,23 @@
   <!-- Package builder -->
   <ItemGroup>
     <!-- Production package -->
-    <ImportFiles Include="@(ProdBinInclude)" Exclude="@(ProdBinExclude)">
+    <ImportFile Include="@(ProdBinInclude)" Exclude="@(ProdBinExclude)">
       <ImportDir>$(PkgProdBinDir)</ImportDir>
-    </ImportFiles>
-    <ImportFiles Include="@(ProdDbgInclude)">
+    </ImportFile>
+    <ImportFile Include="@(ProdDbgInclude)">
       <ImportDir>$(PkgProdDbgDir)</ImportDir>
-    </ImportFiles>
+    </ImportFile>
 
     <!-- Developer package -->
-    <ImportFiles Include="@(DevBinInclude)">
+    <ImportFile Include="@(DevBinInclude)">
       <ImportDir>$(PkgDevBinDir)</ImportDir>
-    </ImportFiles>
-    <ImportFiles Include="@(DevCodInclude)">
+    </ImportFile>
+    <ImportFile Include="@(DevCodInclude)">
       <ImportDir>$(PkgDevDbgDir)</ImportDir>
-    </ImportFiles>
+    </ImportFile>
   </ItemGroup>
 
-  <Import Project="ImportFiles.targets" />
+  <Import Project="ImportFile.targets" />
 
   <Target Name="PackTrace">
     <Message Text="PkgSourceDir = $(PkgSourceDir)" />

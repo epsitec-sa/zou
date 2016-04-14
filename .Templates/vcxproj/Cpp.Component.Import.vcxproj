@@ -9,7 +9,7 @@ Use this template to create a project that builds and imports one or more extern
 - Include the 'zou' submodule (https://git.epsitec.ch/Build/zou) into the root of your bundle repository.
 - Create a new 'ProjectGUID' value.
 - Parameterize the import of the external project.
-  Modify the ImportDir and ImportPlatform properties and the ImportProjects items
+  Modify the ImportDir and ImportPlatform properties and the ImportProject items
 - Include this modified project into the importing solution.
 
 -->
@@ -28,29 +28,29 @@ Use this template to create a project that builds and imports one or more extern
 
   <!-- zou - import managed projects/solutions. -->
   <ItemGroup  Label="ExtensionTargets">
-    <ImportProjects Include="$(BundleDir)pain\Epsitec.Pain.Redist.sln">
+    <ImportProject Include="$(BundleDir)pain\Epsitec.Pain.Redist.sln">
       <Platform>Any CPU</Platform>
       <OutDir>$(OutDir)pain\</OutDir>
-    </ImportProjects>
-    <ImportProjects Include="$(BundleDir)partout\SecureForms.Redist.sln">
+    </ImportProject>
+    <ImportProject Include="$(BundleDir)partout\SecureForms.Redist.sln">
       <Platform>Any CPU</Platform>
       <OutDir>$(OutDir)partout\</OutDir>
-    </ImportProjects>
-    <ImportProjects Include="$(BundleDir)swissdec\Net\Swissdec.Redist.sln">
+    </ImportProject>
+    <ImportProject Include="$(BundleDir)swissdec\Net\Swissdec.Redist.sln">
       <Platform>Any CPU</Platform>
       <OutDir>$(OutDir)swissdec\</OutDir>
-    </ImportProjects>
-    <ImportProjects Include="$(BundleDir)xgen\Epsitec.XGen.Redist.sln">
+    </ImportProject>
+    <ImportProject Include="$(BundleDir)xgen\Epsitec.XGen.Redist.sln">
       <Platform>Any CPU</Platform>
       <OutDir>$(OutDir)xgen\</OutDir>
-    </ImportProjects>
+    </ImportProject>
   </ItemGroup>
   
   <!-- zou - import files -->
   <ItemGroup  Label="ExtensionTargets">
-    <ImportFiles Include="images\*.png" >
+    <ImportFile Include="images\*.png" >
       <ImportDir>$(OutDir)images\</ImportDir>
-    </ImportFiles>
+    </ImportFile>
   </ItemGroup>
 
   <Import Project="$(ZouDir)Cpp.Import.targets" />

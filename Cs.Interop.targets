@@ -2,9 +2,9 @@
 <!-- Import this script at the end of the C# interop project -->
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
-  <!-- Make sure that ImportProjects is available in VisualStudio's Build Action combo -->
+  <!-- Make sure that ImportProject is available in VisualStudio's Build Action combo -->
   <ItemGroup>
-    <AvailableItemName Include="ImportProjects" />
+    <AvailableItemName Include="ImportProject" />
   </ItemGroup>
 
   <Import Project="Cs.Boot.props"/>
@@ -12,16 +12,16 @@
   <Import Project="Com.InteropPlatform.props" />
 
   <ItemDefinitionGroup>
-    <ImportProjects>
+    <ImportProject>
       <Platform>$(InteropPlatform)</Platform>
       <OutDir>$(WorkDir)$(InteropPlatform)\Interop\%(FileName)\$(Configuration)\</OutDir>
-    </ImportProjects>
+    </ImportProject>
   </ItemDefinitionGroup>
   
   <!-- Import interop components -->
-  <Target Name="GetInteropFiles" DependsOnTargets="ImportProjects">
+  <Target Name="GetInteropFiles" DependsOnTargets="ImportProject">
     <ItemGroup>
-      <InteropFile Include="%(ImportProjects.OutDir)**\*.*" />
+      <InteropFile Include="%(ImportProject.OutDir)**\*.*" />
     </ItemGroup>
     <!--<LogItems Items="@(InteropFile)" Title="InteropFile" AllMetadata="true"/>-->
   </Target>
@@ -40,6 +40,6 @@
     <Message Importance="high" Text="  [i] %(InteropFile.Identity) -&gt; $(TargetDir)%(RecursiveDir)%(FileName)%(Extension)" />
   </Target>
 
-  <Import Project="ImportProjects.targets"/>
+  <Import Project="ImportProject.targets"/>
   
 </Project>

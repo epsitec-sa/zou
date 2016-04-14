@@ -9,7 +9,7 @@
 - rename `C*.Standard` to `C*.PropertySheets` (warning: need to update all `.vcxproj`)
 - check `Cs.Forward.OutDir.props` for redondant conditions
 - rename C*.Utility.* to C*.Agent.*
-- ImportFiles: rename metadata fields
+- ImportFile: rename metadata fields
 	- ImportDir -> TargetDir
 	- ImportFile -> TargetFile
 
@@ -62,9 +62,9 @@ Si on exécute un .csproj via la tâche MSBuild et non l'exécutable, il faut qu
 		>>Cpp.Interop.props
 		    $OutDir        = $Com.InteropDir ($Com.InteropPlatform, $ProjectName)
 			$ForwardOutDir = $OutDir
-			ImportProjects ("libcreact.vcxproj")
+			ImportProject ("libcreact.vcxproj")
 		>>Cpp.Interop.targets
-			>>ImportProjects.targets
+			>>ImportProject.targets
 
 	C# Import
 		@Content = $Com.InteropDir($Com.InteropPlatform(), "libcreact.iproxy")\**\*.*
@@ -96,7 +96,7 @@ Le projet **`.prepack`** permet de construire les composants désirés dans un d
 			
 			  <!-- build synchro server in [root-dir]bin\$(Configuration) -->
 			  <ItemGroup>
-			    <ImportProjects Include="Sync.Server.Redist.sln" />
+			    <ImportProject Include="Sync.Server.Redist.sln" />
 			  </ItemGroup>
 			  <Import Project="$(ZouDir)Cs.Prepack.targets" />
 			</Project>   
