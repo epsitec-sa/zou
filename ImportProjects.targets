@@ -38,9 +38,8 @@
   <!-- ================ ImportProjects ================ -->
 
   <!-- Target batching -->
-  <!-- Runs the _PrepareForClean target (which deletes the calling-project.lastbuildstate) so that Visual Studio always runs this target. -->
   <Target Name="ImportProjects"
-          DependsOnTargets="_PrepareForClean;AddBuildOptions"
+          DependsOnTargets="_DeleteLastBuildState;AddBuildOptions"
           BeforeTargets="Build"
           Outputs="%(ProjectsToBuild.Identity)">
 
