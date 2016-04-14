@@ -60,12 +60,12 @@
         <MSBuild Projects="%(ProjectsToBuild.Identity)" Targets="Build" Properties="OutDir=%(OutDir);Configuration=%(Configuration);Platform=%(Platform) " />
     Instead with use the Exec task which starts the MSBuild process.
 	  -->
-    
+
     <!-- Build solutions... -->
     <!-- TODO: process targets and BuildInParallel (/m) for command line -->
     <Exec Condition="'%(Extension)' == '.sln'"
           Command='"$(MSBuildToolsPath)\msbuild" /nologo /v:m /m /t:Build "/p:%(Properties)" "%(ProjectsToBuild.Identity)"' />
-    <!-- ...and projects -->
+    <!-- ...and/or projects -->
     <MSBuild Condition="'%(Extension)' != '.sln'"
              Projects="%(ProjectsToBuild.Identity)" Targets="Build" Properties="%(Properties)" BuildInParallel="%(BuildInParallel)" />
   </Target>
