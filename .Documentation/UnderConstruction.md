@@ -114,7 +114,22 @@ Il faut aussi créer le .pack et le .prepack dans le même dossier que le projet
 - [MSBuild Property Evaluation](https://blogs.msdn.microsoft.com/aaronhallberg/2007/07/16/msbuild-property-evaluation/)
 - [How To: Implementing Custom Tasks – Part I](https://blogs.msdn.microsoft.com/msbuild/2006/01/21/how-to-implementing-custom-tasks-part-i/)
 - [HOW TO: Writing Custom Tasks – Part II – Types and Task Parameters](https://blogs.msdn.microsoft.com/msbuild/2006/02/02/how-to-writing-custom-tasks-part-ii-types-and-task-parameters/)
+
+### Developer Network
 - [MSBuild Properties](https://msdn.microsoft.com/en-us/library/ms171458.aspx)
+- [Target Build Order](https://msdn.microsoft.com/en-us/library/ee216359.aspx)
+- [Comparing Properties and Items](https://msdn.microsoft.com/en-us/library/dd997067.aspx#Anchor_2) 
+- [Property and Item Evaluation Order](https://msdn.microsoft.com/en-us/library/dd997067.aspx#Anchor_2)
+- [Property Functions](https://msdn.microsoft.com/en-us/library/dd633440.aspx)
+- [Item Functions](https://msdn.microsoft.com/en-us/library/ee886422.aspx)
+
+### StackOverflow
+- [Using Item functions on metadata values](http://stackoverflow.com/questions/9512577/using-item-functions-on-metadata-values)
+
+### MSDN Magazine
+- [MSBuild - Best Practices For Creating Reliable Builds, Part 1](https://msdn.microsoft.com/en-us/magazine/dd419659.aspx)
+
+
 ## C++ Output directories
 
 ### Default
