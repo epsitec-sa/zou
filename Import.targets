@@ -1,5 +1,11 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="ImportBuild" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="ImportProjects.targets" />
-  <Import Project="ImportFiles.targets" />
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Import this script at the end of a C++ .import agent -->
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="_ImportFile;_ImportProject">
+  <Import Project="ImportFile.targets" />
+  <Import Project="ImportProject.targets" />
+
+  <Target Name="_ImportProject"      BeforeTargets="Build" DependsOnTargets="ImportProject" />
+  <Target Name="_ImportFile"         BeforeTargets="Build" DependsOnTargets="ImportProject;ImportFile" />
+  <Target Name="_ImportFileClean"    AfterTargets="Clean"  DependsOnTargets="ImportFileClean" />
+  <Target Name="_ImportProjectClean" AfterTargets="Clean"  DependsOnTargets="ImportProjectClean" />
 </Project>

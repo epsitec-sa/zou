@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <!-- Import this script at the end of the C# interop project -->
-<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="InteropBuild">
 
   <!-- Make sure that ImportProject is available in VisualStudio's Build Action combo -->
   <ItemGroup>
@@ -19,16 +19,15 @@
   </ItemDefinitionGroup>
   
   <!-- Import interop components -->
-  <Target Name="GetInteropFiles" DependsOnTargets="ImportProject">
+  <Target Name="GetInteropFiles">
     <ItemGroup>
       <InteropFile Include="%(ImportProject.OutDir)**\*.*" />
     </ItemGroup>
-    <!--<LogItems Items="@(InteropFile)" Title="InteropFile" AllMetadata="true"/>-->
+    <LogItems Items="@(InteropFile)" Title="InteropFile"/>
   </Target>
   
   <Target Name="CreateInteropContent"
           DependsOnTargets="GetInteropFiles"
-          BeforeTargets="BeforeBuild"
           Inputs="@(InteropFile)"
           Outputs="@(InteropFile->'$(TargetDir)%(RecursiveDir)%(FileName)%(Extension)')">
     <ItemGroup>
@@ -40,6 +39,8 @@
     <Message Importance="high" Text="  [i] %(InteropFile.Identity) -&gt; $(TargetDir)%(RecursiveDir)%(FileName)%(Extension)" />
   </Target>
 
-  <Import Project="ImportProject.targets"/>
-  
+  <Target Name="InteropBuild" BeforeTargets="BeforeBuild" DependsOnTargets="ImportProject;CreateInteropContent" />
+  <Target Name="InteropClean" AfterTargets="AfterClean"   DependsOnTargets="ImportProjectClean" />
+
+  <Import Project="ImportProject.targets" />
 </Project>

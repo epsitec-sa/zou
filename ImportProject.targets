@@ -28,7 +28,6 @@
 
   <!-- Target batching -->
   <Target Name="ImportProjectClean"
-          BeforeTargets="Clean"
           DependsOnTargets="AddBuildOptions"
           Outputs="%(ProjectsToBuild.Identity)">
     <!-- The clean target does not care about project dependencies. This means that we can safely use the MSBuild task for solutions too. -->
@@ -40,7 +39,6 @@
   <!-- Target batching -->
   <Target Name="ImportProject"
           DependsOnTargets="_DeleteLastBuildState;AddBuildOptions"
-          BeforeTargets="Build"
           Outputs="%(ProjectsToBuild.Identity)">
 
     <LogItems Items="@(ProjectsToBuild)" Title="ProjectsToBuild" />
