@@ -1,50 +1,50 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003"
-         InitialTargets="PackTrace">
-  
-  <PropertyGroup>
-    <PkgSourceDir Condition="'$(PkgSourceDir)' == ''">$(OutDir)</PkgSourceDir>
-  </PropertyGroup>
-  <!-- Default includes and excludes for package builder -->
-  <ItemGroup>
-    <ProdBinInclude Include="$(PkgSourceDir)**\*" />
-    <ProdBinExclude Include="$(PkgSourceDir)**\*.pdb" />
-    <ProdBinExclude Include="$(PkgSourceDir)**\*.map" />
-    <ProdBinExclude Include="$(PkgSourceDir)**\*.lib" />
-    <ProdBinExclude Include="$(PkgSourceDir)**\*.exp" />
-    <ProdBinExclude Include="$(PkgSourceDir)**\*.bsc" />
-    <ProdBinExclude Include="$(PkgSourceDir)**\*.ilk" />
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="PackBuild">
 
-    <ProdDbgInclude Include="$(PkgSourceDir)**\*.pdb" />
-    <ProdDbgInclude Include="$(PkgSourceDir)**\*.map" />
-    <ProdDbgInclude Include="$(DbgDir)**\*.cod" Condition="'$(DbgDir)' != ''" />
+  <Target Name="PackCreateDefault">
+    <!-- Default includes and excludes -->
+    <ItemGroup>
+      <ProdBinInclude Include="$(OutDir)**\*" />
+      <ProdBinExclude Include="$(OutDir)**\*.pdb" />
+      <ProdBinExclude Include="$(OutDir)**\*.map" />
+      <ProdBinExclude Include="$(OutDir)**\*.lib" />
+      <ProdBinExclude Include="$(OutDir)**\*.exp" />
+      <ProdBinExclude Include="$(OutDir)**\*.bsc" />
+      <ProdBinExclude Include="$(OutDir)**\*.ilk" />
 
-    <DevBinInclude Include="$(PkgSourceDir)**\*" />
-    <DevCodInclude Include="$(DbgDir)**\*.cod" Condition="'$(DbgDir)' != ''" />
-  </ItemGroup>
+      <ProdDbgInclude Include="$(OutDir)**\*.pdb" />
+      <ProdDbgInclude Include="$(OutDir)**\*.map" />
+      <ProdDbgInclude Include="$(DbgDir)**\*.cod" Condition="'$(DbgDir)' != ''" />
 
-  <!-- Package builder -->
-  <ItemGroup>
-    <!-- Production package -->
-    <ImportFile Include="@(ProdBinInclude)" Exclude="@(ProdBinExclude)">
-      <ImportDir>$(PkgProdBinDir)</ImportDir>
-    </ImportFile>
-    <ImportFile Include="@(ProdDbgInclude)">
-      <ImportDir>$(PkgProdDbgDir)</ImportDir>
-    </ImportFile>
-
-    <!-- Developer package -->
-    <ImportFile Include="@(DevBinInclude)">
-      <ImportDir>$(PkgDevBinDir)</ImportDir>
-    </ImportFile>
-    <ImportFile Include="@(DevCodInclude)">
-      <ImportDir>$(PkgDevDbgDir)</ImportDir>
-    </ImportFile>
-  </ItemGroup>
-
-  <Import Project="ImportFile.targets" />
-
-  <Target Name="PackTrace">
-    <Message Text="PkgSourceDir = $(PkgSourceDir)" />
+      <DevBinInclude Include="$(OutDir)**\*" />
+      <DevCodInclude Include="$(DbgDir)**\*.cod" Condition="'$(DbgDir)' != ''" />
+    </ItemGroup>
   </Target>
+
+  <Target Name="PackCreate" DependsOnTargets="PackCreateDefault;PackFilter">
+    <!-- Dispatch package content to respective folders -->
+    <ItemGroup>
+      <!-- Production package -->
+      <ImportFile Include="@(ProdBinInclude)" Exclude="@(ProdBinExclude)">
+        <ImportDir>$(PkgProdBinDir)</ImportDir>
+      </ImportFile>
+      <ImportFile Include="@(ProdDbgInclude)">
+        <ImportDir>$(PkgProdDbgDir)</ImportDir>
+      </ImportFile>
+
+      <!-- Developer package -->
+      <ImportFile Include="@(DevBinInclude)">
+        <ImportDir>$(PkgDevBinDir)</ImportDir>
+      </ImportFile>
+      <ImportFile Include="@(DevCodInclude)">
+        <ImportDir>$(PkgDevDbgDir)</ImportDir>
+      </ImportFile>
+    </ItemGroup>
+  </Target>
+
+  <Target Name="PackBuild" AfterTargets="Build"  DependsOnTargets="ImportProject;PackCreate;ImportFile" />
+  <Target Name="PackClean" BeforeTargets="Clean" DependsOnTargets="PackCreate;ImportFileClean;ImportProjectClean" />
+
+  <Import Project="ImportProject.targets" />
+  <Import Project="ImportFile.targets" />
 </Project>
