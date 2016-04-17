@@ -2,44 +2,140 @@
 <!-- Import this script at the end of the C# interop project -->
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="GetTextBuild">
 
-  <!-- Make sure that ImportProject is available in VisualStudio's Build Action combo -->
+  <!-- Make sure that PoResource is available in VisualStudio's Build Action combo -->
   <ItemGroup>
-    <AvailableItemName Include="GetText" />
+    <AvailableItemName Include="PoResource" />
+    <AvailableItemName Include="PoGlobalResource" />
   </ItemGroup>
 
   <Import Project="Cs.Boot.props"/>
-  <Import Project="Com.WorkDir.props"/>
 
-  <!-- Create list of .cs file for xgettext -->
-  <Target Name="GetCsFiles">
+  <PropertyGroup>
+    <PoAnchorDir>$(BundleDir)</PoAnchorDir>
+    <PoIntDir>$([System.IO.Path]::Combine($(ProjectDir),$(IntermediateOutputPath)))</PoIntDir>
+    <PoSourcesPath>$(PoIntDir)posources.txt</PoSourcesPath>
+    <PoTemplatePath>$(PoIntDir)$(ProjectName).pot</PoTemplatePath>
+    <PoLocaleDir>locale\</PoLocaleDir>
+  </PropertyGroup>
+
+  <Target Name="SplitPoResourceByCulture">
+    <AssignCulture Files="@(PoResource);@(PoGlobalResource)">
+      <!-- Create the list of culture po -->
+      <Output TaskParameter="AssignedFilesWithCulture" ItemName="PoResourceWithCulture" />
+      <!-- Create the list of non-culture po -->
+      <Output TaskParameter="AssignedFilesWithNoCulture" ItemName="PoResourceWithNoCulture" />
+    </AssignCulture>
     <ItemGroup>
-      <CsFile Include="%(ProjectReference.RootDir)%(Directory)**\*.cs" Exclude="%(RootDir)%(Directory)obj\**\*.cs" />
+      <PoResource Remove="@(PoResourceWithCulture)" />
+      <PoResource Remove="@(PoResourceWithNoCulture)" />
+      <PoResource Include="@(PoResourceWithNoCulture);@(PoResourceWithCulture)">
+        <Type>PO</Type>
+        <Domain>$([System.IO.Path]::GetFileNameWithoutExtension('%(Filename)'))</Domain>
+        <MoResourceDir>$(TargetDir)$(PoLocaleDir)%(PoResource.Culture)\LC_MESSAGES\</MoResourceDir>
+        <MoResourceFullPath>%(PoResource.MoResourceDir)%(PoResource.Domain).mo</MoResourceFullPath>
+      </PoResource>
     </ItemGroup>
-    <Message Importance="high" Text="%(CsFile.Identity)" />
   </Target>
 
-  <!-- Save list of .cs file -->
-  <PropertyGroup>
-    <XGetTextInputPath>$([System.IO.Path]::Combine($(ProjectDir),$(IntermediateOutputPath)))xgettext_input.txt</XGetTextInputPath>
-    <!--<XGetTextOutputPath>$([System.IO.Path]::Combine($(ProjectDir),$(OutputPath)))$(ProjectName).pot</XGetTextOutputPath>-->
-  </PropertyGroup>
-  <Target Name="SaveCsFiles" DependsOnTargets="GetCsFiles">
-    <WriteLinesToFile File="$(XGetTextInputPath)" Lines="@(CsFile)" Overwrite="true" />
-    <!-- TODO - FOR TEST ONLY: open in default editor -->
-    <Exec Command='"$(XGetTextInputPath)"' />
+  <!-- Create list of .cs file for xgettext -->
+  
+  <Target Name="GetPoSources">
+    <ItemGroup>
+      <_Temporary Include="@(Compile)" Exclude="$(TMP)\*" />
+      <PoSource  Include="$([MSBuild]::MakeRelative($(PoAnchorDir), %(_Temporary.FullPath)))" />
+      <_Temporary Remove="@(_Temporary)" />
+    </ItemGroup>
+  </Target>
+  
+  <Target Name="GetPoReferenceSources" Condition="'@(PoGlobalResource)' != ''">
+    <ItemGroup>
+      <_Temporary Include="%(ProjectReference.RootDir)%(Directory)**\*.cs" Exclude="%(ProjectReference.RootDir)%(Directory)obj\**\*.cs" />
+      <PoSource  Include="$([MSBuild]::MakeRelative($(PoAnchorDir), %(_Temporary.Identity)))" />
+      <_Temporary Remove="@(_Temporary)" />
+    </ItemGroup>
+    <!--<LogItems Title="ProjectReference" Items="@(ProjectReference)" AllMetadata="true" />-->
+  </Target>
+
+  <!-- Save list of .cs file for xgettext -->
+  <Target Name="SavePoSources" DependsOnTargets="GetPoSources;GetPoReferenceSources">
+    <MakeDir Directories="$(PoIntDir)" />
+    <WriteLinesToFile File="$(PoSourcesPath)" Lines="@(PoSource)" Overwrite="true" />
+    <Message Importance="high" Text="%(PoSource.Identity)" />
+
+    <!-- open in default editor -->
+    <!--<Exec Command='"$(PoSourcesPath)"' />-->
   </Target>
 
   <!-- Create .pot file -->
-  <Target Name="XGetText" DependsOnTargets="SaveCsFiles">
-    <Exec Command='"$(ZouDir)gettext\xgettext" -k_ --from-code utf-8 -d Sync -L C# --no-wrap -f "$(XGetTextInputPath)" -o "$(XGetTextOutputPath)"' />
-  </Target>
-  <Target Name="Debug">
-    <LogItems Title="ProjectReference" Items="@(ProjectReference)" AllMetadata="true" />
-    <!--<LogItems Title="CsFile" Items="@(CsFile)" />-->
+  <Target Name="XGetText" DependsOnTargets="SavePoSources" Inputs="@(PoSource)" Outputs="$(PoTemplatePath)">
+    <Exec Command='"$(ZouDir)gettext\xgettext" -k_ --from-code=utf-8 --no-wrap -f"$(PoSourcesPath)" -o"$(PoTemplatePath)" -D"$(PoAnchorDir)."' />
   </Target>
 
-  <Target Name="GetTextBuild" BeforeTargets="Build" DependsOnTargets="XGetText" />
+  <Target Name="MsgMerge" DependsOnTargets="XGetText" Inputs="$(PoTemplatePath)" Outputs="@(PoResource)">
+    <Exec Command='"$(ZouDir)gettext\msgmerge" -U --no-wrap --lang=%(PoResource.Culture) "%(PoResource.FullPath)" "$(PoTemplatePath)"' />
+  </Target>
+
+  <!-- Use target batching -->
+  <Target Name="MsgFmt" DependsOnTargets="MsgMerge"
+          Inputs="%(PoResource.FullPath)"
+          Outputs="%(PoResource.MoResourceFullPath)">
+    <MakeDir Directories="%(PoResource.MoResourceDir)" />
+    <Exec Command='"$(ZouDir)gettext\msgfmt" -c -v -o"%(PoResource.MoResourceFullPath)" "%(PoResource.FullPath)"' />
+  </Target>
+
+  <Target Name="GetTextBuild" BeforeTargets="Build" DependsOnTargets="XGetText;SplitPoResourceByCulture;MsgMerge;MsgFmt">
+    <!--<LogItems Items="@(PoResource)" AllMetadata="true" />-->
+  </Target>
   <Target Name="GetTextClean" AfterTargets="Clean" />
 
-  <Import Project="ImportProject.targets" />
+  <Target Name="GetLocaleReference">
+    <ItemGroup>
+      <LocaleReference Include="%(ProjectReference.RootDir)%(Directory)$(OutputPath)$(PoLocaleDir)**\*.mo" />
+    </ItemGroup>
+  </Target>
+  
+  <Target Name="ImportLocaleReference"
+          DependsOnTargets="GetLocaleReference"
+          Inputs="%(LocaleReference.Identity)"
+          Outputs="$(TargetDir)$(PoLocaleDir)%(LocaleReference.RecursiveDir)%(FileName)%(Extension)">
+    <Copy SourceFiles="%(LocaleReference.Identity)" DestinationFiles="$(TargetDir)$(PoLocaleDir)%(RecursiveDir)%(FileName)%(Extension)"  />
+    <Message Importance="high" Text="  [+] %(LocaleReference.Identity) =&gt; $(TargetDir)$(PoLocaleDir)%(RecursiveDir)%(FileName)%(Extension)" />
+  </Target>
+
+  <Target Name="CreateLocaleContent"
+          DependsOnTargets="GetLocaleReference"
+          Inputs="@(LocaleReference)"
+          Outputs="@(LocaleReference->'$(TargetDir)%(RecursiveDir)%(FileName)%(Extension)')">
+    <Message Importance="high" Text="##### CREATELOCALECONTENT" />
+    <LogItems Items="@(ProjectReference)" Title="ProjectReference" AllMetadata="true" />
+    <LogItems Items="@(LocaleReference)" Title="LocaleReference" AllMetadata="true" />
+    <ItemGroup>
+      <Content Include="@(LocaleReference)">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        <Visible>false</Visible>
+      </Content>
+    </ItemGroup>
+    <!--<LogItems Items="@(Content)" Title="Content" AllMetadata="true" />
+    <Message Importance="high" Text="[mo] %(LocaleReference.Identity) -&gt; $(TargetDir)%(RecursiveDir)%(FileName)%(Extension)" />-->
+    <Message Importance="high" Text="##### CREATELOCALECONTENT" />
+  </Target>
+
+  <Target Name="LocaleBuild" BeforeTargets="BeforeBuild" DependsOnTargets="ImportLocaleReference;CreateLocaleContent" />
+
+  <!--<Target Name="CsGetTextTrace" BeforeTargets="BeforeBuild">
+    <Message Importance="high" Text="##### CSGETTEXTTRACE" />
+    <LogItems Items="@(ProjectReference)" Title="ProjectReference" AllMetadata="true" />
+    <ItemGroup>
+      <LocaleReference Include="%(ProjectReference.RootDir)%(Directory)$(OutputPath)$(PoLocaleDir)\**\*.mo" />
+    </ItemGroup>
+    <LogItems Items="@(LocaleReference)" Title="LocaleReference" AllMetadata="true" />
+    <ItemGroup>
+      <Content Include="@(LocaleReference)">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        <Visible>false</Visible>
+      </Content>
+    </ItemGroup>
+    <LogItems Items="@(Content)" Title="Content" AllMetadata="true" />
+    <Message Importance="high" Text="##### CSGETTEXTTRACE" />
+  </Target>-->
 </Project>
