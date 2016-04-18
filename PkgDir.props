@@ -1,0 +1,47 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- This property sheet resolves the 'PkgDir'property (supports override in zou.cfg folder). -->
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003"
+         InitialTargets="PkgDirTrace"
+         TreatAsLocalProperty="PkgDir;PkgProdBinDir">
+
+  <PropertyGroup>
+    <PkgDir        Condition="'$(PkgDir)'        != '' and !HasTrailingSlash('$(PkgDir)')">$(PkgDir)\</PkgDir>
+    <PkgProdBinDir Condition="'$(PkgProdBinDir)' != '' and !HasTrailingSlash('$(PkgProdBinDir)')">$(PkgProdBinDir)\</PkgProdBinDir>
+    <PkgProdBinDir Condition="'$(PkgProdBinDirSpecified)' == 'true'">$([System.IO.Path]::Combine($(MSBuildStartupDirectory),$(PkgProdBinDir)))</PkgProdBinDir>
+  </PropertyGroup>
+
+  <Choose>
+    <When Condition="'$(PkgDirSpecified)' == 'true'">
+      <PropertyGroup>
+        <PkgDir>$([System.IO.Path]::Combine($(MSBuildStartupDirectory),$(PkgDir)))</PkgDir>
+      </PropertyGroup>
+    </When>
+    <When Condition="'$(WorkDirSpecified)' == 'true'">
+      <PropertyGroup>
+        <PkgDir>$([System.IO.Path]::Combine($(WorkDir),$(PkgDir)))</PkgDir>
+      </PropertyGroup>
+    </When>
+    <Otherwise>
+      <PropertyGroup>
+        <PkgDir>$([System.IO.Path]::Combine($(ProjectDir),$(PkgDir)))</PkgDir>
+      </PropertyGroup>
+    </Otherwise>
+  </Choose>
+
+  <PropertyGroup>
+    <PkgProdBinDir Condition="'$(PkgProdBinDir)' == ''">$(PkgDir)Prod\bin\</PkgProdBinDir>
+    <PkgProdDbgDir Condition="'$(PkgProdDbgDir)' == ''">$(PkgDir)Prod\dbg\</PkgProdDbgDir>
+    <PkgDevBinDir  Condition="'$(PkgDevBinDir)'  == ''">$(PkgDir)Dev\bin\</PkgDevBinDir>
+    <PkgDevDbgDir  Condition="'$(PkgDevDbgDir)'  == ''">$(PkgDir)Dev\dbg\</PkgDevDbgDir>
+  </PropertyGroup>
+  
+  <Target Name="PkgDirTrace">
+    <Message Importance="normal" Text="PkgDirSpecified        = $(PkgDirSpecified)" />
+    <Message Importance="normal" Text="PkgProdBinDirSpecified = $(PkgProdBinDirSpecified)" />
+    <Message Importance="normal" Text="PkgDir                 = $(PkgDir)" />
+    <Message Importance="normal" Text="PkgProdBinDir          = $(PkgProdBinDir)" />
+    <Message Importance="normal" Text="PkgProdDbgDir          = $(PkgProdDbgDir)" />
+    <Message Importance="normal" Text="PkgDevBinDir           = $(PkgDevBinDir)" />
+    <Message Importance="normal" Text="PkgDevDbgDir           = $(PkgDevDbgDir)" />
+  </Target>
+</Project>

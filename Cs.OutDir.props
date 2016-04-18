@@ -1,8 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <!-- This property sheet resolves the 'OutDir'property (supports override in zou.cfg folder). -->
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003"
-         TreatAsLocalProperty="OutDir"
-         InitialTargets="CsOutDirTrace">
+         TreatAsLocalProperty="OutDir">
   
   <PropertyGroup>
     <_PropertySheetDisplayName>C# Output Directory</_PropertySheetDisplayName>
@@ -20,30 +19,5 @@
     <Import Project="$(ZouPrivateDir)$(MSBuildThisFileName).Default$(MSBuildThisFileExtension)" />
   </ImportGroup>
 
-  <PropertyGroup>
-    <OutDir Condition="'$(OutDir)' != '' and !HasTrailingSlash('$(OutDir)')">$(OutDir)\</OutDir>
-  </PropertyGroup>
-
-  <Choose>
-    <When Condition="'$(OutDirSpecified)' == 'true'">
-      <PropertyGroup>
-        <OutDir>$([System.IO.Path]::Combine($(MSBuildStartupDirectory),$(OutDir)))</OutDir>
-      </PropertyGroup>
-    </When>
-    <When Condition="'$(WorkDirSpecified)' == 'true'">
-      <PropertyGroup>
-        <OutDir>$([System.IO.Path]::Combine($(WorkDir),$(OutDir)))</OutDir>
-      </PropertyGroup>
-    </When>
-    <Otherwise>
-      <PropertyGroup>
-        <OutDir>$([System.IO.Path]::Combine($(ProjectDir),$(OutDir)))</OutDir>
-      </PropertyGroup>
-    </Otherwise>
-  </Choose>
-
-  <Target Name="CsOutDirTrace">
-    <Message Importance="normal" Text="OutDirSpecified = $(OutDirSpecified)" />
-    <Message Importance="normal" Text="OutDir          = $(OutDir)" />
-  </Target>
+  <Import Project="OutDir.props" />
 </Project>
