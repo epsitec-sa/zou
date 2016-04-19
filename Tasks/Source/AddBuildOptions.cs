@@ -12,6 +12,7 @@ namespace Zou
 {
 	public enum Language
 	{
+		None,
 		Cpp,
 		CSharp
 	}
@@ -93,8 +94,7 @@ namespace Zou
 				platform = platform.ToLowerInvariant ();
 				if (platform == "any cpu" || platform == "anycpu")
 				{
-					var extension = Path.GetExtension (project.ItemSpec).ToLowerInvariant ();
-					if (extension == ".sln")
+					if (project.ItemSpec.EndsWith (".sln", StringComparison.OrdinalIgnoreCase))
 					{
 						project.SetMetadata ("Platform", "Any CPU");
 					}
@@ -122,18 +122,24 @@ namespace Zou
 		private static Language				GetLanguageMetaData(this ITaskItem item)	=> item.GetMetadata ("Language").ToLanguage ();
 		private static Language				ToLanguage(this string value)
 		{
-
-			if (value.StartsWith ("C#", StringComparison.OrdinalIgnoreCase) ||
-				value.StartsWith ("CSharp", StringComparison.OrdinalIgnoreCase))
+			if (string.IsNullOrWhiteSpace (value))
+			{
+				return Language.None;
+			}
+			else if (value.StartsWith ("C#", StringComparison.OrdinalIgnoreCase) ||
+				     value.StartsWith ("CSharp", StringComparison.OrdinalIgnoreCase))
 			{
 				return Language.CSharp;
 			}
-			if (value.StartsWith ("C++", StringComparison.OrdinalIgnoreCase) ||
-				value.StartsWith ("Cpp", StringComparison.OrdinalIgnoreCase))
+			else if (value.StartsWith ("C++", StringComparison.OrdinalIgnoreCase) ||
+				     value.StartsWith ("Cpp", StringComparison.OrdinalIgnoreCase))
 			{
 				return Language.Cpp;
 			}
-			throw new ArgumentOutOfRangeException (nameof (value), $"Language '{value}' not defined in zou");
+			else
+			{
+				throw new ArgumentOutOfRangeException (nameof (value), $"Language '{value}' not defined in zou");
+			}
 		}
 
 		private class BuildPropertyComparer : IComparer<Tuple<string, string>>
