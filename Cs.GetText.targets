@@ -13,32 +13,33 @@
   <PropertyGroup>
     <PoAnchorDir>$(BundleDir)</PoAnchorDir>
     <PoIntDir>$([System.IO.Path]::Combine($(ProjectDir),$(IntermediateOutputPath)))</PoIntDir>
-    <PoSourcesPath>$(PoIntDir)posources.txt</PoSourcesPath>
-    <PoTemplatePath>$(PoIntDir)$(ProjectName).pot</PoTemplatePath>
+    <PoTemplateSourcesPath>$(PoIntDir)potsources.txt</PoTemplateSourcesPath>
+    <PoTemplatePath>$(PoIntDir)package.pot</PoTemplatePath>
     <PoLocaleDir>locale\</PoLocaleDir>
   </PropertyGroup>
 
+  <!--=========================================================================-->
   <Target Name="SplitPoResourceByCulture">
+    <!-- Extract Culture metadata -->
     <AssignCulture Files="@(PoResource);@(PoGlobalResource)">
-      <!-- Create the list of culture po -->
       <Output TaskParameter="AssignedFilesWithCulture" ItemName="PoResourceWithCulture" />
-      <!-- Create the list of non-culture po -->
       <Output TaskParameter="AssignedFilesWithNoCulture" ItemName="PoResourceWithNoCulture" />
     </AssignCulture>
+    <!-- Add metadata helpers -->
     <ItemGroup>
       <PoResource Remove="@(PoResourceWithCulture)" />
       <PoResource Remove="@(PoResourceWithNoCulture)" />
       <PoResource Include="@(PoResourceWithNoCulture);@(PoResourceWithCulture)">
         <Type>PO</Type>
-        <Domain>$([System.IO.Path]::GetFileNameWithoutExtension('%(Filename)'))</Domain>
+        <Domain>$([System.IO.Path]::GetFileNameWithoutExtension('%(PoResource.Filename)'))</Domain>
         <MoResourceDir>$(TargetDir)$(PoLocaleDir)%(PoResource.Culture)\LC_MESSAGES\</MoResourceDir>
         <MoResourceFullPath>%(PoResource.MoResourceDir)%(PoResource.Domain).mo</MoResourceFullPath>
       </PoResource>
     </ItemGroup>
   </Target>
 
+  <!--=========================================================================-->
   <!-- Create list of .cs file for xgettext -->
-  
   <Target Name="GetPoSources">
     <ItemGroup>
       <_Temporary Include="@(Compile)" Exclude="$(TMP)\*" />
@@ -46,7 +47,6 @@
       <_Temporary Remove="@(_Temporary)" />
     </ItemGroup>
   </Target>
-  
   <Target Name="GetPoReferenceSources" Condition="'@(PoGlobalResource)' != ''">
     <ItemGroup>
       <_Temporary Include="%(ProjectReference.RootDir)%(Directory)**\*.cs" Exclude="%(ProjectReference.RootDir)%(Directory)obj\**\*.cs" />
@@ -56,54 +56,63 @@
     <!--<LogItems Title="ProjectReference" Items="@(ProjectReference)" AllMetadata="true" />-->
   </Target>
 
-  <!-- Save list of .cs file for xgettext -->
-  <Target Name="SavePoSources" DependsOnTargets="GetPoSources;GetPoReferenceSources">
+  <!--=========================================================================-->
+  <!-- Save the list of C# source files for xgettext -->
+  <Target Name="SavePoSources"
+          DependsOnTargets="GetPoSources;GetPoReferenceSources"
+          Inputs="@(PoSource)"
+          Outputs="$(PoTemplateSourcesPath)">
     <MakeDir Directories="$(PoIntDir)" />
-    <WriteLinesToFile File="$(PoSourcesPath)" Lines="@(PoSource)" Overwrite="true" />
+    <WriteLinesToFile File="$(PoTemplateSourcesPath)" Lines="@(PoSource)" Overwrite="true" />
     <Message Importance="high" Text="%(PoSource.Identity)" />
-
-    <!-- open in default editor -->
-    <!--<Exec Command='"$(PoSourcesPath)"' />-->
+    <!--<Exec Command='"$(PoTemplateSourcesPath)"' />-->  <!-- open in default editor -->
+  </Target>
+  <Target Name="SavePoSourcesClean">
+    <Delete Files="$(PoTemplateSourcesPath)" />
   </Target>
 
-  <!-- Create .pot file -->
-  <Target Name="XGetText" DependsOnTargets="SavePoSources" Inputs="@(PoSource)" Outputs="$(PoTemplatePath)">
-    <Exec Command='"$(ZouDir)gettext\xgettext" -k_ --from-code=utf-8 --no-wrap -f"$(PoSourcesPath)" -o"$(PoTemplatePath)" -D"$(PoAnchorDir)."' />
+  <!--=========================================================================-->
+  <!-- Create or update new PO Template file -->
+  <Target Name="CreatePoTemplate" DependsOnTargets="SavePoSources" Inputs="@(PoSource)" Outputs="$(PoTemplatePath)">
+    <Exec Command='"$(ZouDir)gettext\xgettext" -k_ --from-code=utf-8 --no-wrap -f"$(PoTemplateSourcesPath)" -o"$(PoTemplatePath)" -D"$(PoAnchorDir)."' />
   </Target>
 
-  <Target Name="MsgMerge" DependsOnTargets="XGetText" Inputs="$(PoTemplatePath)" Outputs="@(PoResource)">
+
+  <!--=========================================================================-->
+  <!-- Merge new PO Template into PO Resource file -->
+  <Target Name="MergePoTemplateIntoPoResource" DependsOnTargets="CreatePoTemplate" Inputs="$(PoTemplatePath)" Outputs="@(PoResource)">
     <Exec Command='"$(ZouDir)gettext\msgmerge" -U --no-wrap --lang=%(PoResource.Culture) "%(PoResource.FullPath)" "$(PoTemplatePath)"' />
   </Target>
 
+  <!--=========================================================================-->
+  <!-- Create MO Resource file from PO Resource file -->
   <!-- Use target batching -->
-  <Target Name="MsgFmt" DependsOnTargets="MsgMerge"
+  <Target Name="CreateMoResource" DependsOnTargets="MergePoTemplateIntoPoResource"
           Inputs="%(PoResource.FullPath)"
           Outputs="%(PoResource.MoResourceFullPath)">
     <MakeDir Directories="%(PoResource.MoResourceDir)" />
     <Exec Command='"$(ZouDir)gettext\msgfmt" -c -v -o"%(PoResource.MoResourceFullPath)" "%(PoResource.FullPath)"' />
   </Target>
 
-  <Target Name="GetTextBuild" BeforeTargets="Build" DependsOnTargets="XGetText;SplitPoResourceByCulture;MsgMerge;MsgFmt">
-    <!--<LogItems Items="@(PoResource)" AllMetadata="true" />-->
-  </Target>
-  <Target Name="GetTextClean" AfterTargets="Clean" />
-
-  <Target Name="GetLocaleReference">
+  <!--=========================================================================-->
+  <!-- Import Project References MO Resources files -->
+  <Target Name="GetReferencedMoResources">
     <ItemGroup>
       <LocaleReference Include="%(ProjectReference.RootDir)%(Directory)$(OutputPath)$(PoLocaleDir)**\*.mo" />
     </ItemGroup>
   </Target>
-  
+
   <Target Name="ImportLocaleReference"
-          DependsOnTargets="GetLocaleReference"
+          DependsOnTargets="GetReferencedMoResources"
           Inputs="%(LocaleReference.Identity)"
           Outputs="$(TargetDir)$(PoLocaleDir)%(LocaleReference.RecursiveDir)%(FileName)%(Extension)">
     <Copy SourceFiles="%(LocaleReference.Identity)" DestinationFiles="$(TargetDir)$(PoLocaleDir)%(RecursiveDir)%(FileName)%(Extension)"  />
     <Message Importance="high" Text="  [+] %(LocaleReference.Identity) =&gt; $(TargetDir)$(PoLocaleDir)%(RecursiveDir)%(FileName)%(Extension)" />
   </Target>
 
+  <!-- Set MO Resources files as content -->
   <Target Name="CreateLocaleContent"
-          DependsOnTargets="GetLocaleReference"
+          DependsOnTargets="GetReferencedMoResources"
           Inputs="@(LocaleReference)"
           Outputs="@(LocaleReference->'$(TargetDir)%(RecursiveDir)%(FileName)%(Extension)')">
     <Message Importance="high" Text="##### CREATELOCALECONTENT" />
@@ -121,6 +130,14 @@
   </Target>
 
   <Target Name="LocaleBuild" BeforeTargets="BeforeBuild" DependsOnTargets="ImportLocaleReference;CreateLocaleContent" />
+
+  <!--=========================================================================-->
+
+  <Target Name="GetTextBuild" BeforeTargets="Build" DependsOnTargets="SplitPoResourceByCulture;CreatePoTemplate;MergePoTemplateIntoPoResource;CreateMoResource">
+    <!--<LogItems Items="@(PoResource)" AllMetadata="true" />-->
+  </Target>
+  <Target Name="GetTextClean" AfterTargets="Clean" />
+
 
   <!--<Target Name="CsGetTextTrace" BeforeTargets="BeforeBuild">
     <Message Importance="high" Text="##### CSGETTEXTTRACE" />
