@@ -24,11 +24,19 @@ Example: see Templates\Cs.Component.Pack.vcxproj
       <Configuration>Release</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|Any CPU">
+      <Configuration>Debug</Configuration>
+      <Platform>Any CPU</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Any CPU">
+      <Configuration>Release</Configuration>
+      <Platform>Any CPU</Platform>
+    </ProjectConfiguration>
   </ItemGroup>
   
-  <!-- Translate the C# agent mandatory Win32 platform to C# x86 platform -->
+  <!-- Translate the C# agent mandatory Win32 platform to C# Any CPU platform -->
   <PropertyGroup>
-    <ForwardPlatform Condition="'$(ForwardPlatform)' == '' And '$(Platform)' == 'Win32'">x86</ForwardPlatform>
+    <ForwardPlatform Condition="'$(Platform)' == 'Win32'">Any CPU</ForwardPlatform>
     <ForwardPlatform Condition="'$(ForwardPlatform)' == '' And '$(PlatformSpecified)' == 'true'">$(Platform)</ForwardPlatform>
   </PropertyGroup>
 
