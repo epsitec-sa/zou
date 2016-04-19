@@ -10,6 +10,12 @@ using Microsoft.Build.Utilities;
 
 namespace Zou
 {
+	public enum Language
+	{
+		Cpp,
+		CSharp
+	}
+
 	public class AddBuildOptions : Task
 	{
 		public override bool			Execute()
@@ -65,6 +71,7 @@ namespace Zou
 				yield return "BuildInParallel";
 				yield return "Targets";
 				yield return "OriginalItemSpec";
+				yield return "Language";
 			}
 		}
 		private static bool					IsBuildProperty(string name) => !Mixins.NonBuildProperties.Contains (name);
@@ -100,7 +107,7 @@ namespace Zou
 		}
 		private static void					PreprocessOutDir(ITaskItem project)
 		{
-			if (project.IsCsProj () && string.IsNullOrEmpty(project.GetMetadata ("OutPutPath")))
+			if (project.UseOutputPath () && string.IsNullOrEmpty(project.GetMetadata ("OutPutPath")))
 			{
 				var outDir = project.GetMetadata ("OutDir");
 				if (!string.IsNullOrEmpty(outDir))
@@ -110,7 +117,24 @@ namespace Zou
 				}
 			}
 		}
-		private static bool					IsCsProj(this ITaskItem item) => 0 == string.Compare (".csproj", Path.GetExtension (item.ItemSpec), StringComparison.OrdinalIgnoreCase);
+		private static bool					UseOutputPath(this ITaskItem item)			=> item.IsCsProj () || item.GetLanguageMetaData () == Language.CSharp;
+		private static bool					IsCsProj(this ITaskItem item)				=> item.ItemSpec.EndsWith (".csproj", StringComparison.OrdinalIgnoreCase);
+		private static Language				GetLanguageMetaData(this ITaskItem item)	=> item.GetMetadata ("Language").ToLanguage ();
+		private static Language				ToLanguage(this string value)
+		{
+
+			if (value.StartsWith ("C#", StringComparison.OrdinalIgnoreCase) ||
+				value.StartsWith ("CSharp", StringComparison.OrdinalIgnoreCase))
+			{
+				return Language.CSharp;
+			}
+			if (value.StartsWith ("C++", StringComparison.OrdinalIgnoreCase) ||
+				value.StartsWith ("Cpp", StringComparison.OrdinalIgnoreCase))
+			{
+				return Language.Cpp;
+			}
+			throw new ArgumentOutOfRangeException (nameof (value), $"Language '{value}' not defined in zou");
+		}
 
 		private class BuildPropertyComparer : IComparer<Tuple<string, string>>
 		{
