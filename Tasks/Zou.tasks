@@ -6,11 +6,16 @@
         <ZouTasksDllPath>$(MSBuildThisFileDirectory)bin\Debug\Tasks.dll</ZouTasksDllPath>
       </PropertyGroup>
     </When>
-    <Otherwise>
+    <When Condition="Exists('$(ZouPrivateDir)Tasks.dll')">
       <PropertyGroup>
         <ZouTasksDllPath>$(ZouPrivateDir)Tasks.dll</ZouTasksDllPath>
       </PropertyGroup>
-    </Otherwise>
+    </When>
+    <When Condition="Exists('$(MSBuildThisFileDirectory)bin\Release\Tasks.dll')">
+      <PropertyGroup>
+        <ZouTasksDllPath>$(MSBuildThisFileDirectory)bin\Release\Tasks.dll</ZouTasksDllPath>
+      </PropertyGroup>
+    </When>
   </Choose>
   
   <UsingTask TaskName="AddBuildOptions" AssemblyFile="$(ZouTasksDllPath)" />
