@@ -8,7 +8,7 @@ using Microsoft.Build.BuildEngine;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 
-namespace Zou
+namespace Epsitec.Zou
 {
 	public enum Language
 	{
