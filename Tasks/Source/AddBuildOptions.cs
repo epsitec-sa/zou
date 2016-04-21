@@ -30,8 +30,8 @@ namespace Epsitec.Zou
 	public enum ProjectType
 	{
 		Sln,
-		CsProj,
-		VcxProj,
+		CSharp,
+		Cpp,
 	}
 
 	public class AddBuildOptions : Task
@@ -127,11 +127,11 @@ namespace Epsitec.Zou
 		{
 			if (language == Language.NotSpecified)
 			{
-				if (platform == Platform.AnyCpu)
+				// C++ agent for C++ app
+				if (!PlatformToLanguage.TryGetValue (platform, out language))
 				{
-					return Language.CSharp;
+					this.Log.LogError ($"Language cannot be resolved for solution {project.ItemSpec}, please specify:\n  add Language metadata in ImportProject item (exemple: <Language>C#<Language>) \n  or specify it on the command line (exemple: /p:Language=C#)");
 				}
-				this.Log.LogError ($"Language cannot be resolved for solution {project.ItemSpec}, please specify:\n  add Language metadata in ImportProject item (exemple: <Language>C#<Language>) \n  or specify it on the command line (exemple: /p:Language=C#)");
 			}
 			return language;
 		}
@@ -150,8 +150,13 @@ namespace Epsitec.Zou
 
 		private static readonly Dictionary<ProjectType, Language> ProjectToLanguage = new Dictionary<ProjectType, Language>()
 		{
-			{ ProjectType.CsProj,  Language.CSharp },
-			{ ProjectType.VcxProj, Language.Cpp },
+			{ ProjectType.CSharp, Language.CSharp },
+			{ ProjectType.Cpp,    Language.Cpp },
+		};
+		private static readonly Dictionary<Platform, Language> PlatformToLanguage = new Dictionary<Platform, Language>()
+		{
+			{ Platform.AnyCpu, Language.CSharp },
+			{ Platform.Win32,  Language.Cpp },
 		};
 	}
 
