@@ -34,10 +34,11 @@ Example: see Templates\Cs.Component.Pack.vcxproj
     </ProjectConfiguration>
   </ItemGroup>
   
-  <!-- Translate the C# agent mandatory Win32 platform to C# Any CPU platform -->
   <PropertyGroup>
+    <!-- A C# agent builds external projects/solutions into a C# container (uses the C# standard settings for platform, output path, ...) -->
+    <!-- Normally, external components are C# based, because C++ components should be imported via interop build action (cf Cs.Interop.targets) -->
+    <!-- The C# agent being a C++ utility project, we need to map its mandatory 'Win32' platform to 'Any CPU' for the external C# components -->
     <ForwardPlatform Condition="'$(Platform)' == 'Win32'">Any CPU</ForwardPlatform>
-    <ForwardPlatform Condition="'$(ForwardPlatform)' == '' And '$(PlatformSpecified)' == 'true'">$(Platform)</ForwardPlatform>
   </PropertyGroup>
 
   <!-- Default C++ properties -->
