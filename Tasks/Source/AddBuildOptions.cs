@@ -11,11 +11,11 @@ using Microsoft.Build.Utilities;
 
 namespace Epsitec.Zou
 {
-	public enum Language
+	public enum ProjectType
 	{
-		NotSpecified,
+		Solution,
+		CSharp,
 		Cpp,
-		CSharp
 	}
 	public enum Platform
 	{
@@ -26,12 +26,6 @@ namespace Epsitec.Zou
 		x64,
 		Arm,
 		Itanium
-	}
-	public enum ProjectType
-	{
-		Sln,
-		CSharp,
-		Cpp,
 	}
 
 	public class AddBuildOptions : Task
@@ -56,7 +50,7 @@ namespace Epsitec.Zou
 		private ITaskItem				AddOptions(ITaskItem projectItem)
 		{
 			var project = new TaskItem (projectItem);
-			this.PreprocessOptions (project);
+			this.ProcessOptions (project);
 
 			var buildItem = new BuildItem ("Project", project);
 			var names = buildItem.CustomMetadataNames.Cast<string> ();
@@ -79,32 +73,25 @@ namespace Epsitec.Zou
 
 			return project;
 		}
-		private void					PreprocessOptions(ITaskItem project)
+		private void					ProcessOptions(ITaskItem project)
 		{
 			try
 			{
 				var projectType = project.GetProjectType ();
-				var language    = this.PreprocessLanguage (project, projectType);
-				var platform    = this.PreprocessPlatform (project, projectType, language);
-				language        = this.PreprocessLanguage (project, projectType, language, platform);
-				this.PreprocessOutDir (project, projectType, language, platform);
+				var platform    = this.ProcessPlatform (project, projectType);
+				this.ProcessOutDir (project, projectType, platform);
 			}
 			catch (Exception e)
 			{
 				this.Log.LogErrorFromException (e);
 			}
 		}
-		private Language				PreprocessLanguage(ITaskItem project, ProjectType projectType)
+		private Platform				ProcessPlatform(ITaskItem project, ProjectType projectType)
 		{
-			Language language;
-			return ProjectToLanguage.TryGetValue (projectType, out language) ? language : project.GetLanguageMetadata ();
-		}
-		private Platform				PreprocessPlatform(ITaskItem project, ProjectType projectType, Language language)
-		{
-			var platform = project.GetPlatformMetadata ();
+			var platform = project.GetPlatform ();
 			if (platform == Platform.Win32)
 			{
-				if (language == Language.CSharp)
+				if (projectType == ProjectType.CSharp)
 				{
 					platform = Platform.AnyCpu;
 				}
@@ -112,7 +99,7 @@ namespace Epsitec.Zou
 
 			if (platform == Platform.AnyCpu)
 			{
-				if (projectType == ProjectType.Sln)
+				if (projectType == ProjectType.Solution)
 				{
 					project.SetMetadata ("Platform", "Any CPU");
 				}
@@ -123,21 +110,9 @@ namespace Epsitec.Zou
 			}
 			return platform;
 		}
-		private Language				PreprocessLanguage(ITaskItem project, ProjectType projectType, Language language, Platform platform)
+		private void					ProcessOutDir(ITaskItem project, ProjectType projectType, Platform platform)
 		{
-			if (language == Language.NotSpecified)
-			{
-				// C++ agent for C++ app
-				if (!PlatformToLanguage.TryGetValue (platform, out language))
-				{
-					this.Log.LogError ($"Language cannot be resolved for solution {project.ItemSpec}, please specify:\n  add Language metadata in ImportProject item (exemple: <Language>C#<Language>) \n  or specify it on the command line (exemple: /p:Language=C#)");
-				}
-			}
-			return language;
-		}
-		private void					PreprocessOutDir(ITaskItem project, ProjectType projectType, Language language, Platform platform)
-		{
-			if (language == Language.CSharp && string.IsNullOrEmpty(project.GetMetadata ("OutPutPath")))
+			if (projectType == ProjectType.CSharp && string.IsNullOrEmpty(project.GetMetadata ("OutPutPath")))
 			{
 				var outDir = project.GetMetadata ("OutDir");
 				if (!string.IsNullOrEmpty(outDir))
@@ -148,23 +123,12 @@ namespace Epsitec.Zou
 			}
 		}
 
-		private static readonly Dictionary<ProjectType, Language> ProjectToLanguage = new Dictionary<ProjectType, Language>()
-		{
-			{ ProjectType.CSharp, Language.CSharp },
-			{ ProjectType.Cpp,    Language.Cpp },
-		};
-		private static readonly Dictionary<Platform, Language> PlatformToLanguage = new Dictionary<Platform, Language>()
-		{
-			{ Platform.AnyCpu, Language.CSharp },
-			{ Platform.Win32,  Language.Cpp },
-		};
 	}
 
 	internal class BuildPropertyComparer : IComparer<Tuple<string, string>>
 	{
-		public static readonly BuildPropertyComparer Default = new BuildPropertyComparer ();
-
-		public int							Compare(Tuple<string, string> x, Tuple<string, string> y)
+		public static readonly BuildPropertyComparer	Default = new BuildPropertyComparer ();
+		public int										Compare(Tuple<string, string> x, Tuple<string, string> y)
 		{
 			var xEndsWithBackslash = x.Item2.EndsWith ("\\");
 			var yEndsWithBackslash = y.Item2.EndsWith ("\\");
@@ -184,11 +148,35 @@ namespace Epsitec.Zou
 	}
 	internal static partial class Mixins
 	{
-
-		public static bool					IsBuildProperty(string name)				=> !Mixins.NonBuildProperties.Contains (name);
-		public static ProjectType			GetProjectType(this ITaskItem item)			=> item.ItemSpec.ToProjectType ();
-		public static Platform				GetPlatformMetadata(this ITaskItem item)	=> item.GetMetadata ("Platform").ToPlatform ();
-		public static Language				GetLanguageMetadata(this ITaskItem item)	=> item.GetMetadata ("Language").ToLanguage ();
+		public static bool					IsBuildProperty(string name) => !Mixins.NonBuildProperties.Contains (name);
+		public static Platform				GetPlatform(this ITaskItem item)
+		{
+			var metadata = item.GetMetadata ("Platform");
+			if (string.IsNullOrWhiteSpace (metadata))
+			{
+				return Platform.NotSpecified;
+			}
+			else if (0 == string.Compare(metadata, "Any CPU", StringComparison.OrdinalIgnoreCase))
+			{
+				return Platform.AnyCpu;
+			}
+			Platform platform;
+			if (Enum.TryParse(metadata, true, out platform))
+			{
+				return platform;
+			}
+			throw new ArgumentOutOfRangeException (nameof (metadata), $"Platform '{metadata}' not defined in zou");
+		}
+		public static ProjectType			GetProjectType(this ITaskItem item)
+		{
+			var extension = Path.GetExtension (item.ItemSpec);
+			ProjectType projectType;
+			if (ProjectExtensionToType.TryGetValue (extension, out projectType))
+			{
+				return projectType;
+			}
+			throw new ArgumentOutOfRangeException (nameof (extension), $"Project type '{extension}' not defined in zou");
+		}
 
 		private static IEnumerable<string>	NonBuildProperties
 		{
@@ -200,53 +188,12 @@ namespace Epsitec.Zou
 				yield return "Language";
 			}
 		}
-		private static ProjectType			ToProjectType(this string itemSpec)
+
+		private static readonly Dictionary<string, ProjectType> ProjectExtensionToType = new Dictionary<string, ProjectType>()
 		{
-			var extension = Path.GetExtension (itemSpec);
-			ProjectType projectType;
-			if (Enum.TryParse<ProjectType> (extension.Substring (1), true, out projectType))
-			{
-				return projectType;
-			}
-			throw new ArgumentOutOfRangeException (nameof (extension), $"Project type '{extension}' not defined in zou");
-		}
-		private static Platform				ToPlatform(this string value)
-		{
-			if (string.IsNullOrWhiteSpace (value))
-			{
-				return Platform.NotSpecified;
-			}
-			else if (0 == string.Compare(value, "Any CPU", StringComparison.OrdinalIgnoreCase))
-			{
-				return Platform.AnyCpu;
-			}
-			Platform platform;
-			if (Enum.TryParse(value, true, out platform))
-			{
-				return platform;
-			}
-			throw new ArgumentOutOfRangeException (nameof (value), $"Platform '{value}' not defined in zou");
-		}
-		private static Language				ToLanguage(this string value)
-		{
-			if (string.IsNullOrWhiteSpace (value))
-			{
-				return Language.NotSpecified;
-			}
-			else if (0 == string.Compare (value, "C#", StringComparison.OrdinalIgnoreCase))
-			{
-				return Language.CSharp;
-			}
-			else if (0 == string.Compare (value, "C++", StringComparison.OrdinalIgnoreCase))
-			{
-				return Language.Cpp;
-			}
-			Language language;
-			if (Enum.TryParse (value, true, out language))
-			{
-				return language;
-			}
-			throw new ArgumentOutOfRangeException (nameof (value), $"Language '{value}' not defined in zou");
-		}
+			{ ".sln",     ProjectType.Solution },
+			{ ".csproj",  ProjectType.CSharp },
+			{ ".vcxproj", ProjectType.Cpp },
+		};
 	}
 }
