@@ -12,6 +12,8 @@ This script can be imported anywhere before first MS import (Microsoft.Cpp.Defau
   <PropertyGroup>
     <ZouDir>$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), '.git'))</ZouDir>
     <BundleDir>$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), '.git\HEAD'))</BundleDir>
+    <ZouDir    Condition="HasTrailingSlash('$(ZouDir)')">$(ZouDir.Substring(0, $(ZouDir.LastIndexOf('\'))))</ZouDir>
+    <BundleDir Condition="HasTrailingSlash('$(BundleDir)')">$(BundleDir.Substring(0, $(BundleDir.LastIndexOf('\'))))</BundleDir>
     <ZouName>$(ZouDir.Substring($([MSBuild]::Add($(ZouDir.LastIndexOf('\')), 1))))</ZouName>
     <BundleName>$(BundleDir.Substring($([MSBuild]::Add($(BundleDir.LastIndexOf('\')), 1))))</BundleName>
     <ZouDir>$(ZouDir)\</ZouDir>
@@ -24,6 +26,8 @@ This script can be imported anywhere before first MS import (Microsoft.Cpp.Defau
     <!-- Git Info -->
     <GitSmodDir>$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildProjectDirectory), '.git'))</GitSmodDir>
     <GitRepoDir>$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildProjectDirectory), '.git\HEAD'))</GitRepoDir>
+    <GitSmodDir Condition="HasTrailingSlash('$(GitSmodDir)')">$(GitSmodDir.Substring(0, $(GitSmodDir.LastIndexOf('\'))))</GitSmodDir>
+    <GitRepoDir Condition="HasTrailingSlash('$(GitRepoDir)')">$(GitRepoDir.Substring(0, $(GitRepoDir.LastIndexOf('\'))))</GitRepoDir>
     <GitSmodName>$(GitSmodDir.Substring($([MSBuild]::Add($(GitSmodDir.LastIndexOf('\')), 1))))</GitSmodName>
     <GitRepoName>$(GitRepoDir.Substring($([MSBuild]::Add($(GitRepoDir.LastIndexOf('\')), 1))))</GitRepoName>
     <GitSmodDir>$(GitSmodDir)\</GitSmodDir>
