@@ -112,6 +112,16 @@
     </GetMetadata>
     <Message Text="$(ImportProjectMetadata)" />
   </Target>
+
+  <Target Name="AddFileInfo">
+    <ItemGroup>
+      <InputFile Include="*.targets" />
+    </ItemGroup>
+    <AddFileInfo Files="@(InputFile)">
+      <Output TaskParameter="OutputFiles" ItemName="OutputFile" />
+    </AddFileInfo>
+    <LogItems Items="@(OutputFile)" AllMetadata="true" />
+  </Target>
   <Target Name="GitInfo">
     <PropertyGroup>
       <GitSmodDir>$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), '.git'))</GitSmodDir>
