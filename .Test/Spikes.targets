@@ -112,4 +112,19 @@
     </GetMetadata>
     <Message Text="$(ImportProjectMetadata)" />
   </Target>
+  <Target Name="GitInfo">
+    <PropertyGroup>
+      <GitSmodDir>$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), '.git'))</GitSmodDir>
+      <GitRepoDir>$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), '.git\HEAD'))</GitRepoDir>
+      <GitSmodName>$(GitSmodDir.Substring($([MSBuild]::Add($(GitSmodDir.LastIndexOfAny('/\')), 1))))</GitSmodName>
+      <GitRepoName>$(GitRepoDir.Substring($([MSBuild]::Add($(GitRepoDir.LastIndexOfAny('/\')), 1))))</GitRepoName>
+      <GitSmodDir>$(GitSmodDir)\</GitSmodDir>
+      <GitRepoDir>$(GitRepoDir)\</GitRepoDir>
+    </PropertyGroup>
+
+    <Message Text="GitSmodDir  = $(GitSmodDir)"  Importance="high"/>
+    <Message Text="GitRepoDir  = $(GitRepoDir)"  Importance="high"/>
+    <Message Text="GitSmodName = $(GitSmodName)" Importance="high"/>
+    <Message Text="GitRepoName = $(GitRepoName)" Importance="high"/>
+  </Target>
 </Project>

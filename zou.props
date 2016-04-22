@@ -2,8 +2,7 @@
 <!--
 This script can be imported anywhere before first MS import (Microsoft.Cpp.Default.props).
 -->
-<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003"
-         InitialTargets="ZouTrace">
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" InitialTargets="ZouTrace">
 
   <PropertyGroup>
     <!-- Configuration sub-directory -->
@@ -11,13 +10,24 @@ This script can be imported anywhere before first MS import (Microsoft.Cpp.Defau
   </PropertyGroup>
 
   <PropertyGroup>
-    <ZouDir>$([System.IO.Directory]::GetParent($(MSBuildThisFileDirectory)).FullName)\</ZouDir>
-    <BundleName>$([System.IO.Directory]::GetParent($(MSBuildThisFileDirectory)).Parent.Name)</BundleName>
-    <BundleDir>$([System.IO.Directory]::GetParent($(MSBuildThisFileDirectory)).Parent.FullName)\</BundleDir>
+    <ZouDir>$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), '.git'))</ZouDir>
+    <BundleDir>$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), '.git\HEAD'))</BundleDir>
+    <ZouName>$(ZouDir.Substring($([MSBuild]::Add($(ZouDir.LastIndexOf('\')), 1))))</ZouName>
+    <BundleName>$(BundleDir.Substring($([MSBuild]::Add($(BundleDir.LastIndexOf('\')), 1))))</BundleName>
+    <ZouDir>$(ZouDir)\</ZouDir>
+    <BundleDir>$(BundleDir)\</BundleDir>
 
     <ZouPrivateDir>$(ZouDir)private\</ZouPrivateDir>
     <ZouTasksDir>$(ZouDir)tasks\</ZouTasksDir>
     <ZouGetTextDir>$(ZouDir)gettext\</ZouGetTextDir>
+
+    <!-- Git Info -->
+    <GitSmodDir>$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildProjectDirectory), '.git'))</GitSmodDir>
+    <GitRepoDir>$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildProjectDirectory), '.git\HEAD'))</GitRepoDir>
+    <GitSmodName>$(GitSmodDir.Substring($([MSBuild]::Add($(GitSmodDir.LastIndexOf('\')), 1))))</GitSmodName>
+    <GitRepoName>$(GitRepoDir.Substring($([MSBuild]::Add($(GitRepoDir.LastIndexOf('\')), 1))))</GitRepoName>
+    <GitSmodDir>$(GitSmodDir)\</GitSmodDir>
+    <GitRepoDir>$(GitRepoDir)\</GitRepoDir>
   </PropertyGroup>
 
   <!-- zou custom tasks -->
@@ -110,7 +120,7 @@ This script can be imported anywhere before first MS import (Microsoft.Cpp.Defau
     <Message Importance="normal" Text="  DevEnvDir                      = $(DevEnvDir)" />
   </Target>
   
-  <Target Name="ZouTrace">
+  <Target Name="ZouTrace" Condition="'$(ZouTrace)' != ''">
     <Message Importance="normal" Text="Zou boot properties" />
     <Message Importance="normal" Text="===================" />
     <Message Importance="normal" Text="  BuildingInsideVisualStudio = $(BuildingInsideVisualStudio)" />
@@ -123,11 +133,16 @@ This script can be imported anywhere before first MS import (Microsoft.Cpp.Defau
     <Message Importance="normal" Text="  MSBuildProjectExtension    = $(MSBuildProjectExtension)" />
     <Message Importance="normal" Text="+ BundleName                 = $(BundleName)" />
     <Message Importance="normal" Text="+ BundleDir                  = $(BundleDir)" />
+    <Message Importance="normal" Text="+ ZouName                    = $(ZouName)" />
     <Message Importance="normal" Text="+ ZouDir                     = $(ZouDir)" />
     <Message Importance="normal" Text="+ ZouPrivateDir              = $(ZouPrivateDir)" />
     <Message Importance="normal" Text="+ ZouBundleDir               = $(ZouBundleDir)" />
     <Message Importance="normal" Text="+ ZouSolutionDir             = $(ZouSolutionDir)" />
     <Message Importance="normal" Text="+ ZouProjectDir              = $(ZouProjectDir)" />
+    <Message Importance="normal" Text="+ GitRepoName                = $(GitRepoName)" />
+    <Message Importance="normal" Text="+ GitRepoDir                 = $(GitRepoDir)" />
+    <Message Importance="normal" Text="+ GitSmodName                = $(GitSmodName)" />
+    <Message Importance="normal" Text="+ GitSmodDir                 = $(GitSmodDir)" />
     <Message Importance="normal" Text="+ BundleRelativeSolutionDir  = $(BundleRelativeSolutionDir)" />
     <Message Importance="normal" Text="+ BundleRelativeSolutionName = $(BundleRelativeSolutionName)" />
     <Message Importance="normal" Text="+ BundleRelativeSolutionPath = $(BundleRelativeSolutionPath)" />
