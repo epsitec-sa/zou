@@ -46,10 +46,10 @@
     
     <!-- Restore nuget packages for solutions... -->
     <Exec Condition="'%(Extension)' == '.sln'"
-          Command='"$(ZouDir)nuget" restore "%(ProjectsToBuild.Identity)"'/>
+          Command='"$(ZouBinDir)nuget" restore "%(ProjectsToBuild.Identity)"'/>
     <!-- ...and projects -->
     <Exec Condition="'%(Extension)' != '.sln' And Exists('%(RootDir)%(Directory)packages.config')"
-          Command='"$(ZouDir)nuget" restore "%(ProjectsToBuild.RootDir)%(Directory)packages.config" -PackagesDirectory "$(SolutionDir)packages\."'/>
+          Command='"$(ZouBinDir)nuget" restore "%(ProjectsToBuild.RootDir)%(Directory)packages.config" -PackagesDirectory "$(SolutionDir)packages\."'/>
     
     <!--
 	  The MSBuild task does not determine the build order but MSBuild.exe and Visual Studio do:
