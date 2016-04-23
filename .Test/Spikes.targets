@@ -124,17 +124,17 @@
   </Target>
   <Target Name="GitInfo">
     <PropertyGroup>
-      <GitSmodDir>$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), '.git'))</GitSmodDir>
-      <GitRepoDir>$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), '.git\HEAD'))</GitRepoDir>
-      <GitSmodName>$(GitSmodDir.Substring($([MSBuild]::Add($(GitSmodDir.LastIndexOfAny('/\')), 1))))</GitSmodName>
-      <GitRepoName>$(GitRepoDir.Substring($([MSBuild]::Add($(GitRepoDir.LastIndexOfAny('/\')), 1))))</GitRepoName>
-      <GitSmodDir>$(GitSmodDir)\</GitSmodDir>
-      <GitRepoDir>$(GitRepoDir)\</GitRepoDir>
+      <ModuleDir>$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), '.git'))</ModuleDir>
+      <BundleDir>$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), '.git\HEAD'))</BundleDir>
+      <ModuleName>$(ModuleDir.Substring($([MSBuild]::Add($(ModuleDir.LastIndexOfAny('/\')), 1))))</ModuleName>
+      <BundleName>$(BundleDir.Substring($([MSBuild]::Add($(BundleDir.LastIndexOfAny('/\')), 1))))</BundleName>
+      <ModuleDir>$(ModuleDir)\</ModuleDir>
+      <BundleDir>$(BundleDir)\</BundleDir>
     </PropertyGroup>
 
-    <Message Text="GitSmodDir  = $(GitSmodDir)"  Importance="high"/>
-    <Message Text="GitRepoDir  = $(GitRepoDir)"  Importance="high"/>
-    <Message Text="GitSmodName = $(GitSmodName)" Importance="high"/>
-    <Message Text="GitRepoName = $(GitRepoName)" Importance="high"/>
+    <Message Text="ModuleDir  = $(ModuleDir)"  Importance="high"/>
+    <Message Text="BundleDir  = $(BundleDir)"  Importance="high"/>
+    <Message Text="ModuleName = $(ModuleName)" Importance="high"/>
+    <Message Text="BundleName = $(BundleName)" Importance="high"/>
   </Target>
 </Project>
