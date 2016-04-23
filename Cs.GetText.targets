@@ -10,28 +10,37 @@
 
   <Import Project="Cs.Boot.props"/>
 
+  <!--=========================================================================-->
+  <!-- Definitions -->
+  
   <PropertyGroup>
     <PoAnchorDir>$(BundleDir)</PoAnchorDir>
     <PoIntDir>$([System.IO.Path]::Combine($(ProjectDir),$(IntermediateOutputPath)))</PoIntDir>
     <PoLocaleDir>locale\</PoLocaleDir>
     <PoTemplateSourcesPath>$(PoIntDir)potsources.txt</PoTemplateSourcesPath>
     <PoTemplatePath>$(PoIntDir)$(ProjectName).pot</PoTemplatePath>
-    
-    <BundleCompendiumDir Condition="'$(BundleDir)' != ''">$(BundleDir).Resource\</BundleCompendiumDir>
-    <ModuleCompendiumDir Condition="'$(ModuleDir)' != ''">$(ModuleDir).Resource\</ModuleCompendiumDir>
+
+    <BundleCompendiumDir>$(BundleDir).Resource\</BundleCompendiumDir>
+    <BundleCompendiumName>Compendium</BundleCompendiumName>
+    <ModuleCompendiumDir  Condition="'$(ModuleDir)'  != ''">$(ModuleDir).Resource\</ModuleCompendiumDir>
+    <ModuleCompendiumName Condition="'$(ModuleName)' != ''">Compendium</ModuleCompendiumName>
 
     <!--<GetTextKeyword>_</GetTextKeyword>-->
     <XGetText>$(ZouBinDir)xgettext</XGetText>
     <MsgInit>$(ZouBinDir)msginit</MsgInit>
     <MsgMerge>$(ZouBinDir)msgmerge</MsgMerge>
     <MsgCat>$(ZouBinDir)msgcat</MsgCat>
-    
+    <MsgAttrib>$(ZouBinDir)msgattrib</MsgAttrib>
+
     <CopyrightHolder>EPSITEC SA, CH-1400 Yverdon-les-Bains, Switzerland</CopyrightHolder>
-    <PackageName>'$(BundleName)'</PackageName>
+    <PackageName Condition="'$(ModuleName)' == ''">'$(BundleName)'</PackageName>
+    <PackageName Condition="'$(ModuleName)' != ''">'$(ModuleName)'</PackageName>
   </PropertyGroup>
 
   <!--=========================================================================-->
-  <Target Name="AddPoResourceInfo">
+  <!-- Setup PO Resource -->
+  
+  <Target Name="SetupPoResource">
     <!-- Extract Culture metadata -->
     <AssignCulture Files="@(PoResource);@(PoGlobalResource)">
       <Output TaskParameter="AssignedFilesWithCulture" ItemName="PoResourceWithCulture" />
@@ -50,67 +59,45 @@
         <MoResourceDir Condition="'%(WithCulture)' == 'true'">$(TargetDir)$(PoLocaleDir)%(Culture)\LC_MESSAGES\</MoResourceDir>
         <MoResourceDir Condition="'%(WithCulture)' != 'true'">$(TargetDir)$(PoLocaleDir)en-US\LC_MESSAGES\</MoResourceDir>
 
-        <BundleCompendium Condition="'$(BundleCompendiumDir)' != '' And '%(WithCulture)' == 'true'">$(BundleCompendiumDir)Compendium.%(Culture).po</BundleCompendium>
-        <BundleCompendium Condition="'$(BundleCompendiumDir)' != '' And '%(WithCulture)' != 'true'">$(BundleCompendiumDir)Compendium.po</BundleCompendium>
-        <ModuleCompendium Condition="'$(ModuleCompendiumDir)' != '' And '%(WithCulture)' == 'true'">$(ModuleCompendiumDir)Compendium.%(Culture).po</ModuleCompendium>
-        <ModuleCompendium Condition="'$(ModuleCompendiumDir)' != '' And '%(WithCulture)' != 'true'">$(ModuleCompendiumDir)Compendium.po</ModuleCompendium>
+        <BundleCompendium Condition="'%(WithCulture)' == 'true'">$(BundleCompendiumDir)$(BundleCompendiumName).%(Culture).po</BundleCompendium>
+        <BundleCompendium Condition="'%(WithCulture)' != 'true'">$(BundleCompendiumDir)$(BundleCompendiumName).po</BundleCompendium>
+        <ModuleCompendium Condition="'%(WithCulture)' == 'true' And '$(ModuleCompendiumDir)' != ''">$(ModuleCompendiumDir)$(ModuleCompendiumName).%(Culture).po</ModuleCompendium>
+        <ModuleCompendium Condition="'%(WithCulture)' != 'true' And '$(ModuleCompendiumDir)' != ''">$(ModuleCompendiumDir)$(ModuleCompendiumName).po</ModuleCompendium>
       </PoResource>
       <PoResource>
         <MoResourceFullPath>%(MoResourceDir)%(Domain).mo</MoResourceFullPath>
       </PoResource>
     </ItemGroup>
-    <LogItems Items="@(PoResource)" Title="PoResource" AllMetadata="true" />
-  </Target>
-  
-  <Target Name="CreateCompendiums">
-    <ItemGroup>
-      <Compendium Condition="'%(PoResource.BundleCompendium)' != ''" Include="%(PoResource.BundleCompendium)">
-        <Culture>%(PoResource.Culture)</Culture>
-        <WithCulture>%(PoResource.WithCulture)</WithCulture>
-      </Compendium>
-      <Compendium Condition="'%(PoResource.ModuleCompendium)' != ''" Include="%(PoResource.ModuleCompendium)">
-        <Culture>%(PoResource.Culture)</Culture>
-        <WithCulture>%(PoResource.WithCulture)</WithCulture>
-      </Compendium>
-    </ItemGroup>
-    <!--<LogItems Items="@(Compendium)" Title="Compendium" AllMetadata="true" />-->
-    <MakeDir Directories="%(Compendium.RootDir)%(Directory)" />
-    <Exec Condition="!Exists('%(Compendium.FullPath)')" Command='"$(MsgInit)" -l%(Culture) -o"%(FullPath)" -i"$(PoTemplatePath)"' />
+    <!--<LogItems Items="@(PoResource)" Title="PoResource" AllMetadata="true" />-->
   </Target>
 
   <!--=========================================================================-->
-  <!-- Create list of .cs file for xgettext -->
-  <Target Name="GetPoSources">
+  <!-- Create PO Template -->
+
+  <Target Name="GetPoSources" Condition="'@(Compile)' != ''">
     <ItemGroup>
-      <_Temporary Include="@(Compile)" Exclude="$(TMP)\*" />
-      <PoSource  Include="$([MSBuild]::MakeRelative($(PoAnchorDir), %(_Temporary.FullPath)))" />
-      <_Temporary Remove="@(_Temporary)" />
+      <PoSource Include="@(Compile)" Exclude="$(TMP)\*" />
+      <PoSource Condition="'@(PoGlobalResource)' != ''" Include="%(ProjectReference.RootDir)%(Directory)**\*.cs" Exclude="%(ProjectReference.RootDir)%(Directory)obj\**\*.cs" />
+      <PoSource>
+        <AnchorRelativePath>$([MSBuild]::MakeRelative($(PoAnchorDir), %(PoSource.FullPath)))</AnchorRelativePath>
+      </PoSource>
     </ItemGroup>
-  </Target>
-  <Target Name="GetPoReferenceSources" Condition="'@(PoGlobalResource)' != ''">
-    <ItemGroup>
-      <_Temporary Include="%(ProjectReference.RootDir)%(Directory)**\*.cs" Exclude="%(ProjectReference.RootDir)%(Directory)obj\**\*.cs" />
-      <PoSource  Include="$([MSBuild]::MakeRelative($(PoAnchorDir), %(_Temporary.Identity)))" />
-      <_Temporary Remove="@(_Temporary)" />
-    </ItemGroup>
-    <!--<LogItems Title="ProjectReference" Items="@(ProjectReference)" AllMetadata="true" />-->
+    <!--<LogItems Items="@(PoSource)" Title="PoSource" AllMetadata="true"/>-->
   </Target>
 
-  <!--=========================================================================-->
-  <!-- Save the list of PO source files for xgettext -->
   <Target Name="SavePoSources"
-          DependsOnTargets="GetPoSources;GetPoReferenceSources"
+          DependsOnTargets="GetPoSources"
           Inputs="@(PoSource)"
           Outputs="$(PoTemplateSourcesPath)">
+
     <MakeDir Directories="$(PoIntDir)" />
-    <WriteLinesToFile File="$(PoTemplateSourcesPath)" Lines="@(PoSource)" Overwrite="true" />
-    <Message Importance="high" Text="%(PoSource.Identity)" />
-    <!--<Exec Command='"$(PoTemplateSourcesPath)"' />-->  <!-- open in default editor -->
+    <WriteLinesToFile File="$(PoTemplateSourcesPath)" Lines="@(PoSource->'%(AnchorRelativePath)')" Overwrite="true" />
   </Target>
 
-  <!--=========================================================================-->
-  <!-- Create or update new PO Template file -->
-  <Target Name="CreatePoTemplate" DependsOnTargets="SavePoSources" Inputs="@(PoSource)" Outputs="$(PoTemplatePath)">
+  <Target Name="CreatePoTemplate"
+          DependsOnTargets="SavePoSources"
+          Inputs="$(PoTemplateSourcesPath)"
+          Outputs="$(PoTemplatePath)">
     <PropertyGroup>
       <_Options>--from-code=UTF-8 --no-wrap --copyright-holder="$(CopyrightHolder)" --package-name="$(PackageName)"</_Options>
       <_Options>$(_Options) -k_</_Options>
@@ -118,84 +105,170 @@
     </PropertyGroup>
     <Exec Command='"$(XGetText)" $(_Options)' />
   </Target>
-  <Target Name="DeletePoTemplate" Outputs="$(PoTemplateSourcesPath)">
-    <Delete Files="$(PoTemplateSourcesPath)" />
+  <Target Name="DeletePoTemplate" Outputs="$(PoTemplateSourcesPath);$(PoTemplatePath)">
+    <Delete Files="$(PoTemplateSourcesPath);$(PoTemplatePath)" />
   </Target>
 
-
   <!--=========================================================================-->
-  <!-- Merge new PO Template into PO Resource file -->
-
-  <!-- foreach %(PoResource.Identity) ... -->
-  <Target Name="MergePoTemplateIntoPoResource" DependsOnTargets="CreatePoTemplate;CreateCompendiums" Inputs="$(PoTemplatePath)" Outputs="%(PoResource.Identity)">
-    
-    <!--<Message Importance="high" Text="%(PoResource.Identity) (%(PoResource.Length) bytes)"/>-->
+  <!-- Init PO Resource -->
+  
+  <Target Name="InitPoResource"
+          DependsOnTargets="CreatePoTemplate"
+          Inputs="$(PoTemplatePath)"
+          Outputs="%(PoResource.FullPath)">
+    <!--<Message Importance="high" Text="%(PoResource.FullPath) (%(PoResource.Length) bytes)"/>-->
     <PropertyGroup>
       <_Options>-o"%(PoResource.FullPath)" -i"$(PoTemplatePath)"</_Options>
       <_Options Condition="'%(PoResource.WithCulture)' == 'true'">$(_Options) -l%(Culture)</_Options>
     </PropertyGroup>
     <Exec Condition="'%(PoResource.Length)' &lt;= '10'" Command='"$(MsgInit)" $(_Options)' />
-    
-    <!-- Merge PO template int PO resource -->
-    <PropertyGroup>
-      <_Options>-U --no-wrap -D"$(PoAnchorDir)."</_Options>
-      <_Options Condition="'%(PoResource.WithCulture)'   == 'true'">$(_Options) --lang=%(Culture)</_Options>
-      <_Options Condition="'%(PoResource.ModuleCompendium)' != ''">$(_Options) -C"%(ModuleCompendium)"</_Options>
-      <_Options Condition="'%(PoResource.ModuleCompendium)' == '' And '%(BundleCompendium)' != ''">$(_Options) -C"%(BundleCompendium)"</_Options>
-    </PropertyGroup>
-    <Exec Command='"$(MsgMerge)" $(_Options) "%(PoResource.FullPath)" "$(PoTemplatePath)"' />
-    <!-- Update compendiums -->
-    
-    <!-- If module compendium exists: -->
-    <!-- Update module compendium (concatenate PO resource and module compendium into module compendium)... -->
-    <Exec Condition="'%(PoResource.ModuleCompendium)' != ''" Command='"$(MsgCat)" -D"$(PoAnchorDir)." -o"%(ModuleCompendium)" "%(ModuleCompendium)" "%(FullPath)"' />
-    <!-- ... and merge PO template into module compendium-->
-    <Exec Condition="'%(PoResource.ModuleCompendium)' != ''" Command='"$(MsgMerge)" -U -D"$(PoAnchorDir)." "%(ModuleCompendium)" "$(PoTemplatePath)"' />
-    <!-- Update bundle compendium (concatenate module compendium and bundle compendium into bundle compendium)... -->
-    <Exec Condition="'%(PoResource.ModuleCompendium)' != '' And '%(BundleCompendium)' != ''" Command='"$(MsgCat)" -D"$(PoAnchorDir)." -o"%(BundleCompendium)" "%(BundleCompendium)" "%(ModuleCompendium)"' />
-    <!-- ... and merge PO template into bundle compendium-->
-    <Exec Condition="'%(PoResource.ModuleCompendium)' != '' And '%(BundleCompendium)' != ''" Command='"$(MsgMerge)" -U -D"$(PoAnchorDir)." "%(BundleCompendium)" "$(PoTemplatePath)"' />
-    
-    <!-- else -->
-    <!-- Update bundle compendium (concatenate PO resource and bundle compendium into bundle compendium)... -->
-    <Exec Condition="'%(PoResource.ModuleCompendium)' == '' And '%(BundleCompendium)' != ''" Command='"$(MsgCat)" -D"$(PoAnchorDir)." -o"%(BundleCompendium)" "%(BundleCompendium)" "%(FullPath)"' />
-    <!-- ... and merge PO template into module compendium-->
-    <Exec Condition="'%(PoResource.ModuleCompendium)' == '' And '%(BundleCompendium)' != ''" Command='"$(MsgMerge)" -U -D"$(PoAnchorDir)." "%(BundleCompendium)" "$(PoTemplatePath)"' />
   </Target>
 
   <!--=========================================================================-->
-  <!-- Create MO Resource file from PO Resource file -->
+  <!-- Init bundle compendium -->
 
-  <!-- Use target batching -->
-  <Target Name="CreateMoResource" DependsOnTargets="MergePoTemplateIntoPoResource"
+  <Target Name="InitBundleCompendium"
+          DependsOnTargets="CreatePoTemplate"
+          Inputs="$(PoTemplatePath)"
+          Outputs="%(PoResource.BundleCompendium)">
+    <MakeDir Directories="$(BundleCompendiumDir)" />
+    <PropertyGroup>
+      <_Options>--no-wrap -o"%(PoResource.BundleCompendium)" -i"$(PoTemplatePath)"</_Options>
+      <_Options Condition="'%(PoResource.WithCulture)' == 'true'">$(_Options) -l%(Culture)</_Options>
+    </PropertyGroup>
+    <Exec Condition="!Exists('%(PoResource.ModuleCompendium)')" Command='"$(MsgInit)" $(_Options)' />
+  </Target>
+
+  <!--=========================================================================-->
+  <!-- Init module compendium -->
+
+  <Target Name="InitModuleCompendium"
+          DependsOnTargets="CreatePoTemplate"
+          Inputs="$(PoTemplatePath)"
+          Outputs="%(PoResource.ModuleCompendium)">
+    <MakeDir Condition="'%(PoResource.ModuleCompendium)' != ''" Directories="$(ModuleCompendiumDir)" />
+    <PropertyGroup>
+      <_Options>--no-wrap -o"%(PoResource.ModuleCompendium)" -i"$(PoTemplatePath)"</_Options>
+      <_Options Condition="'%(PoResource.WithCulture)' == 'true'">$(_Options) -l%(Culture)</_Options>
+    </PropertyGroup>
+    <Exec Condition="'%(PoResource.ModuleCompendium)' != '' And !Exists('%(PoResource.ModuleCompendium)')" Command='"$(MsgInit)" $(_Options)' />
+  </Target>
+
+  <!--=========================================================================-->
+  <!-- Consolidate bundle compendium -->
+
+  <Target Name="ConsolidateBundleCompendiumWithPoResource"
+          DependsOnTargets="InitBundleCompendium;InitPoResource"
+          Inputs="%(PoResource.FullPath)"
+          Outputs="%(PoResource.BundleCompendium)">
+
+    <!-- Cat: BundleCompendium += PoResource -->
+    <PropertyGroup>
+      <_Options>--no-wrap -D"$(PoAnchorDir)." -o"%(PoResource.BundleCompendium)"</_Options>
+      <_Options Condition="'%(PoResource.WithCulture)' == 'true'">$(_Options) --lang=%(Culture)</_Options>
+    </PropertyGroup>
+    <Exec Command='"$(MsgCat)" $(_Options) "%(PoResource.BundleCompendium)" "%(PoResource.FullPath)"' />
+  </Target>
+
+  <Target Name="ConsolidateBundleWithModuleCompendium"
+          DependsOnTargets="InitBundleCompendium;InitModuleCompendium"
+          Inputs="%(PoResource.ModuleCompendium)"
+          Outputs="%(PoResource.BundleCompendium)">
+
+    <!-- Cat: BundleCompendium += ModuleCompendium -->
+    <PropertyGroup>
+      <_Options>--no-wrap -D"$(PoAnchorDir)." -o"%(PoResource.BundleCompendium)"</_Options>
+      <_Options Condition="'%(PoResource.WithCulture)' == 'true'">$(_Options) --lang=%(Culture)</_Options>
+    </PropertyGroup>
+    <Exec Condition="'%(PoResource.ModuleCompendium)' != ''" Command='"$(MsgCat)" $(_Options) "%(PoResource.BundleCompendium)" "%(PoResource.ModuleCompendium)"' />
+  </Target>
+
+  <Target Name="ConsolidateBundleCompendium" DependsOnTargets="ConsolidateBundleCompendiumWithPoResource;ConsolidateBundleWithModuleCompendium"/>
+
+  <!--=========================================================================-->
+  <!-- Update module compendium -->
+
+  <Target Name="UpdateModuleCompendium"
+          DependsOnTargets="ConsolidateBundleCompendium"
+          Inputs="$(PoTemplatePath);%(PoResource.BundleCompendium)"
+          Outputs="%(PoResource.ModuleCompendium)">
+
+    <!-- Delete translations -->
+    <PropertyGroup>
+      <_Options>--untranslated --force-po -D"$(PoAnchorDir)." -o"%(PoResource.ModuleCompendium)"</_Options>
+    </PropertyGroup>
+    <!--<Exec Command='"$(MsgAttrib)" $(_Options) "%(PoResource.ModuleCompendium)"' />-->
+
+    <!-- Merge: ModuleCompendium |= PoTemplate << BundleCompendium -->
+    <PropertyGroup>
+      <_Options>-U --no-wrap -q -D"$(PoAnchorDir)." -C"%(PoResource.BundleCompendium)"</_Options>
+      <_Options Condition="'%(PoResource.WithCulture)' == 'true'">$(_Options) --lang=%(PoResource.Culture)</_Options>
+    </PropertyGroup>
+    <Exec Condition="'%(PoResource.ModuleCompendium)' != ''" Command='"$(MsgMerge)" $(_Options) "%(PoResource.ModuleCompendium)" "$(PoTemplatePath)"' />
+    <!-- Avoid consolidation of bundle compendium during next build -->
+    <Touch Condition="'%(PoResource.ModuleCompendium)' != ''" Files="%(PoResource.BundleCompendium)" ForceTouch="true" />
+  </Target>
+
+  <!--=========================================================================-->
+  <!-- Update PO Resource -->
+
+  <Target Name="UpdatePoResource"
+          DependsOnTargets="ConsolidateBundleCompendium"
+          Inputs="$(PoTemplatePath)%(PoResource.BundleCompendium)"
+          Outputs="%(PoResource.FullPath)">
+
+    <!-- Delete translations -->
+    <PropertyGroup>
+      <_Options>--untranslated --force-po -D"$(PoAnchorDir)." -o"%(PoResource.FullPath)"</_Options>
+    </PropertyGroup>
+    <!--<Exec Command='"$(MsgAttrib)" $(_Options) "%(PoResource.FullPath)"' />-->
+
+    <!-- Merge: PoResource |= PoTemplate << BundleCompendium -->
+    <PropertyGroup>
+      <_Options>-U --no-wrap -q -D"$(PoAnchorDir)." -C"%(PoResource.BundleCompendium)"</_Options>
+      <_Options Condition="'%(PoResource.WithCulture)' == 'true'">$(_Options) --lang=%(PoResource.Culture)</_Options>
+    </PropertyGroup>
+    <Exec Command='"$(MsgMerge)" $(_Options) "%(PoResource.FullPath)" "$(PoTemplatePath)"' />
+    <!-- Avoid consolidation of bundle compendium during next build -->
+    <Touch Files="%(PoResource.BundleCompendium)" ForceTouch="true" />
+  </Target>
+
+  <!--=========================================================================-->
+  <!-- Create MO Resource -->
+
+  <Target Name="CreateMoResource" DependsOnTargets="UpdatePoResource"
           Inputs="%(PoResource.FullPath)"
           Outputs="%(PoResource.MoResourceFullPath)">
     <MakeDir Directories="%(PoResource.MoResourceDir)" />
-    <Exec Command='"$(ZouBinDir)msgfmt" -c -v -o"%(PoResource.MoResourceFullPath)" "%(PoResource.FullPath)"' />
+    <Exec Command='"$(ZouBinDir)msgfmt" -c -o"%(PoResource.MoResourceFullPath)" "%(PoResource.FullPath)"' />
   </Target>
   
-  <Target Name="DeleteMoResource" DependsOnTargets="AddPoResourceInfo" Outputs="%(PoResource.MoResourceFullPath)">
-    <Message Importance="high" Text="[-] %(PoResource.MoResourceFullPath)" />
+  <Target Name="DeleteMoResource" DependsOnTargets="SetupPoResource" Outputs="%(PoResource.MoResourceFullPath)">
+    <!--<Message Importance="high" Text="[-] %(PoResource.MoResourceFullPath)" />-->
     <Delete Files="%(PoResource.MoResourceFullPath)" />
   </Target>
 
   <!--=========================================================================-->
-  <!-- Import MO Resources owned by project references -->
+  <!-- Import MO Resources References -->
+  
   <Target Name="GetMoResourceReferences">
     <ItemGroup>
-      <MoResourceReference Include="%(ProjectReference.RootDir)%(Directory)$(OutputPath)$(PoLocaleDir)**\*.mo" />
+      <MoResourceReference Include="%(ProjectReference.RootDir)%(Directory)$(OutputPath)$(PoLocaleDir)**\*.mo">
+        <ProjectOwnerDirectory>%(ProjectReference.RootDir)%(Directory)</ProjectOwnerDirectory>
+      </MoResourceReference>
+      <MoResourceReference>
+        <Link>$([MSBuild]::MakeRelative(%(MoResourceReference.ProjectOwnerDirectory)$(OutputPath), %(MoResourceReference.FullPath)))</Link>
+      </MoResourceReference>
     </ItemGroup>
-    <!-- TODO: assign culture -->
-    <LogItems Items="@(MoResourceReference)" Title="MoResourceReference" AllMetadata="true" />
+    <!--<LogItems Items="@(ProjectReference)" Title="ProjectReference" AllMetadata="true" />
+    <LogItems Items="@(MoResourceReference)" Title="MoResourceReference" AllMetadata="true" />-->
   </Target>
 
-  <!-- Use target batching -->
   <Target Name="ImportMoResourceReferences"
           DependsOnTargets="GetMoResourceReferences"
-          Inputs="%(MoResourceReference.Identity)"
+          Inputs="%(MoResourceReference.FullPath)"
           Outputs="$(TargetDir)$(PoLocaleDir)%(MoResourceReference.RecursiveDir)%(FileName)%(Extension)">
-    <Copy SourceFiles="%(MoResourceReference.Identity)" DestinationFiles="$(TargetDir)$(PoLocaleDir)%(RecursiveDir)%(FileName)%(Extension)"  />
-    <Message Importance="high" Text="  [+] %(MoResourceReference.Identity) =&gt; $(TargetDir)$(PoLocaleDir)%(RecursiveDir)%(FileName)%(Extension)" />
+    <Copy SourceFiles="%(MoResourceReference.FullPath)" DestinationFiles="$(TargetDir)$(PoLocaleDir)%(RecursiveDir)%(FileName)%(Extension)"  />
   </Target>
 
   <!-- Set MO Resources files as content -->
@@ -203,18 +276,13 @@
           DependsOnTargets="GetMoResourceReferences"
           Inputs="@(MoResourceReference)"
           Outputs="@(MoResourceReference->'$(TargetDir)%(RecursiveDir)%(FileName)%(Extension)')">
-    <!--<LogItems Items="@(ProjectReference)" Title="ProjectReference" AllMetadata="true" />
-    <LogItems Items="@(MoResourceReference)" Title="MoResourceReference" AllMetadata="true" />-->
     <ItemGroup>
       <Content Include="@(MoResourceReference)">
-        <!-- TODO: compute hintpath $(OutputPath)$(PoLocaleDir)%(MoResource.Culture)\LC_MESSAGES\%(FileName)%(Extension) -->
-        <HintPath></HintPath>
+        <Link>%(MoResourceReference.Link)</Link>
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         <Visible>false</Visible>
       </Content>
     </ItemGroup>
-    <!--<LogItems Items="@(Content)" Title="Content" AllMetadata="true" />
-    <Message Importance="high" Text="[mo] %(MoResourceReference.Identity) -&gt; $(TargetDir)%(RecursiveDir)%(FileName)%(Extension)" />-->
   </Target>
 
   <Target Name="ImportMoResourceReferencesBuild" BeforeTargets="BeforeBuild" DependsOnTargets="ImportMoResourceReferences;SetMoResourceReferencesAsContent" />
@@ -224,25 +292,15 @@
 
   <!--=========================================================================-->
 
-  <Target Name="GetTextBuild" BeforeTargets="Build" DependsOnTargets="AddPoResourceInfo;CreatePoTemplate;MergePoTemplateIntoPoResource;CreateMoResource">
+  <Target Name="GetTextBuild" BeforeTargets="Build"
+          DependsOnTargets="
+            SetupPoResource;
+            CreatePoTemplate;
+            ConsolidateBundleCompendium;
+            UpdateModuleCompendium;
+            UpdatePoResource;
+            CreateMoResource">
     <!--<LogItems Items="@(PoResource)" AllMetadata="true" />-->
   </Target>
   <Target Name="GetTextClean" AfterTargets="Clean" DependsOnTargets="DeleteMoResource;DeletePoTemplate" />
-
-  <!--<Target Name="CsGetTextTrace" BeforeTargets="BeforeBuild">
-    <Message Importance="high" Text="##### CSGETTEXTTRACE" />
-    <LogItems Items="@(ProjectReference)" Title="ProjectReference" AllMetadata="true" />
-    <ItemGroup>
-      <MoResourceReference Include="%(ProjectReference.RootDir)%(Directory)$(OutputPath)$(PoLocaleDir)\**\*.mo" />
-    </ItemGroup>
-    <LogItems Items="@(MoResourceReference)" Title="MoResourceReference" AllMetadata="true" />
-    <ItemGroup>
-      <Content Include="@(MoResourceReference)">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        <Visible>false</Visible>
-      </Content>
-    </ItemGroup>
-    <LogItems Items="@(Content)" Title="Content" AllMetadata="true" />
-    <Message Importance="high" Text="##### CSGETTEXTTRACE" />
-  </Target>-->
 </Project>
