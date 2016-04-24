@@ -30,11 +30,15 @@
     <MsgInit>$(ZouBinDir)msginit</MsgInit>
     <MsgMerge>$(ZouBinDir)msgmerge</MsgMerge>
     <MsgCat>$(ZouBinDir)msgcat</MsgCat>
+    <MsgFmt>$(ZouBinDir)msgfmt</MsgFmt>
     <MsgAttrib>$(ZouBinDir)msgattrib</MsgAttrib>
 
-    <CopyrightHolder>EPSITEC SA, CH-1400 Yverdon-les-Bains, Switzerland</CopyrightHolder>
-    <PackageName Condition="'$(ModuleName)' == ''">'$(BundleName)'</PackageName>
-    <PackageName Condition="'$(ModuleName)' != ''">'$(ModuleName)'</PackageName>
+    <PoCopyright>EPSITEC SA, CH-1400 Yverdon-les-Bains, Switzerland</PoCopyright>
+    <PoPackageName Condition="'$(ModuleName)' == ''">'$(BundleName)'</PoPackageName>
+    <PoPackageName Condition="'$(ModuleName)' != ''">'$(ModuleName)'</PoPackageName>
+
+    <!-- Use default keyword to extract messages (same as NGetText.Catalog methods) -->
+    <PoKeywordSpec></PoKeywordSpec>
   </PropertyGroup>
 
   <!--=========================================================================-->
@@ -99,9 +103,10 @@
           Inputs="$(PoTemplateSourcesPath)"
           Outputs="$(PoTemplatePath)">
     <PropertyGroup>
-      <_Options>--from-code=UTF-8 --no-wrap --copyright-holder="$(CopyrightHolder)" --package-name="$(PackageName)"</_Options>
-      <_Options>$(_Options) -k_</_Options>
-      <_Options>$(_Options) -D"$(PoAnchorDir)." -f"$(PoTemplateSourcesPath)" -o"$(PoTemplatePath)"</_Options>
+      <_Options>--from-code=UTF-8 --no-wrap -D"$(PoAnchorDir)." -f"$(PoTemplateSourcesPath)" -o"$(PoTemplatePath)"</_Options>
+      <_Options Condition="'$(PoCopyright)'   != ''">$(_Options) --copyright-holder="$(PoCopyright)"</_Options>
+      <_Options Condition="'$(PoPackageName)' != ''">$(_Options) --package-name="$(PoPackageName)"</_Options>
+      <_Options Condition="'$(PoKeywordSpec)' != ''">$(_Options) --keyword="$(PoKeywordSpec)"</_Options>
     </PropertyGroup>
     <Exec Command='"$(XGetText)" $(_Options)' />
   </Target>
@@ -240,9 +245,9 @@
           Inputs="%(PoResource.FullPath)"
           Outputs="%(PoResource.MoResourceFullPath)">
     <MakeDir Directories="%(PoResource.MoResourceDir)" />
-    <Exec Command='"$(ZouBinDir)msgfmt" -c -o"%(PoResource.MoResourceFullPath)" "%(PoResource.FullPath)"' />
+    <Exec Command='"$(MsgFmt)" -c -D"$(PoAnchorDir)." -o"%(PoResource.MoResourceFullPath)" "%(PoResource.FullPath)"' />
   </Target>
-  
+
   <Target Name="DeleteMoResource" DependsOnTargets="SetupPoResource" Outputs="%(PoResource.MoResourceFullPath)">
     <!--<Message Importance="high" Text="[-] %(PoResource.MoResourceFullPath)" />-->
     <Delete Files="%(PoResource.MoResourceFullPath)" />
