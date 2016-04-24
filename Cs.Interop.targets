@@ -7,7 +7,7 @@
     <AvailableItemName Include="ImportProject" />
   </ItemGroup>
 
-  <Import Project="Cs.Boot.props"/>
+  <Import Project="Cs.Boot.props" Condition="'$(CsBootImported)' != 'true'"/>
   <Import Project="Com.WorkDir.props"/>
   <Import Project="Com.InteropPlatform.props" />
 
@@ -19,11 +19,12 @@
   </ItemDefinitionGroup>
   
   <!-- Import interop components -->
-  <Target Name="GetInteropFiles">
+  <Target Name="GetInteropFiles" Condition="'@(ImportProject)' != ''">
     <ItemGroup>
       <InteropFile Include="%(ImportProject.OutDir)**\*.*" />
     </ItemGroup>
-    <LogItems Items="@(InteropFile)" Title="InteropFile"/>
+    <LogItems Items="@(ImportProject)" Title="ImportProject"/>
+    <!--<LogItems Items="@(InteropFile)" Title="InteropFile"/>-->
   </Target>
   
   <Target Name="CreateInteropContent"
