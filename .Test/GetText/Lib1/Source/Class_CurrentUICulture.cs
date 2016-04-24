@@ -14,6 +14,7 @@ namespace Lib1
 		{
 			//t._ ("Hello World from Lib1");
 			this.catalog.GetString ("Hello World from Lib1");
+			this.catalog.GetString ("Another string defined in Lib1");
 		}
 
 		//private readonly T t = new T("Lib1");
