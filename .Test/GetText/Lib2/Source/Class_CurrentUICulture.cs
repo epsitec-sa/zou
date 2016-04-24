@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Epsitec.GetText;
+using NGettext;
 
 namespace Lib2
 {
@@ -11,9 +12,11 @@ namespace Lib2
 	{
 		public Class_CurrentUICulture()
 		{
-			t._ ("Hello World from Lib2");
+			//t._ ("Hello World from Lib2");
+			this.catalog.GetString ("Hello World from Lib2");
 		}
 
-		private readonly T t = new T("Lib2");
+		//private readonly T t = new T("Lib2");
+		private readonly ICatalog catalog = AppDomain.CurrentDomain.CreateCatalog("Lib2");
 	}
 }
