@@ -11,23 +11,24 @@ namespace Epsitec.Zou
 {
 	public class AddFileInfo : Task
 	{
-		public override bool Execute()
-		{
-			this.OutputFiles = this.Files.Select (file => this.AddInfo (file)).ToArray ();
-			return true;
-		}
 		[Required]
-		public ITaskItem[] Files
+		public ITaskItem[]		Files
 		{
 			get; set;
 		}
 		[Output]
-		public ITaskItem[] OutputFiles
+		public ITaskItem[]		OutputFiles
 		{
 			get;
 			private set;
 		}
-		private ITaskItem AddInfo(ITaskItem fileItem)
+		public override bool	Execute()
+		{
+			this.OutputFiles = this.Files.Select (file => this.AddInfo (file)).ToArray ();
+			return !this.Log.HasLoggedErrors;
+		}
+
+		private ITaskItem		AddInfo(ITaskItem fileItem)
 		{
 			var file = new TaskItem (fileItem);
 			var fileInfo = new FileInfo (file.ItemSpec);

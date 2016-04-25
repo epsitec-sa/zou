@@ -30,11 +30,6 @@ namespace Epsitec.Zou
 
 	public class AddBuildOptions : Task
 	{
-		public override bool			Execute()
-		{
-			this.ProjectsOutput = this.Projects.Select (project => this.AddOptions (project)).ToArray();
-			return !this.Log.HasLoggedErrors;
-		}
 		[Required]
 		public ITaskItem[]				Projects
 		{
@@ -45,6 +40,11 @@ namespace Epsitec.Zou
 		public ITaskItem[]				ProjectsOutput
 		{
 			get; private set;
+		}
+		public override bool			Execute()
+		{
+			this.ProjectsOutput = this.Projects.Select (project => this.AddOptions (project)).ToArray();
+			return !this.Log.HasLoggedErrors;
 		}
 
 		private ITaskItem				AddOptions(ITaskItem projectItem)

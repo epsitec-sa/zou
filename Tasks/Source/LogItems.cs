@@ -10,28 +10,27 @@ namespace Epsitec.Zou
 {
 	public class LogItems : Task
 	{
-		public override bool Execute()
-		{
-			this.Items.ForEach (item => this.LogItem (item));
-			return true;
-		}
-
-		public string	Title
+		public string			Title
 		{
 			get; set;
 		}
-		public bool		AllMetadata
+		public bool				AllMetadata
 		{
 			get; set;
 		}
-		[Required]
-		public ITaskItem[] Items
+		[Required]				
+		public ITaskItem[]		Items
 		{
 			get;
 			set;
 		}
+		public override bool	Execute()
+		{
+			this.Items.ForEach (item => this.LogItem (item));
+			return !this.Log.HasLoggedErrors;
+		}
 
-		private void LogItem(ITaskItem item)
+		private void			LogItem(ITaskItem item)
 		{
 			var header = string.IsNullOrEmpty (this.Title) ? $"{item.ItemSpec}:" : $"{this.Title} [{item.ItemSpec}]";
 
@@ -45,12 +44,11 @@ namespace Epsitec.Zou
 				this.LogMetadata (buildItem.CustomMetadataNames, header, item.GetMetadata);
 			}
 		}
-
-		private void LogMetadata(System.Collections.ICollection names, string header, Func<string, string> getMetaData)
+		private void			LogMetadata(System.Collections.ICollection names, string header, Func<string, string> getMetaData)
 		{
 			this.LogMetadata (names.Cast<string> (), header, getMetaData);
 		}
-		private void LogMetadata(IEnumerable<string> names, string header, Func<string, string> getMetaData)
+		private void			LogMetadata(IEnumerable<string> names, string header, Func<string, string> getMetaData)
 		{
 			if (names.IsEmpty ())
 			{
