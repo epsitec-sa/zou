@@ -2,7 +2,8 @@
 <!--
 This script can be imported anywhere before first MS import (Microsoft.Cpp.Default.props).
 -->
-<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" InitialTargets="ZouTrace">
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" InitialTargets="ZouTrace"
+         TreatAsLocalProperty="ZouTrace">
 
   <PropertyGroup>
     <!-- Configuration sub-directory -->
@@ -16,22 +17,38 @@ This script can be imported anywhere before first MS import (Microsoft.Cpp.Defau
     <BundleDir>$(BundleDir)\</BundleDir>
 
     <ModuleDir>$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildProjectDirectory), '.git'))</ModuleDir>
+    <ZouDir>$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), '.git'))</ZouDir>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(ModuleDir)' != ''">
     <ModuleDir Condition="HasTrailingSlash('$(ModuleDir)')">$(ModuleDir.Substring(0, $(ModuleDir.LastIndexOf('\'))))</ModuleDir>
     <ModuleName>$(ModuleDir.Substring($([MSBuild]::Add($(ModuleDir.LastIndexOf('\')), 1))))</ModuleName>
     <ModuleDir>$(ModuleDir)\</ModuleDir>
-    
-    <ZouDir>$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), '.git'))</ZouDir>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(ZouDir)' != ''">
     <ZouDir Condition="HasTrailingSlash('$(ZouDir)')">$(ZouDir.Substring(0, $(ZouDir.LastIndexOf('\'))))</ZouDir>
     <ZouName>$(ZouDir.Substring($([MSBuild]::Add($(ZouDir.LastIndexOf('\')), 1))))</ZouName>
     <ZouDir>$(ZouDir)\</ZouDir>
-    
-    <ZouPrivateDir>$(ZouDir)private\</ZouPrivateDir>
-    <ZouTasksDir>$(ZouDir)tasks\</ZouTasksDir>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(ZouDir)' == ''">
+    <ZouDir>$([System.IO.Directory]::GetParent($(MSBuildThisFileDirectory)).FullName)\</ZouDir>
+    <ZouName>$([System.IO.Directory]::GetParent($(MSBuildThisFileDirectory)).Name)</ZouName>
+  </PropertyGroup>
+
+  <PropertyGroup>
     <ZouBinDir>$(ZouDir)bin\</ZouBinDir>
+    <ZouPrivateDir>$(ZouDir)private\</ZouPrivateDir>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(BundleDir' == '' Or '$(ZouDir)' == ''">
+    <ZouError>true</ZouError>
+    <ZouTrace>true</ZouTrace>
   </PropertyGroup>
 
   <!-- zou custom tasks -->
-  <Import Project="$(ZouTasksDir)zou.tasks"/>
+  <Import Project="zou.tasks"/>
   
   <!-- Dummy target used by zou, provided by Microsoft.Cpp.Targets but not by Microsoft.CSharp.targets -->
   <Target Name="_PrepareForClean" Condition="'$(MSBuildProjectExtension)' != '.vcxproj'" />
@@ -137,6 +154,7 @@ This script can be imported anywhere before first MS import (Microsoft.Cpp.Defau
     <Message Importance="normal" Text="+ ModuleDir                  = $(ModuleDir)" />
     <Message Importance="normal" Text="+ ZouName                    = $(ZouName)" />
     <Message Importance="normal" Text="+ ZouDir                     = $(ZouDir)" />
+    <Message Importance="normal" Text="+ ZouBinDir                  = $(ZouBinDir)" />
     <Message Importance="normal" Text="+ ZouPrivateDir              = $(ZouPrivateDir)" />
     <Message Importance="normal" Text="+ ZouBundleDir               = $(ZouBundleDir)" />
     <Message Importance="normal" Text="+ ZouSolutionDir             = $(ZouSolutionDir)" />
@@ -186,5 +204,7 @@ This script can be imported anywhere before first MS import (Microsoft.Cpp.Defau
     <Message Importance="normal" Text="+ ForwardOutDir              = $(ForwardOutDir)" />
     <Message Importance="normal" Text="+ ForwardPlatform            = $(ForwardPlatform)" />
     <Message Importance="normal" Text="+ ForwardPlatformToolset     = $(ForwardPlatformToolset)" />
+
+    <Error Condition="'$(ZouError)' == 'true'" Text="Base properties error" />
   </Target>
 </Project>
