@@ -200,8 +200,9 @@
       <_Options Condition="'$(PoKeywordSpec)' != ''">$(_Options) --keyword="$(PoKeywordSpec)"</_Options>
     </PropertyGroup>
     <Exec Command='"$(XGetText)" $(_Options)' />
+    
     <!-- Replace CHARSET with UTF-8 (TODO: create a custom task - see FileUpdate on github) -->
-    <ReadLinesFromFile File="$(PoTemplatePath)" >
+    <ReadLinesFromFile File="%(PoResource.BundleCompendium)" >
       <Output TaskParameter="Lines" ItemName="PoTemplateLine"/>
     </ReadLinesFromFile>
     <ItemGroup>
@@ -209,7 +210,7 @@
         <Replaced>$([System.String]::Copy('%(PoTemplateLine.Identity)').Replace('CHARSET', 'UTF-8'))</Replaced>
       </PoTemplateLine>
     </ItemGroup>
-    <WriteLinesToFile File="$(PoTemplatePath)" Lines="@(PoTemplateLine->'%(Replaced)')" Overwrite="true" />
+    <WriteLinesToFile File="%(PoResource.BundleCompendium)" Lines="@(PoTemplateLine->'%(Replaced)')" Overwrite="true" />
     <ItemGroup>
       <PoTemplateLine Remove="@(PoTemplateLine)"/>
     </ItemGroup>
