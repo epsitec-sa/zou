@@ -1,5 +1,24 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <!-- Import this script at the end of the C# interop project -->
+<!--
+Pseudo-code:
+============
+
+PoSource    = *.cs
+
+PotResource = xgettext(PoSource)
+PoResource  = msmerge(PotResource, -C PoBundle)
+
+PoBundle    = msgcat(PoBundle, PoResource)
+
+PotModule   = msgcat(PotModule, PotResource)
+PoModule    = msgmerge(PotModule, -C PoBundle)
+
+git push/pull module
+
+PoBundle    = msgcat(PoBundle, PoModule)
+
+-->
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="GetTextBuild">
 
   <!-- Make sure that PoResource is available in VisualStudio's Build Action combo -->
