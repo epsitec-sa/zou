@@ -44,13 +44,16 @@
     <!--<LogItems Items="@(ProjectsToBuild)" Title="ProjectsToBuild" />
     <Message Text=" " />-->
     
-    <!-- Restore nuget packages for solutions... -->
-    <Exec Condition="'%(Extension)' == '.sln'"
+    <!-- Restore nuget packages for solution... -->
+    <Message Importance="high" Text="nuget restore solution" Condition="'%(ProjectsToBuild.Extension)' == '.sln'" />
+    <Exec Condition="'%(ProjectsToBuild.Extension)' == '.sln'"
           Command='"$(ZouBinDir)nuget" restore "%(ProjectsToBuild.Identity)"'/>
-    <!-- ...and projects -->
-    <Exec Condition="'%(Extension)' != '.sln' And Exists('%(RootDir)%(Directory)packages.config')"
-          Command='"$(ZouBinDir)nuget" restore "%(ProjectsToBuild.RootDir)%(Directory)packages.config" -PackagesDirectory "$(ProjectDir)packages\."'/>
     
+    <!-- ...or project with solution. -->
+    <Message Importance="high" Text="nuget restore project with solution" Condition="'%(ProjectsToBuild.Extension)' != '.sln' And ('$(SolutionDir)' != '*Undefined*' And  '$(SolutionDir)' != '') And Exists('%(RootDir)%(Directory)packages.config')" />
+    <Exec Condition="'%(ProjectsToBuild.Extension)' != '.sln' And ('$(SolutionDir)' != '*Undefined*' And '$(SolutionDir)' != '') And Exists('%(RootDir)%(Directory)packages.config')"
+          Command='"$(ZouBinDir)nuget" restore "%(ProjectsToBuild.RootDir)%(Directory)packages.config" -PackagesDirectory "$(SolutionDir)packages\."'/>
+
     <!--
 	  The MSBuild task does not determine the build order but MSBuild.exe and Visual Studio do:
     https://maximelabelle.wordpress.com/2011/11/29/building-multiple-projects-in-order-with-msbuild/
@@ -59,12 +62,12 @@
     Instead with use the Exec task which starts the MSBuild process.
 	  -->
 
-    <!-- Build solutions... -->
-    <!-- TODO: process targets and BuildInParallel (/m) for command line -->
-    <Exec Condition="'%(Extension)' == '.sln'"
-          Command='"$(MSBuildToolsPath)\msbuild" /nologo /v:m /m /t:Build "/p:%(Properties)" "%(ProjectsToBuild.Identity)"' />
-    <!-- ...and/or projects -->
-    <MSBuild Condition="'%(Extension)' != '.sln'"
-             Projects="%(ProjectsToBuild.Identity)" Targets="Build" Properties="%(Properties)" BuildInParallel="%(BuildInParallel)" />
+    <!-- Build solution... -->
+    <Exec Condition="'%(ProjectsToBuild.Extension)' == '.sln'"
+          Command='"$(MSBuildToolsPath)\msbuild" /nologo /v:m /m /t:Build "/p:%(ProjectsToBuild.Properties)" "%(ProjectsToBuild.Identity)"' />
+
+    <!-- ...or project. -->
+    <MSBuild Condition="'%(ProjectsToBuild.Extension)' != '.sln'"
+             Projects="%(ProjectsToBuild.Identity)" Targets="Build" Properties="%(ProjectsToBuild.Properties)" BuildInParallel="%(BuildInParallel)" />
   </Target>
 </Project>
