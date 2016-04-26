@@ -8,6 +8,7 @@
     <OutDir Condition="'$(OutDir)' != '' and !HasTrailingSlash('$(OutDir)')">$(OutDir)\</OutDir>
   </PropertyGroup>
 
+  <!-- Ensure OutDir is absolute -->
   <Choose>
     <When Condition="'$(OutDirSpecified)' == 'true'">
       <PropertyGroup>
@@ -19,6 +20,13 @@
         <OutDir>$([System.IO.Path]::Combine($(WorkDir),$(OutDir)))</OutDir>
       </PropertyGroup>
     </When>
+    
+    <!-- When building inside Visual Studio, the following 'Otherwise' clause is redondant.
+    It's safe to skip it because Visual Studio uses the same conversion internally.
+    This has the nice side effect to avoid the display of the conversion formula in
+    the 'Output Directory' field of the 'Project Properties' dialog box -->
+    <When Condition="'$(BuildingInsideVisualStudio)' == 'true'"/>
+    
     <Otherwise>
       <PropertyGroup>
         <OutDir>$([System.IO.Path]::Combine($(ProjectDir),$(OutDir)))</OutDir>
