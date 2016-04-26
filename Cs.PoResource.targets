@@ -104,6 +104,8 @@
           Inputs="$(PoTemplateSourcesPath)"
           DependsOnTargets="SavePoSources"
           Outputs="$(PoTemplatePath)">
+    
+    <!-- xgettext: Project.POT << *.cs -->
     <PropertyGroup>
       <_Options>--from-code=UTF-8 --no-wrap -D"$(PoAnchorDir)." -f"$(PoTemplateSourcesPath)" -o"$(PoTemplatePath)"</_Options>
       <_Options Condition="'$(PoCopyright)'   != ''">$(_Options) --copyright-holder="$(PoCopyright)"</_Options>
@@ -111,19 +113,10 @@
       <_Options Condition="'$(PoKeywordSpec)' != ''">$(_Options) --keyword="$(PoKeywordSpec)"</_Options>
     </PropertyGroup>
     <Exec Command='"$(XGetText)" $(_Options)' />
-    <!-- Replace CHARSET with UTF-8 (TODO: create a custom task - see FileUpdate on github) -->
-    <ReadLinesFromFile File="$(PoTemplatePath)" >
-      <Output TaskParameter="Lines" ItemName="PoTemplateLine"/>
-    </ReadLinesFromFile>
-    <ItemGroup>
-      <PoTemplateLine>
-        <Replaced>$([System.String]::Copy('%(PoTemplateLine.Identity)').Replace('CHARSET', 'UTF-8'))</Replaced>
-      </PoTemplateLine>
-    </ItemGroup>
-    <WriteLinesToFile File="$(PoTemplatePath)" Lines="@(PoTemplateLine->'%(Replaced)')" Overwrite="true" />
-    <ItemGroup>
-      <PoTemplateLine Remove="@(PoTemplateLine)"/>
-    </ItemGroup>
+
+    <!-- Replace CHARSET with UTF-8 -->
+    <FileUpdate Files="$(PoTemplatePath)" Multiline="true" IgnoreCase="true" Encoding="utf-8-without-bom"
+                Regex='^("Content-Type.+?charset=)(CHARSET)(.*)$' ReplacementText="$1UTF-8$3" />
   </Target>
   
   <Target Name="DeletePoTemplate" Outputs="$(PoTemplateSourcesPath);$(PoTemplatePath)">
@@ -139,6 +132,7 @@
           Inputs="$(PoTemplateSourcesPath)"
           Outputs="$(ModulePoTemplatePath)">
     <MakeDir Directories="$(ModuleCompendiumDir)" />
+    
     <PropertyGroup>
       <_Options>--from-code=UTF-8 --no-wrap -D"$(PoAnchorDir)." -f"$(PoTemplateSourcesPath)" -o"$(ModulePoTemplatePath)"</_Options>
       <_Options Condition="Exists('$(ModulePoTemplatePath)')">$(_Options) --join-existing</_Options>
@@ -147,19 +141,10 @@
       <_Options Condition="'$(PoKeywordSpec)' != ''">$(_Options) --keyword="$(PoKeywordSpec)"</_Options>
     </PropertyGroup>
     <Exec Command='"$(XGetText)" $(_Options)' />
-    <!-- Replace CHARSET with UTF-8 (TODO: create a custom task - see FileUpdate on github) -->
-    <ReadLinesFromFile File="$(PoTemplatePath)" >
-      <Output TaskParameter="Lines" ItemName="PoTemplateLine"/>
-    </ReadLinesFromFile>
-    <ItemGroup>
-      <PoTemplateLine>
-        <Replaced>$([System.String]::Copy('%(PoTemplateLine.Identity)').Replace('CHARSET', 'UTF-8'))</Replaced>
-      </PoTemplateLine>
-    </ItemGroup>
-    <WriteLinesToFile File="$(PoTemplatePath)" Lines="@(PoTemplateLine->'%(Replaced)')" Overwrite="true" />
-    <ItemGroup>
-      <PoTemplateLine Remove="@(PoTemplateLine)"/>
-    </ItemGroup>
+
+    <!-- Replace CHARSET with UTF-8 -->
+    <FileUpdate Files="$(ModulePoTemplatePath)" Multiline="true" IgnoreCase="true" Encoding="utf-8-without-bom"
+                Regex='^("Content-Type.+?charset=)(CHARSET)(.*)$' ReplacementText="$1UTF-8$3" />
   </Target>
   
   <Target Name="UpdateModulePoTemplate1"
@@ -200,20 +185,10 @@
       <_Options Condition="'$(PoKeywordSpec)' != ''">$(_Options) --keyword="$(PoKeywordSpec)"</_Options>
     </PropertyGroup>
     <Exec Command='"$(XGetText)" $(_Options)' />
-    
-    <!-- Replace CHARSET with UTF-8 (TODO: create a custom task - see FileUpdate on github) -->
-    <ReadLinesFromFile File="%(PoResource.BundleCompendium)" >
-      <Output TaskParameter="Lines" ItemName="PoTemplateLine"/>
-    </ReadLinesFromFile>
-    <ItemGroup>
-      <PoTemplateLine>
-        <Replaced>$([System.String]::Copy('%(PoTemplateLine.Identity)').Replace('CHARSET', 'UTF-8'))</Replaced>
-      </PoTemplateLine>
-    </ItemGroup>
-    <WriteLinesToFile File="%(PoResource.BundleCompendium)" Lines="@(PoTemplateLine->'%(Replaced)')" Overwrite="true" />
-    <ItemGroup>
-      <PoTemplateLine Remove="@(PoTemplateLine)"/>
-    </ItemGroup>
+
+    <!-- Replace CHARSET with UTF-8 -->
+    <FileUpdate Files="%(PoResource.BundleCompendium)" Multiline="true" IgnoreCase="true" Encoding="utf-8-without-bom"
+                Regex='^("Content-Type.+?charset=)(CHARSET)(.*)$' ReplacementText="$1UTF-8$3" />
   </Target>
   
   <Target Name="UpdateBundleCompendium1"
