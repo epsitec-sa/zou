@@ -32,8 +32,17 @@ namespace Epsitec.Zou
 		{
 			var file = new TaskItem (fileItem);
 			var fileInfo = new FileInfo (file.ItemSpec);
-			file.SetMetadata ("Length", fileInfo.Length.ToString ());
-			file.SetMetadata ("IsReadOnly", fileInfo.IsReadOnly.ToString ());
+			file.SetMetadata ("Exists", fileInfo.Exists.ToString ());
+			if (fileInfo.Exists)
+			{
+				file.SetMetadata ("Length", fileInfo.Length.ToString ());
+				file.SetMetadata ("IsReadOnly", fileInfo.IsReadOnly.ToString ());
+			}
+			else
+			{
+				file.SetMetadata ("Length", "0");
+				file.SetMetadata ("IsReadOnly", string.Empty);
+			}
 			return file;
 		}
 	}
