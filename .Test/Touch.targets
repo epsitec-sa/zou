@@ -1,0 +1,35 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Spike5" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <Target Name="InputMoreRecent">
+    <MakeDir Directories="tmp\" />
+    <Touch Files="tmp\Output.txt" AlwaysCreate="true" />
+    <Touch Files="tmp\Input.txt" AlwaysCreate="true" />
+  </Target>
+
+  <Target Name="OutputMoreRecent">
+    <MakeDir Directories="tmp\" />
+    <Touch Files="tmp\Input.txt" AlwaysCreate="true" />
+    <Touch Files="tmp\Output.txt" AlwaysCreate="true" />
+  </Target>
+
+  <Target Name="SameTime">
+    <MakeDir Directories="tmp\" />
+    <Touch Files="tmp\Input.txt" AlwaysCreate="true" />
+    <ItemGroup>
+      <Input Include="tmp\Input.txt"/>
+    </ItemGroup>
+    
+    <Touch Files="tmp\Output.txt" AlwaysCreate="true" Time="%(Input.ModifiedTime)" />
+  </Target>
+
+  <Target Name="T1" DependsOnTargets="InputMoreRecent" Inputs="tmp\Input.txt" Outputs="tmp\Output.txt">
+    <Message Importance="high" Text="InputMoreRecent" />
+  </Target>
+  <Target Name="T2" DependsOnTargets="InputMoreRecent" Inputs="tmp\Output.txt" Outputs="tmp\Input.txt">
+    <Message Importance="high" Text="InputMoreRecent" />
+  </Target>
+  <Target Name="T3" DependsOnTargets="SameTime" Inputs="tmp\Output.txt" Outputs="tmp\Input.txt">
+    <Message Importance="high" Text="SameTime" />
+  </Target>
+</Project>
