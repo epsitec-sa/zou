@@ -45,12 +45,10 @@
     <Message Text=" " />-->
     
     <!-- Restore nuget packages for solution... -->
-    <Message Importance="high" Text="nuget restore solution" Condition="'%(ProjectsToBuild.Extension)' == '.sln'" />
     <Exec Condition="'%(ProjectsToBuild.Extension)' == '.sln'"
           Command='"$(ZouBinDir)nuget" restore "%(ProjectsToBuild.Identity)"'/>
     
     <!-- ...or project with solution. -->
-    <Message Importance="high" Text="nuget restore project with solution" Condition="'%(ProjectsToBuild.Extension)' != '.sln' And ('$(SolutionDir)' != '*Undefined*' And  '$(SolutionDir)' != '') And Exists('%(RootDir)%(Directory)packages.config')" />
     <Exec Condition="'%(ProjectsToBuild.Extension)' != '.sln' And ('$(SolutionDir)' != '*Undefined*' And '$(SolutionDir)' != '') And Exists('%(RootDir)%(Directory)packages.config')"
           Command='"$(ZouBinDir)nuget" restore "%(ProjectsToBuild.RootDir)%(Directory)packages.config" -PackagesDirectory "$(SolutionDir)packages\."'/>
 
