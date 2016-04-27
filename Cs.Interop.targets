@@ -19,12 +19,11 @@
   </ItemDefinitionGroup>
   
   <!-- Import interop components -->
-  <Target Name="GetInteropFiles" Condition="'@(ImportProject)' != ''">
+  <Target Name="GetInteropFiles"
+          Condition="'@(ImportProject)' != ''">
     <ItemGroup>
       <InteropFile Include="%(ImportProject.OutDir)**\*.*" />
     </ItemGroup>
-    <LogItems Items="@(ImportProject)" Title="ImportProject"/>
-    <!--<LogItems Items="@(InteropFile)" Title="InteropFile"/>-->
   </Target>
   
   <Target Name="CreateInteropContent"
@@ -37,11 +36,17 @@
         <Visible>false</Visible>
       </Content>
     </ItemGroup>
-    <Message Importance="high" Text="  [i] %(InteropFile.Identity) -&gt; $(TargetDir)%(RecursiveDir)%(FileName)%(Extension)" />
+    <Message Importance="high" Text="[i] %(InteropFile.Identity) -&gt; $(TargetDir)%(RecursiveDir)%(FileName)%(Extension)" />
   </Target>
 
-  <Target Name="InteropBuild" BeforeTargets="BeforeBuild" DependsOnTargets="ImportProject;CreateInteropContent" />
-  <Target Name="InteropClean" AfterTargets="AfterClean"   DependsOnTargets="ImportProjectClean" />
-
   <Import Project="ImportProject.targets" />
+
+  <Target Name="InteropBuild"
+          Condition="'@(InteropFile)' != ''"
+          BeforeTargets="BeforeBuild"
+          DependsOnTargets="ImportProject;CreateInteropContent" />
+  
+  <Target Name="InteropClean"
+          AfterTargets="AfterClean"
+          DependsOnTargets="ImportProjectClean" />
 </Project>
