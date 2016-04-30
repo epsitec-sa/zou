@@ -8,13 +8,13 @@ Source      = *.cs
 PotResource = xgettext(Source)
 
 PotModule   = PotResource if PotModule does not exist
-PotModule   = msgcat  (anyCulture, PotModule, PotResource)        // aggregate msgid
+PotModule   = msgcat  (anyCulture, PotModule, PotResource)            // aggregate msgid
 
 foreach (poResourceItem)
 {
-    PoResource  = msginit (PotResource) (if PoResource not initialized)
     PoBundle    = msginit (PotResource) (if PoBundle   not Initialized)
     PoModule    = msginit (PotModule)   (if PoModule   not Initialized)
+    PoResource  = msginit (PotResource) (if PoResource not initialized)
 
     PoBundle    = msgcat  (culture, PoBundle, PoModule)               // aggregate msgstr (translations)
     PoBundle    = msgcat  (culture, PoBundle, PoResource)             // aggregate msgstr (translations)
@@ -22,6 +22,7 @@ foreach (poResourceItem)
     PoModule    = msgmerge(culture, -C PoBundle, nul, PotModule)      // give priority to PoBundle translations
     PoResource  = msgmerge(culture, -C PoBundle, nul, PotResource)    // give priority to PoBundle translations
 
+    
     PoResource.Time = PoModule.Time = PoBundle.Time
 
     MoResource  = msgfmt(PoResource)
@@ -38,17 +39,16 @@ g::poResourceItems.Init(global);
 var sourceItems    = SourceItems.Create(g::compileItems, g::poGlobalResourceItems != null);
 var source         = Source.Create(sourceItems);
 
-var potResource    = PotResource.Create (source);
 var potModule      = PotModule.CreateOrUpdate (potResource);
+var potResource    = PotResource.Create (source);
 
 var poResourceItems = poResourceItems.Init();
 foreach(item in poResourceItems)
 {
+  var poBundle   = PoBundle.CreateOrConsolidate(item, g::poFiles;g:potFiles);
   var poResource = PoResource.Create(item, potResource);
-  var poBundle   = PoBundle.Create(item, potResource);
   var poModule   = PoModule.Create(item, potModule);
   
-  var poBundle   = PoBundle.UpdateFromModule(item, poModule);
   var poBundle   = PoBundle.UpdateFromResource(item, poResource);
   
   poModule.Update(item, potResource, poBundle, poModule);
@@ -72,26 +72,25 @@ foreach(item in poResourceItems)
   <!-- Definitions -->
   
   <PropertyGroup>
-    <PoRootDir>$(BundleDir)</PoRootDir>
+    <PoLocaleSubdir>locale\</PoLocaleSubdir>
     <PoIntDir>$([System.IO.Path]::Combine($(ProjectDir),$(IntermediateOutputPath)))</PoIntDir>
     
-    <PoLocaleSubdir>locale\</PoLocaleSubdir>
-    <PoResourceSubdir>.Resource\</PoResourceSubdir>
+    <PoRootDir>$(BundleDir)</PoRootDir>
+    <PoBundleName>Bundle</PoBundleName>
+    
+    <PotBundleDir>$(BundleDir).po\</PotBundleDir>
+    <PotReferencesDir>$(PotBundleDir)</PotReferencesDir>
+    <PotReferencesPath>$(PotReferencesDir)PotReferences.txt</PotReferencesPath>
     
     <PotSourceDir>$(PoIntDir)</PotSourceDir>
     <PotSourcePath>$(PoIntDir)PotSource.txt</PotSourcePath>
     
     <PotResourceDir>$(PoIntDir)</PotResourceDir>
-    <PotResourcePath>$(PoIntDir)$(ProjectName).pot</PotResourcePath>
-
-    <PoBundleDir>$(BundleDir)$(PoResourceSubdir)</PoBundleDir>
-    <PoBundleName>Bundle</PoBundleName>
+    <PotProjectPath>$(PoIntDir)$(ProjectName).pot</PotProjectPath>
     
-    <PoModuleName         Condition="'$(ModuleName)' != ''">Module</PoModuleName>
-    <PoModuleDir          Condition="'$(ModuleDir)'  != ''">$(ModuleDir)$(PoResourceSubdir)</PoModuleDir>
-    
-    <PotModuleDir         Condition="'$(ModuleDir)'  != ''">$(PoModuleDir)</PotModuleDir>
-    <PotModulePath        Condition="'$(ModuleName)' != ''">$(PoModuleDir)$(PoModuleName).pot</PotModulePath>
+    <PoModuleName  Condition="'$(ModuleName)' != ''">$(ModuleName)</PoModuleName>
+    <PotModuleDir  Condition="'$(ModuleName)' != ''">$(PotBundleDir)</PotModuleDir>
+    <PotModulePath Condition="'$(ModuleName)' != ''">$(PotModuleDir)$(PoModuleName).pot</PotModulePath>
 
     <XGetText>$(ZouBinDir)xgettext</XGetText>
     <MsgInit>$(ZouBinDir)msginit</MsgInit>
@@ -139,23 +138,155 @@ foreach(item in poResourceItems)
       <PoResource Include="@(PoResourceWithInfo)" />
       <!-- Use en-US as default culture -->
       <PoResource>
-        <WithCulture>true</WithCulture>
-        <Culture Condition="'%(Culture)' == ''">en-US</Culture>
+        <Culture     Condition="'%(Culture)' == ''">en-US</Culture>
         <Initialized Condition="'%(Length)' &gt; '10'">true</Initialized>
-      </PoResource>
-      <PoResource>
         <Domain>$([System.IO.Path]::GetFileNameWithoutExtension('%(Filename)'))</Domain>
-        <MoResourceDir >$(TargetDir)$(PoLocaleSubdir)%(Culture)\LC_MESSAGES\</MoResourceDir>
-        <PoBundlePath>$(PoBundleDir)$(PoBundleName).%(Culture).po</PoBundlePath>
-        <PoModulePath Condition="'$(PoModuleDir)' != ''">$(PoModuleDir)$(PoModuleName).%(Culture).po</PoModulePath>
       </PoResource>
       <PoResource>
-        <PoBundleInitialized Condition="Exists('%(PoBundlePath)')">true</PoBundleInitialized>
-        <PoModuleInitialized Condition="'%(PoModulePath)' != '' And Exists('%(PoModulePath)')">true</PoModuleInitialized>
-        <MoResourcePath>%(MoResourceDir)%(Domain).mo</MoResourcePath>
+        <PoBundleDir>$(PotBundleDir)%(Culture)\</PoBundleDir>
+        <PoBundleFileName>$(PoBundleName).%(Culture).po</PoBundleFileName>
+        <PoModuleFileName Condition="'$(ModuleName)' != ''">$(PoModuleName).%(Culture).po</PoModuleFileName>
+        <MoProjectDir >$(TargetDir)$(PoLocaleSubdir)%(Culture)\LC_MESSAGES\</MoProjectDir>
+      </PoResource>
+      <PoResource>
+        <PoBundlePath>%(PoBundleDir)%(PoBundleFileName)</PoBundlePath>
+        <PoModulePath Condition="'$(ModuleName)' != ''">%(PoBundleDir)%(PoModuleFileName)</PoModulePath>
+        <MoProjectPath>%(MoProjectDir)%(Domain).mo</MoProjectPath>
+        
+        <PoReferencesPath>%(PoBundleDir)PoReferences.txt</PoReferencesPath>
+        <MoReferencesPath>%(PoBundleDir)MoProjectReferences.txt</MoReferencesPath>
+      </PoResource>
+      <PoResource>
+        <PoModuleInitialized Condition="'$(ModuleName)' != '' And Exists('%(PoModulePath)')">true</PoModuleInitialized>
       </PoResource>
     </ItemGroup>
+
     <!--<LogItems Items="@(PoResource)" Title="PoResource" AllMetadata="true" />-->
+  </Target>
+
+  <!--=========================================================================-->
+
+  <Target Name="GetPotModuleReferenceItems">
+    <ItemGroup>
+      <PotModuleReference Include="$(PotBundleDir)*.pot"/>
+    </ItemGroup>
+    <!--<Message Importance="high" Text="PotModuleReference=@(PotModuleReference->'%(FileName)%(Extension)')" />-->
+    <!--<LogItems Items="@(PotModuleReference)" />-->
+  </Target>
+
+  <!--=========================================================================-->
+
+  <Target Name="GetPotProjectReferenceItems">
+    <ReadLinesFromFile File="$(PotReferencesPath)" >
+      <Output TaskParameter="Lines" ItemName="_Temporary"/>
+    </ReadLinesFromFile>
+    <ItemGroup>
+      <PotProjectReference Include="@(_Temporary->'$(PoRootDir)%(Identity)')" />
+    </ItemGroup>
+    
+    <!--<Message Importance="high" Text="PotProjectReference=@(_Temporary->'%(FileName)%(Extension)')" />-->
+    <!--<LogItems Items="@(_Temporary)" />-->
+    
+    <ItemGroup>
+      <_Temporary Remove="@(_Temporary)" />
+    </ItemGroup>
+  </Target>
+  
+  <!--=========================================================================-->
+
+  <Target Name="GetPoCompendiumReferenceItems"
+          DependsOnTargets="InitPoResourceItems"
+          Outputs="%(PoResource.Identity)">
+
+    <ItemGroup>
+      <_Temporary Include="%(PoResource.PoBundleDir)*.po" />
+      <PoResource>
+        <PoCompendiumReferences>@(_Temporary)</PoCompendiumReferences>
+      </PoResource>
+    </ItemGroup>
+    <!--<Message Importance="high" Text="PoCompendiumReferences=@(_Temporary->'%(FileName)%(Extension)')" />-->
+    <ItemGroup>
+      <_Temporary Remove="@(_Temporary)" />
+    </ItemGroup>
+
+    <!--<LogItems Items="@(PoResource)" />-->
+  </Target>
+
+  <!--=========================================================================-->
+
+  <Target Name="GetPoProjectReferenceItems"
+          DependsOnTargets="InitPoResourceItems"
+          Outputs="%(PoResource.Identity)">
+
+    <!-- Project -->
+    <ReadLinesFromFile File="%(PoResource.PoReferencesPath)" >
+      <Output TaskParameter="Lines" ItemName="_Temporary"/>
+    </ReadLinesFromFile>
+    <ItemGroup>
+      <PoResource>
+        <PoProjectReferences>@(_Temporary->'$(PoRootDir)%(Identity)')</PoProjectReferences>
+      </PoResource>
+    </ItemGroup>
+    <!--<Message Importance="high" Text="PoProjectReferences=@(_Temporary->'%(FileName)%(Extension)')" />-->
+    <ItemGroup>
+      <_Temporary Remove="@(_Temporary)" />
+    </ItemGroup>
+
+    <!--<LogItems Items="@(PoResource)" />-->
+  </Target>
+
+  <!--=========================================================================-->
+
+  <Target Name="GetMoProjectReferenceItems"
+          DependsOnTargets="InitPoResourceItems"
+          Outputs="%(PoResource.Identity)">
+
+    <ReadLinesFromFile File="%(PoResource.MoReferencesPath)" >
+      <Output TaskParameter="Lines" ItemName="_Temporary"/>
+    </ReadLinesFromFile>
+    <ItemGroup>
+      <PoResource>
+        <MoProjectReferences>@(_Temporary->'$(PoRootDir)%(Identity)')</MoProjectReferences>
+      </PoResource>
+    </ItemGroup>
+    
+    <!--<Message Importance="high" Text="MoProjectReferences=@(_Temporary->'%(FileName)%(Extension)')" />-->
+    <LogItems Items="@(PoResource)" />
+    
+    <ItemGroup>
+      <_Temporary Remove="@(_Temporary)" />
+    </ItemGroup>
+  </Target>
+
+  <!--=========================================================================-->
+  <!--
+  PoBundle.Consolidate(poResourceItem, poFileItems)
+  {
+    this.poBundleFile = msgcat(culture, poInitialReferences)
+  }
+  -->
+
+  <Target Name="ConsolidatePoBundle"
+          DependsOnTargets="
+            GetPoCompendiumReferenceItems;
+            GetPoProjectReferenceItems"
+          Inputs="
+            %(PoResource.PoCompendiumReferences);
+            %(PoResource.PoProjectReferences)"
+          Outputs="%(PoResource.PoBundlePath)">
+
+    <MakeDir Directories="%(PoResource.PoBundleDir)" />
+
+    <!-- PoBundle = msgcat(culture, PoBundle, PoFiles) -->
+    <ItemGroup>
+      <PoReference Include="%(PoResource.PoCompendiumReferences);%(PoResource.PoProjectReferences)" />
+    </ItemGroup>
+    <PropertyGroup>
+      <_Options>--no-wrap -D"$(PoRootDir)." --lang=%(PoResource.Culture) -o"%(PoResource.PoBundlePath)"</_Options>
+      <PoReferences>@(PoReference->'"%(FullPath)"')</PoReferences>
+      <PoReferences>$(PoReferences.Replace(';', ' '))</PoReferences>
+    </PropertyGroup>
+    <Exec Command='"$(MsgCat)" $(_Options) $(PoReferences)' />
   </Target>
 
   <!--=========================================================================-->
@@ -171,7 +302,7 @@ foreach(item in poResourceItems)
   }
   -->
 
-  <Target Name="CreatePotSourceItems"
+  <Target Name="CreatePotProjectSourceItems"
           Condition="'@(Compile)' != '' Or ('@(PoGlobalResource)' != '' And '@(ProjectReference)' != '')"
           Outputs="@(PotSource)">
     <ItemGroup>
@@ -193,8 +324,8 @@ foreach(item in poResourceItems)
   }
   -->
 
-  <Target Name="CreatePotSourceFile"
-          DependsOnTargets="CreatePotSourceItems"
+  <Target Name="CreatePotProjectSourceFile"
+          DependsOnTargets="CreatePotProjectSourceItems"
           Inputs="@(PotSource)"
           Outputs="$(PotSourcePath)">
 
@@ -212,14 +343,14 @@ foreach(item in poResourceItems)
   }
   -->
 
-  <Target Name="CreatePotResource"
-          DependsOnTargets="CreatePotSourceFile"
+  <Target Name="CreatePotProject"
+          DependsOnTargets="CreatePotProjectSourceFile"
           Inputs="$(PotSourcePath)"
-          Outputs="$(PotResourcePath)">
+          Outputs="$(PotProjectPath)">
 
     <!-- PotResource = xgettext(PotSource) -->
     <PropertyGroup>
-      <_Options>--from-code=UTF-8 --no-wrap -D"$(PoRootDir)." -f"$(PotSourcePath)" -o"$(PotResourcePath)"</_Options>
+      <_Options>--from-code=UTF-8 --no-wrap -D"$(PoRootDir)." -f"$(PotSourcePath)" -o"$(PotProjectPath)"</_Options>
       <_Options Condition="'$(PoCopyright)'   != ''">$(_Options) --copyright-holder="$(PoCopyright)"</_Options>
       <_Options Condition="'$(PoPackageName)' != ''">$(_Options) --package-name="$(PoPackageName)"</_Options>
       <_Options Condition="'$(PoKeywordSpec)' != ''">$(_Options) --keyword="$(PoKeywordSpec)"</_Options>
@@ -227,12 +358,12 @@ foreach(item in poResourceItems)
     <Exec Command='"$(XGetText)" $(_Options)' />
 
     <!-- Replace CHARSET with UTF-8 -->
-    <FileUpdate Files="$(PotResourcePath)" Multiline="true" IgnoreCase="true" Encoding="utf-8-without-bom"
+    <FileUpdate Files="$(PotProjectPath)" Multiline="true" IgnoreCase="true" Encoding="utf-8-without-bom"
                 Regex='^("Content-Type.+?charset=)(CHARSET)(.*)$' ReplacementText="$1UTF-8$3" />
   </Target>
   
-  <Target Name="DeletePotResource">
-    <Delete Files="$(PotSourcePath);$(PotResourcePath)" />
+  <Target Name="DeletePotProject">
+    <Delete Files="$(PotSourcePath);$(PotProjectPath)" />
   </Target>
 
   <!--=========================================================================-->
@@ -254,8 +385,8 @@ foreach(item in poResourceItems)
 
   <Target Name="CreateOrUpdatePotModule"
           Condition="'$(ModuleName)' != ''"
-          DependsOnTargets="CreatePotResource"
-          Inputs="$(PotResourcePath)"
+          DependsOnTargets="CreatePotProject"
+          Inputs="$(PotProjectPath)"
           Outputs="$(PotModulePath)">
 
     <MakeDir Directories="$(PotModuleDir)" />
@@ -264,13 +395,13 @@ foreach(item in poResourceItems)
     </PropertyGroup>
 
     <!--PotModule = PotResource if PotModule does not exist-->
-    <Copy SourceFiles="$(PotResourcePath)" DestinationFiles="$(PotModulePath)" Condition="'$(PotModuleInitialized)' != 'true'"/>
+    <Copy SourceFiles="$(PotProjectPath)" DestinationFiles="$(PotModulePath)" Condition="'$(PotModuleInitialized)' != 'true'"/>
 
     <!--PotModule = msgcat (anyCulture, PotModule, PotResource) -->
     <PropertyGroup>
       <_Options>--no-wrap -D"$(PoRootDir)." --lang="" -o"$(PotModulePath)"</_Options>
     </PropertyGroup>
-    <Exec Command='"$(MsgCat)" $(_Options) "$(PotModulePath)" "$(PotResourcePath)"' Condition="'$(PotModuleInitialized)' == 'true'" />
+    <Exec Command='"$(MsgCat)" $(_Options) "$(PotModulePath)" "$(PotProjectPath)"' Condition="'$(PotModuleInitialized)' == 'true'" />
   </Target>
   
   <Target Name="DeletePotModule">
@@ -279,43 +410,10 @@ foreach(item in poResourceItems)
 
   <!--=========================================================================-->
   <!--
-  PoResource.Create(poResourceItem, potResourceFile)
-  {
-    var poResourceFile = poResourceItem.File;
-    if (!poResourceFile.Initialized)
-    {
-      poResourceFile = msginit (potResourceFile);
-      // poResourceFile = msgAttrib (poResourceFile, clear-fuzzy);
-    }
-    return new PoResource(poResourceFile);
-  }
-  -->
-
-  <Target Name="CreatePoResource"
-          DependsOnTargets="InitPoResourceItems;CreatePotResource"
-          Inputs="$(PotResourcePath)"
-          Outputs="%(PoResource.FullPath)">
-
-    <!-- PoResource = msginit(PotResource) - fuzzy marker (if not initialized) -->
-    <PropertyGroup>
-      <_Options>--no-wrap --no-translator --locale=%(PoResource.Culture)</_Options>
-      <_Options>$(_Options) -o"%(PoResource.FullPath)" -i"$(PotResourcePath)"</_Options>
-    </PropertyGroup>
-    <Exec Command='"$(MsgInit)" $(_Options)' Condition="'%(PoResource.Initialized)' != 'true'" />
-
-    <!-- PoResource -= header's fuzzy marker -->
-    <PropertyGroup>
-      <_Options>--clear-fuzzy -o"%(PoResource.FullPath)"</_Options>
-    </PropertyGroup>
-    <Exec Command='"$(MsgAttrib)" $(_Options) "%(PoResource.FullPath)"' Condition="'%(PoResource.Initialized)' != 'true'" />
-  </Target>
-
-  <!--=========================================================================-->
-  <!--
   PoBundle.Create(poResourceItem, potResourceFile)
   {
     var poBundleFile = poResourceItem.BundleFile;
-    if (!poBundleFile.Initialized)
+    if (!poBundleFile.Exists)
     {
       poBundleFile = msginit (potResourceFile);
       // poBundleFile = msgAttrib (poBundleFile, clear-fuzzy);
@@ -324,25 +422,37 @@ foreach(item in poResourceItems)
   }
   -->
 
-  <Target Name="CreatePoBundle"
-          DependsOnTargets="InitPoResourceItems;CreatePotResource"
-          Inputs="$(PotResourcePath)"
+  <Target Name="InitPoBundle"
+          DependsOnTargets="InitPoResourceItems;CreatePotProject"
+          Inputs="$(PotProjectPath)"
           Outputs="%(PoResource.PoBundlePath)">
 
-    <MakeDir Directories="$(PoBundleDir)" Condition="'%(PoResource.PoBundleInitialized)' != 'true'" />
+    <PropertyGroup>
+      <PoBundleInitialized Condition="Exists('%(PoResource.PoBundlePath)')">true</PoBundleInitialized>
+    </PropertyGroup>
+
+
+    <MakeDir Directories="%(PoResource.PoBundleDir)" Condition="'$(PoBundleInitialized)' != 'true'" />
 
     <!-- PoBundle = msginit(PotResource) if PoBundle does not exist -->
     <PropertyGroup>
       <_Options>--no-wrap --no-translator --locale=%(PoResource.Culture)</_Options>
-      <_Options>$(_Options) -o"%(PoResource.PoBundlePath)" -i"$(PotResourcePath)"</_Options>
+      <_Options>$(_Options) -o"%(PoResource.PoBundlePath)" -i"$(PotProjectPath)"</_Options>
     </PropertyGroup>
-    <Exec Command='"$(MsgInit)" $(_Options)' Condition="'%(PoResource.PoBundleInitialized)' != 'true'" />
+    <Exec Command='"$(MsgInit)" $(_Options)' Condition="'$(PoBundleInitialized)' != 'true'" />
 
     <!-- PoBundle -= header's fuzzy marker -->
     <PropertyGroup>
       <_Options>--clear-fuzzy -o"%(PoResource.PoBundlePath)"</_Options>
     </PropertyGroup>
-    <Exec Command='"$(MsgAttrib)" $(_Options) "%(PoResource.PoBundlePath)"' Condition="'%(PoResource.PoBundleInitialized)' != 'true'" />
+    <Exec Command='"$(MsgAttrib)" $(_Options) "%(PoResource.PoBundlePath)"' Condition="'$(PoBundleInitialized)' != 'true'" />
+
+
+    <!-- Force a refresh if PoResource or PoModule files exist -->
+    <PropertyGroup>
+      <PoBundleShouldBeUpdated Condition="'$(PoBundleInitialized)' != 'true' And ('%(PoResource.Initialized)' == 'true' Or ('$(ModuleName)' != '' And '%(PoResource.PoModuleInitialized)' == 'true'))">true</PoBundleShouldBeUpdated>
+    </PropertyGroup>
+    <Touch Files="%(PoResource.PoBundlePath)" Time="01.01.2016" Condition="'$(PoBundleShouldBeUpdated)' == 'true'" />
   </Target>
 
   <!--=========================================================================-->
@@ -359,9 +469,9 @@ foreach(item in poResourceItems)
   }
   -->
 
-  <Target Name="CreatePoModule"
+  <Target Name="InitPoModule"
           Condition="'$(ModuleName)' != ''"
-          DependsOnTargets="CreateOrUpdatePotModule"
+          DependsOnTargets="InitPoResourceItems;CreateOrUpdatePotModule"
           Inputs="$(PotModulePath)"
           Outputs="%(PoResource.PoModulePath)">
 
@@ -381,23 +491,35 @@ foreach(item in poResourceItems)
 
   <!--=========================================================================-->
   <!--
-  PoBundle.UpdateFromModule(poResourceItem, poModuleFile)
+  PoResource.Create(poResourceItem, potResourceFile)
   {
-    this.poBundleFile = msgcat(culture, poBundleFile, poResourceFile)
+    var poResourceFile = poResourceItem.File;
+    if (!poResourceFile.Initialized)
+    {
+      poResourceFile = msginit (potResourceFile);
+      // poResourceFile = msgAttrib (poResourceFile, clear-fuzzy);
+    }
+    return new PoResource(poResourceFile);
   }
   -->
 
-  <Target Name="UpdatePoBundleFromModule"
-          Condition="'$(ModuleName)' != ''"
-          DependsOnTargets="CreatePoBundle;CreatePoModule"
-          Inputs="%(PoResource.PoModulePath)"
-          Outputs="%(PoResource.PoBundlePath)">
+  <Target Name="InitPoProject"
+          DependsOnTargets="InitPoResourceItems;CreatePotProject"
+          Inputs="$(PotProjectPath)"
+          Outputs="%(PoResource.FullPath)">
 
-    <!-- PoBundle = msgcat(culture, PoBundle, PoModule) -->
+    <!-- PoResource = msginit(PotResource) - fuzzy marker (if not initialized) -->
     <PropertyGroup>
-      <_Options>--no-wrap -D"$(PoRootDir)." --lang=%(PoResource.Culture) -o"%(PoResource.PoBundlePath)"</_Options>
+      <_Options>--no-wrap --no-translator --locale=%(PoResource.Culture)</_Options>
+      <_Options>$(_Options) -o"%(PoResource.FullPath)" -i"$(PotProjectPath)"</_Options>
     </PropertyGroup>
-    <Exec Command='"$(MsgCat)" $(_Options) "%(PoResource.PoBundlePath)" "%(PoResource.PoModulePath)"' />
+    <Exec Command='"$(MsgInit)" $(_Options)' Condition="'%(PoResource.Initialized)' != 'true'" />
+
+    <!-- PoResource -= header's fuzzy marker -->
+    <PropertyGroup>
+      <_Options>--clear-fuzzy -o"%(PoResource.FullPath)"</_Options>
+    </PropertyGroup>
+    <Exec Command='"$(MsgAttrib)" $(_Options) "%(PoResource.FullPath)"' Condition="'%(PoResource.Initialized)' != 'true'" />
   </Target>
 
   <!--=========================================================================-->
@@ -408,8 +530,8 @@ foreach(item in poResourceItems)
   }
   -->
 
-  <Target Name="UpdatePoBundleFromResource"
-          DependsOnTargets="CreatePoBundle;CreatePoResource"
+  <Target Name="UpdatePoBundleFromProject"
+          DependsOnTargets="InitPoBundle;InitPoProject"
           Inputs="%(PoResource.FullPath)"
           Outputs="%(PoResource.PoBundlePath)">
 
@@ -419,6 +541,7 @@ foreach(item in poResourceItems)
     </PropertyGroup>
     <Exec Command='"$(MsgCat)" $(_Options) "%(PoResource.PoBundlePath)" "%(PoResource.FullPath)"' />
   </Target>
+
 
   <!--=========================================================================-->
   <!--
@@ -430,7 +553,7 @@ foreach(item in poResourceItems)
 
   <Target Name="UpdatePoModule"
           Condition="'$(ModuleName)' != ''"
-          DependsOnTargets="UpdatePoBundleFromResource;UpdatePoBundleFromModule"
+          DependsOnTargets="InitPoModule;UpdatePoBundleFromProject"
           Inputs="$(PotModulePath);%(PoResource.PoBundlePath)"
           Outputs="%(PoResource.PoModulePath)">
 
@@ -441,6 +564,9 @@ foreach(item in poResourceItems)
       <_Options>$(_Options) -o"%(PoResource.PoModulePath)"</_Options>
     </PropertyGroup>
     <Exec Command='"$(MsgMerge)" $(_Options) nul "$(PotModulePath)"' />
+    
+    <!-- Disable ConsolidatePoBundleFromModule -->
+    <!--<Touch Files="%(PoResource.PoModulePath)" Time="%(PoResource.ModifiedTime)" />-->
   </Target>
 
   <!--=========================================================================-->
@@ -451,9 +577,9 @@ foreach(item in poResourceItems)
   }
   -->
 
-  <Target Name="UpdatePoResource"
-          DependsOnTargets="UpdatePoModule"
-          Inputs="$(PotResourcePath);%(PoResource.PoBundlePath)"
+  <Target Name="UpdatePoProject"
+          DependsOnTargets="InitPoProject;UpdatePoBundleFromProject"
+          Inputs="$(PotProjectPath);%(PoResource.PoBundlePath)"
           Outputs="%(PoResource.FullPath)">
 
     <!-- PoResource = msmerge(culture, -C PoBundle, PotResource) -->
@@ -462,58 +588,163 @@ foreach(item in poResourceItems)
       <_Options>$(_Options) -C"%(PoResource.PoBundlePath)"</_Options>
       <_Options>$(_Options) -o"%(PoResource.FullPath)"</_Options>
     </PropertyGroup>
-    <Exec Command='"$(MsgMerge)" $(_Options) nul "$(PotResourcePath)"' />
-  </Target>
-
-  <!--=========================================================================-->
-
-  <Target Name="GetPoBundleReferences"
-          DependsOnTargets="InitPoResourceItems">
-
-    <ItemGroup>
-      <PoBundleReference Include="$(PotModulePath);%(PoResource.PoModulePath)" Condition="'$(ModuleName)' != ''" />
-      <PoBundleReference Include="$(PotResourcePath);%(PoResource.FullPath)" />
-      <PoBundleReference Include="%(ProjectReference.RootDir)%(Directory)**\*.po" />
-      <PoBundleReference Include="%(ProjectReference.RootDir)%(Directory)$(IntermediateOutputPath)*.pot" />
-    </ItemGroup>
-  </Target>
-
-  <Target Name="TouchPoBundleReferences"
-          DependsOnTargets="GetPoBundleReferences"
-          Inputs="%(PoResource.PoBundlePath)"
-          Outputs="@(PoBundleReference)">
-
-    <ItemGroup>
-      <PoBundle Include="%(PoResource.PoBundlePath)" />
-    </ItemGroup>
-    <PropertyGroup>
-      <PoBundleModifiedTime>%(PoBundle.ModifiedTime)</PoBundleModifiedTime>
-    </PropertyGroup>
-
-    <Touch Files="@(PoBundleReference)" Time="$(PoBundleModifiedTime)" />
+    <Exec Command='"$(MsgMerge)" $(_Options) nul "$(PotProjectPath)"' />
   </Target>
 
   <!--=========================================================================-->
   <!-- Create MO Resource -->
 
-  <Target Name="CreateMoResource"
-          DependsOnTargets="UpdatePoResource;TouchPoBundleReferences"
+  <Target Name="CreateMoProject"
+          DependsOnTargets="UpdatePoProject"
           Inputs="%(PoResource.FullPath)"
-          Outputs="%(PoResource.MoResourcePath)">
-    
-    <MakeDir Directories="%(PoResource.MoResourceDir)" />
-    <Exec Command='"$(MsgFmt)" -o"%(PoResource.MoResourcePath)" "%(PoResource.FullPath)"' />
+          Outputs="%(PoResource.MoProjectPath)">
+
+    <MakeDir Directories="%(PoResource.MoProjectDir)" />
+    <Exec Command='"$(MsgFmt)" -o"%(PoResource.MoProjectPath)" "%(PoResource.FullPath)"' />
+
   </Target>
 
-  <Target Name="DeleteMoResource" DependsOnTargets="InitPoResourceItems" Outputs="%(PoResource.MoResourcePath)">
-    <!--<Message Importance="high" Text="[-] %(PoResource.MoResourcePath)" />-->
-    <Delete Files="%(PoResource.MoResourcePath)" />
+  <Target Name="DeleteMoResource" DependsOnTargets="InitPoResourceItems" Outputs="%(PoResource.MoProjectPath)">
+    <!--<Message Importance="high" Text="[-] %(PoResource.MoProjectPath)" />-->
+    <Delete Files="%(PoResource.MoProjectPath)" />
+  </Target>
+
+  <!--=========================================================================-->
+  <!-- Save references and touch them -->
+
+
+  <Target Name="SavePotProjectReferences"
+          DependsOnTargets="GetPotProjectReferenceItems">
+    <ItemGroup>
+      <PotProjectReference Remove="$(PotProjectPath)" />
+      <PotProjectReference Include="$(PotProjectPath)" />
+      <PotProjectReference>
+        <RelativePath>$([MSBuild]::MakeRelative($(PoRootDir), %(FullPath)))</RelativePath>
+      </PotProjectReference>
+    </ItemGroup>
+    <MakeDir Directories="$(PotReferencesDir)" />
+    <WriteLinesToFile File="$(PotReferencesPath)" Lines="@(PotProjectReference->'%(RelativePath)')" Overwrite="true" />
+
+    <!--<Message Importance="high" Text="PotProjectReference=@(PotProjectReference->'%(FileName)%(Extension)')" />-->
+    <!--<LogItems Items="@(PotProjectReference)" Title="PotProjectReference" />-->
+  </Target>
+
+  <Target Name="SavePoProjectReferences"
+          DependsOnTargets="InitPoResourceItems;GetPoProjectReferenceItems"
+          Outputs="%(PoResource.Identity)">
+    
+    <ItemGroup>
+      <_Temporary Include="%(PoResource.PoProjectReferences)" />
+    </ItemGroup>
+    <ItemGroup>
+      <_Temporary Remove="%(PoResource.FullPath)" />
+      <_Temporary Include="%(PoResource.FullPath)" />
+      <PoResource>
+        <PoProjectReferences>@(_Temporary)</PoProjectReferences>
+      </PoResource>
+      <_Temporary>
+        <RelativePath>$([MSBuild]::MakeRelative($(PoRootDir), %(FullPath)))</RelativePath>
+      </_Temporary>
+    </ItemGroup>
+    <MakeDir Directories="%(PoResource.PoBundleDir)" />
+    <WriteLinesToFile File="%(PoResource.PoReferencesPath)" Lines="@(_Temporary->'%(RelativePath)')" Overwrite="true" />
+
+    <!--<Message Importance="high" Text="PoProjectReferences=@(_Temporary->'%(FileName)%(Extension)')" />-->
+    <!--<LogItems Items="@(_Temporary)" Title="PoReference" />-->
+    
+    <ItemGroup>
+      <_Temporary Remove="@(_Temporary)" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="SaveMoProjectReferences"
+          DependsOnTargets="InitPoResourceItems;GetMoProjectReferenceItems"
+          Outputs="%(PoResource.Identity)">
+
+    <ItemGroup>
+      <_Temporary Include="%(PoResource.MoProjectReferences)" />
+    </ItemGroup>
+    <ItemGroup>
+      <_Temporary Remove="%(PoResource.MoProjectPath)" />
+      <_Temporary Include="%(PoResource.MoProjectPath)" />
+      <PoResource>
+        <MoProjectReferences>@(_Temporary)</MoProjectReferences>
+      </PoResource>
+      <_Temporary>
+        <RelativePath>$([MSBuild]::MakeRelative($(PoRootDir), %(FullPath)))</RelativePath>
+      </_Temporary>
+    </ItemGroup>
+
+    <MakeDir Directories="%(PoResource.PoBundleDir)" />
+    <WriteLinesToFile File="%(PoResource.MoReferencesPath)" Lines="@(_Temporary->'%(RelativePath)')" Overwrite="true" />
+
+    <!--<Message Importance="high" Text="MoProjectReferences=@(_Temporary->'%(FileName)%(Extension)')" />-->
+    <!--<LogItems Items="@(_Temporary)" Title="PoReference" />-->
+
+    <ItemGroup>
+      <_Temporary Remove="@(_Temporary)" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="SavePoReferences" DependsOnTargets="SavePoProjectReferences" />
+
+  <!--=========================================================================-->
+
+  <Target Name="TouchPoReferences0"
+        DependsOnTargets="CreateMoProject"
+        Outputs="%(PoResource.Identity)">
+
+    <ItemGroup>
+      <_UpdatedPoResource Include="%(PoResource.FullPath)" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <_Temporary Include="@(PotModuleReference);@(PotProjectReference);%(PoResource.PoCompendiumReferences);%(PoResource.PoProjectReferences);%(PoResource.MoProjectReferences)" />
+      <_Temporary Remove="$(PotModulePath);$(PotProjectPath);%(PoResource.PoBundlePath);%(PoResource.PoModulePath);%(PoResource.FullPath);%(PoResource.MoProjectPath)" />
+      <_Temporary Include="$(PotModulePath);$(PotProjectPath);%(PoResource.PoBundlePath);%(PoResource.PoModulePath);%(PoResource.FullPath);%(PoResource.MoProjectPath)" />
+    </ItemGroup>
+
+    <Touch Files="@(_Temporary)" Time="%(_UpdatedPoResource.ModifiedTime)" />
+
+    <ItemGroup>
+      <_Temporary Remove="@(_Temporary)" />
+      <_UpdatedPoResource Remove="@(_UpdatedPoResource)" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="TouchPoReferences"
+        DependsOnTargets="CreateMoProject"
+        Outputs="%(PoResource.Identity)">
+
+    <Message Importance="high" Text="[1] LastModifiedTime = '$(LastModifiedTime)'" />
+    <ItemGroup>
+      <_UpdatedMoProject Include="%(PoResource.MoProjectPath)" />
+    </ItemGroup>
+    <PropertyGroup>
+      <_ShouldTouchPoReferences Condition="$([System.StringComparer]::OrdinalIgnoreCase.Compare(%(_UpdatedMoProject.ModifiedTime), $(LastModifiedTime))) &gt; 0">true</_ShouldTouchPoReferences>
+    </PropertyGroup>
+    
+    <Message Importance="high" Text="Compare('%(_UpdatedMoProject.ModifiedTime)', '$(LastModifiedTime)') &gt; 0 =&gt; '$(_ShouldTouchPoReferences)'" />
+    
+    <Touch Condition="'$(_ShouldTouchPoReferences)' == 'true'"
+           Files="%(PoResource.PoBundlePath);%(PoResource.PoModulePath)" Time="%(_UpdatedPoResource.ModifiedTime)" />
+
+    <PropertyGroup >
+      <LastModifiedTime>%(_UpdatedMoProject.ModifiedTime)</LastModifiedTime>
+    </PropertyGroup>
+    
+    <Message Importance="high" Text="[2] LastModifiedTime = '$(LastModifiedTime)'" />
+
+    <ItemGroup>
+      <_UpdatedMoProject Remove="@(_UpdatedMoProject)" />
+    </ItemGroup>
   </Target>
 
   <!--=========================================================================-->
   <!-- Import MO Resources References -->
-  
-  <Target Name="GetMoResourceReferences">
+  <!--=========================================================================-->
+
+  <Target Name="GetMoReferenceItemss">
     <ItemGroup>
       <MoResourceReference Include="%(ProjectReference.RootDir)%(Directory)$(OutputPath)$(PoLocaleSubdir)**\*.mo">
         <ProjectOwnerDirectory>%(ProjectReference.RootDir)%(Directory)</ProjectOwnerDirectory>
@@ -527,7 +758,7 @@ foreach(item in poResourceItems)
   </Target>
 
   <Target Name="ImportMoResourceReferences"
-          DependsOnTargets="GetMoResourceReferences"
+          DependsOnTargets="GetMoReferenceItemss"
           Inputs="%(MoResourceReference.FullPath)"
           Outputs="$(TargetDir)$(PoLocaleSubdir)%(MoResourceReference.RecursiveDir)%(FileName)%(Extension)">
     <Copy SourceFiles="%(MoResourceReference.FullPath)" DestinationFiles="$(TargetDir)$(PoLocaleSubdir)%(RecursiveDir)%(FileName)%(Extension)"  />
@@ -535,7 +766,7 @@ foreach(item in poResourceItems)
 
   <!-- Set MO Resources files as content -->
   <Target Name="SetMoResourceReferencesAsContent"
-          DependsOnTargets="GetMoResourceReferences"
+          DependsOnTargets="GetMoReferenceItemss"
           Inputs="@(MoResourceReference)"
           Outputs="@(MoResourceReference->'$(TargetDir)%(RecursiveDir)%(FileName)%(Extension)')">
     <ItemGroup>
@@ -550,32 +781,48 @@ foreach(item in poResourceItems)
   <Target Name="ImportMoResourceReferencesBuild"
           BeforeTargets="BeforeBuild"
           DependsOnTargets="ImportMoResourceReferences;SetMoResourceReferencesAsContent" />
-  
+
   <Target Name="ImportMoResourceReferencesClean"
           AfterTargets="AfterClean"
-          DependsOnTargets="GetMoResourceReferences"
+          DependsOnTargets="GetMoReferenceItemss"
           Outputs="@(MoResourceReference)">
-    
+
     <Delete Files="@(MoResourceReference)" />
   </Target>
 
   <!--=========================================================================-->
+  <!-- Build -->
+  <!--=========================================================================-->
 
   <Target Name="GetTextBuild"
           BeforeTargets="Build"
-          DependsOnTargets="CreateMoResource" />
+          DependsOnTargets="
+            ConsolidatePoBundle;
+            CreatePotProject;
+            CreateOrUpdatePotModule;
+            InitPoBundle;
+            InitPoModule;
+            InitPoProject;
+            UpdatePoBundleFromProject;
+            
+            UpdatePoModule;
+            UpdatePoProject;
+            CreateMoProject;
 
-  <!--<Target Name="GetTextClean"
+            SavePoReferences;
+            TouchPoReferences" />
+
+  <Target Name="GetTextClean"
           AfterTargets="Clean"
-          DependsOnTargets="DeleteMoResource;DeletePotResource;DeletePotModule">
+          DependsOnTargets="DeleteMoResource;DeletePotProject;DeletePotModule">
     
-  </Target>-->
-
-  <Target Name="Reset"
-          AfterTargets="Clean"
-          DependsOnTargets="GetPoBundleReferences">
     <!-- TODO: FOR TEST ONLY -->
-    <Delete Files="%(PoResource.PoBundlePath)" />
-    <Delete Files="@(PoBundleReference)" />
+    <ItemGroup>
+      <PoDirectory Include="$(PotBundleDir);$(PotBundleDir)**" />
+    </ItemGroup>
+    <Delete Files="$(PotBundleDir)**\*;@(PoResource)" />
+    <RemoveDir Directories="@(PoDirectory)" />
   </Target>
+  
+  
 </Project>
