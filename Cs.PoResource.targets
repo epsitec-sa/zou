@@ -123,14 +123,13 @@ foreach(item in poResourceItems)
     <!--<AvailableItemName Include="PoGlobalResource" />-->
   </ItemGroup>
 
-  <Import Project="Cs.Boot.props"  Condition="'$(CsBootImported)' != 'true'"/>
+  <Import Project="Cs.Boot.props" Condition="'$(CsBootImported)' != 'true'"/>
+  <Import Project="BuildSequence.targets" Condition="'$(BuildSequencePath)' == ''"/>
 
   <!--=========================================================================-->
   <!-- Definitions -->
   
   <PropertyGroup>
-    <BuildOrderPath>$(SolutionDir)$(SolutionName).bo.zou</BuildOrderPath>
-    
     <PoLocaleSubdir>locale\</PoLocaleSubdir>
     
     <PoBundleName>$(BundleName)</PoBundleName>
@@ -224,47 +223,6 @@ foreach(item in poResourceItems)
     </ItemGroup>
 
     <!--<LogItems Items="@(PoResource)" Title="PoResource" AllMetadata="true" />-->
-  </Target>
-
-  <!--=========================================================================-->
-
-  <Target Name="ReadBuildOrder"
-          Condition="$(SolutionName) != ''"
-          Outputs="$(BuildOrderPath)">
-
-    <ReadLinesFromFile File="$(BuildOrderPath)" >
-      <Output TaskParameter="Lines" ItemName="BuildOrder"/>
-    </ReadLinesFromFile>
-
-    <PropertyGroup >
-      <BuildOrders>@(BuildOrder)</BuildOrders>
-      <BuildOrderContainsProject Condition="'@(BuildOrder)' != '' And @(BuildOrder->AnyHaveMetadataValue('Identity', '$(ProjectPath)'))">true</BuildOrderContainsProject>
-      <BuildOrderLastProject     Condition="'@(BuildOrder)' != ''">$(BuildOrders.Substring($([MSBuild]::Add($(BuildOrders.LastIndexOf(';')), 1))))</BuildOrderLastProject>
-      <BuildOrderIsLastProject   Condition="'$(BuildOrderContainsProject)' != 'true' Or '$(BuildOrderLastProject)' == '$(ProjectPath)'">true</BuildOrderIsLastProject>
-    </PropertyGroup>
-
-    <Message Importance="high" Text="BuildOrderLastProject     = $(BuildOrderLastProject)" />
-    <Message Importance="high" Text="BuildOrderContainsProject = $(BuildOrderContainsProject)" />
-    <Message Importance="high" Text="BuildOrderIsLastProject   = $(BuildOrderIsLastProject)" />
-    <LogItems Items="@(BuildOrder)" Title="[R] BuildOrder" />
-  </Target>
-
-  <Target Name="WriteBuildOrder"
-          Condition="$(SolutionName) != ''"
-          DependsOnTargets="ReadBuildOrder"
-          Outputs="$(BuildOrderPath)">
-
-    <ItemGroup>
-      <BuildOrder Include="$(ProjectPath)" Condition="'$(BuildOrderContainsProject)' != 'true'" />
-    </ItemGroup>
-    <WriteLinesToFile File="$(BuildOrderPath)" Lines="@(BuildOrder)" Overwrite="true" Condition="'$(BuildOrderContainsProject)' != 'true'" />
-
-    <!--<Message Importance="high" Text="PotModuleReferences=@(_Temporary->'%(FileName)%(Extension)')" />-->
-    <LogItems Items="@(BuildOrder)" Title="[W] BuildOrder" />
-  </Target>
-
-  <Target Name="DeleteBuildOrder">
-    <Delete Files="$(BuildOrderPath)" />
   </Target>
 
   <!--=========================================================================-->
@@ -931,8 +889,8 @@ foreach(item in poResourceItems)
   </Target>
 
   <Target Name="TouchPoReferences"
-          Condition="'$(BuildOrderIsLastProject)' == 'true'"
-          DependsOnTargets="WritePoReferences;ReadBuildOrder"
+          Condition="'$(BuildSequenceIsLastProject)' == 'true'"
+          DependsOnTargets="WritePoReferences;ReadBuildSequence"
           Outputs="%(PoResource.Identity)">
 
     <ItemGroup>
@@ -1028,9 +986,8 @@ foreach(item in poResourceItems)
             CreateMoDomain;
 
             WritePoReferences;
-            ReadBuildOrder;
             TouchPoReferences;
-            WriteBuildOrder">
+            WriteBuildSequence">
     <!--<LogItems Items="@(PoResource)" AllMetadata="true" />-->
   </Target>
 
@@ -1051,7 +1008,6 @@ foreach(item in poResourceItems)
           DependsOnTargets="
             DeleteMoDomain;
             DeletePotDomain;
-            DeleteBuildOrder;
             PoResourceReset">
     
     <!-- POEdit generated files -->

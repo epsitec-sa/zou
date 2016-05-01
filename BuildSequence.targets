@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003"
+         InitialTargets="ReadBuildSequence">
+  
+  <PropertyGroup>
+    <BuildSequencePath>$(SolutionDir)$(SolutionName).bo.zou</BuildSequencePath>
+  </PropertyGroup>
+
+  <!--=========================================================================-->
+
+  <!-- Reset build sequence if associated solution changes -->
+  <Target Name="ResetBuildSequence"
+          Condition="$(SolutionName) != ''"
+          Inputs="$(SolutionPath)"
+          Outputs="$(BuildSequencePath)">
+    
+    <Delete Files="$(BuildSequencePath)" />
+  </Target>
+  
+  
+  <Target Name="ReadBuildSequence"
+          Condition="$(SolutionName) != ''"
+          DependsOnTargets="ResetBuildSequence"
+          Outputs="$(BuildSequencePath)">
+
+    <ReadLinesFromFile File="$(BuildSequencePath)" >
+      <Output TaskParameter="Lines" ItemName="BuildSequence"/>
+    </ReadLinesFromFile>
+
+    <!-- Extract the path of the last project in the build sequence -->
+    <PropertyGroup >
+      <_Temporary>@(BuildSequence)</_Temporary>
+      <BuildSequenceLastProject Condition="'@(BuildSequence)' != ''">$(_Temporary.Substring($([MSBuild]::Add($(_Temporary.LastIndexOf(';')), 1))))</BuildSequenceLastProject>
+      <_Temporary></_Temporary>
+    </PropertyGroup>
+
+    <PropertyGroup >
+      <BuildSequenceContainsProject Condition="'@(BuildSequence)' != '' And @(BuildSequence->AnyHaveMetadataValue('Identity', '$(ProjectPath)'))">true</BuildSequenceContainsProject>
+      <BuildSequenceIsLastProject   Condition="'$(BuildSequenceContainsProject)' != 'true' Or '$(BuildSequenceLastProject)' == '$(ProjectPath)'">true</BuildSequenceIsLastProject>
+    </PropertyGroup>
+
+    <Message Importance="high" Text="BuildSequenceLastProject     = $(BuildSequenceLastProject)" />
+    <Message Importance="high" Text="BuildSequenceContainsProject = $(BuildSequenceContainsProject)" />
+    <Message Importance="high" Text="BuildSequenceIsLastProject   = $(BuildSequenceIsLastProject)" />
+    <LogItems Items="@(BuildSequence)" Title="[R] BuildSequence" />
+  </Target>
+
+  <Target Name="WriteBuildSequence"
+          Condition="$(SolutionName) != ''"
+          DependsOnTargets="ReadBuildSequence"
+          Outputs="$(BuildSequencePath)">
+
+    <ItemGroup>
+      <BuildSequence Include="$(ProjectPath)" Condition="'$(BuildSequenceContainsProject)' != 'true'" />
+    </ItemGroup>
+    <WriteLinesToFile File="$(BuildSequencePath)"
+                      Lines="@(BuildSequence)"
+                      Overwrite="true"
+                      Condition="'$(BuildSequenceContainsProject)' != 'true'" />
+
+    <!--<Message Importance="high" Text="PotModuleReferences=@(_Temporary->'%(FileName)%(Extension)')" />-->
+    <LogItems Items="@(BuildSequence)" Title="[W] BuildSequence" />
+  </Target>
+
+  <Target Name="BuildSequenceClean" AfterTargets="AfterClean">
+    <Delete Files="$(BuildSequencePath)" />
+  </Target>
+</Project>
