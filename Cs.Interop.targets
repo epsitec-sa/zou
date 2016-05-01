@@ -19,8 +19,7 @@
   </ItemDefinitionGroup>
   
   <!-- Import interop components -->
-  <Target Name="GetInteropFiles"
-          Condition="'@(ImportProject)' != ''">
+  <Target Name="GetInteropFiles">
     <ItemGroup>
       <InteropFile Include="%(ImportProject.OutDir)**\*.*" />
     </ItemGroup>
@@ -42,7 +41,7 @@
   <Import Project="ImportProject.targets" />
 
   <Target Name="InteropBuild"
-          Condition="'@(InteropFile)' != ''"
+          Condition="'@(ImportProject)' != ''"
           BeforeTargets="BeforeBuild"
           DependsOnTargets="ImportProject;CreateInteropContent" />
   
