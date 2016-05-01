@@ -803,10 +803,12 @@ Pseudo-code:
 
     <ItemGroup>
       <_Temporary Include="%(PoResource.MoDomainPath)" />
-      <PoResource>
-        <MoDomainLastModifiedTime>%(_Temporary.ModifiedTime)</MoDomainLastModifiedTime>
-      </PoResource>
     </ItemGroup>
+    
+    <PropertyGroup>
+      <MoDomainLastModifiedTime>%(_Temporary.ModifiedTime)</MoDomainLastModifiedTime>
+    </PropertyGroup>
+
     <ItemGroup>
       <_Temporary Remove="@(_Temporary)" />
     </ItemGroup>
@@ -827,63 +829,46 @@ Pseudo-code:
             WritePoDomainReferences;
             WriteMoDomainReferences" />
 
-  <Target Name="TouchPoReferences0" DependsOnTargets="WritePoReferences">
+  <!--=========================================================================-->
+
+  <Target Name="GetPoBundleReferences">
+    <ItemGroup>
+      <PoBundleReference Include="$(PoBundleRootDir)*.po" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="GetPoReferences"
+          DependsOnTargets="WritePoReferences">
 
     <ItemGroup>
-      <PoReferenceFile Include="$(PoReferencesDir)*" />
+      <_PoReferenceFile Include="$(PoReferencesDir)*" />
     </ItemGroup>
 
-    <ReadLinesFromFile File="%(PoReferenceFile.FullPath)" >
+    <ReadLinesFromFile File="%(_PoReferenceFile.FullPath)" >
       <Output TaskParameter="Lines" ItemName="_Temporary"/>
     </ReadLinesFromFile>
 
     <ItemGroup>
-      <PoReference Include="@(_Temporary->'$(BundleDir)%(Identity)')" />
-      <PoReference Include="$(PoBundleRootDir)*.po" />
+      <PoReference      Include="@(_Temporary->'$(BundleDir)%(Identity)')" />
+      <_PoReferenceFile Remove="@(_PoReferenceFile)" />
+      <_Temporary       Remove="@(_Temporary)" />
     </ItemGroup>
-
-    <Touch Files="@(PoReference)" Time="$(MoDomainLastModifiedTime)" />
-
-    <ItemGroup>
-      <PoReference Remove="@(PoReference)" />
-      <_Temporary Remove="@(_Temporary)" />
-    </ItemGroup>
-  </Target>
-
-  <Target Name="TouchPoReferences1"
-          DependsOnTargets="WritePoReferences"
-          Outputs="%(PoResource.Identity)">
-
-    <Touch Files="%(PoResource.PoBundlePath);%(PoModulePath);%(FullPath)" Time="%(MoDomainLastModifiedTime)" />
   </Target>
 
   <Target Name="TouchPoReferences"
           Condition="'$(BuildSequenceIsLastProject)' == 'true'"
-          DependsOnTargets="WritePoReferences;ReadBuildSequence"
-          Outputs="%(PoResource.Identity)">
+          DependsOnTargets="GetPoBundleReferences;GetPoReferences"
+          Inputs="@(PoReference)"
+          Outputs="@(PoBundleReference)">
+
+    <Touch Files="%(PoBundleReference.FullPath)" Time="$(MoDomainLastModifiedTime)" />
+    <Touch Files="%(PoReference.FullPath)"       Time="$(MoDomainLastModifiedTime)" Condition="Exists(%(PoReference.FullPath))" />
 
     <ItemGroup>
-      <PoReferenceFile Include="%(PoResource.PoDomainReferencesPath);%(PoModuleReferencesPath);%(MoDomainReferencesPath)" />
-    </ItemGroup>
-
-    <ReadLinesFromFile File="%(PoReferenceFile.FullPath)" >
-      <Output TaskParameter="Lines" ItemName="_Temporary"/>
-    </ReadLinesFromFile>
-
-    <ItemGroup>
-      <PoReference Include="@(_Temporary->'$(BundleDir)%(Identity)')" />
-      <PoReference Include="%(PoResource.PoBundlePath)" />
-    </ItemGroup>
-
-    <Touch Condition="Exists(%(PoReference.Identity))" Files="%(PoReference.Identity)" Time="%(PoResource.MoDomainLastModifiedTime)" />
-
-    <ItemGroup>
+      <PoBundleReference Remove="@(PoBundleReference)" />
       <PoReference Remove="@(PoReference)" />
-      <_Temporary Remove="@(_Temporary)" />
     </ItemGroup>
   </Target>
-
-
 
   <!--=========================================================================-->
   <!-- Import MO Resources References -->
@@ -942,6 +927,8 @@ Pseudo-code:
   <Target Name="PoResourceBuild"
           BeforeTargets="Build"
           DependsOnTargets="
+            ReadBuildSequence;
+            
             ConsolidatePoBundle;
             CreatePotDomain;
             CreateOrUpdatePotModule;
@@ -954,8 +941,8 @@ Pseudo-code:
             UpdatePoDomain;
             CreateMoDomain;
 
-            WritePoReferences;
             TouchPoReferences;
+            
             WriteBuildSequence">
     <!--<LogItems Items="@(PoResource)" AllMetadata="true" />-->
   </Target>
