@@ -1,11 +1,11 @@
 ﻿using System;
-
+using System.Globalization;
 using Epsitec.Localization;
 using NGettext;
 
 namespace Lib1
 {
-    public class Class_fr_CH : ILocalizable
+    public class Class_fr_CH : Localizable
     {
 		public Class_fr_CH()
 		{
@@ -16,7 +16,6 @@ namespace Lib1
 			Console.WriteLine ();
 		}
 
-		public string Domain  => Localizable.DefaultDomain<Class_fr_CH> ();
-		public string Culture => "fr-CH";
+		public override CultureInfo Culture => CultureInfo.CreateSpecificCulture("fr-CH");
 	}
 }

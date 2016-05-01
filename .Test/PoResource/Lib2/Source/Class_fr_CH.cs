@@ -1,9 +1,10 @@
 ﻿using System;
+using System.Globalization;
 using Epsitec.Localization;
 
 namespace Lib2
 {
-	public class Class_fr_CH : ILocalizable
+	public class Class_fr_CH : Localizable
 	{
 		public Class_fr_CH()
 		{
@@ -16,7 +17,6 @@ namespace Lib2
 			new Lib1.Class_fr_CH ();
 		}
 
-		public string Domain => Localizable.DefaultDomain<Class_fr_CH> ();
-		public string Culture => "fr-CH";
+		public override CultureInfo Culture => CultureInfo.CreateSpecificCulture ("fr-CH");
 	}
 }
