@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<!-- Import this script at the end of the C# interop project -->
 <!--
+Import this script at the end of the C# interop project
 
 Layout:
 =======
@@ -9,17 +9,17 @@ Layout:
       bundle1.fr-CH.po                                  %(PoResource.PoBundlePath)  
       bundle1.de-CH.po
       .refs\                                            $(PoReferencesDir)
-        PotModuleReferences.txt                         $(PotModuleReferencesPath)
+        PotModules.zou                                  $(PotModuleReferencesPath)
           - module1\.po\module1.pot                     $(PotModulePath)
-        PoModuleReferences.fr-CH.txt                    %(PoResource.PoModuleReferencesPath)
-          - module1\.po\module1.fr-CH.po                %(PoResource.PoModulePath)
-        PotDomainReferences.txt                         $(PotDomainReferencesPath)
+        PotDomains.zou                                  $(PotDomainReferencesPath)
           - project1\obj\$(Configuration)\domain1.pot   %(PoResource.PotDomainPath)
           - project1\obj\$(Configuration)\domain2.pot
-        PoDomainReferences.fr-CH.txt                    %(PoResource.PoDomainReferencesPath)
+        PoModules.fr-CH.zou                             %(PoResource.PoModuleReferencesPath)
+          - module1\.po\module1.fr-CH.po                %(PoResource.PoModulePath)
+        PoDomains.fr-CH.zou                             %(PoResource.PoDomainReferencesPath)
           - project1\Resource\domain1.fr-CH.po          %(PoResource.FullPath)
           - project1\Resource\domain2.fr-CH.po
-        MoDomainReferences.fr-CH.txt                    %(PoResource.MoDomainReferencesPath)
+        MoDomains.fr-CH.zou                             %(PoResource.MoDomainReferencesPath)
           -project1\bin\$(Configuration)\locale\fr-CH\LC_MESSAGES\domain1.mo  %(PoResource.MoDomainPath)
           -project1\bin\$(Configuration)\locale\fr-CH\LC_MESSAGES\domain2.mo
             
@@ -39,7 +39,7 @@ Layout:
         domain2.de-CH.po
         
       obj\$(Configuration)\                             $(PotDomainDir)
-        domain1.Sources.txt                             %(PoResource.PotSourceReferencesPath)
+        domain1.Sources.zou                             %(PoResource.PotSourceReferencesPath)
         domain1.pot                                     %(PoResource.PotDomainPath)
         domain2.pot
           
@@ -47,73 +47,42 @@ Layout:
         domain1.mo                                      %(PoResource.MoDomainPath)
         domain2.mo
 
-where:
-
-    bundle1           $(BundleName)
-    module1           $(ModuleName)
-    domain1           %(PoResource.Domain)
-    fr-CH             %(PoResource.Culture)
-    
-    bundle1.fr-CH.po  %(PoResource.PoBundleFileName)
-    module1.fr-CH.po  %(PoResource.PoModuleFileName)
-
+  where:
+      bundle1           $(BundleName)
+      module1           $(ModuleName)
+      domain1           %(PoResource.Domain)
+      fr-CH             %(PoResource.Culture)
+      bundle1.fr-CH.po  %(PoResource.PoBundleFileName)
+      module1.fr-CH.po  %(PoResource.PoModuleFileName)
 
 Pseudo-code:
 ============
 
-PoBundle    = msgcat  (culture, PoBundle, PoModule.References, PoDomain.References)
+  foreach (project in solution)
+  {
+    PoBundle    = msgcat  (culture, PoReferences)                         // integrate external translations
+    PotDomain   = xgettext(*.cs)                                          // update domain message IDs
+    PotModule   = msgcat  (anyCulture, PotDomain[, PotModule])            // update module message IDs
 
-Source      = *.cs
-PotDomain   = xgettext(Source)
+    foreach (poResource)
+    {
+        PoBundle    = msginit (PotDomain) - (if PoBundle not Initialized)
+        PoModule    = msginit (PotModule) - (if PoModule not Initialized)
+        PoDomain    = msginit (PotDomain) - (if PoDomain not initialized)
 
-PotModule   = PotDomain (if PotModule not Initialized)
-PotModule   = msgcat  (anyCulture, PotModule, PotProject)             // aggregate msgid
+        PoBundle    = msgcat  (culture, PoBundle, PoDomain)               // concat domain changes into bundle
+        PoModule    = msgmerge(culture, -C PoBundle, nul, PotModule)      // import bundle changes into module
+        PoDomain    = msgmerge(culture, -C PoBundle, nul, PoDomain)       // import bundle changes into domain
 
-foreach (poResourceItem)
-{
-    PoBundle    = msginit (PotProject)  (if PoBundle not Initialized)
-    PoModule    = msginit (PotModule)   (if PoModule not Initialized)
-    PoDomain    = msginit (PotDomain)   (if PoDomain not initialized)
-
-    PoBundle    = msgcat  (culture, PoBundle, PoModule)               // aggregate msgstr (translations)
-    PoBundle    = msgcat  (culture, PoBundle, PoProject)              // aggregate msgstr (translations)
-
-    PoModule    = msgmerge(culture, -C PoBundle, nul, PotModule)      // give priority to PoBundle translations
-    PoDomain    = msgmerge(culture, -C PoBundle, nul, PoDomain)       // give priority to PoBundle translations
-
-    MoDomain    = msgfmt(PoDomain)
-    
-    PoBundle.Time = PoModule.Time = PoDomain.Time = MoDomain.Time
-}
-
-git push/pull module
-
-
-===========================
-
-g::poResourceItems.Init(global);
-
-var sourceItems    = Source.Create(g::compileItems, g::poGlobalResourceItems != null);
-var source         = Source.Create(sourceItems);
-
-var potModule      = PotModule.CreateOrUpdate (potDomain);
-var potDomain    = PotDomain.Create (source);
-
-var poResourceItems = poResourceItems.Init();
-foreach(item in poResourceItems)
-{
-  var poBundle   = PoBundle.CreateOrConsolidate(item, g::poFiles;g:potFiles);
-  var poResource = PoResource.Create(item, potDomain);
-  var poModule   = PoModule.Create(item, potModule);
+        MoDomain    = msgfmt(PoDomain)                                    // compile domain
+    }
   
-  var poBundle   = PoBundle.UpdateFromResource(item, poResource);
-  
-  poModule.Update(item, potDomain, poBundle, poModule);
-  poResource.Update(item, potDomain, poBundle, poModule);
-  
-  var moResource = MoResource.Create(poResource);
-}
-
+    if (project is last)
+    {
+      // touch all references to same last 
+      PotReferences.Time = PoReferences.Time = MoReferences.Time = LastModifiedMoDomain.Time 
+    }
+  }
 -->
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="GetTextBuild">
 
