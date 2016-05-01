@@ -99,6 +99,8 @@ Pseudo-code:
   <!-- Definitions -->
   
   <PropertyGroup>
+    <PoClearFuzzy>false</PoClearFuzzy>
+    
     <PoLocaleSubdir>locale\</PoLocaleSubdir>
     
     <PoBundleName>$(BundleName)</PoBundleName>
@@ -641,7 +643,7 @@ Pseudo-code:
     <PropertyGroup>
       <_Options>--clear-fuzzy -o"%(PoResource.PoBundlePath)"</_Options>
     </PropertyGroup>
-    <Exec Command='"$(MsgAttrib)" $(_Options) "%(PoResource.PoBundlePath)"' Condition="'$(PoBundleInitialized)' != 'true'" />
+    <Exec Command='"$(MsgAttrib)" $(_Options) "%(PoResource.PoBundlePath)"' Condition="'$(PoClearFuzzy)' == 'true' And '$(PoBundleInitialized)' != 'true'" />
 
 
     <!-- Force a refresh if PoResource or PoModule files exist -->
@@ -682,7 +684,7 @@ Pseudo-code:
     <PropertyGroup>
       <_Options>--clear-fuzzy -o"%(PoResource.PoModulePath)"</_Options>
     </PropertyGroup>
-    <Exec Command='"$(MsgAttrib)" $(_Options) "%(PoResource.PoModulePath)"' Condition="'%(PoResource.PoModuleInitialized)' != 'true'" />
+    <Exec Command='"$(MsgAttrib)" $(_Options) "%(PoResource.PoModulePath)"' Condition="'$(PoClearFuzzy)' == 'true' And '%(PoResource.PoModuleInitialized)' != 'true'" />
   </Target>
 
   <!--=========================================================================-->
@@ -717,7 +719,7 @@ Pseudo-code:
     <PropertyGroup>
       <_Options>--clear-fuzzy -o"%(PoResource.FullPath)"</_Options>
     </PropertyGroup>
-    <Exec Command='"$(MsgAttrib)" $(_Options) "%(PoResource.FullPath)"' Condition="'%(PoResource.Initialized)' != 'true'" />
+    <Exec Command='"$(MsgAttrib)" $(_Options) "%(PoResource.FullPath)"' Condition="'$(PoClearFuzzy)' == 'true' And '%(PoResource.Initialized)' != 'true'" />
   </Target>
 
   <!--=========================================================================-->
