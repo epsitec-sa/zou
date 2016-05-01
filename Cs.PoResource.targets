@@ -951,14 +951,26 @@ Pseudo-code:
 
   <Target Name ="PoResourceReset"
           Condition="$(PoReset) != ''">
-    <Delete Files="$(PoBundleRootDir)**\*" />
-    <Delete Files="$(PoModuleRootDir)**\*" />
-    <Delete Files="@(PoResource)" />
+
     <ItemGroup>
-      <PoDirectory Include="$(PoBundleRootDir);$(PoBundleRootDir)**" />
-      <PoDirectory Include="$(PoModuleRootDir);$(PoModuleRootDir)**" />
+      <_Temporary Include="$(PoBundleRootDir)**\*" />
+      <_Temporary Include="$(PoModuleRootDir)**\*" />
+      <_Temporary Include="@(PoResource)" />
     </ItemGroup>
-    <RemoveDir Directories="@(PoDirectory)" />
+
+    <Delete Files="@(_Temporary)" />
+
+    <ItemGroup>
+      <_Temporary Remove="@(_Temporary)" />
+      <_Temporary Include="$(PoBundleRootDir);$(PoBundleRootDir)**" />
+      <_Temporary Include="$(PoModuleRootDir);$(PoModuleRootDir)**" />
+    </ItemGroup>
+    
+    <RemoveDir Directories="@(_Temporary)" />
+    
+    <ItemGroup>
+      <_Temporary Remove="@(_Temporary)" />
+    </ItemGroup>
   </Target>
 
   <Target Name="PoResourceClean"
@@ -967,11 +979,20 @@ Pseudo-code:
             DeleteMoDomain;
             DeletePotDomain;
             PoResourceReset">
+
+    <ItemGroup>
+      <_Temporary Include="$(PoReferencesDir)*.zou" />
+      <_Temporary Include="$(PoBundleRootDir)*.mo" />
+      <_Temporary Include="$(PoModuleRootDir)*.mo" />
+      <_Temporary Include="%(PoResource.RootDir)%(Directory)*.mo" />
+    </ItemGroup>
     
-    <!-- POEdit generated files -->
-    <Delete Files="$(PoBundleRootDir)*.mo" />
-    <Delete Files="$(PoModuleRootDir)*.mo" />
-    <Delete Files="%(PoResource.RootDir)%(Directory)*.mo" />
+    <Delete Files="@(_Temporary)" />
+    <RemoveDir Directories="$(PoReferencesDir)" ContinueOnError="true" />
+
+    <ItemGroup>
+      <_Temporary Remove="@(_Temporary)" />
+    </ItemGroup>
   </Target>
     
 </Project>
