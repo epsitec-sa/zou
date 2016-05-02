@@ -11,7 +11,7 @@ using Microsoft.Build.Utilities;
 
 namespace Epsitec.Zou
 {
-	public class CleanPoHeader : Task
+	public class CleanPoFile : Task
 	{
 		[Required]
 		public ITaskItem[]				SourceFiles

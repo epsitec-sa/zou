@@ -479,7 +479,7 @@ Pseudo-code:
     </PropertyGroup>
     
     <Exec Command='"$(MsgCat)" $(_Options) $(PoReferences)' />
-    <CleanPoHeader Condition="'$(NoPoClean)' == ''" SourceFiles="%(PoResource.PoBundlePath)" />
+    <CleanPoFile Condition="'$(NoPoClean)' == ''" SourceFiles="%(PoResource.PoBundlePath)" />
     
     <ItemGroup>
       <PoReference Remove="@(PoReference)" />
@@ -598,7 +598,7 @@ Pseudo-code:
     </PropertyGroup>
 
     <Exec Command='"$(MsgCat)" $(_Options) $(PotReferences)' />
-    <CleanPoHeader Condition="'$(NoPoClean)' == ''" SourceFiles="$(PotModulePath)" />
+    <CleanPoFile Condition="'$(NoPoClean)' == ''" SourceFiles="$(PotModulePath)" />
 
     <ItemGroup>
       <PotReference Remove="@(PotReference)" />
@@ -740,7 +740,7 @@ Pseudo-code:
       <_Options>--no-wrap -D"$(BundleDir)." --lang=%(PoResource.Culture) -o"%(PoResource.PoBundlePath)"</_Options>
     </PropertyGroup>
     <Exec Command='"$(MsgCat)" $(_Options) "%(PoResource.PoBundlePath)" "%(PoResource.FullPath)"' />
-    <CleanPoHeader Condition="'$(NoPoClean)' == ''" SourceFiles="%(PoResource.PoBundlePath)" />
+    <CleanPoFile Condition="'$(NoPoClean)' == ''" SourceFiles="%(PoResource.PoBundlePath)" />
   </Target>
 
 
