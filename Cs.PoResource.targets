@@ -724,6 +724,28 @@ Pseudo-code:
 
   <!--=========================================================================-->
   <!--
+  PoDomain.UpdateFromPot(poResourceItem, potDomainFile, poBundle)
+  {
+    this.poResourceFile = msgmerge(poResourceItem, compendium: poBundle, potDomainFile)
+  }
+  -->
+
+  <Target Name="UpdatePoDomainFromPot"
+          DependsOnTargets="InitPoDomain"
+          Inputs="%(PoResource.PotDomainPath)"
+          Outputs="%(PoResource.FullPath)">
+
+    <!-- PoDomain = msmerge(culture, -C PoBundle, PotDomain) -->
+    <PropertyGroup>
+      <_Options>-q --no-wrap -D"$(BundleDir)." --lang=%(PoResource.Culture)</_Options>
+      <_Options>$(_Options) -C"%(PoResource.PoBundlePath)"</_Options>
+      <_Options>$(_Options) -o"%(PoResource.FullPath)"</_Options>
+    </PropertyGroup>
+    <Exec Command='"$(MsgMerge)" $(_Options) nul "%(PoResource.PotDomainPath)"' />
+  </Target>
+
+  <!--=========================================================================-->
+  <!--
   PoBundle.UpdateFromResource(poResourceItem, potDomainFile, poResourceFile)
   {
     this.poBundleFile = msgcat(culture, poBundleFile, poResourceFile)
@@ -731,7 +753,7 @@ Pseudo-code:
   -->
 
   <Target Name="UpdatePoBundleFromDomain"
-          DependsOnTargets="InitPoBundle;InitPoDomain"
+          DependsOnTargets="InitPoBundle;UpdatePoDomainFromPot"
           Inputs="%(PoResource.FullPath)"
           Outputs="%(PoResource.PoBundlePath)">
 
