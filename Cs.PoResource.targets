@@ -503,7 +503,7 @@ Pseudo-code:
           Condition="'@(Compile)' != '' Or ('@(PoGlobalResource)' != '' And '@(ProjectReference)' != '')"
           Outputs="@(PotSource)">
     <ItemGroup>
-      <PotSource Include="@(Compile)" Exclude="$(TMP)\*" />
+      <PotSource Include="@(Compile)" Exclude="$(TMP)\*;$(PotDomainDir)\*" />
       <PotSource Condition="'@(PoGlobalResource)' != ''" Include="%(ProjectReference.RootDir)%(Directory)**\*.cs" Exclude="%(ProjectReference.RootDir)%(Directory)obj\**\*.cs" />
       <PotSource>
         <RelativePath>$([MSBuild]::MakeRelative($(BundleDir), %(PotSource.FullPath)))</RelativePath>
@@ -553,9 +553,11 @@ Pseudo-code:
     </PropertyGroup>
     <Exec Command='"$(XGetText)" $(_Options)' />
 
-    <!-- Replace CHARSET with UTF-8 -->
+    <Error Code="$(ErrorPoNoMessageIdCode)" Text="$(ErrorPoNoMessageId)" Condition="!Exists(%(PoResource.PotDomainPath))" ContinueOnError="false" />
+
+    <!-- Replace CHARSET with UTF-8 and remove BOM -->
     <FileUpdate Files="%(PoResource.PotDomainPath)" Multiline="true" IgnoreCase="true" Encoding="utf-8-without-bom"
-                Regex='^("Content-Type.+?charset=)(CHARSET)(.*)$' ReplacementText="$1UTF-8$3" />
+                Regex='^("Content-Type.+?charset=)(CHARSET)(.*)$' ReplacementText="$1UTF-8$3"/>
   </Target>
   
   <Target Name="DeletePotDomain">
