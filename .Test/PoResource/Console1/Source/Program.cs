@@ -12,7 +12,9 @@ namespace Console1
 
 		static Program()
 		{
-			Thread.CurrentThread.CurrentUICulture = CultureInfo.CreateSpecificCulture (Program.Culture);
+			// Set the defined default culture process wide.
+			CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.CreateSpecificCulture (Program.Culture);
+
 			Console.WriteLine ($"CurrentUICulture = {Program.Culture}");
 			Console.WriteLine ("========================");
 			Console.WriteLine ();
@@ -21,12 +23,13 @@ namespace Console1
 		static void Main(string[] args)
 		{
 			Console.WriteLine (Program.Catalog.GetString ("Hello World from Console1!"));
+			Console.WriteLine (Program.Catalog.GetString ("Goodbye from Console1!"));
 			Console.WriteLine ();
 
 			new Lib2.Class_fr_CH ();
 			new Lib2.Class_CurrentUICulture ();
 		}
 
-		static readonly ICatalog Catalog = CatalogRepository.DefaultCatalog<Program>(Program.Culture);
+		static readonly ICatalog Catalog = CatalogRepository.Default.GetCatalog<Program>(Program.Culture);
 	}
 }
