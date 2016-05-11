@@ -922,9 +922,7 @@ Pseudo-code:
 
   <!-- Set MO Resources files as content -->
   <Target Name="SetMoResourceReferencesAsContent"
-          DependsOnTargets="GetMoReferences"
-          Inputs="@(MoResourceReference)"
-          Outputs="@(MoResourceReference->'$(TargetDir)%(RecursiveDir)%(FileName)%(Extension)')">
+          DependsOnTargets="GetMoReferences">
     <ItemGroup>
       <Content Include="%(MoResourceReference.FullPath)" Condition="Exists(%(MoResourceReference.FullPath))">
         <Link>%(MoResourceReference.Link)</Link>

@@ -18,27 +18,29 @@
     </ImportProject>
   </ItemDefinitionGroup>
   
+  <Import Project="ImportProject.targets" />
+  
   <!-- Import interop components -->
   <Target Name="GetInteropFiles">
     <ItemGroup>
       <InteropFile Include="%(ImportProject.OutDir)**\*.*" />
+      <InteropFile>
+        <Link>%(InteropFile.RecursiveDir)%(FileName)%(Extension)</Link>
+      </InteropFile>
     </ItemGroup>
   </Target>
   
   <Target Name="CreateInteropContent"
-          DependsOnTargets="GetInteropFiles"
-          Inputs="@(InteropFile)"
-          Outputs="@(InteropFile->'$(TargetDir)%(RecursiveDir)%(FileName)%(Extension)')">
+          DependsOnTargets="GetInteropFiles">
     <ItemGroup>
-      <Content Include="@(InteropFile)">
+      <Content Include="%(InteropFile.FullPath)">
+        <Link>%(InteropFile.Link)</Link>
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         <Visible>false</Visible>
       </Content>
     </ItemGroup>
-    <Message Importance="high" Text="[i] %(InteropFile.Identity) -&gt; $(TargetDir)%(RecursiveDir)%(FileName)%(Extension)" />
+    <Message Importance="high" Text="[i] %(InteropFile.FullPath) -&gt; $(TargetDir)%(RecursiveDir)%(FileName)%(Extension)" />
   </Target>
-
-  <Import Project="ImportProject.targets" />
 
   <Target Name="InteropBuild"
           Condition="'@(ImportProject)' != ''"
