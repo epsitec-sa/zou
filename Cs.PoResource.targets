@@ -475,8 +475,9 @@ Pseudo-code:
 
     <!-- PoBundle = msgcat(culture, PoReferences) -->
     <ItemGroup>
-      <PoReference Include="%(PoResource.PoBundlePath)" Condition="Exists(%(PoResource.PoBundlePath))"/>
-      <PoReference Include="%(PoResource.PoModuleReferences);%(PoResource.PoDomainReferences)" />
+      <_Temporary Include="%(PoResource.PoBundlePath);%(PoResource.PoModuleReferences;%(PoResource.PoDomainReferences))" />
+      <PoReference Include="%(_Temporary.FullPath)" Condition="Exists(%(_Temporary.FullPath))"/>
+      <_Temporary Remove="@(_Temporary)" />
     </ItemGroup>
     
     <PropertyGroup>
