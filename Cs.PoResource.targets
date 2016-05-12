@@ -938,42 +938,19 @@ Pseudo-code:
   <!-- Incremental Clean -->
   <!--=========================================================================-->
 
-  <Target Name="GetPoIncrementalCleanInputs">
-    <ItemGroup>
-      <PoIncrementalCleanInput Include="$(SolutionPath)" />
-      <PoIncrementalCleanInput Include="@(BuildSequence)" />
-    </ItemGroup>
+  <Target Name="PoCleanIfNotInBuildSequence"
+          DependsOnTargets="InitPoResources;ReadBuildSequence"
+          Condition="'$(BuildSequenceContainsProject)' != 'true'">
+
+    <Delete Files="@(PoResource->'%(PotSourceReferencesPath)')" />
   </Target>
   
-  <Target Name="GetPoIncrementalCleanDeletes"
-          DependsOnTargets="InitPoResources">
-    <ItemGroup>
-      <_PoReferenceFile Include="$(PotModuleReferencesPath)" />
-      <_PoReferenceFile Include="$(PotDomainReferencesPath)" />
-      <_PoReferenceFile Include="%(PoResource.MoDomainReferencesPath)" />
-    </ItemGroup>
-
-    <ReadLinesFromFile File="%(_PoReferenceFile.FullPath)" >
-      <Output TaskParameter="Lines" ItemName="_Temporary"/>
-    </ReadLinesFromFile>
-
-    <ItemGroup>
-      <PoIncrementalCleanDelete Include="@(_Temporary->'$(BundleDir)%(Identity)')" />
-      <_PoReferenceFile Remove="@(_PoReferenceFile)" />
-      <_Temporary       Remove="@(_Temporary)" />
-    </ItemGroup>
-  </Target>
-
   <Target Name="PoIncrementalClean"
-          DependsOnTargets="ReadBuildSequence;GetPoIncrementalCleanInputs;GetPoIncrementalCleanDeletes"
-          Inputs="@(PoIncrementalCleanInput)"
-          Outputs="$(PotModulePath)">
+          DependsOnTargets="InitPoResources;PoCleanIfNotInBuildSequence"
+          Inputs="$(ProjectPath)"
+          Outputs="@(PoResource->'%(PotSourceReferencesPath)')">
 
-    <Delete Files="@(PoIncrementalCleanDelete)" />
-    
-    <ItemGroup>
-      <PoIncrementalCleanDelete Remove="@(PoIncrementalCleanDelete)" />
-    </ItemGroup>
+    <Delete Files="@(PoResource->'%(PotSourceReferencesPath)')" />
   </Target>
   
   <!--=========================================================================-->
