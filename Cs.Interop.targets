@@ -1,5 +1,27 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<!-- Import this script at the end of the C# interop project -->
+<!--
+Layout:
+=======
+
+  {native-project}
+    Win32\v120_xp\bin\Debug\{native-files}
+
+  where:
+    Win32     $(InteropPlatform)
+    v120_xp   $(PlatformToolset)
+    
+  ====
+  
+  {mixed-platform-solution}
+    Win32\Interop\{native-project-name}\Debug\{native-files}
+      
+  {managed-project}
+    bin\Debug\{native-files}
+
+  where:
+    Win32     $(InteropPlatform)
+    
+-->
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="InteropBuild">
 
   <!-- Make sure that ImportProject is available in VisualStudio's Build Action combo -->
