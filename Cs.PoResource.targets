@@ -88,7 +88,6 @@ Pseudo-code:
   <!-- Make sure that PoResource is available in VisualStudio's Build Action combo -->
   <ItemGroup>
     <AvailableItemName Include="PoResource" />
-    <!--<AvailableItemName Include="PoGlobalResource" />-->
   </ItemGroup>
 
   <ItemDefinitionGroup>
@@ -157,7 +156,7 @@ Pseudo-code:
   
   <Target Name="InitPoResources">
     <!-- Extract Culture metadata from PO project resource name (exemple: Project1.fr-CH.po) -->
-    <AssignCulture Files="@(PoResource);@(PoGlobalResource)">
+    <AssignCulture Files="@(PoResource)">
       <Output TaskParameter="AssignedFilesWithCulture" ItemName="PoResourceWithCulture" />
       <Output TaskParameter="AssignedFilesWithNoCulture" ItemName="PoResourceWithNoCulture" />
     </AssignCulture>
@@ -513,11 +512,10 @@ Pseudo-code:
   -->
 
   <Target Name="CreatePotSources"
-          Condition="'@(Compile)' != '' Or ('@(PoGlobalResource)' != '' And '@(ProjectReference)' != '')"
-          Outputs="@(PotSource)">
+          Condition="'@(Compile)' != ''"
+          Returns="@(PotSource)">
     <ItemGroup>
       <PotSource Include="@(Compile)" Exclude="$(TMP)\*;$(PotDomainDir)\*" />
-      <PotSource Condition="'@(PoGlobalResource)' != ''" Include="%(ProjectReference.RootDir)%(Directory)**\*.cs" Exclude="%(ProjectReference.RootDir)%(Directory)obj\**\*.cs" />
       <PotSource>
         <RelativePath>$([MSBuild]::MakeRelative($(BundleDir), %(PotSource.FullPath)))</RelativePath>
       </PotSource>
