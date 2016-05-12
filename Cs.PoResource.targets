@@ -154,10 +154,6 @@ Pseudo-code:
   -->
   
   <Target Name="InitPoResources">
-    <MakeDir Directories="$(PoReferencesDir)" />
-    <MakeDir Directories="$(PoModuleRootDir)" Condition="'$(ModuleName)' != ''"/>
-    <MakeDir Directories="$(PotDomainDir)" />
-
     <!-- Extract Culture metadata from PO project resource name (exemple: Project1.fr-CH.po) -->
     <AssignCulture Files="@(PoResource);@(PoGlobalResource)">
       <Output TaskParameter="AssignedFilesWithCulture" ItemName="PoResourceWithCulture" />
@@ -201,6 +197,12 @@ Pseudo-code:
     </ItemGroup>
 
     <!--<LogItems Items="@(PoResource)" Title="PoResource" AllMetadata="true" />-->
+  </Target>
+
+  <Target Name="PoCreateFolders">
+    <MakeDir Directories="$(PoReferencesDir)" />
+    <MakeDir Directories="$(PoModuleRootDir)" Condition="'$(ModuleName)' != ''"/>
+    <MakeDir Directories="$(PotDomainDir)" />
   </Target>
 
   <!--=========================================================================-->
@@ -937,6 +939,7 @@ Pseudo-code:
           DependsOnTargets="
             PoLock;
             ReadBuildSequence;
+            PoCreateFolders;
             
             ConsolidatePoBundle;
             CreatePotDomain;
