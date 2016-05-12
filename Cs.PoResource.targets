@@ -187,14 +187,16 @@ Pseudo-code:
         <PotDomainPath>$(PotDomainDir)%(Domain).pot</PotDomainPath>
         <PoBundleFileName>$(PoBundleName).%(Culture).po</PoBundleFileName>
         <PoModuleFileName Condition="'$(ModuleName)' != ''">$(PoModuleName).%(Culture).po</PoModuleFileName>
-        <MoDomainDir>$(TargetDir)$(PoLocaleSubdir)%(Culture)\LC_MESSAGES\</MoDomainDir>
+        <MoDomainSubdir>$(PoLocaleSubdir)%(Culture)\LC_MESSAGES\</MoDomainSubdir>
+        <MoDomainFileName>%(Domain).mo</MoDomainFileName>
       </PoResource>
       <PoResource>
         <PoBundlePath>$(PoBundleRootDir)%(PoBundleFileName)</PoBundlePath>
         <PoModulePath Condition="'$(ModuleName)' != ''">$(PoModuleRootDir)%(PoModuleFileName)</PoModulePath>
-        <MoDomainPath>%(MoDomainDir)%(Domain).mo</MoDomainPath>
+        <MoDomainDir>$(TargetDir)%(MoDomainSubdir)</MoDomainDir>
       </PoResource>
       <PoResource>
+        <MoDomainPath>%(MoDomainDir)%(MoDomainFileName)</MoDomainPath>
         <PoModuleInitialized Condition="'$(ModuleName)' != '' And Exists('%(PoModulePath)')">true</PoModuleInitialized>
       </PoResource>
     </ItemGroup>
@@ -903,51 +905,19 @@ Pseudo-code:
   </Target>
 
   <!--=========================================================================-->
-  <!-- Import MO Resources References -->
+  <!-- Create MO Domain Resources Content -->
   <!--=========================================================================-->
 
-  <Target Name="GetMoReferences">
+  <Target Name="CreateMoDomainContent"
+          DependsOnTargets="CreateMoDomain">
     <ItemGroup>
-      <MoResourceReference Include="%(ProjectReference.RootDir)%(Directory)$(OutputPath)$(PoLocaleSubdir)**\*.mo">
-        <ProjectOwnerDirectory>%(ProjectReference.RootDir)%(Directory)</ProjectOwnerDirectory>
-      </MoResourceReference>
-      <MoResourceReference>
-        <Link>$([MSBuild]::MakeRelative(%(MoResourceReference.ProjectOwnerDirectory)$(OutputPath), %(MoResourceReference.FullPath)))</Link>
-      </MoResourceReference>
-    </ItemGroup>
-    <!--<LogItems Items="@(ProjectReference)" Title="ProjectReference" AllMetadata="true" />
-    <LogItems Items="@(MoResourceReference)" Title="MoResourceReference" AllMetadata="true" />-->
-  </Target>
-
-  <Target Name="ImportMoResourceReferences"
-          DependsOnTargets="GetMoReferences"
-          Inputs="%(MoResourceReference.FullPath)"
-          Outputs="$(TargetDir)$(PoLocaleSubdir)%(MoResourceReference.RecursiveDir)%(FileName)%(Extension)">
-    <Copy SourceFiles="%(MoResourceReference.FullPath)" DestinationFiles="$(TargetDir)$(PoLocaleSubdir)%(RecursiveDir)%(FileName)%(Extension)" Condition="Exists(%(MoResourceReference.FullPath))"/>
-  </Target>
-
-  <!-- Set MO Resources files as content -->
-  <Target Name="SetMoResourceReferencesAsContent"
-          DependsOnTargets="GetMoReferences">
-    <ItemGroup>
-      <Content Include="%(MoResourceReference.FullPath)" Condition="Exists(%(MoResourceReference.FullPath))">
-        <Link>%(MoResourceReference.Link)</Link>
+      <PoContent Include="%(PoResource.MoDomainPath)">
+        <Link>%(PoResource.MoDomainSubdir)%(MoDomainFileName)</Link>
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         <Visible>false</Visible>
-      </Content>
+      </PoContent>
+      <Content Include="@(PoContent)" />
     </ItemGroup>
-  </Target>
-
-  <Target Name="ImportMoResourceReferencesBuild"
-          BeforeTargets="BeforeBuild"
-          DependsOnTargets="ImportMoResourceReferences;SetMoResourceReferencesAsContent" />
-
-  <Target Name="ImportMoResourceReferencesClean"
-          AfterTargets="AfterClean"
-          DependsOnTargets="GetMoReferences"
-          Outputs="@(MoResourceReference)">
-
-    <Delete Files="@(MoResourceReference)" />
   </Target>
 
   <!--=========================================================================-->
@@ -956,7 +926,7 @@ Pseudo-code:
 
   <Target Name="PoResourceBuild"
           Condition="'@(PoResource)' != ''"
-          BeforeTargets="Build"
+          BeforeTargets="BeforeBuild"
           DependsOnTargets="
             ReadBuildSequence;
             
@@ -971,6 +941,7 @@ Pseudo-code:
             UpdatePoModule;
             UpdatePoDomain;
             CreateMoDomain;
+            CreateMoDomainContent;
 
             TouchPoReferences;
             
