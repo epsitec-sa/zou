@@ -923,10 +923,18 @@ Pseudo-code:
   <!-- Build -->
   <!--=========================================================================-->
 
+  <Target Name="PoLock">
+    <Lock Name="$(PoBundleRootDir)" />
+  </Target>
+  <Target Name="PoUnlock">
+    <Unlock Name="$(PoBundleRootDir)" />
+  </Target>
+
   <Target Name="PoResourceBuild"
           Condition="'@(PoResource)' != ''"
           BeforeTargets="BeforeBuild"
           DependsOnTargets="
+            PoLock;
             ReadBuildSequence;
             
             ConsolidatePoBundle;
@@ -944,7 +952,8 @@ Pseudo-code:
 
             TouchPoReferences;
             
-            WriteBuildSequence">
+            WriteBuildSequence;
+            PoUnlock">
     <!--<LogItems Items="@(PoResource)" AllMetadata="true" />-->
   </Target>
 
