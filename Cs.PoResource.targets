@@ -988,9 +988,11 @@ Pseudo-code:
   <Target Name="PoResourceClean"
           AfterTargets="Clean"
           DependsOnTargets="
+            PoLock;
             DeleteMoDomain;
             DeletePotDomain;
-            PoResourceReset">
+            PoResourceReset;
+            PoUnlock">
 
     <ItemGroup>
       <_Temporary Include="$(PoReferencesDir)*.zou" />
