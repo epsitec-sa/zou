@@ -104,7 +104,9 @@ Pseudo-code:
   <!-- Definitions -->
   
   <PropertyGroup>
-    <PoClearFuzzy>false</PoClearFuzzy>
+    <PoNoFuzzy    Condition="'$(PoNoFuzzy)'    == ''">false</PoNoFuzzy>
+    <PoNoClean    Condition="'$(PoNoClean)'    == ''">false</PoNoClean>
+    <PoNoLocation Condition="'$(PoNoLocation)' == ''">true</PoNoLocation>
     
     <PoLocaleSubdir>locale\</PoLocaleSubdir>
     
@@ -484,12 +486,13 @@ Pseudo-code:
     
     <PropertyGroup>
       <_Options>--no-wrap -D"$(BundleDir)." --lang=%(PoResource.Culture) -o"%(PoResource.PoBundlePath)"</_Options>
+      <_Options Condition="'$(PoNoLocation)' == 'true'">$(_Options) --no-location</_Options>
       <PoReferences>@(PoReference->'"%(FullPath)"')</PoReferences>
       <PoReferences>$(PoReferences.Replace(';', ' '))</PoReferences>
     </PropertyGroup>
     
     <Exec Command='"$(MsgCat)" $(_Options) $(PoReferences)' />
-    <CleanPoFile Condition="'$(NoPoClean)' == ''" SourceFiles="%(PoResource.PoBundlePath)" />
+    <CleanPoFile Condition="'$(PoNoClean)' != 'true'" SourceFiles="%(PoResource.PoBundlePath)" />
     
     <ItemGroup>
       <PoReference Remove="@(PoReference)" />
@@ -557,6 +560,7 @@ Pseudo-code:
     <!-- PotDomain = xgettext(PotSource) -->
     <PropertyGroup>
       <_Options>--from-code=UTF-8 --no-wrap -D"$(BundleDir)." -f"%(PoResource.PotSourceReferencesPath)" -o"%(PoResource.PotDomainPath)"</_Options>
+      <_Options Condition="'$(PoNoLocation)'  == 'true'">$(_Options) --no-location</_Options>
       <_Options Condition="'$(PoCopyright)'   != ''">$(_Options) --copyright-holder="$(PoCopyright)"</_Options>
       <_Options Condition="'$(PoPackageName)' != ''">$(_Options) --package-name="$(PoPackageName)"</_Options>
       <_Options Condition="'$(PoKeywordSpec)' != ''">$(_Options) --keyword="$(PoKeywordSpec)"</_Options>
@@ -605,12 +609,13 @@ Pseudo-code:
 
     <PropertyGroup>
       <_Options>--no-wrap -D"$(BundleDir)." --lang="" -o"$(PotModulePath)"</_Options>
+      <_Options Condition="'$(PoNoLocation)'  == 'true'">$(_Options) --no-location</_Options>
       <PotReferences>@(PotReference->'"%(FullPath)"')</PotReferences>
       <PotReferences>$(PotReferences.Replace(';', ' '))</PotReferences>
     </PropertyGroup>
 
     <Exec Command='"$(MsgCat)" $(_Options) $(PotReferences)' />
-    <CleanPoFile Condition="'$(NoPoClean)' == ''" SourceFiles="$(PotModulePath)" />
+    <CleanPoFile Condition="'$(PoNoClean)' != 'true'" SourceFiles="$(PotModulePath)" />
 
     <ItemGroup>
       <PotReference Remove="@(PotReference)" />
@@ -653,9 +658,11 @@ Pseudo-code:
 
     <!-- PoBundle -= header's fuzzy marker -->
     <PropertyGroup>
-      <_Options>--clear-fuzzy -o"%(PoResource.PoBundlePath)"</_Options>
+      <_Options>-o"%(PoResource.PoBundlePath)"</_Options>
+      <_Options Condition="'$(PoNoFuzzy)'  == 'true'">$(_Options) --clear-fuzzy</_Options>
+      <_Options Condition="'$(PoNoLocation)'  == 'true'">$(_Options) --no-location</_Options>
     </PropertyGroup>
-    <Exec Command='"$(MsgAttrib)" $(_Options) "%(PoResource.PoBundlePath)"' Condition="'$(PoClearFuzzy)' == 'true' And '$(PoBundleInitialized)' != 'true'" />
+    <Exec Command='"$(MsgAttrib)" $(_Options) "%(PoResource.PoBundlePath)"' Condition="'$(PoNoFuzzy)' == 'true' And '$(PoBundleInitialized)' != 'true'" />
 
 
     <!-- Force a refresh if PoResource or PoModule files exist -->
@@ -694,9 +701,11 @@ Pseudo-code:
 
     <!-- PoModule -= header's fuzzy marker -->
     <PropertyGroup>
-      <_Options>--clear-fuzzy -o"%(PoResource.PoModulePath)"</_Options>
+      <_Options>-o"%(PoResource.PoModulePath)"</_Options>
+      <_Options Condition="'$(PoNoFuzzy)'  == 'true'">$(_Options) --clear-fuzzy</_Options>
+      <_Options Condition="'$(PoNoLocation)'  == 'true'">$(_Options) --no-location</_Options>
     </PropertyGroup>
-    <Exec Command='"$(MsgAttrib)" $(_Options) "%(PoResource.PoModulePath)"' Condition="'$(PoClearFuzzy)' == 'true' And '%(PoResource.PoModuleInitialized)' != 'true'" />
+    <Exec Command='"$(MsgAttrib)" $(_Options) "%(PoResource.PoModulePath)"' Condition="'$(PoNoFuzzy)' == 'true' And '%(PoResource.PoModuleInitialized)' != 'true'" />
   </Target>
 
   <!--=========================================================================-->
@@ -729,9 +738,11 @@ Pseudo-code:
 
     <!-- PoResource -= header's fuzzy marker -->
     <PropertyGroup>
-      <_Options>--clear-fuzzy -o"%(PoResource.FullPath)"</_Options>
+      <_Options>-o"%(PoResource.FullPath)"</_Options>
+      <_Options Condition="'$(PoNoFuzzy)'  == 'true'">$(_Options) --clear-fuzzy</_Options>
+      <_Options Condition="'$(PoNoLocation)'  == 'true'">$(_Options) --no-location</_Options>
     </PropertyGroup>
-    <Exec Command='"$(MsgAttrib)" $(_Options) "%(PoResource.FullPath)"' Condition="'$(PoClearFuzzy)' == 'true' And '%(PoResource.Initialized)' != 'true'" />
+    <Exec Command='"$(MsgAttrib)" $(_Options) "%(PoResource.FullPath)"' Condition="'$(PoNoFuzzy)' == 'true' And '%(PoResource.Initialized)' != 'true'" />
   </Target>
 
   <!--=========================================================================-->
@@ -772,9 +783,10 @@ Pseudo-code:
     <!-- PoBundle = msgcat(culture, PoBundle, PoResource) -->
     <PropertyGroup>
       <_Options>--no-wrap -D"$(BundleDir)." --lang=%(PoResource.Culture) -o"%(PoResource.PoBundlePath)"</_Options>
+      <_Options Condition="'$(PoNoLocation)'  == 'true'">$(_Options) --no-location</_Options>
     </PropertyGroup>
     <Exec Command='"$(MsgCat)" $(_Options) "%(PoResource.PoBundlePath)" "%(PoResource.FullPath)"' />
-    <CleanPoFile Condition="'$(NoPoClean)' == ''" SourceFiles="%(PoResource.PoBundlePath)" />
+    <CleanPoFile Condition="'$(PoNoClean)' != 'true'" SourceFiles="%(PoResource.PoBundlePath)" />
   </Target>
 
 
@@ -795,6 +807,7 @@ Pseudo-code:
     <!-- PoModule = msmerge(culture, -C PoBundle, PotModule) -->
     <PropertyGroup>
       <_Options>-q --no-wrap -D"$(BundleDir)." --lang=%(PoResource.Culture)</_Options>
+      <_Options Condition="'$(PoNoLocation)'  == 'true'">$(_Options) --no-location</_Options>
       <_Options>$(_Options) -C"%(PoResource.PoBundlePath)"</_Options>
       <_Options>$(_Options) -o"%(PoResource.PoModulePath)"</_Options>
     </PropertyGroup>
@@ -820,6 +833,7 @@ Pseudo-code:
     <!-- PoDomain = msmerge(culture, -C PoBundle, PotDomain) -->
     <PropertyGroup>
       <_Options>-q --no-wrap -D"$(BundleDir)." --lang=%(PoResource.Culture)</_Options>
+      <_Options Condition="'$(PoNoLocation)'  == 'true'">$(_Options) --no-location</_Options>
       <_Options>$(_Options) -C"%(PoResource.PoBundlePath)"</_Options>
       <_Options>$(_Options) -o"%(PoResource.FullPath)"</_Options>
     </PropertyGroup>
