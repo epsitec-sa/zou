@@ -179,7 +179,7 @@ Pseudo-code:
         <PoDomainReferencesPath>$(PoReferencesDir)PoDomains.%(Culture).zou</PoDomainReferencesPath>
         <MoDomainReferencesPath>$(PoReferencesDir)MoDomains.%(Culture).zou</MoDomainReferencesPath>
 
-        <PotSourceReferencesPath>$(PotDomainDir)%(Domain).Sources.zou</PotSourceReferencesPath>
+        <PotSourcePath>$(PotDomainDir)%(Domain).pot.src.zou</PotSourcePath>
         <PotDomainPath>$(PotDomainDir)%(Domain).pot</PotDomainPath>
         <PoBundleFileName>$(PoBundleName).%(Culture).po</PoBundleFileName>
         <PoModuleFileName Condition="'$(ModuleName)' != ''">$(PoModuleName).%(Culture).po</PoModuleFileName>
@@ -511,7 +511,7 @@ Pseudo-code:
   }
   -->
 
-  <Target Name="CreatePotSources"
+  <Target Name="CreatePotSource"
           Condition="'@(Compile)' != ''"
           Returns="@(PotSource)">
     <ItemGroup>
@@ -532,12 +532,12 @@ Pseudo-code:
   }
   -->
 
-  <Target Name="WritePotSourceReferences"
-          DependsOnTargets="InitPoResources;CreatePotSources"
+  <Target Name="WritePotSource"
+          DependsOnTargets="InitPoResources;CreatePotSource"
           Inputs="@(PotSource)"
-          Outputs="%(PoResource.PotSourceReferencesPath)">
+          Outputs="%(PoResource.PotSourcePath)">
 
-    <WriteLinesToFile File="%(PoResource.PotSourceReferencesPath)" Lines="@(PotSource->'%(RelativePath)')" Overwrite="true" />
+    <WriteLinesToFile File="%(PoResource.PotSourcePath)" Lines="@(PotSource->'%(RelativePath)')" Overwrite="true" />
   </Target>
 
   <!--=========================================================================-->
@@ -551,13 +551,13 @@ Pseudo-code:
   -->
 
   <Target Name="CreatePotDomain"
-          DependsOnTargets="WritePotSourceReferences"
-          Inputs="%(PoResource.PotSourceReferencesPath)"
+          DependsOnTargets="WritePotSource"
+          Inputs="%(PoResource.PotSourcePath)"
           Outputs="%(PoResource.PotDomainPath)">
 
     <!-- PotDomain = xgettext(PotSource) -->
     <PropertyGroup>
-      <_Options>--from-code=UTF-8 --no-wrap -D"$(BundleDir)." -f"%(PoResource.PotSourceReferencesPath)" -o"%(PoResource.PotDomainPath)"</_Options>
+      <_Options>--from-code=UTF-8 --no-wrap -D"$(BundleDir)." -f"%(PoResource.PotSourcePath)" -o"%(PoResource.PotDomainPath)"</_Options>
       <_Options Condition="'$(PoNoLocation)'  == 'true'">$(_Options) --no-location</_Options>
       <_Options Condition="'$(PoCopyright)'   != ''">$(_Options) --copyright-holder="$(PoCopyright)"</_Options>
       <_Options Condition="'$(PoPackageName)' != ''">$(_Options) --package-name="$(PoPackageName)"</_Options>
@@ -573,7 +573,7 @@ Pseudo-code:
   </Target>
   
   <Target Name="DeletePotDomain">
-    <Delete Files="@(PoResource->'%(PotSourceReferencesPath)');@(PoResource->'%(PotDomainPath)')" />
+    <Delete Files="@(PoResource->'%(PotSourcePath)');@(PoResource->'%(PotDomainPath)')" />
   </Target>
 
   <!--=========================================================================-->
@@ -942,15 +942,15 @@ Pseudo-code:
           DependsOnTargets="InitPoResources;ReadBuildSequence"
           Condition="'$(BuildSequenceContainsProject)' != 'true'">
 
-    <Delete Files="@(PoResource->'%(PotSourceReferencesPath)')" />
+    <Delete Files="@(PoResource->'%(PotSourcePath)')" />
   </Target>
   
   <Target Name="PoIncrementalClean"
           DependsOnTargets="InitPoResources;PoCleanIfNotInBuildSequence"
           Inputs="$(ProjectPath)"
-          Outputs="@(PoResource->'%(PotSourceReferencesPath)')">
+          Outputs="@(PoResource->'%(PotSourcePath)')">
 
-    <Delete Files="@(PoResource->'%(PotSourceReferencesPath)')" />
+    <Delete Files="@(PoResource->'%(PotSourcePath)')" />
   </Target>
   
   <!--=========================================================================-->
