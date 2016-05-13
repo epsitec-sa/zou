@@ -486,30 +486,34 @@ Pseudo-code:
   -->
 
   <Target Name="ConsolidatePoBundle"
-          DependsOnTargets="
-            ReadPoModuleReferences;
-            ReadPoDomainReferences"
-          Inputs="
-            %(PoResource.PoModuleReferences);
-            %(PoResource.PoDomainReferences)"
-          Outputs="%(PoResource.PoBundlePath)">
+          DependsOnTargets="ReadPoModuleReferences;ReadPoDomainReferences"
+          Returns="%(PoResource.PoBundlePath)">
 
     <!-- PoBundle = msgcat(culture, PoReferences) -->
     <ItemGroup>
-      <_Temporary Include="%(PoResource.PoBundlePath);%(PoResource.PoModuleReferences;%(PoResource.PoDomainReferences))" />
+      <_Temporary Include="%(PoResource.PoBundlePath);%(PoResource.PoModuleReferences);%(PoResource.PoDomainReferences)" />
       <PoReference Include="%(_Temporary.FullPath)" Condition="Exists(%(_Temporary.FullPath))"/>
       <_Temporary Remove="@(_Temporary)" />
+      <PoReferenceModifiedTime Include="%(PoReference.ModifiedTime)"  />
     </ItemGroup>
     
+    <LogItems Items="@(PoReferenceModifiedTime)" Title="PoReferenceModifiedTime" />
+    
     <PropertyGroup>
+      <ConsolidatePoBundle Condition="'@(PoReferenceModifiedTime->Count())' != '1'">true</ConsolidatePoBundle>
+    </PropertyGroup>
+
+    <Message Text="ConsolidatePoBundle = $(ConsolidatePoBundle)" Importance="high" />
+
+    <PropertyGroup Condition="'$(ConsolidatePoBundle)' == 'true'">
       <_Options>--no-wrap -D"$(BundleDir)." --lang=%(PoResource.Culture) -o"%(PoResource.PoBundlePath)"</_Options>
       <_Options Condition="'$(PoNoLocation)' == 'true'">$(_Options) --no-location</_Options>
-      <PoReferences>@(PoReference->'"%(FullPath)"')</PoReferences>
-      <PoReferences>$(PoReferences.Replace(';', ' '))</PoReferences>
+      <_PoReferences>@(PoReference->'"%(FullPath)"')</_PoReferences>
+      <_PoReferences>$(_PoReferences.Replace(';', ' '))</_PoReferences>
     </PropertyGroup>
     
-    <Exec Command='"$(MsgCat)" $(_Options) $(PoReferences)' />
-    <CleanPoFile Condition="'$(PoNoClean)' != 'true'" SourceFiles="%(PoResource.PoBundlePath)" />
+    <Exec Command='"$(MsgCat)" $(_Options) $(_PoReferences)' Condition="'$(ConsolidatePoBundle)' == 'true'" />
+    <CleanPoFile SourceFiles="%(PoResource.PoBundlePath)"    Condition="'$(ConsolidatePoBundle)' == 'true' And '$(PoNoClean)' != 'true'" />
     
     <ItemGroup>
       <PoReference Remove="@(PoReference)" />
