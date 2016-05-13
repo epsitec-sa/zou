@@ -494,13 +494,11 @@ Pseudo-code:
       <PoReferenceModifiedTime Include="%(PoReference.ModifiedTime)"  />
     </ItemGroup>
     
-    <LogItems Items="@(PoReferenceModifiedTime)" Title="PoReferenceModifiedTime" />
+    <!--<LogItems Items="@(PoReferenceModifiedTime)" Title="PoReferenceModifiedTime" />-->
     
     <PropertyGroup>
       <ConsolidatePoBundle Condition="'@(PoReferenceModifiedTime->Count())' != '1'">true</ConsolidatePoBundle>
     </PropertyGroup>
-
-    <Message Text="ConsolidatePoBundle = $(ConsolidatePoBundle)" Importance="high" />
 
     <PropertyGroup Condition="'$(ConsolidatePoBundle)' == 'true'">
       <_Options>--no-wrap -D"$(BundleDir)." --lang=%(PoResource.Culture) -o"%(PoResource.PoBundlePath)"</_Options>
