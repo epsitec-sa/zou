@@ -217,16 +217,19 @@ Pseudo-code:
     </ReadLinesFromFile>
 
     <ItemGroup>
+      <_PoReferences Include="@(_Temporary->'$(BundleDir)%(Identity)')" />
+      <_PoReferences Include="$(PotModulePath)" />
       <PoResource>
-        <PotModuleReferences>@(_Temporary->'$(BundleDir)%(Identity)')</PotModuleReferences>
+        <PotModuleReferences>@(_PoReferences)</PotModuleReferences>
       </PoResource>
+      <_Temporary Remove="@(_Temporary)" />
     </ItemGroup>
 
-    <!--<Message Importance="high" Text="PotModuleReferences=@(_Temporary->'%(FileName)%(Extension)')" />-->
-    <!--<LogItems Items="@(_Temporary)" Title="PotModuleReference" />-->
+    <!--<Message Importance="high" Text="PotModuleReferences.FileNames=@(_PoReferences->'%(FileName)%(Extension)')" />-->
+    <!--<LogItems Items="@(_PoReferences)" Title="PotModuleReference" />-->
 
     <ItemGroup>
-      <_Temporary Remove="@(_Temporary)" />
+      <_PoReferences Remove="@(_PoReferences)" />
     </ItemGroup>
   </Target>
 
@@ -266,17 +269,21 @@ Pseudo-code:
     <ReadLinesFromFile File="$(PotDomainReferencesPath)" >
       <Output TaskParameter="Lines" ItemName="_Temporary"/>
     </ReadLinesFromFile>
+
     <ItemGroup>
+      <_PoReferences Include="@(_Temporary->'$(BundleDir)%(Identity)')" />
+      <_PoReferences Include="%(PoResource.PotDomainPath)" />
       <PoResource>
-        <PotDomainReferences>@(_Temporary->'$(BundleDir)%(Identity)')</PotDomainReferences>
+        <PotDomainReferences>@(_PoReferences)</PotDomainReferences>
       </PoResource>
+      <_Temporary Remove="@(_Temporary)" />
     </ItemGroup>
 
-    <!--<Message Importance="high" Text="PotDomainReferences=@(_Temporary->'%(FileName)%(Extension)')" />-->
-    <!--<LogItems Items="@(_Temporary)" Title="PotDomainReference" />-->
+    <!--<Message Importance="high" Text="PotDomainReferences.FileNames=@(_PoReferences->'%(FileName)%(Extension)')" />-->
+    <!--<LogItems Items="@(_PoReferences)" Title="PotDomainReference" />-->
 
     <ItemGroup>
-      <_Temporary Remove="@(_Temporary)" />
+      <_PoReferences Remove="@(_PoReferences)" />
     </ItemGroup>
   </Target>
 
@@ -318,16 +325,19 @@ Pseudo-code:
     </ReadLinesFromFile>
     
     <ItemGroup>
+      <_PoReferences Include="@(_Temporary->'$(BundleDir)%(Identity)')" />
+      <_PoReferences Include="%(PoResource.PoModulePath)" />
       <PoResource>
-        <PoModuleReferences>@(_Temporary->'$(BundleDir)%(Identity)')</PoModuleReferences>
+        <PoModuleReferences>@(_PoReferences)</PoModuleReferences>
       </PoResource>
+      <_Temporary Remove="@(_Temporary)" />
     </ItemGroup>
 
-    <!--<Message Importance="high" Text="PoModuleReferences=@(_Temporary->'%(FileName)%(Extension)')" />-->
-    <!--<LogItems Items="@(_Temporary)" Title="PoModuleReference" />-->
+    <!--<Message Importance="high" Text="PoModuleReferences.FileNames=@(_PoReferences->'%(FileName)%(Extension)')" />-->
+    <!--<LogItems Items="@(_PoReferences)" Title="PoModuleReference" />-->
 
     <ItemGroup>
-      <_Temporary Remove="@(_Temporary)" />
+      <_PoReferences Remove="@(_PoReferences)" />
     </ItemGroup>
   </Target>
 
@@ -367,17 +377,21 @@ Pseudo-code:
     <ReadLinesFromFile File="%(PoResource.PoDomainReferencesPath)" >
       <Output TaskParameter="Lines" ItemName="_Temporary"/>
     </ReadLinesFromFile>
+    
     <ItemGroup>
+      <_PoReferences Include="@(_Temporary->'$(BundleDir)%(Identity)')" />
+      <_PoReferences Include="%(PoResource.FullPath)" />
       <PoResource>
-        <PoDomainReferences>@(_Temporary->'$(BundleDir)%(Identity)')</PoDomainReferences>
+        <PoDomainReferences>@(_PoReferences)</PoDomainReferences>
       </PoResource>
-    </ItemGroup>
-    
-    <!--<Message Importance="high" Text="PoDomainReferences=@(_Temporary->'%(FileName)%(Extension)')" />-->
-    <!--<LogItems Items="@(_Temporary)" Title="PoDomainReference" />-->
-    
-    <ItemGroup>
       <_Temporary Remove="@(_Temporary)" />
+    </ItemGroup>
+
+    <!--<Message Importance="high" Text="PoDomainReferences.FileNames=@(_PoReferences->'%(FileName)%(Extension)')" />-->
+    <!--<LogItems Items="@(_PoReferences)" Title="PoDomainReference" />-->
+
+    <ItemGroup>
+      <_PoReferences Remove="@(_PoReferences)" />
     </ItemGroup>
   </Target>
 
@@ -417,17 +431,21 @@ Pseudo-code:
     <ReadLinesFromFile File="%(PoResource.MoDomainReferencesPath)" >
       <Output TaskParameter="Lines" ItemName="_Temporary"/>
     </ReadLinesFromFile>
+
     <ItemGroup>
+      <_PoReferences Include="@(_Temporary->'$(BundleDir)%(Identity)')" />
+      <_PoReferences Include="%(PoResource.MoDomainPath)" />
       <PoResource>
-        <MoDomainReferences>@(_Temporary->'$(BundleDir)%(Identity)')</MoDomainReferences>
+        <MoDomainReferences>@(_PoReferences)</MoDomainReferences>
       </PoResource>
-    </ItemGroup>
-    
-    <!--<Message Importance="high" Text="MoDomainReferences=@(_Temporary->'%(FileName)%(Extension)')" />-->
-    <!--<LogItems Items="@(_Temporary)" Title="MoDomainReference" />-->
-    
-    <ItemGroup>
       <_Temporary Remove="@(_Temporary)" />
+    </ItemGroup>
+
+    <!--<Message Importance="high" Text="MoDomainReferences.FileNames=@(_PoReferences->'%(FileName)%(Extension)')" />-->
+    <!--<LogItems Items="@(_PoReferences)" Title="MoDomainReference" />-->
+
+    <ItemGroup>
+      <_PoReferences Remove="@(_PoReferences)" />
     </ItemGroup>
   </Target>
 
