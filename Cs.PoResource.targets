@@ -506,7 +506,10 @@ Pseudo-code:
     </PropertyGroup>
     
     <Exec Command='"$(MsgCat)" $(_Options) $(_PoReferences)' Condition="'$(ConsolidatePoBundle)' == 'true'" />
-    <CleanPoFile SourceFiles="%(PoResource.PoBundlePath)"    Condition="'$(ConsolidatePoBundle)' == 'true' And '$(PoNoClean)' != 'true'" />
+    
+    <CleanPoFile SourceFiles="%(PoResource.PoBundlePath)"
+                 ChildPoFiles="%(PoResource.PoModuleReferences)"
+                 Condition="'$(ConsolidatePoBundle)' == 'true' And '$(PoNoClean)' != 'true'"/>
     
     <ItemGroup>
       <PoReference Remove="@(PoReference)" />
@@ -701,6 +704,9 @@ Pseudo-code:
     
     <Exec Command='"$(MsgMerge)" $(_Options) nul "%(PoResource.PotDomainPath)"' />
     
+    <CleanPoFile SourceFiles="%(PoResource.FullPath)"
+                 ChildPoFiles="%(PoResource.FullPath)"
+                 Condition="'$(PoNoClean)' != 'true'"/>
   </Target>
 
   <!--.........................................................................-->
@@ -717,7 +723,10 @@ Pseudo-code:
     </PropertyGroup>
     
     <Exec Command='"$(MsgCat)" $(_Options) "%(PoResource.PoBundlePath)" "%(PoResource.FullPath)"' />
-    <CleanPoFile Condition="'$(PoNoClean)' != 'true'" SourceFiles="%(PoResource.PoBundlePath)" />
+    
+    <CleanPoFile Condition="'$(PoNoClean)' != 'true'"
+                 SourceFiles="%(PoResource.PoBundlePath)"
+                 ChildPoFiles="%(PoResource.PoModuleReferences)" />
   </Target>
 
   <!--.........................................................................-->
@@ -737,6 +746,10 @@ Pseudo-code:
     </PropertyGroup>
     
     <Exec Command='"$(MsgMerge)" $(_Options) nul "$(PotModulePath)"' />
+
+    <CleanPoFile Condition="'$(PoNoClean)' != 'true'"
+                 SourceFiles="%(PoResource.PoModulePath)"
+                 ChildPoFiles="%(PoResource.PoDomainReferences)" />
   </Target>
 
   <!--.........................................................................-->
@@ -753,7 +766,12 @@ Pseudo-code:
       <_Options>$(_Options) -C"%(PoResource.PoBundlePath)"</_Options>
       <_Options>$(_Options) -o"%(PoResource.FullPath)"</_Options>
     </PropertyGroup>
+    
     <Exec Command='"$(MsgMerge)" $(_Options) nul "%(PoResource.PotDomainPath)"' />
+
+    <CleanPoFile Condition="'$(PoNoClean)' != 'true'"
+                 SourceFiles="%(PoResource.FullPath)"
+                 ChildPoFiles="%(PoResource.FullPath)" />
   </Target>
 
   <!--=========================================================================-->
