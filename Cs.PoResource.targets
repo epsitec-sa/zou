@@ -206,6 +206,7 @@ Pseudo-code:
 
     <ItemGroup>
       <_PoReferences Include="@(_Temporary->'$(BundleDir)%(Identity)')" />
+      <_PoReferences Remove="$(PotModulePath)" />
       <_PoReferences Include="$(PotModulePath)" />
       <PoResource>
         <PotModuleReferences>@(_PoReferences)</PotModuleReferences>
@@ -260,6 +261,7 @@ Pseudo-code:
 
     <ItemGroup>
       <_PoReferences Include="@(_Temporary->'$(BundleDir)%(Identity)')" />
+      <_PoReferences Remove="%(PoResource.PotDomainPath)" />
       <_PoReferences Include="%(PoResource.PotDomainPath)" />
       <PoResource>
         <PotDomainReferences>@(_PoReferences)</PotDomainReferences>
@@ -314,6 +316,7 @@ Pseudo-code:
     
     <ItemGroup>
       <_PoReferences Include="@(_Temporary->'$(BundleDir)%(Identity)')" />
+      <_PoReferences Remove="%(PoResource.PoModulePath)" />
       <_PoReferences Include="%(PoResource.PoModulePath)" />
       <PoResource>
         <PoModuleReferences>@(_PoReferences)</PoModuleReferences>
@@ -368,6 +371,7 @@ Pseudo-code:
     
     <ItemGroup>
       <_PoReferences Include="@(_Temporary->'$(BundleDir)%(Identity)')" />
+      <_PoReferences Remove="%(PoResource.FullPath)" />
       <_PoReferences Include="%(PoResource.FullPath)" />
       <PoResource>
         <PoDomainReferences>@(_PoReferences)</PoDomainReferences>
@@ -422,6 +426,7 @@ Pseudo-code:
 
     <ItemGroup>
       <_PoReferences Include="@(_Temporary->'$(BundleDir)%(Identity)')" />
+      <_PoReferences Remove="%(PoResource.MoDomainPath)" />
       <_PoReferences Include="%(PoResource.MoDomainPath)" />
       <PoResource>
         <MoDomainReferences>@(_PoReferences)</MoDomainReferences>
