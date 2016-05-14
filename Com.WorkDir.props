@@ -21,7 +21,7 @@
     <WorkDir Condition="'$(WorkDirSpecified)' == 'true'">$([System.IO.Path]::Combine($(MSBuildStartupDirectory),$(WorkDir)))</WorkDir>
   </PropertyGroup>
 
-  <Target Name="WorkDirTrace">
+  <Target Name="WorkDirTrace" Condition="'$(ZouTraceProps)' == 'true'">
     <Message Importance="normal" Text="WorkDirSpecified = $(WorkDirSpecified)" />
     <Message Importance="normal" Text="WorkDir          = $(WorkDir)" />
   </Target>

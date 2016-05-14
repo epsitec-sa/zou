@@ -186,6 +186,7 @@ namespace Epsitec.Zou
 				yield return "Targets";
 				yield return "OriginalItemSpec";
 				yield return "Language";
+				yield return "Link";
 			}
 		}
 

@@ -2,7 +2,8 @@
 <!--
 This script can be imported anywhere before first MS import (Microsoft.Cpp.Default.props).
 -->
-<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" InitialTargets="ZouTrace"
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003"
+         InitialTargets="ZouTrace"
          TreatAsLocalProperty="ZouTrace">
 
   <PropertyGroup>
@@ -109,7 +110,7 @@ This script can be imported anywhere before first MS import (Microsoft.Cpp.Defau
     <PlatformToolsetSpecified Condition=" '$(PlatformToolset)' != '' And '$(PlatformToolsetSpecified)' == '' ">true</PlatformToolsetSpecified>
   </PropertyGroup>
 
-  <Target Name="ZouTraceMSBuild">
+  <Target Name="ZouTraceMSBuild" Condition="'$(ZouTraceMSBuild)' == 'true'">
     <Message Importance="normal" Text="MSBuild properties" />
     <Message Importance="normal" Text="==================" />
     <Message Importance="normal" Text="  MSBuildAssemblyVersion         = $(MSBuildAssemblyVersion)" />
@@ -137,7 +138,7 @@ This script can be imported anywhere before first MS import (Microsoft.Cpp.Defau
     <Message Importance="normal" Text="  DevEnvDir                      = $(DevEnvDir)" />
   </Target>
   
-  <Target Name="ZouTrace" Condition="'$(ZouTrace)' != ''">
+  <Target Name="ZouTrace" Condition="'$(ZouTrace)' == 'true'">
     <Message Importance="normal" Text="Zou boot properties" />
     <Message Importance="normal" Text="===================" />
     <Message Importance="normal" Text="  BuildingInsideVisualStudio = $(BuildingInsideVisualStudio)" />
