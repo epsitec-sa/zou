@@ -1,11 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="W2" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="..\zou.props"/>
+
+  <Target Name="Lock2">
+    <Lock Name="$(MSBuildThisFileDirectory)" />
+  </Target>
+  <Target Name="Unlock2">
+    <Unlock Name="$(MSBuildThisFileDirectory)" />
+  </Target>
+  <Target Name="Sleep2">
+    <Sleep Timeout="1000" />
+  </Target>
+  
   <Target Name="W2">
     <Message Text="[W2] running..." />
-    <Lock Name="$(MSBuildThisFileDirectory)" />
-    <Sleep Timeout="1000" />
-    <Unlock Name="$(MSBuildThisFileDirectory)" />
+    <CallTarget Targets="Lock2;Sleep2;Unlock2" RunEachTargetSeparately="true"/>
     <Message Text="[W2] done." />
   </Target>
 </Project>
