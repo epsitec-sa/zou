@@ -308,7 +308,7 @@ Pseudo-code:
 
   <Target Name="ReadPoModuleReferences"
           DependsOnTargets="InitPoResources"
-          Outputs="%(PoResource.PoModuleReferencesPath)">
+          Returns="%(PoResource.PoModuleReferencesPath)">
 
     <ReadLinesFromFile File="%(PoResource.PoModuleReferencesPath)" >
       <Output TaskParameter="Lines" ItemName="_Temporary"/>
@@ -497,6 +497,10 @@ Pseudo-code:
     <PropertyGroup>
       <ConsolidatePoBundle Condition="'@(PoReferenceModifiedTime->Count())' != '1'">true</ConsolidatePoBundle>
     </PropertyGroup>
+
+    <!--<Message Importance="high" Text="ConsolidatePoBundle = $(ConsolidatePoBundle)" />
+    <LogItems Items="@(PoReference->'%(Identity)')" Title="PoReference" />
+    <LogItems Items="@(PoReferenceModifiedTime)" Title="PoReferenceModifiedTime" />-->
 
     <PropertyGroup Condition="'$(ConsolidatePoBundle)' == 'true'">
       <_Options>--no-wrap -D"$(BundleDir)." --lang=%(PoResource.Culture) -o"%(PoResource.PoBundlePath)"</_Options>
@@ -864,6 +868,18 @@ Pseudo-code:
   </Target>
 
   <!--=========================================================================-->
+  <!-- Lock / Unlock -->
+  <!--=========================================================================-->
+
+  <Target Name="PoLock">
+    <Lock Name="$(PoBundleRootDir)" />
+  </Target>
+  
+  <Target Name="PoUnlock">
+    <Unlock Name="$(PoBundleRootDir)" />
+  </Target>
+  
+  <!--=========================================================================-->
   <!-- Clean -->
   <!--=========================================================================-->
 
@@ -884,7 +900,7 @@ Pseudo-code:
 
   <!--.........................................................................-->
 
-  <Target Name ="PoResourceReset"
+  <Target Name ="PoReset"
           Condition="$(PoReset) != ''">
 
     <ItemGroup>
@@ -910,15 +926,11 @@ Pseudo-code:
 
   <!--.........................................................................-->
 
-  <Target Name="PoResourceClean" AfterTargets="Clean">
-
-    <Lock Name="$(PoBundleRootDir)" Timeout="30000" />
-
-    <CallTarget
-      Targets="
-        DeleteMoDomain;
-        DeletePotDomain;
-        PoResourceReset" />
+  <Target Name="PoCleanCore"
+          DependsOnTargets="
+            DeleteMoDomain;
+            DeletePotDomain;
+            PoReset">
 
     <ItemGroup>
       <_Temporary Include="$(PoReferencesDir)*.zou" />
@@ -929,12 +941,10 @@ Pseudo-code:
     
     <Delete Files="@(_Temporary)" />
     <RemoveDir Directories="$(PoReferencesDir)" ContinueOnError="true" />
+  </Target>
 
-    <ItemGroup>
-      <_Temporary Remove="@(_Temporary)" />
-    </ItemGroup>
-
-    <Unlock Name="$(PoBundleRootDir)" />
+  <Target Name="PoClean" AfterTargets="Clean">
+    <CallTarget Targets="PoLock;PoCleanCore;PoUnlock" RunEachTargetSeparately="true" />
   </Target>
     
   
@@ -942,36 +952,33 @@ Pseudo-code:
   <!-- Build -->
   <!--=========================================================================-->
 
-  <Target Name="PoResourceBuild"
-          Condition="'@(PoResource)' != ''"
-          BeforeTargets="BeforeBuild">
-  
-    <Lock Name="$(PoBundleRootDir)" Timeout="30000"/>
-    
-    <CallTarget
-      Targets="
-        ReadBuildSequence;
-        PoIncrementalClean;
-        PoCreateFolders;
+  <Target Name="PoBuildCore"
+          DependsOnTargets="
+            ReadBuildSequence;
+            PoIncrementalClean;
+            PoCreateFolders;
             
-        ConsolidatePoBundle;
-        CreatePotDomain;
-        CreateOrUpdatePotModule;
-        InitPoBundle;
-        InitPoModule;
-        InitPoDomain;
-        UpdatePoBundleFromDomain;
+            ConsolidatePoBundle;
+            CreatePotDomain;
+            CreateOrUpdatePotModule;
+            InitPoBundle;
+            InitPoModule;
+            InitPoDomain;
+            UpdatePoBundleFromDomain;
             
-        UpdatePoModule;
-        UpdatePoDomain;
-        CreateMoDomain;
-        CreateMoDomainContent;
+            UpdatePoModule;
+            UpdatePoDomain;
+            CreateMoDomain;
+            CreateMoDomainContent;
+            
+            TouchPoReferences;
+            WriteBuildSequence" />
 
-        TouchPoReferences;
-            
-        WriteBuildSequence" />
-    
-    <Unlock Name="$(PoBundleRootDir)" />
+  <Target Name="PoBuild"
+          Condition="'@(PoResource)' != ''"
+          BeforeTargets="ResolveReferences">
+
+    <CallTarget Targets="PoLock;PoBuildCore;PoUnlock" RunEachTargetSeparately="true" />
   </Target>
   
 </Project>
