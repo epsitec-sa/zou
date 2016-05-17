@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Security.AccessControl;
 using System.Text;
@@ -18,22 +19,22 @@ namespace Epsitec.Zou
 			get;
 			set;
 		}
+		public bool Global
+		{
+			get;
+			set;
+		}
 		public override bool Execute()
 		{
+			// Replace consecutive non-alphanumeric characters with underscore.
+			string semName = Lock.GetName (this.Name, this.Global);
 			try
 			{
-				// Replace consecutive non-alphanumeric characters with underscore.
-				var mutexName = Regex.Replace (this.Name.ToLowerInvariant (), @"[^\w]+", "_", RegexOptions.CultureInvariant);
-				Mutex mutex;
-				if (Mutex.TryOpenExisting (mutexName, MutexRights.Modify | MutexRights.Synchronize, out mutex))
-				{
-					mutex.ReleaseMutex ();
-					this.Log.LogMessageFromText ($"Unlock -> exited mutex: {mutexName}", MessageImportance.Normal);
-				}
-				else
-				{
-					this.Log.LogMessageFromText ($"Unlock -> unable to open mutex: {mutexName}", MessageImportance.Normal);
-				}
+				Semaphore
+					.OpenExisting (semName, SemaphoreRights.Modify | SemaphoreRights.Synchronize)
+					.Release ();
+
+				this.Log.LogMessageFromText ($"[{Process.GetCurrentProcess ().Id}] Unlock -> released sem: {semName}", MessageImportance.Normal);
 			}
 			catch (Exception e)
 			{
