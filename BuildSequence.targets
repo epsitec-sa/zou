@@ -20,7 +20,7 @@
   <Target Name="ReadBuildSequence"
           Condition="$(SolutionName) != ''"
           DependsOnTargets="ResetBuildSequence"
-          Outputs="$(BuildSequencePath)">
+          Returns="$(BuildSequencePath)">
 
     <ReadLinesFromFile File="$(BuildSequencePath)" >
       <Output TaskParameter="Lines" ItemName="BuildSequence"/>
@@ -47,17 +47,20 @@
   <Target Name="WriteBuildSequence"
           Condition="$(SolutionName) != ''"
           DependsOnTargets="ReadBuildSequence"
-          Outputs="$(BuildSequencePath)">
+          Returns="$(BuildSequencePath)">
 
     <ItemGroup>
-      <BuildSequence Include="$(ProjectPath)" Condition="'$(BuildSequenceContainsProject)' != 'true'" />
+      <_Temporary Include="@(BuildSequence)" />
+      <BuildSequence Remove="@(BuildSequence)" />
+      <BuildSequence Include="$(ProjectPath)" Condition="'$(BuildSequenceContainsProject)' != 'true' And '@(_Temporary)' == ''" />
+      <BuildSequence Include="@(_Temporary);$(ProjectPath)" Condition="'$(BuildSequenceContainsProject)' != 'true' And '@(_Temporary)' != ''" />
+      <_Temporary Remove="@(_Temporary)" />
     </ItemGroup>
     <WriteLinesToFile File="$(BuildSequencePath)"
                       Lines="@(BuildSequence)"
                       Overwrite="true"
                       Condition="'$(BuildSequenceContainsProject)' != 'true'" />
 
-    <!--<Message Importance="high" Text="PotModuleReferences=@(_Temporary->'%(FileName)%(Extension)')" />-->
     <!--<LogItems Items="@(BuildSequence)" Title="[W] BuildSequence" />-->
   </Target>
 
