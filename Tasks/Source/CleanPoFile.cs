@@ -68,18 +68,18 @@ namespace Epsitec.Zou
 		{
 			try
 			{
-				var path = poFileItem.GetMetadata ("FullPath");
-				if (File.Exists (path))
+				var info = new PoFileInfo (poFileItem);
+				if (File.Exists (info.FullPath))
 				{
-					this.Log.LogMessageFromText ($"CleanPoFile -> \"{path}\"", MessageImportance.Normal);
+					this.Log.LogMessageFromText ($"CleanPoFile -> \"{info.FullPath}\"", MessageImportance.Normal);
 
-					var content     = File.ReadAllLines (path);
+					var content     = File.ReadAllLines (info.FullPath);
 					var contentEnum = content.AsEnumerable ().GetEnumerator ();
 
-					var poFile      = PoFile.Parse (contentEnum);
+					var poFile      = PoFile.Parse (contentEnum, info);
 					var newContent  = poFile.Content.ToArray ();
 
-					File.WriteAllLines (path, newContent);
+					File.WriteAllLines (info.FullPath, newContent);
 				}
 			}
 			catch (Exception e)
@@ -127,11 +127,84 @@ namespace Epsitec.Zou
 		//}
 	}
 
+	internal class PoFileInfo
+	{
+		public					PoFileInfo(ITaskItem item)
+		{
+			this.FullPath  = item.GetMetadata ("FullPath");
+			this.PoName    = Path.GetFileName (this.FullPath);
+						
+			this.Bundle    = item.GetMetadata ("Bundle");
+			this.Module    = item.GetMetadata ("Module");
+			this.Domain    = item.GetMetadata ("Domain");
+
+			this.Package   = string.IsNullOrEmpty (this.Module) ? this.Bundle : this.Module;
+			this.ProjectId = string.IsNullOrEmpty (this.Domain)
+				? (string.IsNullOrEmpty (this.Module)
+					? this.Bundle
+					: this.Module)
+				: this.Domain;
+
+			if (!string.IsNullOrEmpty (this.Domain))
+			{
+				this.domainRegex = new Regex ($"^{this.Domain}\\..{{1,5}}\\.po$", RegexOptions.CultureInvariant | RegexOptions.Compiled);
+			}
+		}
+
+		public string				FullPath
+		{
+			get;
+		}
+		public string				PoName
+		{
+			get;
+		}
+		public string				Bundle
+		{
+			get;
+		}
+		public string				Module
+		{
+			get;
+		}
+		public string				Domain
+		{
+			get;
+		}
+		public string				Package
+		{
+			get;
+		}
+		public string				ProjectId
+		{
+			get;
+		}
+
+		public bool					KeepPoName(string name)
+		{
+			if (this.domainRegex != null && !this.domainRegex.Match (name).Success)
+			{
+				return false;
+			}
+			return true;
+		}
+		public bool					KeepPackage(string package)
+		{
+			if (!string.IsNullOrEmpty(this.Module) && package != this.Package)
+			{
+				return false;
+			}
+			return true;
+		}
+		public override string	ToString() => $"{this.Package}[{this.PoName}]";
+
+		private readonly Regex domainRegex;
+	}
 	internal class PoFile
 	{
-		public static PoFile				Parse(IEnumerator<string> e)
+		public static PoFile				Parse(IEnumerator<string> e, PoFileInfo info)
 		{
-			var header   = Header.Parse (e);
+			var header   = Header.Parse (e, info);
 			var messages = Messages.Parse (e);
 
 			return new PoFile (header, messages);
@@ -161,15 +234,15 @@ namespace Epsitec.Zou
 	}
 	internal class Header
 	{
-		public static Header				Parse(IEnumerator<string> e)
+		public static Header				Parse(IEnumerator<string> e, PoFileInfo fileInfo)
 		{
 			var content     = Header.ParseContent (e).ToArray ();
 			var contentEnum = content.AsEnumerable ().GetEnumerator ();
 
-			var comments = HeaderComments.Parse (contentEnum);
-			var info     = HeaderInfo.Parse (contentEnum);
+			var headerComments = HeaderComments.Parse (contentEnum, fileInfo);
+			var headerInfo     = HeaderInfo.Parse (contentEnum, fileInfo);
 
-			return new Header (comments, info);
+			return new Header (headerComments, headerInfo);
 		}
 
 		public HeaderComments				Comments
@@ -234,10 +307,10 @@ namespace Epsitec.Zou
 	}
 	internal class HeaderComments
 	{
-		public static HeaderComments		Parse(IEnumerator<string> e)
+		public static HeaderComments		Parse(IEnumerator<string> e, PoFileInfo fileInfo)
 		{
 			var content = HeaderComments.ParseContent (e).ToArray ();
-			content     = HeaderComments.CleanContent (content);
+			content     = HeaderComments.CleanContent (content, fileInfo);
 			return new HeaderComments (content);
 		}
 
@@ -259,10 +332,10 @@ namespace Epsitec.Zou
 				yield return e.Current;
 			}
 		}
-		private static string[]				CleanContent(string[] content)
+		private static string[]				CleanContent(string[] content, PoFileInfo fileInfo)
 		{
 			var contentEnum = content.AsEnumerable ().GetEnumerator ();
-			var sections    = CommentSection.Parse (contentEnum);
+			var sections    = CommentSection.Parse (contentEnum, fileInfo);
 			//sections.Where (s => s.IsOrphan).ForEach (orphan => orphan.Body = sections.First (s => s.Package == orphan.Package).Body);
 			return sections
 				.GroupBy (s => s.Package)
@@ -275,12 +348,12 @@ namespace Epsitec.Zou
 	}
 	internal class HeaderInfo
 	{
-		public static HeaderInfo			Parse(IEnumerator<string> e)
+		public static HeaderInfo			Parse(IEnumerator<string> e, PoFileInfo fileInfo)
 		{
 			var content = e.ParseRemaining ().ToArray ();
 			var lastPotCreationDateTime = HeaderInfo.GetLastDateTime (content, PotCreationDateRegex);
 			var lastPoRevisionDateTime  = HeaderInfo.GetLastDateTime (content, PoRevisionDateRegex);
-			content = HeaderInfo.Clean (content, lastPotCreationDateTime, lastPoRevisionDateTime);
+			content = HeaderInfo.Clean (content, fileInfo.ProjectId, lastPotCreationDateTime, lastPoRevisionDateTime);
 			return new HeaderInfo (content);
 		}
 
@@ -295,15 +368,15 @@ namespace Epsitec.Zou
 		}
 
 		private static bool					IsPoMarker(IEnumerator<string> e)				=> e.Current.StartsWith ("\"#-");
-		private static string[]				Clean(string[] content, DateTimeOffset? lastPotCreationDateTime, DateTimeOffset? lastPoRevisionDateTime)
+		private static string[]				Clean(string[] content, string projectId, DateTimeOffset? lastPotCreationDateTime, DateTimeOffset? lastPoRevisionDateTime)
 		{
 			content = HeaderInfo.RemoveMarkers (content).ToArray ();
+			content = content
+				.Select (line => HeaderInfo.ProjectIdRegex.Replace (line, m => $"{m.Groups[1].Value}{projectId}{m.Groups[3].Value}"))
+				.ToArray ();
 
 			if (lastPotCreationDateTime != null)
 			{
-				content = content
-					.Select (line => HeaderInfo.PotCreationDateRegex.Replace (line, m => $"{m.Groups[1].Value}{lastPotCreationDateTime.Value.Format ()}{m.Groups[3].Value}"))
-					.ToArray ();
 			}
 			if (lastPoRevisionDateTime != null)
 			{
@@ -352,27 +425,88 @@ namespace Epsitec.Zou
 			return values.Length == 0 ? default (DateTimeOffset?) : values.Max ();
 		}
 
+		// "Project-Id-Version: 'zou'\n"
+		private static readonly Regex       ProjectIdRegex       = new Regex("^(\"Project-Id-Version:\\s*')(\\S+.*)('\\s*\\\\n\")\\s*",  RegexOptions.CultureInvariant | RegexOptions.Compiled);
 		// "POT-Creation-Date: 2016-05-12 18:17+0200\n"
 		private static readonly Regex		PotCreationDateRegex = new Regex("^(\"POT-Creation-Date:\\s*)(\\d+.*)(\\s*\\\\n\")\\s*", RegexOptions.CultureInvariant | RegexOptions.Compiled);
 		// "PO-Revision-Date: 2016-05-12 18:17+0200\n"
-		private static readonly Regex		PoRevisionDateRegex = new Regex("^(\"PO-Revision-Date:\\s*)(\\d+.*)(\\s*\\\\n\")\\s*",  RegexOptions.CultureInvariant | RegexOptions.Compiled);
+		private static readonly Regex		PoRevisionDateRegex  = new Regex("^(\"PO-Revision-Date:\\s*)(\\d+.*)(\\s*\\\\n\")\\s*",  RegexOptions.CultureInvariant | RegexOptions.Compiled);
+
 	}
 
+	internal class CommentSectionComparer : IComparer<CommentSection>
+	{
+		public CommentSectionComparer(PoFileInfo fileInfo)
+		{
+			this.fileInfo = fileInfo;
+		}
+		public int Compare(CommentSection x, CommentSection y)
+		{
+
+			if (x.PoName == y.PoName)
+			{
+				return 0;
+			}
+			else if (x.PoName == fileInfo.PoName)
+			{
+				return 1;
+			}
+			else if (y.PoName == fileInfo.PoName)
+			{
+				return -1;
+			}
+			else
+			{
+				var regex = new Regex ($"^{x.Package}\\..{{1,5}}\\.po$", RegexOptions.CultureInvariant);
+				if (regex.Match (x.PoName).Success)
+				{
+					return 1;
+				}
+				else if (regex.Match (y.PoName).Success)
+				{
+					return -1;
+				}
+			}
+			return 0;
+		}
+
+		private readonly PoFileInfo fileInfo;
+	}
 	internal class CommentSection : IEquatable <CommentSection>
 	{
-		public static CommentSection[]				Parse(IEnumerator<string> e)
+		public static CommentSection[]				Parse(IEnumerator<string> e, PoFileInfo fileInfo)
 		{
 			var allSections = CommentSection
 				.ParseCore (e)
 				.Distinct (s => s.Title)
 				.ToArray ();
 
-			var fullSections   = allSections.Where (s => !s.IsOrphan);
-			var orphanSections = allSections.Where (s => s.IsOrphan)
-				// convert the orphan section to a full section by retrieving a matching body
-				.Select (orphan => new CommentSection (orphan.Title, fullSections.First (s => s.Package == orphan.Package).Body));
+			var fullSections       = allSections.Where (s => !s.IsOrphan);
+			var fromOrphanSections = allSections.Where (s => s.IsOrphan)
+				// Convert the orphan section to a full section by retrieving a matching body.
+				.Select (orphan =>
+				{
+					var samePackageSection = fullSections.FirstOrDefault (s => s.Package == orphan.Package);
+					if (samePackageSection == null)
+					{
+						return null;
+					}
+					return new CommentSection (orphan.Title, samePackageSection.Body);
+				})
+				.Where (s => s != null);
 
-			return fullSections.Concat (orphanSections).ToArray ();
+			// Update package.
+			allSections = fullSections
+				.Concat (fromOrphanSections)
+				.Select (s => s.Update(fileInfo))
+				.ToArray ()
+				.Distinct (s => s.Title)
+				.Where (s => fileInfo.KeepPackage (s.Package))
+				.Where (s => fileInfo.KeepPoName (s.PoName))
+				.OrderByDescending (_ => _, new CommentSectionComparer(fileInfo))
+				.ToArray ();
+
+			return allSections;
 		}
 
 		public CommentTitle							Title
@@ -392,6 +526,16 @@ namespace Epsitec.Zou
 		public bool									Equals(CommentSection other)
 		{
 			return other != null && this.IsOrphan == other.IsOrphan && this.Package == other.Package && this.PoName == other.PoName;
+		}
+		public CommentSection						Update(PoFileInfo fileInfo)
+		{
+			if (fileInfo.PoName == this.PoName && fileInfo.Package != this.Package)
+			{
+				var title = this.Title.Update (fileInfo.Package);
+				var body = this.Body.Update (fileInfo.Package);
+				return new CommentSection (title, body);
+			}
+			return this;
 		}
 
 		private										CommentSection(CommentTitle title, CommentBody body)
@@ -474,6 +618,10 @@ namespace Epsitec.Zou
 		public override string				ToString() => this.Value;
 		public override int					GetHashCode() => this.Value.GetHashCode ();
 		public override bool				Equals(object obj) => object.Equals (this.Value, (obj as CommentTitle)?.Value);
+		public CommentTitle					Update(string package)
+		{
+			return new CommentTitle (this.PoName, package, this.Value.Replace ($"'{this.Package}'", $"'{package}'"));
+		}
 
 		private								CommentTitle(string poName, string package, string value)
 		{
@@ -535,13 +683,21 @@ namespace Epsitec.Zou
 		public bool							IsOrphan	=> this.Content.IsEmpty ();
 		public override string				ToString()	=> this.Package;
 
-		private								CommentBody(string package, IEnumerable<string> content)
+		public CommentBody					Update(string package)
+		{
+			var content = this.Content
+				.Select (v => v.Replace ($"'{this.Package}'", $"'{package}'"))
+				.ToArray ();
+			return new CommentBody (package, content);
+		}
+
+		private CommentBody(string package, IEnumerable<string> content)
 		{
 			this.Package = package;
 			this.Content = content;
 		}
 
-		private static readonly Regex       PackageRegex = new Regex( "# \\S+.*'(.*)'\\s+package\\.", RegexOptions.CultureInvariant | RegexOptions.Compiled);
+		private static readonly Regex       PackageRegex = new Regex("# \\S+.*'(.*)'\\s+package\\.", RegexOptions.CultureInvariant | RegexOptions.Compiled);
 		private static readonly Dictionary<string, CommentBody> EmptyBodies = new Dictionary<string, CommentBody>();
 	}
 
