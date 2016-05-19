@@ -14,27 +14,31 @@ namespace Epsitec.Zou
 	public class Unlock : Task
 	{
 		[Required]
-		public string Name
+		public string			Name
 		{
 			get;
 			set;
 		}
-		public bool Global
+		public bool				Global
 		{
 			get;
 			set;
 		}
-		public override bool Execute()
+		public override bool	Execute()
 		{
-			// Replace consecutive non-alphanumeric characters with underscore.
-			string semName = Lock.GetName (this.Name, this.Global);
 			try
 			{
-				Semaphore
-					.OpenExisting (semName, SemaphoreRights.Modify | SemaphoreRights.Synchronize)
-					.Release ();
-
-				this.Log.LogMessageFromText ($"[{Process.GetCurrentProcess ().Id}] Unlock -> released sem: {semName}", MessageImportance.Normal);
+				var semName = Lock.GetName (this.Name, this.Global);
+				var sem = this.GetRegisteredSemaphore (semName);
+				if (sem == null)
+				{
+					this.Log.LogError ($"Unlock -> semaphore '{semName}' not registered.");
+				}
+				else
+				{
+					this.Log.LogMessageFromText ($"Unlock -> released semaphore '{semName}'.", MessageImportance.Normal);
+					sem.Release ();
+				}
 			}
 			catch (Exception e)
 			{
@@ -42,5 +46,7 @@ namespace Epsitec.Zou
 			}
 			return !this.Log.HasLoggedErrors;
 		}
+
+		private Semaphore		GetRegisteredSemaphore(string name) => this.BuildEngine4.GetRegisteredTaskObject (name, RegisteredTaskObjectLifetime.AppDomain) as Semaphore;
 	}
 }
