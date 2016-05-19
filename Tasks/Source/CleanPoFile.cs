@@ -377,6 +377,9 @@ namespace Epsitec.Zou
 
 			if (lastPotCreationDateTime != null)
 			{
+				content = content
+					.Select (line => HeaderInfo.PotCreationDateRegex.Replace (line, m => $"{m.Groups[1].Value}{lastPotCreationDateTime.Value.Format ()}{m.Groups[3].Value}"))
+					.ToArray ();
 			}
 			if (lastPoRevisionDateTime != null)
 			{
