@@ -13,40 +13,46 @@ namespace Epsitec.Zou
 	public class Lock : Task
 	{
 		[Required]
-		public string Name
+		public string						Name
 		{
 			get;
 			set;
 		}
-		public bool Global
+		public bool							Global
 		{
 			get;
 			set;
 		}
-		public int Timeout
+		public int							Timeout
 		{
 			get;
 			set;
 		}
-		public override bool Execute()
+		public override bool				Execute()
 		{
 			try
 			{
-				var timeout = this.Timeout == 0 ? System.Threading.Timeout.Infinite : this.Timeout;
 				string semName = Lock.GetName (this.Name, this.Global);
 				bool semCreated;
 				var sem = new Semaphore (1, 1, semName, out semCreated, Lock.GetSecurity (this.Global));
-				this.Log.LogMessageFromText ($"Lock -> waiting sem: {semName}, semCreated = {semCreated}", MessageImportance.Normal);
-				var hasSem = sem.WaitOne (timeout, false);
-				if (!hasSem)
+
+				// Register the semaphore with the build engine:
+				// - to keep it alive until the end of the build (avoid GC)
+				// - optionnally to make it available for Unlock task.
+				this.RegisterSemaphore (semName, sem);
+
+				this.Log.LogMessageFromText ($"Lock -> waiting semaphore '{semName}', created = {semCreated}.", MessageImportance.Normal);
+				var hasSem = sem.WaitOne (this.TimeoutInternal, false);
+				if (hasSem)
 				{
-					throw new TimeoutException ($"Lock -> timeout waiting for {semName}");
+					this.Log.LogMessageFromText ($"Lock -> entered semaphore '{semName}', created = {semCreated}.", MessageImportance.Normal);
+				}
+				else
+				{
+					throw new TimeoutException ($"Lock -> timeout waiting for semaphore '{semName}'.");
 				}
 
-				// Register the semaphore to keep it alive until the end of the build (avoid GC).
-				this.BuildEngine4.RegisterTaskObject (semName, sem, RegisteredTaskObjectLifetime.Build, false);
 
-				this.Log.LogMessageFromText ($"Lock -> entered sem: {semName}, semCreated = {semCreated}", MessageImportance.Normal);
 			}
 			catch (Exception e)
 			{
@@ -55,17 +61,23 @@ namespace Epsitec.Zou
 			return !this.Log.HasLoggedErrors;
 		}
 
-		internal static string GetName(string name, bool global)
+		private int							TimeoutInternal => this.Timeout == 0 ? System.Threading.Timeout.Infinite : this.Timeout;
+		private void						RegisterSemaphore(string semName, Semaphore sem)
+		{
+			this.BuildEngine4.RegisterTaskObject (semName, sem, RegisteredTaskObjectLifetime.AppDomain, false);
+		}
+
+		internal static string				GetName(string name, bool global)
 		{
 			// Replace consecutive non-alphanumeric characters with underscore.
-			var semName = Regex.Replace (name.ToLowerInvariant (), @"[^\w]+", "_", RegexOptions.CultureInvariant);
+			var semName = Regex.Replace (name, @"\W+", "_", RegexOptions.CultureInvariant).ToLowerInvariant ();
 			if (global)
 			{
 				return "Global\\" + semName;
 			}
 			return semName;
 		}
-		private static SemaphoreSecurity GetSecurity(bool global)
+		private static SemaphoreSecurity	GetSecurity(bool global)
 		{
 			if (global)
 			{
