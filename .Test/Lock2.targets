@@ -9,12 +9,16 @@
     <Unlock Name="$(MSBuildThisFileDirectory)" />
   </Target>
   <Target Name="Sleep2">
-    <Sleep Timeout="1000" />
+    <Message Text="[W2] working..." />
+    <Sleep Timeout="500" />
+    <!--<Error Text="[W2] forced error!" />-->
+    <Sleep Timeout="500" />
+    <Message Text="[W2] work done." />
   </Target>
   
   <Target Name="W2">
-    <Message Text="[W2] running..." />
+    <Message Text="[W2] starting..." />
     <CallTarget Targets="Lock2;Sleep2;Unlock2" RunEachTargetSeparately="true"/>
-    <Message Text="[W2] done." />
+    <Message Text="[W2] exiting..." />
   </Target>
 </Project>
