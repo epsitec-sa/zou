@@ -511,11 +511,18 @@ Pseudo-code:
     </PropertyGroup>
     
     <Exec Command='"$(MsgCat)" $(_Options) $(_PoReferences)' Condition="'$(ConsolidatePoBundle)' == 'true'" />
-    
-    <CleanPoFile SourceFiles="%(PoResource.PoBundlePath)"
+
+    <ItemGroup>
+      <PoFile Include="%(PoResource.PoBundlePath)">
+        <Bundle>$(BundleName)</Bundle>
+      </PoFile>
+    </ItemGroup>
+
+    <CleanPoFile SourceFiles="@(PoFile)"
                  Condition="'$(ConsolidatePoBundle)' == 'true' And '$(PoNoClean)' != 'true'"/>
     
     <ItemGroup>
+      <PoFile Remove="@(PoFile)" />
       <PoReference Remove="@(PoReference)" />
     </ItemGroup>
   </Target>
@@ -594,11 +601,19 @@ Pseudo-code:
     </PropertyGroup>
 
     <Exec Command='"$(MsgCat)" $(_Options) $(PotReferences)' />
-    
-    <CleanPoFile SourceFiles="$(PotModulePath)"
+
+    <ItemGroup>
+      <PoFile Include="$(PotModulePath)">
+        <Bundle>$(BundleName)</Bundle>
+        <Module>$(ModuleName)</Module>
+      </PoFile>
+    </ItemGroup>
+
+    <CleanPoFile SourceFiles="@(PoFile)"
                  Condition="'$(PoNoClean)' != 'true'" />
 
     <ItemGroup>
+      <PoFile Remove="@(PoFile)" />
       <PotReference Remove="@(PotReference)" />
     </ItemGroup>
   </Target>
@@ -708,9 +723,21 @@ Pseudo-code:
     </PropertyGroup>
     
     <Exec Command='"$(MsgMerge)" $(_Options) nul "%(PoResource.PotDomainPath)"' />
-    
-    <CleanPoFile SourceFiles="%(PoResource.FullPath)"
+
+    <ItemGroup>
+      <PoFile Include="%(PoResource.FullPath)">
+        <Bundle>$(BundleName)</Bundle>
+        <Module Condition="'$(ModuleName)' != ''">$(ModuleName)</Module>
+        <Domain>%(PoResource.Domain)</Domain>
+      </PoFile>
+    </ItemGroup>
+
+    <CleanPoFile SourceFiles="@(PoFile)"
                  Condition="'$(PoNoClean)' != 'true'"/>
+    
+    <ItemGroup>
+      <PoFile Remove="@(PoFile)" />
+    </ItemGroup>
   </Target>
 
   <!--.........................................................................-->
@@ -727,9 +754,19 @@ Pseudo-code:
     </PropertyGroup>
     
     <Exec Command='"$(MsgCat)" $(_Options) "%(PoResource.PoBundlePath)" "%(PoResource.FullPath)"' />
-    
-    <CleanPoFile SourceFiles="%(PoResource.PoBundlePath)"
+
+    <ItemGroup>
+      <PoFile Include="%(PoResource.PoBundlePath)">
+        <Bundle>$(BundleName)</Bundle>
+      </PoFile>
+    </ItemGroup>
+
+    <CleanPoFile SourceFiles="@(PoFile)"
                  Condition="'$(PoNoClean)' != 'true'" />
+    
+    <ItemGroup>
+      <PoFile Remove="@(PoFile)" />
+    </ItemGroup>
   </Target>
 
   <!--.........................................................................-->
@@ -750,9 +787,20 @@ Pseudo-code:
     
     <Exec Command='"$(MsgMerge)" $(_Options) nul "$(PotModulePath)"' />
 
-    <CleanPoFile SourceFiles="%(PoResource.PoModulePath)"
+    <ItemGroup>
+      <PoFile Include="%(PoResource.PoModulePath)">
+        <Bundle>$(BundleName)</Bundle>
+        <Module>$(ModuleName)</Module>
+      </PoFile>
+    </ItemGroup>
+
+    <CleanPoFile SourceFiles="@(PoFile)"
                  Condition="'$(PoNoClean)' != 'true'" />
-  </Target>
+    
+      <ItemGroup>
+        <PoFile Remove="@(PoFile)" />
+      </ItemGroup>
+    </Target>
 
   <!--.........................................................................-->
 
@@ -771,8 +819,20 @@ Pseudo-code:
     
     <Exec Command='"$(MsgMerge)" $(_Options) nul "%(PoResource.PotDomainPath)"' />
 
-    <CleanPoFile SourceFiles="%(PoResource.FullPath)"
+    <ItemGroup>
+      <PoFile Include="%(PoResource.FullPath)">
+        <Bundle>$(BundleName)</Bundle>
+        <Module Condition="'$(ModuleName)' != ''">$(ModuleName)</Module>
+        <Domain>%(PoResource.Domain)</Domain>
+      </PoFile>
+    </ItemGroup>
+
+    <CleanPoFile SourceFiles="@(PoFile)"
                  Condition="'$(PoNoClean)' != 'true'" />
+    
+      <ItemGroup>
+        <PoFile Remove="@(PoFile)" />
+      </ItemGroup>
   </Target>
 
   <!--=========================================================================-->
