@@ -2,10 +2,15 @@
 <Project ToolsVersion="4.0" DefaultTargets="Module" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="..\zou.props"/>
 
+  <PropertyGroup>
+    <PoNoRevisionDate Condition="'$(PoNoRevisionDate)' == ''">true</PoNoRevisionDate>
+  </PropertyGroup>
+
   <Target Name="Bundle">
     <ItemGroup>
       <PoFile Include="$(BundleDir).po\sync-dev.fr-CH.po">
         <Bundle>$(BundleName)</Bundle>
+        <NoRevisionDate>$(PoNoRevisionDate)</NoRevisionDate>
       </PoFile>
     </ItemGroup>
     <CleanPoFile SourceFiles="@(PoFile)" />
@@ -16,6 +21,7 @@
       <PoFile Include="$(ZouDir).po\zou.fr-CH.po">
         <Bundle>$(BundleName)</Bundle>
         <Module>$(ModuleName)</Module>
+        <NoRevisionDate>$(PoNoRevisionDate)</NoRevisionDate>
       </PoFile>
     </ItemGroup>
     <CleanPoFile SourceFiles="@(PoFile)" />
@@ -27,6 +33,7 @@
         <Bundle>$(BundleName)</Bundle>
         <Module>$(ModuleName)</Module>
         <Domain>Lib1</Domain>
+        <NoRevisionDate>$(PoNoRevisionDate)</NoRevisionDate>
       </PoFile>
     </ItemGroup>
     <CleanPoFile SourceFiles="@(PoFile)" />
