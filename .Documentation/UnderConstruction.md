@@ -1,5 +1,7 @@
 ## TODOs
 
+- BuildSequence.targets: use FindInList task
+- 
 - **DONE** - add Swissdec.prepack to Swissdec.pack.sln
 - **DONE** - fix the OutputPath error (`msbuild Tasks.pack.sln`)
 - **DONE** - replace `ZouPack` and `ZouImport` flags with `ZouAgentFunc` property (`Pack`, `Import`, `Interop`)
