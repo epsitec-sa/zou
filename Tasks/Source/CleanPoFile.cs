@@ -93,12 +93,17 @@ namespace Epsitec.Zou
 	{
 		public								PoFileInfo(ITaskItem item)
 		{
-			this.FullPath  = item.GetMetadata ("FullPath");
-			this.PoName    = Path.GetFileName (this.FullPath);
-						
-			this.Bundle    = item.GetMetadata ("Bundle");
-			this.Module    = item.GetMetadata ("Module");
-			this.Domain    = item.GetMetadata ("Domain");
+			this.FullPath       = item.GetMetadata ("FullPath");
+			this.PoName         = Path.GetFileName (this.FullPath);
+						        
+			this.Bundle         = item.GetMetadata ("Bundle");
+			this.Module         = item.GetMetadata ("Module");
+			this.Domain         = item.GetMetadata ("Domain");
+			var noRevisionDate	= item.GetMetadata ("NoRevisionDate");
+			if (!string.IsNullOrEmpty (noRevisionDate))
+			{
+				this.NoRevisionDate = bool.Parse (noRevisionDate);
+			}
 
 			this.Package   = string.IsNullOrEmpty (this.Module) ? this.Bundle : this.Module;
 			this.ProjectId = string.IsNullOrEmpty (this.Domain)
@@ -140,6 +145,11 @@ namespace Epsitec.Zou
 		{
 			get;
 		}
+		public bool							NoRevisionDate
+		{
+			get;
+		}
+
 		public bool							KeepPoName(string name)
 		{
 			if (this.domainRegex != null && !this.domainRegex.Match (name).Success)
@@ -310,8 +320,8 @@ namespace Epsitec.Zou
 		{
 			var content = e.ParseRemaining ().ToArray ();
 			var lastPotCreationDateTime = HeaderInfo.GetLastDateTime (content, PotCreationDateRegex);
-			var lastPoRevisionDateTime  = HeaderInfo.GetLastDateTime (content, PoRevisionDateRegex);
-			content = HeaderInfo.Clean (content, fileInfo.ProjectId, lastPotCreationDateTime, lastPoRevisionDateTime);
+			var lastPoRevisionDateTime  = fileInfo.NoRevisionDate ? null : HeaderInfo.GetLastDateTime (content, PoRevisionDateRegex);
+			content = HeaderInfo.Clean (content, fileInfo.ProjectId, lastPotCreationDateTime, fileInfo.NoRevisionDate, lastPoRevisionDateTime);
 			return new HeaderInfo (content);
 		}
 
@@ -321,11 +331,14 @@ namespace Epsitec.Zou
 		}
 
 		private static bool					IsPoMarker(IEnumerator<string> e)				=> e.Current.StartsWith ("\"#-");
-		private static string[]				Clean(string[] content, string projectId, DateTimeOffset? lastPotCreationDateTime, DateTimeOffset? lastPoRevisionDateTime)
+		private static string[]				Clean(string[] content, string projectId, DateTimeOffset? lastPotCreationDateTime, bool removePoRevisionDate, DateTimeOffset? lastPoRevisionDateTime)
 		{
 			content = HeaderInfo.RemoveMarkers (content).ToArray ();
 			content = content
+				// project ID
 				.Select (line => HeaderInfo.ProjectIdRegex.Replace (line, m => $"{m.Groups[1].Value}{projectId}{m.Groups[3].Value}"))
+				// language posix format
+				.Select (line => HeaderInfo.PoLanguageRegex.Replace (line, m => $"{m.Groups[1].Value}{(m.Groups[2].Value.Any() ? "_" : "")}{m.Groups[3].Value}{m.Groups[4].Value}"))
 				.ToArray ();
 
 			if (lastPotCreationDateTime != null)
@@ -334,7 +347,13 @@ namespace Epsitec.Zou
 					.Select (line => HeaderInfo.PotCreationDateRegex.Replace (line, m => $"{m.Groups[1].Value}{lastPotCreationDateTime.Value.Format ()}{m.Groups[3].Value}"))
 					.ToArray ();
 			}
-			if (lastPoRevisionDateTime != null)
+			if (removePoRevisionDate)
+			{
+				content = content
+					.Where (line => !HeaderInfo.PoRevisionDateRegex.Match (line).Success)
+					.ToArray ();
+			}
+			else if (lastPoRevisionDateTime != null)
 			{
 				content = content
 					.Select (line => HeaderInfo.PoRevisionDateRegex.Replace (line, m => $"{m.Groups[1].Value}{lastPoRevisionDateTime.Value.Format ()}{m.Groups[3].Value}"))
@@ -383,12 +402,14 @@ namespace Epsitec.Zou
 
 		// "Project-Id-Version: 'zou'\n"
 		private static readonly Regex       ProjectIdRegex       = new Regex("^(\"Project-Id-Version:\\s*')(\\S+.*)('\\s*\\\\n\")\\s*",  RegexOptions.CultureInvariant | RegexOptions.Compiled);
+		// "Language: fr-CH\n"
+		private static readonly Regex		PoLanguageRegex      = new Regex("^(\"Language:\\s*\\w{2,3})(?:(-)(\\w{2,3}))?(\\s*\\\\n\")\\s*",  RegexOptions.CultureInvariant | RegexOptions.Compiled);
 		// "POT-Creation-Date: 2016-05-12 18:17+0200\n"
-		private static readonly Regex		PotCreationDateRegex = new Regex("^(\"POT-Creation-Date:\\s*)(\\d+.*)(\\s*\\\\n\")\\s*", RegexOptions.CultureInvariant | RegexOptions.Compiled);
+		private static readonly Regex		PotCreationDateRegex = new Regex("^(\"POT-Creation-Date:\\s*)(\\d+.*)(\\s*\\\\n\")\\s*",     RegexOptions.CultureInvariant | RegexOptions.Compiled);
 		// "PO-Revision-Date: 2016-05-12 18:17+0200\n"
-		private static readonly Regex		PoRevisionDateRegex  = new Regex("^(\"PO-Revision-Date:\\s*)(\\d+.*)(\\s*\\\\n\")\\s*",  RegexOptions.CultureInvariant | RegexOptions.Compiled);
+		private static readonly Regex		PoRevisionDateRegex  = new Regex("^(\"PO-Revision-Date:\\s*)(\\d+.*)(\\s*\\\\n\")\\s*",      RegexOptions.CultureInvariant | RegexOptions.Compiled);
 
-		private								HeaderInfo(string[] content)
+		private HeaderInfo(string[] content)
 		{
 			this.Content = content;
 		}

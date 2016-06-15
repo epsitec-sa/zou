@@ -90,9 +90,10 @@ Pseudo-code:
   <!--=========================================================================-->
   
   <PropertyGroup>
-    <PoNoFuzzy    Condition="'$(PoNoFuzzy)'    == ''">false</PoNoFuzzy>
-    <PoNoClean    Condition="'$(PoNoClean)'    == ''">false</PoNoClean>
-    <PoNoLocation Condition="'$(PoNoLocation)' == ''">false</PoNoLocation>
+    <PoNoFuzzy        Condition="'$(PoNoFuzzy)'        == ''">false</PoNoFuzzy>
+    <PoNoClean        Condition="'$(PoNoClean)'        == ''">false</PoNoClean>
+    <PoNoLocation     Condition="'$(PoNoLocation)'     == ''">false</PoNoLocation>
+    <PoNoRevisionDate Condition="'$(PoNoRevisionDate)' == ''">false</PoNoRevisionDate>
     
     <PoLocaleSubdir>locale\</PoLocaleSubdir>
     
@@ -515,6 +516,7 @@ Pseudo-code:
     <ItemGroup>
       <PoFile Include="%(PoResource.PoBundlePath)">
         <Bundle>$(BundleName)</Bundle>
+        <NoRevisionDate>$(PoNoRevisionDate)</NoRevisionDate>
       </PoFile>
     </ItemGroup>
 
@@ -606,6 +608,7 @@ Pseudo-code:
       <PoFile Include="$(PotModulePath)">
         <Bundle>$(BundleName)</Bundle>
         <Module>$(ModuleName)</Module>
+        <NoRevisionDate>$(PoNoRevisionDate)</NoRevisionDate>
       </PoFile>
     </ItemGroup>
 
@@ -758,6 +761,7 @@ Pseudo-code:
     <ItemGroup>
       <PoFile Include="%(PoResource.PoBundlePath)">
         <Bundle>$(BundleName)</Bundle>
+        <NoRevisionDate>$(PoNoRevisionDate)</NoRevisionDate>
       </PoFile>
     </ItemGroup>
 
@@ -791,6 +795,7 @@ Pseudo-code:
       <PoFile Include="%(PoResource.PoModulePath)">
         <Bundle>$(BundleName)</Bundle>
         <Module>$(ModuleName)</Module>
+        <NoRevisionDate>$(PoNoRevisionDate)</NoRevisionDate>
       </PoFile>
     </ItemGroup>
 
@@ -824,6 +829,7 @@ Pseudo-code:
         <Bundle>$(BundleName)</Bundle>
         <Module Condition="'$(ModuleName)' != ''">$(ModuleName)</Module>
         <Domain>%(PoResource.Domain)</Domain>
+        <NoRevisionDate>$(PoNoRevisionDate)</NoRevisionDate>
       </PoFile>
     </ItemGroup>
 
