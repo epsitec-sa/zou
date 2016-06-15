@@ -93,16 +93,21 @@ namespace Epsitec.Zou
 	{
 		public								PoFileInfo(ITaskItem item)
 		{
-			this.FullPath       = item.GetMetadata ("FullPath");
-			this.PoName         = Path.GetFileName (this.FullPath);
+			this.FullPath         = item.GetMetadata ("FullPath");
+			this.PoName           = Path.GetFileName (this.FullPath);
 						        
-			this.Bundle         = item.GetMetadata ("Bundle");
-			this.Module         = item.GetMetadata ("Module");
-			this.Domain         = item.GetMetadata ("Domain");
-			var noRevisionDate	= item.GetMetadata ("NoRevisionDate");
-			if (!string.IsNullOrEmpty (noRevisionDate))
+			this.Bundle           = item.GetMetadata ("Bundle");
+			this.Module           = item.GetMetadata ("Module");
+			this.Domain           = item.GetMetadata ("Domain");
+			var noPotCreationDate = item.GetMetadata ("NoPotCreationDate");
+			var noPoRevisionDate  = item.GetMetadata ("NoPoRevisionDate");
+			if (!string.IsNullOrEmpty (noPotCreationDate))
 			{
-				this.NoRevisionDate = bool.Parse (noRevisionDate);
+				this.NoPotCreationDate = bool.Parse (noPotCreationDate);
+			}
+			if (!string.IsNullOrEmpty (noPoRevisionDate))
+			{
+				this.NoPoRevisionDate = bool.Parse (noPoRevisionDate);
 			}
 
 			this.Package   = string.IsNullOrEmpty (this.Module) ? this.Bundle : this.Module;
@@ -145,7 +150,11 @@ namespace Epsitec.Zou
 		{
 			get;
 		}
-		public bool							NoRevisionDate
+		public bool							NoPotCreationDate
+		{
+			get;
+		}
+		public bool							NoPoRevisionDate
 		{
 			get;
 		}
@@ -319,9 +328,9 @@ namespace Epsitec.Zou
 		public static HeaderInfo			Parse(IEnumerator<string> e, PoFileInfo fileInfo)
 		{
 			var content = e.ParseRemaining ().ToArray ();
-			var minPotCreationDateTime = HeaderInfo.GetMinDateTime (content, PotCreationDateRegex);
-			var maxPoRevisionDateTime   = fileInfo.NoRevisionDate ? null : HeaderInfo.GetMaxDateTime (content, PoRevisionDateRegex);
-			content = HeaderInfo.Clean (content, fileInfo.ProjectId, minPotCreationDateTime, fileInfo.NoRevisionDate, maxPoRevisionDateTime);
+			var minPotCreationDateTime = fileInfo.NoPotCreationDate ? null : HeaderInfo.GetMinDateTime (content, PotCreationDateRegex);
+			var maxPoRevisionDateTime  = fileInfo.NoPoRevisionDate  ? null : HeaderInfo.GetMaxDateTime (content, PoRevisionDateRegex);
+			content = HeaderInfo.Clean (content, fileInfo, minPotCreationDateTime, maxPoRevisionDateTime);
 			return new HeaderInfo (content);
 		}
 
@@ -331,23 +340,30 @@ namespace Epsitec.Zou
 		}
 
 		private static bool					IsPoMarker(IEnumerator<string> e)				=> e.Current.StartsWith ("\"#-");
-		private static string[]				Clean(string[] content, string projectId, DateTimeOffset? potCreationDateTime, bool removePoRevisionDate, DateTimeOffset? poRevisionDateTime)
+		private static string[]				Clean(string[] content, PoFileInfo fileInfo, DateTimeOffset? potCreationDateTime, DateTimeOffset? poRevisionDateTime)
 		{
 			content = HeaderInfo.RemoveMarkers (content).ToArray ();
 			content = content
-				// project ID
-				.Select (line => HeaderInfo.ProjectIdRegex.Replace (line, m => $"{m.Groups[1].Value}{projectId}{m.Groups[3].Value}"))
-				// language posix format
+				// update project ID
+				.Select (line => HeaderInfo.ProjectIdRegex.Replace (line, m => $"{m.Groups[1].Value}{fileInfo.ProjectId}{m.Groups[3].Value}"))
+				// update language posix format
 				.Select (line => HeaderInfo.PoLanguageRegex.Replace (line, m => $"{m.Groups[1].Value}{(m.Groups[2].Value.Any() ? "_" : "")}{m.Groups[3].Value}{m.Groups[4].Value}"))
 				.ToArray ();
 
-			if (potCreationDateTime != null)
+			if (fileInfo.NoPotCreationDate)
+			{
+				content = content
+					.Where (line => !HeaderInfo.PotCreationDateRegex.Match (line).Success)
+					.ToArray ();
+			}
+			else if (potCreationDateTime != null)
 			{
 				content = content
 					.Select (line => HeaderInfo.PotCreationDateRegex.Replace (line, m => $"{m.Groups[1].Value}{potCreationDateTime.Value.Format ()}{m.Groups[3].Value}"))
 					.ToArray ();
 			}
-			if (removePoRevisionDate)
+
+			if (fileInfo.NoPoRevisionDate)
 			{
 				content = content
 					.Where (line => !HeaderInfo.PoRevisionDateRegex.Match (line).Success)
@@ -413,9 +429,9 @@ namespace Epsitec.Zou
 		// "Language: fr-CH\n"
 		private static readonly Regex		PoLanguageRegex      = new Regex("^(\"Language:\\s*\\w{2,3})(?:(-)(\\w{2,3}))?(\\s*\\\\n\")\\s*",  RegexOptions.CultureInvariant | RegexOptions.Compiled);
 		// "POT-Creation-Date: 2016-05-12 18:17+0200\n"
-		private static readonly Regex		PotCreationDateRegex = new Regex("^(\"POT-Creation-Date:\\s*)(\\d+.*)(\\s*\\\\n\")\\s*",     RegexOptions.CultureInvariant | RegexOptions.Compiled);
+		private static readonly Regex		PotCreationDateRegex = new Regex("^(\"POT-Creation-Date:\\s*)(\\w+.*)(\\s*\\\\n\")\\s*",     RegexOptions.CultureInvariant | RegexOptions.Compiled);
 		// "PO-Revision-Date: 2016-05-12 18:17+0200\n"
-		private static readonly Regex		PoRevisionDateRegex  = new Regex("^(\"PO-Revision-Date:\\s*)(\\d+.*)(\\s*\\\\n\")\\s*",      RegexOptions.CultureInvariant | RegexOptions.Compiled);
+		private static readonly Regex		PoRevisionDateRegex  = new Regex("^(\"PO-Revision-Date:\\s*)(\\w+.*)(\\s*\\\\n\")\\s*",      RegexOptions.CultureInvariant | RegexOptions.Compiled);
 
 		private								HeaderInfo(string[] content)
 		{
