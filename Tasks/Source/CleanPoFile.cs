@@ -319,9 +319,9 @@ namespace Epsitec.Zou
 		public static HeaderInfo			Parse(IEnumerator<string> e, PoFileInfo fileInfo)
 		{
 			var content = e.ParseRemaining ().ToArray ();
-			var lastPotCreationDateTime = HeaderInfo.GetLastDateTime (content, PotCreationDateRegex);
-			var lastPoRevisionDateTime  = fileInfo.NoRevisionDate ? null : HeaderInfo.GetLastDateTime (content, PoRevisionDateRegex);
-			content = HeaderInfo.Clean (content, fileInfo.ProjectId, lastPotCreationDateTime, fileInfo.NoRevisionDate, lastPoRevisionDateTime);
+			var minPotCreationDateTime = HeaderInfo.GetMinDateTime (content, PotCreationDateRegex);
+			var maxPoRevisionDateTime   = fileInfo.NoRevisionDate ? null : HeaderInfo.GetMaxDateTime (content, PoRevisionDateRegex);
+			content = HeaderInfo.Clean (content, fileInfo.ProjectId, minPotCreationDateTime, fileInfo.NoRevisionDate, maxPoRevisionDateTime);
 			return new HeaderInfo (content);
 		}
 
@@ -331,7 +331,7 @@ namespace Epsitec.Zou
 		}
 
 		private static bool					IsPoMarker(IEnumerator<string> e)				=> e.Current.StartsWith ("\"#-");
-		private static string[]				Clean(string[] content, string projectId, DateTimeOffset? lastPotCreationDateTime, bool removePoRevisionDate, DateTimeOffset? lastPoRevisionDateTime)
+		private static string[]				Clean(string[] content, string projectId, DateTimeOffset? potCreationDateTime, bool removePoRevisionDate, DateTimeOffset? poRevisionDateTime)
 		{
 			content = HeaderInfo.RemoveMarkers (content).ToArray ();
 			content = content
@@ -341,10 +341,10 @@ namespace Epsitec.Zou
 				.Select (line => HeaderInfo.PoLanguageRegex.Replace (line, m => $"{m.Groups[1].Value}{(m.Groups[2].Value.Any() ? "_" : "")}{m.Groups[3].Value}{m.Groups[4].Value}"))
 				.ToArray ();
 
-			if (lastPotCreationDateTime != null)
+			if (potCreationDateTime != null)
 			{
 				content = content
-					.Select (line => HeaderInfo.PotCreationDateRegex.Replace (line, m => $"{m.Groups[1].Value}{lastPotCreationDateTime.Value.Format ()}{m.Groups[3].Value}"))
+					.Select (line => HeaderInfo.PotCreationDateRegex.Replace (line, m => $"{m.Groups[1].Value}{potCreationDateTime.Value.Format ()}{m.Groups[3].Value}"))
 					.ToArray ();
 			}
 			if (removePoRevisionDate)
@@ -353,10 +353,10 @@ namespace Epsitec.Zou
 					.Where (line => !HeaderInfo.PoRevisionDateRegex.Match (line).Success)
 					.ToArray ();
 			}
-			else if (lastPoRevisionDateTime != null)
+			else if (poRevisionDateTime != null)
 			{
 				content = content
-					.Select (line => HeaderInfo.PoRevisionDateRegex.Replace (line, m => $"{m.Groups[1].Value}{lastPoRevisionDateTime.Value.Format ()}{m.Groups[3].Value}"))
+					.Select (line => HeaderInfo.PoRevisionDateRegex.Replace (line, m => $"{m.Groups[1].Value}{poRevisionDateTime.Value.Format ()}{m.Groups[3].Value}"))
 					.ToArray ();
 			}
 			return content;
@@ -389,19 +389,27 @@ namespace Epsitec.Zou
 				}
 			}
 		}
-		private static DateTimeOffset?		GetLastDateTime(string[] lines, Regex regex)
+		private static DateTimeOffset?		GetMinDateTime(string[] lines, Regex regex)
 		{
-			var values = lines
+			var values = HeaderInfo.GetDateTimes (lines, regex);
+			return values.Length == 0 ? default (DateTimeOffset?) : values.Min ();
+		}
+		private static DateTimeOffset?		GetMaxDateTime(string[] lines, Regex regex)
+		{
+			var values = HeaderInfo.GetDateTimes (lines, regex);
+			return values.Length == 0 ? default (DateTimeOffset?) : values.Max ();
+		}
+		private static DateTimeOffset[]		GetDateTimes(string[] lines, Regex regex)
+		{
+			return lines
 				.Select (line => regex.Match (line))
 				.Where (match => match.Success)
 				.Select (match => DateTimeOffset.Parse (match.Groups[2].Value))
 				.ToArray ();
-
-			return values.Length == 0 ? default (DateTimeOffset?) : values.Max ();
 		}
 
 		// "Project-Id-Version: 'zou'\n"
-		private static readonly Regex       ProjectIdRegex       = new Regex("^(\"Project-Id-Version:\\s*')(\\S+.*)('\\s*\\\\n\")\\s*",  RegexOptions.CultureInvariant | RegexOptions.Compiled);
+		private static readonly Regex		ProjectIdRegex       = new Regex("^(\"Project-Id-Version:\\s*')(\\S+.*)('\\s*\\\\n\")\\s*",  RegexOptions.CultureInvariant | RegexOptions.Compiled);
 		// "Language: fr-CH\n"
 		private static readonly Regex		PoLanguageRegex      = new Regex("^(\"Language:\\s*\\w{2,3})(?:(-)(\\w{2,3}))?(\\s*\\\\n\")\\s*",  RegexOptions.CultureInvariant | RegexOptions.Compiled);
 		// "POT-Creation-Date: 2016-05-12 18:17+0200\n"
@@ -409,7 +417,7 @@ namespace Epsitec.Zou
 		// "PO-Revision-Date: 2016-05-12 18:17+0200\n"
 		private static readonly Regex		PoRevisionDateRegex  = new Regex("^(\"PO-Revision-Date:\\s*)(\\d+.*)(\\s*\\\\n\")\\s*",      RegexOptions.CultureInvariant | RegexOptions.Compiled);
 
-		private HeaderInfo(string[] content)
+		private								HeaderInfo(string[] content)
 		{
 			this.Content = content;
 		}
@@ -417,11 +425,11 @@ namespace Epsitec.Zou
 
 	internal class CommentSectionComparer : IComparer<CommentSection>
 	{
-		public								CommentSectionComparer(PoFileInfo fileInfo)
+		public										CommentSectionComparer(PoFileInfo fileInfo)
 		{
 			this.fileInfo = fileInfo;
 		}
-		public int							Compare(CommentSection x, CommentSection y)
+		public int									Compare(CommentSection x, CommentSection y)
 		{
 
 			if (x.PoName == y.PoName)
@@ -451,7 +459,7 @@ namespace Epsitec.Zou
 			return 0;
 		}
 
-		private readonly PoFileInfo			fileInfo;
+		private readonly PoFileInfo					fileInfo;
 	}
 	internal class CommentSection : IEquatable <CommentSection>
 	{
