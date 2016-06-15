@@ -148,6 +148,12 @@ Pseudo-code:
       <Output TaskParameter="AssignedFilesWithCulture" ItemName="PoResourceWithCulture" />
       <Output TaskParameter="AssignedFilesWithNoCulture" ItemName="PoResourceWithNoCulture" />
     </AssignCulture>
+    <ItemGroup>
+      <PoResourceWithNoCulture>
+        <!-- Use en-US as default culture -->
+        <Culture>en-US</Culture>
+      </PoResourceWithNoCulture>
+    </ItemGroup>
     <AddFileInfo Files="@(PoResourceWithCulture);@(PoResourceWithNoCulture)">
       <Output TaskParameter="OutputFiles" ItemName="PoResourceWithInfo" />
     </AddFileInfo>
@@ -156,8 +162,6 @@ Pseudo-code:
       <PoResource Remove="@(PoResourceWithInfo)" />
       <PoResource Include="@(PoResourceWithInfo)" />
       <PoResource>
-        <!-- Use en-US as default culture -->
-        <Culture     Condition="'%(Culture)' == ''">en-US</Culture>
         <!-- PO resource is considered as initialized if not empty. -->
         <Initialized Condition="'%(Length)' &gt; '10'">true</Initialized>
         <Domain>$([System.IO.Path]::GetFileNameWithoutExtension('%(Filename)'))</Domain>
