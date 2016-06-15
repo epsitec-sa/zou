@@ -541,7 +541,7 @@ Pseudo-code:
           Condition="'@(Compile)' != ''"
           Returns="@(PotSource)">
     <ItemGroup>
-      <PotSource Include="@(Compile)" Exclude="$(TMP)\*;$(PotDomainDir)\*" />
+      <PotSource Include="@(Compile)" Exclude="$(TMP)\*;$(PotDomainDir)\*;Properties\Resources.Designer.cs;Properties\AssemblyInfo.cs" />
       <PotSource>
         <RelativePath>$([MSBuild]::MakeRelative($(BundleDir), %(PotSource.FullPath)))</RelativePath>
       </PotSource>
