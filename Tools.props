@@ -1,0 +1,43 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003"
+         InitialTargets="ToolsTrace"
+         TreatAsLocalProperty="ToolsTrace">
+
+  <PropertyGroup Label="VisualStudio">
+    <!-- VS Root Dir -->
+    <VS120RootDir Condition="'$(VS120RootDir)' == ''">$([MSBuild]::GetRegistryValue('HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Microsoft\VisualStudio\12.0', 'ShellFolder'))</VS120RootDir>
+    <VS120RootDir Condition="'$(VS120RootDir)' == ''">$([MSBuild]::GetRegistryValue('HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\VisualStudio\12.0', 'ShellFolder'))</VS120RootDir>
+    <VS140RootDir Condition="'$(VS140RootDir)' == ''">$([MSBuild]::GetRegistryValue('HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Microsoft\VisualStudio\14.0', 'ShellFolder'))</VS140RootDir>
+    <VS140RootDir Condition="'$(VS140RootDir)' == ''">$([MSBuild]::GetRegistryValue('HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\VisualStudio\14.0', 'ShellFolder'))</VS140RootDir>
+    <VSRootDir Condition="'$(VSRootDir)' == ''">$(VS140RootDir)</VSRootDir>
+    <VSRootDir Condition="'$(VSRootDir)' == ''">$(VS120RootDir)</VSRootDir>
+    <!-- VS Tools Dir -->
+    <VS120ToolsDir Condition="'$(VS120COMNTOOLS)' != ''">$(VS120COMNTOOLS)</VS120ToolsDir>
+    <VS120ToolsDir Condition="'$(VS120ToolsDir)' == ''">$([MSBuild]::GetRegistryValue('HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Microsoft\VisualStudio\14.0', 'InstallDir'))</VS120ToolsDir>
+    <VS120ToolsDir Condition="'$(VS120ToolsDir)' == ''">$([MSBuild]::GetRegistryValue('HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\VisualStudio\14.0', 'InstallDir'))</VS120ToolsDir>
+    <VS140ToolsDir Condition="'$(VS140COMNTOOLS)' != ''">$(VS140COMNTOOLS)</VS140ToolsDir>
+    <VS140ToolsDir Condition="'$(VS140ToolsDir)' == ''">$([MSBuild]::GetRegistryValue('HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Microsoft\VisualStudio\14.0', 'InstallDir'))</VS140ToolsDir>
+    <VS140ToolsDir Condition="'$(VS140ToolsDir)' == ''">$([MSBuild]::GetRegistryValue('HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\VisualStudio\14.0', 'InstallDir'))</VS140ToolsDir>
+    <VSToolsDir Condition="'$(VSToolsDir)' == ''">$(VS140ToolsDir)</VSToolsDir>
+    <VSToolsDir Condition="'$(VSToolsDir)' == ''">$(VS120ToolsDir)</VSToolsDir>
+    <!-- VC++ Root Dir -->
+    <VCRootDir>$(VSRootDir)VC\</VCRootDir>
+    <!-- MFC Include Dir -->
+    <MFCIncludeDir>$(VCRootDir)atlmfc\include\</MFCIncludeDir>
+  </PropertyGroup>
+
+  <Target Name="ToolsTrace" Condition="'$(ZouTrace)' == 'true'">
+    <Message Importance="normal" Text="Tools" />
+    <Message Importance="normal" Text="===================" />
+    <Message Importance="normal" Text="  VS120RootDir  = $(VS120RootDir)"  Condition="'$(VS120RootDir)' != ''"/>
+    <Message Importance="normal" Text="  VS140RootDir  = $(VS140RootDir)"  Condition="'$(VS140RootDir)' != ''"/>
+    <Message Importance="normal" Text=" "/>
+    <Message Importance="normal" Text="  VS120ToolsDir = $(VS120ToolsDir)" Condition="'$(VS120ToolsDir)' != ''"/>
+    <Message Importance="normal" Text="  VS140ToolsDir = $(VS140ToolsDir)" Condition="'$(VS140ToolsDir)' != ''"/>
+    <Message Importance="normal" Text=" "/>
+    <Message Importance="normal" Text="  VSRootDir     = $(VSRootDir)"     Condition="'$(VSRootDir)' != ''"/>
+    <Message Importance="normal" Text="  VSToolsDir    = $(VSToolsDir)"    Condition="'$(VSToolsDir)' != ''"/>
+    <Message Importance="normal" Text="  VCRootDir     = $(VCRootDir)"     Condition="'$(VCRootDir)' != ''"/>
+    <Message Importance="normal" Text="  MFCIncludeDir = $(MFCIncludeDir)" Condition="'$(MFCIncludeDir)' != ''"/>
+  </Target>
+</Project>
