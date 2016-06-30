@@ -1,0 +1,23 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- Help Project Property Page -->
+<ProjectSchemaDefinitions xmlns="http://schemas.microsoft.com/build/2009/properties">
+  <ContentType Name="HelpProject" DisplayName="Help Project (Content)" ItemType="HelpProject" />
+  <ItemType Name="HelpProject" DisplayName="Help Project" />
+  <FileExtension Name=".hhp" ContentType="HelpProject" />
+
+  <Rule Name="HelpProject" DisplayName="Help Compiler" Order="10" PageTemplate="tool"   >
+    <Rule.Categories>
+      <Category Name="General" DisplayName="General" />
+      <!--<Category Name="Command Line" DisplayName="Command Line" Subtype="CommandLine" />-->
+    </Rule.Categories>
+    <Rule.DataSource>
+      <DataSource Persistence="ProjectFile" ItemType="HelpProject" HasConfigurationCondition="false" />
+    </Rule.DataSource>
+    <StringListProperty Name="HmFields" DisplayName="Help Map Fields" Description="Defines mapping rules from C/C++ resource IDs to help IDs. A map field has the following format: 'ID_,HID_,10000' where the last number is the offset between the C/C++ and help IDs." Category="General" />
+    <StringProperty Subtype="file" Name="CmFile" DisplayName="C/C++ Resource Header File" Description="C/C++ header file (.h) containing resource IDs to be mapped to help IDs." Category="General" />
+    <StringProperty Subtype="file" Name="HmFile" DisplayName="Help Map File" Description="Help map file (.hm) containing help IDs mapped from C/C++ resource IDs." Category="General"/>
+    <StringProperty Subtype="file" Name="OutputFile" DisplayName="Help Compiler Output File" Description="Defines the path of the compiled help file (.chm). This path should be the same as the " Category="General"/>
+    
+    <!--<StringProperty Name="CommandLineTemplate" DisplayName="Command Line" Visible="False" IncludeInCommandLine="False" Category="Command Line" />-->
+  </Rule>
+</ProjectSchemaDefinitions>

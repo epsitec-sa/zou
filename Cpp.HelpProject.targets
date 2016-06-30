@@ -1,0 +1,150 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- Help Project Property Page -->
+  <ItemGroup>
+    <PropertyPageSchema Include="$(MSBuildThisFileDirectory)Cpp.HelpProject.xml" />
+    <AvailableItemName Include="HelpProject">
+      <Targets>_HcBuild</Targets>
+    </AvailableItemName>
+  </ItemGroup>
+
+  <PropertyGroup>
+    <MakeHm>$(VsToolsDir)makehm.exe</MakeHm>
+    <Hhc>$(ZouBinDir)hhc.exe</Hhc>
+  </PropertyGroup>
+
+  <ItemDefinitionGroup>
+    <HelpProject>
+      <CommandLineTemplate>
+        "$(MakeHm)" [HmFields] "[CmFile]" "[HmFile]"
+      </CommandLineTemplate>
+      <CmFile>resource.h</CmFile>
+      <HmFile>$(IntDir)resource.hm</HmFile>
+      <HmFields>ID_,HID_,0x10000;IDM_,HIDM_,0x10000;IDP_,HIDP_,0x30000;IDR_,HIDR_,0x20000;IDD_,HIDD_,0x20000;IDW_,HIDW_,0x50000</HmFields>
+
+      <HhpTmpFile>%(RootDir)%(Directory)_zou.%(FileName)%(Extension)</HhpTmpFile>
+      <OutputFile>$(OutDir)%(FileName).chm</OutputFile>
+      <LogFile>%(RootDir)%(Directory)_errorlog.txt</LogFile>
+    </HelpProject>
+  </ItemDefinitionGroup>
+
+  <Target Name="_ConcatWithMfcHmFile">
+    <ItemGroup>
+      <HmFile Include="%(HelpProject.HmFile)" />
+      <HmFile Include="$(MFCIncludeDir)afxhelp.hm" />
+    </ItemGroup>
+    <ReadLinesFromFile File="%(HmFile.FullPath)" >
+      <Output TaskParameter="Lines" ItemName="_Temporary"/>
+    </ReadLinesFromFile>
+    <WriteLinesToFile File="%(HelpProject.HmFile)" Lines="@(_Temporary)" Overwrite="true"/>
+    <ItemGroup>
+      <_Temporary Remove="@(_Temporary)" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="_CreateHmFile" Inputs="%(HelpProject.CmFile)" Outputs="%(HmFile)">
+    <Delete Files="%(HelpProject.HmFile)" />
+    <PropertyGroup>
+      <HmFields>%(HelpProject.HmFields)</HmFields>
+      <HmFields>$(HmFields.Replace(';', ' '))</HmFields>
+    </PropertyGroup>
+    <Exec Command='"$(MakeHm)" $(HmFields) "%(HelpProject.CmFile)" &gt;&gt;"%(HmFile)"' />
+    <CallTarget Targets="_ConcatWithMfcHmFile" Condition="'$(UseOfMfc)' != 'false' And '$(UseOfMfc)' != ''" />
+  </Target>
+
+  <Target Name="_ResolveHelpDependencies" >
+    <ReadLinesFromFile File="%(HelpProject.HhpTmpFile)">
+      <Output TaskParameter="Lines" ItemName="_Temporary" />
+    </ReadLinesFromFile>
+    <PropertyGroup>
+      <_Temporary>@(_Temporary)</_Temporary>
+      <_OptionsSection>$([System.Text.RegularExpressions.Regex]::Match($(_Temporary), '(?&lt;=\[OPTIONS\])[^\[]*'))</_OptionsSection>
+      <_FilesSection>$([System.Text.RegularExpressions.Regex]::Match($(_Temporary), '(?&lt;=\[FILES\])[^\[]*'))</_FilesSection>
+      <_Temporary></_Temporary>
+    </PropertyGroup>
+    <ItemGroup>
+      <_Temporary Remove="@(_Temporary) " />
+      <_Dependency Include="$([System.Text.RegularExpressions.Regex]::Match($(_OptionsSection), '(?&lt;=Contents File=)[^;]*'))" />
+      <_Dependency Include="$([System.Text.RegularExpressions.Regex]::Match($(_OptionsSection), '(?&lt;=Index File=)[^;]*'))" />
+      <_Dependency Include="$([System.Text.RegularExpressions.Regex]::Match($(_OptionsSection), '(?&lt;=Full text search stop list file=)[^;]*'))" />
+      <_Topic Include="$([System.Text.RegularExpressions.Regex]::Match($(_OptionsSection), '(?&lt;=Default Topic=)[^;]*'))" />
+      <_Topic Include="$(_FilesSection)" />
+    </ItemGroup>
+
+    <Message Importance="high" Text="Dependency=%(_Dependency.Identity)" />
+    <Message Importance="high" Text="Topic=%(_Topic.Identity)" />
+
+    <ItemGroup>
+      <_Dependency Remove="@(_Dependency) " />
+      <_Topic Remove="@(_Topic) " />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="_AssignHelpSourceFiles">
+    <ItemGroup>
+      <_Temporary Include="%(HelpProject.FullPath);%(RootDir)%(Directory)**\*" />
+      <HelpProject>
+        <SourceFiles>@(_Temporary)</SourceFiles>
+      </HelpProject>
+      <_Temporary Remove="@(_Temporary)" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="_HcCore" DependsOnTargets="_AssignHelpSourceFiles" Inputs="%(HelpProject.SourceFiles)" Outputs="%(HelpProject.OutputFile)">
+
+    <!-- Replace the path of the output file (.chm) inside the help project file -->
+    <Copy SourceFiles="%(HelpProject.FullPath)" DestinationFiles="%(HhpTmpFile)" />
+    <FileUpdate Files="%(HelpProject.HhpTmpFile)" Encoding="windows-1252"
+                Regex='^(\s*Compiled File\s*=\s*).*[^\r\n]'
+                ReplacementText="$1%(HelpProject.OutputFile)"
+                Multiline="true"
+                IgnoreCase="true"/>
+
+    <!-- Execute the help compiler (HHC) and redirect its output to NUL -->
+    <Exec Command='"$(Hhc)" "%(HelpProject.HhpTmpFile)" &gt;NUL' IgnoreExitCode='true' />
+    <Delete Files="%(HelpProject.HhpTmpFile)" />
+  </Target>
+
+  <Target Name="_CheckForHcError" DependsOnTargets="_HcCore" >
+    <!-- Parse log file for errors and convert them to MSBuild format -->
+    <ReadLinesFromFile File="%(HelpProject.LogFile)">
+      <Output TaskParameter="Lines" ItemName="_Temporary"/>
+    </ReadLinesFromFile>
+    <PropertyGroup>
+      <_Temporary>@(_Temporary)</_Temporary>
+      <_HhpPath>%(HelpProject.FullPath)</_HhpPath>
+    </PropertyGroup>
+    <ItemGroup>
+      <_Temporary Remove="@(_Temporary) " />
+      <_HhcError Include="$([System.Text.RegularExpressions.Regex]::Matches($(_Temporary), 'HHC\w+:\s*Error:[^;]*'))" />
+    </ItemGroup>
+    <!-- Fix for Visual Studio -->
+    <CallTarget Targets="_DeleteLastBuildState" Condition="'%(_HhcError.Identity)' != ''" />
+    <!-- -->
+    <Error File="$(_HhpPath)"
+           Condition="'%(_HhcError.Identity)' != ''"
+           Code="$([System.Text.RegularExpressions.Regex]::Match(%(Identity), 'HHC[^:]+'))"
+           Text="$([System.Text.RegularExpressions.Regex]::Match(%(Identity), '(?&lt;=HHC\w+:\s*Error:\s*).*'))" />
+
+    <Delete Files="%(HelpProject.LogFile)" />
+    <PropertyGroup>
+      <_Temporary></_Temporary>
+      <_HhpPath></_HhpPath>
+    </PropertyGroup>
+  </Target>
+
+  <Target Name="_DeleteHmFiles">
+    <Delete Files="%(HelpProject.HmFile)" />
+  </Target>
+
+  <Target Name="_DeleteHhcFiles">
+    <Delete Files="%(HelpProject.HhpTmpFile);%(OutputFile)" />
+  </Target>
+
+  <Target Name="_HmClean"   DependsOnTargets="_DeleteHmFiles" AfterTargets="Clean"/>
+  <Target Name="_HmBuild"   DependsOnTargets="_CreateHmFile" BeforeTargets="ClCompile" />
+  <Target Name="_HmRebuild" DependsOnTargets="_HmClean;_HmBuild"/>
+  <Target Name="_HcClean"   DependsOnTargets="_DeleteHhcFiles" AfterTargets="Clean" />
+  <Target Name="_HcBuild"   DependsOnTargets="_HcCore;_CheckForHcError" AfterTargets="Build" />
+  <Target Name="_HcRebuild" DependsOnTargets="_HcClean;_HcBuild" />
+</Project>
