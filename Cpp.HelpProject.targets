@@ -16,11 +16,11 @@
   <ItemDefinitionGroup>
     <HelpProject>
       <CommandLineTemplate>
-        "$(MakeHm)" [HmFields] "[CmFile]" "[HmFile]"
+        "$(MakeHm)" [ResIdsMappingRules] "[CppResIdsFile]" "[HelpResIdsFile]"
       </CommandLineTemplate>
-      <CmFile>resource.h</CmFile>
-      <HmFile>$(IntDir)resource.hm</HmFile>
-      <HmFields>ID_,HID_,0x10000;IDM_,HIDM_,0x10000;IDP_,HIDP_,0x30000;IDR_,HIDR_,0x20000;IDD_,HIDD_,0x20000;IDW_,HIDW_,0x50000</HmFields>
+      <CppResIdsFile>resource.h</CppResIdsFile>
+      <HelpResIdsFile>$(IntDir)resource.hm</HelpResIdsFile>
+      <ResIdsMappingRules>ID_,HID_,0x10000;IDM_,HIDM_,0x10000;IDP_,HIDP_,0x30000;IDR_,HIDR_,0x20000;IDD_,HIDD_,0x20000;IDW_,HIDW_,0x50000</ResIdsMappingRules>
 
       <HhpTmpFile>%(RootDir)%(Directory)_zou.%(FileName)%(Extension)</HhpTmpFile>
       <OutputFile>$(OutDir)%(FileName).chm</OutputFile>
@@ -30,25 +30,25 @@
 
   <Target Name="_ConcatWithMfcHmFile">
     <ItemGroup>
-      <HmFile Include="%(HelpProject.HmFile)" />
-      <HmFile Include="$(MFCIncludeDir)afxhelp.hm" />
+      <HelpResIdsFile Include="%(HelpProject.HelpResIdsFile)" />
+      <HelpResIdsFile Include="$(MFCIncludeDir)afxhelp.hm" />
     </ItemGroup>
-    <ReadLinesFromFile File="%(HmFile.FullPath)" >
+    <ReadLinesFromFile File="%(HelpResIdsFile.FullPath)" >
       <Output TaskParameter="Lines" ItemName="_Temporary"/>
     </ReadLinesFromFile>
-    <WriteLinesToFile File="%(HelpProject.HmFile)" Lines="@(_Temporary)" Overwrite="true"/>
+    <WriteLinesToFile File="%(HelpProject.HelpResIdsFile)" Lines="@(_Temporary)" Overwrite="true"/>
     <ItemGroup>
       <_Temporary Remove="@(_Temporary)" />
     </ItemGroup>
   </Target>
 
-  <Target Name="_CreateHmFile" Inputs="%(HelpProject.CmFile)" Outputs="%(HmFile)">
-    <Delete Files="%(HelpProject.HmFile)" />
+  <Target Name="_CreateHmFile" Inputs="%(HelpProject.CppResIdsFile)" Outputs="%(HelpResIdsFile)">
+    <Delete Files="%(HelpProject.HelpResIdsFile)" />
     <PropertyGroup>
-      <HmFields>%(HelpProject.HmFields)</HmFields>
-      <HmFields>$(HmFields.Replace(';', ' '))</HmFields>
+      <ResIdsMappingRules>%(HelpProject.ResIdsMappingRules)</ResIdsMappingRules>
+      <ResIdsMappingRules>$(ResIdsMappingRules.Replace(';', ' '))</ResIdsMappingRules>
     </PropertyGroup>
-    <Exec Command='"$(MakeHm)" $(HmFields) "%(HelpProject.CmFile)" &gt;&gt;"%(HmFile)"' />
+    <Exec Command='"$(MakeHm)" $(ResIdsMappingRules) "%(HelpProject.CppResIdsFile)" &gt;&gt;"%(HelpResIdsFile)"' />
     <CallTarget Targets="_ConcatWithMfcHmFile" Condition="'$(UseOfMfc)' != 'false' And '$(UseOfMfc)' != ''" />
   </Target>
 
@@ -134,7 +134,7 @@
   </Target>
 
   <Target Name="_DeleteHmFiles">
-    <Delete Files="%(HelpProject.HmFile)" />
+    <Delete Files="%(HelpProject.HelpResIdsFile)" />
   </Target>
 
   <Target Name="_DeleteHhcFiles">
