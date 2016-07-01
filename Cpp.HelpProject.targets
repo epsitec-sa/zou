@@ -25,8 +25,17 @@
       <HhpTmpFile>%(RootDir)%(Directory)_zou.%(FileName)%(Extension)</HhpTmpFile>
       <OutputFile>$(OutDir)%(FileName).chm</OutputFile>
       <LogFile>%(RootDir)%(Directory)_errorlog.txt</LogFile>
+      <ExcludedFromBuild>false</ExcludedFromBuild>
     </HelpProject>
   </ItemDefinitionGroup>
+
+  <Target Name="_HcInit">
+    <ItemGroup>
+      <_ExcludedFromBuild Include="%(HelpProject.Identity)" Condition="'%(ExcludedFromBuild)' == 'true'" />
+      <HelpProject Remove="@(_ExcludedFromBuild)" />
+      <_ExcludedFromBuild Remove="@(_ExcludedFromBuild)" />
+    </ItemGroup>
+  </Target>
 
   <Target Name="_ConcatWithMfcHmFile">
     <ItemGroup>
@@ -105,7 +114,7 @@
     <Delete Files="%(HelpProject.HhpTmpFile)" />
   </Target>
 
-  <Target Name="_CheckForHcError" DependsOnTargets="_HcCore" >
+  <Target Name="_CheckForHcError" DependsOnTargets="_HcCore" Condition="'@(HelpProject)' != ''">
     <!-- Parse log file for errors and convert them to MSBuild format -->
     <ReadLinesFromFile File="%(HelpProject.LogFile)">
       <Output TaskParameter="Lines" ItemName="_Temporary"/>
@@ -115,7 +124,7 @@
       <_HhpPath>%(HelpProject.FullPath)</_HhpPath>
     </PropertyGroup>
     <ItemGroup>
-      <_Temporary Remove="@(_Temporary) " />
+      <_Temporary Remove="@(_Temporary)" />
       <_HhcError Include="$([System.Text.RegularExpressions.Regex]::Matches($(_Temporary), 'HHC\w+:\s*Error:[^;]*'))" />
     </ItemGroup>
     <!-- Fix for Visual Studio -->
@@ -145,6 +154,6 @@
   <Target Name="_HmBuild"   DependsOnTargets="_CreateHmFile" BeforeTargets="ClCompile" />
   <Target Name="_HmRebuild" DependsOnTargets="_HmClean;_HmBuild"/>
   <Target Name="_HcClean"   DependsOnTargets="_DeleteHhcFiles" AfterTargets="Clean" />
-  <Target Name="_HcBuild"   DependsOnTargets="_HcCore;_CheckForHcError" AfterTargets="Build" />
+  <Target Name="_HcBuild"   DependsOnTargets="_HcInit;_HcCore;_CheckForHcError" AfterTargets="Build" />
   <Target Name="_HcRebuild" DependsOnTargets="_HcClean;_HcBuild" />
 </Project>
