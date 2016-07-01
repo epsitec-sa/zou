@@ -1,0 +1,44 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- C++ pack agent : builds and packages main application into the C++ container (hm2map) -->
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\..\..\zou\Cpp.Boot.props" />
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{86351A8F-167B-428F-933C-7B81985418EC}</ProjectGuid>
+  </PropertyGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(ZouDir)Cpp.Pack.props" />
+  </ImportGroup>
+  <!-- build component in [root-dir]$(Platform)\$(PlatformToolset)\bin\$(Configuration) -->
+  <ItemGroup>
+    <ImportProject Include="hm2map.vcxproj" />
+  </ItemGroup>
+  <Target Name="PackFilter">
+    <ItemGroup>
+      <!-- Exclude assemblies doc. -->
+      <ProdBinExclude Include="$(OutDir)**\*.xml" />
+    </ItemGroup>
+  </Target>
+  <PropertyGroup>
+    <!-- Install tool into zou bin folder -->
+    <PkgProdBinDir>$(ZouBinDir)</PkgProdBinDir>
+  </PropertyGroup>
+  <Import Project="$(ZouDir)Cpp.Pack.targets" />
+</Project>
