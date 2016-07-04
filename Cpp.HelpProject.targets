@@ -49,11 +49,11 @@
       <HelpResIdsFile Include="$(MFCIncludeDir)afxhelp.hm" />
     </ItemGroup>
     <ReadLinesFromFile File="%(HelpResIdsFile.FullPath)" >
-      <Output TaskParameter="Lines" ItemName="_Temporary"/>
+      <Output TaskParameter="Lines" ItemName="_SourceFile"/>
     </ReadLinesFromFile>
-    <WriteLinesToFile File="%(HelpProject.HelpResIdsFile)" Lines="@(_Temporary)" Overwrite="true"/>
+    <WriteLinesToFile File="%(HelpProject.HelpResIdsFile)" Lines="@(_SourceFile)" Overwrite="true"/>
     <ItemGroup>
-      <_Temporary Remove="@(_Temporary)" />
+      <_SourceFile Remove="@(_SourceFile)" />
     </ItemGroup>
   </Target>
 
@@ -69,17 +69,17 @@
 
   <Target Name="_GetHelpTopics" DependsOnTargets="_CreateHmFile" Returns="@(_HelpTopic)">
     <ReadLinesFromFile File="%(HelpProject.FullPath)">
-      <Output TaskParameter="Lines" ItemName="_Temporary" />
+      <Output TaskParameter="Lines" ItemName="_SourceFile" />
     </ReadLinesFromFile>
     
     <PropertyGroup>
-      <_Temporary>@(_Temporary)</_Temporary>
-      <_OptionsSection>$([System.Text.RegularExpressions.Regex]::Match($(_Temporary), '(?&lt;=\[OPTIONS\])[^\[]*'))</_OptionsSection>
-      <_FilesSection>$([System.Text.RegularExpressions.Regex]::Match($(_Temporary), '(?&lt;=\[FILES\])[^\[]*'))</_FilesSection>
-      <_Temporary></_Temporary>
+      <_SourceFile>@(_SourceFile)</_SourceFile>
+      <_OptionsSection>$([System.Text.RegularExpressions.Regex]::Match($(_SourceFile), '(?&lt;=\[OPTIONS\])[^\[]*'))</_OptionsSection>
+      <_FilesSection>$([System.Text.RegularExpressions.Regex]::Match($(_SourceFile), '(?&lt;=\[FILES\])[^\[]*'))</_FilesSection>
+      <_SourceFile></_SourceFile>
     </PropertyGroup>
     <ItemGroup>
-      <_Temporary Remove="@(_Temporary) " />
+      <_SourceFile Remove="@(_SourceFile) " />
       <_HelpTopic Include="$([System.Text.RegularExpressions.Regex]::Match($(_OptionsSection), '(?&lt;=Default Topic=)[^;]*'))" />
       <_HelpTopic Include="$(_FilesSection)" />
     </ItemGroup>
@@ -99,16 +99,16 @@
     <!--<Message Importance="high" Text="_HelpTopicSynonym = %(_HelpTopicSynonym.Identity)" />-->
 
     <CreateHelpMap HelpIds="@(_HelpId)" Topics="@(_HelpTopic)" Synonyms="@(_HelpTopicSynonym)">
-      <Output TaskParameter="Items" ItemName="_Temporary" />
+      <Output TaskParameter="Items" ItemName="_SourceFile" />
     </CreateHelpMap>
     
-    <WriteLinesToFile File="%(HelpProject.CppHelpMapFile)" Lines="@(_Temporary)" Overwrite="true" />
-    <!--<Message Importance="high" Text="%(_Temporary.Identity)" />-->
+    <WriteLinesToFile File="%(HelpProject.CppHelpMapFile)" Lines="@(_SourceFile)" Overwrite="true" />
+    <!--<Message Importance="high" Text="%(_SourceFile.Identity)" />-->
 
     <ItemGroup>
       <_HelpId Remove="@(_HelpId)" />
       <_HelpTopicSynonym Remove="@(_HelpTopicSynonym)" />
-      <_Temporary Remove="@(_Temporary)" />
+      <_SourceFile Remove="@(_SourceFile)" />
     </ItemGroup>
   </Target>
   
@@ -133,18 +133,18 @@
     </ItemGroup>
   </Target>
 
-  <Target Name="_AssignHelpSourceFiles">
+  <Target Name="_AssignHelpSourceFiles" Returns="%(HelpProject.Identity)">
     <ItemGroup>
-      <_Temporary Include="%(HelpProject.FullPath);%(RootDir)%(Directory)**\*" />
+      <_SourceFile Include="%(HelpProject.RootDir)%(Directory)**\*" />
+      <_SourceFile Include="%(HelpProject.FullPath)" KeepDuplicates="false" />
       <HelpProject>
-        <SourceFiles>@(_Temporary)</SourceFiles>
+        <SourceFiles>@(_SourceFile)</SourceFiles>
       </HelpProject>
-      <_Temporary Remove="@(_Temporary)" />
+      <_SourceFile Remove="@(_SourceFile)" />
     </ItemGroup>
   </Target>
 
   <Target Name="_HcCore" DependsOnTargets="_AssignHelpSourceFiles" Inputs="%(HelpProject.SourceFiles)" Outputs="%(HelpProject.HelpFile)">
-
     <!-- Replace the path of the output file (.chm) inside the help project file -->
     <Copy SourceFiles="%(HelpProject.FullPath)" DestinationFiles="%(HhpTmpFile)" />
     <FileUpdate Files="%(HelpProject.HhpTmpFile)" Encoding="windows-1252"
@@ -161,15 +161,15 @@
   <Target Name="_CheckForHcError" DependsOnTargets="_HcCore" Condition="'@(HelpProject)' != ''">
     <!-- Parse log file for errors and convert them to MSBuild format -->
     <ReadLinesFromFile File="%(HelpProject.LogFile)">
-      <Output TaskParameter="Lines" ItemName="_Temporary"/>
+      <Output TaskParameter="Lines" ItemName="_SourceFile"/>
     </ReadLinesFromFile>
     <PropertyGroup>
-      <_Temporary>@(_Temporary)</_Temporary>
+      <_SourceFile>@(_SourceFile)</_SourceFile>
       <_HhpPath>%(HelpProject.FullPath)</_HhpPath>
     </PropertyGroup>
     <ItemGroup>
-      <_Temporary Remove="@(_Temporary)" />
-      <_HhcError Include="$([System.Text.RegularExpressions.Regex]::Matches($(_Temporary), 'HHC\w+:\s*Error:[^;]*'))" />
+      <_SourceFile Remove="@(_SourceFile)" />
+      <_HhcError Include="$([System.Text.RegularExpressions.Regex]::Matches($(_SourceFile), 'HHC\w+:\s*Error:[^;]*'))" />
     </ItemGroup>
     <!-- Fix for Visual Studio -->
     <CallTarget Targets="_DeleteLastBuildState" Condition="'%(_HhcError.Identity)' != ''" />
@@ -181,7 +181,7 @@
 
     <Delete Files="%(HelpProject.LogFile)" />
     <PropertyGroup>
-      <_Temporary></_Temporary>
+      <_SourceFile></_SourceFile>
       <_HhpPath></_HhpPath>
     </PropertyGroup>
   </Target>
