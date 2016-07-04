@@ -1,0 +1,146 @@
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Text.RegularExpressions;
+using Microsoft.Build.BuildEngine;
+using Microsoft.Build.Framework;
+using Microsoft.Build.Utilities;
+
+namespace Epsitec.Zou
+{
+	public class CreateHelpMap: Task
+	{
+		[Required]
+		public ITaskItem[] HelpIds
+		{
+			get;
+			set;
+		}
+		[Required]
+		public ITaskItem[] Topics
+		{
+			get;
+			set;
+		}
+		public ITaskItem[] Synonyms
+		{
+			get;
+			set;
+		}
+		[Output]
+		public ITaskItem[] Items
+		{
+			get;
+			private set;
+		}
+		public override bool			Execute()
+		{
+			try
+			{
+				this.Items = this.GetMapElements ().Select (element => new TaskItem (element)).ToArray ();
+			}
+			catch (Exception e)
+			{
+				this.Log.LogErrorFromException (e);
+			}
+			return !this.Log.HasLoggedErrors;
+		}
+
+		private IEnumerable<string> GetMapElements()
+		{
+			var topics = this.Topics
+				.Select (item => item.GetMetadata ("Identity").ToLowerInvariant ())
+				.Select (topic => Path.GetFileNameWithoutExtension (topic))
+				.ToArray ();
+
+			var synonymLookup = this.Synonyms?
+				.Select (item => item.GetMetadata ("Identity"))
+				.Select (line => KeyValueRegex.Match (line))
+				.Where (match => match.Success)
+				.Select (match => new
+				{
+					Symbol = match.Groups[1].Value,
+					Synonym = match.Groups[2].Value.ToLowerInvariant ()
+				})
+				.ToLookup (a => a.Symbol, a => a.Synonym);
+
+			// symbol -> values
+			var symVals = this.HelpIds
+				.Select (item => item.GetMetadata ("Identity"))
+				.Select (line => KeyValueRegex.Match (line))
+				.Where (match => match.Success)
+				.SelectMany (match =>
+				{
+					var symbol = match.Groups[1].Value.ToLowerInvariant ();
+					var value = int.Parse (match.Groups[2].Value.Substring (2), NumberStyles.HexNumber);
+					var synonyms = synonymLookup?[symbol] ?? Enumerable.Empty<string> ();
+					return EnumerableEx
+						.Return (symbol)
+						.Concat (synonyms)
+						.Distinct ()
+						.Select (sym => new
+						{
+							Symbol = sym,
+							Value = value
+						});
+				})
+				.ToArray ();
+
+			var symValLookup = symVals
+				.Where (a => topics.Contains (a.Symbol, StringComparer.OrdinalIgnoreCase))
+				.ToLookup (a => a.Symbol, a => a.Value);
+
+			// value -> symbol
+			var valSymLookup = symValLookup
+				.SelectMany (helpId => helpId.Select (value => new
+				{
+					Value = value,
+					Symbol = helpId.Key
+				}))
+				.OrderBy (a => a.Symbol)
+				.ToLookup (a => a.Value, a => a.Symbol);
+
+			if (valSymLookup.Count == 0)
+			{
+				yield return "// empty";
+				this.Log.LogWarning ("could not find any matching help topic");
+			}
+			else
+			{
+				int i = 0;
+				foreach (var valSym in valSymLookup)
+				{
+					var orderedTopics = valSym.OrderBy (_ => _);
+					var mapElement = $"{{ 0x{valSym.Key:X4}, \"{orderedTopics.First ()}\" }}";
+					if (++i < valSymLookup.Count)
+					{
+						mapElement += ',';
+					}
+
+					if (valSym.Count () > 1)
+					{
+						var values = string.Join (" and ", valSym.Select (x => $"\"{x}\""));
+						var warning = $"topics {values} have the same ID (0x{valSym.Key:X4}), using \"{orderedTopics.First ()}\"...";
+						this.Log.LogWarning (warning);
+						yield return $"// WARNING: {warning}";
+					}
+					yield return mapElement;
+				}
+			}
+		}
+
+		// Match this:
+		//   HID_FILE_NEW	0x1E100		// comment
+		// But not C++ line comment:
+		//   // C++ line comment
+
+		private static readonly Regex KeyValueRegex = new Regex("^(?<!\\s*//\\s*)(\\w+)\\s*(\\w+)", RegexOptions.CultureInvariant | RegexOptions.Compiled);
+	}
+
+
+}
