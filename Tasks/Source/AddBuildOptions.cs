@@ -43,7 +43,7 @@ namespace Epsitec.Zou
 		}
 		public override bool			Execute()
 		{
-			this.ProjectsOutput = this.Projects.Select (project => this.AddOptions (project)).ToArray();
+			this.ProjectsOutput = this.Projects.Select (project => this.AddOptions (project)).ToArray ();
 			return !this.Log.HasLoggedErrors;
 		}
 
