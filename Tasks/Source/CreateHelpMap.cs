@@ -107,7 +107,6 @@ namespace Epsitec.Zou
 			if (valSymLookup.Count == 0)
 			{
 				this.Log.LogWarning ("could not find any matching help topic");
-
 			}
 			else
 			{
@@ -126,7 +125,6 @@ namespace Epsitec.Zou
 					yield return mapElement;
 				}
 			}
-			yield return "{ 0x0000, nullPtr }";
 		}
 
 		// Match this:
