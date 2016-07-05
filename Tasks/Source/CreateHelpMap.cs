@@ -15,18 +15,24 @@ namespace Epsitec.Zou
 {
 	public class CreateHelpMap: Task
 	{
+		// Format sample:
+		//	HIDR_MAINFRAME	0x20002
 		[Required]
 		public string[] HelpIds
 		{
 			get;
 			set;
 		}
+		// Format example:
+		//	html\afx_hidd_font.htm
 		[Required]
 		public string[] Topics
 		{
 			get;
 			set;
 		}
+		// Format example:
+		//	hid_edit_navprev		navigation
 		public string[] Synonyms
 		{
 			get;
@@ -53,10 +59,21 @@ namespace Epsitec.Zou
 
 		private IEnumerable<string> GetMapElements()
 		{
-			var topics = this.Topics
-				.Select (topic => Path.GetFileNameWithoutExtension (topic.ToLowerInvariant ()))
-				.ToArray ();
+			// symbol -> relative path
+			var symPathLookup = this.Topics
+				.ToLookup (topic => Path.GetFileNameWithoutExtension (topic).ToLowerInvariant ());
 
+			// check that topic file names are unique
+			symPathLookup.ForEach (item =>
+			{
+				if (item.Count () > 1)
+				{
+					var pathes = string.Join (", ", item);
+					this.Log.LogError ($"duplicate topic file names are forbidden: {{ {pathes} }}");
+				}
+			});
+
+			// symbol -> symbol
 			var synonymLookup = this.Synonyms?
 				.Select (line => KeyValueRegex.Match (line))
 				.Where (match => match.Success)
@@ -67,6 +84,7 @@ namespace Epsitec.Zou
 				})
 				.ToLookup (a => a.Symbol, a => a.Synonym);
 
+			// merge synonyms with C/C++ help ID symbols
 			// symbol -> values
 			var symVals = this.HelpIds
 				.Select (line => KeyValueRegex.Match (line))
@@ -88,8 +106,11 @@ namespace Epsitec.Zou
 				})
 				.ToArray ();
 
+			// filter with existing topic files
 			var symValLookup = symVals
-				.Where (a => topics.Contains (a.Symbol, StringComparer.OrdinalIgnoreCase))
+				.Where (a => symPathLookup
+					.Select(item => item.Key)
+					.Contains (a.Symbol, StringComparer.OrdinalIgnoreCase))
 				.ToLookup (a => a.Symbol, a => a.Value);
 
 			// value -> symbol
@@ -112,13 +133,14 @@ namespace Epsitec.Zou
 			{
 				foreach (var valSym in valSymLookup)
 				{
-					var orderedTopics = valSym.OrderBy (_ => _);
-					var mapElement = $"{{ 0x{valSym.Key:X4}, \"{orderedTopics.First ()}\" }},";
+					var sym = valSym.OrderBy (_ => _).First ();
+					var url = symPathLookup[sym].Single ().Replace ('\\', '/');
+					var mapElement = $"{{ 0x{valSym.Key:X4}, _T(\"{url}\") }},";
 
 					if (valSym.Count () > 1)
 					{
 						var values = string.Join (" and ", valSym.Select (x => $"\"{x}\""));
-						var warning = $"topics {values} have the same ID (0x{valSym.Key:X4}), using \"{orderedTopics.First ()}\"...";
+						var warning = $"topics {values} have the same ID (0x{valSym.Key:X4}), using \"{sym}\"...";
 						this.Log.LogWarning (warning);
 						yield return $"// WARNING: {warning}";
 					}
