@@ -115,7 +115,11 @@
     <!--<Message Importance="high" Text="_HelpContextTopic=%(_HelpContextTopic.Identity)" />-->
   </Target>
 
-  <Target Name="_CreateCppHelpMap" DependsOnTargets="_GetHelpTopics" Inputs="%(HelpProject.HelpResIdsFile);%(HelpIgnoreTopicsFile);%(HelpSynonymTopicsFile)" Outputs="%(CppHelpIndexMapFile);%(CppHelpContextMapFile)">
+  <Target Name="_CreateCppHelpMap"
+          DependsOnTargets="_GetHelpTopics"
+          Inputs="%(HelpProject.HelpResIdsFile);%(HelpIgnoreTopicsFile);%(HelpSynonymTopicsFile)"
+          Outputs="%(CppHelpIndexMapFile);%(CppHelpContextMapFile)"
+          Condition="'@(HelpProject)' != ''">
     <ReadLinesFromFile File="%(HelpProject.HelpResIdsFile)">
       <Output TaskParameter="Lines" ItemName="_HelpContextId" />
     </ReadLinesFromFile>
