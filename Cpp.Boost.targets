@@ -77,7 +77,7 @@
   else
     copy temp file to packages.config
   -->
-  <Target Name="UpdateBoostPackages" DependsOnTargets="_BoostUpdateExistingPackagesConfig" BeforeTargets="Build">
+  <Target Name="UpdateBoostPackages" DependsOnTargets="_BoostCreateBoostOnlyPackagesConfig;_BoostUpdateExistingPackagesConfig" BeforeTargets="Build">
     <Copy Condition="'$(_PackagesConfigExists)' != 'true'" SourceFiles="$(_BoostOnlyPackagesConfigFile)" DestinationFiles="$(BoostPackagesConfigFile)" />
 
     <PropertyGroup>
