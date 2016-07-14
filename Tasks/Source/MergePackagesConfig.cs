@@ -42,6 +42,12 @@ namespace Epsitec.Zou
 					.Aggregate(XDocument.Load (this.IntoFile), (doc1, doc2) => this.Merge(doc1, doc2));
 				if (this.Changed)
 				{
+					// order elements by id...
+					var elements = merged.Root.Elements ()
+						.OrderBy (e => e.Attribute ("id").Value, StringComparer.OrdinalIgnoreCase).ToArray ();
+					merged.Root.RemoveNodes ();
+					merged.Root.Add (elements);
+					// ... and save
 					merged.Save (this.IntoFile);
 				}
 			}
@@ -54,20 +60,14 @@ namespace Epsitec.Zou
 
 		private XDocument Merge(XDocument doc1, XDocument doc2)
 		{
-			var ids1 = doc1.Root.Elements ().Select (e => e.Attribute ("id").Value).ToArray ();
-			var ids2 = doc2.Root.Elements ().Select (e => e.Attribute ("id").Value).ToArray ();
-			var common = ids1.Intersect (ids2).ToArray ();
-			var other2 = ids2.Except (common).ToArray ();
+			var count0 = doc1.Root.Elements ().Count ();
+			doc1.Root.Add (
+				doc2.Root.Elements()
+					.Except(doc1.Root.Elements(), e => e.Attribute ("id").Value, StringComparer.OrdinalIgnoreCase));
 
-			if (!ids1.Except (common).IsEmpty () || !other2.IsEmpty ())
+			if (count0 != doc1.Root.Elements ().Count ())
 			{
 				this.Changed = true;
-				var elements = doc1.Root.Elements ()
-					.Concat (doc2.Root.Elements ()
-						.Where (e => other2.Contains (e.Attribute ("id").Value)))
-					.ToArray ();
-				doc1.Root.RemoveNodes ();
-				doc1.Root.Add (elements);
 			}
 			return doc1;
 		}
