@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003"
-         InitialTargets="ToolsTrace"
+         InitialTargets="ToolsTrace;ZouSetupNuget"
          TreatAsLocalProperty="ToolsTrace">
 
   <PropertyGroup Label="VisualStudio">
@@ -28,12 +28,12 @@
 
   <!-- Nuget -->
   <PropertyGroup Condition="'$(NugetPackagesDir)' == ''" >
-    <NugetPackagesDir>$(SolutionDir)packages\</NugetPackagesDir>
+    <NugetPackagesDir>$(BundleDir)packages\</NugetPackagesDir>
   </PropertyGroup>
 
-  <!--<Target Name="ZouSetupNuget" Condition="!Exists($(NugetBundleConfigFile))">
+  <Target Name="ZouSetupNuget" Condition="!Exists($(NugetBundleConfigFile))">
     <Copy SourceFiles="$(ZouDir).Templates\nuget\NuGet.config" DestinationFiles="$(BundleDir)NuGet.config" />
-  </Target>-->
+  </Target>
 
   <Target Name="ToolsTrace" Condition="'$(ZouTrace)' == 'true'">
     <Message Importance="normal" Text="Tools" />
