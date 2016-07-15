@@ -26,18 +26,29 @@
     <MFCIncludeDir>$(VCRootDir)atlmfc\include\</MFCIncludeDir>
   </PropertyGroup>
 
+  <!-- Nuget -->
+  <PropertyGroup Condition="'$(NugetPackagesDir)' == ''" >
+    <NugetPackagesDir>$(SolutionDir)packages\</NugetPackagesDir>
+  </PropertyGroup>
+
+  <!--<Target Name="ZouSetupNuget" Condition="!Exists($(NugetBundleConfigFile))">
+    <Copy SourceFiles="$(ZouDir).Templates\nuget\NuGet.config" DestinationFiles="$(BundleDir)NuGet.config" />
+  </Target>-->
+
   <Target Name="ToolsTrace" Condition="'$(ZouTrace)' == 'true'">
     <Message Importance="normal" Text="Tools" />
     <Message Importance="normal" Text="===================" />
-    <Message Importance="normal" Text="  VS120RootDir  = $(VS120RootDir)"  Condition="'$(VS120RootDir)' != ''"/>
-    <Message Importance="normal" Text="  VS140RootDir  = $(VS140RootDir)"  Condition="'$(VS140RootDir)' != ''"/>
-    <Message Importance="normal" Text=" "/>
-    <Message Importance="normal" Text="  VS120ToolsDir = $(VS120ToolsDir)" Condition="'$(VS120ToolsDir)' != ''"/>
-    <Message Importance="normal" Text="  VS140ToolsDir = $(VS140ToolsDir)" Condition="'$(VS140ToolsDir)' != ''"/>
-    <Message Importance="normal" Text=" "/>
-    <Message Importance="normal" Text="  VSRootDir     = $(VSRootDir)"     Condition="'$(VSRootDir)' != ''"/>
-    <Message Importance="normal" Text="  VSToolsDir    = $(VSToolsDir)"    Condition="'$(VSToolsDir)' != ''"/>
-    <Message Importance="normal" Text="  VCRootDir     = $(VCRootDir)"     Condition="'$(VCRootDir)' != ''"/>
-    <Message Importance="normal" Text="  MFCIncludeDir = $(MFCIncludeDir)" Condition="'$(MFCIncludeDir)' != ''"/>
+    <Message Importance="normal" Text="  VS120RootDir     = $(VS120RootDir)"     Condition="'$(VS120RootDir)' != ''"/>
+    <Message Importance="normal" Text="  VS140RootDir     = $(VS140RootDir)"     Condition="'$(VS140RootDir)' != ''"/>
+    <Message Importance="normal" Text=" "/>                                      
+    <Message Importance="normal" Text="  VS120ToolsDir    = $(VS120ToolsDir)"    Condition="'$(VS120ToolsDir)' != ''"/>
+    <Message Importance="normal" Text="  VS140ToolsDir    = $(VS140ToolsDir)"    Condition="'$(VS140ToolsDir)' != ''"/>
+    <Message Importance="normal" Text=" "/>                                      
+    <Message Importance="normal" Text="  VSRootDir        = $(VSRootDir)"        Condition="'$(VSRootDir)' != ''"/>
+    <Message Importance="normal" Text="  VSToolsDir       = $(VSToolsDir)"       Condition="'$(VSToolsDir)' != ''"/>
+    <Message Importance="normal" Text="  VCRootDir        = $(VCRootDir)"        Condition="'$(VCRootDir)' != ''"/>
+    <Message Importance="normal" Text="  MFCIncludeDir    = $(MFCIncludeDir)"    Condition="'$(MFCIncludeDir)' != ''"/>
+    <Message Importance="normal" Text=" "/>                                      
+    <Message Importance="normal" Text="  NugetPackagesDir = $(NugetPackagesDir)" Condition="'$(NugetPackagesDir)' != ''" />
   </Target>
 </Project>
