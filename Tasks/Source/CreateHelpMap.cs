@@ -175,7 +175,8 @@ namespace Epsitec.Zou
 			{
 				foreach (var valSym in valSymLookup)
 				{
-					var sym = valSym.OrderBy (_ => _).First ();
+					var syms = valSym.Except (ignore, StringComparer.OrdinalIgnoreCase).ToArray ();
+					var sym = syms.OrderBy (_ => _).First ();
 					var url = symPathLookup[sym].FirstOrDefault ()?.Replace ('\\', '/');
 
 					string mapElement;
@@ -188,9 +189,9 @@ namespace Epsitec.Zou
 						mapElement = $"{{ 0x{valSym.Key:X5}, _T(\"{url}\") }},";
 					}
 
-					if (valSym.Count () > 1)
+					if (syms.Count () > 1)
 					{
-						var values = string.Join (" and ", valSym.Select (x => $"\"{x}\""));
+						var values = string.Join (" and ", syms.Select (x => $"\"{x}\""));
 						var warning = $"topics {values} have the same ID (0x{valSym.Key:X4}), using \"{sym}\"...";
 						this.Log.LogWarning (warning);
 						yield return $"// WARNING: {warning}";
