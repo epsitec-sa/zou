@@ -17,7 +17,12 @@
     <Hhc>$(ZouBinDir)hhc.exe</Hhc>
   </PropertyGroup>
 
-  <ItemGroup>
+  <!--=========================================================================-->
+  <!-- Initialization -->
+  <!--=========================================================================-->
+
+  <ItemDefinitionGroup>
+    <HelpProject>
       <!--
         // see afxpriv.h
         // Help ID bases
@@ -28,28 +33,8 @@
         #define HID_BASE_CONTROL    0x00050000UL        // IDC
         #define HID_BASE_DISPATCH   0x00060000UL        // IDispatch help codes
       -->
-    <_HelpIdMappingRule Include="ID_,HID_,0x10000" />
-    <_HelpIdMappingRule Include="IDM_,HIDM_,0x10000" />
-    <_HelpIdMappingRule Include="IDR_,HIDR_,0x20000" />
-    <_HelpIdMappingRule Include="IDD_,HIDD_,0x20000" />
-    <_HelpIdMappingRule Include="IDP_,HIDP_,0x30000" />
-    <_HelpIdMappingRule Include="IDC_,HIDC_,0x50000" />
-    <_HelpIdMappingRule Include="IDW_,HIDW_,0x50000" />
-  </ItemGroup>
-  <PropertyGroup>
-      <_HelpIdMappingRules>@(_HelpIdMappingRule)</_HelpIdMappingRules>
-  </PropertyGroup>
-
-  <!--=========================================================================-->
-  <!-- Initialization -->
-  <!--=========================================================================-->
-
-  <ItemDefinitionGroup>
-    <HelpProject>
-      <CommandLineTemplate>
-        "$(MakeHm)" [HelpIdMappingRules] "[CppResIdsFile]" "[HelpResIdsFile]"
-      </CommandLineTemplate>
-      <HelpIdMappingRules>$(_HelpIdMappingRules)</HelpIdMappingRules>
+      <HelpIdMappingRules>ID_,HID_,0x10000;IDM_,HIDM_,0x10000;IDR_,HIDR_,0x20000;IDD_,HIDD_,0x20000;IDP_,HIDP_,0x30000;IDC_,HIDC_,0x50000;IDW_,HIDW_,0x50000</HelpIdMappingRules>
+      
       <CppResIdsFile>resource.h</CppResIdsFile>
       <HelpResIdsFile>$(IntDir)resource.hm</HelpResIdsFile>
 
