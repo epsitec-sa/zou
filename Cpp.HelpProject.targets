@@ -60,9 +60,10 @@
       <_SourceFile>@(_SourceFile)</_SourceFile>
       <_OptionsSection>$([System.Text.RegularExpressions.Regex]::Match($(_SourceFile), '(?&lt;=\[OPTIONS\])[^\[]*'))</_OptionsSection>
       <_FilesSection>$([System.Text.RegularExpressions.Regex]::Match($(_SourceFile), '(?&lt;=\[FILES\])[^\[]*'))</_FilesSection>
-      <_CompiledFile>$([System.Text.RegularExpressions.Regex]::Match($(_SourceFile), '(?&lt;=Compiled File=)[^;]*'))</_CompiledFile>
-      <_HelpIndexTopic>$([System.Text.RegularExpressions.Regex]::Match($(_OptionsSection), '(?&lt;=Default Topic=)[^;]*'))</_HelpIndexTopic>
+      <_CompiledFile>$([System.Text.RegularExpressions.Regex]::Match($(_OptionsSection.ToLower()), '(?&lt;=compiled file=)[^;]*'))</_CompiledFile>
+      <_HelpIndexTopic>$([System.Text.RegularExpressions.Regex]::Match($(_OptionsSection.ToLower()), '(?&lt;=default topic=)[^;]*'))</_HelpIndexTopic>
     </PropertyGroup>
+
     <ItemGroup>
       <HelpProject>
         <HelpIndexTopic>$(_HelpIndexTopic)</HelpIndexTopic>
