@@ -99,6 +99,8 @@
       <HelpResIdsFile Include="%(HelpProject.HelpResIdsFile)" />
       <HelpResIdsFile Include="$(MFCIncludeDir)afxhelp.hm" />
     </ItemGroup>
+    <!--<Message Importance="high" Text="HelpResIdsFile = %(HelpResIdsFile.FullPath)" />-->
+    <Message Importance="high" Text="HelpResIdsFile exists: %(HelpResIdsFile.FullPath)" Condition="Exists(%(HelpResIdsFile.FullPath))"/>
     <ReadLinesFromFile File="%(HelpResIdsFile.FullPath)" >
       <Output TaskParameter="Lines" ItemName="_SourceFile"/>
     </ReadLinesFromFile>
@@ -108,15 +110,16 @@
     </ItemGroup>
   </Target>
 
-  <Target Name="_CreateHmFile" Inputs="%(HelpProject.CppResIdsFile)" Outputs="%(HelpResIdsFile)">
+  <Target Name="_CreateRootHmFile" Inputs="%(HelpProject.CppResIdsFile)" Outputs="%(HelpResIdsFile)">
     <Delete Files="%(HelpProject.HelpResIdsFile)" />
     <PropertyGroup>
       <HelpIdMappingRules>%(HelpProject.HelpIdMappingRules)</HelpIdMappingRules>
       <HelpIdMappingRules>$(HelpIdMappingRules.Replace(';', ' '))</HelpIdMappingRules>
     </PropertyGroup>
     <Exec Command='"$(MakeHm)" $(HelpIdMappingRules) "%(HelpProject.CppResIdsFile)" &gt;&gt;"%(HelpResIdsFile)"' />
-    <CallTarget Targets="_ConcatWithMfcHmFile" Condition="'$(UseOfMfc)' != 'false' And '$(UseOfMfc)' != ''" />
   </Target>
+
+  <Target Name="_CreateHmFile" DependsOnTargets="_CreateRootHmFile;_ConcatWithMfcHmFile" Inputs="%(HelpProject.CppResIdsFile)" Outputs="%(HelpResIdsFile)" />
 
   <Target Name="_CreateCppHelpMap" DependsOnTargets="_InitHelpProject;_CreateHmFile" Inputs="%(HelpProject.HelpResIdsFile);%(HelpIgnoreTopicsFile);%(HelpSynonymTopicsFile)" Outputs="%(CppHelpIndexMapFile);%(CppHelpContextMapFile)">
     <ReadLinesFromFile File="%(HelpProject.HelpResIdsFile)">
