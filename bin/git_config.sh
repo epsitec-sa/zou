@@ -8,3 +8,4 @@ git config --global alias.spush 'push --recurse-submodules=on-demand'
 git config --global alias.sclean '!'"git clean -xdf && git submodule foreach --recursive 'git clean -xdf'"
 git config --global alias.oprune 'fetch origin --prune'
 git config --global alias.supdate 'submodule update --init --recursive'
+git config --global alias.issue '!f() { git checkout -b issue/$1 master && git push -u origin issue/$1; }; f'
