@@ -175,11 +175,25 @@ namespace Epsitec.Zou
 			{
 				foreach (var valSym in valSymLookup)
 				{
+					string sym;
 					var syms = valSym.Except (ignore, StringComparer.OrdinalIgnoreCase).ToArray ();
-					var sym = syms.OrderBy (_ => _).First ();
-					var url = symPathLookup[sym].FirstOrDefault ()?.Replace ('\\', '/');
+					if (syms.Count () > 1)
+					{
+						// favour second column of synonym table (used as a redirection table)
+						sym = syms.Where (x => synonymLookup.Contains (x)).Select (x => synonymLookup[x].Last ()).FirstOrDefault () ?? syms.Last ();
+
+						var values = string.Join (" and ", syms.Select (x => $"\"{x}\""));
+						var warning = $"topics {values} have the same ID (0x{valSym.Key:X4}), using \"{sym}\"...";
+						this.Log.LogWarning (warning);
+						yield return $"// WARNING: {warning}";
+					}
+					else
+					{
+						sym = syms.First ();
+					}
 
 					string mapElement;
+					var url = symPathLookup[sym].FirstOrDefault ()?.Replace ('\\', '/');
 					if (url == null)
 					{
 						mapElement = $"{{ 0x{valSym.Key:X5}, _T(\"\") }},	// ignore {sym}";
@@ -187,14 +201,6 @@ namespace Epsitec.Zou
 					else
 					{
 						mapElement = $"{{ 0x{valSym.Key:X5}, _T(\"{url}\") }},";
-					}
-
-					if (syms.Count () > 1)
-					{
-						var values = string.Join (" and ", syms.Select (x => $"\"{x}\""));
-						var warning = $"topics {values} have the same ID (0x{valSym.Key:X4}), using \"{sym}\"...";
-						this.Log.LogWarning (warning);
-						yield return $"// WARNING: {warning}";
 					}
 					yield return mapElement;
 				}
