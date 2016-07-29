@@ -17,7 +17,12 @@
     <Hhc>$(ZouBinDir)hhc.exe</Hhc>
   </PropertyGroup>
 
-  <ItemGroup>
+  <!--=========================================================================-->
+  <!-- Initialization -->
+  <!--=========================================================================-->
+
+  <ItemDefinitionGroup>
+    <HelpProject>
       <!--
         // see afxpriv.h
         // Help ID bases
@@ -28,28 +33,8 @@
         #define HID_BASE_CONTROL    0x00050000UL        // IDC
         #define HID_BASE_DISPATCH   0x00060000UL        // IDispatch help codes
       -->
-    <_HelpIdMappingRule Include="ID_,HID_,0x10000" />
-    <_HelpIdMappingRule Include="IDM_,HIDM_,0x10000" />
-    <_HelpIdMappingRule Include="IDR_,HIDR_,0x20000" />
-    <_HelpIdMappingRule Include="IDD_,HIDD_,0x20000" />
-    <_HelpIdMappingRule Include="IDP_,HIDP_,0x30000" />
-    <_HelpIdMappingRule Include="IDC_,HIDC_,0x50000" />
-    <_HelpIdMappingRule Include="IDW_,HIDW_,0x50000" />
-  </ItemGroup>
-  <PropertyGroup>
-      <_HelpIdMappingRules>@(_HelpIdMappingRule)</_HelpIdMappingRules>
-  </PropertyGroup>
-
-  <!--=========================================================================-->
-  <!-- Initialization -->
-  <!--=========================================================================-->
-
-  <ItemDefinitionGroup>
-    <HelpProject>
-      <CommandLineTemplate>
-        "$(MakeHm)" [HelpIdMappingRules] "[CppResIdsFile]" "[HelpResIdsFile]"
-      </CommandLineTemplate>
-      <HelpIdMappingRules>$(_HelpIdMappingRules)</HelpIdMappingRules>
+      <HelpIdMappingRules>ID_,HID_,0x10000;IDM_,HIDM_,0x10000;IDR_,HIDR_,0x20000;IDD_,HIDD_,0x20000;IDP_,HIDP_,0x30000;IDC_,HIDC_,0x50000;IDW_,HIDW_,0x50000</HelpIdMappingRules>
+      
       <CppResIdsFile>resource.h</CppResIdsFile>
       <HelpResIdsFile>$(IntDir)resource.hm</HelpResIdsFile>
 
@@ -57,7 +42,6 @@
       <HelpIgnoreTopicsFile>%(RootDir)%(Directory)..\ignoretopics.txt</HelpIgnoreTopicsFile>
       <CppHelpIndexMapFile>%(RootDir)%(Directory)..\helpindex.h</CppHelpIndexMapFile>
       <CppHelpContextMapFile>%(RootDir)%(Directory)..\helpcontext.h</CppHelpContextMapFile>
-      <HelpFile>$(OutDir)%(FileName).chm</HelpFile>
       
       <HhpTmpFile>%(RootDir)%(Directory)_zou.%(FileName)%(Extension)</HhpTmpFile>
       <HhcStdLogFile>%(RootDir)%(Directory)_errorlog.txt</HhcStdLogFile>
@@ -75,14 +59,38 @@
       <_SourceFile>@(_SourceFile)</_SourceFile>
       <_OptionsSection>$([System.Text.RegularExpressions.Regex]::Match($(_SourceFile), '(?&lt;=\[OPTIONS\])[^\[]*'))</_OptionsSection>
       <_FilesSection>$([System.Text.RegularExpressions.Regex]::Match($(_SourceFile), '(?&lt;=\[FILES\])[^\[]*'))</_FilesSection>
-      <_CompiledFile>$([System.Text.RegularExpressions.Regex]::Match($(_SourceFile), '(?&lt;=Compiled File=)[^;]*'))</_CompiledFile>
-      <_HelpIndexTopic>$([System.Text.RegularExpressions.Regex]::Match($(_OptionsSection), '(?&lt;=Default Topic=)[^;]*'))</_HelpIndexTopic>
+      <_CompiledFile>$([System.Text.RegularExpressions.Regex]::Match($(_OptionsSection.ToLower()), '(?&lt;=compiled file=)[^;]*'))</_CompiledFile>
+      <_HelpIndexTopic>$([System.Text.RegularExpressions.Regex]::Match($(_OptionsSection.ToLower()), '(?&lt;=default topic=)[^;]*'))</_HelpIndexTopic>
     </PropertyGroup>
+
     <ItemGroup>
+      <_CompiledFile Include="%(HelpProject.RootDir)%(Directory)$(_CompiledFile)" />
+    </ItemGroup>
+    
+    <PropertyGroup>
+      <_CompiledFile>%(_CompiledFile.FullPath)</_CompiledFile>
+      <_HelpFile>$(OutDir)%(_CompiledFile.Filename)%(_CompiledFile.Extension)</_HelpFile>
+    </PropertyGroup>
+
+    <!-- Be sure index topic is in files section -->
+    <ItemGroup>
+      <_Temporary Include="$(_FilesSection)" />
+      <_Temporary Remove="$(_HelpIndexTopic)" />
+      <_Temporary Include="$(_HelpIndexTopic)" />
+    </ItemGroup>
+    
+    <PropertyGroup>
+      <_FilesSection>@(_Temporary)</_FilesSection>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <_Temporary Remove="$(_Temporary)" />
+      
       <HelpProject>
         <HelpIndexTopic>$(_HelpIndexTopic)</HelpIndexTopic>
         <HelpContextTopics>$(_FilesSection)</HelpContextTopics>
-        <CompiledFile>%(RootDir)%(Directory)$(_CompiledFile)</CompiledFile>
+        <CompiledFile>$(_CompiledFile)</CompiledFile>
+        <HelpFile>$(_HelpFile)</HelpFile>
       </HelpProject>
       <_SourceFile Remove="@(_SourceFile) " />
       <_SourceFile Include="%(HelpProject.RootDir)%(Directory)**\*" Exclude="%(HelpProject.HhpTmpFile)" />
@@ -93,15 +101,17 @@
       <_SourceFile Remove="@(_SourceFile)" />
     </ItemGroup>
     
+    <!-- Clean locals -->
     <PropertyGroup>
       <_SourceFile></_SourceFile>
       <_OptionsSection></_OptionsSection>
       <_FilesSection></_FilesSection>
       <_CompiledFile></_CompiledFile>
+      <_HelpFile></_HelpFile>
       <_HelpIndexTopic></_HelpIndexTopic>
     </PropertyGroup>
 
-    <!--<LogItems Items="@(HelpProject)" AllMetaData="true"/>-->
+    <LogItems Items="@(HelpProject)" AllMetaData="true"/>
   </Target>
 
   <!--=========================================================================-->
@@ -132,21 +142,18 @@
     <CallTarget Targets="_ConcatWithMfcHmFile" Condition="'$(UseOfMfc)' != 'false' And '$(UseOfMfc)' != ''" />
   </Target>
 
-  <Target Name="_CreateCppHelpMap" DependsOnTargets="_InitHelpProject;_CreateHmFile" Inputs="%(HelpProject.HelpResIdsFile);%(HelpIgnoreTopicsFile);%(HelpSynonymTopicsFile)" Outputs="%(CppHelpIndexMapFile);%(CppHelpContextMapFile)">
+  <Target Name="_CreateCppHelpMap" DependsOnTargets="_InitHelpProject;_CreateHmFile" Inputs="%(HelpProject.HelpResIdsFile);%(HelpIgnoreTopicsFile);%(HelpSynonymTopicsFile)" Outputs="%(CppHelpContextMapFile)">
     <ReadLinesFromFile File="%(HelpProject.HelpResIdsFile)">
       <Output TaskParameter="Lines" ItemName="_HelpContextId" />
     </ReadLinesFromFile>
-    <!--<Message Importance="high" Text="_HelpContextId = %(_HelpContextId.Identity)" />-->
     
     <ReadLinesFromFile File="%(HelpProject.HelpIgnoreTopicsFile)">
       <Output TaskParameter="Lines" ItemName="_HelpIgnoreTopic" />
     </ReadLinesFromFile>
-    <!--<Message Importance="high" Text="_HelpIgnoreTopic = %(_HelpIgnoreTopic.Identity)" />-->
     
     <ReadLinesFromFile File="%(HelpProject.HelpSynonymTopicsFile)">
       <Output TaskParameter="Lines" ItemName="_HelpSynonymTopic" />
     </ReadLinesFromFile>
-    <!--<Message Importance="high" Text="_HelpSynonymTopic = %(_HelpSynonymTopic.Identity)" />-->
 
     <CreateHelpMap HelpContextIds="@(_HelpContextId)"
                    HelpIndexTopic="%(HelpProject.HelpIndexTopic)"
@@ -158,10 +165,7 @@
     </CreateHelpMap>
     
     <WriteLinesToFile File="%(HelpProject.CppHelpIndexMapFile)" Lines="@(_HelpIndexMapping)" Overwrite="true" />
-    <!--<Message Importance="high" Text="%(_HelpIndexMapping.Identity)" />-->
-
     <WriteLinesToFile File="%(HelpProject.CppHelpContextMapFile)" Lines="@(_HelpContextMapping)" Overwrite="true" />
-    <!--<Message Importance="high" Text="%(_HelpContextMapping.Identity)" />-->
 
     <ItemGroup>
       <_HelpContextId Remove="@(_HelpContextId)" />
@@ -174,7 +178,8 @@
   
   <Target Name="_DeleteHmFiles">
     <Delete Files="%(HelpProject.HelpResIdsFile)" />
-    <Delete Files="%(HelpProject.CppHelpMapFile)" />
+    <Delete Files="%(HelpProject.CppHelpIndexMapFile)" />
+    <Delete Files="%(HelpProject.CppHelpContextMapFile)" />
   </Target>
 
   <Target Name="_HmClean"   DependsOnTargets="_DeleteHmFiles" AfterTargets="Clean"/>
@@ -200,7 +205,7 @@
     <Move SourceFiles="%(HelpProject.CompiledFile)" DestinationFiles="%(HelpFile)" />
   </Target>
 
-  <Target Name="_CheckForHcError" DependsOnTargets="_HcCore" Condition="'@(HelpProject)' != ''">
+  <Target Name="_HcErrorsAndWarnings" DependsOnTargets="_HcCore" Outputs="%(HelpProject.Identity)" Condition="'@(HelpProject)' != ''">
     <!-- Parse log file for errors and convert them to MSBuild format -->
     <ReadLinesFromFile File="%(HelpProject.HhcLogFile)">
       <Output TaskParameter="Lines" ItemName="_SourceFile"/>
@@ -212,26 +217,36 @@
     <ItemGroup>
       <_SourceFile Remove="@(_SourceFile)" />
       <_HhcError Include="$([System.Text.RegularExpressions.Regex]::Matches($(_SourceFile), 'HHC\w+:\s*Error:[^;]*'))" />
+      <_HhcWarning Include="$([System.Text.RegularExpressions.Regex]::Matches($(_SourceFile), 'HHC\w+:\s*Warning:[^;]*'))" />
     </ItemGroup>
     <!-- Fix for Visual Studio -->
     <CallTarget Targets="_DeleteLastBuildState" Condition="'%(_HhcError.Identity)' != ''" />
-    <!-- -->
+    <!-- Log MSBuild errors and warnings -->
     <Error File="$(_HhpPath)"
            Condition="'%(_HhcError.Identity)' != ''"
            Code="$([System.Text.RegularExpressions.Regex]::Match(%(Identity), 'HHC[^:]+'))"
-           Text="$([System.Text.RegularExpressions.Regex]::Match(%(Identity), '(?&lt;=HHC\w+:\s*Error:\s*).*'))" />
+           Text="$([System.Text.RegularExpressions.Regex]::Match(%(Identity), '(?&lt;=HHC\w+:\s*Error:\s*).*'))"
+           ContinueOnError="ErrorAndContinue" />
+    <Warning File="$(_HhpPath)"
+           Condition="'%(_HhcWarning.Identity)' != ''"
+           Code="$([System.Text.RegularExpressions.Regex]::Match(%(Identity), 'HHC[^:]+'))"
+           Text="$([System.Text.RegularExpressions.Regex]::Match(%(Identity), '(?&lt;=HHC\w+:\s*Warning:\s*).*'))" />
 
     <PropertyGroup>
       <_SourceFile></_SourceFile>
       <_HhpPath></_HhpPath>
     </PropertyGroup>
+    <ItemGroup>
+      <_HhcError Remove="@(_HhcError)" />
+      <_HhcWarning Remove="@(_HhcWarning)" />
+    </ItemGroup>
   </Target>
 
-  <Target Name="_DeleteHhcFiles">
+  <Target Name="_DeleteHhcFiles" DependsOnTargets="_InitHelpProject">
     <Delete Files="%(HelpProject.HhpTmpFile);%(HelpFile);%(HhcStdLogFile);%(HhcLogFile)" />
   </Target>
 
   <Target Name="_HcClean"   DependsOnTargets="_DeleteHhcFiles" AfterTargets="Clean" />
-  <Target Name="_HcBuild"   DependsOnTargets="_HcInit;_HcCore;_CheckForHcError" AfterTargets="Build" Condition="'@(HelpProject)' != ''"/>
+  <Target Name="_HcBuild"   DependsOnTargets="_HcInit;_HcCore;_HcErrorsAndWarnings" AfterTargets="Build" Condition="'@(HelpProject)' != ''"/>
   <Target Name="_HcRebuild" DependsOnTargets="_HcClean;_HcBuild" />
 </Project>
