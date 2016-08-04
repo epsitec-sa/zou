@@ -13,6 +13,7 @@ Layout:
   lib2\resouce.h                              +%(HelpProject.ResourceHeaderFiles)
   
   lib0\help\                                  $(ProjectDir)
+    lib0.help.vcxproj                         $(ProjectPath)
     ignoretopics.txt                          %(HelpProject.IgnoreTopicsFile)
     synonymtopics.txt                         %(HelpProject.SynonymTopicsFile)
     fr\
@@ -46,7 +47,7 @@ Layout:
 Dependencies:
 =============
 
-lib0\help\fr\lib0.fr.hhp: $(ProjectPath)
+lib0\help\fr\lib0.fr.hhp: lib0.help.vcxproj
   _UpdateHelpProject
   
 $(IntDir)\lib0.xx.hm: lib1\resource.h[, lib2\resource.h][, afxres.hm]
@@ -90,7 +91,7 @@ lib0\help\helpmap.cpp: {$(IntDir)\lib0.xx.cpp}
   <!--=========================================================================-->
 
   <!-- Ensure following files appear in VS solution explorer -->
-  <ItemGroup>
+  <ItemGroup Condition="'@(HelpProject)' != ''">
     <!--<ClCompile Include="helpmap.cpp" Condition="'@(ClCompile)' == '' Or !@(ClCompile->AnyHaveMetadataValue('Identity', 'helpmap.cpp'))">
       <PrecompiledHeader>Use</PrecompiledHeader>
     </ClCompile>-->
@@ -100,6 +101,18 @@ lib0\help\helpmap.cpp: {$(IntDir)\lib0.xx.cpp}
     <ClInclude Include="helpmap.h" Condition="'@(ClInclude)' == '' Or !@(ClInclude->AnyHaveMetadataValue('Identity', 'helpmap.h'))" />
     <ClInclude Include="Stdafx.h"  Condition="'@(ClInclude)' == '' Or !@(ClInclude->AnyHaveMetadataValue('Identity', 'Stdafx.h'))" />
   </ItemGroup>
+
+  <ItemGroup Condition="'@(HelpProject)' != ''">
+    <HelpProjectCppTemplate Include="$(ZouDir).Templates\cpp\Stdafx.h" />
+    <HelpProjectCppTemplate Include="$(ZouDir).Templates\cpp\Stdafx.cpp" />
+    <HelpProjectCppTemplate Include="$(ZouDir).Templates\help\helpmap.h" />
+    <HelpProjectCppTemplate Include="$(ZouDir).Templates\help\helpmap.cpp" />
+  </ItemGroup>
+  
+  <Target Name="_UpdateHelpProjectCppTemplates" Inputs="%(HelpProjectCppTemplate.Identity)" Outputs="%(Filename)%(Extension)">
+    <Copy SourceFiles="%(HelpProjectCppTemplate.Identity)" DestinationFiles="%(Filename)%(Extension)" />
+    <Touch Files="@(HelpProject)" />
+  </Target>
 
   <!--=========================================================================-->
   <!-- Metadata Initialization -->
@@ -396,7 +409,7 @@ lib0\help\helpmap.cpp: {$(IntDir)\lib0.xx.cpp}
   </Target>
 
   <Target Name="_CreateHelpMapCpp" DependsOnTargets="_CreateHelpMapCultureCpp"
-          Inputs="@(HelpProject->'%(HelpMapCppFile)')"
+          Inputs="@(HelpProject->'%(HelpMapCppFile)');$(ZouDir).Templates\help\helpmap.h;$(ZouDir).Templates\help\helpmap.cpp;$(ZouDir).Templates\help\helpmap.culture.cpp"
           Outputs="$(HelpMapCppFile)">
     <Copy SourceFiles="$(HelpMapCppTemplate)" DestinationFiles="$(HelpMapCppFile)" OverwriteReadOnlyFiles="true" />
     <ItemGroup>
@@ -416,12 +429,6 @@ lib0\help\helpmap.cpp: {$(IntDir)\lib0.xx.cpp}
       <_HelpMapCpp Remove="@(_HelpMapCpp)" />
     </ItemGroup>
   </Target>
-
-  <Target Name="_CopyHelpProjectTemplates">
-    <Copy SourceFiles="$(ZouDir).Templates\cpp\Stdafx.h" DestinationFiles="Stdafx.h" Condition="!Exists('Stdafx.h')" />
-    <Copy SourceFiles="$(ZouDir).Templates\cpp\Stdafx.cpp" DestinationFiles="Stdafx.cpp" Condition="!Exists('Stdafx.cpp')" />
-    <Copy SourceFiles="$(ZouDir).Templates\help\helpmap.h" DestinationFiles="helpmap.h" Condition="!Exists('helpmap.h')" />
-  </Target>
   
   <Target Name="_HmCleanCore">
     <Touch  Files="%(HelpProject.Identity)" Time="01.01.2016" />
@@ -431,7 +438,7 @@ lib0\help\helpmap.cpp: {$(IntDir)\lib0.xx.cpp}
   </Target>
 
   <Target Name="_HmClean"   DependsOnTargets="_HmCleanCore" AfterTargets="Clean" />
-  <Target Name="_HmBuild"   DependsOnTargets="_UpdateHelpProject;_CreateHelpMapCpp;_CopyHelpProjectTemplates" BeforeTargets="ClCompile" Condition="'@(HelpProject)' != ''"/>
+  <Target Name="_HmBuild"   DependsOnTargets="_UpdateHelpProject;_CreateHelpMapCpp;_UpdateHelpProjectCppTemplates" BeforeTargets="ClCompile" Condition="'@(HelpProject)' != ''"/>
   <Target Name="_HmRebuild" DependsOnTargets="_HmClean;_HmBuild"/>
 
   <!--=========================================================================-->
