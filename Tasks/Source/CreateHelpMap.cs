@@ -175,15 +175,7 @@ namespace Epsitec.Zou
 				{
 					string sym;
 					var syms = valSym.Except (ignore, StringComparer.OrdinalIgnoreCase).ToArray ();
-					if (syms.Length == 0)
-					{
-						continue;
-					}
-					else if (syms.Length == 1)
-					{
-						sym = syms.First ();
-					}
-					else
+					if (syms.Length > 1)
 					{
 						// favour second column of synonym table (used as a redirection table)
 						sym = syms.Where (x => synonymLookup.Contains (x)).Select (x => synonymLookup[x].Last ()).FirstOrDefault () ?? syms.Last ();
@@ -193,12 +185,16 @@ namespace Epsitec.Zou
 						this.Log.LogWarning (warning);
 						yield return $"// WARNING: {warning}";
 					}
+					else
+					{
+						sym = syms.FirstOrDefault ();
+					}
 
 					string mapElement;
-					var url = symPathLookup[sym].FirstOrDefault ()?.Replace ('\\', '/');
+					var url = sym == null ? null : symPathLookup[sym].FirstOrDefault ()?.Replace ('\\', '/');
 					if (url == null)
 					{
-						mapElement = $"{{ 0x{valSym.Key:X5}, _T(\"\") }},	// ignore {sym}";
+						mapElement = $"{{ 0x{valSym.Key:X5}, _T(\"\") }},	// ignore {valSym.First ()}";
 					}
 					else
 					{
