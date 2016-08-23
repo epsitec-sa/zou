@@ -307,7 +307,7 @@ lib0\help\helpmap.cpp: {$(IntDir)\lib0.xx.cpp}
 
     <PropertyGroup>
       <_HelpTopics>%(HelpProject.Topics)</_HelpTopics>
-      <_HelpTopics>%0A$(_HelpTopics.Replace(';', '%0A'))</_HelpTopics>
+      <_HelpTopics>%0D%0A$(_HelpTopics.Replace(';', '%0D%0A'))</_HelpTopics>
     </PropertyGroup>
 
     <FileUpdate Files="%(HelpProject.Identity)"
@@ -384,9 +384,9 @@ lib0\help\helpmap.cpp: {$(IntDir)\lib0.xx.cpp}
 
     <PropertyGroup>
       <_HelpCppIndexMappings>@(_HelpCppIndexMapping)</_HelpCppIndexMappings>
-      <_HelpCppIndexMappings>$(_HelpCppIndexMappings.Replace(';', '%0A          '))</_HelpCppIndexMappings>
+      <_HelpCppIndexMappings>$(_HelpCppIndexMappings.Replace(';', '%0D%0A          '))</_HelpCppIndexMappings>
       <_HelpCppContextMappings>@(_HelpCppContextMapping)</_HelpCppContextMappings>
-      <_HelpCppContextMappings>$(_HelpCppContextMappings.Replace(';', '%0A          '))</_HelpCppContextMappings>
+      <_HelpCppContextMappings>$(_HelpCppContextMappings.Replace(';', '%0D%0A          '))</_HelpCppContextMappings>
     </PropertyGroup>
     
     <Copy SourceFiles="$(HelpMapCultureCppTemplate)" DestinationFiles="%(HelpProject.HelpMapCppFile)" />
@@ -421,7 +421,7 @@ lib0\help\helpmap.cpp: {$(IntDir)\lib0.xx.cpp}
     </ItemGroup>
     <PropertyGroup>
       <_HelpMapping>@(_HelpMapCpp->'%(Content)')</_HelpMapping>
-      <_HelpMapping>$(_HelpMapping.Replace(';', '%0A'))</_HelpMapping>
+      <_HelpMapping>$(_HelpMapping.Replace(';', '%0D%0A'))</_HelpMapping>
     </PropertyGroup>
     
     <FileUpdate Files="$(HelpMapCppFile)" Regex='##CULTURES' ReplacementText="$(_HelpMapping)" />
