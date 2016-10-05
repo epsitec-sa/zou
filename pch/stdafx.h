@@ -20,14 +20,8 @@
 // désactive le masquage MFC de certains messages d'avertissement courants et par ailleurs souvent ignorés
 #define _AFX_ALL_WARNINGS
 
-//	For details about MFC static linking
-//	http://blogs.msdn.com/b/vcblog/archive/2012/02/06/10263387.aspx
-//  WARNING: all static libraries linked together should [un]define the following macro to avoid link errors
-#define _AFX_NO_MFC_CONTROLS_IN_DIALOGS         // remove support for MFC controls in dialogs
-
 #include <afxwin.h>         // MFC core and standard components
 #include <afxext.h>         // MFC extensions
-
 #include <afxdisp.h>        // MFC Automation
 
 #ifndef _AFX_NO_OLE_SUPPORT
