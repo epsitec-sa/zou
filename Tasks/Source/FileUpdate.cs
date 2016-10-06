@@ -153,6 +153,11 @@ namespace Epsitec.Zou
 		[Output]
 		public bool			AllItemsUpdated { get; set; } = true;
 		/// <summary>
+		/// Returns true if file changed, else false
+		/// </summary>
+		[Output]
+		public bool			Changed { get; set; }
+		/// <summary>
 		/// When overridden in a derived class, executes the task.
 		/// </summary>
 		/// <returns>
@@ -217,15 +222,17 @@ namespace Epsitec.Zou
 						}
 					}
 
-					buffer = replaceRegex.Replace (buffer, this.ReplacementText, this.ReplacementCount);
-
-					if (this.useDefaultEncoding)
+					var outputBuffer = replaceRegex.Replace (buffer, this.ReplacementText, this.ReplacementCount);
+					if (this.Changed = outputBuffer != buffer)
 					{
-						File.WriteAllText (fileName, buffer);
-					}
-					else
-					{
-						File.WriteAllText (fileName, buffer, this.encoding);
+						if (this.useDefaultEncoding)
+						{
+							File.WriteAllText (fileName, outputBuffer);
+						}
+						else
+						{
+							File.WriteAllText (fileName, outputBuffer, this.encoding);
+						}
 					}
 				}
 

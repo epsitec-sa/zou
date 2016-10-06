@@ -3,12 +3,15 @@
 This script can be imported anywhere before first MS import (Microsoft.Cpp.Default.props).
 -->
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003"
-         InitialTargets="ZouTrace"
+         InitialTargets="ZouTraceMSBuild;ZouTrace"
          TreatAsLocalProperty="ZouTrace">
 
   <PropertyGroup>
     <!-- Configuration sub-directory -->
     <_ZouCfgSubdir>zou.cfg\</_ZouCfgSubdir>
+    <!-- Enable ZouTrace and ZouTraceMSBuild if the command 'msbuild zou.props' is executed -->
+    <ZouTrace Condition="'$(ZouTrace)' == '' And '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">true</ZouTrace>
+    <ZouTraceMSBuild Condition="'$(ZouTraceMSBuild)' == '' And '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">true</ZouTraceMSBuild>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -59,7 +62,7 @@ This script can be imported anywhere before first MS import (Microsoft.Cpp.Defau
   <PropertyGroup Condition="'$(ZouBundleDir)' == ''" >
     <ZouBundleDir>$(BundleDir)$(_ZouCfgSubdir)</ZouBundleDir>
   </PropertyGroup>
-
+  
   <!-- Project properties -->
   <PropertyGroup Condition="'$(ZouProjectDir)' == ''" >
     <ZouProjectDir>$(MSBuildProjectDirectory)\$(_ZouCfgSubdir)</ZouProjectDir>
@@ -110,6 +113,8 @@ This script can be imported anywhere before first MS import (Microsoft.Cpp.Defau
     <PlatformToolsetSpecified Condition=" '$(PlatformToolset)' != '' And '$(PlatformToolsetSpecified)' == '' ">true</PlatformToolsetSpecified>
   </PropertyGroup>
 
+  <Import Project="Tools.props" />
+  
   <Target Name="ZouTraceMSBuild" Condition="'$(ZouTraceMSBuild)' == 'true'">
     <Message Importance="normal" Text="MSBuild properties" />
     <Message Importance="normal" Text="==================" />

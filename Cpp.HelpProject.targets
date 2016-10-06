@@ -1,0 +1,514 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!--
+Layout:
+=======
+
+  zou\
+    .Templates\
+      help\
+        helpmap.cpp                           $(HelpMapCppTemplate)
+        helpmap.culture.cpp                   $(HelpMapCultureCppTemplate)
+        
+  lib1\resource.h                             +%(HelpProject.ResourceHeaderFiles)
+  lib2\resouce.h                              +%(HelpProject.ResourceHeaderFiles)
+  
+  lib0\help\                                  $(ProjectDir)
+    lib0.help.vcxproj                         $(ProjectPath)
+    ignoretopics.txt                          %(HelpProject.IgnoreTopicsFile)
+    synonymtopics.txt                         %(HelpProject.SynonymTopicsFile)
+    fr\
+      lib0.fr.hhp:                            %(HelpProject.Identity)
+        [OPTIONS]
+        Compiled File=lib0.fr.chm             %(HelpProject.CompiledFile)
+        Default Topic=html\overview.htm       %(HelpProject.DefaultTopic)
+        [FILES}
+        html/topic1.htm                       +%(HelpProject.Topics)
+        html/topic2.htm                       +%(HelpProject.Topics)
+      html/
+        topic1.htm
+        topic2.htm
+    de\
+      lib0.de.hhp                             %(HelpProject.Identity)
+      html\
+        topic1.htm
+        topic2.htm
+        
+    helpmap.cpp:                              [out] $(HelpMapCppFile)
+      
+    $(IntDir)\
+      lib0.fr.hm                              [out] %(HelpProject.HmFile)
+      lib0.de.hm                              [out] %(HelpProject.HmFile)
+      lib0.fr.cpp                             [out] %(HelpProject.HelpMapCppFile)
+      lib0.de.cpp                             [out] %(HelpProject.HelpMapCppFile)
+    $(OutDir)\
+      lib0.fr.chm                             [out] %(HelpProject.OutputFile)
+      lib0.de.chm                             [out] %(HelpProject.OutputFile)
+ 
+Dependencies:
+=============
+
+lib0\help\fr\lib0.fr.hhp: lib0.help.vcxproj
+  _UpdateHelpProject
+  
+$(IntDir)\lib0.xx.hm: lib1\resource.h[, lib2\resource.h][, afxres.hm]
+  _CreateHmFiles
+
+$(IntDir)\lib0.xx.cpp: $(IntDir)\lib0.xx.hm, lib0\help\ignoretopics.txt, lib0\help\synonymtopics.txt
+  _CreateHelpMapCultureCpp
+  
+lib0\help\helpmap.cpp: {$(IntDir)\lib0.xx.cpp}
+  _CreateHelpMapCpp
+  
+-->
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <!-- Help Project Property Page -->
+    <PropertyPageSchema Include="$(MSBuildThisFileDirectory)Cpp.HelpProject.xml" />
+    <AvailableItemName Include="HelpProject">
+      <Targets>_HcBuild</Targets>
+    </AvailableItemName>
+    <!-- Help Topic Property Page -->
+    <PropertyPageSchema Include="$(MSBuildThisFileDirectory)Cpp.HelpTopic.xml" />
+    <AvailableItemName Include="HelpTopic">
+	  <!-- TODO: implement (topic preprocessing?) -->
+      <Targets>_HelpTopicBuild</Targets>
+    </AvailableItemName>
+  </ItemGroup>
+
+  <!--=========================================================================-->
+  <!-- Constants -->
+  <!--=========================================================================-->
+
+  <PropertyGroup>
+    <MakeHm>$(VsToolsDir)makehm.exe</MakeHm>
+    <Hhc>$(ZouBinDir)hhc.exe</Hhc>
+    <HelpMapCppFile>helpmap.cpp</HelpMapCppFile>
+    <HelpMapCppTemplate>$(ZouDir).Templates\help\helpmap.cpp</HelpMapCppTemplate>
+    <HelpMapCultureCppTemplate>$(ZouDir).Templates\help\helpmap.culture.cpp</HelpMapCultureCppTemplate>
+  </PropertyGroup>
+
+  <!--=========================================================================-->
+  <!-- Library Files -->
+  <!--=========================================================================-->
+
+  <!-- Ensure following files appear in VS solution explorer -->
+  <ItemGroup Condition="'@(HelpProject)' != ''">
+    <!--<ClCompile Include="helpmap.cpp" Condition="'@(ClCompile)' == '' Or !@(ClCompile->AnyHaveMetadataValue('Identity', 'helpmap.cpp'))">
+      <PrecompiledHeader>Use</PrecompiledHeader>
+    </ClCompile>-->
+    <ClCompile Include="Stdafx.cpp" Condition="'@(ClCompile)' == '' Or !@(ClCompile->AnyHaveMetadataValue('Identity', 'Stdafx.cpp'))">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+    </ClCompile>
+    <ClInclude Include="helpmap.h" Condition="'@(ClInclude)' == '' Or !@(ClInclude->AnyHaveMetadataValue('Identity', 'helpmap.h'))" />
+    <ClInclude Include="Stdafx.h"  Condition="'@(ClInclude)' == '' Or !@(ClInclude->AnyHaveMetadataValue('Identity', 'Stdafx.h'))" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'@(HelpProject)' != ''">
+    <HelpProjectCppTemplate Include="$(ZouDir).Templates\cpp\Stdafx.h" />
+    <HelpProjectCppTemplate Include="$(ZouDir).Templates\cpp\Stdafx.cpp" />
+    <HelpProjectCppTemplate Include="$(ZouDir).Templates\help\helpmap.h" />
+    <HelpProjectCppTemplate Include="$(ZouDir).Templates\help\helpmap.cpp" />
+  </ItemGroup>
+  
+  <Target Name="_UpdateHelpProjectCppTemplates" Inputs="%(HelpProjectCppTemplate.Identity)" Outputs="%(Filename)%(Extension)">
+    <Copy SourceFiles="%(HelpProjectCppTemplate.Identity)" DestinationFiles="%(Filename)%(Extension)" />
+    <Touch Files="@(HelpProject)" />
+  </Target>
+
+  <!--=========================================================================-->
+  <!-- Metadata Initialization -->
+  <!--=========================================================================-->
+
+  <ItemDefinitionGroup>
+    <HelpProject>
+      <!--
+        // see afxpriv.h
+        // Help ID bases
+        #define HID_BASE_COMMAND    0x00010000UL        // ID and IDM
+        #define HID_BASE_RESOURCE   0x00020000UL        // IDR and IDD
+        #define HID_BASE_PROMPT     0x00030000UL        // IDP
+        #define HID_BASE_NCAREAS    0x00040000UL
+        #define HID_BASE_CONTROL    0x00050000UL        // IDC
+        #define HID_BASE_DISPATCH   0x00060000UL        // IDispatch help codes
+      -->
+      <HelpIdMappingRules>ID_,HID_,0x10000;IDM_,HIDM_,0x10000;IDR_,HIDR_,0x20000;IDD_,HIDD_,0x20000;IDP_,HIDP_,0x30000;IDC_,HIDC_,0x50000;IDW_,HIDW_,0x50000</HelpIdMappingRules>
+      
+      <HmFile>$(IntDir)%(FileName).hm</HmFile>
+      <HelpMapCppFile>$(IntDir)%(FileName).cpp</HelpMapCppFile>
+      <ResourceHeaderFiles>..\resource.h</ResourceHeaderFiles>
+      <IgnoreTopicsFile>ignoretopics.txt</IgnoreTopicsFile>
+      <SynonymTopicsFile>synonymtopics.txt</SynonymTopicsFile>
+
+      <HhpTmpFile>%(RootDir)%(Directory)zou.%(FileName)%(Extension)</HhpTmpFile>
+      <HhcLogFile>$(IntDir)%(FileName).hhc.log</HhcLogFile>
+      <ExcludedFromBuild>false</ExcludedFromBuild>
+    </HelpProject>
+  </ItemDefinitionGroup>
+
+  <Target Name="_RemoveExcludedHelpProjects">
+    <ItemGroup>
+      <_ExcludedFromBuild Include="%(HelpProject.Identity)" Condition="'%(ExcludedFromBuild)' == 'true'" />
+      <HelpProject Remove="@(_ExcludedFromBuild)" />
+      <_ExcludedFromBuild Remove="@(_ExcludedFromBuild)" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="_AssignHelpItemsCulture">
+    <ItemGroup>
+      <HelpTopic>
+        <Culture>$([System.String]::new('%(Identity)').Substring(0, 2))</Culture>
+      </HelpTopic>
+      <Image>
+        <Culture>$([System.String]::new('%(Identity)').Substring(0, 2))</Culture>
+      </Image>
+    </ItemGroup>
+    <!--<Message Importance="high" Text="HelpTopic = %(HelpTopic.Culture) - %(Identity)" />-->
+    <!--<Message Importance="high" Text="Image = %(Image.Culture) - %(Identity)" />-->
+  </Target>
+
+  <Target Name="_AssignHelpProjectCulture">
+    <AssignCulture Files="@(HelpProject)">
+      <Output TaskParameter="AssignedFilesWithCulture" ItemName="HelpProjectWithCulture" />
+    </AssignCulture>
+
+    <ItemGroup>
+      <HelpProject Remove="@(HelpProjectWithCulture)" />
+      <HelpProject Include="@(HelpProjectWithCulture)" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="_AssignHelpProjectOptions" Outputs="%(HelpProject.Identity)" Condition="'@(HelpProject)' != ''">
+    
+    <ReadLinesFromFile File="%(HelpProject.FullPath)">
+      <Output TaskParameter="Lines" ItemName="_SourceFile" />
+    </ReadLinesFromFile>
+
+    <PropertyGroup>
+      <_SourceFile>@(_SourceFile)</_SourceFile>
+      <_HelpOptionsSection>$([System.Text.RegularExpressions.Regex]::Match($(_SourceFile), '(?&lt;=\[OPTIONS\])[^\[]*'))</_HelpOptionsSection>
+      <_HelpCompiledFile>$([System.Text.RegularExpressions.Regex]::Match($(_HelpOptionsSection.ToLower()), '(?&lt;=compiled file=)[^;]*'))</_HelpCompiledFile>
+      <_HelpContentsFile>$([System.Text.RegularExpressions.Regex]::Match($(_HelpOptionsSection.ToLower()), '(?&lt;=contents file=)[^;]*'))</_HelpContentsFile>
+      <_HelpDefaultTopic>$([System.Text.RegularExpressions.Regex]::Match($(_HelpOptionsSection.ToLower()), '(?&lt;=default topic=)[^;]*'))</_HelpDefaultTopic>
+      <_HelpStopListFile>$([System.Text.RegularExpressions.Regex]::Match($(_HelpOptionsSection.ToLower()), '(?&lt;=full text search stop list file=)[^;]*'))</_HelpStopListFile>
+      <_HelpIndexFile>$([System.Text.RegularExpressions.Regex]::Match($(_HelpOptionsSection.ToLower()), '(?&lt;=index file=)[^;]*'))</_HelpIndexFile>
+      <_HelpErrorLogFile>$([System.Text.RegularExpressions.Regex]::Match($(_HelpOptionsSection.ToLower()), '(?&lt;=error log file=)[^;]*'))</_HelpErrorLogFile>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <_SourceFile Remove="@(_SourceFile) " />
+      <_HelpCompiledFile Include="%(HelpProject.RootDir)%(Directory)$(_HelpCompiledFile)" />
+    </ItemGroup>
+
+    <PropertyGroup>
+      <_HelpCompiledFile>%(_HelpCompiledFile.FullPath)</_HelpCompiledFile>
+      <_HelpOutputFile>$(OutDir)%(_HelpCompiledFile.Filename)%(Extension)</_HelpOutputFile>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <HelpProject>
+        <CompiledFile>$(_HelpCompiledFile)</CompiledFile>
+        <ContentsFile>$(_HelpContentsFile)</ContentsFile>
+        <DefaultTopic>$(_HelpDefaultTopic)</DefaultTopic>
+        <StopListFile>$(_HelpStopListFile)</StopListFile>
+        <IndexFile>$(_HelpIndexFile)</IndexFile>
+        <ErrorLogFile>$(_HelpErrorLogFile)</ErrorLogFile>
+        <OutputFile>$(_HelpOutputFile)</OutputFile>
+      </HelpProject>
+    </ItemGroup>
+
+    <!-- Clean locals -->
+    <PropertyGroup>
+      <_SourceFile></_SourceFile>
+      <_HelpOptionsSection></_HelpOptionsSection>
+      <_HelpCompiledFile></_HelpCompiledFile>
+      <_HelpContentsFile></_HelpContentsFile>
+      <_HelpDefaultTopic></_HelpDefaultTopic>
+      <_HelpStopListFile></_HelpStopListFile>
+      <_HelpIndexFile></_HelpIndexFile>
+      <_HelpErrorLogFile></_HelpErrorLogFile>
+      <_HelpOutputFile></_HelpOutputFile>
+    </PropertyGroup>
+  </Target>
+  
+  <Target Name="_AssignHelpProjectItems" DependsOnTargets="_AssignHelpProjectCulture;_AssignHelpItemsCulture"
+          Returns="%(HelpProject.Culture)">
+    
+    <PropertyGroup>
+      <_HelpProjectCulture>%(HelpProject.Culture)</_HelpProjectCulture>
+      <_HelpProjectDirectory>%(HelpProject.RootDir)%(Directory)</_HelpProjectDirectory>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <_HelpTopic Include="@(HelpTopic)" Condition="'%(HelpTopic.Culture)' == '$(_HelpProjectCulture)'" />
+      <_HelpTopic>
+        <ProjectRelativePath>$([MSBuild]::MakeRelative($(_HelpProjectDirectory), %(RootDir)%(Directory)))</ProjectRelativePath>
+      </_HelpTopic>
+      
+      <_HelpImage Include="@(Image)" Condition="'%(Image.Culture)' == '$(_HelpProjectCulture)'" />
+      <_HelpImage>
+        <ProjectRelativePath>$([MSBuild]::MakeRelative($(_HelpProjectDirectory), %(RootDir)%(Directory)))</ProjectRelativePath>
+      </_HelpImage>
+    </ItemGroup>
+    <PropertyGroup>
+      <_HelpTopics>@(_HelpTopic->'%(ProjectRelativePath)%(Filename)%(Extension)')</_HelpTopics>
+      <_HelpImages>@(_HelpImage->'%(ProjectRelativePath)%(Filename)%(Extension)')</_HelpImages>
+    </PropertyGroup>
+    
+    <ItemGroup>
+      <HelpProject>
+        <Topics>$(_HelpTopics)</Topics>
+        <Images>$(_HelpImages)</Images>
+      </HelpProject>
+    </ItemGroup>
+
+    <!-- Clean locals -->
+    <ItemGroup>
+      <_HelpTopic Remove="@(_HelpTopic)" />
+      <_HelpImage Remove="@(_HelpImage)" />
+    </ItemGroup>
+    <PropertyGroup>
+      <_HelpTopics></_HelpTopics>
+      <_HelpImages></_HelpImages>
+    </PropertyGroup>
+  </Target>
+
+  <Target Name="_AssignHelpProjectHmFiles">
+    <ItemGroup>
+      <_HmFile Include="$(MFCIncludeDir)afxhelp.hm" Condition="'$(UseOfMfc)' != 'false' And '$(UseOfMfc)' != ''" />
+      <HelpProject>
+        <AdditionalHmFiles>@(_HmFile)</AdditionalHmFiles>
+      </HelpProject>
+      <_HmFile Remove="@(_HmFile)" />
+    </ItemGroup>
+  </Target>
+  
+  <Target Name="_AssignHelpProjectSourceFiles" Returns="%(HelpProject.Identity)">
+
+    <ItemGroup>
+      <_SourceFile Include="%(HelpProject.RootDir)%(Directory)**\*" Exclude="%(HelpProject.HhpTmpFile)" />
+      <_SourceFile Include="%(HelpProject.FullPath)" KeepDuplicates="false" />
+      <HelpProject>
+        <SourceFiles>@(_SourceFile)</SourceFiles>
+      </HelpProject>
+      <_SourceFile Remove="@(_SourceFile)" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="_InitHelpProject" DependsOnTargets="_RemoveExcludedHelpProjects;_AssignHelpProjectOptions;_AssignHelpProjectItems;_AssignHelpProjectHmFiles">
+    <!--<LogItems Items="@(HelpProject)" />-->
+  </Target>
+
+  <!--=========================================================================-->
+  <!-- Help Project Update -->
+  <!--=========================================================================-->
+  
+  <Target Name="_UpdateHelpProject" DependsOnTargets="_InitHelpProject"
+          Inputs="$(ProjectPath)" Outputs="%(HelpProject.Identity)">
+
+    <PropertyGroup>
+      <_HelpTopics>%(HelpProject.Topics)</_HelpTopics>
+      <_HelpTopics>%0D%0A$(_HelpTopics.Replace(';', '%0D%0A'))</_HelpTopics>
+    </PropertyGroup>
+
+    <FileUpdate Files="%(HelpProject.Identity)"
+                Regex='(?&lt;=\[FILES\])[^\[]*'
+                ReplacementText="$(_HelpTopics)"
+                Multiline="true"
+                IgnoreCase="true"
+                Encoding="windows-1252" />
+    
+    <PropertyGroup>
+      <_HelpTopics></_HelpTopics>
+    </PropertyGroup>
+  </Target>
+  
+  <!--=========================================================================-->
+  <!-- C/C++ Help Map -->
+  <!--=========================================================================-->
+  
+  <Target Name="_CreateHmFiles" DependsOnTargets="_InitHelpProject"
+          Inputs="%(HelpProject.ResourceHeaderFiles);%(AdditionalHmFiles)"
+          Outputs="%(HmFile)">
+    
+    <PropertyGroup>
+      <_HelpIdMappingRules>%(HelpProject.HelpIdMappingRules)</_HelpIdMappingRules>
+      <_HelpIdMappingRules>$(_HelpIdMappingRules.Replace(';', ' '))</_HelpIdMappingRules>
+    </PropertyGroup>
+    <ItemGroup>
+      <_HelpMapSource Include="%(HelpProject.ResourceHeaderFiles)">
+        <OutputFile>%(HelpProject.HmFile)</OutputFile>
+      </_HelpMapSource>
+    </ItemGroup>
+    <Exec Command='"$(MakeHm)" $(_HelpIdMappingRules) "%(_HelpMapSource.Identity)" &gt;&gt;"%(OutputFile)"' />
+
+    <ItemGroup>
+      <_HmFile Include="%(HelpProject.HmFile)" />
+      <_HmFile Include="%(HelpProject.AdditionalHmFiles)" />
+    </ItemGroup>
+    <ReadLinesFromFile File="%(_HmFile.FullPath)" >
+      <Output TaskParameter="Lines" ItemName="_SourceFile"/>
+    </ReadLinesFromFile>
+    <WriteLinesToFile File="%(HelpProject.HmFile)" Lines="@(_SourceFile)" Overwrite="true"/>
+    <ItemGroup>
+      <_SourceFile Remove="@(_SourceFile)" />
+    </ItemGroup>
+    <PropertyGroup>
+      <_HelpIdMappingRules></_HelpIdMappingRules>
+    </PropertyGroup>
+  </Target>
+  
+  <Target Name="_CreateHelpMapCultureCpp" DependsOnTargets="_InitHelpProject;_CreateHmFiles"
+          Inputs="%(HelpProject.HmFile);%(IgnoreTopicsFile);%(SynonymTopicsFile)"
+          Outputs="%(HelpMapCppFile)">
+    
+    <ReadLinesFromFile File="%(HelpProject.HmFile)">
+      <Output TaskParameter="Lines" ItemName="_HelpTopicIdValue" />
+    </ReadLinesFromFile>
+
+    <ReadLinesFromFile File="%(HelpProject.IgnoreTopicsFile)">
+      <Output TaskParameter="Lines" ItemName="_HelpIgnoreTopicId" />
+    </ReadLinesFromFile>
+
+    <ReadLinesFromFile File="%(HelpProject.SynonymTopicsFile)">
+      <Output TaskParameter="Lines" ItemName="_HelpSynonymTopicId" />
+    </ReadLinesFromFile>
+
+    <CreateHelpMap TopicIdValues="@(_HelpTopicIdValue)"
+                   DefaultTopicUri="%(HelpProject.DefaultTopic)"
+                   TopicUris="%(HelpProject.Topics)"
+                   IgnoreTopicIds="@(_HelpIgnoreTopicId)"
+                   SynonymTopicIds="@(_HelpSynonymTopicId)">
+      <Output TaskParameter="IndexMappings"   ItemName="_HelpCppIndexMapping" />
+      <Output TaskParameter="ContextMappings" ItemName="_HelpCppContextMapping" />
+    </CreateHelpMap>
+
+    <PropertyGroup>
+      <_HelpCppIndexMappings>@(_HelpCppIndexMapping)</_HelpCppIndexMappings>
+      <_HelpCppIndexMappings>$(_HelpCppIndexMappings.Replace(';', '%0D%0A          '))</_HelpCppIndexMappings>
+      <_HelpCppContextMappings>@(_HelpCppContextMapping)</_HelpCppContextMappings>
+      <_HelpCppContextMappings>$(_HelpCppContextMappings.Replace(';', '%0D%0A          '))</_HelpCppContextMappings>
+    </PropertyGroup>
+    
+    <Copy SourceFiles="$(HelpMapCultureCppTemplate)" DestinationFiles="%(HelpProject.HelpMapCppFile)" />
+    
+    <FileUpdate Files="%(HelpProject.HelpMapCppFile)" Regex='##CULTURE' ReplacementText="%(HelpProject.Culture)" />
+    <FileUpdate Files="%(HelpProject.HelpMapCppFile)" Regex='##INDEX'   ReplacementText="$(_HelpCppIndexMappings)" />
+    <FileUpdate Files="%(HelpProject.HelpMapCppFile)" Regex='##CONTEXT' ReplacementText="$(_HelpCppContextMappings)" />
+
+    <!-- Clear locals -->
+    <PropertyGroup>
+      <_HelpCppIndexMappings></_HelpCppIndexMappings>
+      <_HelpCppContextMappings></_HelpCppContextMappings>
+    </PropertyGroup>
+    <ItemGroup>
+      <_HelpTopicIdValue Remove="@(_HelpTopicIdValue)" />
+      <_HelpIgnoreTopicId Remove="@(_HelpIgnoreTopicId)" />
+      <_HelpSynonymTopicId Remove="@(_HelpSynonymTopicId)" />
+      <_HelpCppIndexMapping Remove="@(_HelpCppIndexMapping)" />
+      <_HelpCppContextMapping Remove="@(_HelpCppContextMapping)" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="_CreateHelpMapCpp" DependsOnTargets="_CreateHelpMapCultureCpp"
+          Inputs="@(HelpProject->'%(HelpMapCppFile)');$(ZouDir).Templates\help\helpmap.h;$(ZouDir).Templates\help\helpmap.cpp;$(ZouDir).Templates\help\helpmap.culture.cpp"
+          Outputs="$(HelpMapCppFile)">
+    <Copy SourceFiles="$(HelpMapCppTemplate)" DestinationFiles="$(HelpMapCppFile)" OverwriteReadOnlyFiles="true" />
+    <ItemGroup>
+      <_HelpMapCpp Include="@(HelpProject->'%(HelpMapCppFile)')"/>
+      <_HelpMapCpp>
+        <Content>$([System.IO.File]::ReadAllText(%(HelpMapCppFile)))</Content>
+      </_HelpMapCpp>
+    </ItemGroup>
+    <PropertyGroup>
+      <_HelpMapping>@(_HelpMapCpp->'%(Content)')</_HelpMapping>
+      <_HelpMapping>$(_HelpMapping.Replace(';', '%0D%0A'))</_HelpMapping>
+    </PropertyGroup>
+    
+    <FileUpdate Files="$(HelpMapCppFile)" Regex='##CULTURES' ReplacementText="$(_HelpMapping)" />
+
+    <ItemGroup>
+      <_HelpMapCpp Remove="@(_HelpMapCpp)" />
+    </ItemGroup>
+  </Target>
+  
+  <Target Name="_HmCleanCore">
+    <Touch  Files="%(HelpProject.Identity)" Time="01.01.2016" />
+    <Delete Files="$(HelpMapCppFile)" />
+    <Delete Files="%(HelpProject.HelpMapCppFile)" />
+    <Delete Files="%(HelpProject.HmFile)" />
+  </Target>
+
+  <Target Name="_HmClean"   DependsOnTargets="_HmCleanCore" AfterTargets="Clean" />
+  <Target Name="_HmBuild"   DependsOnTargets="_UpdateHelpProject;_CreateHelpMapCpp;_UpdateHelpProjectCppTemplates" BeforeTargets="ClCompile" Condition="'@(HelpProject)' != ''"/>
+  <Target Name="_HmRebuild" DependsOnTargets="_HmClean;_HmBuild"/>
+
+  <!--=========================================================================-->
+  <!-- Help compilation -->
+  <!--=========================================================================-->
+
+  <Target Name="_HcInit" DependsOnTargets="_InitHelpProject;_AssignHelpProjectSourceFiles" />
+
+  <Target Name="_HcCore" DependsOnTargets="_HcInit" Inputs="%(HelpProject.SourceFiles)" Outputs="%(HelpProject.OutputFile)"  Condition="'@(HelpProject)' != ''">
+    <!-- Execute the MS crazy help compiler (HHC) and redirect its output to custom log file -->
+    <Exec Command='"$(Hhc)" "%(HelpProject.FullPath)" &gt;"%(HelpProject.HhcLogFile)"' IgnoreExitCode='true' />
+    <ItemGroup>
+      <_Temporary Include="**\%(HelpProject.ErrorLogFile);%(OutputFile)" />
+    </ItemGroup>
+    <Delete Files="@(_Temporary)" />
+    <Move SourceFiles="%(HelpProject.CompiledFile)" DestinationFiles="%(OutputFile)" />
+    <ItemGroup>
+      <_Temporary Remove="@(_Temporary)" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="_HcErrorsAndWarnings" DependsOnTargets="_HcCore" Outputs="%(HelpProject.Identity)" Condition="'@(HelpProject)' != ''">
+    <!-- Parse log file for errors and convert them to MSBuild format -->
+    <ReadLinesFromFile File="%(HelpProject.HhcLogFile)">
+      <Output TaskParameter="Lines" ItemName="_SourceFile"/>
+    </ReadLinesFromFile>
+    <PropertyGroup>
+      <_SourceFile>@(_SourceFile)</_SourceFile>
+      <_HhpPath>%(HelpProject.FullPath)</_HhpPath>
+    </PropertyGroup>
+    <ItemGroup>
+      <_SourceFile Remove="@(_SourceFile)" />
+      <_HhcError Include="$([System.Text.RegularExpressions.Regex]::Matches($(_SourceFile), 'HHC\w+:\s*Error:[^;]*'))" />
+      <_HhcWarning Include="$([System.Text.RegularExpressions.Regex]::Matches($(_SourceFile), 'HHC\w+:\s*Warning:[^;]*'))" />
+    </ItemGroup>
+    <!-- Fix for Visual Studio -->
+    <CallTarget Targets="_DeleteLastBuildState" Condition="'%(_HhcError.Identity)' != ''" />
+    <!-- Log MSBuild errors and warnings -->
+    <Error File="$(_HhpPath)"
+           Condition="'%(_HhcError.Identity)' != ''"
+           Code="$([System.Text.RegularExpressions.Regex]::Match(%(Identity), 'HHC[^:]+'))"
+           Text="$([System.Text.RegularExpressions.Regex]::Match(%(Identity), '(?&lt;=HHC\w+:\s*Error:\s*).*'))"
+           ContinueOnError="ErrorAndContinue" />
+    <Warning File="$(_HhpPath)"
+           Condition="'%(_HhcWarning.Identity)' != ''"
+           Code="$([System.Text.RegularExpressions.Regex]::Match(%(Identity), 'HHC[^:]+'))"
+           Text="$([System.Text.RegularExpressions.Regex]::Match(%(Identity), '(?&lt;=HHC\w+:\s*Warning:\s*).*'))" />
+
+    <PropertyGroup>
+      <_SourceFile></_SourceFile>
+      <_HhpPath></_HhpPath>
+    </PropertyGroup>
+    <ItemGroup>
+      <_HhcError Remove="@(_HhcError)" />
+      <_HhcWarning Remove="@(_HhcWarning)" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="_DeleteHhcFiles" DependsOnTargets="_InitHelpProject">
+    <ItemGroup>
+      <_Temporary Include="**\%(HelpProject.ErrorLogFile);%(HhpTmpFile);%(OutputFile);%(HhcLogFile)" />
+    </ItemGroup>
+    <Delete Files="@(_Temporary)" />
+    <ItemGroup>
+      <_Temporary Remove="@(_Temporary)" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="_HcClean"   DependsOnTargets="_DeleteHhcFiles" AfterTargets="Clean" />
+  <Target Name="_HcBuild"   DependsOnTargets="_HcCore;_HcErrorsAndWarnings" AfterTargets="Build" Condition="'@(HelpProject)' != ''"/>
+  <Target Name="_HcRebuild" DependsOnTargets="_HcClean;_HcBuild" />
+</Project>

@@ -1,12 +1,12 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.25123.0
+VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".Bin", ".Bin", "{B7610C02-E722-41E4-BF44-0E7A7D19B54A}"
 	ProjectSection(SolutionItems) = preProject
-		git_config.bat = git_config.bat
-		git_config.sh = git_config.sh
+		bin\git_config.bat = bin\git_config.bat
+		bin\git_config.sh = bin\git_config.sh
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".Archives", ".Archives", "{015BC4D5-05EB-4690-B3FF-E74B61024115}"
@@ -27,6 +27,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tasks", "Tasks", "{627C996F
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".Templates", ".Templates", "{CF12DDFE-F258-4E73-8331-CAAE312DC29E}"
+	ProjectSection(SolutionItems) = preProject
+		.Templates\help\helpmap.cpp = .Templates\help\helpmap.cpp
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "props", "props", "{FB1E8808-5B49-485E-8B80-9CC26FBB1E59}"
 	ProjectSection(SolutionItems) = preProject
@@ -44,7 +47,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "vcxproj", "vcxproj", "{80B6
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".Test", ".Test", "{0DF3F6D9-0217-4C0E-B79C-3D1E67514424}"
 	ProjectSection(SolutionItems) = preProject
-		.Test\CleanPoFile.targets = .Test\CleanPoFile.targets
 		.Test\DateTime.targets = .Test\DateTime.targets
 		.Test\Lock.targets = .Test\Lock.targets
 		.Test\Lock1.targets = .Test\Lock1.targets
@@ -52,8 +54,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".Test", ".Test", "{0DF3F6D9
 		.Test\PropertyOverwrite.targets = .Test\PropertyOverwrite.targets
 		.Test\Spikes.targets = .Test\Spikes.targets
 		.Test\String.targets = .Test\String.targets
-		.Test\Test.ImportFiles.targets = .Test\Test.ImportFiles.targets
-		.Test\Test.ImportProjects.targets = .Test\Test.ImportProjects.targets
 		.Test\Test.targets = .Test\Test.targets
 		.Test\Touch.targets = .Test\Touch.targets
 	EndProjectSection
@@ -120,6 +120,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Agents", "Agents", "{890B64
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Cpp", "Cpp", "{3ADA93D3-9202-41FC-811E-78BCE35B0264}"
 	ProjectSection(SolutionItems) = preProject
+		private\Cpp.BoostVersion.Default.props = private\Cpp.BoostVersion.Default.props
+		Cpp.BoostVersion.props = Cpp.BoostVersion.props
 		private\Cpp.DbgDir.Default.props = private\Cpp.DbgDir.Default.props
 		Cpp.DbgDir.props = Cpp.DbgDir.props
 		private\Cpp.DbgSettings.Default.props = private\Cpp.DbgSettings.Default.props
@@ -169,11 +171,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".Doc", ".Doc", "{2E8BF27A-3
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "BuildActions", "BuildActions", "{630EE6E0-D163-4024-97E2-228B52D0A7BF}"
-	ProjectSection(SolutionItems) = preProject
-		Cs.Interop.targets = Cs.Interop.targets
-		Cs.PoResource.targets = Cs.PoResource.targets
-		Zou.CSharp.targets = Zou.CSharp.targets
-	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Core", "Core", "{C4405A59-5088-4F0D-A46C-213E232F6E0B}"
 	ProjectSection(SolutionItems) = preProject
@@ -186,9 +183,71 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Core", "Core", "{C4405A59-5
 		OutDir.props = OutDir.props
 		Pack.targets = Pack.targets
 		PkgDir.props = PkgDir.props
+		Tools.props = Tools.props
 		zou.Errors.props = zou.Errors.props
 		zou.props = zou.props
 		zou.Tasks.props = zou.Tasks.props
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "PoResource", "PoResource", "{0EC6EC20-BE8A-498A-892D-AFBF38939C2B}"
+	ProjectSection(SolutionItems) = preProject
+		.Test\PoResource\CleanPoFile.targets = .Test\PoResource\CleanPoFile.targets
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Import", "Import", "{83DB0AFE-3BA8-489E-B108-A8144CB14393}"
+	ProjectSection(SolutionItems) = preProject
+		.Test\Test.ImportFiles.targets = .Test\Test.ImportFiles.targets
+		.Test\Test.ImportProjects.targets = .Test\Test.ImportProjects.targets
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "HelpProject", "HelpProject", "{DF7FEF01-AF79-4E4B-AF5E-2E8AAF0BAD9A}"
+	ProjectSection(SolutionItems) = preProject
+		.Test\MakeHelp\HelpProject.targets = .Test\MakeHelp\HelpProject.targets
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Cpp", "Cpp", "{855A8B8E-F61B-432F-B485-EB3AF4327444}"
+	ProjectSection(SolutionItems) = preProject
+		Cpp.Boost.targets = Cpp.Boost.targets
+		Cpp.HelpProject.targets = Cpp.HelpProject.targets
+		Cpp.HelpProject.xml = Cpp.HelpProject.xml
+		Cpp.HelpTopic.xml = Cpp.HelpTopic.xml
+		Zou.Cpp.targets = Zou.Cpp.targets
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Cs", "Cs", "{AA9808FC-9DB0-419F-ADFA-6788DB9606B6}"
+	ProjectSection(SolutionItems) = preProject
+		Cs.Interop.targets = Cs.Interop.targets
+		Cs.PoResource.targets = Cs.PoResource.targets
+		Zou.CSharp.targets = Zou.CSharp.targets
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Cpp.Boost", "Cpp.Boost", "{F6CBAECB-D33C-4F77-8A9D-55A236ACC2D7}"
+	ProjectSection(SolutionItems) = preProject
+		Cpp.Boost.Headers.targets = Cpp.Boost.Headers.targets
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Boost", "Boost", "{7E561272-8A4A-4D10-A746-69EC87BF3EDF}"
+	ProjectSection(SolutionItems) = preProject
+		.Test\Boost\Boost.targets = .Test\Boost\Boost.targets
+		.Test\Boost\BoostHeaders.targets = .Test\Boost\BoostHeaders.targets
+		..\compta\Host\Compta.Host.vcxproj = ..\compta\Host\Compta.Host.vcxproj
+		.Test\Boost\packages.config = .Test\Boost\packages.config
+		.Test\Boost\zou.packages.config = .Test\Boost\zou.packages.config
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "boost", "boost", "{3A26707A-2578-47B1-A13A-4F9F30845D3E}"
+	ProjectSection(SolutionItems) = preProject
+		.Templates\boost\Cpp.Boost.Headers.Imports.targets = .Templates\boost\Cpp.Boost.Headers.Imports.targets
+		.Templates\boost\Cpp.Boost.Headers.packages.config = .Templates\boost\Cpp.Boost.Headers.packages.config
+		.Templates\boost\Cpp.Boost.Libs.Imports.targets = .Templates\boost\Cpp.Boost.Libs.Imports.targets
+		.Templates\boost\Cpp.Boost.Libs.packages.config = .Templates\boost\Cpp.Boost.Libs.packages.config
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Help", "Help", "{8E2CB97C-9B6F-45B2-9806-C4C48A6CE9EA}"
+	ProjectSection(SolutionItems) = preProject
+		.Templates\help\helpmap.cpp = .Templates\help\helpmap.cpp
+		.Templates\help\helpmap.culture.cpp = .Templates\help\helpmap.culture.cpp
+		.Templates\help\helpmap.h = .Templates\help\helpmap.h
 	EndProjectSection
 EndProject
 Global
@@ -205,5 +264,13 @@ Global
 		{2266D478-99DB-46CD-9BD5-69EAF037654F} = {890B64EB-7BCA-4FE4-B980-24EC8B2A78E7}
 		{3ADA93D3-9202-41FC-811E-78BCE35B0264} = {4BA07256-0B1E-4222-827E-C1D96E554CE1}
 		{94A790B8-3FA9-48B5-A3FD-8E1E69A26167} = {4BA07256-0B1E-4222-827E-C1D96E554CE1}
+		{0EC6EC20-BE8A-498A-892D-AFBF38939C2B} = {0DF3F6D9-0217-4C0E-B79C-3D1E67514424}
+		{83DB0AFE-3BA8-489E-B108-A8144CB14393} = {0DF3F6D9-0217-4C0E-B79C-3D1E67514424}
+		{DF7FEF01-AF79-4E4B-AF5E-2E8AAF0BAD9A} = {0DF3F6D9-0217-4C0E-B79C-3D1E67514424}
+		{855A8B8E-F61B-432F-B485-EB3AF4327444} = {630EE6E0-D163-4024-97E2-228B52D0A7BF}
+		{AA9808FC-9DB0-419F-ADFA-6788DB9606B6} = {630EE6E0-D163-4024-97E2-228B52D0A7BF}
+		{7E561272-8A4A-4D10-A746-69EC87BF3EDF} = {0DF3F6D9-0217-4C0E-B79C-3D1E67514424}
+		{3A26707A-2578-47B1-A13A-4F9F30845D3E} = {CF12DDFE-F258-4E73-8331-CAAE312DC29E}
+		{8E2CB97C-9B6F-45B2-9806-C4C48A6CE9EA} = {CF12DDFE-F258-4E73-8331-CAAE312DC29E}
 	EndGlobalSection
 EndGlobal
