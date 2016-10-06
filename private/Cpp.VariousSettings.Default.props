@@ -2,27 +2,62 @@
 <!-- This property sheet defines the default debug settings for C++ projects. -->
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup  Condition="'$(Configuration)'=='Debug'">
-    <_PropertySheetDisplayName>[zou] Stdafx.h, Warning Level 3</_PropertySheetDisplayName>
+    <_PropertySheetDisplayName>[zou] Stdafx.h, Warning Level 3, Multi-threaded Debug</_PropertySheetDisplayName>
     <VariousSettings>true</VariousSettings>
   </PropertyGroup>
   <PropertyGroup  Condition="'$(Configuration)'=='Release'">
-    <_PropertySheetDisplayName>[zou] Stdafx.h, Warning Level 3, Intrinsic Functions</_PropertySheetDisplayName>
+    <_PropertySheetDisplayName>[zou] Stdafx.h, Warning Level 3, Multi-threaded, Intrinsic Functions, Function-Level Linking, Whole Program Optimization</_PropertySheetDisplayName>
     <VariousSettings>true</VariousSettings>
   </PropertyGroup>
-
-
+  
   <ItemDefinitionGroup>
     <ClCompile>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
     </ClCompile>
+  </ItemDefinitionGroup>
+
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug'">
+    <ClCompile>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+    </ClCompile>
     <Link>
     </Link>
   </ItemDefinitionGroup>
-  
+
   <ItemDefinitionGroup Condition="'$(Configuration)'=='Release'">
     <ClCompile>
       <IntrinsicFunctions>true</IntrinsicFunctions>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <WholeProgramOptimization>true</WholeProgramOptimization>
     </ClCompile>
   </ItemDefinitionGroup>
+
+  <ItemDefinitionGroup Condition="'$(ConfigurationType)' == 'StaticLibrary'">
+    <ClCompile>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">_LIB;WIN32;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'"  >_LIB;WIN32;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'"  >_LIB;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'"    >_LIB;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
+
+	<ItemDefinitionGroup Condition="'$(ConfigurationType)' == 'DynamicLibrary'">
+		<ClCompile>
+			<PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">_USRDLL;_WINDOWS;WIN32;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+			<PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'"  >_USRDLL;_WINDOWS;WIN32;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+			<PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'"  >_USRDLL;_WINDOWS;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+			<PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'"    >_USRDLL;_WINDOWS;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+		</ClCompile>
+	</ItemDefinitionGroup>
+
+	<ItemDefinitionGroup Condition="'$(ConfigurationType)' == 'Application'">
+		<ClCompile>
+			<PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">_WINDOWS;WIN32;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+			<PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'"  >_WINDOWS;WIN32;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+			<PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'"  >_WINDOWS;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+			<PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'"    >_WINDOWS;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+		</ClCompile>
+	</ItemDefinitionGroup>
 </Project>
