@@ -4,7 +4,29 @@
 //
 
 #pragma once
-#pragma warning(disable: 4503 4786)
+
+//----------------------------------------------------------------------------- Warnings
+
+#pragma warning(disable: 4503)  // "identifier": decorated name length exceeded, name was truncated
+#pragma warning(disable: 4996)  // "function": was declared deprecated (_CRT_SECURE_NO_DEPRECATE/_SCL_SECURE_NO_WARNINGS)
+
+#define _CRT_SECURE_NO_WARNINGS
+
+#define NO_WARN_MBCS_MFC_DEPRECATION
+// désactive le masquage MFC de certains messages d'avertissement courants et par ailleurs souvent ignorés
+#define _AFX_ALL_WARNINGS
+
+//..................................... Boost warnings
+
+// http://stackoverflow.com/questions/18837401/c-boost-read-json-crash-and-i-had-define-boost-spirit-threadsafe
+// http://www.boost.org/doc/libs/1_60_0/boost/log/support/spirit_classic.hpp
+#define BOOST_SPIRIT_THREADSAFE
+
+// Since boost v1.62.0.0, coroutine is deprecated
+#define BOOST_COROUTINE_NO_DEPRECATION_WARNING
+#define BOOST_COROUTINES_NO_DEPRECATION_WARNING
+
+//----------------------------------------------------------------------------- AFX
 
 // Exclude rarely-used stuff from Windows headers
 #ifndef VC_EXTRALEAN
@@ -16,9 +38,6 @@
 
 #include "targetver.h"
 
-#define _CRT_SECURE_NO_WARNINGS
-// désactive le masquage MFC de certains messages d'avertissement courants et par ailleurs souvent ignorés
-#define _AFX_ALL_WARNINGS
 
 #include <afxwin.h>         // MFC core and standard components
 #include <afxext.h>         // MFC extensions
@@ -44,3 +63,11 @@
 #pragma comment(linker,"/manifestdependency:\"type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 #endif
 #endif
+
+//----------------------------------------------------------------------------- STL
+
+#include <list>
+#include <map>
+#include <queue>
+#include <set>
+#include <vector>
