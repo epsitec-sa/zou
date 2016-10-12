@@ -353,7 +353,7 @@ Pseudo-code:
         <PoModuleReferences>@(_Temporary)</PoModuleReferences>
       </PoResource>
       <_Temporary>
-        <RelativePath>$([MSBuild]::MakeRelative($(BundleDir), %(FullPath)))</RelativePath>
+        <RelativePath>$([MSBuild]::MakeRelative($(BundleDir), %(Identity)))</RelativePath>
       </_Temporary>
     </ItemGroup>
     <WriteLinesToFile File="%(PoResource.PoModuleReferencesPath)" Lines="@(_Temporary->'%(RelativePath)')" Overwrite="true" />
@@ -496,7 +496,7 @@ Pseudo-code:
     <!-- PoBundle = msgcat(culture, PoReferences) -->
     <ItemGroup>
       <_Temporary Include="%(PoResource.PoBundlePath);%(PoResource.PoModuleReferences);%(PoResource.PoDomainReferences)" />
-      <PoReference Include="%(_Temporary.FullPath)" Condition="Exists(%(_Temporary.FullPath))"/>
+      <PoReference Include="%(_Temporary.Identity)" Condition="Exists(%(_Temporary.Identity))"/>
       <_Temporary Remove="@(_Temporary)" />
       <PoReferenceModifiedTime Include="%(PoReference.ModifiedTime)"  />
     </ItemGroup>
@@ -505,9 +505,9 @@ Pseudo-code:
       <ConsolidatePoBundle Condition="'@(PoReferenceModifiedTime->Count())' != '1'">true</ConsolidatePoBundle>
     </PropertyGroup>
 
-    <!--<Message Importance="high" Text="ConsolidatePoBundle = $(ConsolidatePoBundle)" />
+    <Message Importance="high" Text="ConsolidatePoBundle = $(ConsolidatePoBundle)" />
     <LogItems Items="@(PoReference->'%(Identity)')" Title="PoReference" />
-    <LogItems Items="@(PoReferenceModifiedTime)" Title="PoReferenceModifiedTime" />-->
+    <LogItems Items="@(PoReferenceModifiedTime)" Title="PoReferenceModifiedTime" />
 
     <PropertyGroup Condition="'$(ConsolidatePoBundle)' == 'true'">
       <_Options>--no-wrap -D"$(BundleDir)." --lang=%(PoResource.Culture) -o"%(PoResource.PoBundlePath)"</_Options>
@@ -934,7 +934,7 @@ Pseudo-code:
           Outputs="@(PoBundleReference)">
 
     <Touch Files="%(PoBundleReference.FullPath)" Time="$(MoDomainLastModifiedTime)" />
-    <Touch Files="%(PoReference.FullPath)"       Time="$(MoDomainLastModifiedTime)" Condition="Exists(%(PoReference.FullPath))" />
+    <Touch Files="%(PoReference.Identity)"       Time="$(MoDomainLastModifiedTime)" Condition="Exists(%(PoReference.Identity))" />
 
     <ItemGroup>
       <PoBundleReference Remove="@(PoBundleReference)" />
