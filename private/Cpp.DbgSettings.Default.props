@@ -2,7 +2,8 @@
 <!-- This property sheet defines the default debug settings for C++ projects. -->
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup  Condition="'$(Configuration)'=='Debug'">
-    <_PropertySheetDisplayName>[zou] PDB for Edit and Continue, Enable Browse Information</_PropertySheetDisplayName>
+    <_PropertySheetDisplayName Condition="'$(Platform)'=='Win32'">[zou] PDB for Edit and Continue, Enable Browse Information</_PropertySheetDisplayName>
+    <_PropertySheetDisplayName Condition="'$(Platform)'=='x64'">[zou] PDB, Enable Browse Information</_PropertySheetDisplayName>
     <DbgSettings>true</DbgSettings>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'=='Release'">
@@ -12,7 +13,8 @@
 
   <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug'">
     <ClCompile>
-      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <DebugInformationFormat Condition="'$(Platform)'=='Win32'">EditAndContinue</DebugInformationFormat>
+      <DebugInformationFormat Condition="'$(Platform)'=='x64'">ProgramDatabase</DebugInformationFormat>
       <BrowseInformation>true</BrowseInformation>
     </ClCompile>
     <Link>
