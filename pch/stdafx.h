@@ -8,6 +8,7 @@
 //----------------------------------------------------------------------------- Warnings
 
 #pragma warning(disable: 4503)  // "identifier": decorated name length exceeded, name was truncated
+#pragma warning(disable: 4786)	// identifier was truncated in the debug information
 #pragma warning(disable: 4996)  // "function": was declared deprecated (_CRT_SECURE_NO_DEPRECATE/_SCL_SECURE_NO_WARNINGS)
 
 #define _CRT_SECURE_NO_WARNINGS
