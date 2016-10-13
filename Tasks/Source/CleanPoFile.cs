@@ -184,7 +184,7 @@ namespace Epsitec.Zou
 		public static PoFile				Parse(IEnumerator<string> e, PoFileInfo info)
 		{
 			var header   = Header.Parse (e, info);
-			var messages = Messages.Parse (e);
+			var messages = Messages.Parse (e, info);
 
 			return new PoFile (header, messages);
 		}
@@ -266,9 +266,10 @@ namespace Epsitec.Zou
 	}
 	internal class Messages
 	{
-		public static Messages				Parse(IEnumerator<string> e)
+		public static Messages				Parse(IEnumerator<string> e, PoFileInfo fileInfo)
 		{
 			var content = e.ParseRemaining ().ToArray ();
+			content = Messages.CleanContent (content, fileInfo);
 			return new Messages (content);
 		}
 
@@ -280,6 +281,111 @@ namespace Epsitec.Zou
 		private								Messages(string[] content)
 		{
 			this.Content = content;
+		}
+		private static string[]				CleanContent(string[] content, PoFileInfo fileInfo)
+		{
+			var e = new Parser (content);
+			var messages = Message.Parse (e, fileInfo);
+			return messages
+				.OrderBy(m => m.Id)
+				.SelectMany (m => m.Content)
+				.ToArray ();
+		}
+	}
+	internal class Message
+	{
+		public static Message[] Parse(Parser e, PoFileInfo fileInfo)
+		{
+			return Message
+				.ParseCore (e)
+				.ToArray ();
+
+		}
+
+		public string Id
+		{
+			get;
+		}
+		public string[] Header
+		{
+			get;
+		}
+		public string[] MsgId
+		{
+			get;
+		}
+		public string[] MsgStr
+		{
+			get;
+		}
+		public string[] Content => this.Header.Concat (this.MsgId).Concat (this.MsgStr).ToArray ();
+
+		private static IEnumerable<Message> ParseCore(Parser e)
+		{
+			while (!e.Completed)
+			{
+				var header = Message.ParseHeader (e).ToArray ();
+				var msgid = Message.ParseItem (e, "msgid").ToArray ();
+				var msgstr = Message.ParseItem (e, "msgstr").ToArray ();
+				yield return new Message (header, msgid, msgstr);
+			}
+		}
+		private static IEnumerable<string> ParseHeader(Parser e)
+		{
+			// emit empty lines
+			while (!e.Completed && string.IsNullOrWhiteSpace (e.Current))
+			{
+				yield return e.Current;
+				e.MoveNext ();
+			}
+			while (!e.Completed && e.Current.StartsWith ("#"))
+			{
+				yield return e.Current;
+				e.MoveNext ();
+			}
+		}
+		private static IEnumerable<string> ParseItem(Parser e, string key)
+		{
+			if (!e.Current.StartsWith (key))
+			{
+				throw new Exception ($"Bad format: {key} expected");
+			}
+
+			yield return e.Current;
+
+			while (e.MoveNext () && e.Current.StartsWith ("\""))
+			{
+				yield return e.Current;
+			}
+		}
+		private static string ParseId(string[] msgid)
+		{
+			var msgid0 = Regex.Unescape (msgid[0].Substring (msgid[0].IndexOf ('"')).Trim ('"'));
+
+			if (msgid.Length == 1)
+			{
+				return msgid0;
+			}
+			else
+			{
+				if (!string.IsNullOrEmpty (msgid0))
+				{
+					throw new Exception ($"Bad format: first line should be the empty string");
+				}
+
+				return msgid
+					.Skip (1)
+					.Select (m => Regex.Unescape (m.Trim ('"')))
+					.Join ("\n");
+			}
+		}
+
+		private Message(string[] header, string[] msgid, string[] msgstr)
+		{
+			this.Header = header;
+			this.MsgId = msgid;
+			this.MsgStr = msgstr;
+			this.Id = Message.ParseId (msgid);
 		}
 	}
 	internal class HeaderComments
@@ -701,6 +807,7 @@ namespace Epsitec.Zou
 			this.Content = content;
 		}
 	}
+
 	internal static partial class Mixins
 	{
 		public static string						Format(this DateTimeOffset self)					=> self.ToString ("yyyy-MM-dd HH:mmzz00");
@@ -727,5 +834,21 @@ namespace Epsitec.Zou
 			}
 			return value;
 		}
+	}
+
+	internal class Parser
+	{
+		public Parser(string[] content)
+		{
+			this.enumerator = content.AsEnumerable ().GetEnumerator ();
+			this.ok = enumerator.MoveNext ();
+		}
+		public bool				Completed	=> !this.ok;
+		public string			Current		=> this.ok ? this.enumerator.Current : null;
+		public bool				MoveNext()	=> this.ok ? this.ok = enumerator.MoveNext () : false;
+		public override string	ToString()	=> this.ok ? this.enumerator.Current : "<completed>";
+
+		private IEnumerator<string> enumerator;
+		private bool ok;
 	}
 }
