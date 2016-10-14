@@ -4,13 +4,15 @@
   <PropertyGroup>
     <LastBuildSequencePath>$(SolutionDir)$(SolutionName).lbs.zou</LastBuildSequencePath>
     <ActualBuildSequencePath>$(SolutionDir)$(SolutionName).abs.zou</ActualBuildSequencePath>
+    <LastBuildSequenceContainsProject>true</LastBuildSequenceContainsProject>
+    <BuildSequenceIsLastProject>true</BuildSequenceIsLastProject>
   </PropertyGroup>
 
   <!--=========================================================================-->
 
   <!-- Reset build sequence if associated solution changes -->
   <Target Name="ResetBuildSequence"
-          Condition="$(SolutionName) != ''"
+          Condition="'$(SolutionName)' != '*Undefined*'"
           Inputs="$(SolutionPath)"
           Outputs="$(LastBuildSequencePath);$(ActualBuildSequencePath)">
     
@@ -19,7 +21,7 @@
   
   
   <Target Name="ReadBuildSequence"
-          Condition="$(SolutionName) != ''"
+          Condition="'$(SolutionName)' != '*Undefined*'"
           DependsOnTargets="ResetBuildSequence"
           Returns="$(LastBuildSequencePath);$(ActualBuildSequencePath)">
 
@@ -34,7 +36,8 @@
       <LastBuildSequence Include="@(_Temporary)" />
       <_Temporary Remove="@(_Temporary)" />
     </ItemGroup>
-     <PropertyGroup >
+    <PropertyGroup>
+      <LastBuildSequenceContainsProject></LastBuildSequenceContainsProject>
       <LastBuildSequenceContainsProject Condition="'@(LastBuildSequence)' != '' And @(LastBuildSequence->AnyHaveMetadataValue('Identity', '$(ProjectPath)'))">true</LastBuildSequenceContainsProject>
     </PropertyGroup>
     <!--<LogItems Items="@(LastBuildSequence)" Title="[R] LastBuildSequence" />-->
@@ -74,6 +77,7 @@
     <Error Condition="'@(_ActualMinusLast)' != ''" Text="Last build sequence is not up to date: please clean the solution!" />
          
     <PropertyGroup >
+      <BuildSequenceIsLastProject></BuildSequenceIsLastProject>
       <BuildSequenceIsLastProject Condition="'@(_LastMinusActual)' == ''">true</BuildSequenceIsLastProject>
     </PropertyGroup>
     <!--<Message Importance="high" Text="BuildSequenceIsLastProject = $(BuildSequenceIsLastProject)" />-->
@@ -85,7 +89,7 @@
   </Target>
 
   <Target Name="WriteBuildSequence"
-          Condition="$(SolutionName) != ''"
+          Condition="'$(SolutionName)' != '' And '$(SolutionName)' != '*Undefined*'"
           DependsOnTargets="ReadBuildSequence"
           Returns="$(LastBuildSequencePath);$(ActualBuildSequencePath)">
 
