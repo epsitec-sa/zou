@@ -40,7 +40,7 @@
       <LastBuildSequenceContainsProject></LastBuildSequenceContainsProject>
       <LastBuildSequenceContainsProject Condition="'@(LastBuildSequence)' != '' And @(LastBuildSequence->AnyHaveMetadataValue('Identity', '$(ProjectPath)'))">true</LastBuildSequenceContainsProject>
     </PropertyGroup>
-    <!--<LogItems Items="@(LastBuildSequence)" Title="[R] LastBuildSequence" />-->
+    <LogItems Items="@(LastBuildSequence)" Title="[R] LastBuildSequence" />
     
     <!-- Load actual build sequence -->
     <ReadLinesFromFile File="$(ActualBuildSequencePath)" >
@@ -60,6 +60,13 @@
       <ActualBuildSequence Remove="@(ActualBuildSequence)" Condition="'$(ActualBuildSequenceContainsProject)' == 'true'"/>
     </ItemGroup>
 
+    <!-- If actual minus last is not empty, there is a new project in the solution -->
+    <ItemGroup >
+      <_ActualMinusLast Include="@(ActualBuildSequence)" />
+      <_ActualMinusLast Remove="@(LastBuildSequence)" />
+    </ItemGroup>
+    <Error Condition="'@(_ActualMinusLast)' != ''" Text="Seems the project '$(ProjectPath)' is new to the solution: please rebuild (clean then build) it!" />
+
     <!-- Add current project to actual build sequence -->
     <ItemGroup>
       <ActualBuildSequence Remove="$(ProjectPath)" />
@@ -71,10 +78,7 @@
     <ItemGroup >
       <_LastMinusActual Include="@(LastBuildSequence)" />
       <_LastMinusActual Remove="@(ActualBuildSequence)" />
-      <_ActualMinusLast Include="@(ActualBuildSequence)" />
-      <_ActualMinusLast Remove="@(LastBuildSequence)" />
     </ItemGroup>
-    <Error Condition="'@(_ActualMinusLast)' != ''" Text="Last build sequence is not up to date: please clean the solution!" />
          
     <PropertyGroup >
       <BuildSequenceIsLastProject></BuildSequenceIsLastProject>
