@@ -379,10 +379,45 @@ namespace Epsitec.Zou
 					.Join ("\n");
 			}
 		}
+		private static string[] OrderLocations(string[] header)
+		{
+			// order in place
+			if (header.Where (h => h.StartsWith ("#: ")).Skip (1).Any ())
+			{
+				var indexedHeader = header
+					.Select ((value, i) => new
+					{
+						Index = i,
+						Value = value
+					})
+					.ToArray ();
+
+				var locations = indexedHeader
+					.Where (h => h.Value.StartsWith ("#: "));
+
+				var indexes = locations.Select (l => l.Index);
+
+				var orderedLocations = locations
+					.OrderBy (h => h.Value.ToLowerInvariant ())
+					.Zip (indexes, (ol, i) => new
+					{
+						Index = i,
+						Value = ol.Value
+					});
+
+				var result = header.ToArray (); // make a copy
+				orderedLocations.ForEach (ol => result[ol.Index] = ol.Value);
+				return result;
+			}
+			else
+			{
+				return header;
+			}
+		}
 
 		private Message(string[] header, string[] msgid, string[] msgstr)
 		{
-			this.Header = header;
+			this.Header = Message.OrderLocations (header);
 			this.MsgId = msgid;
 			this.MsgStr = msgstr;
 			this.Id = Message.ParseId (msgid);
