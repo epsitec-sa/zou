@@ -2,7 +2,8 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   
   <PropertyGroup>
-    <BuildSequencePath>$(SolutionDir)$(SolutionName).bo.zou</BuildSequencePath>
+    <LastBuildSequencePath>$(SolutionDir)$(SolutionName).lbs.zou</LastBuildSequencePath>
+    <ActualBuildSequencePath>$(SolutionDir)$(SolutionName).abs.zou</ActualBuildSequencePath>
   </PropertyGroup>
 
   <!--=========================================================================-->
@@ -11,60 +12,101 @@
   <Target Name="ResetBuildSequence"
           Condition="$(SolutionName) != ''"
           Inputs="$(SolutionPath)"
-          Outputs="$(BuildSequencePath)">
+          Outputs="$(LastBuildSequencePath);$(ActualBuildSequencePath)">
     
-    <Delete Files="$(BuildSequencePath)" />
+    <Delete Files="$(LastBuildSequencePath);$(ActualBuildSequencePath)" />
   </Target>
   
   
   <Target Name="ReadBuildSequence"
           Condition="$(SolutionName) != ''"
           DependsOnTargets="ResetBuildSequence"
-          Returns="$(BuildSequencePath)">
+          Returns="$(LastBuildSequencePath);$(ActualBuildSequencePath)">
 
-    <ReadLinesFromFile File="$(BuildSequencePath)" >
-      <Output TaskParameter="Lines" ItemName="BuildSequence"/>
+    <!-- Clean obsolete stuff -->
+    <Delete Files="$(SolutionDir)$(SolutionName).bo.zou" />
+
+    <!-- Load last build sequence -->
+    <ReadLinesFromFile File="$(LastBuildSequencePath)" >
+      <Output TaskParameter="Lines" ItemName="_Temporary"/>
     </ReadLinesFromFile>
-
-    <!-- Extract the path of the last project in the build sequence -->
-    <PropertyGroup >
-      <_Temporary>@(BuildSequence)</_Temporary>
-      <BuildSequenceLastProject Condition="'@(BuildSequence)' != ''">$(_Temporary.Substring($([MSBuild]::Add($(_Temporary.LastIndexOf(';')), 1))))</BuildSequenceLastProject>
-      <_Temporary></_Temporary>
+    <ItemGroup >
+      <LastBuildSequence Include="@(_Temporary)" />
+      <_Temporary Remove="@(_Temporary)" />
+    </ItemGroup>
+     <PropertyGroup >
+      <LastBuildSequenceContainsProject Condition="'@(LastBuildSequence)' != '' And @(LastBuildSequence->AnyHaveMetadataValue('Identity', '$(ProjectPath)'))">true</LastBuildSequenceContainsProject>
     </PropertyGroup>
-
-    <PropertyGroup >
-      <BuildSequenceContainsProject Condition="'@(BuildSequence)' != '' And @(BuildSequence->AnyHaveMetadataValue('Identity', '$(ProjectPath)'))">true</BuildSequenceContainsProject>
-      <BuildSequenceIsLastProject   Condition="'$(BuildSequenceContainsProject)' != 'true' Or '$(BuildSequenceLastProject)' == '$(ProjectPath)'">true</BuildSequenceIsLastProject>
+    <!--<LogItems Items="@(LastBuildSequence)" Title="[R] LastBuildSequence" />-->
+    
+    <!-- Load actual build sequence -->
+    <ReadLinesFromFile File="$(ActualBuildSequencePath)" >
+      <Output TaskParameter="Lines" ItemName="_Temporary"/>
+    </ReadLinesFromFile>
+    <ItemGroup >
+      <ActualBuildSequence Include="@(_Temporary)" />
+      <_Temporary Remove="@(_Temporary)" />
+    </ItemGroup>
+     <PropertyGroup >
+      <ActualBuildSequenceContainsProject Condition="'@(ActualBuildSequence)' != '' And @(ActualBuildSequence->AnyHaveMetadataValue('Identity', '$(ProjectPath)'))">true</ActualBuildSequenceContainsProject>
     </PropertyGroup>
+    <!--<Message Importance="high" Text="ActualBuildSequenceContainsProject = $(ActualBuildSequenceContainsProject)" />-->
 
-    <!--<Message Importance="high" Text="BuildSequenceLastProject     = $(BuildSequenceLastProject)" />
-    <Message Importance="high" Text="BuildSequenceContainsProject = $(BuildSequenceContainsProject)" />
-    <Message Importance="high" Text="BuildSequenceIsLastProject   = $(BuildSequenceIsLastProject)" />
-    <LogItems Items="@(BuildSequence)" Title="[R] BuildSequence" />-->
+    <!-- Reset actual build sequence if the current project is alreay inside -->
+    <ItemGroup >
+      <ActualBuildSequence Remove="@(ActualBuildSequence)" Condition="'$(ActualBuildSequenceContainsProject)' == 'true'"/>
+    </ItemGroup>
+
+    <!-- Add current project to actual build sequence -->
+    <ItemGroup>
+      <ActualBuildSequence Remove="$(ProjectPath)" />
+      <ActualBuildSequence Include="$(ProjectPath)" />
+    </ItemGroup>
+    <!--<LogItems Items="@(ActualBuildSequence)" Title="[U] ActualBuildSequence" />-->
+  
+    <!-- Compare last and actual build sequences: if they contain the same elements we can consider that the current project is the last project of the solution build -->
+    <ItemGroup >
+      <_LastMinusActual Include="@(LastBuildSequence)" />
+      <_LastMinusActual Remove="@(ActualBuildSequence)" />
+      <_ActualMinusLast Include="@(ActualBuildSequence)" />
+      <_ActualMinusLast Remove="@(LastBuildSequence)" />
+    </ItemGroup>
+    <Error Condition="'@(_ActualMinusLast)' != ''" Text="Last build sequence is not up to date: please clean the solution!" />
+         
+    <PropertyGroup >
+      <BuildSequenceIsLastProject Condition="'@(_LastMinusActual)' == ''">true</BuildSequenceIsLastProject>
+    </PropertyGroup>
+    <!--<Message Importance="high" Text="BuildSequenceIsLastProject = $(BuildSequenceIsLastProject)" />-->
+    
+    <ItemGroup >
+      <_LastMinusActual Remove="@(_LastMinusActual)" />
+      <_ActualMinusLast Remove="@(_ActualMinusLast)" />
+    </ItemGroup>
   </Target>
 
   <Target Name="WriteBuildSequence"
           Condition="$(SolutionName) != ''"
           DependsOnTargets="ReadBuildSequence"
-          Returns="$(BuildSequencePath)">
+          Returns="$(LastBuildSequencePath);$(ActualBuildSequencePath)">
 
     <ItemGroup>
-      <_Temporary Include="@(BuildSequence)" />
-      <BuildSequence Remove="@(BuildSequence)" />
-      <BuildSequence Include="$(ProjectPath)" Condition="'$(BuildSequenceContainsProject)' != 'true' And '@(_Temporary)' == ''" />
-      <BuildSequence Include="@(_Temporary);$(ProjectPath)" Condition="'$(BuildSequenceContainsProject)' != 'true' And '@(_Temporary)' != ''" />
-      <_Temporary Remove="@(_Temporary)" />
+      <LastBuildSequence Remove="$(ProjectPath)" />
+      <LastBuildSequence Include="$(ProjectPath)" />
     </ItemGroup>
-    <WriteLinesToFile File="$(BuildSequencePath)"
-                      Lines="@(BuildSequence)"
-                      Overwrite="true"
-                      Condition="'$(BuildSequenceContainsProject)' != 'true'" />
+    
+    <WriteLinesToFile File="$(LastBuildSequencePath)"
+                      Lines="@(LastBuildSequence)"
+                      Overwrite="true" />
 
-    <!--<LogItems Items="@(BuildSequence)" Title="[W] BuildSequence" />-->
+    <WriteLinesToFile File="$(ActualBuildSequencePath)"
+                      Lines="@(ActualBuildSequence)"
+                      Overwrite="true" />
+
+    <!--<LogItems Items="@(LastBuildSequence)"   Title="[W] LastBuildSequence" />
+    <LogItems Items="@(ActualBuildSequence)" Title="[W] ActualBuildSequence" />-->
   </Target>
 
   <Target Name="BuildSequenceClean" AfterTargets="AfterClean">
-    <Delete Files="$(BuildSequencePath)" />
+    <Delete Files="$(LastBuildSequencePath);$(ActualBuildSequence)" />
   </Target>
 </Project>

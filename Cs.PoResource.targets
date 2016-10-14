@@ -35,6 +35,7 @@ Layout:
         domain1.de-CH.po
         domain2.fr-CH.po
         domain2.de-CH.po
+      obj\Debug                                     $(PotDomainDir)
         domain1.pot.src.zou                         %(PoResource.PotSourcePath)
         domain1.pot                                 %(PoResource.PotDomainPath)
         domain2.pot
@@ -83,7 +84,7 @@ Pseudo-code:
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="PoResourceBuild">
 
   <Import Project="Cs.Boot.props" Condition="'$(CsBootImported)' != 'true'"/>
-  <Import Project="BuildSequence.targets" Condition="'$(BuildSequencePath)' == ''"/>
+  <Import Project="BuildSequence.targets" Condition="'$(LastBuildSequencePath)' == ''"/>
 
   <!--=========================================================================-->
   <!-- Constants -->
@@ -505,7 +506,7 @@ Pseudo-code:
       <ConsolidatePoBundle Condition="'@(PoReferenceModifiedTime->Count())' != '1'">true</ConsolidatePoBundle>
     </PropertyGroup>
 
-    <!--<Message Importance="high" Text="ConsolidatePoBundle = $(ConsolidatePoBundle)" />
+    <!--<Message Importance="high" Text="ConsolidatePoBundle = $(ConsolidatePoBundle) [$(ProjectName)]" />
     <LogItems Items="@(PoReference->'%(Identity)')" Title="PoReference" />
     <LogItems Items="@(PoReferenceModifiedTime)" Title="PoReferenceModifiedTime" />-->
 
@@ -960,7 +961,7 @@ Pseudo-code:
 
   <Target Name="PoCleanIfNotInBuildSequence"
           DependsOnTargets="InitPoResources;ReadBuildSequence"
-          Condition="'$(BuildSequenceContainsProject)' != 'true'">
+          Condition="'$(LastBuildSequenceContainsProject)' != 'true'">
 
     <Delete Files="@(PoResource->'%(PotSourcePath)')" />
   </Target>
