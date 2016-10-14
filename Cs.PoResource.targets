@@ -1062,9 +1062,13 @@ Pseudo-code:
     
     <Delete Files="@(_Temporary)" />
     <RemoveDir Directories="$(PoReferencesDir)" ContinueOnError="true" />
+    
+    <ItemGroup>
+      <_Temporary Remove="@(_Temporary)" />
+    </ItemGroup>
   </Target>
 
-  <Target Name="PoClean" BeforeTargets="Clean">
+  <Target Name="PoClean" AfterTargets="Clean">
     <CallTarget Targets="PoLock;PoCleanCore;PoUnlock" RunEachTargetSeparately="true" />
   </Target>
     
