@@ -36,6 +36,7 @@ Layout:
         domain2.fr-CH.po
         domain2.de-CH.po
       obj\Debug                                     $(PotDomainDir)
+        LastSolution.zou                            $(LastSolutionSavePath)
         domain1.pot.src.zou                         %(PoResource.PotSourcePath)
         domain1.pot                                 %(PoResource.PotDomainPath)
         domain2.pot
@@ -111,8 +112,9 @@ Pseudo-code:
     <PoModuleRootDir Condition="'$(ModuleName)' != ''">$(ModuleDir).po\</PoModuleRootDir>
     <PotModuleDir    Condition="'$(ModuleName)' != ''">$(PoModuleRootDir)obj\$(Configuration)\</PotModuleDir>
     <PotModulePath   Condition="'$(ModuleName)' != ''">$(PotModuleDir)$(PoModuleName).pot</PotModulePath>
-    
+
     <PotDomainDir>$([System.IO.Path]::Combine($(ProjectDir),$(IntermediateOutputPath)))</PotDomainDir>
+    <LastSolutionSavePath>$(PotDomainDir)LastSolution.zou</LastSolutionSavePath>
 
     <XGetText>$(ZouBinDir)xgettext</XGetText>
     <MsgInit>$(ZouBinDir)msginit</MsgInit>
@@ -956,9 +958,50 @@ Pseudo-code:
   </Target>
   
   <!--=========================================================================-->
+  <!-- Last solution path -->
+  <!--=========================================================================-->
+
+  <Target Name ="ReadLastSolution">
+
+    <ReadLinesFromFile File="$(LastSolutionSavePath)" >
+      <Output TaskParameter="Lines" ItemName="_Temporary"/>
+    </ReadLinesFromFile>
+    <PropertyGroup >
+      <LastSolutionPath>@(_Temporary)</LastSolutionPath>
+    </PropertyGroup>
+
+    <!--<Message Importance="high" Text="[R] SolutionPath     = $(SolutionPath)" />
+    <Message Importance="high" Text="[R] LastSolutionPath = $(LastSolutionPath)" />-->
+    
+    <ItemGroup >
+      <_Temporary Remove="@(_Temporary)" />
+    </ItemGroup>
+  </Target>
+  
+  <Target Name ="WriteLastSolution">
+
+    <!--<Message Importance="high" Text="[W] SolutionPath     = $(SolutionPath)" />-->
+    
+    <WriteLinesToFile File="$(LastSolutionSavePath)"
+                      Lines="$(SolutionPath)"
+                      Overwrite="true" />
+  </Target>
+  
+  <Target Name="CleanLastSolution">
+    <Delete Files="$(LastSolutionSavePath)" />
+  </Target>
+
+  <!--=========================================================================-->
   <!-- Clean -->
   <!--=========================================================================-->
 
+  <Target Name="PoCleanIfSolutionChange"
+          DependsOnTargets="InitPoResources;ReadLastSolution;WriteLastSolution"
+          Condition="'$(LastSolutionPath)' != '$(SolutionPath)'">
+
+    <Delete Files="@(PoResource->'%(PotSourcePath)')" />
+  </Target>
+  
   <Target Name="PoCleanIfNotInBuildSequence"
           DependsOnTargets="InitPoResources;ReadBuildSequence"
           Condition="'$(LastBuildSequenceContainsProject)' != 'true'">
@@ -967,7 +1010,7 @@ Pseudo-code:
   </Target>
   
   <Target Name="PoIncrementalClean"
-          DependsOnTargets="InitPoResources;PoCleanIfNotInBuildSequence"
+          DependsOnTargets="InitPoResources;PoCleanIfNotInBuildSequence;PoCleanIfSolutionChange"
           Inputs="$(ProjectPath)"
           Outputs="@(PoResource->'%(PotSourcePath)')">
 
@@ -1004,6 +1047,7 @@ Pseudo-code:
 
   <Target Name="PoCleanCore"
           DependsOnTargets="
+            CleanLastSolution;
             DeleteMoDomain;
             DeletePotDomain;
             DeletePotModule;
@@ -1032,6 +1076,7 @@ Pseudo-code:
   <Target Name="PoBuildCore"
           DependsOnTargets="
             ReadBuildSequence;
+            ReadLastSolution;
             PoIncrementalClean;
             PoCreateFolders;
             
