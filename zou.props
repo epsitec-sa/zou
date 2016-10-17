@@ -115,6 +115,18 @@ This script can be imported anywhere before first MS import (Microsoft.Cpp.Defau
 
   <Import Project="Tools.props" />
   
+  <!-- Detect a rebuild -->
+  <Target Name="ZouBeforeRebuild" BeforeTargets="BeforeRebuild">
+    <PropertyGroup>
+      <ZouInsideRebuild>true</ZouInsideRebuild>
+    </PropertyGroup>
+  </Target>
+  <Target Name="ZouAfterRebuild" AfterTargets="AfterRebuild">
+    <PropertyGroup>
+      <ZouInsideRebuild></ZouInsideRebuild>
+    </PropertyGroup>
+  </Target>
+
   <Target Name="ZouTraceMSBuild" Condition="'$(ZouTraceMSBuild)' == 'true'">
     <Message Importance="normal" Text="MSBuild properties" />
     <Message Importance="normal" Text="==================" />
