@@ -586,7 +586,7 @@ Pseudo-code:
                 Regex='^("Content-Type.+?charset=)(CHARSET)(.*)$' ReplacementText="$1UTF-8$3"/>
   </Target>
 
-  <Target Name="DeletePotDomain">
+  <Target Name="DeletePotDomain" DependsOnTargets="InitPoResources">
     <Delete Files="@(PoResource->'%(PotSourcePath)');@(PoResource->'%(PotDomainPath)')" />
   </Target>
 
@@ -879,11 +879,6 @@ Pseudo-code:
     </ItemGroup>
   </Target>
 
-  <Target Name="DeleteMoDomain" DependsOnTargets="InitPoResources">
-    <!--<Message Importance="high" Text="[-] %(PoResource.MoDomainPath)" />-->
-    <Delete Files="@(PoResource->'%(MoDomainPath)')" />
-  </Target>
-
   <!--.........................................................................-->
   
   <Target Name="CreateMoDomainContent"
@@ -987,7 +982,7 @@ Pseudo-code:
                       Overwrite="true" />
   </Target>
   
-  <Target Name="CleanLastSolution">
+  <Target Name="DeleteLastSolutionSave">
     <Delete Files="$(LastSolutionSavePath)" />
   </Target>
 
@@ -1016,6 +1011,7 @@ Pseudo-code:
   
   <Target Name="PoIncrementalClean"
           DependsOnTargets="
+            InitPoResources;
             PoCleanIfNotInBuildSequence;
             PoCleanIfSolutionChange"
           Inputs="$(ProjectPath)"
@@ -1052,10 +1048,10 @@ Pseudo-code:
 
   <!--.........................................................................-->
 
-  <Target Name="PoCleanCore"
+  <Target Name="PoCleanCoreForClean"
+          Condition="'$(ZouInsideRebuild)' != 'true'"
           DependsOnTargets="
-            CleanLastSolution;
-            DeleteMoDomain;
+            DeleteLastSolutionSave;
             DeletePotDomain;
             DeletePotModule;
             PoReset">
@@ -1074,6 +1070,15 @@ Pseudo-code:
       <_Temporary Remove="@(_Temporary)" />
     </ItemGroup>
   </Target>
+
+  <Target Name="PoCleanCoreForRebuild"
+          Condition="'$(ZouInsideRebuild)' == 'true'"
+          DependsOnTargets="DeletePotDomain" />
+  
+  <Target Name="PoCleanCore"
+          DependsOnTargets="
+            PoCleanCoreForClean;
+            PoCleanCoreForRebuild" />
 
   <Target Name="PoClean" AfterTargets="Clean">
     <CallTarget Targets="PoLock;PoCleanCore;PoUnlock" RunEachTargetSeparately="true" />

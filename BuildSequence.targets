@@ -14,7 +14,7 @@
   <Target Name="ResetBuildSequence"
           Condition="'$(SolutionName)' != '*Undefined*'"
           Inputs="$(SolutionPath)"
-          Outputs="$(LastBuildSequencePath);$(ActualBuildSequencePath)">
+          Outputs="$(LastBuildSequencePath)">
     
     <Delete Files="$(LastBuildSequencePath);$(ActualBuildSequencePath)" />
   </Target>
@@ -22,8 +22,7 @@
   
   <Target Name="ReadBuildSequence"
           Condition="'$(SolutionName)' != '*Undefined*'"
-          DependsOnTargets="ResetBuildSequence"
-          Returns="$(LastBuildSequencePath);$(ActualBuildSequencePath)">
+          DependsOnTargets="ResetBuildSequence">
 
     <!-- Clean obsolete stuff -->
     <Delete Files="$(SolutionDir)$(SolutionName).bo.zou" />
@@ -40,8 +39,7 @@
       <LastBuildSequenceContainsProject></LastBuildSequenceContainsProject>
       <LastBuildSequenceContainsProject Condition="'@(LastBuildSequence)' != '' And @(LastBuildSequence->AnyHaveMetadataValue('Identity', '$(ProjectPath)'))">true</LastBuildSequenceContainsProject>
     </PropertyGroup>
-    <LogItems Items="@(LastBuildSequence)" Title="[R] LastBuildSequence" />
-    
+
     <!-- Load actual build sequence -->
     <ReadLinesFromFile File="$(ActualBuildSequencePath)" >
       <Output TaskParameter="Lines" ItemName="_Temporary"/>
@@ -50,10 +48,13 @@
       <ActualBuildSequence Include="@(_Temporary)" />
       <_Temporary Remove="@(_Temporary)" />
     </ItemGroup>
-     <PropertyGroup >
+    <PropertyGroup >
       <ActualBuildSequenceContainsProject Condition="'@(ActualBuildSequence)' != '' And @(ActualBuildSequence->AnyHaveMetadataValue('Identity', '$(ProjectPath)'))">true</ActualBuildSequenceContainsProject>
     </PropertyGroup>
-    <!--<Message Importance="high" Text="ActualBuildSequenceContainsProject = $(ActualBuildSequenceContainsProject)" />-->
+    
+    <!--<LogItems Items="@(LastBuildSequence)" Title="[R] LastBuildSequence" />
+    <LogItems Items="@(ActualBuildSequence)" Title="[R] ActualBuildSequence" />
+    <Message Importance="high" Text="ActualBuildSequenceContainsProject = $(ActualBuildSequenceContainsProject)" />-->
 
     <!-- Reset actual build sequence if the current project is alreay inside -->
     <ItemGroup >
@@ -72,7 +73,6 @@
       <ActualBuildSequence Remove="$(ProjectPath)" />
       <ActualBuildSequence Include="$(ProjectPath)" />
     </ItemGroup>
-    <!--<LogItems Items="@(ActualBuildSequence)" Title="[U] ActualBuildSequence" />-->
   
     <!-- Compare last and actual build sequences: if they contain the same elements we can consider that the current project is the last project of the solution build -->
     <ItemGroup >
@@ -84,18 +84,19 @@
       <BuildSequenceIsLastProject></BuildSequenceIsLastProject>
       <BuildSequenceIsLastProject Condition="'@(_LastMinusActual)' == ''">true</BuildSequenceIsLastProject>
     </PropertyGroup>
-    <!--<Message Importance="high" Text="BuildSequenceIsLastProject = $(BuildSequenceIsLastProject)" />-->
-    
+
     <ItemGroup >
       <_LastMinusActual Remove="@(_LastMinusActual)" />
       <_ActualMinusLast Remove="@(_ActualMinusLast)" />
     </ItemGroup>
+    
+    <!--<LogItems Items="@(ActualBuildSequence)" Title="[U] ActualBuildSequence" />
+    <Message Importance="high" Text="BuildSequenceIsLastProject = $(BuildSequenceIsLastProject)" />-->
   </Target>
 
   <Target Name="WriteBuildSequence"
           Condition="'$(SolutionName)' != '' And '$(SolutionName)' != '*Undefined*'"
-          DependsOnTargets="ReadBuildSequence"
-          Returns="$(LastBuildSequencePath);$(ActualBuildSequencePath)">
+          DependsOnTargets="ReadBuildSequence">
 
     <ItemGroup>
       <LastBuildSequence Remove="$(ProjectPath)" />
@@ -114,7 +115,7 @@
     <LogItems Items="@(ActualBuildSequence)" Title="[W] ActualBuildSequence" />-->
   </Target>
 
-  <Target Name="BuildSequenceClean" AfterTargets="AfterClean">
+  <Target Name="BuildSequenceClean" AfterTargets="AfterClean" Condition="'$(ZouInsideRebuild)' != 'true'">
     <Delete Files="$(LastBuildSequencePath);$(ActualBuildSequencePath)" />
   </Target>
 </Project>
