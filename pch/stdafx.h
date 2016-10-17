@@ -9,12 +9,13 @@
 
 #pragma warning(disable: 4503)  // "identifier": decorated name length exceeded, name was truncated
 #pragma warning(disable: 4786)	// identifier was truncated in the debug information
-#pragma warning(disable: 4996)  // "function": was declared deprecated (_CRT_SECURE_NO_DEPRECATE/_SCL_SECURE_NO_WARNINGS)
 
+// disable deprecation warnings
+#define _SCL_SECURE_NO_WARNINGS
 #define _CRT_SECURE_NO_WARNINGS
+#define _CRT_NONSTDC_NO_WARNINGS
 
 #define NO_WARN_MBCS_MFC_DEPRECATION
-// désactive le masquage MFC de certains messages d'avertissement courants et par ailleurs souvent ignorés
 #define _AFX_ALL_WARNINGS
 
 //..................................... Boost warnings
@@ -38,7 +39,6 @@
 #endif
 
 #include "targetver.h"
-
 
 #include <afxwin.h>         // MFC core and standard components
 #include <afxext.h>         // MFC extensions
