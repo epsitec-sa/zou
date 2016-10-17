@@ -996,21 +996,28 @@ Pseudo-code:
   <!--=========================================================================-->
 
   <Target Name="PoCleanIfSolutionChange"
-          DependsOnTargets="InitPoResources;ReadLastSolution;WriteLastSolution"
+          DependsOnTargets="
+            InitPoResources;
+            ReadLastSolution;
+            WriteLastSolution"
           Condition="'$(LastSolutionPath)' != '$(SolutionPath)'">
 
     <Delete Files="@(PoResource->'%(PotSourcePath)')" />
   </Target>
   
   <Target Name="PoCleanIfNotInBuildSequence"
-          DependsOnTargets="InitPoResources;ReadBuildSequence"
+          DependsOnTargets="
+            InitPoResources;
+            ReadBuildSequence"
           Condition="'$(LastBuildSequenceContainsProject)' != 'true'">
 
     <Delete Files="@(PoResource->'%(PotSourcePath)')" />
   </Target>
   
   <Target Name="PoIncrementalClean"
-          DependsOnTargets="InitPoResources;PoCleanIfNotInBuildSequence;PoCleanIfSolutionChange"
+          DependsOnTargets="
+            PoCleanIfNotInBuildSequence;
+            PoCleanIfSolutionChange"
           Inputs="$(ProjectPath)"
           Outputs="@(PoResource->'%(PotSourcePath)')">
 
