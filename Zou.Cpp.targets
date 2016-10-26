@@ -9,6 +9,13 @@
 
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
+  <!-- Ensure packages.config appears in VS solution explorer -->
+  <ItemGroup Condition="'$(ConfigurationType)' == 'StaticLibrary' Or '$(ConfigurationType)' == 'DynamicLibrary' Or '$(ConfigurationType)' == 'Application'">
+    <None Include="packages.config" Condition="'@(None)' == '' Or !@(None->AnyHaveMetadataValue('Identity', 'packages.config'))">
+      <SubType>Designer</SubType>
+    </None>
+  </ItemGroup>
+
   <Import Project="$(MSBuildThisFileDirectory)Cpp.Boost.targets"
           Condition="'$(ConfigurationType)' == 'StaticLibrary' Or '$(ConfigurationType)' == 'DynamicLibrary' Or '$(ConfigurationType)' == 'Application'"/>
   <Import Project="$(MSBuildThisFileDirectory)Cpp.HelpProject.targets"/>

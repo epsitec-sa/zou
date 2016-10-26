@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <!-- This property sheet resolves the 'BoostVersion'property (supports override in zou.cfg folder). -->
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003"
-         InitialTargets="CppNTVersionTrace"
+         InitialTargets="CppBoostVersionTrace"
          TreatAsLocalProperty="BoostVersion">
 
   <PropertyGroup>
@@ -12,7 +12,7 @@
     <Import Project="$(ZouBundleDir)**\$(MSBuildThisFileName)*$(MSBuildThisFileExtension)"   Condition="'$(ZouBundleDir)'   != ''" />
     <Import Project="$(ZouSolutionDir)**\$(MSBuildThisFileName)*$(MSBuildThisFileExtension)" Condition="'$(ZouSolutionDir)' != '' And '$(ZouSolutionDir)' != '$(ZouBundleDir)'" />
     <Import Project="$(ZouProjectDir)**\$(MSBuildThisFileName)*$(MSBuildThisFileExtension)"  Condition="'$(ZouProjectDir)'  != '' And '$(ZouProjectDir)'  != '$(ZouSolutionDir)' And '$(ZouProjectDir)' != '$(ZouBundleDir)'" />
-    <Import Project="$(ZouPrivateDir)$(MSBuildThisFileName).Default$(MSBuildThisFileExtension)" />
+    <Import Project="$(ZouPrivateDir)$(MSBuildThisFileName).Default$(MSBuildThisFileExtension)" Condition="'$(BoostVersion)' == ''" />
   </ImportGroup>
 
   <Target Name="CppBoostVersionTrace" Condition="'$(ZouTraceProps)' == 'true'">
