@@ -23,6 +23,7 @@ namespace Console1
 		static void Main(string[] args)
 		{
 			Console.WriteLine (Program.Catalog.GetString ("Hello World from Console1!"));
+			Console.WriteLine (Program.Catalog.GetString ("Another string defined in Console1."));
 			Console.WriteLine (Program.Catalog.GetString ("Goodbye from Console1!"));
 			Console.WriteLine ();
 
