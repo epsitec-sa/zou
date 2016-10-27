@@ -7,6 +7,7 @@ Input parameters:
   - %(ImportFile)
 -->
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
   <!-- Define imported files default metadata -->
   <ItemDefinitionGroup>
     <ImportFile>
@@ -15,25 +16,17 @@ Input parameters:
     </ImportFile>
   </ItemDefinitionGroup>
   
-  <!-- ================ ImportFileClean ================ -->
+  <!-- Create custom builds so that Visual Studio FastUpToDateCheck does not skip changes -->
 
-  <!-- Target batching -->
-  <Target Name="ImportFileClean"
-          Outputs="%(ImportFile.ImportDir)%(RecursiveDir)%(ImportFile)">
-    
-    <Delete  Files="%(ImportFile.ImportDir)%(RecursiveDir)%(ImportFile)" />
-    <Message Importance="high" Text="[-] %(ImportFile.ImportDir)%(RecursiveDir)%(ImportFile)" Condition="'%(ImportFile)' != ''"/>
-  </Target>
-  
-  <!-- ================ ImportFile ================ -->
-
-  <!-- Target batching -->
-  <Target Name="ImportFile"
-          DependsOnTargets="_DeleteLastBuildState"
-          Inputs="@(ImportFile)"
-          Outputs="%(ImportFile.ImportDir)%(RecursiveDir)%(ImportFile)">
-    
-    <Message Importance="high" Text="[+] %(ImportFile.Identity) =&gt; %(ImportDir)%(RecursiveDir)%(ImportFile)" />
-    <Copy SourceFiles="@(ImportFile)" DestinationFiles="%(ImportDir)%(RecursiveDir)%(ImportFile)"  />
-  </Target>
+  <ItemGroup>
+    <CustomBuild Include="@(ImportFile)">
+      <Outputs>%(ImportDir)%(RecursiveDir)%(ImportFile)</Outputs>
+      <Message>[+] %(FullPath) -&gt; %(ImportDir)%(RecursiveDir)%(ImportFile)</Message>
+      <Command>
+echo [+] %(FullPath) =^&gt; %(ImportDir)%(RecursiveDir)%(ImportFile)
+copy "%(FullPath)" "%(ImportDir)%(RecursiveDir)%(ImportFile)" &gt;nul
+      </Command>
+      <TreatOutputAsContent>true</TreatOutputAsContent>
+    </CustomBuild>
+  </ItemGroup>
 </Project>
