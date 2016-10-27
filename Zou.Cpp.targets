@@ -1,8 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Import this script at the end of a C++ project -->
+<!-- Import this script at the end of a C++ project like this:
+ 
+  [ImportGroup Label = "ExtensionTargets"]
+    [Import Project = "$(ZouDir)Zou.Cpp.targets" /]
+  [/ ImportGroup]
+ 
+ -->
+
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
-  <Import Project="$(MSBuildThisFileDirectory)Cpp.Boost.targets" />
-  <Import Project="$(MSBuildThisFileDirectory)Cpp.HelpProject.targets"/>
+  <!-- Ensure packages.config appears in VS solution explorer -->
+  <ItemGroup Condition="'$(ConfigurationType)' == 'StaticLibrary' Or '$(ConfigurationType)' == 'DynamicLibrary' Or '$(ConfigurationType)' == 'Application'">
+    <None Include="packages.config" Condition="'@(None)' == '' Or !@(None->AnyHaveMetadataValue('Identity', 'packages.config'))">
+      <SubType>Designer</SubType>
+    </None>
+  </ItemGroup>
 
+  <!-- Ensure vld.ini appears in VS solution explorer -->
+  <ItemGroup Condition="'$(ConfigurationType)' == 'DynamicLibrary' Or '$(ConfigurationType)' == 'Application'">
+    <None Include="vld.ini" Condition="'@(None)' == '' Or !@(None->AnyHaveMetadataValue('Identity', 'vld.ini'))" />
+  </ItemGroup>
+
+  <Import Project="$(MSBuildThisFileDirectory)Cpp.Boost.targets"
+          Condition="'$(ConfigurationType)' == 'StaticLibrary' Or '$(ConfigurationType)' == 'DynamicLibrary' Or '$(ConfigurationType)' == 'Application'"/>
+  
+  <Import Project="$(MSBuildThisFileDirectory)Cpp.Vld.targets"
+          Condition="'$(EnableVLD)' == 'true' And ('$(ConfigurationType)' == 'DynamicLibrary' Or '$(ConfigurationType)' == 'Application')"/>
+
+  <Import Project="$(MSBuildThisFileDirectory)Cpp.HelpProject.targets"/>
+  <Import Project="$(MSBuildThisFileDirectory)Cpp.Import.targets"/>
 </Project>

@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- This property sheet resolves various build flags (supports override in zou.cfg folder). -->
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <_PropertySheetDisplayName>C++ Various Settings</_PropertySheetDisplayName>
+
+    <VariousSettings></VariousSettings>
+  </PropertyGroup> 
+
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(ZouBundleDir)**\$(MSBuildThisFileName)*$(MSBuildThisFileExtension)"   Condition="'$(ZouBundleDir)'   != ''" />
+    <Import Project="$(ZouSolutionDir)**\$(MSBuildThisFileName)*$(MSBuildThisFileExtension)" Condition="'$(ZouSolutionDir)' != '' And '$(ZouSolutionDir)' != '$(ZouBundleDir)'" />
+    <Import Project="$(ZouProjectDir)**\$(MSBuildThisFileName)*$(MSBuildThisFileExtension)"  Condition="'$(ZouProjectDir)'  != '' And '$(ZouProjectDir)'  != '$(ZouSolutionDir)' And '$(ZouProjectDir)' != '$(ZouBundleDir)'" />
+    <Import Project="$(ZouPrivateDir)$(MSBuildThisFileName).Default$(MSBuildThisFileExtension)" Condition="'$(_VariousSettings)' == ''" />
+  </ImportGroup>
+</Project>

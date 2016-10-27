@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- This property sheet resolves the 'EnableVLD' and 'VldVersion'properties (supports override in zou.cfg folder). -->
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003"
+         InitialTargets="CppVldVersionTrace"
+         TreatAsLocalProperty="VldVersion">
+
+  <PropertyGroup>
+    <_PropertySheetDisplayName>C++ Visual Leak Detector Version</_PropertySheetDisplayName>
+  </PropertyGroup>
+
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(ZouBundleDir)**\$(MSBuildThisFileName)*$(MSBuildThisFileExtension)"   Condition="'$(ZouBundleDir)'   != ''" />
+    <Import Project="$(ZouSolutionDir)**\$(MSBuildThisFileName)*$(MSBuildThisFileExtension)" Condition="'$(ZouSolutionDir)' != '' And '$(ZouSolutionDir)' != '$(ZouBundleDir)'" />
+    <Import Project="$(ZouProjectDir)**\$(MSBuildThisFileName)*$(MSBuildThisFileExtension)"  Condition="'$(ZouProjectDir)'  != '' And '$(ZouProjectDir)'  != '$(ZouSolutionDir)' And '$(ZouProjectDir)' != '$(ZouBundleDir)'" />
+    <Import Project="$(ZouPrivateDir)$(MSBuildThisFileName).Default$(MSBuildThisFileExtension)" Condition="'$(VldVersion)' == ''"/>
+  </ImportGroup>
+
+  <Target Name="CppVldVersionTrace" Condition="'$(ZouTraceProps)' == 'true'">
+    <Message Importance="normal" Text="VldVersion = $(VldVersion)" />
+  </Target>
+</Project>

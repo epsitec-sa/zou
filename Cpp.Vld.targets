@@ -1,0 +1,99 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <PropertyGroup>
+    <PackagesConfigFile Condition="'$(PackagesConfigFile)' == ''">packages.config</PackagesConfigFile>
+    <VldIniFile Condition="'$(VldIniFile)' == ''">vld.ini</VldIniFile>
+    
+    <_VldTemplateDir>$(ZouDir).Templates\nuget\</_VldTemplateDir>
+    <_VldTemplatePathPrefix>$(_VldTemplateDir)Cpp.Vld</_VldTemplatePathPrefix>
+    <_VldTemplateIniFile>$(_VldTemplateDir)$(VldIniFile)</_VldTemplateIniFile>
+    <_VldOnlyPackagesConfigFile>$(IntDir)zou.vld.packages.config</_VldOnlyPackagesConfigFile>
+    <_PackagesConfigExists  Condition="Exists($(PackagesConfigFile))">true</_PackagesConfigExists>
+  </PropertyGroup>
+
+  <!-- Create $(VldIniFile) -->
+  <Target Name="_VldCreateIni"
+          Condition="'$(ConfigurationType)' == 'Application'"
+          Inputs="$(_VldTemplateDir)$(VldIniFile)"
+          Outputs="$(ProjectDir)$(VldIniFile)"
+          BeforeTargets="PrepareForBuild">
+    <Message Importance="high" Text="[+] $(_VldTemplateDir)$(VldIniFile) =&gt; $(ProjectDir)$(VldIniFile)" />
+    <Copy SourceFiles="$(_VldTemplateDir)$(VldIniFile)" DestinationFolder="$(ProjectDir)" />
+  </Target>
+
+  <!-- Update $(VldIniFile) -->
+  <ItemGroup Condition="'$(ConfigurationType)' == 'Application'">
+    <ImportFile Include="$(ProjectDir)$(VldIniFile)" >
+      <ImportDir>$(OutDir)</ImportDir>
+    </ImportFile>
+  </ItemGroup>
+  
+  <!-- Import standard nuget VLD imports -->
+  <Import Project="$(_VldTemplatePathPrefix).Imports.targets"/>
+  
+  <Target Name="_VldCreateVldOnlyPackagesConfig"
+          Inputs="$(_VldTemplatePathPrefix).packages.config"
+          Outputs="$(_VldOnlyPackagesConfigFile)">
+    <Copy SourceFiles="$(_VldTemplatePathPrefix).packages.config" DestinationFiles="$(_VldOnlyPackagesConfigFile)" />
+    <!-- Update version -->
+    <FileUpdate Files="$(_VldOnlyPackagesConfigFile)"
+                Regex='^(?&lt;A&gt;\s*&lt;package\s+id="VisualLeakDetector"\s+version=")\S+(?&lt;Z&gt;"[^\r\n]+)'
+                ReplacementText="${A}$(VldVersion)${Z}"
+                Multiline="true"
+                IgnoreCase="true">
+    </FileUpdate>
+  </Target>
+
+  <Target Name="_VldUpdateExistingPackagesConfig"
+          DependsOnTargets="_VldCreateVldOnlyPackagesConfig"
+          Condition="'$(_PackagesConfigExists)' == 'true'" >
+    <!-- Update version -->
+    <FileUpdate Files="$(PackagesConfigFile)"
+                Regex='^(?&lt;A&gt;\s*&lt;package\s+id="VisualLeakDetector"\s+version=")\S+(?&lt;Z&gt;"[^\r\n]+)'
+                ReplacementText="${A}$(VldVersion)${Z}"
+                Multiline="true"
+                IgnoreCase="true">
+      <Output TaskParameter="Changed" PropertyName="_VldVersionChanged" />
+    </FileUpdate>
+
+    <MergePackagesConfig MergeFiles="$(_VldOnlyPackagesConfigFile)"
+                         IntoFile="$(PackagesConfigFile)">
+      <Output TaskParameter="Changed" PropertyName="_VldMergeChanged" />
+    </MergePackagesConfig>
+  </Target>
+
+  <!--
+  copy packages.config template to temp file and update it
+  if packages.config exists
+    update packages.config
+    merge temp file into existing packages.config
+  else
+    copy temp file to packages.config
+  -->
+  <Target Name="UpdateVldPackages" DependsOnTargets="_VldCreateVldOnlyPackagesConfig;_VldUpdateExistingPackagesConfig" BeforeTargets="_CppVldImportCheck">
+    <Copy Condition="'$(_PackagesConfigExists)' != 'true'" SourceFiles="$(_VldOnlyPackagesConfigFile)" DestinationFiles="$(PackagesConfigFile)" />
+
+    <PropertyGroup>
+      <_PackagesConfigChanged Condition="'$(_PackagesConfigExists)' != 'true' Or'$(_VldVersionChanged)' == 'true' Or '$(_VldToolsetChanged)' == 'true' Or '$(_VldMergeChanged)' == 'true'">true</_PackagesConfigChanged>
+    </PropertyGroup>
+
+    <!--<Message Importance="high" Text="_VldVersionChanged = $(_VldVersionChanged)"/>
+    <Message Importance="high" Text="_VldMergeChanged   = $(_VldMergeChanged)"/>
+    <Message Importance="high" Text="_PackagesConfigChanged = $(_PackagesConfigChanged)"/>-->
+    
+    <!-- Restore nuget packages if necessary... -->
+    <Exec Condition="'$(_PackagesConfigChanged)' == 'true'"
+          Command='"$(ZouBinDir)nuget" restore "$(PackagesConfigFile)" -PackagesDirectory "$(NugetPackagesDir.TrimEnd(\))"' />
+  </Target>
+
+  <Target Name="VldClean" AfterTargets="Clean">
+    <Delete Files="$(IntDir)zou.vld.packages.config" />
+  </Target>
+
+  <Target Name="_CppVldTrace" Condition="'$(ZouTrace)' == 'true'">
+    <Message Importance="high" Text="PlatformToolset   = $(PlatformToolset)" />
+    <Message Importance="high" Text="ConfigurationType = $(ConfigurationType)" />
+    <Message Importance="high" Text="VldVersion        = $(VldVersion)" />
+  </Target>
+</Project>

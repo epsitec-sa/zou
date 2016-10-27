@@ -35,6 +35,8 @@ Layout:
         domain1.de-CH.po
         domain2.fr-CH.po
         domain2.de-CH.po
+      obj\Debug                                     $(PotDomainDir)
+        LastSolution.zou                            $(LastSolutionSavePath)
         domain1.pot.src.zou                         %(PoResource.PotSourcePath)
         domain1.pot                                 %(PoResource.PotDomainPath)
         domain2.pot
@@ -83,7 +85,7 @@ Pseudo-code:
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="PoResourceBuild">
 
   <Import Project="Cs.Boot.props" Condition="'$(CsBootImported)' != 'true'"/>
-  <Import Project="BuildSequence.targets" Condition="'$(BuildSequencePath)' == ''"/>
+  <Import Project="BuildSequence.targets" Condition="'$(LastBuildSequencePath)' == ''"/>
 
   <!--=========================================================================-->
   <!-- Constants -->
@@ -110,8 +112,9 @@ Pseudo-code:
     <PoModuleRootDir Condition="'$(ModuleName)' != ''">$(ModuleDir).po\</PoModuleRootDir>
     <PotModuleDir    Condition="'$(ModuleName)' != ''">$(PoModuleRootDir)obj\$(Configuration)\</PotModuleDir>
     <PotModulePath   Condition="'$(ModuleName)' != ''">$(PotModuleDir)$(PoModuleName).pot</PotModulePath>
-    
+
     <PotDomainDir>$([System.IO.Path]::Combine($(ProjectDir),$(IntermediateOutputPath)))</PotDomainDir>
+    <LastSolutionSavePath>$(PotDomainDir)LastSolution.zou</LastSolutionSavePath>
 
     <XGetText>$(ZouBinDir)xgettext</XGetText>
     <MsgInit>$(ZouBinDir)msginit</MsgInit>
@@ -353,7 +356,7 @@ Pseudo-code:
         <PoModuleReferences>@(_Temporary)</PoModuleReferences>
       </PoResource>
       <_Temporary>
-        <RelativePath>$([MSBuild]::MakeRelative($(BundleDir), %(FullPath)))</RelativePath>
+        <RelativePath>$([MSBuild]::MakeRelative($(BundleDir), %(Identity)))</RelativePath>
       </_Temporary>
     </ItemGroup>
     <WriteLinesToFile File="%(PoResource.PoModuleReferencesPath)" Lines="@(_Temporary->'%(RelativePath)')" Overwrite="true" />
@@ -496,7 +499,7 @@ Pseudo-code:
     <!-- PoBundle = msgcat(culture, PoReferences) -->
     <ItemGroup>
       <_Temporary Include="%(PoResource.PoBundlePath);%(PoResource.PoModuleReferences);%(PoResource.PoDomainReferences)" />
-      <PoReference Include="%(_Temporary.FullPath)" Condition="Exists(%(_Temporary.FullPath))"/>
+      <PoReference Include="%(_Temporary.Identity)" Condition="Exists(%(_Temporary.Identity))"/>
       <_Temporary Remove="@(_Temporary)" />
       <PoReferenceModifiedTime Include="%(PoReference.ModifiedTime)"  />
     </ItemGroup>
@@ -505,7 +508,7 @@ Pseudo-code:
       <ConsolidatePoBundle Condition="'@(PoReferenceModifiedTime->Count())' != '1'">true</ConsolidatePoBundle>
     </PropertyGroup>
 
-    <!--<Message Importance="high" Text="ConsolidatePoBundle = $(ConsolidatePoBundle)" />
+    <!--<Message Importance="high" Text="ConsolidatePoBundle = $(ConsolidatePoBundle) [$(ProjectName)]" />
     <LogItems Items="@(PoReference->'%(Identity)')" Title="PoReference" />
     <LogItems Items="@(PoReferenceModifiedTime)" Title="PoReferenceModifiedTime" />-->
 
@@ -583,7 +586,7 @@ Pseudo-code:
                 Regex='^("Content-Type.+?charset=)(CHARSET)(.*)$' ReplacementText="$1UTF-8$3"/>
   </Target>
 
-  <Target Name="DeletePotDomain">
+  <Target Name="DeletePotDomain" DependsOnTargets="InitPoResources">
     <Delete Files="@(PoResource->'%(PotSourcePath)');@(PoResource->'%(PotDomainPath)')" />
   </Target>
 
@@ -876,11 +879,6 @@ Pseudo-code:
     </ItemGroup>
   </Target>
 
-  <Target Name="DeleteMoDomain" DependsOnTargets="InitPoResources">
-    <!--<Message Importance="high" Text="[-] %(PoResource.MoDomainPath)" />-->
-    <Delete Files="@(PoResource->'%(MoDomainPath)')" />
-  </Target>
-
   <!--.........................................................................-->
   
   <Target Name="CreateMoDomainContent"
@@ -934,7 +932,7 @@ Pseudo-code:
           Outputs="@(PoBundleReference)">
 
     <Touch Files="%(PoBundleReference.FullPath)" Time="$(MoDomainLastModifiedTime)" />
-    <Touch Files="%(PoReference.FullPath)"       Time="$(MoDomainLastModifiedTime)" Condition="Exists(%(PoReference.FullPath))" />
+    <Touch Files="%(PoReference.Identity)"       Time="$(MoDomainLastModifiedTime)" Condition="Exists(%(PoReference.Identity))" />
 
     <ItemGroup>
       <PoBundleReference Remove="@(PoBundleReference)" />
@@ -955,18 +953,67 @@ Pseudo-code:
   </Target>
   
   <!--=========================================================================-->
+  <!-- Last solution path -->
+  <!--=========================================================================-->
+
+  <Target Name ="ReadLastSolution">
+
+    <ReadLinesFromFile File="$(LastSolutionSavePath)" >
+      <Output TaskParameter="Lines" ItemName="_Temporary"/>
+    </ReadLinesFromFile>
+    <PropertyGroup >
+      <LastSolutionPath>@(_Temporary)</LastSolutionPath>
+    </PropertyGroup>
+
+    <!--<Message Importance="high" Text="[R] SolutionPath     = $(SolutionPath)" />
+    <Message Importance="high" Text="[R] LastSolutionPath = $(LastSolutionPath)" />-->
+    
+    <ItemGroup >
+      <_Temporary Remove="@(_Temporary)" />
+    </ItemGroup>
+  </Target>
+  
+  <Target Name ="WriteLastSolution">
+
+    <!--<Message Importance="high" Text="[W] SolutionPath     = $(SolutionPath)" />-->
+    
+    <WriteLinesToFile File="$(LastSolutionSavePath)"
+                      Lines="$(SolutionPath)"
+                      Overwrite="true" />
+  </Target>
+  
+  <Target Name="DeleteLastSolutionSave">
+    <Delete Files="$(LastSolutionSavePath)" />
+  </Target>
+
+  <!--=========================================================================-->
   <!-- Clean -->
   <!--=========================================================================-->
 
+  <Target Name="PoCleanIfSolutionChange"
+          DependsOnTargets="
+            InitPoResources;
+            ReadLastSolution;
+            WriteLastSolution"
+          Condition="'$(LastSolutionPath)' != '$(SolutionPath)'">
+
+    <Delete Files="@(PoResource->'%(PotSourcePath)')" />
+  </Target>
+  
   <Target Name="PoCleanIfNotInBuildSequence"
-          DependsOnTargets="InitPoResources;ReadBuildSequence"
-          Condition="'$(BuildSequenceContainsProject)' != 'true'">
+          DependsOnTargets="
+            InitPoResources;
+            ReadBuildSequence"
+          Condition="'$(LastBuildSequenceContainsProject)' != 'true'">
 
     <Delete Files="@(PoResource->'%(PotSourcePath)')" />
   </Target>
   
   <Target Name="PoIncrementalClean"
-          DependsOnTargets="InitPoResources;PoCleanIfNotInBuildSequence"
+          DependsOnTargets="
+            InitPoResources;
+            PoCleanIfNotInBuildSequence;
+            PoCleanIfSolutionChange"
           Inputs="$(ProjectPath)"
           Outputs="@(PoResource->'%(PotSourcePath)')">
 
@@ -1001,9 +1048,10 @@ Pseudo-code:
 
   <!--.........................................................................-->
 
-  <Target Name="PoCleanCore"
+  <Target Name="PoCleanCoreForClean"
+          Condition="'$(ZouInsideRebuild)' != 'true'"
           DependsOnTargets="
-            DeleteMoDomain;
+            DeleteLastSolutionSave;
             DeletePotDomain;
             DeletePotModule;
             PoReset">
@@ -1017,7 +1065,20 @@ Pseudo-code:
     
     <Delete Files="@(_Temporary)" />
     <RemoveDir Directories="$(PoReferencesDir)" ContinueOnError="true" />
+    
+    <ItemGroup>
+      <_Temporary Remove="@(_Temporary)" />
+    </ItemGroup>
   </Target>
+
+  <Target Name="PoCleanCoreForRebuild"
+          Condition="'$(ZouInsideRebuild)' == 'true'"
+          DependsOnTargets="DeletePotDomain" />
+  
+  <Target Name="PoCleanCore"
+          DependsOnTargets="
+            PoCleanCoreForClean;
+            PoCleanCoreForRebuild" />
 
   <Target Name="PoClean" AfterTargets="Clean">
     <CallTarget Targets="PoLock;PoCleanCore;PoUnlock" RunEachTargetSeparately="true" />
@@ -1031,6 +1092,7 @@ Pseudo-code:
   <Target Name="PoBuildCore"
           DependsOnTargets="
             ReadBuildSequence;
+            ReadLastSolution;
             PoIncrementalClean;
             PoCreateFolders;
             
