@@ -28,6 +28,12 @@
 #define BOOST_COROUTINE_NO_DEPRECATION_WARNING
 #define BOOST_COROUTINES_NO_DEPRECATION_WARNING
 
+//----------------------------------------------------------------------------- Visual Leak Detector
+
+#ifdef _VLD
+#include <vld.h>
+#endif
+
 //----------------------------------------------------------------------------- AFX
 
 // Exclude rarely-used stuff from Windows headers
