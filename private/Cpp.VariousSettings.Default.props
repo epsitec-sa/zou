@@ -17,47 +17,34 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <SDLCheck>true</SDLCheck>
       <WarningLevel>Level3</WarningLevel>
+      <RuntimeLibrary       Condition="'$(Configuration)'=='Debug'">MultiThreadedDebug</RuntimeLibrary>
+      <RuntimeLibrary       Condition="'$(Configuration)'=='Release'">MultiThreaded</RuntimeLibrary>
+      <FunctionLevelLinking Condition="'$(Configuration)'=='Release'">true</FunctionLevelLinking>
+      <IntrinsicFunctions   Condition="'$(Configuration)'=='Release'">true</IntrinsicFunctions>
+      <AdditionalOptions    Condition="'$(Configuration)'=='Release'">/bigobj %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
-    </Link>
-  </ItemDefinitionGroup>
-
-  <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug'">
-    <ClCompile>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-    </ClCompile>
-  </ItemDefinitionGroup>
-
-  <ItemDefinitionGroup Condition="'$(Configuration)'=='Release'">
-    <ClCompile>
-      <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-    </ClCompile>
-    <Link>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
-    </Link>
-  </ItemDefinitionGroup>
-
-  <ItemDefinitionGroup Condition="'$(Platform)'=='Win32'">
-    <Link>
-      <TargetMachine>MachineX86</TargetMachine>
+      <EnableCOMDATFolding  Condition="'$(Configuration)'=='Release'">true</EnableCOMDATFolding>
+      <OptimizeReferences   Condition="'$(Configuration)'=='Release'">true</OptimizeReferences>
+      <TargetMachine        Condition="'$(Platform)'=='Win32'">MachineX86</TargetMachine>
+      <TargetMachine        Condition="'$(Platform)'=='x64'">MachineX64</TargetMachine>
     </Link>
     <Lib>
-      <TargetMachine>MachineX86</TargetMachine>
+      <TargetMachine        Condition="'$(Platform)'=='Win32'">MachineX86</TargetMachine>
+      <TargetMachine        Condition="'$(Platform)'=='x64'">MachineX64</TargetMachine>
     </Lib>
-  </ItemDefinitionGroup>
-
-  <ItemDefinitionGroup Condition="'$(Platform)'=='x64'">
-    <Link>
-      <TargetMachine>MachineX64</TargetMachine>
-    </Link>
-    <Lib>
-      <TargetMachine>MachineX64</TargetMachine>
-    </Lib>
+    <Midl>
+      <MkTypLibCompatible>false</MkTypLibCompatible>
+      <ValidateAllParameters>true</ValidateAllParameters>
+      <PreprocessorDefinitions Condition="'$(Configuration)'=='Release'">NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)'=='Debug'"  >_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </Midl>
+    <ResourceCompile>
+      <Culture>0x100c</Culture>
+      <PreprocessorDefinitions Condition="'$(Configuration)'=='Release'">NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)'=='Debug'"  >_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
   </ItemDefinitionGroup>
 
   <ItemDefinitionGroup Condition="'$(ConfigurationType)' == 'StaticLibrary'">
@@ -85,19 +72,5 @@
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'"  >_WINDOWS;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'"    >_WINDOWS;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <Link>
-      <AdditionalLibraryDirectories>$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-    </Link>
-  </ItemDefinitionGroup>
-
-  <ItemDefinitionGroup>
-    <ResourceCompile>
-      <Culture>0x100c</Culture>
-      <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">_M_X32;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'"  >_M_X32;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'"  >_M_X64;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'"    >_M_X64;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-    </ResourceCompile>
   </ItemDefinitionGroup>
 </Project>
