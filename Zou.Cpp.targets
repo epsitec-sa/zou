@@ -18,7 +18,15 @@
 
   <Import Project="$(MSBuildThisFileDirectory)Cpp.Boost.targets"
           Condition="'$(ConfigurationType)' == 'StaticLibrary' Or '$(ConfigurationType)' == 'DynamicLibrary' Or '$(ConfigurationType)' == 'Application'"/>
-  
+
+  <!--
+  Ensure vld.ini appears in VS solution explorer ('vld.ini' should appear verbatim in the Include attribute)
+  WARNING: should not depend on the EnableVLD property - so do not move this code in the Cpp.Vld.targets script!
+  -->
+  <ItemGroup Condition="'$(ConfigurationType)' == 'Application'">
+    <None Include="$(SolutionOrProjectDir)vld.ini" />
+  </ItemGroup>
+
   <Import Project="$(MSBuildThisFileDirectory)Cpp.Vld.targets"
           Condition="'$(EnableVLD)' == 'true' And ('$(ConfigurationType)' == 'DynamicLibrary' Or '$(ConfigurationType)' == 'Application')"/>
 

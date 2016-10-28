@@ -3,9 +3,7 @@
 
   <PropertyGroup>
     <PackagesConfigFile Condition="'$(PackagesConfigFile)' == ''">packages.config</PackagesConfigFile>
-    <VldIniDir Condition="'$(SolutionDir)' != '' And '$(SolutionDir)' != '*Undefined*'">$(SolutionDir)</VldIniDir>
-    <VldIniDir Condition="'$(SolutionDir)' == '' Or  '$(SolutionDir)' == '*Undefined*'">$(ProjectDir)</VldIniDir>
-    <VldIniPath>$(VldIniDir)vld.ini</VldIniPath>
+    <VldIniPath>$(SolutionOrProjectDir)vld.ini</VldIniPath>
 
     <_VldTemplateDir>$(ZouDir).Templates\nuget\</_VldTemplateDir>
     <_VldTemplatePathPrefix>$(_VldTemplateDir)Cpp.Vld</_VldTemplatePathPrefix>
@@ -13,11 +11,6 @@
     <_VldOnlyPackagesConfigFile>$(IntDir)zou.vld.packages.config</_VldOnlyPackagesConfigFile>
     <_PackagesConfigExists  Condition="Exists($(PackagesConfigFile))">true</_PackagesConfigExists>
   </PropertyGroup>
-
-  <!-- Ensure vld.ini appears in VS solution explorer ('vld.ini' should appear verbatim in the Include attribute: do not use $(VldIniPath)) -->
-  <ItemGroup Condition="'$(ConfigurationType)' == 'Application'">
-    <None Include="$(VldIniDir)vld.ini" />
-  </ItemGroup>
 
   <!-- Create vld.ini -->
   <Target Name="_VldCreateIni"
