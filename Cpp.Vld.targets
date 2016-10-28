@@ -1,33 +1,52 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" InitialTargets="_CppVldTrace">
 
   <PropertyGroup>
     <PackagesConfigFile Condition="'$(PackagesConfigFile)' == ''">packages.config</PackagesConfigFile>
-    <VldIniFile Condition="'$(VldIniFile)' == ''">vld.ini</VldIniFile>
-    
+    <VldIniDir Condition="'$(SolutionDir)' != '' And '$(SolutionDir)' != '*Undefined*'">$(SolutionDir)</VldIniDir>
+    <VldIniDir Condition="'$(SolutionDir)' == '' Or  '$(SolutionDir)' == '*Undefined*'">$(ProjectDir)</VldIniDir>
+    <VldIniPath>$(VldIniDir)vld.ini</VldIniPath>
+
     <_VldTemplateDir>$(ZouDir).Templates\nuget\</_VldTemplateDir>
     <_VldTemplatePathPrefix>$(_VldTemplateDir)Cpp.Vld</_VldTemplatePathPrefix>
-    <_VldTemplateIniFile>$(_VldTemplateDir)$(VldIniFile)</_VldTemplateIniFile>
+    <_VldTemplateIniPath>$(_VldTemplateDir)vld.ini</_VldTemplateIniPath>
     <_VldOnlyPackagesConfigFile>$(IntDir)zou.vld.packages.config</_VldOnlyPackagesConfigFile>
     <_PackagesConfigExists  Condition="Exists($(PackagesConfigFile))">true</_PackagesConfigExists>
   </PropertyGroup>
 
-  <!-- Create $(VldIniFile) -->
+  <!-- Ensure vld.ini appears in VS solution explorer ('vld.ini' should appear verbatim in the Include attribute: do not use $(VldIniPath)) -->
+  <ItemGroup Condition="'$(ConfigurationType)' == 'Application'">
+    <None Include="$(VldIniDir)vld.ini" />
+  </ItemGroup>
+
+  <!-- Create vld.ini -->
   <Target Name="_VldCreateIni"
           Condition="'$(ConfigurationType)' == 'Application'"
-          Inputs="$(_VldTemplateDir)$(VldIniFile)"
-          Outputs="$(ProjectDir)$(VldIniFile)"
+          Inputs="$(_VldTemplateIniPath)"
+          Outputs="$(VldIniPath)"
           BeforeTargets="PrepareForBuild">
-    <Message Importance="high" Text="[+] $(_VldTemplateDir)$(VldIniFile) =&gt; $(ProjectDir)$(VldIniFile)" />
-    <Copy SourceFiles="$(_VldTemplateDir)$(VldIniFile)" DestinationFolder="$(ProjectDir)" />
+    <Message Importance="high" Text="[+] $(_VldTemplateIniPath) =&gt; $(VldIniPath)" />
+    <Copy SourceFiles="$(_VldTemplateIniPath)" DestinationFiles="$(VldIniPath)" />
   </Target>
 
-  <!-- Update $(VldIniFile) -->
+  <!-- Update vld.ini -->
   <ItemGroup Condition="'$(ConfigurationType)' == 'Application'">
-    <ImportFile Include="$(ProjectDir)$(VldIniFile)" >
+    <ImportFile Include="$(VldIniPath)" />
+  </ItemGroup>
+
+  <!-- Import binaries -->
+  <PropertyGroup>
+    <NumericPlatform Condition="'$(Platform)'=='Win32'">32</NumericPlatform>
+    <NumericPlatform Condition="'$(Platform)'=='x64'">64</NumericPlatform>
+    <VldLibDir>$(NugetPackagesDir)VisualLeakDetector.$(VldVersion)\lib\native\address-model-$(NumericPlatform)\lib\</VldLibDir>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(Configuration)'=='Debug' And '$(ConfigurationType)' == 'Application'">
+    <ImportFile Include="$(VldLibDir)*.*">
       <ImportDir>$(OutDir)</ImportDir>
     </ImportFile>
   </ItemGroup>
+
+  
   
   <!-- Import standard nuget VLD imports -->
   <Import Project="$(_VldTemplatePathPrefix).Imports.targets"/>
@@ -95,5 +114,7 @@
     <Message Importance="high" Text="PlatformToolset   = $(PlatformToolset)" />
     <Message Importance="high" Text="ConfigurationType = $(ConfigurationType)" />
     <Message Importance="high" Text="VldVersion        = $(VldVersion)" />
+    <Message Importance="high" Text="VldLibDir         = $(VldLibDir)" />
+    <LogItems Items="@(CustomBuild)" />
   </Target>
 </Project>
