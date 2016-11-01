@@ -29,26 +29,41 @@
     <!-- Dispatch package content to respective folders -->
     <ItemGroup>
       <!-- Production package -->
-      <ImportFile Include="@(ProdBinInclude)" Exclude="@(ProdBinExclude)">
+      <PackFile Include="@(ProdBinInclude)" Exclude="@(ProdBinExclude)">
         <ImportDir>$(PkgProdBinDir)</ImportDir>
-      </ImportFile>
-      <ImportFile Include="@(ProdDbgInclude)">
+      </PackFile>
+      <PackFile Include="@(ProdDbgInclude)">
         <ImportDir>$(PkgProdDbgDir)</ImportDir>
-      </ImportFile>
+      </PackFile>
 
       <!-- Developer package -->
-      <ImportFile Include="@(DevBinInclude)">
+      <PackFile Include="@(DevBinInclude)">
         <ImportDir>$(PkgDevBinDir)</ImportDir>
-      </ImportFile>
-      <ImportFile Include="@(DevCodInclude)">
+      </PackFile>
+      <PackFile Include="@(DevCodInclude)">
         <ImportDir>$(PkgDevDbgDir)</ImportDir>
-      </ImportFile>
+      </PackFile>
     </ItemGroup>
   </Target>
 
-  <Target Name="PackBuild" AfterTargets="Build"  DependsOnTargets="ImportProject;PackCreate" />
-  <Target Name="PackClean" BeforeTargets="Clean" DependsOnTargets="PackCreate;ImportProjectClean" />
+  <Target Name="PackImportClean"
+          DependsOnTargets="PackCreate">
+    
+    <Delete  Files="%(PackFile.ImportDir)%(RecursiveDir)%(FileName)%(Extension)" />
+    <Message Importance="high" Text="[-] %(PackFile.ImportDir)%(RecursiveDir)%(FileName)%(Extension)" Condition="'%(FileName)%(Extension)' != ''"/>
+  </Target>
+  
+  <Target Name="PackImport"
+          DependsOnTargets="_DeleteLastBuildState;PackCreate"
+          Inputs="@(PackFile)"
+          Outputs="%(PackFile.ImportDir)%(RecursiveDir)%(FileName)%(Extension)">
+    
+    <Message Importance="high" Text="[+] %(PackFile.Identity) =&gt; %(ImportDir)%(RecursiveDir)%(FileName)%(Extension)" />
+    <Copy SourceFiles="@(PackFile)" DestinationFiles="%(ImportDir)%(RecursiveDir)%(FileName)%(Extension)"  />
+  </Target>
+
+  <Target Name="PackBuild" AfterTargets="Build"  DependsOnTargets="ImportProject;PackImport" />
+  <Target Name="PackClean" BeforeTargets="Clean" DependsOnTargets="PackImportClean;ImportProjectClean" />
 
   <Import Project="ImportProject.targets" />
-  <Import Project="ImportFile.targets" />
 </Project>
