@@ -623,9 +623,17 @@ namespace Epsitec.Zou
 		public static CommentSection[]				Parse(IEnumerator<string> e, PoFileInfo fileInfo)
 		{
 			var allSections = CommentSection
-				.ParseCore (e)
+				.ParseCore (e, fileInfo)
 				.Distinct (s => s.Title)
 				.ToArray ();
+
+			// add a domain orphan section if necessary
+			if (!string.IsNullOrEmpty (fileInfo.Domain) && !allSections.Where(s => s.Title.PoName == fileInfo.PoName).Any())
+			{
+				allSections = allSections
+					.StartWith (CommentSection.CreateDomainOrphan (fileInfo))
+					.ToArray ();
+			}
 
 			var fullSections       = allSections.Where (s => !s.IsOrphan);
 			var fromOrphanSections = allSections.Where (s => s.IsOrphan)
@@ -685,7 +693,7 @@ namespace Epsitec.Zou
 		}
 
 		private static bool							IsEmptyComment(IEnumerator<string> e) => e.Current == "#";
-		private static IEnumerable<CommentSection>	ParseCore(IEnumerator<string> e)
+		private static IEnumerable<CommentSection>	ParseCore(IEnumerator<string> e, PoFileInfo fileInfo)
 		{
 			while (true)
 			{
@@ -696,7 +704,7 @@ namespace Epsitec.Zou
 				}
 				else
 				{
-					foreach (var commentSection in CommentSection.ParseDemux (content))
+					foreach (var commentSection in CommentSection.ParseDemux (content, fileInfo))
 					{
 						yield return commentSection;
 					}
@@ -716,23 +724,56 @@ namespace Epsitec.Zou
 				yield return e.Current;
 			}
 		}
-		private static IEnumerable<CommentSection>	ParseDemux(string[] content)
+		private static IEnumerable<CommentSection>	ParseDemux(string[] content, PoFileInfo fileInfo)
 		{
-			var e      = content.AsEnumerable ().GetEnumerator ();
-			var titles = CommentTitle.Parse (e);
-			var body   = CommentBody.Parse(e);
+			var e = content.AsEnumerable ().GetEnumerator ();	// save initial position
 
-			var fullSections = titles
-				.Where (t => t.Package == body.Package)
-				.Select (t => new CommentSection (t, body));
-			var orphanSections = titles
-				.Where (t => t.Package != body.Package)
-				.Select (t => new CommentSection (t, CommentBody.GetEmpty (t.Package)));
+			var ok = e.MoveNext ();
+			if (ok)
+			{
+				var titles = new CommentTitle[0];
 
-			return fullSections.Concat(orphanSections);
+				// check if a title exists
+				var match = CommentTitle.PoNamePackageRegex.Match (e.Current);
+				if (match.Success)
+				{
+					// seek to original position
+					e = content.AsEnumerable ().GetEnumerator ();
+					titles = CommentTitle.Parse (e);
+				}
+				else
+				{
+					match = CommentBody.PackageRegex.Match (e.Current);
+					if (match.Success)
+					{
+						// title is missing
+						var package = match.Groups[1].Value;
+						titles = new[] { CommentTitle.Create (fileInfo.PoName, package) };
+					}
+				}
+
+				var body = CommentBody.Parse (e);
+				var fullSections = titles
+					.Where (t => t.Package == body.Package)
+					.Select (t => new CommentSection (t, body));
+				var orphanSections = titles
+					.Where (t => t.Package != body.Package)
+					.Select (t => new CommentSection (t, CommentBody.GetEmpty (t.Package)));
+
+				return fullSections.Concat (orphanSections);
+			}
+			else
+			{
+				return Enumerable.Empty<CommentSection> ();
+			}
+		}
+		private static CommentSection				CreateDomainOrphan(PoFileInfo fileInfo)
+		{
+			return new CommentSection (CommentTitle.Create (fileInfo.PoName, fileInfo.Package), CommentBody.GetEmpty (fileInfo.Package));
 		}
 
-		private										CommentSection(CommentTitle title, CommentBody body)
+
+		private CommentSection(CommentTitle title, CommentBody body)
 		{
 			Debug.Assert (title.Package == body.Package);
 			this.Title = title;
@@ -746,6 +787,10 @@ namespace Epsitec.Zou
 			return CommentTitle.ParseCore (e)
 				.Distinct ()
 				.ToArray ();
+		}
+		public static CommentTitle					Create(string poName, string package)
+		{
+			return new CommentTitle (poName, package, $"# #-#-#-#-#  {poName} ('{package}')  #-#-#-#-#");
 		}
 
 		public string								PoName
@@ -782,14 +827,13 @@ namespace Epsitec.Zou
 				yield return new CommentTitle (poName, package, e.Current);
 			}
 		}
-		private static readonly Regex				PoNamePackageRegex = new Regex("# #-#-#-#-#\\s+(\\S+.*) \\('(.*)'\\)\\s+#", RegexOptions.CultureInvariant | RegexOptions.Compiled);
-
 		private										CommentTitle(string poName, string package, string value)
 		{
 			this.PoName  = poName;
 			this.Package = package;
 			this.Value   = value;
 		}
+		public  static readonly Regex				PoNamePackageRegex = new Regex("# #-#-#-#-#\\s+(\\S+.*) \\('(.*)'\\)\\s+#", RegexOptions.CultureInvariant | RegexOptions.Compiled);
 	}
 	internal class CommentBody
 	{
@@ -833,7 +877,7 @@ namespace Epsitec.Zou
 			return new CommentBody (package, content);
 		}
 
-		private static readonly Regex				PackageRegex = new Regex("# \\S+.*'(.*)'\\s+package\\.", RegexOptions.CultureInvariant | RegexOptions.Compiled);
+		public static readonly Regex				PackageRegex = new Regex("# \\S+.*'(.*)'\\s+package\\.", RegexOptions.CultureInvariant | RegexOptions.Compiled);
 		private static readonly Dictionary<string, CommentBody> EmptyBodies = new Dictionary<string, CommentBody>();
 
 		private										CommentBody(string package, IEnumerable<string> content)
