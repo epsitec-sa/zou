@@ -92,10 +92,12 @@ Pseudo-code:
   <!--=========================================================================-->
   
   <PropertyGroup>
+    <ContinueMessage>Press [Enter] to continue...</ContinueMessage>
+    <Interactive       Condition="'$(Interactive)'       == ''">false</Interactive>
     <PoNoFuzzy         Condition="'$(PoNoFuzzy)'         == ''">false</PoNoFuzzy>
     <PoNoClean         Condition="'$(PoNoClean)'         == ''">false</PoNoClean>
     <PoNoLocation      Condition="'$(PoNoLocation)'      == ''">false</PoNoLocation>
-    <NoPotCreationDate Condition="'$(NoPoRevisionDate)'  == ''">true</NoPotCreationDate>
+    <NoPotCreationDate Condition="'$(NoPotCreationDate)' == ''">true</NoPotCreationDate>
     <NoPoRevisionDate  Condition="'$(NoPoRevisionDate)'  == ''">true</NoPoRevisionDate>
     
     <PoLocaleSubdir>locale\</PoLocaleSubdir>
@@ -493,7 +495,7 @@ Pseudo-code:
   <!--=========================================================================-->
 
   <Target Name="ConsolidatePoBundle"
-          DependsOnTargets="ReadPoModuleReferences;ReadPoDomainReferences"
+          DependsOnTargets="ReadPoModuleReferences;ReadPoDomainReferences;InitPoDomain"
           Returns="%(PoResource.PoBundlePath)">
 
     <!-- PoBundle = msgcat(culture, PoReferences) -->
@@ -505,7 +507,7 @@ Pseudo-code:
     </ItemGroup>
     
     <PropertyGroup>
-      <ConsolidatePoBundle Condition="'@(PoReferenceModifiedTime->Count())' != '1'">true</ConsolidatePoBundle>
+      <ConsolidatePoBundle Condition="'@(PoReferenceModifiedTime->Count())' &gt; '1'">true</ConsolidatePoBundle>
     </PropertyGroup>
 
     <!--<Message Importance="high" Text="ConsolidatePoBundle = $(ConsolidatePoBundle) [$(ProjectName)]" />
@@ -520,6 +522,9 @@ Pseudo-code:
     </PropertyGroup>
     
     <Exec Command='"$(MsgCat)" $(_Options) $(_PoReferences)' Condition="'$(ConsolidatePoBundle)' == 'true'" />
+  
+    <Prompt Text="$ msgcat =&gt; %(PoResource.PoBundlePath) -- $(ContinueMessage)"
+            Condition="'$(ConsolidatePoBundle)' == 'true' And '$(Interactive)' == 'True'" />
 
     <ItemGroup>
       <PoFile Include="%(PoResource.PoBundlePath)">
@@ -560,6 +565,9 @@ Pseudo-code:
           Outputs="%(PoResource.PotSourcePath)">
 
     <WriteLinesToFile File="%(PoResource.PotSourcePath)" Lines="@(PotSource->'%(RelativePath)')" Overwrite="true" />
+
+    <Prompt Text="$ create =&gt; %(PoResource.PotSourcePath) -- $(ContinueMessage)"
+            Condition="'$(Interactive)' == 'True'" />
   </Target>
 
   <!--.........................................................................-->
@@ -584,6 +592,9 @@ Pseudo-code:
     <!-- Replace CHARSET with UTF-8 and remove BOM -->
     <FileUpdate Files="%(PoResource.PotDomainPath)" Multiline="true" IgnoreCase="true" Encoding="utf-8-without-bom"
                 Regex='^("Content-Type.+?charset=)(CHARSET)(.*)$' ReplacementText="$1UTF-8$3"/>
+  
+    <Prompt Text="$ xgettext =&gt; %(PoResource.PotDomainPath) -- $(ContinueMessage)"
+            Condition="'$(Interactive)' == 'True'" />
   </Target>
 
   <Target Name="DeletePotDomain" DependsOnTargets="InitPoResources">
@@ -592,16 +603,42 @@ Pseudo-code:
 
   <!--.........................................................................-->
 
+  <Target Name="CreatePotModule"
+          Condition="'$(ModuleName)' != '' And !Exists($(PotModulePath))"
+          DependsOnTargets="WritePotSource"
+          Outputs="$(PotModulePath)">
+
+    <!-- PotModule = xgettext(PotSource) -->
+    <PropertyGroup>
+      <_Options>--from-code=UTF-8 --no-wrap -D"$(BundleDir)." -f"%(PoResource.PotSourcePath)" -o"$(PotModulePath)"</_Options>
+      <_Options Condition="'$(PoNoLocation)'  == 'true'">$(_Options) --no-location</_Options>
+      <_Options Condition="'$(PoCopyright)'   != ''">$(_Options) --copyright-holder="$(PoCopyright)"</_Options>
+      <_Options Condition="'$(PoPackageName)' != ''">$(_Options) --package-name="$(PoPackageName)"</_Options>
+      <_Options Condition="'$(PoKeywordSpec)' != ''">$(_Options) --keyword="$(PoKeywordSpec)"</_Options>
+    </PropertyGroup>
+    <Exec Command='"$(XGetText)" $(_Options)' />
+
+    <Error Code="$(ErrorPoNoMessageIdCode)" Text="$(ErrorPoNoMessageId)" Condition="!Exists($(PotModulePath))" ContinueOnError="false" />
+
+    <!-- Replace CHARSET with UTF-8 and remove BOM -->
+    <FileUpdate Files="$(PotModulePath)" Multiline="true" IgnoreCase="true" Encoding="utf-8-without-bom"
+                Regex='^("Content-Type.+?charset=)(CHARSET)(.*)$' ReplacementText="$1UTF-8$3"/>
+
+    <Prompt Text="$ xgettext =&gt; $(PotModulePath) -- $(ContinueMessage)"
+            Condition="'$(Interactive)' == 'True'" />
+  </Target>
+
   <Target Name="CreateOrUpdatePotModule"
           Condition="'$(ModuleName)' != ''"
-          DependsOnTargets="InitPoResources;CreatePotDomain"
+          DependsOnTargets="InitPoResources;CreatePotModule;CreatePotDomain"
           Inputs="@(PoResource->'%(PotDomainPath)')"
           Outputs="$(PotModulePath)">
 
     <!--PotModule = msgcat (anyCulture, PotReferences) -->
+
     <ItemGroup>
-      <PotReference Include="$(PotModulePath)" Condition="Exists($(PotModulePath))"/>
       <PotReference Include="@(PoResource->'%(PotDomainPath)')" />
+      <PotReference Include="$(PotModulePath)" Condition="Exists($(PotModulePath))"/>
     </ItemGroup>
 
     <PropertyGroup>
@@ -612,6 +649,9 @@ Pseudo-code:
     </PropertyGroup>
 
     <Exec Command='"$(MsgCat)" $(_Options) $(PotReferences)' />
+
+    <Prompt Text="$ msgcat =&gt; $(PotModulePath) -- $(ContinueMessage)"
+           Condition="'$(Interactive)' == 'True'" />
 
     <ItemGroup>
       <PoFile Include="$(PotModulePath)">
@@ -640,7 +680,7 @@ Pseudo-code:
   <!--=========================================================================-->
 
   <Target Name="InitPoBundle"
-          DependsOnTargets="InitPoResources;CreateOrUpdatePotModule"
+          DependsOnTargets="InitPoResources;CreateOrUpdatePotModule;InitPoModule"
           Inputs="$(PotModulePath)"
           Outputs="%(PoResource.PoBundlePath)">
 
@@ -662,6 +702,31 @@ Pseudo-code:
       <_Options Condition="'$(PoNoLocation)'  == 'true'">$(_Options) --no-location</_Options>
     </PropertyGroup>
     <Exec Command='"$(MsgAttrib)" $(_Options) "%(PoResource.PoBundlePath)"' Condition="'$(PoNoFuzzy)' == 'true' And '$(PoBundleInitialized)' != 'true'" />
+  
+    <!-- concat module header -->
+    <PropertyGroup>
+      <_Options>--no-wrap -D"$(BundleDir)." --lang=%(PoResource.Culture) -o"%(PoResource.PoBundlePath)"</_Options>
+      <_Options Condition="'$(PoNoLocation)'  == 'true'">$(_Options) --no-location</_Options>
+    </PropertyGroup>
+    <Exec Command='"$(MsgCat)" $(_Options) "%(PoResource.PoBundlePath)" "%(PoResource.PoModulePath)"' Condition="'$(PoBundleInitialized)' != 'true'" />
+
+    <Prompt Text="$ msginit =&gt; %(PoResource.PoBundlePath) -- $(ContinueMessage)"
+            Condition="'$(PoBundleInitialized)' != 'true' And '$(Interactive)' == 'True'" />
+
+    <ItemGroup>
+      <PoFile Include="%(PoResource.PoBundlePath)">
+        <Bundle>$(BundleName)</Bundle>
+        <NoPotCreationDate>$(NoPotCreationDate)</NoPotCreationDate>
+        <NoPoRevisionDate>$(NoPoRevisionDate)</NoPoRevisionDate>
+      </PoFile>
+    </ItemGroup>
+
+    <CleanPoFile SourceFiles="@(PoFile)"
+                 Condition="'$(PoNoClean)' != 'true' And '$(PoBundleInitialized)' != 'true'"/>
+    
+    <ItemGroup>
+      <PoFile Remove="@(PoFile)" />
+    </ItemGroup>
 
     <!-- Force a refresh if PoResource or PoModule files exist -->
     <PropertyGroup>
@@ -685,6 +750,9 @@ Pseudo-code:
     </PropertyGroup>
     <Exec Command='"$(MsgInit)" $(_Options)' Condition="'%(PoResource.PoModuleInitialized)' != 'true'" />
 
+    <Prompt Text="$ msginit =&gt; %(PoResource.PoModulePath) -- $(ContinueMessage)"
+            Condition="'%(PoResource.PoModuleInitialized)' != 'true' And '$(Interactive)' == 'True'" />
+
     <!-- PoModule -= header's fuzzy marker -->
     <PropertyGroup>
       <_Options>-o"%(PoResource.PoModulePath)"</_Options>
@@ -692,6 +760,22 @@ Pseudo-code:
       <_Options Condition="'$(PoNoLocation)'  == 'true'">$(_Options) --no-location</_Options>
     </PropertyGroup>
     <Exec Command='"$(MsgAttrib)" $(_Options) "%(PoResource.PoModulePath)"' Condition="'$(PoNoFuzzy)' == 'true' And '%(PoResource.PoModuleInitialized)' != 'true'" />
+  
+    <ItemGroup>
+      <PoFile Include="%(PoResource.PoModulePath)">
+        <Bundle>$(BundleName)</Bundle>
+        <Module Condition="'$(ModuleName)' != ''">$(ModuleName)</Module>
+        <NoPotCreationDate>$(NoPotCreationDate)</NoPotCreationDate>
+        <NoPoRevisionDate>$(NoPoRevisionDate)</NoPoRevisionDate>
+      </PoFile>
+    </ItemGroup>
+
+    <CleanPoFile SourceFiles="@(PoFile)"
+                 Condition="'$(PoNoClean)' != 'true' And '%(PoResource.PoModuleInitialized)' != 'true'"/>
+    
+    <ItemGroup>
+      <PoFile Remove="@(PoFile)" />
+    </ItemGroup>
   </Target>
 
   <!--.........................................................................-->
@@ -710,6 +794,9 @@ Pseudo-code:
     <MakeDir Directories="%(PoResource.RootDir)%(Directory)" />
     <Exec Command='"$(MsgInit)" $(_Options)' Condition="'%(PoResource.Initialized)' != 'true'" />
 
+    <Prompt Text="$ msginit =&gt; %(PoResource.FullPath) -- $(ContinueMessage)"
+            Condition="'%(PoResource.Initialized)' != 'true' And '$(Interactive)' == 'True'" />
+
     <!-- PoResource -= header's fuzzy marker -->
     <PropertyGroup>
       <_Options>-o"%(PoResource.FullPath)"</_Options>
@@ -717,6 +804,23 @@ Pseudo-code:
       <_Options Condition="'$(PoNoLocation)'  == 'true'">$(_Options) --no-location</_Options>
     </PropertyGroup>
     <Exec Command='"$(MsgAttrib)" $(_Options) "%(PoResource.FullPath)"' Condition="'$(PoNoFuzzy)' == 'true' And '%(PoResource.Initialized)' != 'true'" />
+  
+    <ItemGroup>
+      <PoFile Include="%(PoResource.FullPath)">
+        <Bundle>$(BundleName)</Bundle>
+        <Module Condition="'$(ModuleName)' != ''">$(ModuleName)</Module>
+        <Domain>%(PoResource.Domain)</Domain>
+        <NoPotCreationDate>$(NoPotCreationDate)</NoPotCreationDate>
+        <NoPoRevisionDate>$(NoPoRevisionDate)</NoPoRevisionDate>
+      </PoFile>
+    </ItemGroup>
+
+    <CleanPoFile SourceFiles="@(PoFile)"
+                 Condition="'$(PoNoClean)' != 'true' And '%(PoResource.Initialized)' != 'true'"/>
+    
+    <ItemGroup>
+      <PoFile Remove="@(PoFile)" />
+    </ItemGroup>
   </Target>
 
   <!--=========================================================================-->
@@ -736,6 +840,9 @@ Pseudo-code:
     </PropertyGroup>
     
     <Exec Command='"$(MsgMerge)" $(_Options) nul "%(PoResource.PotDomainPath)"' />
+
+    <Prompt Text="$ msgmerge =&gt; %(PoResource.FullPath) -- $(ContinueMessage)"
+            Condition="'$(Interactive)' == 'True'" />
 
     <ItemGroup>
       <PoFile Include="%(PoResource.FullPath)">
@@ -769,6 +876,9 @@ Pseudo-code:
     </PropertyGroup>
     
     <Exec Command='"$(MsgCat)" $(_Options) "%(PoResource.PoBundlePath)" "%(PoResource.FullPath)"' />
+
+    <Prompt Text="$ msgcat =&gt; %(PoResource.PoBundlePath) -- $(ContinueMessage)"
+            Condition="'$(Interactive)' == 'True'" />
 
     <ItemGroup>
       <PoFile Include="%(PoResource.PoBundlePath)">
@@ -804,6 +914,9 @@ Pseudo-code:
     
     <Exec Command='"$(MsgMerge)" $(_Options) nul "$(PotModulePath)"' />
 
+    <Prompt Text="$ msgmerge =&gt; %(PoResource.PoModulePath) -- $(ContinueMessage)"
+            Condition="'$(Interactive)' == 'True'" />
+
     <ItemGroup>
       <PoFile Include="%(PoResource.PoModulePath)">
         <Bundle>$(BundleName)</Bundle>
@@ -838,6 +951,9 @@ Pseudo-code:
     
     <Exec Command='"$(MsgMerge)" $(_Options) nul "%(PoResource.PotDomainPath)"' />
 
+    <Prompt Text="$ msgmerge =&gt; %(PoResource.FullPath) -- $(ContinueMessage)"
+            Condition="'$(Interactive)' == 'True'" />
+
     <ItemGroup>
       <PoFile Include="%(PoResource.FullPath)">
         <Bundle>$(BundleName)</Bundle>
@@ -851,7 +967,7 @@ Pseudo-code:
     <CleanPoFile SourceFiles="@(PoFile)"
                  Condition="'$(PoNoClean)' != 'true'" />
     
-      <ItemGroup>
+    <ItemGroup>
         <PoFile Remove="@(PoFile)" />
       </ItemGroup>
   </Target>
@@ -1099,9 +1215,9 @@ Pseudo-code:
             ConsolidatePoBundle;
             CreatePotDomain;
             CreateOrUpdatePotModule;
-            InitPoBundle;
-            InitPoModule;
             InitPoDomain;
+            InitPoModule;
+            InitPoBundle;
             UpdatePoBundleFromDomain;
             
             UpdatePoModule;
