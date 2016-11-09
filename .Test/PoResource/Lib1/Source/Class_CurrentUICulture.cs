@@ -11,6 +11,7 @@ namespace Lib1
 			Console.WriteLine (">>>> Lib1.Class_CurrentUICulture");
 			Console.WriteLine (this.GetString ("Hello World from Lib1"));
 			Console.WriteLine (this.GetString ("Another string defined in Lib1"));
+			Console.WriteLine (this.GetString ("Common string"));
 			Console.WriteLine ("<<<< Lib1.Class_CurrentUICulture");
 			Console.WriteLine ();
 		}
