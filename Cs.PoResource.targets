@@ -195,7 +195,7 @@ Pseudo-code:
       </PoResource>
     </ItemGroup>
 
-    <!--<LogItems Items="@(PoResource)" Title="PoResource" AllMetadata="true" />-->
+    <!--<LogItems Items="@(PoResource)" Title="PoResource" />-->
   </Target>
 
   <Target Name="PoCreateFolders">
@@ -494,37 +494,128 @@ Pseudo-code:
   <!-- Consolidation -->
   <!--=========================================================================-->
 
-  <Target Name="ConsolidatePoBundle"
-          DependsOnTargets="ReadPoModuleReferences;ReadPoDomainReferences;InitPoDomain"
-          Returns="%(PoResource.PoBundlePath)">
+  <Target Name="ConsolidatePoRoot"
+          DependsOnTargets="ReadPoModuleReferences;ReadPoDomainReferences;ReadPotDomainReferences;InitPoDomain"
+          Returns="%(PoResource.Identity)">
 
     <!-- PoBundle = msgcat(culture, PoReferences) -->
+    <!--<Message Importance="high" Text="%(PoResource.Identity): culture=%(Culture)" />-->
+
+    <!-- INITIALISATION -->
+    
     <ItemGroup>
-      <_Temporary Include="%(PoResource.PoBundlePath);%(PoResource.PoModuleReferences);%(PoResource.PoDomainReferences)" />
-      <PoReference Include="%(_Temporary.Identity)" Condition="Exists(%(_Temporary.Identity))"/>
+      <!-- PoBundleReference -->
+      <_Temporary Include="%(PoResource.PoBundlePath)" />
+      <PoBundleReference Include="%(_Temporary.Identity)" Condition="Exists(%(_Temporary.Identity))" />
+      <PoBundleReference>
+        <Culture>%(PoResource.Culture)</Culture>
+        <Bundle>$(BundleName)</Bundle>
+      </PoBundleReference>
       <_Temporary Remove="@(_Temporary)" />
+
+      <!-- PoModuleReference -->
+      <_Temporary Include="%(PoResource.PoModuleReferences)" />
+      <PoModuleReference Include="%(_Temporary.Identity)" Condition="Exists(%(_Temporary.Identity))" />
+      <PoModuleReference>
+        <Culture>%(PoResource.Culture)</Culture>
+        <PoBundlePath>%(PoResource.PoBundlePath)</PoBundlePath>
+        <Bundle>$(BundleName)</Bundle>
+        <Module>$(ModuleName)</Module>
+        <Domain></Domain>
+        <PotPath>$(PotModulePath)</PotPath>
+      </PoModuleReference>
+      <_Temporary Remove="@(_Temporary)" />
+
+      <!-- PoDomainReference -->
+      <_Temporary Include="%(PoResource.PoDomainReferences)" />
+      <_PoDomainReference Include="%(_Temporary.Identity)" Condition="Exists(%(_Temporary.Identity))" />
+      <_PoDomainReference>
+        <Culture>%(PoResource.Culture)</Culture>
+        <PoBundlePath>%(PoResource.PoBundlePath)</PoBundlePath>
+        <Bundle>$(BundleName)</Bundle>
+        <Module>$(ModuleName)</Module>
+      </_PoDomainReference>
+      <_PoDomainReference>
+        <Domain>$([System.IO.Path]::GetFileNameWithoutExtension('%(Filename)'))</Domain>
+      </_PoDomainReference>
+      <_Temporary Remove="@(_Temporary)" />
+      
+      <!-- _PotDomainReference -->
+      <!-- Extract POT path from POT references -->
+      <_Temporary Include="%(PoResource.PotDomainReferences)" />
+      <_PotDomainReference Include="%(_Temporary.Identity)" Condition="Exists(%(Identity))" />
+      <_PotDomainReference>
+        <Domain>$([System.IO.Path]::GetFileNameWithoutExtension('%(Filename)'))</Domain>
+      </_PotDomainReference>
+      <_Temporary Remove="@(_Temporary)" />
+    </ItemGroup>
+    
+    <!-- PoDomainReference[domain].PotPath = PotDomainReference[domain].FullPath -->
+    <Join Outer="@(_PoDomainReference)" Inner="@(_PotDomainReference)" Key="Domain" Modifiers="PotPath=FullPath">
+      <Output TaskParameter="Result" ItemName="PoDomainReference"/>
+    </Join>
+    <ItemGroup>
+      <_PoDomainReference Remove="@(_PoDomainReference)" />
+      <_PotDomainReference Remove="@(_PotDomainReference)" />
+    </ItemGroup>
+
+    <!-- PoReference -->
+    <ItemGroup>
+      <PoReference Include="@(PoBundleReference);@(PoModuleReference);@(PoDomainReference)" />
+    </ItemGroup>
+    <ItemGroup >
+      <!-- existing only -->
+      <_Temporary Include="%(PoReference.Identity)" Condition="!Exists(%(FullPath))" />
+      <PoReference Remove="@(_Temporary)" />
+      <_Temporary Remove="@(_Temporary)" />
+    </ItemGroup>
+    
+    <!-- PoReferenceModifiedTime -->
+    <ItemGroup>
       <PoReferenceModifiedTime Include="%(PoReference.ModifiedTime)"  />
     </ItemGroup>
     
+    <!-- ConsolidatePoTree -->
     <PropertyGroup>
-      <ConsolidatePoBundle Condition="'@(PoReferenceModifiedTime->Count())' &gt; '1'">true</ConsolidatePoBundle>
+      <ConsolidatePoTree Condition="'@(PoReferenceModifiedTime->Count())' &gt; '1'">true</ConsolidatePoTree>
     </PropertyGroup>
+    
+    <!-- PoDescendant -->
+    <ItemGroup  Condition="'$(ConsolidatePoTree)' == 'true'">
+      <PoDescendant Include="@(PoModuleReference);@(PoDomainReference)">
+        <NoPotCreationDate>$(NoPotCreationDate)</NoPotCreationDate>
+        <NoPoRevisionDate>$(NoPoRevisionDate)</NoPoRevisionDate>
+      </PoDescendant>
+    </ItemGroup>
+    <ItemGroup  Condition="'$(ConsolidatePoTree)' == 'true'">
+      <!-- with existing POT only -->
+      <_Temporary Include="%(PoDescendant.Identity)" Condition="'%(PotPath)' == '' Or !Exists(%(PotPath))" />
+      <PoDescendant Remove="@(_Temporary)" />
+      <_Temporary Remove="@(_Temporary)" />
+    </ItemGroup>
+    
+    <!--<LogItems Items="@(PoBundleReference)" Title="PoBundleReference" />
+    <LogItems Items="@(PoModuleReference)" Title="PoModuleReference" />
+    <LogItems Items="@(PoDomainReference)" Title="PoDomainReference" />
+    <LogItems Items="@(PoReference)" Title="PoReference" />
+    <LogItems Items="@(PoReferenceModifiedTime)" Title="PoReferenceModifiedTime" />
+    <LogItems Items="@(PoDescendant)" Title="PoDescendant.WithExistingPot" />
+    <Message Importance="high" Text="[$(ProjectName)] ConsolidatePoTree = $(ConsolidatePoTree)" />-->
 
-    <!--<Message Importance="high" Text="ConsolidatePoBundle = $(ConsolidatePoBundle) [$(ProjectName)]" />
-    <LogItems Items="@(PoReference->'%(Identity)')" Title="PoReference" />
-    <LogItems Items="@(PoReferenceModifiedTime)" Title="PoReferenceModifiedTime" />-->
-
-    <PropertyGroup Condition="'$(ConsolidatePoBundle)' == 'true'">
+    <!-- CONSOLIDATE ROOT (BUNDLE) -->
+    
+    <PropertyGroup Condition="'$(ConsolidatePoTree)' == 'true'">
       <_Options>--no-wrap -D"$(BundleDir)." --lang=%(PoResource.Culture) -o"%(PoResource.PoBundlePath)"</_Options>
       <_Options Condition="'$(PoNoLocation)' == 'true'">$(_Options) --no-location</_Options>
       <_PoReferences>@(PoReference->'"%(FullPath)"')</_PoReferences>
       <_PoReferences>$(_PoReferences.Replace(';', ' '))</_PoReferences>
     </PropertyGroup>
     
-    <Exec Command='"$(MsgCat)" $(_Options) $(_PoReferences)' Condition="'$(ConsolidatePoBundle)' == 'true'" />
+    <Exec Command='"$(MsgCat)" $(_Options) $(_PoReferences)'
+          Condition="'$(ConsolidatePoTree)' == 'true'" />
   
     <Prompt Text="$ msgcat =&gt; %(PoResource.PoBundlePath) -- $(ContinueMessage)"
-            Condition="'$(ConsolidatePoBundle)' == 'true' And '$(Interactive)' == 'True'" />
+            Condition="'$(ConsolidatePoTree)' == 'true' And '$(Interactive)' == 'True'" />
 
     <ItemGroup>
       <PoFile Include="%(PoResource.PoBundlePath)">
@@ -535,11 +626,46 @@ Pseudo-code:
     </ItemGroup>
 
     <CleanPoFile SourceFiles="@(PoFile)"
-                 Condition="'$(ConsolidatePoBundle)' == 'true' And '$(PoNoClean)' != 'true'"/>
+                 Condition="'$(ConsolidatePoTree)' == 'true' And '$(PoNoClean)' != 'true'"/>
     
     <ItemGroup>
       <PoFile Remove="@(PoFile)" />
-      <PoReference Remove="@(PoReference)" />
+    </ItemGroup>
+  </Target>
+  
+  <Target Name="ConsolidatePoDescendants"
+          DependsOnTargets="CreateOrUpdatePotModule"
+          Returns="%(PoDescendant.Identity)">
+
+    <!-- PoDescendant = msmerge(culture, -C PoBundle, PoDescendant.PotFile) -->
+    <PropertyGroup>
+      <_Options>-q --no-wrap -D"$(BundleDir)." --lang=%(PoDescendant.Culture)</_Options>
+      <_Options Condition="'$(PoNoLocation)'  == 'true'">$(_Options) --no-location</_Options>
+      <_Options>$(_Options) -C"%(PoDescendant.PoBundlePath)"</_Options>
+      <_Options>$(_Options) -o"%(PoDescendant.FullPath)"</_Options>
+    </PropertyGroup>
+
+    <Exec Command='"$(MsgMerge)" $(_Options) nul "%(PoDescendant.PotPath)"' />
+
+    <Prompt Text="$ msgmerge =&gt; %(PoDescendant.FullPath) -- $(ContinueMessage)"
+            Condition="'$(Interactive)' == 'True'" />
+
+    <CleanPoFile SourceFiles="@(PoDescendant)"
+                 Condition="'$(PoNoClean)' != 'true'" />
+  </Target>
+
+  <Target Name="ConsolidatePoTree"
+          DependsOnTargets="ConsolidatePoRoot">
+
+    <CallTarget Targets="ConsolidatePoDescendants" Condition="'$(ConsolidatePoTree)' == 'true' And '@(PoDescendant)' != ''" />
+    
+    <ItemGroup>
+      <PoDescendant      Remove="@(PoDescendant)" />
+      <PoBundleReference Remove="@(PoBundleReference)" />
+      <PoModuleReference Remove="@(PoModuleReference)" />
+      <PoDomainReference Remove="@(PoDomainReference)" />
+      <PoReference       Remove="@(PoReference)" />
+      <PoReferenceModifiedTime Remove="@(PoReferenceModifiedTime)" />
     </ItemGroup>
   </Target>
 
@@ -634,13 +760,15 @@ Pseudo-code:
           Inputs="@(PoResource->'%(PotDomainPath)')"
           Outputs="$(PotModulePath)">
 
-    <!--PotModule = msgcat (anyCulture, PotReferences) -->
+    <!-- PotModule = msgcat (anyCulture, PotReferences) -->
 
     <ItemGroup>
       <PotReference Include="@(PoResource->'%(PotDomainPath)')" />
       <PotReference Include="$(PotModulePath)" Condition="Exists($(PotModulePath))"/>
     </ItemGroup>
 
+    <LogItems Items="@(PotReference)" />
+    
     <PropertyGroup>
       <_Options>--no-wrap -D"$(BundleDir)." --lang="" -o"$(PotModulePath)"</_Options>
       <_Options Condition="'$(PoNoLocation)'  == 'true'">$(_Options) --no-location</_Options>
@@ -688,7 +816,7 @@ Pseudo-code:
       <PoBundleInitialized Condition="Exists('%(PoResource.PoBundlePath)')">true</PoBundleInitialized>
     </PropertyGroup>
 
-    <!-- PoBundle = msginit(PotDomain) if PoBundle does not exist -->
+    <!-- PoBundle = msginit(PotModule) if PoBundle does not exist -->
     <PropertyGroup>
       <_Options>--no-wrap --no-translator --locale=%(PoResource.Culture)</_Options>
       <_Options>$(_Options) -o"%(PoResource.PoBundlePath)" -i"$(PotModulePath)"</_Options>
@@ -865,6 +993,7 @@ Pseudo-code:
   <!--.........................................................................-->
 
   <Target Name="UpdatePoBundleFromDomain"
+          Condition="'$(ConsolidatePoTree)' != 'true'"
           DependsOnTargets="InitPoBundle;UpdatePoDomainFromPot"
           Inputs="%(PoResource.FullPath)"
           Outputs="%(PoResource.PoBundlePath)">
@@ -899,7 +1028,7 @@ Pseudo-code:
   <!--.........................................................................-->
 
   <Target Name="UpdatePoModule"
-          Condition="'$(ModuleName)' != ''"
+          Condition="'$(ModuleName)' != '' And '$(ConsolidatePoTree)' != 'true'"
           DependsOnTargets="InitPoModule;UpdatePoBundleFromDomain"
           Inputs="$(PotModulePath);%(PoResource.PoBundlePath)"
           Outputs="%(PoResource.PoModulePath)">
@@ -929,14 +1058,15 @@ Pseudo-code:
     <CleanPoFile SourceFiles="@(PoFile)"
                  Condition="'$(PoNoClean)' != 'true'" />
     
-      <ItemGroup>
-        <PoFile Remove="@(PoFile)" />
-      </ItemGroup>
-    </Target>
+    <ItemGroup>
+      <PoFile Remove="@(PoFile)" />
+    </ItemGroup>
+  </Target>
 
   <!--.........................................................................-->
 
   <Target Name="UpdatePoDomain"
+          Condition="'$(ConsolidatePoTree)' != 'true'"
           DependsOnTargets="InitPoDomain;UpdatePoBundleFromDomain"
           Inputs="%(PoResource.PotDomainPath);%(PoResource.PoBundlePath)"
           Outputs="%(PoResource.FullPath)">
@@ -1077,6 +1207,7 @@ Pseudo-code:
     <ReadLinesFromFile File="$(LastSolutionSavePath)" >
       <Output TaskParameter="Lines" ItemName="_Temporary"/>
     </ReadLinesFromFile>
+    
     <PropertyGroup >
       <LastSolutionPath>@(_Temporary)</LastSolutionPath>
     </PropertyGroup>
@@ -1107,29 +1238,21 @@ Pseudo-code:
   <!--=========================================================================-->
 
   <Target Name="PoCleanIfSolutionChange"
-          DependsOnTargets="
-            InitPoResources;
-            ReadLastSolution;
-            WriteLastSolution"
+          DependsOnTargets="InitPoResources;ReadLastSolution;WriteLastSolution"
           Condition="'$(LastSolutionPath)' != '$(SolutionPath)'">
 
     <Delete Files="@(PoResource->'%(PotSourcePath)')" />
   </Target>
   
   <Target Name="PoCleanIfNotInBuildSequence"
-          DependsOnTargets="
-            InitPoResources;
-            ReadBuildSequence"
+          DependsOnTargets="InitPoResources;ReadBuildSequence"
           Condition="'$(LastBuildSequenceContainsProject)' != 'true'">
 
     <Delete Files="@(PoResource->'%(PotSourcePath)')" />
   </Target>
   
   <Target Name="PoIncrementalClean"
-          DependsOnTargets="
-            InitPoResources;
-            PoCleanIfNotInBuildSequence;
-            PoCleanIfSolutionChange"
+          DependsOnTargets="InitPoResources;PoCleanIfNotInBuildSequence;PoCleanIfSolutionChange"
           Inputs="$(ProjectPath)"
           Outputs="@(PoResource->'%(PotSourcePath)')">
 
@@ -1166,11 +1289,7 @@ Pseudo-code:
 
   <Target Name="PoCleanCoreForClean"
           Condition="'$(ZouInsideRebuild)' != 'true'"
-          DependsOnTargets="
-            DeleteLastSolutionSave;
-            DeletePotDomain;
-            DeletePotModule;
-            PoReset">
+          DependsOnTargets="DeleteLastSolutionSave;DeletePotDomain;DeletePotModule;PoReset">
 
     <ItemGroup>
       <_Temporary Include="$(PoReferencesDir)*.zou" />
@@ -1192,9 +1311,7 @@ Pseudo-code:
           DependsOnTargets="DeletePotDomain" />
   
   <Target Name="PoCleanCore"
-          DependsOnTargets="
-            PoCleanCoreForClean;
-            PoCleanCoreForRebuild" />
+          DependsOnTargets="PoCleanCoreForClean;PoCleanCoreForRebuild" />
 
   <Target Name="PoClean" AfterTargets="Clean">
     <CallTarget Targets="PoLock;PoCleanCore;PoUnlock" RunEachTargetSeparately="true" />
@@ -1205,14 +1322,14 @@ Pseudo-code:
   <!-- Build -->
   <!--=========================================================================-->
 
-  <Target Name="PoBuildCore"
-          DependsOnTargets="
+  <PropertyGroup>
+    <PoBuildDependsOn>
             ReadBuildSequence;
             ReadLastSolution;
             PoIncrementalClean;
             PoCreateFolders;
             
-            ConsolidatePoBundle;
+            ConsolidatePoTree;
             CreatePotDomain;
             CreateOrUpdatePotModule;
             InitPoDomain;
@@ -1226,7 +1343,11 @@ Pseudo-code:
             CreateMoDomainContent;
             
             TouchPoReferences;
-            WriteBuildSequence" />
+            WriteBuildSequence
+    </PoBuildDependsOn>
+  </PropertyGroup>
+  
+  <Target Name="PoBuildCore" DependsOnTargets="$(PoBuildDependsOn)" />
 
   <Target Name="PoBuild"
           Condition="'@(PoResource)' != ''"
