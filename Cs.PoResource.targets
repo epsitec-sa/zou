@@ -52,7 +52,7 @@ Layout:
       bundle1.fr-CH.po          %(PoResource.PoBundleFileName)
       module1.fr-CH.po          %(PoResource.PoModuleFileName)
       locale\fr-CH\LC_MESSAGES\ %(PoResource.MoDomainSubdir)
-
+  
 Pseudo-code:
 ============
 
@@ -81,6 +81,53 @@ Pseudo-code:
       PotReferences.Time = PoReferences.Time = MoReferences.Time = LastModifiedMoDomain.Time 
     }
   }
+
+PoResource metadata:
+====================
+BundleDir = .../bundle
+
+InitPoResources:
+  Culture                   // fr-CH, fr, ..., default to en-US
+  Domain                    // file name without culture extension
+  
+  PoModuleReferencesPath    // .../bundle/.po/refs/PoModules.fr-CH.zou -> { module\.po\module.fr-CH.po }
+  PoDomainReferencesPath    // .../bundle/.po/refs/PoDomains.fr-CH.zou -> { module\**\project\Resource\domain.fr-CH.po }
+  MoDomainReferencesPath    // .../bundle/.po/refs/MoDomains.fr-CH.zou -> { %(MoDomainPath) }
+  
+  PotSourcePath             // .../bundle/module/**/project/obj/Debug/%(Domain).pot.src.zou
+  PotDomainPath             // .../bundle/module/**/project/obj/Debug/%(Domain).pot
+  MoDomainSubdir            // locale/fr-CH/LC_MESSAGES/
+  PoBundleFileName          // bundle.fr-CH.po
+  PoModuleFileName          // module.fr-CH.po
+  MoDomainFileName          // domain.mo
+
+  PoBundlePath              // .../bundle/.po/bundle.fr-CH.po
+  PoModulePath              // .../bundle/module/.po/module.fr-CH.po
+  MoDomainDir               // .../bundle/module/**/project/bin/Debug/locale/fr-CH/LC_MESSAGES/
+  MoDomainPath              // .../bundle/module/**/project/bin/Debug/locale/fr-CH/LC_MESSAGES/domain.mo
+
+  Initialized               // true if domain.fr-CH.po exists and length > 10
+  PoModuleInitialized       // true if module.po exists
+  CopyToOutputDirectory     // default to PreserveNewest
+  Exists
+  Length
+  IsReadOnly
+  
+Read/WritePotModuleReferences:
+  PotModuleReferences       // { module\.po\obj\Debug\module.po }
+
+Read/WritePotDomainReferences:
+  PotDomainReferences       // { module\**\project\obj\Debug\domain.pot }
+ 
+Read/WritePoModuleReferences:
+  PoModuleReferences        // { module\.po\module.fr-CH.po }
+ 
+Read/WritePoDomainReferences:
+  PoDomainReferences        // { module\**\project\Resource\domain.fr-CH.po }
+ 
+Read/WriteMoDomainReferences:
+  MoDomainReferences        // { module\**\project\bin\Debug\locale\fr-CH\LC_MESSAGES\domain.mo }
+  
 -->
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="PoResourceBuild">
 
@@ -142,24 +189,14 @@ Pseudo-code:
     <AvailableItemName Include="PoResource" />
   </ItemGroup>
 
-  <ItemDefinitionGroup>
-    <PoResource>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </PoResource>
-  </ItemDefinitionGroup>
-
   <Target Name="InitPoResources">
     <!-- Extract Culture metadata from PO project resource name (exemple: Project1.fr-CH.po) -->
     <AssignCulture Files="@(PoResource)">
       <Output TaskParameter="AssignedFilesWithCulture" ItemName="PoResourceWithCulture" />
       <Output TaskParameter="AssignedFilesWithNoCulture" ItemName="PoResourceWithNoCulture" />
     </AssignCulture>
-    <ItemGroup>
-      <PoResourceWithNoCulture>
-        <!-- Use en-US as default culture -->
-        <Culture>en-US</Culture>
-      </PoResourceWithNoCulture>
-    </ItemGroup>
+
+    <!-- Add Exists, Length and IsReadOnly metadata -->
     <AddFileInfo Files="@(PoResourceWithCulture);@(PoResourceWithNoCulture)">
       <Output TaskParameter="OutputFiles" ItemName="PoResourceWithInfo" />
     </AddFileInfo>
@@ -197,6 +234,13 @@ Pseudo-code:
 
     <!--<LogItems Items="@(PoResource)" Title="PoResource" />-->
   </Target>
+
+  <ItemDefinitionGroup>
+    <PoResource>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Culture>en-US</Culture>
+    </PoResource>
+  </ItemDefinitionGroup>
 
   <Target Name="PoCreateFolders">
     <MakeDir Directories="$(PoReferencesDir)" />
@@ -767,7 +811,7 @@ Pseudo-code:
       <PotReference Include="$(PotModulePath)" Condition="Exists($(PotModulePath))"/>
     </ItemGroup>
 
-    <LogItems Items="@(PotReference)" />
+    <!--<LogItems Items="@(PotReference)" />-->
     
     <PropertyGroup>
       <_Options>--no-wrap -D"$(BundleDir)." --lang="" -o"$(PotModulePath)"</_Options>
@@ -1324,26 +1368,26 @@ Pseudo-code:
 
   <PropertyGroup>
     <PoBuildDependsOn>
-            ReadBuildSequence;
-            ReadLastSolution;
-            PoIncrementalClean;
-            PoCreateFolders;
+      ReadBuildSequence;
+      ReadLastSolution;
+      PoIncrementalClean;
+      PoCreateFolders;
             
-            ConsolidatePoTree;
-            CreatePotDomain;
-            CreateOrUpdatePotModule;
-            InitPoDomain;
-            InitPoModule;
-            InitPoBundle;
-            UpdatePoBundleFromDomain;
+      ConsolidatePoTree;
+      CreatePotDomain;
+      CreateOrUpdatePotModule;
+      InitPoDomain;
+      InitPoModule;
+      InitPoBundle;
+      UpdatePoBundleFromDomain;
             
-            UpdatePoModule;
-            UpdatePoDomain;
-            CreateMoDomain;
-            CreateMoDomainContent;
+      UpdatePoModule;
+      UpdatePoDomain;
+      CreateMoDomain;
+      CreateMoDomainContent;
             
-            TouchPoReferences;
-            WriteBuildSequence
+      TouchPoReferences;
+      WriteBuildSequence
     </PoBuildDependsOn>
   </PropertyGroup>
   
