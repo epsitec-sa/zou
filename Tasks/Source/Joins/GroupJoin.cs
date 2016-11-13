@@ -29,8 +29,8 @@ namespace Epsitec.Zou
 				foreach (var modifier in modifiers)
 				{
 					item.SetMetadata (modifier.LValue, pair.Group?.Select(inner => inner.GetMetadata (modifier.RValue)).Join(";"));
-					yield return item;
 				}
+				yield return item;
 			}
 		}
 	}
