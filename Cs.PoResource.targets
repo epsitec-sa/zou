@@ -319,6 +319,151 @@ First project
   </Target>
   
   <!--=========================================================================-->
+  <!-- CREATE PO DOMAIN -->
+  <!--=========================================================================-->
+
+  <!-- POT source -->
+  
+  <Target Name="InitPotSources"
+          Returns="@(PotSource)">
+    <ItemGroup>
+      <PotSource Include="@(Compile)" Exclude="$(TMP)\*;$(IntDir)\*;Properties\Resources.Designer.cs;Properties\AssemblyInfo.cs" />
+      <PotSource>
+        <RelativePath>$([MSBuild]::MakeRelative($(BundleDir), %(PotSource.FullPath)))</RelativePath>
+      </PotSource>
+    </ItemGroup>
+    <!--<LogItems Items="@(PotSource)" Title="PotSource" AllMetadata="true"/>-->
+  </Target>
+
+  <Target Name="CreatePotSource"
+          DependsOnTargets="InitPoResources;InitPotSources"
+          Inputs="@(PotSource)"
+          Outputs="%(PoResource.PotSourcePath)">
+
+    <WriteLinesToFile File="%(PoResource.PotSourcePath)" Lines="@(PotSource->'%(RelativePath)')" Overwrite="true" />
+    <Message Text='Created POT source file: "%(PoResource.PotSourcePath)"' />
+
+    <Prompt Text="$ create =&gt; %(PoResource.PotSourcePath) -- $(ContinueMessage)"
+            Condition="'$(Interactive)' == 'True'" />
+  </Target>
+
+  <Target Name="DeletePotSource" DependsOnTargets="InitPoResources">
+    <Delete Files="@(PoResource->'%(PotSourcePath)')" />
+  </Target>
+
+  <!-- POT domain-->
+
+  <Target Name="CreatePotDomain"
+          DependsOnTargets="CreatePotSource"
+          Inputs="%(PoResource.PotSourcePath)"
+          Outputs="%(PoResource.PotDomainPath)">
+
+    <!-- PotDomain = xgettext(PotSource) -->
+    <PropertyGroup>
+      <_Options>--from-code=UTF-8 --no-wrap -D"$(BundleDir)." -f"%(PoResource.PotSourcePath)" -o"%(PoResource.PotDomainPath)"</_Options>
+      <_Options Condition="'$(PoNoLocation)'  == 'true'">$(_Options) --no-location</_Options>
+      <_Options Condition="'$(PoCopyright)'   != ''">$(_Options) --copyright-holder="$(PoCopyright)"</_Options>
+      <_Options Condition="'$(PoPackageName)' != ''">$(_Options) --package-name="$(PoPackageName)"</_Options>
+      <_Options Condition="'$(PoKeywordSpec)' != ''">$(_Options) --keyword="$(PoKeywordSpec)"</_Options>
+    </PropertyGroup>
+    <Exec Command='"$(XGetText)" $(_Options)' />
+
+    <Error Code="$(ErrorPoNoMessageIdCode)" Text="$(ErrorPoNoMessageId)" Condition="!Exists(%(PoResource.PotDomainPath))" ContinueOnError="false" />
+
+    <!-- Replace CHARSET with UTF-8 and remove BOM -->
+    <FileUpdate Files="%(PoResource.PotDomainPath)" Multiline="true" IgnoreCase="true" Encoding="utf-8-without-bom"
+                Regex='^("Content-Type.+?charset=)(CHARSET)(.*)$' ReplacementText="$1UTF-8$3"/>
+
+    <Prompt Text="$ xgettext =&gt; %(PoResource.PotDomainPath) -- $(ContinueMessage)"
+            Condition="'$(Interactive)' == 'True'" />
+  </Target>
+
+  <Target Name="DeletePotDomain" DependsOnTargets="InitPoResources">
+    <Delete Files="@(PoResource->'%(PotDomainPath)')" />
+  </Target>
+
+  <!-- PO domain -->
+  
+  <Target Name="InitPoDomain"
+          DependsOnTargets="InitPoResources;CreatePotDomain"
+          Inputs="%(PoResource.PotDomainPath)"
+          Outputs="%(FullPath)">
+
+    <!-- PoResource = msginit(PotDomain) - fuzzy marker (if not initialized) -->
+    <PropertyGroup>
+      <_Options>--no-wrap --no-translator --locale=%(PoResource.Culture)</_Options>
+      <_Options>$(_Options) -o"%(PoResource.FullPath)" -i"%(PoResource.PotDomainPath)"</_Options>
+    </PropertyGroup>
+
+    <MakeDir Directories="%(PoResource.RootDir)%(Directory)" />
+    <Exec Command='"$(MsgInit)" $(_Options)' />
+
+    <Prompt Text="$ msginit =&gt; %(PoResource.FullPath) -- $(ContinueMessage)" Condition="'$(Interactive)' == 'True'" />
+
+    <!-- PoResource -= header's fuzzy marker -->
+    <PropertyGroup>
+      <_Options>-o"%(PoResource.FullPath)"</_Options>
+      <_Options Condition="'$(PoNoFuzzy)'  == 'true'">$(_Options) --clear-fuzzy</_Options>
+      <_Options Condition="'$(PoNoLocation)'  == 'true'">$(_Options) --no-location</_Options>
+    </PropertyGroup>
+    <Exec Command='"$(MsgAttrib)" $(_Options) "%(PoResource.FullPath)"' Condition="'$(PoNoFuzzy)' == 'true'" />
+
+    <!-- Clean -->
+    <ItemGroup>
+      <PoFile Include="%(PoResource.FullPath)">
+        <Bundle>$(BundleName)</Bundle>
+        <Module Condition="'$(ModuleName)' != ''">$(ModuleName)</Module>
+        <DomainName>%(PoResource.DomainName)</DomainName>
+        <NoPotCreationDate>$(NoPotCreationDate)</NoPotCreationDate>
+        <NoPoRevisionDate>$(NoPoRevisionDate)</NoPoRevisionDate>
+      </PoFile>
+    </ItemGroup>
+    <CleanPoFile SourceFiles="@(PoFile)" Condition="'$(PoNoClean)' != 'true'"/>
+    <ItemGroup>
+      <PoFile Remove="@(PoFile)" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="UpdatePoDomain"
+          DependsOnTargets="InitPoResources;CreatePotDomain"
+          Inputs="%(PoResource.PotDomainPath)"
+          Outputs="%(FullPath)">
+
+    <!-- PoDomain = msmerge(culture, PoDomain, PotDomain) -->
+    <PropertyGroup>
+      <_Options>-q --no-wrap -D"$(BundleDir)." --lang=%(PoResource.Culture)</_Options>
+      <_Options Condition="'$(PoNoLocation)'  == 'true'">$(_Options) --no-location</_Options>
+      <_Options Condition="Exists(%(PoResource.PoBundlePath))">$(_Options) -C"%(PoResource.PoBundlePath)"</_Options>
+      <_Options>$(_Options) -o"%(PoResource.FullPath)"</_Options>
+    </PropertyGroup>
+    <Exec Command='"$(MsgMerge)" $(_Options) "%(PoResource.FullPath)" "%(PoResource.PotDomainPath)"' />
+
+    <Prompt Text="$ msgmerge =&gt; %(PoResource.FullPath) -- $(ContinueMessage)" Condition="'$(Interactive)' == 'True'" />
+
+    <!-- Clean -->
+    <ItemGroup>
+      <PoFile Include="%(PoResource.FullPath)">
+        <Bundle>$(BundleName)</Bundle>
+        <Module Condition="'$(ModuleName)' != ''">$(ModuleName)</Module>
+        <DomainName>%(PoResource.DomainName)</DomainName>
+        <NoPotCreationDate>$(NoPotCreationDate)</NoPotCreationDate>
+        <NoPoRevisionDate>$(NoPoRevisionDate)</NoPoRevisionDate>
+      </PoFile>
+    </ItemGroup>
+    <CleanPoFile SourceFiles="@(PoFile)" Condition="'$(PoNoClean)' != 'true'"/>
+    <ItemGroup>
+      <PoFile Remove="@(PoFile)" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name ="CreatePoDomain" DependsOnTargets="InitPoResources" Returns="%(PoResource.Identity)">
+    
+    <CallTarget Targets="InitPoDomain"    Condition="'%(PoResource.Initialized)' != 'true'" />
+    <CallTarget Targets="UpdatePoDomain"  Condition="'%(PoResource.Initialized)' == 'true'" />
+
+  </Target>
+
+  <!--=========================================================================-->
   <!-- SAVE PO REFERENCES -->
   <!--=========================================================================-->
 
@@ -500,149 +645,6 @@ First project
 
     <!--<Message Importance="high" Text="[U]MoDomainReference=%(MoDomainReference.Identity)" />-->
     <!--<LogItems Items="@(MoDomainReference)" Title="MoDomainReference"/>-->
-  </Target>
-
-  <!--=========================================================================-->
-  <!-- CREATE PO DOMAIN -->
-  <!--=========================================================================-->
-
-  <!-- POT source -->
-  
-  <Target Name="InitPotSources"
-          Returns="@(PotSource)">
-    <ItemGroup>
-      <PotSource Include="@(Compile)" Exclude="$(TMP)\*;$(IntDir)\*;Properties\Resources.Designer.cs;Properties\AssemblyInfo.cs" />
-      <PotSource>
-        <RelativePath>$([MSBuild]::MakeRelative($(BundleDir), %(PotSource.FullPath)))</RelativePath>
-      </PotSource>
-    </ItemGroup>
-    <!--<LogItems Items="@(PotSource)" Title="PotSource" AllMetadata="true"/>-->
-  </Target>
-
-  <Target Name="CreatePotSource"
-          DependsOnTargets="InitPoResources;InitPotSources"
-          Inputs="@(PotSource)"
-          Outputs="%(PoResource.PotSourcePath)">
-
-    <WriteLinesToFile File="%(PoResource.PotSourcePath)" Lines="@(PotSource->'%(RelativePath)')" Overwrite="true" />
-    <Message Text='Created POT source file: "%(PoResource.PotSourcePath)"' />
-
-    <Prompt Text="$ create =&gt; %(PoResource.PotSourcePath) -- $(ContinueMessage)"
-            Condition="'$(Interactive)' == 'True'" />
-  </Target>
-
-  <Target Name="DeletePotSource" DependsOnTargets="InitPoResources">
-    <Delete Files="@(PoResource->'%(PotSourcePath)')" />
-  </Target>
-
-  <!-- POT domain-->
-
-  <Target Name="CreatePotDomain"
-          DependsOnTargets="CreatePotSource"
-          Inputs="%(PoResource.PotSourcePath)"
-          Outputs="%(PoResource.PotDomainPath)">
-
-    <!-- PotDomain = xgettext(PotSource) -->
-    <PropertyGroup>
-      <_Options>--from-code=UTF-8 --no-wrap -D"$(BundleDir)." -f"%(PoResource.PotSourcePath)" -o"%(PoResource.PotDomainPath)"</_Options>
-      <_Options Condition="'$(PoNoLocation)'  == 'true'">$(_Options) --no-location</_Options>
-      <_Options Condition="'$(PoCopyright)'   != ''">$(_Options) --copyright-holder="$(PoCopyright)"</_Options>
-      <_Options Condition="'$(PoPackageName)' != ''">$(_Options) --package-name="$(PoPackageName)"</_Options>
-      <_Options Condition="'$(PoKeywordSpec)' != ''">$(_Options) --keyword="$(PoKeywordSpec)"</_Options>
-    </PropertyGroup>
-    <Exec Command='"$(XGetText)" $(_Options)' />
-
-    <Error Code="$(ErrorPoNoMessageIdCode)" Text="$(ErrorPoNoMessageId)" Condition="!Exists(%(PoResource.PotDomainPath))" ContinueOnError="false" />
-
-    <!-- Replace CHARSET with UTF-8 and remove BOM -->
-    <FileUpdate Files="%(PoResource.PotDomainPath)" Multiline="true" IgnoreCase="true" Encoding="utf-8-without-bom"
-                Regex='^("Content-Type.+?charset=)(CHARSET)(.*)$' ReplacementText="$1UTF-8$3"/>
-
-    <Prompt Text="$ xgettext =&gt; %(PoResource.PotDomainPath) -- $(ContinueMessage)"
-            Condition="'$(Interactive)' == 'True'" />
-  </Target>
-
-  <Target Name="DeletePotDomain" DependsOnTargets="InitPoResources">
-    <Delete Files="@(PoResource->'%(PotDomainPath)')" />
-  </Target>
-
-  <!-- PO domain -->
-  
-  <Target Name="InitPoDomain" Inputs="%(PoResource.PotDomainPath)" Outputs="%(FullPath)">
-
-    <!-- PoResource = msginit(PotDomain) - fuzzy marker (if not initialized) -->
-    <PropertyGroup>
-      <_Options>--no-wrap --no-translator --locale=%(PoResource.Culture)</_Options>
-      <_Options>$(_Options) -o"%(PoResource.FullPath)" -i"%(PoResource.PotDomainPath)"</_Options>
-    </PropertyGroup>
-
-    <MakeDir Directories="%(PoResource.RootDir)%(Directory)" />
-    <Exec Command='"$(MsgInit)" $(_Options)' />
-
-    <Prompt Text="$ msginit =&gt; %(PoResource.FullPath) -- $(ContinueMessage)" Condition="'$(Interactive)' == 'True'" />
-
-    <!-- PoResource -= header's fuzzy marker -->
-    <PropertyGroup>
-      <_Options>-o"%(PoResource.FullPath)"</_Options>
-      <_Options Condition="'$(PoNoFuzzy)'  == 'true'">$(_Options) --clear-fuzzy</_Options>
-      <_Options Condition="'$(PoNoLocation)'  == 'true'">$(_Options) --no-location</_Options>
-    </PropertyGroup>
-    <Exec Command='"$(MsgAttrib)" $(_Options) "%(PoResource.FullPath)"' Condition="'$(PoNoFuzzy)' == 'true'" />
-
-    <!-- Clean -->
-    <ItemGroup>
-      <PoFile Include="%(PoResource.FullPath)">
-        <Bundle>$(BundleName)</Bundle>
-        <Module Condition="'$(ModuleName)' != ''">$(ModuleName)</Module>
-        <DomainName>%(PoResource.DomainName)</DomainName>
-        <NoPotCreationDate>$(NoPotCreationDate)</NoPotCreationDate>
-        <NoPoRevisionDate>$(NoPoRevisionDate)</NoPoRevisionDate>
-      </PoFile>
-    </ItemGroup>
-    <CleanPoFile SourceFiles="@(PoFile)" Condition="'$(PoNoClean)' != 'true'"/>
-    <ItemGroup>
-      <PoFile Remove="@(PoFile)" />
-    </ItemGroup>
-  </Target>
-
-  <Target Name="UpdatePoDomain" 
-          Inputs="%(PoResource.PotDomainPath)"
-          Outputs="%(FullPath)">
-
-    <!-- PoDomain = msmerge(culture, PoDomain, PotDomain) -->
-    <PropertyGroup>
-      <_Options>-q --no-wrap -D"$(BundleDir)." --lang=%(PoResource.Culture)</_Options>
-      <_Options Condition="'$(PoNoLocation)'  == 'true'">$(_Options) --no-location</_Options>
-      <_Options Condition="Exists(%(PoResource.PoBundlePath))">$(_Options) -C"%(PoResource.PoBundlePath)"</_Options>
-      <_Options>$(_Options) -o"%(PoResource.FullPath)"</_Options>
-    </PropertyGroup>
-    <Exec Command='"$(MsgMerge)" $(_Options) "%(PoResource.FullPath)" "%(PoResource.PotDomainPath)"' />
-
-    <Prompt Text="$ msgmerge =&gt; %(PoResource.FullPath) -- $(ContinueMessage)" Condition="'$(Interactive)' == 'True'" />
-
-    <!-- Clean -->
-    <ItemGroup>
-      <PoFile Include="%(PoResource.FullPath)">
-        <Bundle>$(BundleName)</Bundle>
-        <Module Condition="'$(ModuleName)' != ''">$(ModuleName)</Module>
-        <DomainName>%(PoResource.DomainName)</DomainName>
-        <NoPotCreationDate>$(NoPotCreationDate)</NoPotCreationDate>
-        <NoPoRevisionDate>$(NoPoRevisionDate)</NoPoRevisionDate>
-      </PoFile>
-    </ItemGroup>
-    <CleanPoFile SourceFiles="@(PoFile)" Condition="'$(PoNoClean)' != 'true'"/>
-    <ItemGroup>
-      <PoFile Remove="@(PoFile)" />
-    </ItemGroup>
-  </Target>
-
-  <Target Name ="CreatePoDomain"
-          DependsOnTargets="InitPoResources;CreatePotDomain"
-          Returns="%(PoResource.Identity)">
-    
-    <CallTarget Targets="InitPoDomain"    Condition="'%(PoResource.Initialized)' != 'true'" />
-    <CallTarget Targets="UpdatePoDomain"  Condition="'%(PoResource.Initialized)' == 'true'" />
-    
   </Target>
 
   <!--=========================================================================-->
