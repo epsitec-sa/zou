@@ -648,10 +648,8 @@ First project
   </Target>
 
   <!--=========================================================================-->
-  <!-- CONSOLIDATE UPWARDS -->
+  <!-- INITIALIZE PO TREE COLLECTIONS -->
   <!--=========================================================================-->
-
-  <!-- Initialize PO collections -->
 
   <!-- Domain -->
   
@@ -860,7 +858,11 @@ First project
     <!--<Message Text="%(PoBundle.Identity)" Importance="high" />-->
     <!--<LogItems Items="@(PoBundle)" Title="PoBundle" />-->
   </Target>
-  
+
+  <!--=========================================================================-->
+  <!-- UPDATE PO BUNDLE (CONSOLIDATE UPWARDS) -->
+  <!--=========================================================================-->
+
   <Target Name="CreatePoBundle" DependsOnTargets="InitPoBundles"
           Inputs ="%(PoBundle.PoDependencies)"
           Outputs="%(PoBundle.Identity)">
@@ -896,7 +898,7 @@ First project
   </Target>
 
   <!--=========================================================================-->
-  <!-- CONSOLIDATE DOWNWARDS -->
+  <!-- UPDATE PO MODULES & DOMAINS (CONSOLIDATE DOWNWARDS) -->
   <!--=========================================================================-->
   
   <!-- POT Module -->
