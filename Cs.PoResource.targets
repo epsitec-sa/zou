@@ -825,7 +825,7 @@ First project
     <!--<LogItems Items="@(PoModule)" Title="PoModule" />-->
   </Target>
   
-  <!-- PO Bundle -->
+  <!-- Bundle -->
   
   <Target Name="InitPoBundles" DependsOnTargets="InitPoDomains;InitPoModules;InitMoDomains">
     <ItemGroup>
@@ -979,7 +979,7 @@ First project
     <CallTarget Targets="InitPoModule" Condition="!Exists(%(PoModule.FullPath))" />
   </Target>
 
-  <!-- PO Bundle Dependencies -->
+  <!-- PO Items -->
 
   <Target Name="InitPoItems" DependsOnTargets="InitPoDomains;InitPoModules">
     <ItemGroup>
@@ -988,9 +988,11 @@ First project
     <!--<LogItems Items="@(PoItem)" Title="PoItem" />-->
   </Target>
   
-  <Target Name="RefreshPoBundleItems" DependsOnTargets="InitPoItems;InitMoDomains">
+  <!-- PO Tree -->
+  
+  <Target Name="RefreshPoTree" DependsOnTargets="InitPoItems;InitMoDomains">
     
-    <!-- Refresh PO items -->
+    <!-- Refresh PO dependencies -->
     <GroupJoin Outer="@(PoBundle)" Inner="@(PoItem)" Keys="Culture" Modifiers="PoDependencies=FullPath;PotDependencies=PotPath">
       <Output TaskParameter="Result" ItemName="_PoBundle1" />
     </GroupJoin>
@@ -1009,10 +1011,8 @@ First project
     <!--<LogItems Items="@(PoBundle)" Title="PoBundle" />-->
   </Target>
 
-  <!-- PO Tree -->
-
   <Target Name="UpdatePoTree"
-          DependsOnTargets="RefreshPoBundleItems;CreatePoBundle;CreatePoModule"
+          DependsOnTargets="RefreshPoTree;CreatePoBundle;CreatePoModule"
           Inputs="%(PoItem.BundlePath);%(PotPath)"
           Outputs="%(FullPath)">
 
@@ -1067,7 +1067,7 @@ First project
     </ItemGroup>
   </Target>
   
-  <Target Name="TouchPoTrees" DependsOnTargets="InitPoTrees">
+  <Target Name="TouchPoTree" DependsOnTargets="InitPoTrees">
     <Touch Files="@(PoTree)" Condition="'$(PoTreeChanged)' == 'true'"/>
   </Target>
 
@@ -1229,7 +1229,7 @@ First project
       CreatePoBundle;
       CreatePoModule;
       UpdatePoTree;
-      TouchPoTrees;
+      TouchPoTree;
       UpdateMoTree;
       CreateMoDomainContent;
     </PoBuildDependsOn>
