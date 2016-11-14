@@ -841,18 +841,10 @@ First project
     </ItemGroup>
     
     <GroupJoin Outer="@(_PoBundle1)" Inner="@(_ExistingPoModule);@(PoDomain)" Keys="Culture" Modifiers="PoDependencies=FullPath;PotDependencies=PotPath">
-      <Output TaskParameter="Result" ItemName="_PoBundle2" />
-    </GroupJoin>
-    <ItemGroup>
-      <_PoBundle1 Remove="@(_PoBundle1)" />
-      <_ExistingMoDomain Include="@(MoDomain)" Condition="Exists(%(Identity))" />
-    </ItemGroup>
-
-    <GroupJoin Outer="@(_PoBundle2)" Inner="@(_ExistingMoDomain)" Keys="Culture" Modifiers="MoDependencies=FullPath">
       <Output TaskParameter="Result" ItemName="PoBundle" />
     </GroupJoin>
     <ItemGroup>
-      <_PoBundle2 Remove="@(_PoBundle2)" />
+      <_PoBundle1 Remove="@(_PoBundle1)" />
     </ItemGroup>
 
     <!--<Message Text="%(PoBundle.Identity)" Importance="high" />-->
@@ -998,16 +990,10 @@ First project
     </GroupJoin>
     <ItemGroup>
       <PoBundle Remove="@(PoBundle)" />
-    </ItemGroup>
-    
-    <!-- Refresh MO Items -->
-    <GroupJoin Outer="@(_PoBundle1)" Inner="@(MoDomain)" Keys="Culture" Modifiers="MoDependencies=FullPath">
-      <Output TaskParameter="Result" ItemName="PoBundle" />
-    </GroupJoin>
-    <ItemGroup>
+      <PoBundle Include="@(_PoBundle1)" />
       <_PoBundle1 Remove="@(_PoBundle1)" />
     </ItemGroup>
-    
+
     <!--<LogItems Items="@(PoBundle)" Title="PoBundle" />-->
   </Target>
 
