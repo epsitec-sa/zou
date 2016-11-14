@@ -1041,16 +1041,6 @@ First project
     <CleanPoFile SourceFiles="@(PoFile)" Condition="'$(PoNoClean)' != 'true'"/>
   </Target>
 
-  <Target Name="UpdateMoTree"
-          DependsOnTargets="UpdatePoTree"
-          Inputs="%(MoDomain.PoPath)"
-          Outputs="%(FullPath)">
-
-    <!-- MoDomain = msgfmt(PoDomain) -->
-    <MakeDir Directories="%(PoResource.MoDomainDir)" />
-    <Exec Command='"$(MsgFmt)" -o"%(MoDomain.FullPath)" "%(PoPath)"' />
-  </Target>
-
   <Target Name="InitPoTrees">
     <!-- PoTree -->
     <ItemGroup>
@@ -1079,6 +1069,16 @@ First project
   
   <Target Name="TouchPoTrees" DependsOnTargets="InitPoTrees">
     <Touch Files="@(PoTree)" Condition="'$(PoTreeChanged)' == 'true'"/>
+  </Target>
+
+  <Target Name="UpdateMoTree"
+          DependsOnTargets="UpdatePoTree"
+          Inputs="%(MoDomain.PoPath)"
+          Outputs="%(FullPath)">
+
+    <!-- MoDomain = msgfmt(PoDomain) -->
+    <MakeDir Directories="%(PoResource.MoDomainDir)" />
+    <Exec Command='"$(MsgFmt)" -o"%(MoDomain.FullPath)" "%(PoPath)"' />
   </Target>
 
   <!--=========================================================================-->
