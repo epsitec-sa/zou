@@ -906,7 +906,7 @@ First project
   <Target Name="CreatePotModule"
           DependsOnTargets="InitPotModules"
           Inputs="%(PotModule.Dependencies)"
-          Outputs="%(PotModule.FullPath)">
+          Outputs="%(PotModule.Identity)">
 
     <!-- PotModule = msgcat (anyCulture, PotDomains) -->
 
@@ -974,7 +974,7 @@ First project
   <Target Name="CreatePoModule"
           DependsOnTargets="InitPoModules;CreatePotModule"
           Inputs="%(PoModule.PotPath)"
-          Outputs="%(PoModule.FullPath)">
+          Outputs="%(PoModule.Identity)">
 
     <CallTarget Targets="InitPoModule" Condition="!Exists(%(PoModule.FullPath))" />
   </Target>
