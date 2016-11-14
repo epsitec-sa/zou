@@ -1,16 +1,20 @@
 ## TODOs
 
-- BuildSequence.targets: use FindInList task
-- 
+- PoResource: TouchPoTrees: remove POT files ?
+- PoResource: UpdateReferences: is MoDomainReferences necessary ?
+- Tasks: add persistent itemgroup tasks
+  - LoadItems, SaveItems, UpdateItems(add, delete, keepduplicates=false)
+
+- BuildSequence.targets: obsolete ?
 - **DONE** - add Swissdec.prepack to Swissdec.pack.sln
 - **DONE** - fix the OutputPath error (`msbuild Tasks.pack.sln`)
 - **DONE** - replace `ZouPack` and `ZouImport` flags with `ZouAgentFunc` property (`Pack`, `Import`, `Interop`)
 - **DONE** - update C*.Standard.props.
-- think if Toolset should be treated as PlatformToolset (Toolset specified, Cpp.Toolset.props, ...) or if it should stay as an internal property ?
-- create a bundle solution `zou.cfg\zou.sln` to gather all zou agents and zouified projects.
+- **DONE** - think if Toolset should be treated as PlatformToolset (Toolset specified, Cpp.Toolset.props, ...) or if it should stay as an internal property ?
+- **DONE** - create a bundle solution `zou.cfg\zou.sln` to gather all zou agents and zouified projects.
 - rename `C*.Standard` to `C*.PropertySheets` (warning: need to update all `.vcxproj`)
 - check `Cs.Forward.OutDir.props` for redondant conditions
-- rename C*.Utility.* to C*.Agent.*
+- **DONE** - rename C*.Utility.* to C*.Agent.*
 - ImportFile: rename metadata fields
 	- ImportDir -> TargetDir
 	- ImportFile -> TargetFile
