@@ -469,7 +469,7 @@ First project
 
   <!-- POT Domain -->
 
-  <Target Name="ReadPotDomainReferences" DependsOnTargets="InitPoResources">
+  <Target Name="LoadPotDomains">
 
     <ReadLinesFromFile File="$(PotDomainReferencesPath)" >
       <Output TaskParameter="Lines" ItemName="_Temporary"/>
@@ -484,8 +484,8 @@ First project
     <!--<LogItems Items="@(PotDomainReference)" Title="PotDomainReference"/>-->
   </Target>
 
-  <Target Name="UpdatePotDomainReferences"
-          DependsOnTargets="ReadPotDomainReferences;PoCreateRefsDir"
+  <Target Name="SavePotDomain"
+          DependsOnTargets="PoCreateRefsDir;LoadPotDomains"
           Outputs="$(PotDomainReferencesPath)">
 
     <ItemGroup>
@@ -505,7 +505,7 @@ First project
 
   <!-- POT Module -->
 
-  <Target Name="ReadPotModuleReferences" DependsOnTargets="InitPoResources">
+  <Target Name="LoadPotModules" DependsOnTargets="InitPoResources">
 
     <ReadLinesFromFile File="$(PotModuleReferencesPath)" >
       <Output TaskParameter="Lines" ItemName="_Temporary"/>
@@ -520,8 +520,8 @@ First project
     <!--<LogItems Items="@(PotModuleReference)" Title="PotModuleReference"/>-->
   </Target>
 
-  <Target Name="UpdatePotModuleReferences"
-          DependsOnTargets="ReadPotModuleReferences;PoCreateRefsDir"
+  <Target Name="SavePotModule"
+          DependsOnTargets="PoCreateRefsDir;LoadPotModules"
           Outputs="$(PotModuleReferencesPath)">
 
     <ItemGroup>
@@ -541,7 +541,7 @@ First project
 
   <!-- PO Domain -->
 
-  <Target Name="ReadPoDomainReferences" DependsOnTargets="InitPoResources">
+  <Target Name="LoadPoDomains" DependsOnTargets="InitPoResources">
 
     <ReadLinesFromFile File="$(PoDomainReferencesPath)" >
       <Output TaskParameter="Lines" ItemName="_Temporary"/>
@@ -556,8 +556,8 @@ First project
     <!--<LogItems Items="@(PoDomainReference)" Title="PoDomainReference"/>-->
   </Target>
 
-  <Target Name="UpdatePoDomainReferences"
-          DependsOnTargets="ReadPoDomainReferences;PoCreateRefsDir"
+  <Target Name="SavePoDomain"
+          DependsOnTargets="PoCreateRefsDir;LoadPoDomains"
           Outputs="$(PoDomainReferencesPath)">
 
     <ItemGroup>
@@ -577,7 +577,7 @@ First project
 
   <!-- PO Module -->
 
-  <Target Name="ReadPoModuleReferences" DependsOnTargets="InitPoResources">
+  <Target Name="LoadPoModules" DependsOnTargets="InitPoResources">
 
     <ReadLinesFromFile File="$(PoModuleReferencesPath)" >
       <Output TaskParameter="Lines" ItemName="_Temporary"/>
@@ -592,8 +592,8 @@ First project
     <!--<LogItems Items="@(PoModuleReference)" Title="PoModuleReference"/>-->
   </Target>
 
-  <Target Name="UpdatePoModuleReferences"
-          DependsOnTargets="ReadPoModuleReferences;PoCreateRefsDir"
+  <Target Name="SavePoModule"
+          DependsOnTargets="PoCreateRefsDir;LoadPoModules"
           Outputs="$(PoModuleReferencesPath)">
 
     <ItemGroup>
@@ -613,7 +613,7 @@ First project
 
   <!-- MO Domain -->
 
-  <Target Name="ReadMoDomainReferences" DependsOnTargets="InitPoResources">
+  <Target Name="LoadMoDomains" DependsOnTargets="InitPoResources">
 
     <ReadLinesFromFile File="$(MoDomainReferencesPath)" >
       <Output TaskParameter="Lines" ItemName="_Temporary"/>
@@ -628,8 +628,8 @@ First project
     <!--<LogItems Items="@(MoDomainReference)" Title="MoDomainReference"/>-->
   </Target>
 
-  <Target Name="UpdateMoDomainReferences"
-          DependsOnTargets="ReadMoDomainReferences;PoCreateRefsDir"
+  <Target Name="SaveMoDomain"
+          DependsOnTargets="PoCreateRefsDir;LoadMoDomains"
           Outputs="$(MoDomainReferencesPath)">
 
     <ItemGroup>
@@ -653,7 +653,7 @@ First project
 
   <!-- Domain -->
   
-  <Target Name="InitPotDomains" DependsOnTargets="UpdatePotDomainReferences">
+  <Target Name="InitPotDomains" DependsOnTargets="SavePotDomain">
     <ItemGroup>
       <PotDomain Include="@(PotDomainReference)" />
       <PotDomain>
@@ -671,7 +671,7 @@ First project
     <!--<LogItems Items="@(PotDomain)" Title="PotDomain" />-->
   </Target>
   
-  <Target Name="InitPoDomains" DependsOnTargets="InitPotDomains;UpdatePoDomainReferences">
+  <Target Name="InitPoDomains" DependsOnTargets="InitPotDomains;SavePoDomain">
     <ItemGroup>
       <PoDomain Include="@(PoDomainReference)">
         <Culture>en-US</Culture>
@@ -718,7 +718,7 @@ First project
     <!--<LogItems Items="@(PoDomain)" Title="PoDomain" />-->
   </Target>
 
-  <Target Name="InitMoDomains" DependsOnTargets="InitPoDomains;UpdateMoDomainReferences">
+  <Target Name="InitMoDomains" DependsOnTargets="InitPoDomains;SaveMoDomain">
     <ItemGroup>
       <MoDomain Include="@(MoDomainReference)" />
       <MoDomain>
@@ -764,7 +764,7 @@ First project
   
   <!-- Module -->
   
-  <Target Name="InitPotModules" DependsOnTargets="InitPotDomains;UpdatePotModuleReferences">
+  <Target Name="InitPotModules" DependsOnTargets="InitPotDomains;SavePotModule">
     <ItemGroup>
       <_PotModule Include="@(PotModuleReference)" />
       <_PotModule>
@@ -782,7 +782,7 @@ First project
     <!--<LogItems Items="@(PotModule)" Title="PotModule" />-->
   </Target>
 
-  <Target Name="InitPoModules" DependsOnTargets="InitPotModules;UpdatePoModuleReferences">
+  <Target Name="InitPoModules" DependsOnTargets="InitPotModules;SavePoModule">
     <ItemGroup>
       <PoModule Include="@(PoModuleReference)">
         <DomainName/>
@@ -931,7 +931,7 @@ First project
     </ItemGroup>
   </Target>
 
-  <Target Name="DeletePotModule" DependsOnTargets="ReadPotModuleReferences">
+  <Target Name="DeletePotModule" DependsOnTargets="LoadPotModules">
     <Delete Files="%(PoResource.PotModuleReferences)" />
   </Target>
   
