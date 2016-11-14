@@ -1,11 +1,11 @@
 ## TODOs
 
-- PoResource: TouchPoTrees: remove POT files ?
-- PoResource: UpdateReferences: is MoDomainReferences necessary ?
+- **DONE** - PoResource: should we touch POT files ? NO
+- **DONE** - PoResource: UpdateReferences: is MoDomainReferences necessary ? NO
 - Tasks: add persistent itemgroup tasks
   - LoadItems, SaveItems, UpdateItems(add, delete, keepduplicates=false)
+- **DONE** - PoResource: needs BuildSequence.targets ? NO
 
-- BuildSequence.targets: obsolete ?
 - **DONE** - add Swissdec.prepack to Swissdec.pack.sln
 - **DONE** - fix the OutputPath error (`msbuild Tasks.pack.sln`)
 - **DONE** - replace `ZouPack` and `ZouImport` flags with `ZouAgentFunc` property (`Pack`, `Import`, `Interop`)
