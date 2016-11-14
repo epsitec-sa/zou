@@ -211,12 +211,12 @@ First project
     <PotModuleDir    Condition="'$(ModuleName)' != ''">$(PoModuleRootDir)obj\$(Configuration)\</PotModuleDir>
     <PotModulePath   Condition="'$(ModuleName)' != ''">$(PotModuleDir)$(PoModuleName).pot</PotModulePath>
 
-    <PotDomainSubdir>$([MSBuild]::MakeRelative($(ProjectDir), $(IntDir)))</PotDomainSubdir>
+    <PotDomainSubdir>$(IntermediateOutputPath)</PotDomainSubdir>
     <PoDomainSubdir>Resource\</PoDomainSubdir>
     
     <MoLocaleLinkdir>locale\</MoLocaleLinkdir>
-    <MoLocaleSubdir>$([MSBuild]::MakeRelative($(ProjectDir), $(OutDir)))$(MoLocaleLinkdir)</MoLocaleSubdir>
-    <MoLocaleDir>$(ProjectDir)$(MoLocaleSubdir)</MoLocaleDir>
+    <MoLocaleSubdir>$(OutputPath)$(MoLocaleLinkdir)</MoLocaleSubdir>
+    <MoLocaleDir>$(OutDir)$(MoLocaleLinkdir)</MoLocaleDir>
 
     <XGetText>$(ZouBinDir)xgettext</XGetText>
     <MsgInit>$(ZouBinDir)msginit</MsgInit>
@@ -249,6 +249,7 @@ First project
     <Message Text="PotModulePath            = $(PotModulePath)" Importance="high" />
     <Message Text="PotDomainSubdir          = $(PotDomainSubdir)" Importance="high" />
     <Message Text="PoDomainSubdir           = $(PoDomainSubdir)" Importance="high" />
+    <Message Text="MoLocaleLinkdir          = $(MoLocaleLinkdir)" Importance="high" />
     <Message Text="MoLocaleSubdir           = $(MoLocaleSubdir)" Importance="high" />
     <Message Text="MoLocaleDir              = $(MoLocaleDir)" Importance="high" />
   </Target>
