@@ -476,12 +476,12 @@ First project
     </ReadLinesFromFile>
 
     <ItemGroup>
-      <PotDomainReference Include="@(_Temporary->'$(BundleDir)%(Identity)')" />
+      <PotDomain Include="@(_Temporary->'$(BundleDir)%(Identity)')" />
       <_Temporary Remove="@(_Temporary)" />
     </ItemGroup>
 
-    <!--<Message Importance="high" Text="[R]PotDomainReference=%(PotDomainReference.Identity)" />-->
-    <!--<LogItems Items="@(PotDomainReference)" Title="PotDomainReference"/>-->
+    <!--<Message Importance="high" Text="[R]PotDomain=%(PotDomain.Identity)" />-->
+    <!--<LogItems Items="@(PotDomain)" Title="PotDomain"/>-->
   </Target>
 
   <Target Name="SavePotDomain"
@@ -489,18 +489,18 @@ First project
           Outputs="$(PotDomainReferencesPath)">
 
     <ItemGroup>
-      <PotDomainReference Remove="%(PoResource.PotDomainPath)" />
-      <PotDomainReference Include="%(PoResource.PotDomainPath)" />
-      <PotDomainReference>
+      <PotDomain Remove="%(PoResource.PotDomainPath)" />
+      <PotDomain Include="%(PoResource.PotDomainPath)" />
+      <PotDomain>
         <RelativePath>$([MSBuild]::MakeRelative($(BundleDir), %(Identity)))</RelativePath>
-      </PotDomainReference>
+      </PotDomain>
     </ItemGroup>
-    <WriteLinesToFile File="$(PotDomainReferencesPath)" Lines="@(PotDomainReference->'%(RelativePath)')" Overwrite="true" />
+    <WriteLinesToFile File="$(PotDomainReferencesPath)" Lines="@(PotDomain->'%(RelativePath)')" Overwrite="true" />
 
     <Message Text='Added "%(PoResource.PotDomainPath)" to "$(PotDomainReferencesPath)"' />
 
-    <!--<Message Importance="high" Text="[U]PotDomainReference=%(PotDomainReference.Identity)" />-->
-    <!--<LogItems Items="@(PotDomainReference)" Title="PotDomainReference"/>-->
+    <!--<Message Importance="high" Text="[U]PotDomain=%(PotDomain.Identity)" />-->
+    <!--<LogItems Items="@(PotDomain)" Title="PotDomain"/>-->
   </Target>
 
   <!-- POT Module -->
@@ -512,12 +512,12 @@ First project
     </ReadLinesFromFile>
 
     <ItemGroup>
-      <PotModuleReference Include="@(_Temporary->'$(BundleDir)%(Identity)')" />
+      <PotModule Include="@(_Temporary->'$(BundleDir)%(Identity)')" />
       <_Temporary Remove="@(_Temporary)" />
     </ItemGroup>
 
-    <!--<Message Importance="high" Text="[R]PotModuleReference=%(PotModuleReference.Identity)" />-->
-    <!--<LogItems Items="@(PotModuleReference)" Title="PotModuleReference"/>-->
+    <!--<Message Importance="high" Text="[R]PotModule=%(PotModule.Identity)" />-->
+    <!--<LogItems Items="@(PotModule)" Title="PotModule"/>-->
   </Target>
 
   <Target Name="SavePotModule"
@@ -525,18 +525,18 @@ First project
           Outputs="$(PotModuleReferencesPath)">
 
     <ItemGroup>
-      <PotModuleReference Remove="$(PotModulePath)" />
-      <PotModuleReference Include="$(PotModulePath)" />
-      <PotModuleReference>
+      <PotModule Remove="$(PotModulePath)" />
+      <PotModule Include="$(PotModulePath)" />
+      <PotModule>
         <RelativePath>$([MSBuild]::MakeRelative($(BundleDir), %(Identity)))</RelativePath>
-      </PotModuleReference>
+      </PotModule>
     </ItemGroup>
-    <WriteLinesToFile File="$(PotModuleReferencesPath)" Lines="@(PotModuleReference->'%(RelativePath)')" Overwrite="true" />
+    <WriteLinesToFile File="$(PotModuleReferencesPath)" Lines="@(PotModule->'%(RelativePath)')" Overwrite="true" />
 
     <Message Text='Added "$(PotModulePath)" to "$(PotModuleReferencesPath)"' />
 
-    <!--<Message Importance="high" Text="[U]PotModuleReference=%(PotModuleReference.Identity)" />-->
-    <!--<LogItems Items="@(PotModuleReference)" Title="PotModuleReference"/>-->
+    <!--<Message Importance="high" Text="[U]PotModule=%(PotModule.Identity)" />-->
+    <!--<LogItems Items="@(PotModule)" Title="PotModule"/>-->
   </Target>
 
   <!-- PO Domain -->
@@ -548,12 +548,12 @@ First project
     </ReadLinesFromFile>
 
     <ItemGroup>
-      <PoDomainReference Include="@(_Temporary->'$(BundleDir)%(Identity)')" />
+      <PoDomain Include="@(_Temporary->'$(BundleDir)%(Identity)')" />
       <_Temporary Remove="@(_Temporary)" />
     </ItemGroup>
 
-    <!--<Message Importance="high" Text="[R]PoDomainReference=%(PoDomainReference.Identity)" />-->
-    <!--<LogItems Items="@(PoDomainReference)" Title="PoDomainReference"/>-->
+    <!--<Message Importance="high" Text="[R]PoDomain=%(PoDomain.Identity)" />-->
+    <!--<LogItems Items="@(PoDomain)" Title="PoDomain"/>-->
   </Target>
 
   <Target Name="SavePoDomain"
@@ -561,18 +561,18 @@ First project
           Outputs="$(PoDomainReferencesPath)">
 
     <ItemGroup>
-      <PoDomainReference Remove="%(PoResource.FullPath)" />
-      <PoDomainReference Include="%(PoResource.FullPath)" />
-      <PoDomainReference>
+      <PoDomain Remove="%(PoResource.FullPath)" />
+      <PoDomain Include="%(PoResource.FullPath)" />
+      <PoDomain>
         <RelativePath>$([MSBuild]::MakeRelative($(BundleDir), %(Identity)))</RelativePath>
-      </PoDomainReference>
+      </PoDomain>
     </ItemGroup>
-    <WriteLinesToFile File="$(PoDomainReferencesPath)" Lines="@(PoDomainReference->'%(RelativePath)')" Overwrite="true" />
+    <WriteLinesToFile File="$(PoDomainReferencesPath)" Lines="@(PoDomain->'%(RelativePath)')" Overwrite="true" />
 
     <Message Text='Added "%(PoResource.FullPath)" to "$(PoDomainReferencesPath)"' />
 
-    <!--<Message Importance="high" Text="[U]PoDomainReference=%(PoDomainReference.Identity)" />-->
-    <!--<LogItems Items="@(PoDomainReference)" Title="PoDomainReference"/>-->
+    <!--<Message Importance="high" Text="[U]PoDomain=%(PoDomain.Identity)" />-->
+    <!--<LogItems Items="@(PoDomain)" Title="PoDomain"/>-->
   </Target>
 
   <!-- PO Module -->
@@ -584,12 +584,12 @@ First project
     </ReadLinesFromFile>
 
     <ItemGroup>
-      <PoModuleReference Include="@(_Temporary->'$(BundleDir)%(Identity)')" />
+      <PoModule Include="@(_Temporary->'$(BundleDir)%(Identity)')" />
       <_Temporary Remove="@(_Temporary)" />
     </ItemGroup>
 
-    <!--<Message Importance="high" Text="[R]PoModuleReference=%(PoModuleReference.Identity)" />-->
-    <!--<LogItems Items="@(PoModuleReference)" Title="PoModuleReference"/>-->
+    <!--<Message Importance="high" Text="[R]PoModule=%(PoModule.Identity)" />-->
+    <!--<LogItems Items="@(PoModule)" Title="PoModule"/>-->
   </Target>
 
   <Target Name="SavePoModule"
@@ -597,18 +597,18 @@ First project
           Outputs="$(PoModuleReferencesPath)">
 
     <ItemGroup>
-      <PoModuleReference Remove="%(PoResource.PoModulePath)" />
-      <PoModuleReference Include="%(PoResource.PoModulePath)" />
-      <PoModuleReference>
+      <PoModule Remove="%(PoResource.PoModulePath)" />
+      <PoModule Include="%(PoResource.PoModulePath)" />
+      <PoModule>
         <RelativePath>$([MSBuild]::MakeRelative($(BundleDir), %(Identity)))</RelativePath>
-      </PoModuleReference>
+      </PoModule>
     </ItemGroup>
-    <WriteLinesToFile File="$(PoModuleReferencesPath)" Lines="@(PoModuleReference->'%(RelativePath)')" Overwrite="true" />
+    <WriteLinesToFile File="$(PoModuleReferencesPath)" Lines="@(PoModule->'%(RelativePath)')" Overwrite="true" />
 
     <Message Text='Added "%(PoResource.PoModulePath)" to "$(PoModuleReferencesPath)"' />
 
-    <!--<Message Importance="high" Text="[U]PoModuleReference=%(PoModuleReference.Identity)" />-->
-    <!--<LogItems Items="@(PoModuleReference)" Title="PoModuleReference"/>-->
+    <!--<Message Importance="high" Text="[U]PoModule=%(PoModule.Identity)" />-->
+    <!--<LogItems Items="@(PoModule)" Title="PoModule"/>-->
   </Target>
 
   <!-- MO Domain -->
@@ -620,12 +620,12 @@ First project
     </ReadLinesFromFile>
 
     <ItemGroup>
-      <MoDomainReference Include="@(_Temporary->'$(BundleDir)%(Identity)')" />
+      <MoDomain Include="@(_Temporary->'$(BundleDir)%(Identity)')" />
       <_Temporary Remove="@(_Temporary)" />
     </ItemGroup>
 
-    <!--<Message Importance="high" Text="[R]MoDomainReference=%(MoDomainReference.Identity)" />-->
-    <!--<LogItems Items="@(MoDomainReference)" Title="MoDomainReference"/>-->
+    <!--<Message Importance="high" Text="[R]MoDomain=%(MoDomain.Identity)" />-->
+    <!--<LogItems Items="@(MoDomain)" Title="MoDomain"/>-->
   </Target>
 
   <Target Name="SaveMoDomain"
@@ -633,18 +633,18 @@ First project
           Outputs="$(MoDomainReferencesPath)">
 
     <ItemGroup>
-      <MoDomainReference Remove="%(PoResource.MoDomainPath)" />
-      <MoDomainReference Include="%(PoResource.MoDomainPath)" />
-      <MoDomainReference>
+      <MoDomain Remove="%(PoResource.MoDomainPath)" />
+      <MoDomain Include="%(PoResource.MoDomainPath)" />
+      <MoDomain>
         <RelativePath>$([MSBuild]::MakeRelative($(BundleDir), %(Identity)))</RelativePath>
-      </MoDomainReference>
+      </MoDomain>
     </ItemGroup>
-    <WriteLinesToFile File="$(MoDomainReferencesPath)" Lines="@(MoDomainReference->'%(RelativePath)')" Overwrite="true" />
+    <WriteLinesToFile File="$(MoDomainReferencesPath)" Lines="@(MoDomain->'%(RelativePath)')" Overwrite="true" />
 
     <Message Text='Added "%(PoResource.MoDomainPath)" to "$(MoDomainReferencesPath)"' />
 
-    <!--<Message Importance="high" Text="[U]MoDomainReference=%(MoDomainReference.Identity)" />-->
-    <!--<LogItems Items="@(MoDomainReference)" Title="MoDomainReference"/>-->
+    <!--<Message Importance="high" Text="[U]MoDomain=%(MoDomain.Identity)" />-->
+    <!--<LogItems Items="@(MoDomain)" Title="MoDomain"/>-->
   </Target>
 
   <!--=========================================================================-->
@@ -655,7 +655,6 @@ First project
   
   <Target Name="InitPotDomains" DependsOnTargets="SavePotDomain">
     <ItemGroup>
-      <PotDomain Include="@(PotDomainReference)" />
       <PotDomain>
         <ProjectDir>$([System.String]::new(%(FullPath)).Substring(0, $([System.String]::new(%(FullPath)).IndexOf($(PotDomainSubdir)%(FileName)%(Extension)))))</ProjectDir>
       </PotDomain>
@@ -673,7 +672,7 @@ First project
   
   <Target Name="InitPoDomains" DependsOnTargets="InitPotDomains;SavePoDomain">
     <ItemGroup>
-      <PoDomain Include="@(PoDomainReference)">
+      <PoDomain>
         <Culture>en-US</Culture>
       </PoDomain>
       <PoDomain>
@@ -720,7 +719,6 @@ First project
 
   <Target Name="InitMoDomains" DependsOnTargets="InitPoDomains;SaveMoDomain">
     <ItemGroup>
-      <MoDomain Include="@(MoDomainReference)" />
       <MoDomain>
         <ProjectDir>$([System.String]::new(%(FullPath)).Substring(0, $([System.String]::new(%(FullPath)).IndexOf($(MoLocaleSubdir)))))</ProjectDir>
       </MoDomain>
@@ -766,7 +764,7 @@ First project
   
   <Target Name="InitPotModules" DependsOnTargets="InitPotDomains;SavePotModule">
     <ItemGroup>
-      <_PotModule Include="@(PotModuleReference)" />
+      <_PotModule Include="@(PotModule)" />
       <_PotModule>
         <ModuleDir>$([MSBuild]::GetDirectoryNameOfFileAbove(%(FullPath), '.git'))</ModuleDir>
       </_PotModule>
@@ -784,7 +782,7 @@ First project
 
   <Target Name="InitPoModules" DependsOnTargets="InitPotModules;SavePoModule">
     <ItemGroup>
-      <PoModule Include="@(PoModuleReference)">
+      <PoModule>
         <DomainName/>
       </PoModule>
       <PoModule>
