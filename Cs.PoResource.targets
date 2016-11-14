@@ -53,6 +53,31 @@ Layout:
       module1.fr-CH.po                              %(PoResource.PoModuleFileName)
       locale\fr-CH\LC_MESSAGES\                     %(PoResource.MoDomainLinkdir)
       bin\debug\locale\fr-CH\LC_MESSAGES\           %(PoResource.MoDomainSubdir)
+
+PoResource metadata:
+====================
+BundleDir = .../bundle
+
+InitPoResources:
+  Culture                   // fr-CH, fr, ..., default to en-US
+  DomainName                // file name without culture extension
+  
+  PotSourcePath             // .../bundle/module/**/project/obj/Debug/%(DomainName).pot.src.zou
+  PotDomainPath             // .../bundle/module/**/project/obj/Debug/%(DomainName).pot
+  MoDomainSubdir            // locale/fr-CH/LC_MESSAGES/
+  PoBundleFileName          // bundle.fr-CH.po
+  PoModuleFileName          // module.fr-CH.po
+  MoDomainFileName          // domain.mo
+
+  PoBundlePath              // .../bundle/.po/bundle.fr-CH.po
+  PoModulePath              // .../bundle/module/.po/module.fr-CH.po
+  MoDomainDir               // .../bundle/module/**/project/bin/Debug/locale/fr-CH/LC_MESSAGES/
+  MoDomainPath              // .../bundle/module/**/project/bin/Debug/locale/fr-CH/LC_MESSAGES/domain.mo
+
+  CopyToOutputDirectory     // default to PreserveNewest
+  Exists
+  Length
+  IsReadOnly
   
 Pseudo-code:
 ============
@@ -82,49 +107,71 @@ Pseudo-code:
       MoDomain = msgfmt(PoDomain)                                    // compile domains
   }
 
-Properties:
-===========
-  
-PoResource metadata:
-====================
-BundleDir = .../bundle
+Targets Order:
+==============
+    PoTraceConstants;
+    PoCleanIfSolutionChange;
+    PoCleanIfProjectChange;
+    CreatePoDomain;
+    UpdatePoTree;
+    TouchPoTree;
+    UpdateMoTree;
+    CreateMoDomainContent;
 
-InitPoResources:
-  Culture                   // fr-CH, fr, ..., default to en-US
-  DomainName                // file name without culture extension
-  
-  PotSourcePath             // .../bundle/module/**/project/obj/Debug/%(DomainName).pot.src.zou
-  PotDomainPath             // .../bundle/module/**/project/obj/Debug/%(DomainName).pot
-  MoDomainSubdir            // locale/fr-CH/LC_MESSAGES/
-  PoBundleFileName          // bundle.fr-CH.po
-  PoModuleFileName          // module.fr-CH.po
-  MoDomainFileName          // domain.mo
+First project
 
-  PoBundlePath              // .../bundle/.po/bundle.fr-CH.po
-  PoModulePath              // .../bundle/module/.po/module.fr-CH.po
-  MoDomainDir               // .../bundle/module/**/project/bin/Debug/locale/fr-CH/LC_MESSAGES/
-  MoDomainPath              // .../bundle/module/**/project/bin/Debug/locale/fr-CH/LC_MESSAGES/domain.mo
+    CreatePoDomain
+      InitPoResources             = @(PoResource)
+      InitPoDomain     
+        CreatePotDomain
+          CreatePotSource
+            InitPotSources        = @(PoSource)
+          CreatePotSource         = %(PoResource.PotSourcePath)                                 // ...\bundle\module\project\obj\debug\{domain}.pot.src.zou    { *.cs }
+          $$ xgettext
+        CreatePotDomain           = %(PoResource.PotDomainPath)                                 // ...\bundle\module\project\obj\debug\{domain}.pot            { (msgid, msgstr="")* }
+        $$ msginit
+        $$ msgattrib
+      InitPoDomain                = %(PoResource.Identity)                                      // ...\bundle\module\project\Resource\{domain}[.{culture}].po  { (msgid, msgstr="")* }
+    CreatePoDomain
+      
+    UpdatePoTree
+      CreatePoBundle
+        InitPoBundles
+          InitPoDomains
+            InitPotDomains
+              SavePotDomain       = $(PotDomainReferencesPath)  += %(PoResource.PotDomainPath)  // ...\bundle\.po\refs\PotDomains.zou += project\obj\debug\domain.pot
+            InitPotDomains        = @(PotDomain)
+            SavePoDomain          = $(PoDomainReferencesPath)   += %(PoResource.Identity)       // ...\bundle\.po\refs\PoDomains.zou  += project\Resource\domain[.culture].po
+          InitPoDomains           = @(PoDomain)
+          InitPoModules
+            InitPotModules
+              SavePotModule       = $(PotModuleReferencesPath)  += %(PoResource.PotModulePath)  // ...\bundle\.po\refs\PotModules.zou += module\.po\obj\debug\module.pot
+            InitPotModules        = @(PotModule)
+            SavePoModule          = $(PoModuleReferencesPath)   += %(PoResource.PoModulePath)   // ...\bundle\.po\refs\PoModules.zou  += module\.po\module.culture.po
+          InitPoModules           = @(PoModule)
+        InitPoBundles             = @(PoBundle)
+        $$ msgcat bundle.po {module}.po {domain}.po
+      CreatePoBundle              = %(PoBundle.Identity)                                        // ...\bundle\.po\bundle.{culture}.po
+    
+      CreatePoModule
+        [InitPoModules]
+        CreatePotModule
+          [InitPotModules]
+          $$ msgcat               = module.pot = msgcat(module.{domain}.pot)
+        CreatePotModule           = %(PotModule.Identity)                                       // ...\bundle\{module}\.po\obj\debug\module.pot
+        InitPoModule
+          $$ msginit              = module.{culture}.po = msginit(module.pot)
+        InitPoModule
+      CreatePoModule              = %(PoModule.Identity)                                        // ...\bundle\{module}\.po\module.{culture}.po
+     
+      RefreshPoTree
+        InitPoItems               = @(PoItem) = @(PoModule) + @(PoDomain)
+        InitMoDomains
+          [InitPoDomains]
+          SaveMoDomain          = $(MoDomainReferencesPath)   += %(PoResource.MoDomainPath)   // ...\bundle\.po\refs\MoDomains.zou  += project\obj\debug\locale\culture\LC_MESSAGES\domain.mo
+        InitMoDomains           = @(MoDomains)
+    UpdatePoTree
 
-  CopyToOutputDirectory     // default to PreserveNewest
-  Exists
-  Length
-  IsReadOnly
-  
-Read/WritePotModuleReferences:
-  PotModuleReferences       // { module\.po\obj\Debug\module.po }
-
-Read/UpdatePotDomainReferences:
-  PotDomainReferences       // { module\**\project\obj\Debug\domain.pot }
- 
-Read/WritePoModuleReferences:
-  PoModuleReferences        // { module\.po\module.fr-CH.po }
- 
-Read/WritePoDomainReferences:
-  PoDomainReferences        // { module\**\project\Resource\domain.fr-CH.po }
- 
-Read/WriteMoDomainReferences:
-  MoDomainReferences        // { module\**\project\bin\Debug\locale\fr-CH\LC_MESSAGES\domain.mo }
-  
 -->
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="PoResourceBuild">
 
