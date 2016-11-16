@@ -30,6 +30,7 @@ This script can be imported anywhere before first MS import (Microsoft.Cpp.Defau
 
   <PropertyGroup Condition="'$(ModuleDir)' != ''">
     <ModuleDir Condition="HasTrailingSlash('$(ModuleDir)')">$(ModuleDir.Substring(0, $(ModuleDir.LastIndexOf('\'))))</ModuleDir>
+    <ModuleId>$([MSBuild]::MakeRelative($(BundleDir), $(ModuleDir)))</ModuleId>
     <ModuleName>$(ModuleDir.Substring($([MSBuild]::Add($(ModuleDir.LastIndexOf('\')), 1))))</ModuleName>
     <ModuleDir>$(ModuleDir)\</ModuleDir>
   </PropertyGroup>
