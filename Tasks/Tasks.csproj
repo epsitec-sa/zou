@@ -34,9 +34,16 @@
     <Reference Include="Microsoft.Build.Framework" />
     <Reference Include="Microsoft.Build.Utilities.v4.0" />
     <Reference Include="System" />
+    <Reference Include="System.ComponentModel.Composition" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Interactive, Version=1.2.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Ix-Main.1.2.5\lib\net45\System.Interactive.dll</HintPath>
+    <Reference Include="System.Interactive, Version=3.0.1000.0, Culture=neutral, PublicKeyToken=94bc3704cddfc263, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\System.Interactive.3.1.0\lib\net45\System.Interactive.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.IO.Compression" />
+    <Reference Include="System.Numerics" />
+    <Reference Include="System.Runtime.InteropServices.RuntimeInformation, Version=4.0.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\System.Runtime.InteropServices.RuntimeInformation.4.3.0\lib\net45\System.Runtime.InteropServices.RuntimeInformation.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System.Xml.Linq" />
@@ -47,13 +54,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\..\Bcx\Net\Bcx\Source\Collections\AnonymousEqualityComparer.cs">
-      <Link>Source\Bcx\AnonymousEqualityComparer.cs</Link>
-    </Compile>
-    <Compile Include="..\..\Bcx\Net\Bcx\Source\Linq\LinqExtensions.cs">
-      <Link>Source\Bcx\LinqExtensions.cs</Link>
-    </Compile>
     <Compile Include="Source\ITaskItemExtensions.cs" />
+    <Compile Include="Source\Items\ItemMemo.cs" />
+    <Compile Include="Source\Items\ItemsTask.cs" />
+    <Compile Include="Source\Items\LoadItems.cs" />
     <Compile Include="Source\Joins\BaseJoin.cs" />
     <Compile Include="Source\CreateHelpMap.cs" />
     <Compile Include="Source\CleanPoFile.cs" />
@@ -64,11 +68,18 @@
     <Compile Include="Source\Joins\LeftOuterJoin.cs" />
     <Compile Include="Source\MergePackagesConfig.cs" />
     <Compile Include="Source\Lock.cs" />
-    <Compile Include="Source\LogItems.cs" />
+    <Compile Include="Source\Items\LogItems.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Source\Prompt.cs" />
+    <Compile Include="Source\Items\SaveItems.cs" />
     <Compile Include="Source\Unlock.cs" />
     <Compile Include="Source\Sleep.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Bcx\Net\Bcx\Bcx.csproj">
+      <Project>{61a84fe6-cce3-4037-a3d8-ea58a8011fcc}</Project>
+      <Name>Bcx</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
