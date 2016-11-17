@@ -12,100 +12,91 @@ This script can be imported anywhere before first MS import (Microsoft.Cpp.Defau
     <!-- Enable ZouTrace and ZouTraceMSBuild if the command 'msbuild zou.props' is executed -->
     <ZouTrace Condition="'$(ZouTrace)' == '' And '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">true</ZouTrace>
     <ZouTraceMSBuild Condition="'$(ZouTraceMSBuild)' == '' And '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">true</ZouTraceMSBuild>
-
-    <!-- Use the following property instead of SolutionDir when building a project without a solution (example: msbuild project.vcxproj) -->
-    <SolutionOrProjectDir Condition="'$(SolutionDir)' != '' And '$(SolutionDir)' != '*Undefined*'">$(SolutionDir)</SolutionOrProjectDir>
-    <SolutionOrProjectDir Condition="'$(SolutionDir)' == '' Or  '$(SolutionDir)' == '*Undefined*'">$(ProjectDir)</SolutionOrProjectDir>
   </PropertyGroup>
 
+  <!-- Bundle -->
   <PropertyGroup>
     <BundleDir>$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), '.git\HEAD'))</BundleDir>
-    <BundleDir Condition="HasTrailingSlash('$(BundleDir)')">$(BundleDir.Substring(0, $(BundleDir.LastIndexOf('\'))))</BundleDir>
-    <BundleName>$(BundleDir.Substring($([MSBuild]::Add($(BundleDir.LastIndexOf('\')), 1))))</BundleName>
+    <BundleName>$([System.IO.Path]::GetFileName('$(BundleDir)'))</BundleName>
     <BundleDir>$(BundleDir)\</BundleDir>
-
-    <ModuleDir>$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildProjectDirectory), '.git'))</ModuleDir>
-    <ZouDir>$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), '.git'))</ZouDir>
+    <!-- bundle/zou.cfg/ -->
+    <ZouBundleDir Condition="'$(ZouBundleDir)' == ''">$(BundleDir)$(_ZouCfgSubdir)</ZouBundleDir>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(ModuleDir)' != ''">
-    <ModuleDir Condition="HasTrailingSlash('$(ModuleDir)')">$(ModuleDir.Substring(0, $(ModuleDir.LastIndexOf('\'))))</ModuleDir>
-    <ModuleId>$([MSBuild]::MakeRelative($(BundleDir), $(ModuleDir)))</ModuleId>
-    <ModuleName>$(ModuleDir.Substring($([MSBuild]::Add($(ModuleDir.LastIndexOf('\')), 1))))</ModuleName>
-    <ModuleDir>$(ModuleDir)\</ModuleDir>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(ZouDir)' != ''">
-    <ZouDir Condition="HasTrailingSlash('$(ZouDir)')">$(ZouDir.Substring(0, $(ZouDir.LastIndexOf('\'))))</ZouDir>
-    <ZouName>$(ZouDir.Substring($([MSBuild]::Add($(ZouDir.LastIndexOf('\')), 1))))</ZouName>
-    <ZouDir>$(ZouDir)\</ZouDir>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(ZouDir)' == ''">
-    <ZouDir>$([System.IO.Directory]::GetParent($(MSBuildThisFileDirectory)).FullName)\</ZouDir>
-    <ZouName>$([System.IO.Directory]::GetParent($(MSBuildThisFileDirectory)).Name)</ZouName>
-  </PropertyGroup>
-
+  <!-- zou submodule -->
   <PropertyGroup>
+    <ZouDir>$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), '.git'))</ZouDir>
+    <ZouDir Condition="'$(ZouDir)' == ''">$(BundleDir)</ZouDir>
+    <ZouDir Condition="HasTrailingSlash('$(ZouDir)')">$(ZouDir.Substring(0, $(ZouDir.LastIndexOf('\'))))</ZouDir>
+    <ZouName>$([System.IO.Path]::GetFileName('$(ZouDir)'))</ZouName>
+    <ZouDir>$(ZouDir)\</ZouDir>
     <ZouBinDir>$(ZouDir)bin\</ZouBinDir>
     <ZouPrivateDir>$(ZouDir)private\</ZouPrivateDir>
   </PropertyGroup>
-
+  
   <PropertyGroup Condition="'$(BundleDir' == '' Or '$(ZouDir)' == ''">
     <ZouError>true</ZouError>
     <ZouTrace>true</ZouTrace>
   </PropertyGroup>
 
-  <!-- zou custom tasks -->
-  <Import Project="zou.Tasks.props"/>
-  
-  <!-- Dummy target used by zou, provided by Microsoft.Cpp.Targets but not by Microsoft.CSharp.targets -->
-  <Target Name="_PrepareForClean" Condition="'$(MSBuildProjectExtension)' != '.vcxproj'" />
-  <Target Name="_DeleteLastBuildState" DependsOnTargets="_PrepareForClean" />
-  
-  <!-- ZouBundleDir -->
-  <PropertyGroup Condition="'$(ZouBundleDir)' == ''" >
-    <ZouBundleDir>$(BundleDir)$(_ZouCfgSubdir)</ZouBundleDir>
-  </PropertyGroup>
-  
-  <!-- Project properties -->
-  <PropertyGroup Condition="'$(ZouProjectDir)' == ''" >
-    <ZouProjectDir>$(MSBuildProjectDirectory)\$(_ZouCfgSubdir)</ZouProjectDir>
-  </PropertyGroup>
+  <!-- Module -->
   <PropertyGroup>
+    <ModuleId>$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), '.git'))</ModuleId>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(ModuleId)' != ''">
+    <ModuleId>$([MSBuild]::MakeRelative($(BundleDir), $(ModuleId)))</ModuleId>
+    <ModuleId Condition="HasTrailingSlash('$(ModuleId)')">$(ModuleId.Substring(0, $(ModuleId.LastIndexOfAny('\/'))))</ModuleId>
+    <ModuleName>$(ModuleId)</ModuleName>
+    <ModuleDir>$(BundleDir)$(ModuleId)\</ModuleDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(ModuleId)' == ''">
+    <ModuleId>$(MSBuildThisFileDirectory)</ModuleId>
+    <ModuleId>$([MSBuild]::MakeRelative($(BundleDir), $(ModuleId)))</ModuleId>
+  </PropertyGroup>
+  <PropertyGroup  Condition="'$(ModuleId)' != ''">
+    <ModuleId Condition="HasTrailingSlash('$(ModuleId)')">$(ModuleId.Substring(0, $(ModuleId.IndexOfAny('\/'))))</ModuleId>
+    <ModuleName>$([System.IO.Path]::GetFileName('$(ModuleId)'))</ModuleName>
+    <ModuleDir>$(BundleDir)$(ModuleId)\</ModuleDir>
+  </PropertyGroup>
+
+  <!-- Project -->
+  <PropertyGroup>
+    <!-- project/zou.cfg/ -->
+    <ZouProjectDir Condition="'$(ZouProjectDir)' == ''">$(MSBuildProjectDirectory)\$(_ZouCfgSubdir)</ZouProjectDir>
     <BundleRelativeProjectDir>$([MSBuild]::MakeRelative($(BundleDir), $(MSBuildProjectDirectory)\))</BundleRelativeProjectDir>
     <BundleRelativeProjectName>$([MSBuild]::MakeRelative($(BundleDir), $(MSBuildProjectDirectory)\$(MSBuildProjectName)))</BundleRelativeProjectName>
     <BundleRelativeProjectPath>$([MSBuild]::MakeRelative($(BundleDir), $(MSBuildProjectDirectory)\$(MSBuildProjectFile)))</BundleRelativeProjectPath>
-    <_ZouBackSlashPos>$(BundleRelativeProjectPath.IndexOf('\'))</_ZouBackSlashPos>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(_ZouBackSlashPos)' &gt; '0'" >
-    <BundleProjectAnchor>$(BundleRelativeProjectPath.Substring(0, $(_ZouBackSlashPos)))\</BundleProjectAnchor>
+    <ProjectId>$(BundleRelativeProjectName)</ProjectId>
   </PropertyGroup>
 
-  <!-- Solution properties -->
+  <!-- Solution -->
   <Choose>
     <When Condition="'$(SolutionPath)' != '' And '$(SolutionPath)' != '*Undefined*'">
-      <PropertyGroup Condition="'$(ZouSolutionDir)' == ''" >
-        <ZouSolutionDir>$(SolutionDir)$(_ZouCfgSubdir)</ZouSolutionDir>
-      </PropertyGroup>
-      <PropertyGroup>
+      <PropertyGroup >
+        <!-- solution/zou.cfg/ -->
+        <ZouSolutionDir  Condition="'$(ZouSolutionDir)' == ''">$(SolutionDir)$(_ZouCfgSubdir)</ZouSolutionDir>
         <BundleRelativeSolutionDir>$([MSBuild]::MakeRelative($(BundleDir), $(SolutionDir)))</BundleRelativeSolutionDir>
         <BundleRelativeSolutionName>$([MSBuild]::MakeRelative($(BundleDir), $(SolutionDir)$(SolutionName)))</BundleRelativeSolutionName>
         <BundleRelativeSolutionPath>$([MSBuild]::MakeRelative($(BundleDir), $(SolutionPath)))</BundleRelativeSolutionPath>
-        <_ZouBackSlashPos>$(BundleRelativeSolutionPath.IndexOf('\'))</_ZouBackSlashPos>
-      </PropertyGroup>
-      <PropertyGroup Condition="'$(_ZouBackSlashPos)' &gt; '0'" >
-        <BundleSolutionAnchor>$(BundleRelativeSolutionPath.Substring(0, $(_ZouBackSlashPos)))\</BundleSolutionAnchor>
+        
+        <!-- Use the following property instead of SolutionDir when building a project without a solution (example: msbuild project.vcxproj) -->
+        <SolutionOrProjectDir>$(SolutionDir)</SolutionOrProjectDir>
       </PropertyGroup>
     </When>
     <Otherwise>
       <PropertyGroup>
         <ZouSolutionDir>$(ZouProjectDir)</ZouSolutionDir>
         <BundleRelativeSolutionDir>$(BundleRelativeProjectDir)</BundleRelativeSolutionDir>
-        <BundleSolutionAnchor>$(BundleProjectAnchor)</BundleSolutionAnchor>
+
+        <!-- Use the following property instead of SolutionDir when building a project without a solution (example: msbuild project.vcxproj) -->
+        <SolutionOrProjectDir>$(ProjectDir)</SolutionOrProjectDir>
       </PropertyGroup>
     </Otherwise>
   </Choose>
+  
+  <!-- Dummy target used by zou, provided by Microsoft.Cpp.Targets but not by Microsoft.CSharp.targets -->
+  <Target Name="_PrepareForClean" Condition="'$(MSBuildProjectExtension)' != '.vcxproj'" />
+  <Target Name="_DeleteLastBuildState" DependsOnTargets="_PrepareForClean" />
 
   <!-- Flag properties that are defined on the command line. -->
   <PropertyGroup>
@@ -118,6 +109,8 @@ This script can be imported anywhere before first MS import (Microsoft.Cpp.Defau
     <PlatformToolsetSpecified Condition=" '$(PlatformToolset)' != '' And '$(PlatformToolsetSpecified)' == '' ">true</PlatformToolsetSpecified>
   </PropertyGroup>
 
+  <!-- zou custom tasks -->
+  <Import Project="zou.Tasks.props"/>
   <Import Project="Tools.props" />
   
   <!-- Detect a rebuild -->
@@ -173,6 +166,7 @@ This script can be imported anywhere before first MS import (Microsoft.Cpp.Defau
     <Message Importance="normal" Text="  MSBuildProjectExtension    = $(MSBuildProjectExtension)" />
     <Message Importance="normal" Text="+ BundleName                 = $(BundleName)" />
     <Message Importance="normal" Text="+ BundleDir                  = $(BundleDir)" />
+    <Message Importance="normal" Text="+ ModuleId                   = $(ModuleId)" />
     <Message Importance="normal" Text="+ ModuleName                 = $(ModuleName)" />
     <Message Importance="normal" Text="+ ModuleDir                  = $(ModuleDir)" />
     <Message Importance="normal" Text="+ ZouName                    = $(ZouName)" />
@@ -188,8 +182,6 @@ This script can be imported anywhere before first MS import (Microsoft.Cpp.Defau
     <Message Importance="normal" Text="+ BundleRelativeProjectDir   = $(BundleRelativeProjectDir)" />
     <Message Importance="normal" Text="+ BundleRelativeProjectName  = $(BundleRelativeProjectName)" />
     <Message Importance="normal" Text="+ BundleRelativeProjectPath  = $(BundleRelativeProjectPath)" />
-    <Message Importance="normal" Text="+ BundleSolutionAnchor       = $(BundleSolutionAnchor)" />
-    <Message Importance="normal" Text="+ BundleProjectAnchor        = $(BundleProjectAnchor)" />
     <Message Importance="normal" Text="Execution time" />
     <Message Importance="normal" Text="==============" />
     <Message Importance="normal" Text="  Configuration              = $(Configuration)" />
