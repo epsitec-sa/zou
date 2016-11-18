@@ -930,13 +930,13 @@ First project
   <!-- Clean -->
   <!--=========================================================================-->
 
-  <Target Name ="PoReset"
+  <Target Name ="PoResetCore"
           Condition="$(PoReset) != ''"
           DependsOnTargets="InitPoResources">
 
     <ItemGroup>
       <_Temporary Include="$(PoBundleRootDir)**\*" />
-      <_Temporary Include="$(PoModuleRootDir)**\*" Condition="'$(ModuleName)' != ''"/>
+      <_Temporary Include="$(PoModuleRootDir)**\*"/>
       <_Temporary Include="@(PoResource)" />
     </ItemGroup>
 
@@ -945,7 +945,7 @@ First project
     <ItemGroup>
       <_Temporary Remove="@(_Temporary)" />
       <_Temporary Include="$(PoBundleRootDir);$(PoBundleRootDir)**" />
-      <_Temporary Include="$(PoModuleRootDir);$(PoModuleRootDir)**" Condition="'$(ModuleName)' != ''"/>
+      <_Temporary Include="$(PoModuleRootDir);$(PoModuleRootDir)**"/>
     </ItemGroup>
     
     <RemoveDir Directories="@(_Temporary)" />
@@ -954,17 +954,21 @@ First project
       <_Temporary Remove="@(_Temporary)" />
     </ItemGroup>
   </Target>
-  
+
+  <Target Name="PoReset">
+    <CallTarget Targets="PoResetCore"  Condition="$(PoReset) == 'true'" />
+  </Target>
+
   <Target Name="PoDelete">
     <ItemGroup>
       <_Temporary Include="$(SolutionDir)*.zou" />
       <_Temporary Include="$(PoBundleRootDir)**/*.zou" />
       <_Temporary Include="$(PoBundleRootDir)**/*.mo" />
-      <_Temporary Include="$(PoModuleRootDir)**/*.zou" Condition="'$(ModuleName)' != ''"/>
-      <_Temporary Include="$(PoModuleRootDir)**/*.mo"  Condition="'$(ModuleName)' != ''"/>
+      <_Temporary Include="$(PoModuleRootDir)**/*.zou"/>
+      <_Temporary Include="$(PoModuleRootDir)**/*.mo"/>
       <_Temporary Include="$(PoIntDir)**/*.zou" />
       <_Temporary Include="$(PoIntDir)**/*.pot" />
-      <_Temporary Include="$(TargetDir)**/*.mo" />
+      <_Temporary Include="$(ProjectDir)**/*.mo" />
     </ItemGroup>
 
     <Delete Files="@(_Temporary)" />
@@ -974,13 +978,8 @@ First project
     </ItemGroup>
   </Target>
 
-  <Target Name="PoCleanCore">
-    <CallTarget Targets="PoDelete" />
-    <CallTarget Targets="PoReset"  Condition="$(PoReset) != ''" />
-  </Target>
-
   <Target Name="PoClean" AfterTargets="Clean">
-    <CallTarget Targets="PoLock;PoCleanCore;PoUnlock" RunEachTargetSeparately="true" />
+    <CallTarget Targets="PoLock;PoTraceConstants;PoDelete;PoReset;PoUnlock" RunEachTargetSeparately="true" />
   </Target>
   
   <!--=========================================================================-->
