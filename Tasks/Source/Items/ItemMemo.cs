@@ -24,14 +24,10 @@ namespace Epsitec.Zou
 		{
 			var itemSpec = string.IsNullOrEmpty (relativeTo) ? item.ItemSpec : PathEx.MakeRelative(relativeTo, item.GetMetadata ("FullPath"));
 
-			var metadata = (metadataNames ?? string.Empty)
-				.Split (';')
-				.Select (name => new
-				{
-					Key = name,
-					Value = item.GetMetadata (name)
-				})
-				.Where (a => a != null)
+			var names    = metadataNames == null ? Enumerable.Empty<string> () : metadataNames.Split (';');
+			var metadata = names
+				.Select (name => new { Key = name, Value = item.GetMetadata (name) })
+				.NonNull ()
 				.ToDictionary (a => a.Key, a => a.Value);
 
 			return new ItemMemo(itemSpec, metadata);
