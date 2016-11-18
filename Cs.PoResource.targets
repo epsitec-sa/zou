@@ -412,7 +412,7 @@ First project
     <ItemGroup>
       <_PoFile Include="%(PoResource.FullPath)">
         <Bundle>$(BundleName)</Bundle>
-        <Module Condition="'$(ModuleName)' != ''">$(ModuleName)</Module>
+        <Module>$(ModuleName)</Module>
         <DomainName>%(PoResource.DomainName)</DomainName>
         <NoPotCreationDate>$(NoPotCreationDate)</NoPotCreationDate>
         <NoPoRevisionDate>$(NoPoRevisionDate)</NoPoRevisionDate>
@@ -444,7 +444,7 @@ First project
     <ItemGroup>
       <_PoFile Include="%(PoResource.FullPath)">
         <Bundle>$(BundleName)</Bundle>
-        <Module Condition="'$(ModuleName)' != ''">$(ModuleName)</Module>
+        <Module>$(ModuleName)</Module>
         <DomainName>%(PoResource.DomainName)</DomainName>
         <NoPotCreationDate>$(NoPotCreationDate)</NoPotCreationDate>
         <NoPoRevisionDate>$(NoPoRevisionDate)</NoPoRevisionDate>
@@ -533,10 +533,11 @@ First project
       <_PoModule1 Include="%(PoResource.PoModulePath)">
         <Culture>%(PoResource.Culture)</Culture>
         <ModuleId>$(ModuleId)</ModuleId>
+        <ModuleName>$(ModuleName)</ModuleName>
       </_PoModule1>
     </ItemGroup>
 
-    <SaveItems File="$(PoModuleReferencesPath)" Items="@(_PoModule1)" RelativeTo="$(BundleDir)" Metadata="Culture;ModuleId">
+    <SaveItems File="$(PoModuleReferencesPath)" Items="@(_PoModule1)" RelativeTo="$(BundleDir)" Metadata="Culture;ModuleId;ModuleName">
       <Output TaskParameter="NewItems" ItemName="_PoModule2" />
     </SaveItems>
     <ItemGroup>
@@ -565,11 +566,13 @@ First project
       <_PoDomain1 Include="%(PoResource.FullPath)">
         <Culture>%(PoResource.Culture)</Culture>
         <ModuleId>$(ModuleId)</ModuleId>
+        <ModuleName>$(ModuleName)</ModuleName>
         <DomainId>%(PoResource.DomainId)</DomainId>
+        <DomainName>%(PoResource.DomainName)</DomainName>
       </_PoDomain1>
     </ItemGroup>
 
-    <SaveItems File="$(PoDomainReferencesPath)" Items="@(_PoDomain1)" RelativeTo="$(BundleDir)" Metadata="Culture;ModuleId;DomainId">
+    <SaveItems File="$(PoDomainReferencesPath)" Items="@(_PoDomain1)" RelativeTo="$(BundleDir)" Metadata="Culture;ModuleId;ModuleName;DomainId;DomainName">
       <Output TaskParameter="NewItems" ItemName="_PoDomain2" />
     </SaveItems>
     <ItemGroup>
@@ -750,7 +753,7 @@ First project
     <ItemGroup>
       <_PoFile Include="%(PoModule.FullPath)">
         <Bundle>$(BundleName)</Bundle>
-        <Module>%(PoBundle.ModuleName)</Module>
+        <Module>%(PoModule.ModuleName)</Module>
         <NoPotCreationDate>$(NoPotCreationDate)</NoPotCreationDate>
         <NoPoRevisionDate>$(NoPoRevisionDate)</NoPoRevisionDate>
       </_PoFile>
