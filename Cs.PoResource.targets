@@ -7,6 +7,7 @@ Layout:
       bundle1.fr-CH.po                              %(PoResource.PoBundlePath)  
       bundle1.de-CH.po
       obj\Debug\                                    $(PoBundleIntDir)
+        LastSolution.zou                            $(LastSolutionSavePath)
         PotModules.zou                              $(PotModuleReferencesPath)
           - module1\.po\module1.pot                 $(PotModulePath)
         PotDomains.zou                              $(PotDomainReferencesPath)
@@ -36,15 +37,13 @@ Layout:
         domain2.fr-CH.po
         domain2.de-CH.po
       obj\Debug\                                    $(PoIntDir)
-        LastSolution.zou                            $(LastSolutionSavePath)
         domain1.pot.src.zou                         %(PoResource.PotSourcePath)
         domain1.pot                                 %(PoResource.PotDomainPath)
         domain2.pot
-      bin\Debug\                                    $(PoOutDir)
-      bin\Debug\locale\                             $(MoLocaleSubdir
-          fr-CH\LC_MESSAGES\                        %(PoResource.MoDomainDir)
-            domain1.mo                              %(PoResource.MoDomainPath)
-            domain2.mo
+      bin\Debug\                                    $(TargetDir)
+        locale\fr-CH\LC_MESSAGES\                   %(PoResource.MoDomainDir)
+          domain1.mo                                %(PoResource.MoDomainPath)
+          domain2.mo
 
   where:
       bundle1                                       $(BundleName)
@@ -53,21 +52,15 @@ Layout:
       fr-CH                                         %(PoResource.Culture)
       bundle1.fr-CH.po                              %(PoResource.PoBundleFileName)
       module1.fr-CH.po                              %(PoResource.PoModuleFileName)
-      
-      locale\                                       $(MoLocaleLinkdir)
-      bin\debug\locale\                             $(MoLocaleSubdir)
-      locale\fr-CH\LC_MESSAGES\                     %(PoResource.MoDomainLinkdir)
-    
     
 Temporary
 =========
 
-$(PoBundleRootDir)/refs/
-
-$(PoBundleIntDir)/**/*.*
-$(PoModuleIntDir)/**/*.*
-$(PoIntDir)/*.zou
-$(PoIntDir)/*.pot
+$(PoBundleIntDir)/**/*.zou
+$(PoModuleIntDir)/**/*.zou
+$(PoIntDir)/**/*.zou
+$(PoIntDir)/**/*.pot
+$(TargetDir)/**/*.mo
 
 -->
 
@@ -203,7 +196,7 @@ First project
   <!--=========================================================================-->
   
   <PropertyGroup>
-    <PoTrace>true</PoTrace>
+    <PoTrace>false</PoTrace>
     <PoTraceResources>false</PoTraceResources>
     
     <ContinueMessage>Press [Enter] to continue...</ContinueMessage>
@@ -214,12 +207,9 @@ First project
     <NoPotCreationDate Condition="'$(NoPotCreationDate)' == ''">true</NoPotCreationDate>
     <NoPoRevisionDate  Condition="'$(NoPoRevisionDate)'  == ''">true</NoPoRevisionDate>
 
-    <PoIntDir Condition="'$(PoIntDir)' == ''">$(ProjectDir)$(IntermediateOutputPath)</PoIntDir>
-    
-    <LastSolutionSavePath>$(PoIntDir)LastSolution.zou</LastSolutionSavePath>
-    
     <PoBundleRootDir>$(BundleDir).po\</PoBundleRootDir>
     <PoBundleIntDir>$(PoBundleRootDir)obj\$(Configuration)\</PoBundleIntDir>
+    <LastSolutionSavePath>$(PoBundleIntDir)LastSolution.zou</LastSolutionSavePath>
 
     <PotModuleReferencesPath>$(PoBundleIntDir)PotModules.zou</PotModuleReferencesPath>
     <PotDomainReferencesPath>$(PoBundleIntDir)PotDomains.zou</PotDomainReferencesPath>
@@ -230,6 +220,8 @@ First project
     <PoModuleRootDir Condition="'$(ModuleName)' != ''">$(ModuleDir).po\</PoModuleRootDir>
     <PoModuleIntDir  Condition="'$(ModuleName)' != ''">$(PoModuleRootDir)obj\$(Configuration)\</PoModuleIntDir>
     <PotModulePath   Condition="'$(ModuleName)' != ''">$(PoModuleIntDir)$(ModuleName).pot</PotModulePath>
+    
+    <PoIntDir Condition="'$(PoIntDir)' == ''">$(ProjectDir)$(IntermediateOutputPath)</PoIntDir>
 
     <XGetText>$(ZouBinDir)xgettext</XGetText>
     <MsgInit>$(ZouBinDir)msginit</MsgInit>
@@ -326,7 +318,7 @@ First project
     <LogItems Items="@(PoResource)" Title="PoResource" Condition="'$(PoTraceResources)' == 'true'"/>
   </Target>
 
-  <Target Name="PoCreateRefsDir">
+  <Target Name="PoCreateBundleIntDir">
     <MakeDir Directories="$(PoBundleIntDir)" />
   </Target>
   
@@ -357,10 +349,6 @@ First project
 
     <Prompt Text="$ create =&gt; %(PoResource.PotSourcePath) -- $(ContinueMessage)"
             Condition="'$(Interactive)' == 'True'" />
-  </Target>
-
-  <Target Name="DeletePotSource" DependsOnTargets="InitPoResources">
-    <Delete Files="@(PoResource->'%(PotSourcePath)')" />
   </Target>
 
   <!-- POT domain-->
@@ -482,7 +470,7 @@ First project
   <!-- POT Domain -->
 
   <Target Name="InitPotDomains"
-          DependsOnTargets="InitPoResources;PoCreateRefsDir"
+          DependsOnTargets="InitPoResources;PoCreateBundleIntDir"
           Outputs="$(PotDomainReferencesPath)">
 
     <ItemGroup>
@@ -493,7 +481,7 @@ First project
     </ItemGroup>
 
     <SaveItems File="$(PotDomainReferencesPath)" Items="@(_PotDomain)" RelativeTo="$(BundleDir)" Metadata="ModuleId;DomainId">
-      <Output TaskParameter="OutputItems" ItemName="PotDomain" />
+      <Output TaskParameter="NewItems" ItemName="PotDomain" />
     </SaveItems>
     
     <ItemGroup>
@@ -517,7 +505,7 @@ First project
     </ItemGroup>
 
     <SaveItems File="$(PotModuleReferencesPath)" Items="@(_PotModule1)" RelativeTo="$(BundleDir)" Metadata="ModuleId">
-      <Output TaskParameter="OutputItems" ItemName="_PotModule2" />
+      <Output TaskParameter="NewItems" ItemName="_PotModule2" />
     </SaveItems>
     <ItemGroup>
       <_PotModule1 Remove="@(_PotModule1)" />
@@ -549,7 +537,7 @@ First project
     </ItemGroup>
 
     <SaveItems File="$(PoModuleReferencesPath)" Items="@(_PoModule1)" RelativeTo="$(BundleDir)" Metadata="Culture;ModuleId">
-      <Output TaskParameter="OutputItems" ItemName="_PoModule2" />
+      <Output TaskParameter="NewItems" ItemName="_PoModule2" />
     </SaveItems>
     <ItemGroup>
       <_PoModule1 Remove="@(_PoModule1)" />
@@ -582,7 +570,7 @@ First project
     </ItemGroup>
 
     <SaveItems File="$(PoDomainReferencesPath)" Items="@(_PoDomain1)" RelativeTo="$(BundleDir)" Metadata="Culture;ModuleId;DomainId">
-      <Output TaskParameter="OutputItems" ItemName="_PoDomain2" />
+      <Output TaskParameter="NewItems" ItemName="_PoDomain2" />
     </SaveItems>
     <ItemGroup>
       <_PoDomain1 Remove="@(_PoDomain1)" />
@@ -615,7 +603,7 @@ First project
     </ItemGroup>
 
     <SaveItems File="$(MoDomainReferencesPath)" Items="@(_MoDomain1)" RelativeTo="$(BundleDir)" Metadata="Culture;ModuleId;DomainId">
-      <Output TaskParameter="OutputItems" ItemName="_MoDomain2" />
+      <Output TaskParameter="NewItems" ItemName="_MoDomain2" />
     </SaveItems>
     <ItemGroup>
       <_MoDomain1 Remove="@(_MoDomain1)" />
@@ -735,10 +723,6 @@ First project
     </ItemGroup>
   </Target>
 
-  <Target Name="DeletePotModule">
-    <Delete Files="%(PoResource.PotModuleReferences)" />
-  </Target>
-  
   <!-- PO Module -->
   
   <Target Name="CreatePoModuleCore"
@@ -915,43 +899,23 @@ First project
   <!--=========================================================================-->
   <!-- Last solution path -->
   <!--=========================================================================-->
+  
+  <Target Name ="InitSolutionChanged" DependsOnTargets="PoCreateBundleIntDir">
 
-  <Target Name ="ReadLastSolution">
+    <SaveItems File="$(LastSolutionSavePath)" Items="$(SolutionPath)" RelativeTo="$(BundleDir)" Overwrite="true">
+      <Output TaskParameter="OldItems" PropertyName="_LastSolutionPath"/>
+    </SaveItems>
 
-    <ReadLinesFromFile File="$(LastSolutionSavePath)" >
-      <Output TaskParameter="Lines" ItemName="_Temporary"/>
-    </ReadLinesFromFile>
-    
     <PropertyGroup >
-      <LastSolutionPath>@(_Temporary)</LastSolutionPath>
+      <SolutionChanged Condition="'$(_LastSolutionPath)' != '$(SolutionPath)'">true</SolutionChanged>
+      <_LastSolutionPath />
     </PropertyGroup>
 
-    <!--<Message Importance="high" Text="[R] SolutionPath     = $(SolutionPath)" />
-    <Message Importance="high" Text="[R] LastSolutionPath = $(LastSolutionPath)" />-->
-    
-    <ItemGroup >
-      <_Temporary Remove="@(_Temporary)" />
-    </ItemGroup>
-  </Target>
-  
-  <Target Name ="WriteLastSolution">
-
-    <!--<Message Importance="high" Text="[W] SolutionPath     = $(SolutionPath)" />-->
-    
-    <WriteLinesToFile File="$(LastSolutionSavePath)" Lines="$(SolutionPath)" Overwrite="true" />
-  </Target>
-  
-  <Target Name="DeleteLastSolutionSave">
-    <Delete Files="$(LastSolutionSavePath)" />
+    <!--<Message Importance="high" Text="[R] SolutionChanged = $(SolutionChanged)" />-->
   </Target>
 
-  <!--=========================================================================-->
-  <!-- Clean -->
-  <!--=========================================================================-->
-
-  <Target Name="PoCleanIfSolutionChange" DependsOnTargets="InitPoResources;ReadLastSolution;WriteLastSolution">
-
-    <Delete Files="@(PoResource->'%(PotSourcePath)')" Condition="'$(LastSolutionPath)' != '$(SolutionPath)'" />
+  <Target Name="PoCleanIfSolutionChange" DependsOnTargets="InitPoResources;InitSolutionChanged">
+    <Delete Files="@(PoResource->'%(PotSourcePath)')" Condition="'$(SolutionChanged)' == 'true'" />
   </Target>
 
   <Target Name="PoCleanIfProjectChange"
@@ -962,13 +926,17 @@ First project
     <Delete Files="@(PoResource->'%(PotSourcePath)')" />
   </Target>
 
-  <!--.........................................................................-->
+  <!--=========================================================================-->
+  <!-- Clean -->
+  <!--=========================================================================-->
 
-  <Target Name ="PoReset" Condition="$(PoReset) != ''">
+  <Target Name ="PoReset"
+          Condition="$(PoReset) != ''"
+          DependsOnTargets="InitPoResources">
 
     <ItemGroup>
       <_Temporary Include="$(PoBundleRootDir)**\*" />
-      <_Temporary Include="$(PoModuleRootDir)**\*" />
+      <_Temporary Include="$(PoModuleRootDir)**\*" Condition="'$(ModuleName)' != ''"/>
       <_Temporary Include="@(PoResource)" />
     </ItemGroup>
 
@@ -977,7 +945,7 @@ First project
     <ItemGroup>
       <_Temporary Remove="@(_Temporary)" />
       <_Temporary Include="$(PoBundleRootDir);$(PoBundleRootDir)**" />
-      <_Temporary Include="$(PoModuleRootDir);$(PoModuleRootDir)**" />
+      <_Temporary Include="$(PoModuleRootDir);$(PoModuleRootDir)**" Condition="'$(ModuleName)' != ''"/>
     </ItemGroup>
     
     <RemoveDir Directories="@(_Temporary)" />
@@ -986,33 +954,29 @@ First project
       <_Temporary Remove="@(_Temporary)" />
     </ItemGroup>
   </Target>
-
-  <!--.........................................................................-->
-
-  <Target Name="PoCleanCoreForClean" DependsOnTargets="DeleteLastSolutionSave;DeletePotSource;DeletePotDomain;DeletePotModule;PoReset" >
-
+  
+  <Target Name="PoDelete">
     <ItemGroup>
       <_Temporary Include="$(SolutionDir)*.zou" />
       <_Temporary Include="$(PoBundleRootDir)**/*.zou" />
-      <_Temporary Include="$(PoModuleRootDir)**/*.zou" />
-      <_Temporary Include="$(PoBundleRootDir)*.mo" />
-      <_Temporary Include="$(PoModuleRootDir)*.mo" />
-      <_Temporary Include="%(PoResource.RootDir)%(Directory)*.mo" />
+      <_Temporary Include="$(PoBundleRootDir)**/*.mo" />
+      <_Temporary Include="$(PoModuleRootDir)**/*.zou" Condition="'$(ModuleName)' != ''"/>
+      <_Temporary Include="$(PoModuleRootDir)**/*.mo"  Condition="'$(ModuleName)' != ''"/>
+      <_Temporary Include="$(PoIntDir)**/*.zou" />
+      <_Temporary Include="$(PoIntDir)**/*.pot" />
+      <_Temporary Include="$(TargetDir)**/*.mo" />
     </ItemGroup>
-    
+
     <Delete Files="@(_Temporary)" />
-    <RemoveDir Directories="$(PoBundleIntDir)" ContinueOnError="true" />
-    
+
     <ItemGroup>
       <_Temporary Remove="@(_Temporary)" />
     </ItemGroup>
   </Target>
 
-  <Target Name="PoCleanCoreForRebuild" DependsOnTargets="DeletePotSource" />
-
   <Target Name="PoCleanCore">
-    <CallTarget Targets="PoCleanCoreForClean"   Condition="'$(ZouInsideRebuild)' != 'true'" />
-    <CallTarget Targets="PoCleanCoreForRebuild" Condition="'$(ZouInsideRebuild)' == 'true'" />
+    <CallTarget Targets="PoDelete" />
+    <CallTarget Targets="PoReset"  Condition="$(PoReset) != ''" />
   </Target>
 
   <Target Name="PoClean" AfterTargets="Clean">
