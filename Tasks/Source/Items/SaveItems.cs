@@ -32,23 +32,32 @@ namespace Epsitec.Zou
 			set;
 		}
 		[Output]
-		public ITaskItem[]		OutputItems
+		public ITaskItem[]		OldItems
+		{
+			get;
+			set;
+		}
+		[Output]
+		public ITaskItem[]		NewItems
 		{
 			get;
 			set;
 		}
 		public override bool	Execute()
 		{
-			var inputMemos   = this.Items.Select (item => ItemMemo.FromTaskItem (item, this.RelativeTo, this.Metadata)).ToArray ();
-			var outputMemos  = this.GetOuptutMemos (inputMemos);
-			this.OutputItems = outputMemos.Select (m => m.ToTaskItem (this.RelativeTo)).ToArray ();
+			var inputMemos = this.Items.Select (item => ItemMemo.FromTaskItem (item, this.RelativeTo, this.Metadata)).ToArray ();
+			var oldMemos   = ItemMemo.Parse (this.ReadAllLines ()).ToArray ();
+			var newMemos   = this.MergeMemos (oldMemos, inputMemos);
 
-			System.IO.File.WriteAllLines (this.File, outputMemos.Serialize ().ToArray ());
+			System.IO.File.WriteAllLines (this.File, newMemos.Serialize ().ToArray ());
+
+			this.OldItems  = oldMemos.Select (m => m.ToTaskItem (this.RelativeTo)).ToArray ();
+			this.NewItems  = newMemos.Select (m => m.ToTaskItem (this.RelativeTo)).ToArray ();
 
 			return !this.Log.HasLoggedErrors;
 		}
 
-		private ItemMemo[]		GetOuptutMemos(ItemMemo[] inputMemos)
+		private ItemMemo[]		MergeMemos(ItemMemo[] previousMemos, ItemMemo[] inputMemos)
 		{
 			if (this.Overwrite)
 			{
@@ -56,7 +65,6 @@ namespace Epsitec.Zou
 			}
 			else
 			{
-				var previousMemos = ItemMemo.Parse (this.ReadAllLines ()).ToArray ();
 				if (this.KeepDuplicates)
 				{
 					return inputMemos.Concat (previousMemos).ToArray ();
