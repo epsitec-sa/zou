@@ -41,16 +41,17 @@ This script can be imported anywhere before first MS import (Microsoft.Cpp.Defau
 
   <!-- Module -->
   <PropertyGroup>
-    <ModuleId>$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), '.git'))</ModuleId>
+    <ModuleId>$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildProjectDirectory), '.git'))</ModuleId>
   </PropertyGroup>
   <PropertyGroup Condition="'$(ModuleId)' != ''">
+    <ModuleIsShared>true</ModuleIsShared>
     <ModuleId>$([MSBuild]::MakeRelative($(BundleDir), $(ModuleId)))</ModuleId>
     <ModuleId Condition="HasTrailingSlash('$(ModuleId)')">$(ModuleId.Substring(0, $(ModuleId.LastIndexOfAny('\/'))))</ModuleId>
     <ModuleName>$(ModuleId)</ModuleName>
     <ModuleDir>$(BundleDir)$(ModuleId)\</ModuleDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(ModuleId)' == ''">
-    <ModuleId>$(MSBuildThisFileDirectory)</ModuleId>
+    <ModuleId>$(MSBuildProjectDirectory)\</ModuleId>
     <ModuleId>$([MSBuild]::MakeRelative($(BundleDir), $(ModuleId)))</ModuleId>
   </PropertyGroup>
   <PropertyGroup  Condition="'$(ModuleId)' != ''">
@@ -169,6 +170,7 @@ This script can be imported anywhere before first MS import (Microsoft.Cpp.Defau
     <Message Importance="normal" Text="+ ModuleId                   = $(ModuleId)" />
     <Message Importance="normal" Text="+ ModuleName                 = $(ModuleName)" />
     <Message Importance="normal" Text="+ ModuleDir                  = $(ModuleDir)" />
+    <Message Importance="normal" Text="+ ModuleIsShared             = $(ModuleIsShared)" />
     <Message Importance="normal" Text="+ ZouName                    = $(ZouName)" />
     <Message Importance="normal" Text="+ ZouDir                     = $(ZouDir)" />
     <Message Importance="normal" Text="+ ZouBinDir                  = $(ZouBinDir)" />
