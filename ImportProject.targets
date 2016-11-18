@@ -40,7 +40,8 @@
 
   <!-- Target batching -->
   <Target Name="ImportProject"
-          DependsOnTargets="_DeleteLastBuildState;AddBuildOptions"
+          Condition="'@(ImportProject)' != ''"
+          DependsOnTargets="AddBuildOptions"
           Returns="%(ProjectsToBuild.Identity)">
 
     <!--<LogItems Items="@(ProjectsToBuild)" Title="ProjectsToBuild" />
@@ -69,5 +70,8 @@
     <!-- ...or project. -->
     <MSBuild Condition="'%(ProjectsToBuild.Extension)' != '.sln'"
              Projects="%(ProjectsToBuild.Identity)" Targets="%(Targets)" Properties="%(ProjectsToBuild.Properties)" BuildInParallel="%(BuildInParallel)" />
+
+    <CallTarget Targets="_DeleteLastBuildState" />
   </Target>
-</Project>
+
+  </Project>
