@@ -81,6 +81,7 @@ namespace Epsitec.Zou
 
 					File.WriteAllLines (info.FullPath, newContent);
 				}
+				info.LogWarnings (this.Log);
 			}
 			catch (Exception e)
 			{
@@ -158,6 +159,7 @@ namespace Epsitec.Zou
 		{
 			get;
 		}
+		public IList<string>				Warnings => this.warnings;
 
 		public bool							KeepPoName(string name)
 		{
@@ -176,8 +178,11 @@ namespace Epsitec.Zou
 			return true;
 		}
 		public override string				ToString() => $"{this.Package}[{this.PoName}]";
+		public void							LogWarnings(TaskLoggingHelper log) => this.warnings.ForEach(w => log.LogWarning (w));
 
 		private readonly Regex				domainRegex;
+		private readonly List<string>		warnings = new List<string>();
+
 	}
 	internal class PoFile
 	{
@@ -297,7 +302,7 @@ namespace Epsitec.Zou
 		public static Message[] Parse(Parser e, PoFileInfo fileInfo)
 		{
 			return Message
-				.ParseCore (e)
+				.ParseCore (e, fileInfo)
 				.ToArray ();
 
 		}
@@ -320,13 +325,24 @@ namespace Epsitec.Zou
 		}
 		public string[] Content => this.Header.Concat (this.MsgId).Concat (this.MsgStr).ToArray ();
 
-		private static IEnumerable<Message> ParseCore(Parser e)
+		private static IEnumerable<Message> ParseCore(Parser e, PoFileInfo fileInfo)
 		{
 			while (!e.Completed)
 			{
 				var header = Message.ParseHeader (e).ToArray ();
 				var msgid = Message.ParseItem (e, "msgid").ToArray ();
 				var msgstr = Message.ParseItem (e, "msgstr").ToArray ();
+				if (msgstr.Length > 1 && msgstr[1].StartsWith("\"#-#-#-#-#"))
+				{
+					var conflict = msgstr
+						.Where(m => !m.StartsWith("msgstr") && !m.StartsWith ("\"#-#-#-#-#"))
+						.Select(m => m.Replace ("\\n\"", "\""))
+						.Distinct ();
+
+					fileInfo.Warnings.Add (
+						$"Translation ambiguity between {string.Join (" and ", conflict)} " +
+						$"for {msgid.First()} in \"{Path.GetFileName(fileInfo.FullPath)}\".");
+				}
 				yield return new Message (header, msgid, msgstr);
 			}
 		}
