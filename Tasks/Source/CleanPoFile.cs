@@ -290,10 +290,10 @@ namespace Epsitec.Zou
 		private static string[]				CleanContent(string[] content, PoFileInfo fileInfo)
 		{
 			var e = new Parser (content);
-			var messages = Message.Parse (e, fileInfo);
-			return messages
-				.OrderBy(m => m.Id)
-				.SelectMany (m => m.Content)
+			return Message
+				.Parse (e, fileInfo)
+				.OrderBy(m => m.Id, StringComparer.InvariantCultureIgnoreCase)
+				.SelectMany(m => m.Content)
 				.ToArray ();
 		}
 	}
@@ -324,6 +324,7 @@ namespace Epsitec.Zou
 			get;
 		}
 		public string[]						Content => this.Header.Concat (this.MsgId).Concat (this.MsgStr).ToArray ();
+		public override string				ToString() => this.Id;
 
 		private static IEnumerable<Message> ParseCore(Parser e, PoFileInfo fileInfo)
 		{
@@ -369,16 +370,14 @@ namespace Epsitec.Zou
 		}
 		private static IEnumerable<string>	ParseItem(Parser e, string key)
 		{
-			if (!e.Current.StartsWith (key))
-			{
-				throw new Exception ($"Bad format: {key} expected");
-			}
-
-			yield return e.Current;
-
-			while (e.MoveNext () && e.Current.StartsWith ("\""))
+			if (e.Current.StartsWith(key))
 			{
 				yield return e.Current;
+
+				while (e.MoveNext() && e.Current.StartsWith("\""))
+				{
+					yield return e.Current;
+				}
 			}
 		}
 		private static string				ParseId(string[] msgid)
@@ -442,7 +441,7 @@ namespace Epsitec.Zou
 		{
 			this.Header = Message.OrderLocations (header);
 			this.MsgId  = this.MsgStr = new string[0];
-			this.Id     = "~{~}";
+			this.Id     = "zzz";
 		}
 		private								Message(string[] header, string[] msgid, string[] msgstr)
 		{
