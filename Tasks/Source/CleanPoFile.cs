@@ -85,7 +85,7 @@ namespace Epsitec.Zou
 			}
 			catch (Exception e)
 			{
-				this.Log.LogErrorFromException (e);
+				this.Log.LogErrorFromException (e, true);
 			}
 		}
 	}
@@ -299,7 +299,7 @@ namespace Epsitec.Zou
 	}
 	internal class Message
 	{
-		public static Message[] Parse(Parser e, PoFileInfo fileInfo)
+		public static Message[]				Parse(Parser e, PoFileInfo fileInfo)
 		{
 			return Message
 				.ParseCore (e, fileInfo)
@@ -307,46 +307,53 @@ namespace Epsitec.Zou
 
 		}
 
-		public string Id
+		public string						Id
 		{
 			get;
 		}
-		public string[] Header
+		public string[]						Header
 		{
 			get;
 		}
-		public string[] MsgId
+		public string[]						MsgId
 		{
 			get;
 		}
-		public string[] MsgStr
+		public string[]						MsgStr
 		{
 			get;
 		}
-		public string[] Content => this.Header.Concat (this.MsgId).Concat (this.MsgStr).ToArray ();
+		public string[]						Content => this.Header.Concat (this.MsgId).Concat (this.MsgStr).ToArray ();
 
 		private static IEnumerable<Message> ParseCore(Parser e, PoFileInfo fileInfo)
 		{
 			while (!e.Completed)
 			{
 				var header = Message.ParseHeader (e).ToArray ();
-				var msgid = Message.ParseItem (e, "msgid").ToArray ();
-				var msgstr = Message.ParseItem (e, "msgstr").ToArray ();
-				if (msgstr.Length > 1 && msgstr[1].StartsWith("\"#-#-#-#-#"))
+				if (e.Completed)
 				{
-					var conflict = msgstr
-						.Where(m => !m.StartsWith("msgstr") && !m.StartsWith ("\"#-#-#-#-#"))
-						.Select(m => m.Replace ("\\n\"", "\""))
-						.Distinct ();
-
-					fileInfo.Warnings.Add (
-						$"Translation ambiguity between {string.Join (" and ", conflict)} " +
-						$"for {msgid.First()} in \"{Path.GetFileName(fileInfo.FullPath)}\".");
+					yield return new Message(header);
 				}
-				yield return new Message (header, msgid, msgstr);
+				else
+				{
+					var msgid = Message.ParseItem(e, "msgid").ToArray();
+					var msgstr = Message.ParseItem(e, "msgstr").ToArray();
+					if (msgstr.Length > 1 && msgstr[1].StartsWith("\"#-#-#-#-#"))
+					{
+						var conflict = msgstr
+							.Where(m => !m.StartsWith("msgstr") && !m.StartsWith("\"#-#-#-#-#"))
+							.Select(m => m.Replace("\\n\"", "\""))
+							.Distinct();
+
+						fileInfo.Warnings.Add(
+							$"Translation ambiguity between {string.Join(" and ", conflict)} " +
+							$"for {msgid.First()} in \"{Path.GetFileName(fileInfo.FullPath)}\".");
+					}
+					yield return new Message(header, msgid, msgstr);
+				}
 			}
 		}
-		private static IEnumerable<string> ParseHeader(Parser e)
+		private static IEnumerable<string>	ParseHeader(Parser e)
 		{
 			// emit empty lines
 			while (!e.Completed && string.IsNullOrWhiteSpace (e.Current))
@@ -360,7 +367,7 @@ namespace Epsitec.Zou
 				e.MoveNext ();
 			}
 		}
-		private static IEnumerable<string> ParseItem(Parser e, string key)
+		private static IEnumerable<string>	ParseItem(Parser e, string key)
 		{
 			if (!e.Current.StartsWith (key))
 			{
@@ -374,7 +381,7 @@ namespace Epsitec.Zou
 				yield return e.Current;
 			}
 		}
-		private static string ParseId(string[] msgid)
+		private static string				ParseId(string[] msgid)
 		{
 			var msgid0 = Regex.Unescape (msgid[0].Substring (msgid[0].IndexOf ('"')).Trim ('"'));
 
@@ -395,7 +402,7 @@ namespace Epsitec.Zou
 					.Join ("\n");
 			}
 		}
-		private static string[] OrderLocations(string[] header)
+		private static string[]				OrderLocations(string[] header)
 		{
 			// order in place
 			if (header.Where (h => h.StartsWith ("#: ")).Skip (1).Any ())
@@ -431,12 +438,18 @@ namespace Epsitec.Zou
 			}
 		}
 
-		private Message(string[] header, string[] msgid, string[] msgstr)
+		private								Message(string[] header)
 		{
 			this.Header = Message.OrderLocations (header);
-			this.MsgId = msgid;
+			this.MsgId  = this.MsgStr = new string[0];
+			this.Id     = "~{~}";
+		}
+		private								Message(string[] header, string[] msgid, string[] msgstr)
+		{
+			this.Header = Message.OrderLocations (header);
+			this.MsgId  = msgid;
 			this.MsgStr = msgstr;
-			this.Id = Message.ParseId (msgid);
+			this.Id     = Message.ParseId (msgid);
 		}
 	}
 	internal class HeaderComments
