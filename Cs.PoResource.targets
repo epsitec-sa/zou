@@ -125,6 +125,9 @@ Pseudo-code:
   <PropertyGroup>
     <PoTrace>false</PoTrace>
     <PoTraceResources>false</PoTraceResources>
+
+    <PoReset Condition="'$(PoReset)' == ''">false</PoReset>
+    <PoPurge Condition="'$(PoPurge)' == ''">false</PoPurge>
     
     <ContinueMessage>Press [Enter] to continue...</ContinueMessage>
     <Interactive       Condition="'$(Interactive)'       == ''">false</Interactive>
@@ -165,6 +168,8 @@ Pseudo-code:
   <Target Name="PoTraceConstants" Condition="'$(PoTrace)' == 'true'">
     <Message Text="OutputPath               = $(OutputPath)" Importance="high" />
     <Message Text="IntermediateOutputPath   = $(IntermediateOutputPath)" Importance="high" />
+    <Message Text="PoPurge                  = $(PoPurge)" Importance="high" />
+    <Message Text="PoReset                  = $(PoReset)" Importance="high" />
     <Message Text="PoIntDir                 = $(PoIntDir)" Importance="high" />
     <Message Text="TargetDir                = $(TargetDir)" Importance="high" />
     <Message Text="ModuleName               = $(ModuleName)" Importance="high" />
@@ -767,33 +772,36 @@ Pseudo-code:
   <!-- Clean -->
   <!--=========================================================================-->
 
-  <Target Name ="PoResetCore"
-          Condition="$(PoReset) != ''"
-          DependsOnTargets="InitPoResources">
+  <Target Name ="PoReset" Condition="$(PoReset) == 'true'" DependsOnTargets="InitPoResources">
 
     <ItemGroup>
       <_Temporary Include="$(PoBundleRootDir)**\*" />
-      <_Temporary Include="$(PoModuleRootDir)**\*"/>
+      <_Temporary Include="$(PoModuleRootDir)**\*" />
       <_Temporary Include="@(PoResource)" />
     </ItemGroup>
-
     <Delete Files="@(_Temporary)" />
 
     <ItemGroup>
       <_Temporary Remove="@(_Temporary)" />
-      <_Temporary Include="$(PoBundleRootDir);$(PoBundleRootDir)**" />
-      <_Temporary Include="$(PoModuleRootDir);$(PoModuleRootDir)**"/>
+      <_Temporary Include="$(PoBundleRootDir)**;$(PoBundleRootDir)" />
+      <_Temporary Include="$(PoModuleRootDir)**;$(PoModuleRootDir)" />
     </ItemGroup>
-    
     <RemoveDir Directories="@(_Temporary)" />
-    
     <ItemGroup>
       <_Temporary Remove="@(_Temporary)" />
     </ItemGroup>
   </Target>
 
-  <Target Name="PoReset">
-    <CallTarget Targets="PoResetCore"  Condition="$(PoReset) == 'true'" />
+  <Target Name ="PoPurge" Condition="$(PoPurge) == 'true'">
+
+    <ItemGroup>
+      <_Temporary Include="$(PoBundleRootDir)*.po" />
+      <_Temporary Include="$(PoModuleRootDir)*.po" />
+    </ItemGroup>
+    <Delete Files="@(_Temporary)" />
+    <ItemGroup>
+      <_Temporary Remove="@(_Temporary)" />
+    </ItemGroup>
   </Target>
 
   <Target Name="PoDelete">
@@ -816,7 +824,7 @@ Pseudo-code:
   </Target>
 
   <Target Name="PoClean" AfterTargets="Clean">
-    <CallTarget Targets="PoLock;PoTraceConstants;PoDelete;PoReset;PoUnlock" RunEachTargetSeparately="true" />
+    <CallTarget Targets="PoLock;PoTraceConstants;PoDelete;PoPurge;PoReset;PoUnlock" RunEachTargetSeparately="true" />
   </Target>
   
   <!--=========================================================================-->
