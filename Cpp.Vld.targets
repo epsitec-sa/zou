@@ -22,8 +22,13 @@
     <Copy SourceFiles="$(_VldTemplateIniPath)" DestinationFiles="$(VldIniPath)" />
   </Target>
 
+  <PropertyGroup>
+    <!-- VLD files should be copied to output directory only for applications that are not imported -->
+    <VLDImport Condition="'$(ConfigurationType)' == 'Application' And '$(Imported)' == ''">true</VLDImport>
+  </PropertyGroup>
+  
   <!-- Update vld.ini -->
-  <ItemGroup Condition="'$(ConfigurationType)' == 'Application'">
+  <ItemGroup Condition="'$(VLDImport)' == 'true'">
     <ImportFile Include="$(VldIniPath)" />
   </ItemGroup>
 
@@ -33,13 +38,11 @@
     <NumericPlatform Condition="'$(Platform)'=='x64'">64</NumericPlatform>
     <VldLibDir>$(NugetPackagesDir)VisualLeakDetector.$(VldVersion)\lib\native\address-model-$(NumericPlatform)\lib\</VldLibDir>
   </PropertyGroup>
-  <ItemGroup Condition="'$(Configuration)'=='Debug' And '$(ConfigurationType)' == 'Application'">
+  <ItemGroup Condition="'$(VLDImport)' == 'true'">
     <ImportFile Include="$(VldLibDir)*.*">
       <ImportDir>$(OutDir)</ImportDir>
     </ImportFile>
   </ItemGroup>
-
-  
   
   <!-- Import standard nuget VLD imports -->
   <Import Project="$(_VldTemplatePathPrefix).Imports.targets"/>
