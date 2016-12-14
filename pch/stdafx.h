@@ -8,7 +8,7 @@
 //----------------------------------------------------------------------------- Warnings
 
 #pragma warning(disable: 4503)  // "identifier": decorated name length exceeded, name was truncated
-#pragma warning(disable: 4786)	// identifier was truncated in the debug information
+#pragma warning(disable: 4786)  // identifier was truncated in the debug information
 
 // disable deprecation warnings
 #define _SCL_SECURE_NO_WARNINGS
@@ -38,27 +38,27 @@
 
 // Exclude rarely-used stuff from Windows headers
 #ifndef VC_EXTRALEAN
-#define VC_EXTRALEAN            
+#define VC_EXTRALEAN
 #endif
 #ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN            
+#define WIN32_LEAN_AND_MEAN
 #endif
 
 #include "targetver.h"
 
-#include <afxwin.h>         // MFC core and standard components
-#include <afxext.h>         // MFC extensions
-#include <afxdisp.h>        // MFC Automation
+#include <afxwin.h>  // MFC core and standard components
+#include <afxext.h>  // MFC extensions
+#include <afxdisp.h> // MFC Automation
 
 #ifndef _AFX_NO_OLE_SUPPORT
-#include <afxdtctl.h>           // Prise en charge MFC pour les contrôles communs Internet Explorer 4
+#include <afxdtctl.h> // Prise en charge MFC pour les contrôles communs Internet Explorer 4
 #endif
 #ifndef _AFX_NO_AFXCMN_SUPPORT
-#include <afxcmn.h>             // Prise en charge des MFC pour les contrôles communs Windows
+#include <afxcmn.h> // Prise en charge des MFC pour les contrôles communs Windows
 #endif // _AFX_NO_AFXCMN_SUPPORT
 
-#include <afxpriv.h>		// MFC support for Windows 95 Common Controls
-//#include <afxcontrolbars.h>     // prise en charge des MFC pour les rubans et les barres de contrôles
+#include <afxpriv.h> // MFC support for Windows 95 Common Controls
+//#include <afxcontrolbars.h> // prise en charge des MFC pour les rubans et les barres de contrôles
 
 
 #ifdef _UNICODE
