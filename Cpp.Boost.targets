@@ -28,6 +28,9 @@
   
   <Target Name="_BoostCreateBoostOnlyPackagesConfig" Inputs="$(_BoostTemplatePathPrefix).packages.config" Outputs="$(_BoostOnlyPackagesConfigFile)">
     <Copy SourceFiles="$(_BoostTemplatePathPrefix).packages.config" DestinationFiles="$(_BoostOnlyPackagesConfigFile)" />
+  </Target>
+
+  <Target Name="_BoostUpdateBoostOnlyPackagesConfig" DependsOnTargets="_BoostCreateBoostOnlyPackagesConfig" >
     <!-- Update version -->
     <FileUpdate Files="$(_BoostOnlyPackagesConfigFile)"
                 Regex='^(?&lt;A&gt;\s*&lt;package\s+id="boost\S*"\s+version=")\S+(?&lt;Z&gt;"[^\r\n]+)'
@@ -47,26 +50,14 @@
     </FileUpdate>
   </Target>
 
-  <Target Name="_BoostUpdateExistingPackagesConfig" DependsOnTargets="_BoostCreateBoostOnlyPackagesConfig" Condition="'$(_PackagesConfigExists)' == 'true' Or  '$(_BoostVersionChanged)' == 'true' Or  '$(_BoostToolsetChanged)' == 'true'" >
-    <!-- Update version (if not already done in previous target) -->
-    <FileUpdate Condition="'$(_BoostVersionChanged)' == ''"
-                Files="$(PackagesConfigFile)"
-                Regex='^(?&lt;A&gt;\s*&lt;package\s+id="boost\S*"\s+version=")\S+(?&lt;Z&gt;"[^\r\n]+)'
-                ReplacementText="${A}$(BoostVersion)${Z}"
+  <Target Name="_BoostUpdateExistingPackagesConfig" DependsOnTargets="_BoostUpdateBoostOnlyPackagesConfig" Inputs="$(_BoostOnlyPackagesConfigFile)" Outputs="$(PackagesConfigFile)" >
+    <!-- Remove previous boost packages -->
+    <FileUpdate Files="$(PackagesConfigFile)"
+                Regex='^\s*&lt;package\s+id="boost\S*".*$'
+                ReplacementTextEmpty="true"
                 Multiline="true"
                 IgnoreCase="true">
-      <Output TaskParameter="Changed" PropertyName="_BoostVersionChanged" />
     </FileUpdate>
-    <!-- Update toolset (if not already done in previous target) -->
-    <FileUpdate Condition="'$(_BoostToolsetChanged)' == '' And '$(_BoostPackagesConfigType)' == 'Libs'"
-                Files="$(PackagesConfigFile)"
-                Regex='^(?&lt;A&gt;\s*&lt;package\s+id="boost\S*-)vc\d+\S*(?&lt;Z&gt;"[^\r\n]+)'
-                ReplacementText="${A}$(BoostToolset)${Z}"
-                Multiline="true"
-                IgnoreCase="true">
-      <Output TaskParameter="Changed" PropertyName="_BoostToolsetChanged" />
-    </FileUpdate>
-
     <MergePackagesConfig MergeFiles="$(_BoostOnlyPackagesConfigFile)"
                          IntoFile="$(PackagesConfigFile)">
       <Output TaskParameter="Changed" PropertyName="_BoostMergeChanged" />
