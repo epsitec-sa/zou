@@ -34,6 +34,7 @@
                 ReplacementText="${A}$(BoostVersion)${Z}"
                 Multiline="true"
                 IgnoreCase="true">
+      <Output TaskParameter="Changed" PropertyName="_BoostVersionChanged" />
     </FileUpdate>
     <!-- Update toolset -->
     <FileUpdate Condition="'$(_BoostPackagesConfigType)' == 'Libs'"
@@ -42,20 +43,22 @@
                 ReplacementText="${A}$(BoostToolset)${Z}"
                 Multiline="true"
                 IgnoreCase="true">
+      <Output TaskParameter="Changed" PropertyName="_BoostToolsetChanged" />
     </FileUpdate>
   </Target>
 
-  <Target Name="_BoostUpdateExistingPackagesConfig" DependsOnTargets="_BoostCreateBoostOnlyPackagesConfig" Condition="'$(_PackagesConfigExists)' == 'true'" >
-    <!-- Update version -->
-    <FileUpdate Files="$(PackagesConfigFile)"
+  <Target Name="_BoostUpdateExistingPackagesConfig" DependsOnTargets="_BoostCreateBoostOnlyPackagesConfig" Condition="'$(_PackagesConfigExists)' == 'true' Or  '$(_BoostVersionChanged)' == 'true' Or  '$(_BoostToolsetChanged)' == 'true'" >
+    <!-- Update version (if not already done in previous target) -->
+    <FileUpdate Condition="'$(_BoostVersionChanged)' == ''"
+                Files="$(PackagesConfigFile)"
                 Regex='^(?&lt;A&gt;\s*&lt;package\s+id="boost\S*"\s+version=")\S+(?&lt;Z&gt;"[^\r\n]+)'
                 ReplacementText="${A}$(BoostVersion)${Z}"
                 Multiline="true"
                 IgnoreCase="true">
       <Output TaskParameter="Changed" PropertyName="_BoostVersionChanged" />
     </FileUpdate>
-    <!-- Update toolset -->
-    <FileUpdate Condition="'$(_BoostPackagesConfigType)' == 'Libs'"
+    <!-- Update toolset (if not already done in previous target) -->
+    <FileUpdate Condition="'$(_BoostToolsetChanged)' == '' And '$(_BoostPackagesConfigType)' == 'Libs'"
                 Files="$(PackagesConfigFile)"
                 Regex='^(?&lt;A&gt;\s*&lt;package\s+id="boost\S*-)vc\d+\S*(?&lt;Z&gt;"[^\r\n]+)'
                 ReplacementText="${A}$(BoostToolset)${Z}"
