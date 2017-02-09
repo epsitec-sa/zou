@@ -1,4 +1,4 @@
-﻿#region Copyright © 2005 Paul Welter. All rights reserved.
+#region Copyright © 2005 Paul Welter. All rights reserved.
 /*
 Copyright © 2005 Paul Welter. All rights reserved.
 Redistribution and use in source and binary forms, with or without
