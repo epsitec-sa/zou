@@ -90,7 +90,7 @@ This script can be imported anywhere before first MS import (Microsoft.Cpp.Defau
         <BundleRelativeSolutionDir>$(BundleRelativeProjectDir)</BundleRelativeSolutionDir>
 
         <!-- Use the following property instead of SolutionDir when building a project without a solution (example: msbuild project.vcxproj) -->
-        <SolutionOrProjectDir>$(ProjectDir)</SolutionOrProjectDir>
+        <SolutionOrProjectDir>$(MSBuildProjectDirectory)\</SolutionOrProjectDir>
       </PropertyGroup>
     </Otherwise>
   </Choose>
@@ -200,6 +200,7 @@ This script can be imported anywhere before first MS import (Microsoft.Cpp.Defau
     <Message Importance="normal" Text="  TargetDir                  = $(TargetDir)" />
     <Message Importance="normal" Text="  OutputPath                 = $(OutputPath)" />
     <Message Importance="normal" Text="  IntermediateOutputPath     = $(IntermediateOutputPath)" />
+    <Message Importance="normal" Text="+ SolutionOrProjectDir       = $(SolutionOrProjectDir)" />
     <Message Importance="normal" Text="+ WorkDir                    = $(WorkDir)" />
     <Message Importance="normal" Text="+ DbgDir                     = $(DbgDir)" />
     <Message Importance="normal" Text="+ DbgProjDir                 = $(DbgProjDir)" />
