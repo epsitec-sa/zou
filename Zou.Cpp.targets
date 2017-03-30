@@ -16,8 +16,12 @@
     </None>
   </ItemGroup>
 
+  <PropertyGroup>
+    <BoostEnabled Condition="'$(BoostEnabled)' != ''">true</BoostEnabled>
+  </PropertyGroup>
+
   <Import Project="$(MSBuildThisFileDirectory)Cpp.Boost.targets"
-          Condition="'$(ConfigurationType)' == 'StaticLibrary' Or '$(ConfigurationType)' == 'DynamicLibrary' Or '$(ConfigurationType)' == 'Application'"/>
+          Condition="'$(BoostEnabled)' == 'true' And ('$(ConfigurationType)' == 'StaticLibrary' Or '$(ConfigurationType)' == 'DynamicLibrary' Or '$(ConfigurationType)' == 'Application')"/>
 
   <!--
   Ensure vld.ini appears in VS solution explorer ('vld.ini' should appear verbatim in the Include attribute)
