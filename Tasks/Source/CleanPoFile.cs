@@ -1,16 +1,11 @@
+using Microsoft.Build.Framework;
+using Microsoft.Build.Utilities;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Runtime.ExceptionServices;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading;
-using Microsoft.Build.BuildEngine;
-using Microsoft.Build.Framework;
-using Microsoft.Build.Utilities;
 
 namespace Epsitec.Zou
 {
@@ -292,7 +287,7 @@ namespace Epsitec.Zou
 			var e = new Parser (content);
 			return Message
 				.Parse (e, fileInfo)
-				.OrderBy(m => m.Id, StringComparer.InvariantCultureIgnoreCase)
+				.OrderBy(m => m.Id, StringComparer.OrdinalIgnoreCase)
 				.SelectMany(m => m.Content)
 				.ToArray ();
 		}

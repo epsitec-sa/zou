@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Epsitec.IO;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 
@@ -14,7 +13,7 @@ namespace Epsitec.Zou
 	{
 		public static IEnumerable<ItemMemo>			Parse(IEnumerable<string> content)
 		{
-			var cursor = content.GetCursor ();
+			var cursor = content.GetEnumeraptor ();
 			while (!cursor.AtEnd)
 			{
 				yield return ItemMemo.ParseItem (cursor);
@@ -62,7 +61,7 @@ namespace Epsitec.Zou
 		}
 		public override string ToString() => this.Id;
 
-		private static ItemMemo						ParseItem(ICursor<string> cursor)
+		private static ItemMemo						ParseItem(IEnumeraptor<string> cursor)
 		{
 			var itemSpec = cursor.Current;
 			var metadata = ItemMemo
@@ -71,7 +70,7 @@ namespace Epsitec.Zou
 
 			return new ItemMemo (itemSpec, metadata);
 		}
-		private static IEnumerable<string[]>		ParseMetadata(ICursor<string> cursor)
+		private static IEnumerable<string[]>		ParseMetadata(IEnumeraptor<string> cursor)
 		{
 			while (cursor.MoveNext () && cursor.Current[0] == ' ')
 			{

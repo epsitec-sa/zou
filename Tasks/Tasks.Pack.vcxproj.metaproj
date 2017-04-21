@@ -1,0 +1,52 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
+  <PropertyGroup>
+    <RoslynTargetsPath>C:\Program Files\dotnet\sdk\1.0.3\Roslyn</RoslynTargetsPath>
+    <AspNetConfiguration>release</AspNetConfiguration>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <NuGetRestoreTargets>C:\Program Files\dotnet\sdk\1.0.3\NuGet.targets</NuGetRestoreTargets>
+    <IsRestoreTargetsFileLoaded>true</IsRestoreTargetsFileLoaded>
+    <RestoreTaskAssemblyFile>NuGet.Build.Tasks.dll</RestoreTaskAssemblyFile>
+    <RestoreRecursive>true</RestoreRecursive>
+    <MSBuildAllProjects>;C:\Program Files\dotnet\sdk\1.0.3\NuGet.targets</MSBuildAllProjects>
+    <ValidateRuntimeIdentifierCompatibility>false</ValidateRuntimeIdentifierCompatibility>
+    <RestoreContinueOnError>WarnAndContinue</RestoreContinueOnError>
+    <_GenerateRestoreGraphProjectEntryInputProperties>
+      RestoreUseCustomAfterTargets=;
+      NuGetRestoreTargets=C:\Program Files\dotnet\sdk\1.0.3\NuGet.targets;
+      BuildProjectReferences=false;
+      ExcludeRestorePackageImports=true;
+    </_GenerateRestoreGraphProjectEntryInputProperties>
+  </PropertyGroup>
+  <ItemDefinitionGroup />
+  <ItemGroup>
+    <ProjectReference Include="S:\devel\zou-dev\zou\Tasks\Tasks.csproj">
+      <ToolsVersion>
+      </ToolsVersion>
+      <SkipNonexistentProjects>False</SkipNonexistentProjects>
+      <AdditionalProperties>Configuration=Release; Platform=AnyCPU</AdditionalProperties>
+      <Configuration>Release</Configuration>
+      <Platform>AnyCPU</Platform>
+    </ProjectReference>
+  </ItemGroup>
+  <Target Name="Clean">
+    <MSBuild Projects="@(ProjectReference-&gt;Reverse())" Targets="Clean" BuildInParallel="True" Properties="BuildingSolutionFile=true; CurrentSolutionConfigurationContents=$(CurrentSolutionConfigurationContents); SolutionDir=$(SolutionDir); SolutionExt=$(SolutionExt); SolutionFileName=$(SolutionFileName); SolutionName=$(SolutionName); SolutionPath=$(SolutionPath)" SkipNonexistentProjects="%(ProjectReference.SkipNonexistentProjects)" />
+    <MSBuild Projects="S:\devel\zou-dev\zou\Tasks\Tasks.Pack.vcxproj" Targets="Clean" BuildInParallel="True" ToolsVersion="$(ProjectToolsVersion)" Properties="Configuration=Release; Platform=AnyCPU;BuildingSolutionFile=true; CurrentSolutionConfigurationContents=$(CurrentSolutionConfigurationContents); SolutionDir=$(SolutionDir); SolutionExt=$(SolutionExt); SolutionFileName=$(SolutionFileName); SolutionName=$(SolutionName); SolutionPath=$(SolutionPath)" />
+  </Target>
+  <Target Name="Build" Outputs="@(Tasks_PackBuildOutput)">
+    <MSBuild Projects="@(ProjectReference)" BuildInParallel="True" Properties="BuildingSolutionFile=true; CurrentSolutionConfigurationContents=$(CurrentSolutionConfigurationContents); SolutionDir=$(SolutionDir); SolutionExt=$(SolutionExt); SolutionFileName=$(SolutionFileName); SolutionName=$(SolutionName); SolutionPath=$(SolutionPath)" SkipNonexistentProjects="%(ProjectReference.SkipNonexistentProjects)" />
+    <MSBuild Projects="S:\devel\zou-dev\zou\Tasks\Tasks.Pack.vcxproj" BuildInParallel="True" ToolsVersion="$(ProjectToolsVersion)" Properties="Configuration=Release; Platform=AnyCPU;BuildingSolutionFile=true; CurrentSolutionConfigurationContents=$(CurrentSolutionConfigurationContents); SolutionDir=$(SolutionDir); SolutionExt=$(SolutionExt); SolutionFileName=$(SolutionFileName); SolutionName=$(SolutionName); SolutionPath=$(SolutionPath)">
+      <Output TaskParameter="TargetOutputs" ItemName="Tasks_PackBuildOutput" />
+    </MSBuild>
+  </Target>
+  <Target Name="Rebuild" Outputs="@(Tasks_PackBuildOutput)">
+    <MSBuild Projects="@(ProjectReference)" Targets="Rebuild" BuildInParallel="True" Properties="BuildingSolutionFile=true; CurrentSolutionConfigurationContents=$(CurrentSolutionConfigurationContents); SolutionDir=$(SolutionDir); SolutionExt=$(SolutionExt); SolutionFileName=$(SolutionFileName); SolutionName=$(SolutionName); SolutionPath=$(SolutionPath)" SkipNonexistentProjects="%(ProjectReference.SkipNonexistentProjects)" />
+    <MSBuild Projects="S:\devel\zou-dev\zou\Tasks\Tasks.Pack.vcxproj" Targets="Rebuild" BuildInParallel="True" ToolsVersion="$(ProjectToolsVersion)" Properties="Configuration=Release; Platform=AnyCPU;BuildingSolutionFile=true; CurrentSolutionConfigurationContents=$(CurrentSolutionConfigurationContents); SolutionDir=$(SolutionDir); SolutionExt=$(SolutionExt); SolutionFileName=$(SolutionFileName); SolutionName=$(SolutionName); SolutionPath=$(SolutionPath)">
+      <Output TaskParameter="TargetOutputs" ItemName="Tasks_PackBuildOutput" />
+    </MSBuild>
+  </Target>
+  <Target Name="Publish">
+    <MSBuild Projects="@(ProjectReference)" Targets="Publish" BuildInParallel="True" Properties="BuildingSolutionFile=true; CurrentSolutionConfigurationContents=$(CurrentSolutionConfigurationContents); SolutionDir=$(SolutionDir); SolutionExt=$(SolutionExt); SolutionFileName=$(SolutionFileName); SolutionName=$(SolutionName); SolutionPath=$(SolutionPath)" SkipNonexistentProjects="%(ProjectReference.SkipNonexistentProjects)" />
+    <MSBuild Projects="S:\devel\zou-dev\zou\Tasks\Tasks.Pack.vcxproj" Targets="Publish" BuildInParallel="True" ToolsVersion="$(ProjectToolsVersion)" Properties="Configuration=Release; Platform=AnyCPU;BuildingSolutionFile=true; CurrentSolutionConfigurationContents=$(CurrentSolutionConfigurationContents); SolutionDir=$(SolutionDir); SolutionExt=$(SolutionExt); SolutionFileName=$(SolutionFileName); SolutionName=$(SolutionName); SolutionPath=$(SolutionPath)" />
+  </Target>
+</Project>

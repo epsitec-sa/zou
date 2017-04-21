@@ -1,10 +1,8 @@
+using Microsoft.Build.Framework;
+using Microsoft.Build.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using Microsoft.Build.BuildEngine;
-using Microsoft.Build.Framework;
-using Microsoft.Build.Utilities;
 
 namespace Epsitec.Zou
 {
@@ -40,8 +38,7 @@ namespace Epsitec.Zou
 			}
 			else
 			{
-				var buildItem = new BuildItem ("Item", item);
-				this.LogMetadata (buildItem.CustomMetadataNames, header, item.GetMetadata);
+				this.LogMetadata (item.CustomMetadataNames(), header, item.GetMetadata);
 			}
 		}
 		private void			LogMetadata(System.Collections.ICollection names, string header, Func<string, string> getMetaData)

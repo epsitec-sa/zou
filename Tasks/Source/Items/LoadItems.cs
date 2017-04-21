@@ -1,11 +1,5 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using Microsoft.Build.BuildEngine;
 using Microsoft.Build.Framework;
-using Microsoft.Build.Utilities;
+using System.Linq;
 
 namespace Epsitec.Zou
 {

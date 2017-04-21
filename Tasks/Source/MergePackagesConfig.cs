@@ -1,14 +1,9 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.AccessControl;
-using System.Security.Principal;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading;
-using System.Xml.Linq;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
+using System;
+using System.IO;
+using System.Linq;
+using System.Xml.Linq;
 
 namespace Epsitec.Zou
 {
@@ -48,7 +43,10 @@ namespace Epsitec.Zou
 					merged.Root.RemoveNodes ();
 					merged.Root.Add (elements);
 					// ... and save
-					merged.Save (this.IntoFile);
+					using (var stream = new FileStream(this.IntoFile, FileMode.Create, FileAccess.Write, FileShare.None))
+					{
+						merged.Save(stream);
+					}
 				}
 			}
 			catch (Exception e)

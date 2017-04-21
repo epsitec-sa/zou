@@ -1,13 +1,9 @@
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Text;
-using Microsoft.Build.BuildEngine;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 
 namespace Epsitec.Zou
 {
@@ -52,14 +48,13 @@ namespace Epsitec.Zou
 			var project = new TaskItem (projectItem);
 			this.ProcessOptions (project);
 
-			var buildItem = new BuildItem ("Project", project);
-			var names = buildItem.CustomMetadataNames.Cast<string> ();
+			var names = project.CustomMetadataNames();
 
 
 			// Add Properties metadata
 			var properties = names
 				.Where (name => Mixins.IsBuildProperty (name))
-				.Select (name => Tuple.Create (name, buildItem.GetMetadata (name)))
+				.Select (name => Tuple.Create (name, project.GetMetadata (name)))
 				.OrderBy (a => a, BuildPropertyComparer.Default)
 				.Select (a => $"{a.Item1}={a.Item2}")
 				.ToArray ();
