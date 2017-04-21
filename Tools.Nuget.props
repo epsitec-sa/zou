@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003"
+         InitialTargets="ToolsNugetTrace;ZouSetupNuget">
+
+  <!-- Nuget -->
+  <PropertyGroup Condition="'$(NugetPackagesDir)' == ''" >
+    <NugetPackagesDir>$(BundleDir)packages\</NugetPackagesDir>
+  </PropertyGroup>
+
+  <Target Name="ZouSetupNuget" Condition="!Exists('$(BundleDir)NuGet.config')">
+    <Copy SourceFiles="$(ZouDir).Templates\nuget\NuGet.config" DestinationFiles="$(BundleDir)NuGet.config" />
+  </Target>
+
+  <Target Name="ToolsNugetTrace" Condition="'$(ZouTrace)' == 'true'">
+    <Message Importance="normal" Text="  NugetPackagesDir = $(NugetPackagesDir)" Condition="'$(NugetPackagesDir)' != ''" />
+  </Target>
+</Project>
