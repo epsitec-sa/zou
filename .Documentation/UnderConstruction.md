@@ -120,6 +120,7 @@ Il faut aussi créer le .pack et le .prepack dans le même dossier que le projet
 - [MSBuild Property Evaluation](https://blogs.msdn.microsoft.com/aaronhallberg/2007/07/16/msbuild-property-evaluation/)
 - [How To: Implementing Custom Tasks – Part I](https://blogs.msdn.microsoft.com/msbuild/2006/01/21/how-to-implementing-custom-tasks-part-i/)
 - [HOW TO: Writing Custom Tasks – Part II – Types and Task Parameters](https://blogs.msdn.microsoft.com/msbuild/2006/02/02/how-to-writing-custom-tasks-part-ii-types-and-task-parameters/)
+- **[.NET Core CLI tools extensibility model](https://docs.microsoft.com/en-us/dotnet/core/tools/extensibility)**
 
 ### Developer Network
 - [MSBuild Properties](https://msdn.microsoft.com/en-us/library/ms171458.aspx)
