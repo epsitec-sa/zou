@@ -8,7 +8,7 @@ This script can be imported anywhere before first MS import (Microsoft.Cpp.Defau
 
   <PropertyGroup>
     <!-- Configuration sub-directory -->
-    <_ZouCfgSubdir>zou.cfg\</_ZouCfgSubdir>
+    <_ZouCfgSubdir>zou.cfg/</_ZouCfgSubdir>
     <!-- Enable ZouTrace and ZouTraceMSBuild if the command 'msbuild zou.props' is executed -->
     <ZouTrace Condition="'$(ZouTrace)' == '' And '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">true</ZouTrace>
     <ZouTraceMSBuild Condition="'$(ZouTraceMSBuild)' == '' And '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">true</ZouTraceMSBuild>
@@ -27,11 +27,11 @@ This script can be imported anywhere before first MS import (Microsoft.Cpp.Defau
   <PropertyGroup>
     <ZouDir>$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), '.git'))</ZouDir>
     <ZouDir Condition="'$(ZouDir)' == ''">$(BundleDir)</ZouDir>
-    <ZouDir Condition="HasTrailingSlash('$(ZouDir)')">$(ZouDir.Substring(0, $(ZouDir.LastIndexOfAny('\/'))))</ZouDir>
+    <ZouDir>$(ZouDir.TrimEnd('\/'))</ZouDir>
     <ZouName>$([System.IO.Path]::GetFileName('$(ZouDir)'))</ZouName>
-    <ZouDir>$(ZouDir)\</ZouDir>
-    <ZouBinDir>$(ZouDir)bin\</ZouBinDir>
-    <ZouPrivateDir>$(ZouDir)private\</ZouPrivateDir>
+    <ZouDir>$(ZouDir)/</ZouDir>
+    <ZouBinDir>$(ZouDir)bin/</ZouBinDir>
+    <ZouPrivateDir>$(ZouDir)private/</ZouPrivateDir>
   </PropertyGroup>
   
   <PropertyGroup Condition="'$(BundleDir' == '' Or '$(ZouDir)' == ''">
@@ -46,27 +46,27 @@ This script can be imported anywhere before first MS import (Microsoft.Cpp.Defau
   <PropertyGroup Condition="'$(ModuleId)' != ''">
     <ModuleIsShared>true</ModuleIsShared>
     <ModuleId>$([MSBuild]::MakeRelative(file://$(BundleDir), file://$(ModuleId)))</ModuleId>
-    <ModuleId Condition="HasTrailingSlash('$(ModuleId)')">$(ModuleId.Substring(0, $(ModuleId.LastIndexOfAny('\/'))))</ModuleId>
+    <ModuleId>$(ModuleId.TrimEnd('\/'))</ModuleId>
     <ModuleName>$(ModuleId)</ModuleName>
-    <ModuleDir>$(BundleDir)$(ModuleId)\</ModuleDir>
+    <ModuleDir>$(BundleDir)$(ModuleId)/</ModuleDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(ModuleId)' == ''">
-    <ModuleId>$(MSBuildProjectDirectory)\</ModuleId>
-    <ModuleId>$([MSBuild]::MakeRelative($(BundleDir), $(ModuleId)))</ModuleId>
+    <ModuleId>$(MSBuildProjectDirectory)/</ModuleId>
+    <ModuleId>$([MSBuild]::MakeRelative(file://$(BundleDir), file://$(ModuleId)))</ModuleId>
   </PropertyGroup>
   <PropertyGroup  Condition="'$(ModuleId)' != ''">
-    <ModuleId Condition="HasTrailingSlash('$(ModuleId)')">$(ModuleId.Substring(0, $(ModuleId.IndexOfAny('\/'))))</ModuleId>
+    <ModuleId>$(ModuleId.TrimEnd('\/'))</ModuleId>
     <ModuleName>$([System.IO.Path]::GetFileName('$(ModuleId)'))</ModuleName>
-    <ModuleDir>$(BundleDir)$(ModuleId)\</ModuleDir>
+    <ModuleDir>$(BundleDir)$(ModuleId)/</ModuleDir>
   </PropertyGroup>
 
   <!-- Project -->
   <PropertyGroup>
     <!-- project/zou.cfg/ -->
-    <ZouProjectDir Condition="'$(ZouProjectDir)' == ''">$(MSBuildProjectDirectory)\$(_ZouCfgSubdir)</ZouProjectDir>
-    <BundleRelativeProjectDir>$([MSBuild]::MakeRelative(file://$(BundleDir), file://$(MSBuildProjectDirectory)\))</BundleRelativeProjectDir>
-    <BundleRelativeProjectName>$([MSBuild]::MakeRelative(file://$(BundleDir), file://$(MSBuildProjectDirectory)\$(MSBuildProjectName)))</BundleRelativeProjectName>
-    <BundleRelativeProjectPath>$([MSBuild]::MakeRelative(file://$(BundleDir), file://$(MSBuildProjectDirectory)\$(MSBuildProjectFile)))</BundleRelativeProjectPath>
+    <ZouProjectDir Condition="'$(ZouProjectDir)' == ''">$(MSBuildProjectDirectory)/$(_ZouCfgSubdir)</ZouProjectDir>
+    <BundleRelativeProjectDir>$([MSBuild]::MakeRelative(file://$(BundleDir), file://$(MSBuildProjectDirectory)/))</BundleRelativeProjectDir>
+    <BundleRelativeProjectName>$([MSBuild]::MakeRelative(file://$(BundleDir), file://$(MSBuildProjectDirectory)/$(MSBuildProjectName)))</BundleRelativeProjectName>
+    <BundleRelativeProjectPath>$([MSBuild]::MakeRelative(file://$(BundleDir), file://$(MSBuildProjectDirectory)/$(MSBuildProjectFile)))</BundleRelativeProjectPath>
     <ProjectId>$(BundleRelativeProjectName)</ProjectId>
   </PropertyGroup>
 
@@ -76,9 +76,9 @@ This script can be imported anywhere before first MS import (Microsoft.Cpp.Defau
       <PropertyGroup >
         <!-- solution/zou.cfg/ -->
         <ZouSolutionDir  Condition="'$(ZouSolutionDir)' == ''">$(SolutionDir)$(_ZouCfgSubdir)</ZouSolutionDir>
-        <BundleRelativeSolutionDir>$([MSBuild]::MakeRelative($(BundleDir), $(SolutionDir)))</BundleRelativeSolutionDir>
-        <BundleRelativeSolutionName>$([MSBuild]::MakeRelative($(BundleDir), $(SolutionDir)$(SolutionName)))</BundleRelativeSolutionName>
-        <BundleRelativeSolutionPath>$([MSBuild]::MakeRelative($(BundleDir), $(SolutionPath)))</BundleRelativeSolutionPath>
+        <BundleRelativeSolutionDir>$([MSBuild]::MakeRelative(file://$(BundleDir), file://$(SolutionDir)))</BundleRelativeSolutionDir>
+        <BundleRelativeSolutionName>$([MSBuild]::MakeRelative(file://$(BundleDir), file://$(SolutionDir)$(SolutionName)))</BundleRelativeSolutionName>
+        <BundleRelativeSolutionPath>$([MSBuild]::MakeRelative(file://$(BundleDir), file://$(SolutionPath)))</BundleRelativeSolutionPath>
         
         <!-- Use the following property instead of SolutionDir when building a project without a solution (example: msbuild project.vcxproj) -->
         <SolutionOrProjectDir>$(SolutionDir)</SolutionOrProjectDir>
@@ -90,7 +90,7 @@ This script can be imported anywhere before first MS import (Microsoft.Cpp.Defau
         <BundleRelativeSolutionDir>$(BundleRelativeProjectDir)</BundleRelativeSolutionDir>
 
         <!-- Use the following property instead of SolutionDir when building a project without a solution (example: msbuild project.vcxproj) -->
-        <SolutionOrProjectDir>$(MSBuildProjectDirectory)\</SolutionOrProjectDir>
+        <SolutionOrProjectDir>$(MSBuildProjectDirectory)/</SolutionOrProjectDir>
       </PropertyGroup>
     </Otherwise>
   </Choose>
@@ -129,6 +129,7 @@ This script can be imported anywhere before first MS import (Microsoft.Cpp.Defau
   <Target Name="ZouTraceMSBuild" Condition="'$(ZouTraceMSBuild)' == 'true'">
     <Message Importance="normal" Text="MSBuild properties" />
     <Message Importance="normal" Text="==================" />
+    <Message Importance="normal" Text="  OS                             = $(OS)" />
     <Message Importance="normal" Text="  MSBuildAssemblyVersion         = $(MSBuildAssemblyVersion)" />
     <Message Importance="normal" Text="  MSBuildBinPath                 = $(MSBuildBinPath)" />
     <Message Importance="normal" Text="  MSBuildToolsPath               = $(MSBuildToolsPath)" />

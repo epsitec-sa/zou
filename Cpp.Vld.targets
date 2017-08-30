@@ -5,7 +5,7 @@
     <PackagesConfigFile Condition="'$(PackagesConfigFile)' == ''">packages.config</PackagesConfigFile>
     <VldIniPath>$(SolutionOrProjectDir)vld.ini</VldIniPath>
 
-    <_VldTemplateDir>$(ZouDir).Templates\nuget\</_VldTemplateDir>
+    <_VldTemplateDir>$(ZouDir).Templates/nuget/</_VldTemplateDir>
     <_VldTemplatePathPrefix>$(_VldTemplateDir)Cpp.Vld</_VldTemplatePathPrefix>
     <_VldTemplateIniPath>$(_VldTemplateDir)vld.ini</_VldTemplateIniPath>
     <_VldOnlyPackagesConfigFile>$(IntDir)zou.vld.packages.config</_VldOnlyPackagesConfigFile>
@@ -36,7 +36,7 @@
   <PropertyGroup>
     <NumericPlatform Condition="'$(Platform)'=='Win32'">32</NumericPlatform>
     <NumericPlatform Condition="'$(Platform)'=='x64'">64</NumericPlatform>
-    <VldLibDir>$(NugetPackagesDir)VisualLeakDetector.$(VldVersion)\lib\native\address-model-$(NumericPlatform)\lib\</VldLibDir>
+    <VldLibDir>$(NugetPackagesDir)VisualLeakDetector.$(VldVersion)/lib/native/address-model-$(NumericPlatform)/lib/</VldLibDir>
   </PropertyGroup>
   <ItemGroup Condition="'$(VLDImport)' == 'true'">
     <ImportFile Include="$(VldLibDir)*.*">
@@ -99,7 +99,7 @@
     
     <!-- Restore nuget packages if necessary... -->
     <Exec Condition="'$(_PackagesConfigChanged)' == 'true'"
-          Command='"$(ZouBinDir)nuget" restore "$(PackagesConfigFile)" -PackagesDirectory "$(NugetPackagesDir.TrimEnd(\))"' />
+          Command='"$(ZouBinDir)nuget" restore "$(PackagesConfigFile)" -PackagesDirectory "$(NugetPackagesDir.TrimEnd(\/))"' />
   </Target>
 
   <Target Name="VldClean" AfterTargets="Clean">

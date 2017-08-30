@@ -16,7 +16,7 @@
     <_BoostPackagesConfigType Condition="'$(ConfigurationType)' == 'DynamicLibrary'">Libs</_BoostPackagesConfigType>
     <_BoostPackagesConfigType Condition="'$(ConfigurationType)' == 'Application'">Libs</_BoostPackagesConfigType>
 
-    <_BoostTemplatePathPrefix>$(ZouDir).Templates\nuget\Cpp.Boost.$(_BoostPackagesConfigType)</_BoostTemplatePathPrefix>
+    <_BoostTemplatePathPrefix>$(ZouDir).Templates/nuget/Cpp.Boost.$(_BoostPackagesConfigType)</_BoostTemplatePathPrefix>
     
     <_BoostOnlyPackagesConfigFile>$(IntDir)zou.boost.packages.config</_BoostOnlyPackagesConfigFile>
 
@@ -86,7 +86,7 @@
     
     <!-- Restore nuget packages if necessary... -->
     <Exec Condition="'$(_PackagesConfigChanged)' == 'true'"
-          Command='"$(ZouBinDir)nuget" restore "$(PackagesConfigFile)" -PackagesDirectory "$(NugetPackagesDir.TrimEnd(\))"' />
+          Command='"$(ZouBinDir)nuget" restore "$(PackagesConfigFile)" -PackagesDirectory "$(NugetPackagesDir.TrimEnd(\/))"' />
   </Target>
 
   <Target Name="BoostClean" AfterTargets="Clean">
