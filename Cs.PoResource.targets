@@ -3,41 +3,41 @@
 Layout:
 =======
     
-  bundle1\.po\                                      $(PoBundleRootDir)
+  bundle1/.po/                                      $(PoBundleRootDir)
       bundle1.fr-CH.po                              %(PoResource.PoBundlePath)  
       bundle1.de-CH.po
-      obj\Debug\                                    $(PoBundleIntDir)
+      obj/Debug/                                    $(PoBundleIntDir)
         LastSolution.zou                            $(LastSolutionSavePath)
         PoModules.zou                               $(PoModuleReferencesPath)
-          - module1\.po\module1.fr-CH.po            %(PoResource.PoModulePath)
+          - module1/.po/module1.fr-CH.po            %(PoResource.PoModulePath)
         PotDomains.zou                              $(PotDomainReferencesPath)
-          - project1\obj\Debug\domain1.pot          %(PoResource.PotDomainPath)
-          - project1\obj\Debug\domain2.pot
+          - project1/obj/Debug/domain1.pot          %(PoResource.PotDomainPath)
+          - project1/obj/Debug/domain2.pot
         PoDomains.zou                               $(PoDomainReferencesPath)
-          - project1\Resource\domain1.fr-CH.po      %(PoResource.FullPath)
-          - project1\Resource\domain2.fr-CH.po
+          - project1/Resource/domain1.fr-CH.po      %(PoResource.FullPath)
+          - project1/Resource/domain2.fr-CH.po
         MoDomains.zou                               $(MoDomainReferencesPath)
-          -project1\bin\Debug\locale\fr-CH\LC_MESSAGES\domain1.mo  %(PoResource.MoDomainPath)
-          -project1\bin\Debug\locale\fr-CH\LC_MESSAGES\domain2.mo
+          -project1/bin/Debug/locale/fr-CH/LC_MESSAGES/domain1.mo  %(PoResource.MoDomainPath)
+          -project1/bin/Debug/locale/fr-CH/LC_MESSAGES/domain2.mo
             
-    module1\.po\                                    $(PoModuleRootDir)
+    module1/.po/                                    $(PoModuleRootDir)
       module1.fr-CH.po                              %(PoResource.PoModulePath)
       module1.de-CH.po
           
-    project1\
-      Source\
+    project1/
+      Source/
         *.cs
-      Resource\
+      Resource/
         domain1.fr-CH.po                            %(PoResource.FullPath)
         domain1.de-CH.po
         domain2.fr-CH.po
         domain2.de-CH.po
-      obj\Debug\                                    $(PoIntDir)
+      obj/Debug/                                    $(PoIntDir)
         domain1.pot.src.zou                         %(PoResource.PotSourcePath)
         domain1.pot                                 %(PoResource.PotDomainPath)
         domain2.pot
-      bin\Debug\                                    $(TargetDir)
-        locale\fr-CH\LC_MESSAGES\                   %(PoResource.MoDomainDir)
+      bin/Debug/                                    $(TargetDir)
+        locale/fr-CH/LC_MESSAGES/                   %(PoResource.MoDomainDir)
           domain1.mo                                %(PoResource.MoDomainPath)
           domain2.mo
 
@@ -89,9 +89,9 @@ InitPoResources:
 Pseudo-code:
 ============
 
-  PoModuleReferencesPath    // .../bundle/.po/obj/debug/PoModules.zou -> { module\.po\module.fr-CH.po }
-  PoDomainReferencesPath    // .../bundle/.po/obj/debug/PoDomains.zou -> { module\**\project\Resource\domain.fr-CH.po }
-  MoDomainReferencesPath    // .../bundle/.po/obj/debug/MoDomains.zou -> { project\bin\Debug\locale\fr-CH\LC_MESSAGES\domain.mo }
+  PoModuleReferencesPath    // .../bundle/.po/obj/debug/PoModules.zou -> { module/.po/module.fr-CH.po }
+  PoDomainReferencesPath    // .../bundle/.po/obj/debug/PoDomains.zou -> { module/**/project/Resource/domain.fr-CH.po }
+  MoDomainReferencesPath    // .../bundle/.po/obj/debug/MoDomains.zou -> { project/bin/Debug/locale/fr-CH/LC_MESSAGES/domain.mo }
 
   foreach (project in solution)
   {
@@ -114,7 +114,7 @@ Pseudo-code:
   }
 -->
 
-<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="PoResourceBuild">
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="PoResourceBuild">
 
   <Import Project="Cs.Boot.props" Condition="'$(CsBootImported)' != 'true'"/>
 
@@ -137,8 +137,8 @@ Pseudo-code:
     <NoPotCreationDate Condition="'$(NoPotCreationDate)' == ''">true</NoPotCreationDate>
     <NoPoRevisionDate  Condition="'$(NoPoRevisionDate)'  == ''">true</NoPoRevisionDate>
 
-    <PoBundleRootDir>$(BundleDir).po\</PoBundleRootDir>
-    <PoBundleIntDir>$(PoBundleRootDir)obj\$(Configuration)\</PoBundleIntDir>
+    <PoBundleRootDir>$(BundleDir).po/</PoBundleRootDir>
+    <PoBundleIntDir>$(PoBundleRootDir)obj/$(Configuration)/</PoBundleIntDir>
     <LastSolutionSavePath>$(PoBundleIntDir)LastSolution.zou</LastSolutionSavePath>
 
     <PotDomainReferencesPath>$(PoBundleIntDir)PotDomains.zou</PotDomainReferencesPath>
@@ -146,7 +146,7 @@ Pseudo-code:
     <PoDomainReferencesPath>$(PoBundleIntDir)PoDomains.zou</PoDomainReferencesPath>
     <MoDomainReferencesPath>$(PoBundleIntDir)MoDomains.zou</MoDomainReferencesPath>
 
-    <PoModuleRootDir Condition="'$(ModuleName)' != ''">$(ModuleDir).po\</PoModuleRootDir>
+    <PoModuleRootDir Condition="'$(ModuleName)' != ''">$(ModuleDir).po/</PoModuleRootDir>
     
     <PoIntDir Condition="'$(PoIntDir)' == ''">$(ProjectDir)$(IntermediateOutputPath)</PoIntDir>
 
@@ -225,7 +225,7 @@ Pseudo-code:
         <PotDomainPath>$(PoIntDir)%(DomainName).pot</PotDomainPath>
         <PoBundleFileName>$(BundleName).%(Culture).po</PoBundleFileName>
         <PoModuleFileName Condition="'$(ModuleName)' != ''">$(ModuleName).%(Culture).po</PoModuleFileName>
-        <MoDomainLinkdir>locale\%(Culture)\LC_MESSAGES\</MoDomainLinkdir>
+        <MoDomainLinkDir>locale/%(Culture)/LC_MESSAGES/</MoDomainLinkDir>
         <MoDomainFileName>%(DomainName).mo</MoDomainFileName>
       </PoResource>
       <PoResource>
@@ -257,7 +257,7 @@ Pseudo-code:
   <Target Name="InitPotSources"
           Returns="@(PotSource)">
     <ItemGroup>
-      <PotSource Include="@(Compile)" Exclude="$(TMP)\*;$(PoIntDir)\*;Properties\Resources.Designer.cs;Properties\AssemblyInfo.cs" />
+      <PotSource Include="@(Compile)" Exclude="$(TMP)/*;$(PoIntDir)/*;Properties/Resources.Designer.cs;Properties/AssemblyInfo.cs" />
       <PotSource>
         <RelativePath>$([MSBuild]::MakeRelative($(BundleDir), %(PotSource.FullPath)))</RelativePath>
       </PotSource>
@@ -717,7 +717,7 @@ Pseudo-code:
   <Target Name="CreateMoDomainContent">
     <ItemGroup>
       <PoContent Include="%(PoResource.MoDomainPath)">
-        <Link>%(PoResource.MoDomainLinkdir)%(MoDomainFileName)</Link>
+        <Link>%(PoResource.MoDomainLinkDir)%(MoDomainFileName)</Link>
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         <Visible>false</Visible>
       </PoContent>
@@ -775,8 +775,8 @@ Pseudo-code:
   <Target Name ="PoReset" Condition="$(PoReset) == 'true'" DependsOnTargets="InitPoResources">
 
     <ItemGroup>
-      <_Temporary Include="$(PoBundleRootDir)**\*" />
-      <_Temporary Include="$(PoModuleRootDir)**\*" />
+      <_Temporary Include="$(PoBundleRootDir)**/*" />
+      <_Temporary Include="$(PoModuleRootDir)**/*" />
       <_Temporary Include="@(PoResource)" />
     </ItemGroup>
     <Delete Files="@(_Temporary)" />

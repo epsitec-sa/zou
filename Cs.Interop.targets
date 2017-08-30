@@ -4,7 +4,7 @@ Layout:
 =======
 
   {native-project}
-    Win32\v120_xp\bin\Debug\{native-files}
+    Win32/v120_xp/bin/Debug/{native-files}
 
   where:
     Win32     $(InteropPlatform)
@@ -13,10 +13,10 @@ Layout:
   ====
   
   {mixed-platform-solution}
-    Win32\Interop\{native-project-name}\Debug\{native-files}
+    Win32/Interop/{native-project-name}/Debug/{native-files}
       
   {managed-project}
-    bin\Debug\{native-files}
+    bin/Debug/{native-files}
 
   where:
     Win32     $(InteropPlatform)
@@ -36,7 +36,7 @@ Layout:
   <ItemDefinitionGroup>
     <ImportProject>
       <Platform>$(InteropPlatform)</Platform>
-      <OutDir>$(WorkDir)$(InteropPlatform)\Interop\%(FileName)\$(Configuration)\</OutDir>
+      <OutDir>$(WorkDir)$(InteropPlatform)/Interop/%(FileName)/$(Configuration)/</OutDir>
     </ImportProject>
   </ItemDefinitionGroup>
   
@@ -46,7 +46,7 @@ Layout:
           Condition="'@(ImportProject)' != ''"
           DependsOnTargets="ImportProject">
     <ItemGroup>
-      <InteropContent Include="%(ImportProject.OutDir)**\*.*" />
+      <InteropContent Include="%(ImportProject.OutDir)**/*.*" />
       <InteropContent>
         <Link>%(InteropContent.RecursiveDir)%(FileName)%(Extension)</Link>
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
