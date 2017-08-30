@@ -1,0 +1,57 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003"
+         InitialTargets="ToolsCppTrace">
+
+  <PropertyGroup Label="VisualStudio">
+    <!-- VS Root Dir -->
+    <VS120RootDir Condition="'$(VS120RootDir)' == ''">$([MSBuild]::GetRegistryValue('HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Microsoft\VisualStudio\12.0', 'ShellFolder'))</VS120RootDir>
+    <VS120RootDir Condition="'$(VS120RootDir)' == ''">$([MSBuild]::GetRegistryValue('HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\VisualStudio\12.0', 'ShellFolder'))</VS120RootDir>
+    <VS140RootDir Condition="'$(VS140RootDir)' == ''">$([MSBuild]::GetRegistryValue('HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Microsoft\VisualStudio\14.0', 'ShellFolder'))</VS140RootDir>
+    <VS140RootDir Condition="'$(VS140RootDir)' == ''">$([MSBuild]::GetRegistryValue('HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\VisualStudio\14.0', 'ShellFolder'))</VS140RootDir>
+    <VS150RootDir Condition="'$(VS150RootDir)' == ''">$([MSBuild]::GetRegistryValue('HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\VisualStudio\SxS\VS7', '15.0'))</VS150RootDir>
+    <VS150RootDir Condition="'$(VS150RootDir)' == ''">$([MSBuild]::GetRegistryValue('HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\VisualStudio\SxS\VS7', '15.0''))</VS150RootDir>
+    <VSRootDir Condition="'$(VSRootDir)' == ''">$(VS150RootDir)</VSRootDir>
+    <VSRootDir Condition="'$(VSRootDir)' == ''">$(VS140RootDir)</VSRootDir>
+    <VSRootDir Condition="'$(VSRootDir)' == ''">$(VS120RootDir)</VSRootDir>
+    <!-- VS Shared Root Dir -->
+    <VSSharedRootDir Condition="'$(VSSharedRootDir)' == ''">$([MSBuild]::GetRegistryValue('HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Policies\Microsoft\VisualStudio\Setup', 'SharedInstallationPath'))</VSSharedRootDir>
+    <VSSharedRootDir Condition="'$(VSSharedRootDir)' == ''">$([MSBuild]::GetRegistryValue('HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\VisualStudio\Setup', 'SharedInstallationPath'))</VSSharedRootDir>
+    <VSSharedRootDir Condition="'$(VSSharedRootDir)' == ''">$([MSBuild]::GetRegistryValue('HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Microsoft\VisualStudio\Setup', 'SharedInstallationPath'))</VSSharedRootDir>
+    <VSSharedRootDir Condition="'$(VSSharedRootDir)' == ''">$([MSBuild]::GetRegistryValue('HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\VisualStudio\Setup', 'SharedInstallationPath'))</VSSharedRootDir>
+    <VSSharedRootDir Condition="'$(VSSharedRootDir)' != ''">$(VSSharedRootDir)/</VSSharedRootDir>
+    <VS140SharedRootDir Condition="'$(VS140SharedRootDir)' == '' And '$(VSSharedRootDir)' != ''">$(VSSharedRootDir)14.0/</VS140SharedRootDir>
+    <!-- VS Tools Dir -->
+    <VS120ToolsDir Condition="'$(VS120COMNTOOLS)' != ''">$(VS120COMNTOOLS)</VS120ToolsDir>
+    <VS120ToolsDir Condition="'$(VS120ToolsDir)' == ''">$([MSBuild]::GetRegistryValue('HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Microsoft\VisualStudio\14.0', 'InstallDir'))</VS120ToolsDir>
+    <VS120ToolsDir Condition="'$(VS120ToolsDir)' == ''">$([MSBuild]::GetRegistryValue('HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\VisualStudio\14.0', 'InstallDir'))</VS120ToolsDir>
+    <VS140ToolsDir Condition="'$(VS140COMNTOOLS)' != ''">$(VS140COMNTOOLS)</VS140ToolsDir>
+    <VS140ToolsDir Condition="'$(VS140ToolsDir)' == ''">$([MSBuild]::GetRegistryValue('HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Microsoft\VisualStudio\14.0', 'InstallDir'))</VS140ToolsDir>
+    <VS140ToolsDir Condition="'$(VS140ToolsDir)' == ''">$([MSBuild]::GetRegistryValue('HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\VisualStudio\14.0', 'InstallDir'))</VS140ToolsDir>
+    <VS150ToolsDir Condition="'$(VS150COMNTOOLS)' != ''">$(VS150COMNTOOLS)</VS150ToolsDir>
+    <VS150ToolsDir Condition="'$(VS150ToolsDir)' == ''">$(VS150RootDir)Common7/Tools/</VS150ToolsDir>
+    <VSToolsDir Condition="'$(VSToolsDir)' == ''">$(VS150ToolsDir)</VSToolsDir>
+    <VSToolsDir Condition="'$(VSToolsDir)' == ''">$(VS140ToolsDir)</VSToolsDir>
+    <VSToolsDir Condition="'$(VSToolsDir)' == ''">$(VS120ToolsDir)</VSToolsDir>
+    <!-- MFC Include Dir -->
+    <MFCIncludeDir>$(VSRootDir)VC/atlmfc/include/</MFCIncludeDir>
+    <MFCIncludeDir Condition="'$(VS140SharedRootDir)' != '' And !Exists($(MFCIncludeDir))">$(VS140SharedRootDir)VC/atlmfc/include/</MFCIncludeDir>
+    <MFCIncludeDir Condition="'$(VS140RootDir)'       != '' And !Exists($(MFCIncludeDir))">$(VS140RootDir)VC/atlmfc/include/</MFCIncludeDir>
+  </PropertyGroup>
+
+  <Target Name="ToolsCppTrace" Condition="'$(ZouTrace)' == 'true'">
+    <Message Importance="normal" Text="C++ Tools" />
+    <Message Importance="normal" Text="===================" />
+    <Message Importance="normal" Text="  VS120RootDir     = $(VS120RootDir)"     Condition="'$(VS120RootDir)' != ''"/>
+    <Message Importance="normal" Text="  VS140RootDir     = $(VS140RootDir)"     Condition="'$(VS140RootDir)' != ''"/>
+    <Message Importance="normal" Text="  VS150RootDir     = $(VS150RootDir)"     Condition="'$(VS150RootDir)' != ''"/>
+    <Message Importance="normal" Text=" "/>                                      
+    <Message Importance="normal" Text="  VS120ToolsDir    = $(VS120ToolsDir)"    Condition="'$(VS120ToolsDir)' != ''"/>
+    <Message Importance="normal" Text="  VS140ToolsDir    = $(VS140ToolsDir)"    Condition="'$(VS140ToolsDir)' != ''"/>
+    <Message Importance="normal" Text="  VS150ToolsDir    = $(VS150ToolsDir)"    Condition="'$(VS150ToolsDir)' != ''"/>
+    <Message Importance="normal" Text=" "/>                                      
+    <Message Importance="normal" Text="  VSRootDir        = $(VSRootDir)"        Condition="'$(VSRootDir)' != ''"/>
+    <Message Importance="normal" Text="  VSToolsDir       = $(VSToolsDir)"       Condition="'$(VSToolsDir)' != ''"/>
+    <Message Importance="normal" Text="  VSSharedRootDir  = $(VSSharedRootDir)"  Condition="'$(VSSharedRootDir)' != ''"/>
+    <Message Importance="normal" Text="  MFCIncludeDir    = $(MFCIncludeDir)"    Condition="'$(MFCIncludeDir)' != ''"/>
+  </Target>
+</Project>
