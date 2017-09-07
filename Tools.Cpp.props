@@ -32,10 +32,16 @@
     <VSToolsDir Condition="'$(VSToolsDir)' == ''">$(VS150ToolsDir)</VSToolsDir>
     <VSToolsDir Condition="'$(VSToolsDir)' == ''">$(VS140ToolsDir)</VSToolsDir>
     <VSToolsDir Condition="'$(VSToolsDir)' == ''">$(VS120ToolsDir)</VSToolsDir>
+
+    <!-- VC++ Root Dir -->
+    <VC140RootDir Condition="'$(VC140RootDir)' == ''">$([MSBuild]::GetRegistryValue('HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Microsoft\VisualStudio\14.0\Setup\VC', 'ProductDir'))</VC140RootDir>
+    <VC140RootDir Condition="'$(VC140RootDir)' == ''">$([MSBuild]::GetRegistryValue('HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\VisualStudio\14.0\Setup\VC', 'ProductDir'))</VC140RootDir>
+        
     <!-- MFC Include Dir -->
     <MFCIncludeDir>$(VSRootDir)VC/atlmfc/include/</MFCIncludeDir>
     <MFCIncludeDir Condition="'$(VS140SharedRootDir)' != '' And !Exists($(MFCIncludeDir))">$(VS140SharedRootDir)VC/atlmfc/include/</MFCIncludeDir>
     <MFCIncludeDir Condition="'$(VS140RootDir)'       != '' And !Exists($(MFCIncludeDir))">$(VS140RootDir)VC/atlmfc/include/</MFCIncludeDir>
+    <MFCIncludeDir Condition="'$(VC140RootDir)'       != '' And !Exists($(MFCIncludeDir))">$(VC140RootDir)atlmfc/include/</MFCIncludeDir>
   </PropertyGroup>
 
   <Target Name="ToolsCppTrace" Condition="'$(ZouTrace)' == 'true'">
@@ -48,6 +54,8 @@
     <Message Importance="normal" Text="  VS120ToolsDir    = $(VS120ToolsDir)"    Condition="'$(VS120ToolsDir)' != ''"/>
     <Message Importance="normal" Text="  VS140ToolsDir    = $(VS140ToolsDir)"    Condition="'$(VS140ToolsDir)' != ''"/>
     <Message Importance="normal" Text="  VS150ToolsDir    = $(VS150ToolsDir)"    Condition="'$(VS150ToolsDir)' != ''"/>
+    <Message Importance="normal" Text=" "/>                                      
+    <Message Importance="normal" Text="  VC140RootDir     = $(VC140RootDir)"     Condition="'$(VC140RootDir)' != ''"/>
     <Message Importance="normal" Text=" "/>                                      
     <Message Importance="normal" Text="  VSRootDir        = $(VSRootDir)"        Condition="'$(VSRootDir)' != ''"/>
     <Message Importance="normal" Text="  VSToolsDir       = $(VSToolsDir)"       Condition="'$(VSToolsDir)' != ''"/>
