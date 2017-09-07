@@ -9,14 +9,14 @@
   </PropertyGroup> 
 
   <ImportGroup Label="PropertySheets">
-    <Import Project="$(ZouBundleDir)**/$(MSBuildThisFileName)*$(MSBuildThisFileExtension)"   Condition="'$(ZouBundleDir)'   != ''" />
-    <Import Project="$(ZouSolutionDir)**/$(MSBuildThisFileName)*$(MSBuildThisFileExtension)" Condition="'$(ZouSolutionDir)' != '' And '$(ZouSolutionDir)' != '$(ZouBundleDir)'" />
-    <Import Project="$(ZouProjectDir)**/$(MSBuildThisFileName)*$(MSBuildThisFileExtension)"  Condition="'$(ZouProjectDir)'  != '' And '$(ZouProjectDir)'  != '$(ZouSolutionDir)' And '$(ZouProjectDir)' != '$(ZouBundleDir)'" />
+    <Import Project="$(ZouBundleDir)**\$(MSBuildThisFileName)*$(MSBuildThisFileExtension)"   Condition="'$(ZouBundleDir)'   != ''" />
+    <Import Project="$(ZouSolutionDir)**\$(MSBuildThisFileName)*$(MSBuildThisFileExtension)" Condition="'$(ZouSolutionDir)' != '' And '$(ZouSolutionDir)' != '$(ZouBundleDir)'" />
+    <Import Project="$(ZouProjectDir)**\$(MSBuildThisFileName)*$(MSBuildThisFileExtension)"  Condition="'$(ZouProjectDir)'  != '' And '$(ZouProjectDir)'  != '$(ZouSolutionDir)' And '$(ZouProjectDir)' != '$(ZouBundleDir)'" />
     <Import Project="$(ZouPrivateDir)$(MSBuildThisFileName).Default$(MSBuildThisFileExtension)" />
   </ImportGroup>
 
   <PropertyGroup>
-    <WorkDir Condition="'$(WorkDir)' != '' and !HasTrailingSlash('$(WorkDir)')">$(WorkDir)/</WorkDir>
+    <WorkDir Condition="'$(WorkDir)' != '' and !HasTrailingSlash('$(WorkDir)')">$(WorkDir)\</WorkDir>
     <WorkDir Condition="'$(WorkDirSpecified)' != 'true'">$([System.IO.Path]::Combine($(ProjectDir),$(WorkDir)))</WorkDir>
     <WorkDir Condition="'$(WorkDirSpecified)' == 'true'">$([System.IO.Path]::Combine($(MSBuildStartupDirectory),$(WorkDir)))</WorkDir>
   </PropertyGroup>
