@@ -3,60 +3,60 @@
 Layout:
 =======
 
-  zou/
-    .Templates/
-      help/
+  zou\
+    .Templates\
+      help\
         helpmap.cpp                           $(HelpMapCppTemplate)
         helpmap.culture.cpp                   $(HelpMapCultureCppTemplate)
         
-  lib1/resource.h                             +%(HelpProject.ResourceHeaderFiles)
-  lib2/resouce.h                              +%(HelpProject.ResourceHeaderFiles)
+  lib1\resource.h                             +%(HelpProject.ResourceHeaderFiles)
+  lib2\resouce.h                              +%(HelpProject.ResourceHeaderFiles)
   
-  lib0/help/                                  $(ProjectDir)
+  lib0\help\                                  $(ProjectDir)
     lib0.help.vcxproj                         $(ProjectPath)
     ignoretopics.txt                          %(HelpProject.IgnoreTopicsFile)
     synonymtopics.txt                         %(HelpProject.SynonymTopicsFile)
-    fr/
+    fr\
       lib0.fr.hhp:                            %(HelpProject.Identity)
         [OPTIONS]
         Compiled File=lib0.fr.chm             %(HelpProject.CompiledFile)
-        Default Topic=html/overview.htm       %(HelpProject.DefaultTopic)
+        Default Topic=html\overview.htm       %(HelpProject.DefaultTopic)
         [FILES}
         html/topic1.htm                       +%(HelpProject.Topics)
         html/topic2.htm                       +%(HelpProject.Topics)
       html/
         topic1.htm
         topic2.htm
-    de/
+    de\
       lib0.de.hhp                             %(HelpProject.Identity)
-      html/
+      html\
         topic1.htm
         topic2.htm
         
     helpmap.cpp:                              [out] $(HelpMapCppFile)
       
-    $(IntDir)/
+    $(IntDir)\
       lib0.fr.hm                              [out] %(HelpProject.HmFile)
       lib0.de.hm                              [out] %(HelpProject.HmFile)
       lib0.fr.cpp                             [out] %(HelpProject.HelpMapCppFile)
       lib0.de.cpp                             [out] %(HelpProject.HelpMapCppFile)
-    $(OutDir)/
+    $(OutDir)\
       lib0.fr.chm                             [out] %(HelpProject.OutputFile)
       lib0.de.chm                             [out] %(HelpProject.OutputFile)
  
 Dependencies:
 =============
 
-lib0/help/fr/lib0.fr.hhp: lib0.help.vcxproj
+lib0\help\fr\lib0.fr.hhp: lib0.help.vcxproj
   _UpdateHelpProject
   
-$(IntDir)/lib0.xx.hm: lib1/resource.h[, lib2/resource.h][, afxres.hm]
+$(IntDir)\lib0.xx.hm: lib1\resource.h[, lib2\resource.h][, afxres.hm]
   _CreateHmFiles
 
-$(IntDir)/lib0.xx.cpp: $(IntDir)/lib0.xx.hm, lib0/help/ignoretopics.txt, lib0/help/synonymtopics.txt
+$(IntDir)\lib0.xx.cpp: $(IntDir)\lib0.xx.hm, lib0\help\ignoretopics.txt, lib0\help\synonymtopics.txt
   _CreateHelpMapCultureCpp
   
-lib0/help/helpmap.cpp: {$(IntDir)/lib0.xx.cpp}
+lib0\help\helpmap.cpp: {$(IntDir)\lib0.xx.cpp}
   _CreateHelpMapCpp
   
 -->
@@ -86,8 +86,8 @@ lib0/help/helpmap.cpp: {$(IntDir)/lib0.xx.cpp}
     <MakeHm>$(VsToolsDir)makehm.exe</MakeHm>
     <Hhc>$(ZouBinDir)hhc.exe</Hhc>
     <HelpMapCppFile>helpmap.cpp</HelpMapCppFile>
-    <HelpMapCppTemplate>$(ZouDir).Templates/help/helpmap.cpp</HelpMapCppTemplate>
-    <HelpMapCultureCppTemplate>$(ZouDir).Templates/help/helpmap.culture.cpp</HelpMapCultureCppTemplate>
+    <HelpMapCppTemplate>$(ZouDir).Templates\help\helpmap.cpp</HelpMapCppTemplate>
+    <HelpMapCultureCppTemplate>$(ZouDir).Templates\help\helpmap.culture.cpp</HelpMapCultureCppTemplate>
   </PropertyGroup>
 
   <!--=========================================================================-->
@@ -107,10 +107,10 @@ lib0/help/helpmap.cpp: {$(IntDir)/lib0.xx.cpp}
   </ItemGroup>
 
   <ItemGroup Condition="'@(HelpProject)' != ''">
-    <HelpProjectCppTemplate Include="$(ZouDir).Templates/cpp/Stdafx.h" />
-    <HelpProjectCppTemplate Include="$(ZouDir).Templates/cpp/Stdafx.cpp" />
-    <HelpProjectCppTemplate Include="$(ZouDir).Templates/help/helpmap.h" />
-    <HelpProjectCppTemplate Include="$(ZouDir).Templates/help/helpmap.cpp" />
+    <HelpProjectCppTemplate Include="$(ZouDir).Templates\cpp\Stdafx.h" />
+    <HelpProjectCppTemplate Include="$(ZouDir).Templates\cpp\Stdafx.cpp" />
+    <HelpProjectCppTemplate Include="$(ZouDir).Templates\help\helpmap.h" />
+    <HelpProjectCppTemplate Include="$(ZouDir).Templates\help\helpmap.cpp" />
   </ItemGroup>
   
   <Target Name="_UpdateHelpProjectCppTemplates" Inputs="%(HelpProjectCppTemplate.Identity)" Outputs="%(Filename)%(Extension)">
@@ -138,7 +138,7 @@ lib0/help/helpmap.cpp: {$(IntDir)/lib0.xx.cpp}
       
       <HmFile>$(IntDir)%(FileName).hm</HmFile>
       <HelpMapCppFile>$(IntDir)%(FileName).cpp</HelpMapCppFile>
-      <ResourceHeaderFiles>../resource.h</ResourceHeaderFiles>
+      <ResourceHeaderFiles>..\resource.h</ResourceHeaderFiles>
       <IgnoreTopicsFile>ignoretopics.txt</IgnoreTopicsFile>
       <SynonymTopicsFile>synonymtopics.txt</SynonymTopicsFile>
 
@@ -288,7 +288,7 @@ lib0/help/helpmap.cpp: {$(IntDir)/lib0.xx.cpp}
   <Target Name="_AssignHelpProjectSourceFiles" Returns="%(HelpProject.Identity)">
 
     <ItemGroup>
-      <_SourceFile Include="%(HelpProject.RootDir)%(Directory)**/*" Exclude="%(HelpProject.HhpTmpFile)" />
+      <_SourceFile Include="%(HelpProject.RootDir)%(Directory)**\*" Exclude="%(HelpProject.HhpTmpFile)" />
       <_SourceFile Include="%(HelpProject.FullPath)" KeepDuplicates="false" />
       <HelpProject>
         <SourceFiles>@(_SourceFile)</SourceFiles>
@@ -413,7 +413,7 @@ lib0/help/helpmap.cpp: {$(IntDir)/lib0.xx.cpp}
   </Target>
 
   <Target Name="_CreateHelpMapCpp" DependsOnTargets="_CreateHelpMapCultureCpp"
-          Inputs="@(HelpProject->'%(HelpMapCppFile)');$(ZouDir).Templates/help/helpmap.h;$(ZouDir).Templates/help/helpmap.cpp;$(ZouDir).Templates/help/helpmap.culture.cpp"
+          Inputs="@(HelpProject->'%(HelpMapCppFile)');$(ZouDir).Templates\help\helpmap.h;$(ZouDir).Templates\help\helpmap.cpp;$(ZouDir).Templates\help\helpmap.culture.cpp"
           Outputs="$(HelpMapCppFile)">
     <Copy SourceFiles="$(HelpMapCppTemplate)" DestinationFiles="$(HelpMapCppFile)" OverwriteReadOnlyFiles="true" />
     <ItemGroup>
@@ -455,7 +455,7 @@ lib0/help/helpmap.cpp: {$(IntDir)/lib0.xx.cpp}
     <!-- Execute the MS crazy help compiler (HHC) and redirect its output to custom log file -->
     <Exec Command='"$(Hhc)" "%(HelpProject.FullPath)" &gt;"%(HelpProject.HhcLogFile)"' IgnoreExitCode='true' />
     <ItemGroup>
-      <_Temporary Include="**/%(HelpProject.ErrorLogFile);%(OutputFile)" />
+      <_Temporary Include="**\%(HelpProject.ErrorLogFile);%(OutputFile)" />
     </ItemGroup>
     <Delete Files="@(_Temporary)" />
     <Move SourceFiles="%(HelpProject.CompiledFile)" DestinationFiles="%(OutputFile)" />
@@ -503,7 +503,7 @@ lib0/help/helpmap.cpp: {$(IntDir)/lib0.xx.cpp}
 
   <Target Name="_DeleteHhcFiles" DependsOnTargets="_InitHelpProject">
     <ItemGroup>
-      <_Temporary Include="**/%(HelpProject.ErrorLogFile);%(HhpTmpFile);%(OutputFile);%(HhcLogFile)" />
+      <_Temporary Include="**\%(HelpProject.ErrorLogFile);%(HhpTmpFile);%(OutputFile);%(HhcLogFile)" />
     </ItemGroup>
     <Delete Files="@(_Temporary)" />
     <ItemGroup>

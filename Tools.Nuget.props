@@ -4,11 +4,11 @@
 
   <!-- Nuget -->
   <PropertyGroup Condition="'$(NugetPackagesDir)' == ''" >
-    <NugetPackagesDir>$(BundleDir)packages/</NugetPackagesDir>
+    <NugetPackagesDir>$(BundleDir)packages$(V)</NugetPackagesDir>
   </PropertyGroup>
 
   <Target Name="ZouSetupNuget" Condition="!Exists('$(BundleDir)NuGet.config')">
-    <Copy SourceFiles="$(ZouDir).Templates/nuget/NuGet.config" DestinationFiles="$(BundleDir)NuGet.config" />
+    <Copy SourceFiles="$(ZouDir).Templates$(V)nuget$(V)NuGet.config" DestinationFiles="$(BundleDir)NuGet.config" />
   </Target>
 
   <Target Name="ToolsNugetTrace" Condition="'$(ZouTrace)' == 'true'">

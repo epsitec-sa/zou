@@ -5,8 +5,8 @@
          TreatAsLocalProperty="PkgDir;PkgProdBinDir">
 
   <PropertyGroup>
-    <PkgDir        Condition="'$(PkgDir)'        != '' and !HasTrailingSlash('$(PkgDir)')">$(PkgDir)/</PkgDir>
-    <PkgProdBinDir Condition="'$(PkgProdBinDir)' != '' and !HasTrailingSlash('$(PkgProdBinDir)')">$(PkgProdBinDir)/</PkgProdBinDir>
+    <PkgDir        Condition="'$(PkgDir)'        != '' and !HasTrailingSlash('$(PkgDir)')">$(PkgDir)\</PkgDir>
+    <PkgProdBinDir Condition="'$(PkgProdBinDir)' != '' and !HasTrailingSlash('$(PkgProdBinDir)')">$(PkgProdBinDir)\</PkgProdBinDir>
     <PkgProdBinDir Condition="'$(PkgProdBinDirSpecified)' == 'true'">$([System.IO.Path]::Combine($(MSBuildStartupDirectory),$(PkgProdBinDir)))</PkgProdBinDir>
   </PropertyGroup>
 
@@ -30,10 +30,10 @@
   </Choose>
 
   <PropertyGroup>
-    <PkgProdBinDir Condition="'$(PkgProdBinDir)' == ''">$(PkgDir)Prod/bin/</PkgProdBinDir>
-    <PkgProdDbgDir Condition="'$(PkgProdDbgDir)' == ''">$(PkgDir)Prod/dbg/</PkgProdDbgDir>
-    <PkgDevBinDir  Condition="'$(PkgDevBinDir)'  == ''">$(PkgDir)Dev/bin/</PkgDevBinDir>
-    <PkgDevDbgDir  Condition="'$(PkgDevDbgDir)'  == ''">$(PkgDir)Dev/dbg/</PkgDevDbgDir>
+    <PkgProdBinDir Condition="'$(PkgProdBinDir)' == ''">$(PkgDir)Prod\bin\</PkgProdBinDir>
+    <PkgProdDbgDir Condition="'$(PkgProdDbgDir)' == ''">$(PkgDir)Prod\dbg\</PkgProdDbgDir>
+    <PkgDevBinDir  Condition="'$(PkgDevBinDir)'  == ''">$(PkgDir)Dev\bin\</PkgDevBinDir>
+    <PkgDevDbgDir  Condition="'$(PkgDevDbgDir)'  == ''">$(PkgDir)Dev\dbg\</PkgDevDbgDir>
   </PropertyGroup>
   
   <Target Name="PkgDirTrace" Condition="'$(ZouTraceProps)' == 'true'">
