@@ -17,6 +17,8 @@ This script can be imported anywhere before first MS import (Microsoft.Cpp.Defau
     <!-- Enable ZouTrace and ZouTraceMSBuild if the command 'msbuild zou.props' is executed -->
     <ZouTrace Condition="'$(ZouTrace)' == '' And '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">true</ZouTrace>
     <ZouTraceMSBuild Condition="'$(ZouTraceMSBuild)' == '' And '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">true</ZouTraceMSBuild>
+    <IsDebug Condition="$(Configuration.StartsWith('Debug', StringComparison.OrdinalIgnoreCase))">true</IsDebug>
+    <IsRelease Condition="$(Configuration.StartsWith('Release', StringComparison.OrdinalIgnoreCase))">true</IsRelease>
   </PropertyGroup>
 
   <!-- Bundle -->
@@ -212,6 +214,8 @@ This script can be imported anywhere before first MS import (Microsoft.Cpp.Defau
     <Message Importance="normal" Text="  TargetDir                  = $(TargetDir)" />
     <Message Importance="normal" Text="  OutputPath                 = $(OutputPath)" />
     <Message Importance="normal" Text="  IntermediateOutputPath     = $(IntermediateOutputPath)" />
+    <Message Importance="normal" Text="+ IsDebug                    = $(IsDebug)" />
+    <Message Importance="normal" Text="+ IsRelease                  = $(IsRelease)" />
     <Message Importance="normal" Text="+ SolutionOrProjectDir       = $(SolutionOrProjectDir)" />
     <Message Importance="normal" Text="+ WorkDir                    = $(WorkDir)" />
     <Message Importance="normal" Text="+ DbgDir                     = $(DbgDir)" />
