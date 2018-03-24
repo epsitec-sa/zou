@@ -1,3 +1,4 @@
+using Bcx.Linq;
 using Microsoft.Build.Framework;
 using System;
 using System.Linq;
