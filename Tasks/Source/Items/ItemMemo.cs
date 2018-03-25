@@ -1,20 +1,19 @@
-using System;
+using Bcx;
+using Bcx.IO;
+using Bcx.Linq;
+using Microsoft.Build.Framework;
+using Microsoft.Build.Utilities;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Epsitec.IO;
-using Microsoft.Build.Framework;
-using Microsoft.Build.Utilities;
 
 namespace Epsitec.Zou
 {
-	public class ItemMemo
+    public class ItemMemo
 	{
 		public static IEnumerable<ItemMemo>			Parse(IEnumerable<string> content)
 		{
-			var cursor = content.GetCursor ();
+			var cursor = content.GetEnumeraptor ();
 			while (!cursor.AtEnd)
 			{
 				yield return ItemMemo.ParseItem (cursor);
@@ -22,7 +21,7 @@ namespace Epsitec.Zou
 		}
 		public static ItemMemo						FromTaskItem(ITaskItem item, string relativeTo, string metadataNames)
 		{
-			var itemSpec = string.IsNullOrEmpty (relativeTo) ? item.ItemSpec : PathEx.MakeRelative(relativeTo, item.GetMetadata ("FullPath"));
+			var itemSpec = string.IsNullOrEmpty (relativeTo) ? item.ItemSpec : PathEx.GetRelativePath(relativeTo, item.GetMetadata ("FullPath"));
 
 			var names    = metadataNames == null ? Enumerable.Empty<string> () : metadataNames.Split (';');
 			var metadata = names
@@ -62,7 +61,7 @@ namespace Epsitec.Zou
 		}
 		public override string ToString() => this.Id;
 
-		private static ItemMemo						ParseItem(ICursor<string> cursor)
+		private static ItemMemo						ParseItem(IEnumeraptor<string> cursor)
 		{
 			var itemSpec = cursor.Current;
 			var metadata = ItemMemo
@@ -71,7 +70,7 @@ namespace Epsitec.Zou
 
 			return new ItemMemo (itemSpec, metadata);
 		}
-		private static IEnumerable<string[]>		ParseMetadata(ICursor<string> cursor)
+		private static IEnumerable<string[]>		ParseMetadata(IEnumeraptor<string> cursor)
 		{
 			while (cursor.MoveNext () && cursor.Current[0] == ' ')
 			{

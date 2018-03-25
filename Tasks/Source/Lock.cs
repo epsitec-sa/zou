@@ -1,12 +1,8 @@
-using System;
-using System.Linq;
-using System.Security.AccessControl;
-using System.Security.Principal;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
+using System;
+using System.Text.RegularExpressions;
+using System.Threading;
 
 namespace Epsitec.Zou
 {
@@ -33,8 +29,7 @@ namespace Epsitec.Zou
 			try
 			{
 				string semName = Lock.GetName (this.Name, this.Global);
-				bool semCreated;
-				var sem = new Semaphore (1, 1, semName, out semCreated, Lock.GetSecurity (this.Global));
+				var sem = new Semaphore (1, 1, semName, out bool semCreated);
 
 				// Register the semaphore with the build engine:
 				// - to keep it alive until the end of the build (avoid GC)
@@ -42,7 +37,7 @@ namespace Epsitec.Zou
 				this.RegisterSemaphore (semName, sem);
 
 				this.Log.LogMessageFromText ($"Lock -> waiting semaphore '{semName}', created = {semCreated}.", MessageImportance.Normal);
-				var hasSem = sem.WaitOne (this.TimeoutInternal, false);
+				var hasSem = sem.WaitOne (this.TimeoutInternal);
 				if (hasSem)
 				{
 					this.Log.LogMessageFromText ($"Lock -> entered semaphore '{semName}', created = {semCreated}.", MessageImportance.Normal);
@@ -76,18 +71,6 @@ namespace Epsitec.Zou
 				return "Global\\" + semName;
 			}
 			return semName;
-		}
-		private static SemaphoreSecurity	GetSecurity(bool global)
-		{
-			if (global)
-			{
-				var worldId = new SecurityIdentifier (WellKnownSidType.WorldSid, null);
-				var semAccessRule = new SemaphoreAccessRule (worldId, SemaphoreRights.FullControl, AccessControlType.Allow);
-				var semSecurity = new SemaphoreSecurity ();
-				semSecurity.AddAccessRule (semAccessRule);
-				return semSecurity;
-			}
-			return null;
 		}
 	}
 }
