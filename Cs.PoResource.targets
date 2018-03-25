@@ -114,17 +114,23 @@ Pseudo-code:
   }
 -->
 
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="PoResourceBuild">
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" InitialTargets="SetPoIntDir">
 
   <Import Project="Cs.Boot.props" Condition="'$(CsBootImported)' != 'true'"/>
 
   <!--=========================================================================-->
   <!-- Constants -->
   <!--=========================================================================-->
+
+  <Target Name="SetPoIntDir">
+    <PropertyGroup>
+      <PoIntDir>$(ProjectDir)$(IntermediateOutputPath)</PoIntDir>
+    </PropertyGroup>
+  </Target>
   
   <PropertyGroup>
-    <PoTrace>false</PoTrace>
-    <PoTraceResources>false</PoTraceResources>
+    <PoTrace Condition="'$(PoTrace)' == ''">false</PoTrace>
+    <PoTraceResources Condition="'$(PoTraceResources)' == ''">false</PoTraceResources>
 
     <PoReset Condition="'$(PoReset)' == ''">false</PoReset>
     <PoPurge Condition="'$(PoPurge)' == ''">false</PoPurge>
@@ -148,8 +154,6 @@ Pseudo-code:
 
     <PoModuleRootDir Condition="'$(ModuleName)' != ''">$(ModuleDir).po\</PoModuleRootDir>
     
-    <PoIntDir Condition="'$(PoIntDir)' == ''">$(ProjectDir)$(IntermediateOutputPath)</PoIntDir>
-
     <XGetText>$(ZouBinDir)xgettext</XGetText>
     <MsgInit>$(ZouBinDir)msginit</MsgInit>
     <MsgMerge>$(ZouBinDir)msgmerge</MsgMerge>
@@ -742,7 +746,7 @@ Pseudo-code:
   <!-- Last solution path -->
   <!--=========================================================================-->
   
-  <Target Name ="InitSolutionChanged" DependsOnTargets="PoCreateBundleIntDir">
+  <Target Name ="InitSolutionChanged" DependsOnTargets="PoCreateBundleIntDir" Condition="'$(SolutionPath)' != '*Undefined*'">
 
     <SaveItems File="$(LastSolutionSavePath)" Items="$(SolutionPath)" RelativeTo="$(BundleDir)" Overwrite="true">
       <Output TaskParameter="OldItems" PropertyName="_LastSolutionPath"/>
