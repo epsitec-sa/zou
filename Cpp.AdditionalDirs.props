@@ -7,8 +7,13 @@
 
   <ImportGroup Label="PropertySheets">
     <Import Project="$(ZouPrivateDir)$(MSBuildThisFileName).Default$(MSBuildThisFileExtension)" />
-    <Import Project="$(ZouBundleDir)**\$(MSBuildThisFileName)*$(MSBuildThisFileExtension)"   Condition="'$(ZouBundleDir)'   != '' And '$(ZouBundleDir)'  != '$(ZouProjectDir)' And '$(ZouBundleDir)' != '$(ZouSolutionDir)'" />
-    <Import Project="$(ZouSolutionDir)**\$(MSBuildThisFileName)*$(MSBuildThisFileExtension)" Condition="'$(ZouSolutionDir)' != '' And '$(ZouSolutionDir)' != '$(ZouProjectDir)'" />
-    <Import Project="$(ZouProjectDir)**\$(MSBuildThisFileName)*$(MSBuildThisFileExtension)"  Condition="'$(ZouProjectDir)'  != ''" />
+    <Import Project="$(ProjectDir)..\..\..\..\..\..\..\$(ZouCfg)**\$(MSBuildThisFileName)*$(MSBuildThisFileExtension)" Condition="Exists('$(ProjectDir)..\..\..\..\..\..\$(ZouCfg)')" />
+    <Import Project="$(ProjectDir)..\..\..\..\..\..\$(ZouCfg)**\$(MSBuildThisFileName)*$(MSBuildThisFileExtension)" Condition="Exists('$(ProjectDir)..\..\..\..\..\$(ZouCfg)')" />
+    <Import Project="$(ProjectDir)..\..\..\..\..\$(ZouCfg)**\$(MSBuildThisFileName)*$(MSBuildThisFileExtension)" Condition="Exists('$(ProjectDir)..\..\..\..\$(ZouCfg)')" />
+    <Import Project="$(ProjectDir)..\..\..\..\$(ZouCfg)**\$(MSBuildThisFileName)*$(MSBuildThisFileExtension)" Condition="Exists('$(ProjectDir)..\..\..\$(ZouCfg)')" />
+    <Import Project="$(ProjectDir)..\..\..\$(ZouCfg)**\$(MSBuildThisFileName)*$(MSBuildThisFileExtension)" Condition="Exists('$(ProjectDir)..\..\$(ZouCfg)')" />
+    <Import Project="$(ProjectDir)..\..\$(ZouCfg)**\$(MSBuildThisFileName)*$(MSBuildThisFileExtension)" Condition="Exists('$(ProjectDir)..\..\$(ZouCfg)')" />
+    <Import Project="$(ProjectDir)..\$(ZouCfg)**\$(MSBuildThisFileName)*$(MSBuildThisFileExtension)" Condition="Exists('$(ProjectDir)..\$(ZouCfg)')" />
+    <Import Project="$(ProjectDir)$(ZouCfg)**\$(MSBuildThisFileName)*$(MSBuildThisFileExtension)" Condition="Exists('$(ProjectDir)$(ZouCfg)')" />
   </ImportGroup>
 </Project>
