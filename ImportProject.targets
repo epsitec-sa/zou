@@ -14,6 +14,7 @@
       <PkgDir          Condition="'$(ForwardPkgDir)'          != ''">$(ForwardPkgDir)</PkgDir>
       <DbgDir          Condition="'$(ForwardDbgDir)'          != ''">$(ForwardDbgDir)</DbgDir>
       <OutDir          Condition="'$(ForwardOutDir)'          != ''">$(ForwardOutDir)</OutDir>
+      <PublishDir      Condition="'$(ForwardPublishDir)'      != ''">$(ForwardPublishDir)</PublishDir>
       <Platform        Condition="'$(ForwardPlatform)'        != ''">$(ForwardPlatform)</Platform>
       <PlatformToolset Condition="'$(ForwardPlatformToolset)' != ''">$(ForwardPlatformToolset)</PlatformToolset>
     </ImportProject>
@@ -46,11 +47,11 @@
 
     <!--<LogItems Items="@(ProjectsToBuild)" Title="ProjectsToBuild" />
     <Message Text=" " />-->
-    
+
     <!-- Restore nuget packages for solution... -->
     <Exec Condition="'%(ProjectsToBuild.Extension)' == '.sln'"
           Command='"$(ZouBinDir)nuget" restore "%(ProjectsToBuild.Identity)"'/>
-    
+
     <!-- ...or project with solution. -->
     <Exec Condition="'%(ProjectsToBuild.Extension)' != '.sln' And ('$(SolutionDir)' != '*Undefined*' And '$(SolutionDir)' != '') And Exists('%(RootDir)%(Directory)packages.config')"
           Command='"$(ZouBinDir)nuget" restore "%(ProjectsToBuild.RootDir)%(Directory)packages.config" -PackagesDirectory "$(NugetPackagesDir)."'/>

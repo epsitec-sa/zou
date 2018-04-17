@@ -1,0 +1,34 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- This property sheet resolves the 'PublishDir'property (supports override in zou.cfg folder). -->
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003"
+         InitialTargets="PublishDirTrace"
+         TreatAsLocalProperty="PublishDir">
+  
+  <PropertyGroup>
+    <PublishDir Condition="'$(PublishDir)' != '' and !HasTrailingSlash('$(PublishDir)')">$(PublishDir)\</PublishDir>
+  </PropertyGroup>
+
+  <!-- Ensure PublishDir is absolute -->
+  <Choose>
+    <When Condition="'$(PublishDirSpecified)' == 'true'">
+      <PropertyGroup>
+        <PublishDir>$([System.IO.Path]::Combine($(MSBuildStartupDirectory),$(PublishDir)))</PublishDir>
+      </PropertyGroup>
+    </When>
+    <When Condition="'$(WorkDirSpecified)' == 'true'">
+      <PropertyGroup>
+        <PublishDir>$([System.IO.Path]::Combine($(WorkDir),$(PublishDir)))</PublishDir>
+      </PropertyGroup>
+    </When>
+    <Otherwise>
+      <PropertyGroup>
+        <PublishDir>$([System.IO.Path]::Combine($(ProjectDir),$(PublishDir)))</PublishDir>
+      </PropertyGroup>
+    </Otherwise>
+  </Choose>
+
+  <Target Name="PublishDirTrace" Condition="'$(ZouTraceProps)' == 'true'">
+    <Message Importance="normal" Text="PublishDirSpecified = $(PublishDirSpecified)" />
+    <Message Importance="normal" Text="PublishDir          = $(PublishDir)" />
+  </Target>
+</Project>
