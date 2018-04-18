@@ -112,8 +112,11 @@ namespace Epsitec.Zou
 				var outDir = project.GetMetadata ("OutDir");
 				if (!string.IsNullOrEmpty(outDir))
 				{
-					project.SetMetadata ("OutputPath", outDir);
-					project.RemoveMetadata ("OutDir");
+                    if (!project.GetMetadata("Targets").Contains("Publish"))
+                    {
+                        project.SetMetadata("OutputPath", outDir);
+                    }
+                    project.RemoveMetadata ("OutDir");
 				}
 			}
 		}
