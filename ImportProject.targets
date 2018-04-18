@@ -63,8 +63,8 @@
     Instead with use the Exec task which starts the MSBuild process.
 	  -->
 
-    <!--<Message Importance="high" Text='msbuild /nologo /t:%(Targets) /p:%(ProjectsToBuild.Properties) %(ProjectsToBuild.Identity)' />-->
-    <Exec Command='"$(MSBuildToolsPath)\msbuild" "/t:%(Targets)" "/p:%(ProjectsToBuild.Properties)" "%(ProjectsToBuild.Identity)"' />
+    <!--<Message Importance="high" Text='msbuild /t:%(Targets) /p:%(ProjectsToBuild.Properties) %(ProjectsToBuild.Identity)' />-->
+    <Exec Command='"$(MSBuildToolsPath)\msbuild" /nologo /v:m /m "/t:%(Targets)" "/p:%(ProjectsToBuild.Properties)" "%(ProjectsToBuild.Identity)"' />
 
     <CallTarget Targets="_DeleteLastBuildState" />
   </Target>
