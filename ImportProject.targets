@@ -63,13 +63,8 @@
     Instead with use the Exec task which starts the MSBuild process.
 	  -->
 
-    <!-- Build solution... -->
-    <Exec Condition="'%(ProjectsToBuild.Extension)' == '.sln'"
-          Command='"$(MSBuildToolsPath)\msbuild" /nologo /v:m /m "/t:%(Targets)" "/p:%(ProjectsToBuild.Properties)" "%(ProjectsToBuild.Identity)"' />
-
-    <!-- ...or project. -->
-    <MSBuild Condition="'%(ProjectsToBuild.Extension)' != '.sln'"
-             Projects="%(ProjectsToBuild.Identity)" Targets="%(Targets)" Properties="%(ProjectsToBuild.Properties)" BuildInParallel="%(BuildInParallel)" />
+    <!--<Message Importance="high" Text='msbuild /nologo /t:%(Targets) /p:%(ProjectsToBuild.Properties) %(ProjectsToBuild.Identity)' />-->
+    <Exec Command='"$(MSBuildToolsPath)\msbuild" "/t:%(Targets)" "/p:%(ProjectsToBuild.Properties)" "%(ProjectsToBuild.Identity)"' />
 
     <CallTarget Targets="_DeleteLastBuildState" />
   </Target>
