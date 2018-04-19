@@ -15,6 +15,9 @@
       <ProdBinExclude Include="$(OutDir)**\*.exp" />
       <ProdBinExclude Include="$(OutDir)**\*.bsc" />
       <ProdBinExclude Include="$(OutDir)**\*.ilk" />
+      <!-- Exclude Visual Leak Detector in release mode -->
+      <ProdBinExclude Include="$(OutDir)vld_x86.dll" Condition="'$(Configuration)'=='Release'" />
+      <ProdBinExclude Include="$(OutDir)vld.ini"     Condition="'$(Configuration)'=='Release'" />
 
       <ProdDbgInclude Include="$(OutDir)**\*.pdb" />
       <ProdDbgInclude Include="$(OutDir)**\*.map" />
