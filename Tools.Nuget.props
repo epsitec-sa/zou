@@ -4,10 +4,12 @@
 
   <!-- Nuget -->
   <PropertyGroup Condition="'$(NugetPackagesDir)' == ''" >
-    <NugetPackagesDir>$(BundleDir)packages$(V)</NugetPackagesDir>
+    <NugetPackagesDir>$(BundleDir)..$(V).nuget$(V)packages$(V)</NugetPackagesDir>
   </PropertyGroup>
 
-  <Target Name="ZouSetupNuget" Condition="!Exists('$(BundleDir)NuGet.config')">
+  <Target Name="ZouSetupNuget"
+          Inputs="$(ZouDir).Templates$(V)nuget$(V)NuGet.config"
+          Outputs="$(BundleDir)NuGet.config">
     <Copy SourceFiles="$(ZouDir).Templates$(V)nuget$(V)NuGet.config" DestinationFiles="$(BundleDir)NuGet.config" />
   </Target>
 
