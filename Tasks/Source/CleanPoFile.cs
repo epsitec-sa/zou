@@ -334,19 +334,26 @@ namespace Epsitec.Zou
 				else
 				{
 					var msgid = Message.ParseItem(e, "msgid").ToArray();
-					var msgstr = Message.ParseItem(e, "msgstr").ToArray();
-					if (msgstr.Length > 1 && msgstr[1].StartsWith("\"#-#-#-#-#"))
-					{
-						var conflict = msgstr
-							.Where(m => !m.StartsWith("msgstr") && !m.StartsWith("\"#-#-#-#-#"))
-							.Select(m => m.Replace("\\n\"", "\""))
-							.Distinct();
+                    if (msgid.Length > 0)
+                    {
+                        var msgstr = Message.ParseItem(e, "msgstr").ToArray();
+                        if (msgstr.Length > 1 && msgstr[1].StartsWith("\"#-#-#-#-#"))
+                        {
+                            var conflict = msgstr
+                                .Where(m => !m.StartsWith("msgstr") && !m.StartsWith("\"#-#-#-#-#"))
+                                .Select(m => m.Replace("\\n\"", "\""))
+                                .Distinct();
 
-						fileInfo.Warnings.Add(
-							$"Translation ambiguity between {string.Join(" and ", conflict)} " +
-							$"for {msgid.First()} in \"{Path.GetFileName(fileInfo.FullPath)}\".");
-					}
-					yield return new Message(header, msgid, msgstr);
+                            fileInfo.Warnings.Add(
+                                $"Translation ambiguity between {string.Join(" and ", conflict)} " +
+                                $"for {msgid.First()} in \"{Path.GetFileName(fileInfo.FullPath)}\".");
+                        }
+                        yield return new Message(header, msgid, msgstr);
+                    }
+                    else
+                    {
+                        yield return new Message(header);
+                    }
 				}
 			}
 		}
@@ -378,24 +385,24 @@ namespace Epsitec.Zou
 		}
 		private static string				ParseId(string[] msgid)
 		{
-			var msgid0 = Regex.Unescape (msgid[0].Substring (msgid[0].IndexOf ('"')).Trim ('"'));
+            var msgid0 = Regex.Unescape(msgid[0].Substring(msgid[0].IndexOf('"')).Trim('"'));
 
-			if (msgid.Length == 1)
-			{
-				return msgid0;
-			}
-			else
-			{
-				if (!string.IsNullOrEmpty (msgid0))
-				{
-					throw new Exception ($"Bad format: first line should be the empty string");
-				}
+            if (msgid.Length == 1)
+            {
+                return msgid0;
+            }
+            else
+            {
+                if (!string.IsNullOrEmpty(msgid0))
+                {
+                    throw new Exception($"Bad format: first line should be the empty string");
+                }
 
-				return msgid
-					.Skip (1)
-					.Select (m => Regex.Unescape (m.Trim ('"')))
-					.Join ("\n");
-			}
+                return msgid
+                    .Skip(1)
+                    .Select(m => Regex.Unescape(m.Trim('"')))
+                    .Join("\n");
+            }
 		}
 		private static string[]				OrderLocations(string[] header)
 		{
@@ -919,6 +926,7 @@ namespace Epsitec.Zou
 		public static bool							IsExtractedComment(this IEnumerator<string> e)		=> e.Current.StartsWith ("#. ");
 		public static bool							IsReference(this IEnumerator<string> e)				=> e.Current.StartsWith ("#: ");
 		public static bool							IsFlag(this IEnumerator<string> e)					=> e.Current.StartsWith ("#, ");
+		public static bool							IsObsolete(this IEnumerator<string> e)			    => e.Current.StartsWith ("#~");
 		public static bool							IsCommentSectionTitle(this IEnumerator<string> e)	=> e.Current.StartsWith("# #-#-#-#-#");
 		public static IEnumerable<string>			ParseRemaining(this IEnumerator<string> e)
 		{
