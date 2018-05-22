@@ -41,11 +41,8 @@ namespace Epsitec.Zou
 				this.LogMetadata (item.CustomMetadataNames(), header, item.GetMetadata);
 			}
 		}
-		private void			LogMetadata(System.Collections.ICollection names, string header, Func<string, string> getMetaData)
-		{
-			this.LogMetadata (names.Cast<string> (), header, getMetaData);
-		}
-		private void			LogMetadata(IEnumerable<string> names, string header, Func<string, string> getMetaData)
+        private void            LogMetadata(System.Collections.ICollection names, string header, Func<string, string> getMetaData) => this.LogMetadata(names.Cast<string>(), header, getMetaData);
+        private void			LogMetadata(IEnumerable<string> names, string header, Func<string, string> getMetaData)
 		{
 			if (names.IsEmpty ())
 			{
