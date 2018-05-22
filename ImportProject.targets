@@ -63,8 +63,12 @@
     Instead with use the Exec task which starts the MSBuild process.
 	  -->
 
+    <PropertyGroup>
+      <MSBuildCmd Condition="'$(OS)' == 'Windows_NT'">"$(MSBuildToolsPath)\msbuild"</MSBuildCmd>
+      <MSBuildCmd Condition="'$(OS)' != 'Windows_NT'">dotnet msbuild</MSBuildCmd>
+    </PropertyGroup>
     <!--<Message Importance="high" Text='msbuild /t:%(Targets) /p:%(ProjectsToBuild.Properties) %(ProjectsToBuild.Identity)' />-->
-    <Exec Command='"$(MSBuildToolsPath)\msbuild" /nologo /v:m /m "/t:%(Targets)" "/p:%(ProjectsToBuild.Properties)" "%(ProjectsToBuild.Identity)"' />
+    <Exec Command='$(MSBuildCmd) /nologo /v:m /m "/t:%(Targets)" "/p:%(ProjectsToBuild.Properties)" "%(ProjectsToBuild.Identity)"' />
 
     <CallTarget Targets="_DeleteLastBuildState" />
   </Target>
