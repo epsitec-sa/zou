@@ -12,6 +12,18 @@ namespace Epsitec.Zou
 		Solution,
 		CSharp,
 		Cpp,
+        PowerShell,
+        FSharp,
+        VisualBasic,
+        Dependency,
+        Docker,
+        Shared,
+        Cloud,
+        NodeJs,
+        Js,
+        MsBuild,
+        Sql,
+        DataBase
 	}
 	public enum Platform
 	{
@@ -190,9 +202,21 @@ namespace Epsitec.Zou
 
 		private static readonly Dictionary<string, ProjectType> ProjectExtensionToType = new Dictionary<string, ProjectType>()
 		{
-			{ ".sln",     ProjectType.Solution },
-			{ ".csproj",  ProjectType.CSharp },
-			{ ".vcxproj", ProjectType.Cpp },
-		};
+			{ ".sln",         ProjectType.Solution },
+			{ ".csproj",      ProjectType.CSharp },
+            { ".vcxproj",     ProjectType.Cpp },
+            { ".pssproj",     ProjectType.PowerShell },
+            { ".fsproj",      ProjectType.FSharp },
+            { ".vbproj",      ProjectType.VisualBasic },
+            { ".modelproj",   ProjectType.Dependency },
+            { ".dcproj",      ProjectType.Docker },
+            { ".shproj",      ProjectType.Shared },
+            { ".ccproj",      ProjectType.Cloud },
+            { ".njsproj",     ProjectType.NodeJs },
+            { ".jsproj",      ProjectType.Js },
+            { ".msbuildproj", ProjectType.MsBuild },
+            { ".sqlproj",     ProjectType.Sql },
+            { ".dbproj",      ProjectType.DataBase },
+        };
 	}
 }
