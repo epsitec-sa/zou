@@ -1,0 +1,21 @@
+<!-- The Agent.targets is used to create a minimal zou agent (see Agent.props) -->
+<Project>
+
+  <!-- Resolves missing properties when using 'dotnet msbuild' command. -->
+  <PropertyGroup Condition="'$(MSBuildRuntimeType)' == 'Core'" >
+    <TargetDir              Condition="'$(TargetDir)'              == ''">$(OutDir)</TargetDir>
+    <OutputPath             Condition="'$(OutputPath)'             == ''">$(OutDir)</OutputPath>
+    <IntermediateOutputPath Condition="'$(IntermediateOutputPath)' == ''">$(IntDir)</IntermediateOutputPath>
+  </PropertyGroup>
+
+  <!-- Forward properties specified on the command line -->
+  <Import Project="$(ZouPrivateDir)Forward.props" />
+
+  <!-- C++ utility targets -->
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" Condition="Exists('$(VCTargetsPath)\Microsoft.Cpp.targets')" />
+
+  <!-- Default targets -->
+  <Target Name="Build" Condition="'$(VCTargetsPath)' == ''" />
+  <Target Name="Clean" Condition="'$(VCTargetsPath)' == ''" />
+  
+</Project>

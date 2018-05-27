@@ -1,47 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-The Cpp.Agent.props & .targets are used to create a minimal C++ agent
-with standard configurations (Debug, Release) and platforms (Win32, x64).
-Example: see .Templates\Cpp.Component.Agent.vcxproj
--->
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  
-  <!-- Standard C++ project configurations -->
-  <ItemGroup Label="ProjectConfigurations">
-    <ProjectConfiguration Include="Debug|Win32">
-      <Configuration>Debug</Configuration>
-      <Platform>Win32</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="Release|Win32">
-      <Configuration>Release</Configuration>
-      <Platform>Win32</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="Debug|x64">
-      <Configuration>Debug</Configuration>
-      <Platform>x64</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="Release|x64">
-      <Configuration>Release</Configuration>
-      <Platform>x64</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="Debug|Any CPU">
-      <Configuration>Debug</Configuration>
-      <Platform>Any CPU</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="Release|Any CPU">
-      <Configuration>Release</Configuration>
-      <Platform>Any CPU</Platform>
-    </ProjectConfiguration>
-  </ItemGroup>
 
-  <!-- Default C++ properties -->
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-
-  <!-- C++ utility project -->
-  <PropertyGroup Label="Configuration">
-    <ConfigurationType>Utility</ConfigurationType>
+  <PropertyGroup>
+    <_PropertySheetDisplayName>[zou] C++ Agent</_PropertySheetDisplayName>
   </PropertyGroup>
 
-  <!-- C++ utility properties -->
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <Import Project="Agent.props" />
+  
+  <ImportGroup Label="PropertySheets">
+    <Import Project="Cpp.NTVersion.props" />
+    <Import Project="Com.WorkDir.props"/>
+    <Import Project="Tmp.IntDir.props" />
+    <Import Project="Cpp.DbgDir.props" />
+    <Import Project="Cpp.PkgDir.props" />
+    <Import Project="Cpp.OutDir.props"/>
+  </ImportGroup>
+
+  <Import Project="Agent.targets" />
+
 </Project>

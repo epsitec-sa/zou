@@ -1,39 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-The Cs.Agent.props & .targets are used to create a minimal C# agent.
-with standard configurations (Debug, Release) and platforms (Win32, x64 and AnyCPU).
-Example: see Templates\Cs.Component.Pack.vcxproj
--->
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  
-  <!-- Standard C# project configurations -->
-  <ItemGroup Label="ProjectConfigurations">
-    <ProjectConfiguration Include="Debug|Win32">
-      <Configuration>Debug</Configuration>
-      <Platform>Win32</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="Release|Win32">
-      <Configuration>Release</Configuration>
-      <Platform>Win32</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="Debug|x64">
-      <Configuration>Debug</Configuration>
-      <Platform>x64</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="Release|x64">
-      <Configuration>Release</Configuration>
-      <Platform>x64</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="Debug|Any CPU">
-      <Configuration>Debug</Configuration>
-      <Platform>Any CPU</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="Release|Any CPU">
-      <Configuration>Release</Configuration>
-      <Platform>Any CPU</Platform>
-    </ProjectConfiguration>
-  </ItemGroup>
-  
+
+  <PropertyGroup>
+    <_PropertySheetDisplayName>[zou] C# Agent</_PropertySheetDisplayName>
+  </PropertyGroup>
+
+  <Import Project="Agent.props" />
+
   <PropertyGroup>
     <!-- A C# agent builds external projects/solutions into a C# container (uses the C# standard settings for platform, output path, ...) -->
     <!-- Normally, external components are C# based, because C++ components should be imported via interop build action (cf Cs.Interop.targets) -->
@@ -41,14 +14,13 @@ Example: see Templates\Cs.Component.Pack.vcxproj
     <ForwardPlatform Condition="'$(Platform)' == 'Win32'">Any CPU</ForwardPlatform>
   </PropertyGroup>
 
-  <!-- Default C++ properties -->
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" Condition="'$(VCTargetsPath)' != ''"/>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="Com.WorkDir.props" />
+    <Import Project="Tmp.IntDir.props" />
+    <Import Project="Cs.PkgDir.props" />
+    <Import Project="Cs.OutDir.props" />
+  </ImportGroup>
 
-  <!-- C++ utility project -->
-  <PropertyGroup Label="Configuration">
-    <ConfigurationType>Utility</ConfigurationType>
-  </PropertyGroup>
+  <Import Project="Agent.targets" />
 
-  <!-- C++ utility properties -->
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" Condition="'$(VCTargetsPath)' != ''"/>
 </Project>

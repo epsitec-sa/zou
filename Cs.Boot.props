@@ -1,6 +1,6 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- The Cs.Boot.targets is used to boot zou in a C# agent -->
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<!-- Import this script at the top of a C# agent -->
+<Project>
+  
   <PropertyGroup>
     <CsBootImported>true</CsBootImported>
   </PropertyGroup>
@@ -8,7 +8,12 @@
   <Import Project="zou.props" />
   <Import Project="zou.Errors.props" />
 
+  <PropertyGroup Condition="'$(MSBuildRuntimeType)' == 'Core'">
+    <Platform Condition="'$(Platform)' == ''">Any CPU</Platform>
+  </PropertyGroup>
+
   <ImportGroup Label="ExtensionSettings">
     <Import Project="Cs.PlatformToolset.props" />
+    <Import Project="Boot.Core.props" Condition="'$(MSBuildRuntimeType)' == 'Core'" />
   </ImportGroup>
 </Project>
