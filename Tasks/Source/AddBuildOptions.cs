@@ -66,8 +66,9 @@ namespace Epsitec.Zou
 			// Add Properties metadata
 			var properties = names
 				.Where (name => Mixins.IsBuildProperty (name))
-				.Select (name => Tuple.Create (name, project.GetMetadata (name)))
-				.OrderBy (a => a, BuildPropertyComparer.Default)
+                .Select(name => Tuple.Create(name, project.GetMetadata(name)))
+                .Where(a => !string.IsNullOrWhiteSpace(a.Item2))
+                .OrderBy (a => a, BuildPropertyComparer.Default)
 				.Select (a => $"{a.Item1}={a.Item2}")
 				.ToArray ();
 
@@ -170,22 +171,20 @@ namespace Epsitec.Zou
 			{
 				return Platform.AnyCpu;
 			}
-			Platform platform;
-			if (Enum.TryParse(metadata, true, out platform))
-			{
-				return platform;
-			}
-			throw new ArgumentOutOfRangeException (nameof (metadata), $"Platform '{metadata}' not defined in zou");
+            if (Enum.TryParse(metadata, true, out Platform platform))
+            {
+                return platform;
+            }
+            throw new ArgumentOutOfRangeException (nameof (metadata), $"Platform '{metadata}' not defined in zou");
 		}
 		public static ProjectType			GetProjectType(this ITaskItem item)
 		{
 			var extension = Path.GetExtension (item.ItemSpec);
-			ProjectType projectType;
-			if (ProjectExtensionToType.TryGetValue (extension, out projectType))
-			{
-				return projectType;
-			}
-			throw new ArgumentOutOfRangeException (nameof (extension), $"Project type '{extension}' not defined in zou");
+            if (ProjectExtensionToType.TryGetValue(extension, out var projectType))
+            {
+                return projectType;
+            }
+            throw new ArgumentOutOfRangeException (nameof (extension), $"Project type '{extension}' not defined in zou");
 		}
 
 		private static IEnumerable<string>	NonBuildProperties
