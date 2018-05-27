@@ -33,6 +33,11 @@ Example: see Templates\Cs.Component.Pack.vcxproj
     </ProjectConfiguration>
   </ItemGroup>
 
+  <!-- Default targets -->
+  <Target Name="Build" Condition="'$(VCTargetsPath)' == ''" />
+  <Target Name="Clean" Condition="'$(VCTargetsPath)' == ''" />
+  <Target Name="PackFilter" />
+
   <!-- Default C++ properties -->
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" Condition="Exists('$(VCTargetsPath)\Microsoft.Cpp.Default.props')"/>
 
@@ -43,8 +48,5 @@ Example: see Templates\Cs.Component.Pack.vcxproj
 
   <!-- C++ utility properties -->
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" Condition="Exists('$(VCTargetsPath)\Microsoft.Cpp.props')"/>
-
-  <!-- Default pack filter target -->
-  <Target Name="PackFilter" />
 
 </Project>
