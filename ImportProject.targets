@@ -64,8 +64,8 @@
 	  -->
 
     <PropertyGroup>
-      <MSBuildCmd Condition="'$(OS)' == 'Windows_NT'">"$(MSBuildToolsPath)\msbuild"</MSBuildCmd>
-      <MSBuildCmd Condition="'$(OS)' != 'Windows_NT'">dotnet msbuild</MSBuildCmd>
+      <MSBuildCmd Condition="'$(MSBuildRuntimeType)' != 'Core' And $([MSBuild]::IsOsPlatform('Windows'))">"$(MSBuildToolsPath)\msbuild"</MSBuildCmd>
+      <MSBuildCmd Condition="'$(MSBuildRuntimeType)' == 'Core'">dotnet msbuild</MSBuildCmd>
     </PropertyGroup>
     <!--<Message Importance="high" Text='msbuild /t:%(Targets) /p:%(ProjectsToBuild.Properties) %(ProjectsToBuild.Identity)' />-->
     <Exec Command='$(MSBuildCmd) /nologo /v:m /m "/t:%(Targets)" "/p:%(ProjectsToBuild.Properties)" "%(ProjectsToBuild.Identity)"' />
