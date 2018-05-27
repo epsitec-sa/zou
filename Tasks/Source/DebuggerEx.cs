@@ -8,10 +8,7 @@ namespace Epsitec.Zou
         public static void WaitAttached()
         {
             Console.WriteLine($"Attach to MSBuild (PID = {System.Diagnostics.Process.GetCurrentProcess().Id})");
-            while (!System.Diagnostics.Debugger.IsAttached)
-            {
-                Thread.Sleep(100);
-            }
+            while (!System.Diagnostics.Debugger.IsAttached) ;
         }
     }
 }
