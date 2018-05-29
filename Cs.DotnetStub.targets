@@ -1,0 +1,16 @@
+<!-- Creates a stub that launch the main assembly dll with the dotnet utility. -->
+<!-- Import this script at the end of a .NET Core project to enable stub creation. -->
+<Project InitialTargets="CreateDotnetStub">
+
+  <ItemGroup Condition="'$(PublishDir)' == ''">
+    <None Remove="$(AssemblyName).bat" />
+    <Content Include="$(AssemblyName).bat">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <Target Name="CreateDotnetStub" Condition="'$(PublishDir)' == ''">
+    <WriteLinesToFile File="$(ProjectDir)$(AssemblyName).bat" Lines="@dotnet $(AssemblyName).dll %*" Overwrite="true" />
+  </Target>
+  
+</Project>
