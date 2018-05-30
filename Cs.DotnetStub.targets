@@ -2,17 +2,30 @@
 <!-- Import this script at the end of a .NET Core project to enable stub creation. -->
 <Project>
 
-  <Target Name="_CreateDotnetStubInTargetDir" AfterTargets="Build">
+  <Target Name="_CreateDotnetBatchStubInTargetDir" AfterTargets="Build" Condition="$([MSBuild]::IsOsPlatform(Windows))">
     <WriteLinesToFile
       Condition="!Exists('$(TargetDir)$(TargetName).exe')"
       File="$(TargetDir)$(TargetName).bat"
       Lines="@pushd %~dp0;@dotnet $(TargetName).dll %*;@popd" Overwrite="true" />
   </Target>
-  <Target Name="_CreateDotnetStubInPublishDir" AfterTargets="Publish">
+  <Target Name="_CreateDotnetBatchStubInPublishDir" AfterTargets="Publish" Condition="$([MSBuild]::IsOsPlatform(Windows))">
     <WriteLinesToFile
       Condition="!Exists('$(PublishDir)$(TargetName).exe')"
       File="$(PublishDir)$(TargetName).bat"
       Lines="@pushd %~dp0;@dotnet $(TargetName).dll %*;@popd" Overwrite="true" />
+  </Target>
+  
+  <Target Name="_CreateDotnetShellScriptStubInTargetDir" AfterTargets="Build" Condition="!$([MSBuild]::IsOsPlatform(Windows))">
+    <WriteLinesToFile
+      Condition="!Exists('$(TargetDir)$(TargetName)')"
+      File="$(TargetDir)$(TargetName)"
+      Lines="cd `dirname $0`;dotnet $(TargetName).dll $@;cd -" Overwrite="true" />
+  </Target>
+  <Target Name="_CreateDotnetShellScriptStubInPublishDir" AfterTargets="Publish" Condition="!$([MSBuild]::IsOsPlatform(Windows))">
+    <WriteLinesToFile
+      Condition="!Exists('$(PublishDir)$(TargetName)')"
+      File="$(PublishDir)$(TargetName)"
+      Lines="cd `dirname $0`;dotnet $(TargetName).dll $@;cd -" Overwrite="true" />
   </Target>
 
 </Project>
