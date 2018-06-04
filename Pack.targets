@@ -21,10 +21,8 @@
 
       <ProdDbgInclude Include="$(OutDir)**\*.pdb" />
       <ProdDbgInclude Include="$(OutDir)**\*.map" />
-      <ProdDbgInclude Include="$(DbgDir)**\*.cod" Condition="'$(DbgDir)' != ''" />
-
-      <DevBinInclude Include="$(OutDir)**\*" />
-      <DevCodInclude Include="$(DbgDir)**\*.cod" Condition="'$(DbgDir)' != ''" />
+      
+      <ProdAsmInclude Include="$(AsmDir)**\*.cod" Condition="'$(AsmDir)' != ''" />
     </ItemGroup>
   </Target>
 
@@ -33,18 +31,13 @@
     <ItemGroup>
       <!-- Production package -->
       <PackFile Include="@(ProdBinInclude)" Exclude="@(ProdBinExclude)">
-        <ImportDir>$(PkgProdBinDir)</ImportDir>
+        <ImportDir>$(PkgBinDir)</ImportDir>
       </PackFile>
       <PackFile Include="@(ProdDbgInclude)">
-        <ImportDir>$(PkgProdDbgDir)</ImportDir>
+        <ImportDir>$(PkgDbgDir)</ImportDir>
       </PackFile>
-
-      <!-- Developer package -->
-      <PackFile Include="@(DevBinInclude)">
-        <ImportDir>$(PkgDevBinDir)</ImportDir>
-      </PackFile>
-      <PackFile Include="@(DevCodInclude)">
-        <ImportDir>$(PkgDevDbgDir)</ImportDir>
+      <PackFile Include="@(ProdAsmInclude)">
+        <ImportDir>$(PkgAsmDir)</ImportDir>
       </PackFile>
     </ItemGroup>
   </Target>
