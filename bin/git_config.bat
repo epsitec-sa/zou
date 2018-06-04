@@ -9,4 +9,11 @@ git config --global alias.sclean "!git clean -xdf -e packages && git submodule f
 git config --global alias.oprune "fetch origin --prune"
 git config --global alias.supdate "submodule update --init --recursive"
 git config --global alias.issue "!f() { git checkout -b issue/$1 master && git push -u origin issue/$1; }; f"
-git config --global alias.smaster "!git checkout master && git pull && git submodule foreach 'git checkout master; git pull'"
+git config --global alias.smaster "!git checkout master && git pull && git submodule foreach 'git checkout master && git pull'"
+
+:: Semantic versioning
+git config --global --remove-section versionsort >nul 2>&1
+git config --global --add versionsort.suffix -alpha
+git config --global --add versionsort.suffix -beta
+git config --global --add versionsort.suffix -rc
+git config --global alias.maxver "!f() { local version=$1; local regex; if [[ -z \"$version\" ]]; then regex=[0-9]; else regex=$(echo $version | sed s,[.],\\.,g); fi; git tag -l --sort=-v:refname | grep -m1 ^v$regex; }; f"
