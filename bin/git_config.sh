@@ -17,5 +17,6 @@ git config --global --add versionsort.suffix -alpha
 git config --global --add versionsort.suffix -beta
 git config --global --add versionsort.suffix -rc
 
-git config --global alias.maxver '!f() { local version=$1; local regex; if [[ -z "$version" ]]; then regex=[0-9]; else regex=$(echo $version | sed s,[.],\\.,g); fi; git tag -l --sort=-v:refname | grep -m1 ^v$regex; }; f'
-git config --global alias.logver '!'"git tag -l --sort=-v:refname | grep ^v[0-9]"
+git config --global alias.vmax '!f() { local version=$1; local regex; if [[ -z "$version" ]]; then regex=[0-9]; else regex=$(echo $version | sed s,[.],\\.,g); fi; git tag -l --sort=-v:refname | grep -m1 ^v$regex; }; f'
+git config --global alias.vlog '!'"git tag -l --sort=-v:refname | grep ^v[0-9]"
+git config --global alias.vbranch '!'"f() { git checkout -b $1 && git tag v$1-@; }; f"
