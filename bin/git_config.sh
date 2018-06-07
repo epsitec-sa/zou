@@ -10,6 +10,7 @@ git config --global alias.oprune 'fetch origin --prune'
 git config --global alias.supdate 'submodule update --init --recursive'
 git config --global alias.issue '!f() { git checkout -b issue/$1 master && git push -u origin issue/$1; }; f'
 git config --global alias.smaster '!'"git checkout master && git pull && git submodule foreach 'git checkout master && git pull'"
+git config --global alias.prunetags '!'"git tag -l | xargs git tag -d && git fetch -t"
 
 # Semantic versioning
 git config --global --remove-section versionsort >/dev/null 2>&1
