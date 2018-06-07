@@ -13,6 +13,7 @@ git config --global alias.smaster '!'"git checkout master && git pull && git sub
 
 # Semantic versioning
 git config --global --remove-section versionsort >/dev/null 2>&1
+git config --global --add versionsort.suffix -@
 git config --global --add versionsort.suffix -alpha
 git config --global --add versionsort.suffix -beta
 git config --global --add versionsort.suffix -rc
