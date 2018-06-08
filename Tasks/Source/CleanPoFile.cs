@@ -817,6 +817,7 @@ namespace Epsitec.Zou
 		{
 			return CommentTitle.ParseCore (e)
 				.Distinct ()
+                .OrderBy(title => title.PoName)
 				.ToArray ();
 		}
 		public static CommentTitle					Create(string poName, string package)
