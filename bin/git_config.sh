@@ -49,3 +49,4 @@ git config --global alias.vcheckout '!'"f() { git vcommit2minor $1 | xargs git c
 git config --global alias.vmajor '!'"f() { git vcommit2major $1 | xargs git vmax | xargs git vcheckout; }; f"
 git config --global alias.vminor '!'"f() { git vcommit2minor $1 | xargs git vmax | xargs git vcheckout; }; f"
 git config --global alias.vnext '!'"f() { git vmax $1 | xargs git vcheckout; }; f"
+git config --global alias.vtable '!'"echo / Module / Version / Delta >_v1; echo /:-/:-/:- >>_v1; git submodule foreach 'echo / $path / $(git vcommit2tag | sed -r \"s,(.*)-g[[:alnum:]]*$,\1,\" | sed -r \"s,(.*)-([0-9]+),\1 / \2,\") >>../_v2'; sort _v2 >> _v1; sed -r 's,/,|,g' _v1 >versions.md; rm _v?"

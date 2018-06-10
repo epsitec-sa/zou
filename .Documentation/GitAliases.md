@@ -30,5 +30,6 @@ Git aliases can be enabled by running `zou/bin/git_config[.bat|.sh]`
 | git **vminor** | [*HASH*] | checkout the `vbranch` having the same `MAJOR.MINOR` version as the given `vcommit`
 | git **vmajor** | [*HASH*] | checkout the `vbranch` having the same `MAJOR` and greatest `MINOR` version as the given `vcommit`
 | git **vnext** | [*HASH*] | checkout the `vbranch` with the greatest `MAJOR` and `MINOR` version
+| git **vtable** || create a markdown table of sub-module versions (`versions.md`)
 
 (1) `vtag` description exemple : `v1.0.0-2-gc8af267` (see [git describe](https://git-scm.com/docs/git-describe))
