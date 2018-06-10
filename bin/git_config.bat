@@ -24,9 +24,9 @@ git config --global alias.tags "!git tag; git ls-remote --tags origin | sed s/[[
 git config --global alias.newtag "!f() { git tag $1 $2; git push origin $1; }; f"
 git config --global alias.deltag "!f() { git tag --delete $1; git push --delete origin $1; }; f"
 :: get short hash of given tag
-git config --global alias.htag "!f() { git describe --tags --long $1 | sed s,.*-[0-9]*-g,,g; }; f"
+git config --global alias.tag2hash "!f() { git describe --tags --long $1 | sed s,.*-[0-9]*-g,,g; }; f"
 :: rename local + remote tag 
-git config --global alias.mvtag "!f() { local old=$1; local new=$2; local hash=$(git htag $old); git rmtag $old; git maketag $new $htag; }; f"
+git config --global alias.mvtag "!f() { local old=$1; local new=$2; local hash=$(git tag2hash $old); git rmtag $old; git maketag $new $tag2hash; }; f"
 
 :: Semantic versioning
 git config --global --remove-section versionsort >nul 2>&1
@@ -41,3 +41,11 @@ git config --global alias.vbranch "!f() { git checkout -b $1 && git tag v$1-@; }
 git config --global alias.vmin "!f() { local version=$1; local regex; if [[ -z \"$version\" ]]; then regex=[0-9]; else regex=$(echo $version | sed s,[.],\\.,g); fi; git tag -l --sort=v:refname | grep -m1 ^v$regex; }; f"
 git config --global alias.vmax "!f() { local version=$1; local regex; if [[ -z \"$version\" ]]; then regex=[0-9]; else regex=$(echo $version | sed s,[.],\\.,g); fi; git tag -l --sort=-v:refname | grep -m1 ^v$regex; }; f"
 git config --global alias.vtags "!f() { local version=$1; local regex; if [[ -z \"$version\" ]]; then regex=[0-9]; else regex=$(echo $version | sed s,[.],\\.,g); fi; git tag -l --sort=-v:refname | grep ^v$regex; }; f"
+
+git config --global alias.vcommit2tag "!f() { git describe --tags --match 'v[0-9]*' $1; }; f"
+git config --global alias.vcommit2major "!f() { git vcommit2tag $1 |  sed -r 's,^v([0-9]+).*,\1,'; }; f"
+git config --global alias.vcommit2minor "!f() { git vcommit2tag $1 |  sed -r 's,^v([0-9]+\.[0-9]+).*,\1,'; }; f"
+git config --global alias.vcheckout "!f() { git vcommit2minor $1 | xargs git checkout >/dev/null; }; f"
+git config --global alias.vmajor "!f() { git vcommit2major $1 | xargs git vmax | xargs git vcheckout; }; f"
+git config --global alias.vminor "!f() { git vcommit2minor $1 | xargs git vmax | xargs git vcheckout; }; f"
+git config --global alias.vnext "!f() { git vmax $1 | xargs git vcheckout; }; f"
