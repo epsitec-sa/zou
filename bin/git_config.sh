@@ -4,7 +4,7 @@ git config --global status.submoduleSummary true
 git config --global diff.submodule log
 
 # Aliases
-git config --global --remove-section alias >/dev/null 2>&1
+#git config --global --remove-section alias >/dev/null 2>&1
 git config --global alias.oprune 'fetch origin --prune'
 # Sub-modules
 git config --global alias.sdiff '!'"git diff && git submodule foreach 'git diff'"
