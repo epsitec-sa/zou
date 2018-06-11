@@ -27,7 +27,7 @@ git config --global alias.deltag "!f() { git tag --delete $1; git push --delete 
 :: get short hash of given tag
 git config --global alias.tag2hash "!f() { git describe --tags --long $1 | sed s,.*-[0-9]*-g,,g; }; f"
 :: rename local + remote tag 
-git config --global alias.mvtag "!f() { local old=$1; local new=$2; local hash=$(git tag2hash $old); git rmtag $old; git maketag $new $tag2hash; }; f"
+git config --global alias.mvtag "!f() { local old=$1; local new=$2; local hash=$(git tag2hash $old); git deltag $old; git newtag $new $tag2hash; }; f"
 
 :: Semantic versioning
 git config --global --remove-section versionsort >nul 2>&1
