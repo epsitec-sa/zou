@@ -31,13 +31,13 @@ git config --global alias.bundle-dir '!f() { r=${1:-`pwd -P`}; while [[ "$r" != 
 git config --global alias.module-id  '!f() { r=${1:-`pwd -P`}; c=$r; while [[ "$r" != '"'"''"'"' && ! -d "$r/.git" ]]; do r=${r%/*}; done; id=${c#$r}; id=${id#/}; echo ${id%/}; }; f'
 git config --global alias.sfor 'submodule foreach'
 git config --global alias.sfor-q 'submodule --quiet foreach'
-git config --global alias.sfor-r 'submodule foreach -- recursive'
-git config --global alias.sfor-qr 'submodule --quiet foreach -- recursive'
+git config --global alias.sfor-r 'submodule foreach --recursive'
+git config --global alias.sfor-qr 'submodule --quiet foreach --recursive'
 # Bundle and sub-modules
 git config --global alias.for '!path=$(basename `pwd`); eval $@; git submodule foreach'
 git config --global alias.for-r '!path=$(basename `pwd`); eval $@; git submodule foreach --recursive'
 git config --global alias.for-q '!path=$(basename `pwd`); eval $@; git submodule --quiet foreach'
-git config --global alias.for-qr '!path=$(basename `pwd`); eval $@; git submodule --quiet foreach -- recursive'
+git config --global alias.for-qr '!path=$(basename `pwd`); eval $@; git submodule --quiet foreach --recursive'
 
 git config --global alias.sdiff '!git diff && git submodule foreach '"'git diff'"
 git config --global alias.spull '!git pull && git submodule sync --recursive && git submodule update --init --recursive'
