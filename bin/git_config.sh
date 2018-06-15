@@ -54,7 +54,7 @@ git config --global alias.curbranch '!c=$(git rev-parse --abbrev-ref HEAD); [ $c
 # Tags
 git config --global alias.prunetags '!git tag -l | xargs git tag -d && git fetch -t'
 git config --global alias.foldtags '!f() { local suffix=$1; for t in $(git tag | grep -$suffix$); do st=$(echo $t | sed s,-$suffix$,,I); git mvtag $t $suffix/$st ; done; }; f'
-git config --global alias.otags '!git tag | grep -Ev '"'"'^v[0-9]+\.[0-9]+\.[0-9]+(-(@|(alpha|beta|rc)[0-9]{2}))?$'"'"' | grep -Ev '"'"'^[^/]+/.+$'"'"''
+git config --global alias.otags '!git tag | grep -Ev '"'"'^v[0-9]+\.[0-9]+(-@|\.[0-9]+(-(alpha|beta|rc)[0-9]{2})?)$'"'"' | grep -Ev '"'"'^[^/]+/.+$'"'"''
 git config --global alias.foldotags '!for t in $(git otags); do git mvtag $t other/$t; done'
 git config --global alias.tags '!git tag; git ls-remote --tags origin | sed s,[[:alnum:]]*[[:space:]]*,,'
 git config --global alias.newtag '!f() { git tag $1 $2; git push origin $1; }; f'
