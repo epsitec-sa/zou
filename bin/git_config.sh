@@ -26,14 +26,13 @@ git config --global diff.submodule log
 [ "$reset" == 'true' ] && git config --global --remove-section alias >/dev/null 2>&1
 
 git config --global alias.oprune 'fetch origin --prune'
-# Sub-modules
+# Bundle and sub-modules
 git config --global alias.bundle-dir '!f() { r=${1:-`pwd -P`}; while [[ "$r" != '"'"''"'"' && ! -d "$r/.git" ]]; do r=${r%/*}; done; echo $r; }; f'
 git config --global alias.module-id  '!f() { r=${1:-`pwd -P`}; c=$r; while [[ "$r" != '"'"''"'"' && ! -d "$r/.git" ]]; do r=${r%/*}; done; id=${c#$r}; id=${id#/}; echo ${id%/}; }; f'
 git config --global alias.sfor 'submodule foreach'
 git config --global alias.sfor-q 'submodule --quiet foreach'
 git config --global alias.sfor-r 'submodule foreach --recursive'
 git config --global alias.sfor-qr 'submodule --quiet foreach --recursive'
-# Bundle and sub-modules
 git config --global alias.for '!path=$(basename `pwd`); eval $@; git submodule foreach'
 git config --global alias.for-r '!path=$(basename `pwd`); eval $@; git submodule foreach --recursive'
 git config --global alias.for-q '!path=$(basename `pwd`); eval $@; git submodule --quiet foreach'
@@ -57,12 +56,12 @@ git config --global alias.foldtags '!f() { local suffix=$1; for t in $(git tag |
 git config --global alias.otags '!git tag | grep -Ev '"'"'^v[0-9]+\.[0-9]+(-@|\.[0-9]+(-(alpha|beta|rc)[0-9A-Za-z-]*(\.[0-9A-Za-z-]*)*)?(\+[0-9A-Za-z-]+(\.[0-9A-Za-z-]*)*)?)$'"'"' | grep -Ev '"'"'^[^/]+/.+$'"'"' || true'
 git config --global alias.foldotags '!for t in $(git otags); do git mvtag $t other/$t; done'
 git config --global alias.tags '!git tag; git ls-remote --tags origin | sed s,[[:alnum:]]*[[:space:]]*,,'
-git config --global alias.newtag '!f() { git tag $1 $2; git push origin $1; }; f'
-git config --global alias.deltag '!f() { git tag --delete $1; git push --delete origin $1; }; f'
+git config --global alias.newtag '!f() { git tag -a $1 $2; git push origin $1; }; f'
+git config --global alias.deltag '!f() { git tag --delete $1 >/dev/null 2>&1; git push --delete origin $1 >/dev/null 2>&1; }; f'
 # get short hash of given tag
 git config --global alias.tag2hash '!f() { git describe --tags --long $1 | sed s,.*-[0-9]*-g,,g; }; f'
 # rename local + remote tag 
-git config --global alias.mvtag '!f() { local old=$1; local new=$2; local hash=$(git tag2hash $old); git deltag $old && git newtag $new $hash || true; }; f'
+git config --global alias.mvtag '!f() { local old=$1; local new=$2; git tag $new $old; git deltag $old; git push origin $new >/dev/null 2>&1; }; f'
 
 # Semantic versioning
 git config --global --remove-section versionsort >/dev/null 2>&1
