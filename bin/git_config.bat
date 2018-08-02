@@ -62,12 +62,12 @@ git config --global alias.deltag "!f() { git tag --delete $1 >/dev/null 2>&1; gi
 :: get short hash of given tag
 git config --global alias.tag2hash "!f() { git describe --tags --long $1 | sed s,.*-[0-9]*-g,,g; }; f"
 :: rename local + remote tag 
-git config --global alias.mvtag "!f() { local old=$1; local new=$2; git tag $new $old; git deltag $old; git push origin $new >/dev/null 2>&1; }; f"
-:: clean tags (zou-flow):
-:: - move all otags to other folder
-:: - group tags pointing to the same commit hash - create a lookup table with the commit hash as key and the commit tags (space separated) as value.
-:: - remove tags in other folder that have a duplicate elsewhere
-git config --global alias.ztags "!f() { for tag in $(git otags); do echo Moving $tag to other folder; git mvtag $tag \"other/$tag\"; done; declare -A lookup; for tag in $(git tag); do h=$(git tag2hash $tag); if [ -z \"${lookup[$h]}\" ]; then lookup[$h]=$tag; echo \"$h : ${lookup[$h]}\"; else lookup[$h]=\"${lookup[$h]} $tag\"; echo \"$h : ${lookup[$h]}\"; fi; done; echo; echo Duplicated tags; for k in ${!lookup[@]}; do read -a r <<< \"${lookup[$k]}\"; if [[ ${#r[@]} > 1 ]]; then echo ${#r[@]} $k = ${r[@]}; for tag in \"${r[@]}\"; do [[ $tag == other/* ]] && echo Deleting $tag && git deltag $tag; done; fi; done; }; f"
+git config --global alias.mvtag "!f() { local old=$1; local new=$2; echo Renaming $old to $new; git tag $new $old; git deltag $old; git push origin $new >/dev/null 2>&1; }; f"
+:: zouify tags (apply zou-flow):
+:: 1. move non SemVer tags (otags) to other folder
+:: 2. group tags pointing to the same commit hash - create a lookup table with the commit hash as key and the commit tags (space separated) as value.
+:: 3. remove other folder's redondant tags
+git config --global alias.ztags "!f() { for tag in $(git otags); do echo Moving $tag to other folder; git mvtag $tag \"other/$tag\"; done; declare -A lookup; for tag in $(git tag); do h=$(git tag2hash $tag); if [ -z \"${lookup[$h]}\" ]; then lookup[$h]=$tag; echo \"$h : ${lookup[$h]}\"; else lookup[$h]=\"${lookup[$h]} $tag\"; echo \"$h : ${lookup[$h]}\"; fi; done; echo; echo Redondant tags; for k in ${!lookup[@]}; do read -a r <<< \"${lookup[$k]}\"; if [[ ${#r[@]} > 1 ]]; then echo ${#r[@]} $k = ${r[@]}; for tag in \"${r[@]}\"; do [[ $tag == other/* ]] && echo Deleting $tag && git deltag $tag; done; fi; done; }; f"
 
 :: Semantic versioning
 git config --global --remove-section versionsort >nul 2>&1
