@@ -1,6 +1,6 @@
 # Git aliases
 
-Git aliases can be enabled by running `zou/bin/git_config[.bat|.sh]`
+Git aliases can be enabled by running `zou/bin/git_config.{bat|sh}` (see [git_config.bat](../bin/git_config.bat), [git_config.sh](../bin/git_config.sh))
 
 | Alias | Parameters | Description
 |:-|:-|:-
@@ -45,5 +45,14 @@ Git aliases can be enabled by running `zou/bin/git_config[.bat|.sh]`
 | git **vnext** | *[VCOMMIT]* | checkout the `vbranch` with the greatest `MAJOR` and `MINOR` version
 | git **vtable** || create a markdown table of sub-module versions (`versions.md`)
 | git **vtags** || list local `vtag`s
+| git **ztags** || zouify tags (2)
 
-(1) `vtag` description exemple : `v1.0.0-2-gc8af267` (see [git describe](https://git-scm.com/docs/git-describe))
+
+(1) git **vcommit2tag** notes:
+
+`vtag` description exemple : `v1.0.0-2-gc8af267` (see [git describe](https://git-scm.com/docs/git-describe))
+
+(2) git **ztags** processing (see [zou-flow](ZouFlow.md)):
+- move non [SemVer](https://semver.org/) tags to `other` folder (rename tag with `other/` prefix)
+- group tags with the same commit hash (detect commit with multiple tags)
+- delete `other` folder's tags that have a sibling in the commit hash group (delete redondant tags from `other` folder)
