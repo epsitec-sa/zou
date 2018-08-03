@@ -38,14 +38,16 @@ git config --global alias.for-r '!path=$(basename `pwd`); eval $@; git submodule
 git config --global alias.for-q '!path=$(basename `pwd`); eval $@; git submodule --quiet foreach'
 git config --global alias.for-qr '!path=$(basename `pwd`); eval $@; git submodule --quiet foreach --recursive'
 
-git config --global alias.sdiff '!git diff && git submodule foreach '"'git diff'"
+git config --global alias.sdiff '!git for git diff'
 git config --global alias.spull '!git pull && git submodule sync --recursive && git submodule update --init --recursive'
 git config --global alias.spush 'push --recurse-submodules=on-demand'
-git config --global alias.sclean "![ -d node_modules ] && rm -rf node_modules; git clean -xdf -e packages && git submodule foreach --recursive '[ -d node_modules ] && rm -rf node_modules; git clean -xdf'"
+git config --global alias.zclean '![ -d node_modules ] && rm -rf node_modules; git clean -xdf -e packages'
+git config --global alias.sclean '!git for git zclean'
 git config --global alias.supdate 'submodule update --init --recursive'
 # Branch
 git config --global alias.issue '!f() { git checkout -b issue/$1 master && git push -u origin issue/$1; }; f'
-git config --global alias.smaster '!git checkout master && git pull && git submodule foreach '"'git checkout master && git pull'"
+git config --global alias.zmaster '!git checkout master && git pull'
+git config --global alias.smaster '!git for git zmaster'
 # rename local + remote branch 
 git config --global alias.mvbranch '!f() { local old=$1; local new=$2; git ls-remote --heads --exit-code origin $old >/dev/null || git push origin $old; git branch $new origin/$old >/dev/null 2>&1; git push origin --set-upstream $new >/dev/null 2>&1; git push --delete --force origin $old >/dev/null 2>&1; git branch -D $old >/dev/null 2>&1; }; f'
 git config --global alias.curbranch '!c=$(git rev-parse --abbrev-ref HEAD); [ $c == '"'"'HEAD'"'"' ] && git rev-parse --short HEAD || echo $c'
@@ -56,12 +58,12 @@ git config --global alias.foldtags '!f() { local suffix=$1; for t in $(git tag |
 git config --global alias.otags '!git tag | grep -Ev '"'"'^v[0-9]+\.[0-9]+(-@|\.[0-9]+(-(alpha|beta|rc)[0-9A-Za-z-]*(\.[0-9A-Za-z-]*)*)?(\+[0-9A-Za-z-]+(\.[0-9A-Za-z-]*)*)?)$'"'"' | grep -Ev '"'"'^[^/]+/.+$'"'"' || true'
 git config --global alias.foldotags '!for t in $(git otags); do git mvtag $t other/$t; done'
 git config --global alias.tags '!git tag; git ls-remote --tags origin | sed s,[[:alnum:]]*[[:space:]]*,,'
-git config --global alias.newtag '!f() { git tag -a $1 $2; git push origin $1; }; f'
+git config --global alias.newtag '!f() { local tag=$1; shift; local opt=$([[ "$@" == '"'"''"'"' ]] && echo -m$(git log -1 --pretty=%B) || echo -a $@); git tag "$opt" $tag; git push origin $tag; }; f'
 git config --global alias.deltag '!f() { git tag --delete $1 >/dev/null 2>&1; git push --delete origin $1 >/dev/null 2>&1; }; f'
 # get short hash of given tag
 git config --global alias.tag2hash '!f() { git describe --tags --long $1 | sed s,.*-[0-9]*-g,,g; }; f'
 # rename local + remote tag 
-git config --global alias.mvtag '!f() { local old=$1; local new=$2; echo Renaming $old to $new; git tag $new $old; git deltag $old; git push origin $new >/dev/null 2>&1; }; f'
+git config --global alias.mvtag '!f() { local old=$1; local new=$2; echo Renaming $old to $new; local ocomment=$(git tag -l -n1 $old | cut -d'"'"' '"'"' -f2- | sed s,^[[:space:]]*,,); git tag -f -m "$ocomment" $new $old^{}; [[ "$old" != "$new" ]] && git deltag $old; git push origin $new >/dev/null 2>&1; }; f'
 # zouify tags (apply zou-flow):
 # 1. move non SemVer tags (otags) to other folder
 # 2. group tags pointing to the same commit hash - create a lookup table with the commit hash as key and the commit tags (space separated) as value.
