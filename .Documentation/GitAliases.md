@@ -33,7 +33,7 @@ Git aliases can be enabled by running `zou/bin/git_config.{bat|sh}` (see [git_co
 | git **supdate** || for each registered submodules, clone missing ones and update their working trees
 | git **tag2hash** | *TAG* | display short hash of given tag
 | git **tags** || list local and remote tags
-| git **vbranch** | *MAJOR.MINOR* | create a `vbranch` and a `vnode` (*1.0 <- v1.0-@*)
+| git **vbranch** | *MAJOR.MINOR[ COMMIT]* | create a `vbranch` and a `vnode` | `git vbranch 0.1`<br>`git vbranch 0.1 cc1aa32`<br>*=> 1.0 <- v1.0-@*
 | git **vcheckout** | *[VCOMMIT]* | checkout the `vbranch` of the given `vcommit`
 | git **vcommit2major** | *[VCOMMIT]* | display the most recent `MAJOR` version reachable from given `vcommit`
 | git **vcommit2minor** | *[VCOMMIT]* | display the most recent `MAJOR.MINOR` version reachable from given `vcommit`
