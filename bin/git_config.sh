@@ -63,7 +63,11 @@ git config --global alias.deltag '!f() { git tag --delete $1 >/dev/null 2>&1; gi
 # get short hash of given tag
 git config --global alias.tag2hash '!f() { git describe --tags --long $1 | sed s,.*-[0-9]*-g,,g; }; f'
 # rename local + remote tag 
-git config --global alias.mvtag '!f() { local old=$1; local new=$2; echo Renaming $old to $new; local ocomment=$(git tag -l -n1 $old | cut -d'"'"' '"'"' -f2- | sed s,^[[:space:]]*,,); git tag -f -m "$ocomment" $new $old^{}; [[ "$old" != "$new" ]] && git deltag $old; git push origin $new >/dev/null 2>&1; }; f'
+git config --global alias.tagger-name '!f() { git show $1 -q | grep Tagger: | sed -E '"'"'s,Tagger:\s+(.*)\s+<(.*)>,\1,'"'"'; }; f'
+git config --global alias.tagger-email '!f() { git show $1 -q | grep Tagger: | sed -E '"'"'s,Tagger:\s+(.*)\s+<(.*)>,\2,'"'"'; }; f'
+git config --global alias.tag-date '!f() { git show $1 -q | grep Date: | sed -E '"'"'s,Date:\s+(.*),\1,'"'"' | head -n 1; }; f'
+git config --global alias.tag-comment '!f() { git tag -l -n1 $1 | sed -E '"'"'s,\w+\s+(.*),\1,'"'"'; }; f'
+git config --global alias.mvtag '!f() { local old=$1; local new=$2; echo Renaming $old to $new; GIT_COMMITTER_NAME=$(git tagger-name $old) GIT_COMMITTER_EMAIL=$(git tagger-email $old) GIT_COMMITTER_DATE=$(git tag-date $old) git tag -f -m "$(git tag-comment $old)" $new $old^{}; [[ "$old" != "$new" ]] && git deltag $old; git push origin $new >/dev/null 2>&1; }; f'
 # zouify tags (apply zou-flow):
 # 1. move non SemVer tags (otags) to other folder
 # 2. group tags pointing to the same commit hash - create a lookup table with the commit hash as key and the commit tags (space separated) as value.
