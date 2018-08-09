@@ -28,8 +28,8 @@ if '%reset%'=='true' git config --global --remove-section alias >nul 2>&1
 
 git config --global alias.oprune "fetch origin --prune"
 :: Bundle and sub-modules
-git config --global alias.bundle-dir "!f() { r=${1:-`pwd -P`}; while [[ \"$r\" != '' && ! -d \"$r/.git\" ]]; do r=${r%%/*}; done; echo $r; }; f"
-git config --global alias.module-id  "!f() { r=${1:-`pwd -P`}; c=$r; while [[ \"$r\" != '' && ! -d \"$r/.git\" ]]; do r=${r%%/*}; done; id=${c#$r}; id=${id#/}; echo ${id%%/}; }; f"
+git config --global alias.bundle-dir "!f() { r=${1:-`pwd -P`}; while [[ -n \"$r\" && ! -d \"$r/.git\" ]]; do r=${r%%/*}; done; echo $r; }; f"
+git config --global alias.module-id  "!f() { r=${1:-`pwd -P`}; c=$r; while [[ -n \"$r\" && ! -d \"$r/.git\" ]]; do r=${r%%/*}; done; id=${c#$r}; id=${id#/}; echo ${id%%/}; }; f"
 git config --global alias.sfor "submodule foreach"
 git config --global alias.sfor-q "submodule --quiet foreach"
 git config --global alias.sfor-r "submodule foreach --recursive"
@@ -59,8 +59,9 @@ git config --global alias.foldtags "!f() { local suffix=$1; for t in $(git tag |
 git config --global alias.otags "!git tag | grep -Ev '^v[0-9]+\.[0-9]+(-@|\.[0-9]+(-(alpha|beta|rc)[0-9A-Za-z-]*(\.[0-9A-Za-z-]*)*)?(\+[0-9A-Za-z-]+(\.[0-9A-Za-z-]*)*)?)$' | grep -Ev '^[^/]+/.+$' || true"
 git config --global alias.foldotags "!for t in $(git otags); do git mvtag $t other/$t; done"
 git config --global alias.tags "!git tag; git ls-remote --tags origin | sed s,[[:alnum:]]*[[:space:]]*,,"
-git config --global alias.newtag "!f() { local tag=$1; shift; local opt=$([[ \"$@\" == '' ]] && echo -m$(git log -1 --pretty=%%B) || echo -a $@); git tag \"$opt\" $tag; git push origin $tag; }; f"
-git config --global alias.deltag "!f() { git tag --delete $1 >/dev/null 2>&1; git push --delete origin $1 >/dev/null 2>&1; }; f"	
+git config --global alias.newtag-lo "!f() { local tag=$1; shift; local opt=$([[ -z \"$@\" ]] && echo -m$(git log -1 --pretty=%%B) || echo -a $@); git tag \"$opt\" $tag; }; f"
+git config --global alias.newtag "!f() { local tag=$1; git newtag-lo $@; git push origin $tag; }; f"
+git config --global alias.deltag "!f() { git tag --delete $1; git push --delete origin $1 >/dev/null 2>&1; }; f"	
 :: get short hash of given tag
 git config --global alias.tag2hash "!f() { git describe --tags --long $1 | sed s,.*-[0-9]*-g,,g; }; f"
 :: rename local + remote tag
@@ -68,12 +69,15 @@ git config --global alias.tagger-name "!f() { git show $1 -q | grep Tagger: | se
 git config --global alias.tagger-email "!f() { git show $1 -q | grep Tagger: | sed -E 's,Tagger:\s+(.*)\s+<(.*)>,\2,'; }; f"
 git config --global alias.tag-date "!f() { git show $1 -q | grep Date: | sed -E 's,Date:\s+(.*),\1,' | head -n 1; }; f"
 git config --global alias.tag-comment "!f() { git tag -l -n1 $1 | sed -E 's,\w+\s+(.*),\1,'; }; f"
-git config --global alias.mvtag "!f() { local old=$1; local new=$2; echo Renaming $old to $new; GIT_COMMITTER_NAME=$(git tagger-name $old) GIT_COMMITTER_EMAIL=$(git tagger-email $old) GIT_COMMITTER_DATE=$(git tag-date $old) git tag -f -m \"$(git tag-comment $old)\" $new $old^{}; [[ \"$old\" != \"$new\" ]] && git deltag $old; git push origin $new >/dev/null 2>&1; }; f"
+git config --global alias.mvtag-lo "!f() { local tagger=$(git tagger-name $1); [[ -z \"$tagger\" ]] && { echo Renaming lightweight tag $1 to $2; git tag -f $2 $1^{}; } || { echo Renaming annotated tag $1 to $2; GIT_COMMITTER_NAME=$tagger GIT_COMMITTER_EMAIL=$(git tagger-email $1) GIT_COMMITTER_DATE=$(git tag-date $1) git tag -f -m \"$(git tag-comment $1)\" $2 $1^{}; }; [[ \"$1\" != \"$2\" ]] && git tag --delete $1 >/dev/null; }; f"
+git config --global alias.mvtag "!f() { git mvtag-lo $@; [[ \"$1\" != \"$2\" ]] && git push --delete origin $1 >/dev/null 2>&1; git push origin $2 >/dev/null 2>&1; }; f"
+git config --global alias.mirrortags "!git push --tags --prune || true"
 :: zouify tags (apply zou-flow):
 :: 1. move non SemVer tags (otags) to other folder
 :: 2. group tags pointing to the same commit hash - create a lookup table with the commit hash as key and the commit tags (space separated) as value.
 :: 3. remove other folder's redondant tags
-git config --global alias.ztags "!f() { for tag in $(git otags); do echo Moving $tag to other folder; git mvtag $tag \"other/$tag\"; done; declare -A lookup; for tag in $(git tag); do h=$(git tag2hash $tag); if [ -z \"${lookup[$h]}\" ]; then lookup[$h]=$tag; echo \"$h : ${lookup[$h]}\"; else lookup[$h]=\"${lookup[$h]} $tag\"; echo \"$h : ${lookup[$h]}\"; fi; done; echo; echo Redondant tags; for k in ${!lookup[@]}; do read -a r <<< \"${lookup[$k]}\"; if [[ ${#r[@]} > 1 ]]; then echo ${#r[@]} $k = ${r[@]}; for tag in \"${r[@]}\"; do [[ $tag == other/* ]] && echo Deleting $tag && git deltag $tag; done; fi; done; }; f"
+git config --global alias.ztags-lo "!f() { for tag in $(git otags); do echo Moving $tag to other folder; git mvtag-lo $tag \"other/$tag\"; done; declare -A lookup; for tag in $(git tag); do h=$(git tag2hash $tag); if [ -z \"${lookup[$h]}\" ]; then lookup[$h]=$tag; echo \"$h : ${lookup[$h]}\"; else lookup[$h]=\"${lookup[$h]} $tag\"; echo \"$h : ${lookup[$h]}\"; fi; done; echo; echo Redondant tags; for k in ${!lookup[@]}; do read -a r <<< \"${lookup[$k]}\"; if [[ ${#r[@]} > 1 ]]; then echo ${#r[@]} $k = ${r[@]}; for tag in \"${r[@]}\"; do [[ $tag == other/* ]] git tag --delete $tag; done; fi; done; }; f"
+git config --global alias.ztags "!f() { local z=$(git ztags-lo $@); [[ -n \"$z\" ]] && git mirrortags }; f"
 
 :: Semantic versioning
 git config --global --remove-section versionsort >nul 2>&1
