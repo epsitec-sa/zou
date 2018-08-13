@@ -53,7 +53,7 @@ namespace Epsitec.Zou
 		}
 		public override bool				Execute()
 		{
-			foreach (var poFile in this.SourceFiles)
+            foreach (var poFile in this.SourceFiles)
 			{
 				this.Clean (poFile);
 			}
@@ -479,11 +479,18 @@ namespace Epsitec.Zou
 		private static string[]				CleanContent(string[] content, PoFileInfo fileInfo)
 		{
 			var contentEnum = content.AsEnumerable ().GetEnumerator ();
-			var sections    = CommentSection.Parse (contentEnum, fileInfo);
-			//sections.Where (s => s.IsOrphan).ForEach (orphan => orphan.Body = sections.First (s => s.Package == orphan.Package).Body);
+			var sections    = CommentSection.Parse (contentEnum, fileInfo).ToArray();
 			return sections
 				.GroupBy (s => s.Package)
-				.SelectMany (g => g.Select (s => s.Title.Value).Concat (g.First (s => !s.IsOrphan).Body.Content))
+                .OrderBy (g => g.Key)
+				.SelectMany (g =>
+                {
+                    var titleComment = 
+                        g.Take(1).Select(s => s.Title.Value).Concat(
+                        g.Skip(1).Select(s => s.Title.Value).OrderBy(_ => _));
+                    var translatorComment = g.First().Body.Content;
+                    return titleComment.Concat(translatorComment);
+                })
 				.ToArray ();
 		}
 		// # Language...
@@ -678,7 +685,7 @@ namespace Epsitec.Zou
 					}
 					return new CommentSection (orphan.Title, samePackageSection.Body);
 				})
-				.Where (s => s != null);
+                .NonNull();
 
 			// Update package.
 			allSections = fullSections
@@ -815,12 +822,9 @@ namespace Epsitec.Zou
 	{
 		public static CommentTitle[]				Parse(IEnumerator<string> e)
 		{
-			return CommentTitle.ParseCore (e)
-				.Distinct ()
-                .OrderBy(title => title.PoName)
-				.ToArray ();
-		}
-		public static CommentTitle					Create(string poName, string package)
+            return CommentTitle.ParseCore(e).Distinct().ToArray();
+        }
+        public static CommentTitle					Create(string poName, string package)
 		{
 			return new CommentTitle (poName, package, $"# #-#-#-#-#  {poName} ('{package}')  #-#-#-#-#");
 		}
