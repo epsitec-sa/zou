@@ -23,7 +23,7 @@ This script can be imported anywhere before first MS import (Microsoft.Cpp.Defau
 
   <!-- Bundle -->
   <PropertyGroup>
-    <BundleDir>$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), '.git$(V)HEAD'))</BundleDir>
+    <BundleDir>$([System.IO.Directory]::GetParent('$(MSBuildThisFileDirectory.TrimEnd('\/'))'))</BundleDir>
     <BundleName>$([System.IO.Path]::GetFileName('$(BundleDir)'))</BundleName>
     <BundleDir>$(BundleDir)$(V)</BundleDir>
     <!-- bundle/zou.cfg/ -->
