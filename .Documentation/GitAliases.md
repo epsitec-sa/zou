@@ -33,7 +33,7 @@ Git aliases can be enabled by running `zou/bin/git_config.{bat|sh}` (see [git_co
 | git **supdate** || for each registered submodules, clone missing ones and update their working trees |
 | git **tag2hash** | *TAG* | display short hash of given tag |
 | git **tags** || list local and remote tags |
-| git **vbranch** | *MAJOR.MINOR[ COMMIT]* | create a `vbranch` and a `vnode` | `git vbranch 0.1`<br>`git vbranch 0.1 cc1aa32`<br>*=> 1.0 <- v1.0-@*
+| git **vbranch** | *MAJOR.MINOR[ COMMIT]* | create a `vbranch` and a `vnode` | `git vbranch 0.1`<br>`git vbranch 0.1 cc1aa32`<br>*=> 0.1 <- v0.1-@*
 | git **vcheckout** | *[VCOMMIT]* | checkout the `vbranch` of the given `vcommit` |
 | git **vcommit2major** | *[VCOMMIT]* | display the most recent `MAJOR` version reachable from given `vcommit` |
 | git **vcommit2minor** | *[VCOMMIT]* | display the most recent `MAJOR.MINOR` version reachable from given `vcommit` |
@@ -45,6 +45,8 @@ Git aliases can be enabled by running `zou/bin/git_config.{bat|sh}` (see [git_co
 | git **vnext** | *[VCOMMIT]* | checkout the `vbranch` with the greatest `MAJOR` and `MINOR` version |
 | git **vtable** || create a markdown table of sub-module versions (`versions.md`) |
 | git **vtags** || list local `vtag`s |
+| git **vtag2next** | *[VTAG[-DESCR]]* | given a `vtag` description (1), compute next `vtag` (see **vcommit2tag**)<br>*if vtag is a vnode, set patch to 0<br>if vtag's description is empty (tag on top), vtag2next returns empty<br>if pre-release is specified, patch is not modified and prerelease is incremented* | `git vtag2next v1.0-@` *=> v1.0.0*<br>`git vtag2next v1.0-@-1-g1234567` *=> v1.0.0*<br>`git vtag2next v1.0.0` *=>*<br>`git vtag2next v1.0.0-1-g1234567` *=> v1.0.1*<br>`git vtag2next v1.0.0-rc1-1-g1234567` *=> v1.0.0-rc2*<br>`git vtag2next v1.0.0+fix-1-g1234567` *=> v1.0.1*
+| git **vtagauto** || ensure current `vbranch` is tagged (use **vtag2next** to compute new tag) | `git vtagauto`
 | git **zclean** || remove all untracked files and `node_modules` folder except `packages` folder in current repo/submodule |
 | git **zmaster** || checkout and pull master branch (see **smaster**) |
 | git **ztags** || zouify tags (2) |
@@ -52,7 +54,7 @@ Git aliases can be enabled by running `zou/bin/git_config.{bat|sh}` (see [git_co
 
 (1) git **vcommit2tag** notes:
 
-`vtag` description exemple : `v1.0.0-2-gc8af267` (see [git describe](https://git-scm.com/docs/git-describe))
+`vtag` description exemple : `v1.0.0`**`-2-gc8af267`** (see [git describe](https://git-scm.com/docs/git-describe))
 
 (2) git **ztags** processing (see [zou-flow](ZouFlow.md)):
 - move non [SemVer](https://semver.org/) tags to `other` folder (rename tag with `other/` prefix)

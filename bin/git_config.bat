@@ -92,7 +92,9 @@ git config --global alias.vbranch "!f() { git checkout -b $@ && git newtag v$1-@
 git config --global alias.vmin "!f() { local version=$1; local regex; if [[ -z \"$version\" ]]; then regex=[0-9]; else regex=$(echo $version | sed s,[.],\\.,g); fi; git tag -l --sort=v:refname | grep -m1 ^v$regex || true; }; f"
 git config --global alias.vmax "!f() { local version=$1; local regex; if [[ -z \"$version\" ]]; then regex=[0-9]; else regex=$(echo $version | sed s,[.],\\.,g); fi; git tag -l --sort=-v:refname | grep -m1 ^v$regex || true; }; f"
 git config --global alias.vtags "!f() { local version=$1; local regex; if [[ -z \"$version\" ]]; then regex=[0-9]; else regex=$(echo $version | sed s,[.],\\.,g); fi; git tag -l --sort=-v:refname | grep ^v$regex || true; }; f"
-
+git config --global alias.vtag2next "!f() { [[ -n $1 ]] && tag=$1 || tag=$(git vcommit2tag); re='^v([0-9]+)\.([0-9]+)(\.|-)(.*)-([0-9]+)-g[[:alnum:]]*$'; if [[ $tag =~ $re ]]; then major=${BASH_REMATCH[1]}; minor=${BASH_REMATCH[2]}; patch=${BASH_REMATCH[4]}; delta=${BASH_REMATCH[5]}; if [[ $patch == '@' ]]; then echo v$major.$minor.0; elif [[ -n $delta ]]; then re='([0-9]+)(-[[:alnum:]]+)?(\+.+)?$'; if [[ $patch =~ $re ]]; then patch=${BASH_REMATCH[1]}; suffix=${BASH_REMATCH[2]}; re='-(alpha|beta|rc)([0-9]*)'; if [[ $suffix =~ $re ]]; then prerel_label=${BASH_REMATCH[1]}; prerel_rev=${BASH_REMATCH[2]}; echo v$major.$minor.$patch-$prerel_label$((prerel_rev+1)); else echo v$major.$minor.$((patch+1)); fi; fi; fi; fi; }; f"
+git config --global alias.vtagauto-lo "!f() { vtag=$(git vcommit2tag); vnext=$(git vtag2next $vtag); [[ -z $vnext ]] && echo Current tag: $vtag || { git newtag-lo $vnext; echo Tag created: $vnext; }; }; f"
+git config --global alias.vtagauto "!f() { vtag=$(git vcommit2tag); vnext=$(git vtag2next $vtag); [[ -z $vnext ]] && echo Current tag: $vtag || { git newtag $vnext; echo Tag created: $vnext; }; }; f"
 git config --global alias.vcommit2tag "!f() { git describe --tags --match 'v[0-9]*' $1 2>/dev/null || true; }; f"
 git config --global alias.vcommit2major "!f() { git vcommit2tag $1 |  sed -E 's,^v([0-9]+).*,\1,'; }; f"
 git config --global alias.vcommit2minor "!f() { git vcommit2tag $1 |  sed -E 's,^v([0-9]+\.[0-9]+).*,\1,'; }; f"
@@ -100,6 +102,6 @@ git config --global alias.vcheckout "!f() { git vcommit2minor $1 | xargs git che
 git config --global alias.vmajor "!f() { git vcommit2major $1 | xargs git vmax | xargs git vcheckout; }; f"
 git config --global alias.vminor "!f() { git vcommit2minor $1 | xargs git vmax | xargs git vcheckout; }; f"
 git config --global alias.vnext "!f() { git vmax $1 | xargs git vcheckout; }; f"
-git config --global alias.vtable "!row() { echo _ $1 _ $(git curbranch) _ $((git vcommit2tag 2>/dev/null || true) | sed -E 's,(.*)-g[[:alnum:]]*$,\1,' | sed -E 's,(.*)-([0-9]+)$,\1 _ \2,'); }; export -f row; export v1=`pwd`/_v1; export v2=`pwd`/_v2; echo _ Module _ Head _ Version _ Delta >$v1; echo _:-_:-_:-_:- >>$v1; row $(basename `pwd`) >>$v1; git submodule foreach --recursive 'row $(git module-id) >>$v2'; sort $v2 >>$v1; sed -E 's,_,|,g' $v1 >versions.md; rm $v1 $v2"
+git config --global alias.vtable "!row() { echo _ $1 _ $(git curbranch) _ $(git vcommit2tag | sed -E 's,(.*)-g[[:alnum:]]*$,\1,' | sed -E 's,(.*)-([0-9]+)$,\1 _ \2,'); }; export -f row; export v1=`pwd`/_v1; export v2=`pwd`/_v2; echo _ Module _ Head _ Version _ Delta >$v1; echo _:-_:-_:-_:- >>$v1; row $(basename `pwd`) >>$v1; git submodule foreach --recursive 'row $(git module-id) >>$v2'; sort $v2 >>$v1; sed -E 's,_,|,g' $v1 >versions.md; rm $v1 $v2"
 
 if '%copy%'=='true' copy /Y "%USERPROFILE%\.gitconfig" "%USERPROFILE%\.gitconfig.cmd.zou" >nul
