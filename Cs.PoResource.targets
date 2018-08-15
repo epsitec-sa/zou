@@ -153,13 +153,15 @@ Pseudo-code:
     <MoDomainReferencesPath>$(PoBundleIntDir)MoDomains.zou</MoDomainReferencesPath>
 
     <PoModuleRootDir Condition="'$(ModuleName)' != ''">$(ModuleDir).po\</PoModuleRootDir>
-    
-    <XGetText>$(ZouBinDir)xgettext</XGetText>
-    <MsgInit>$(ZouBinDir)msginit</MsgInit>
-    <MsgMerge>$(ZouBinDir)msgmerge</MsgMerge>
-    <MsgCat>$(ZouBinDir)msgcat</MsgCat>
-    <MsgFmt>$(ZouBinDir)msgfmt</MsgFmt>
-    <MsgAttrib>$(ZouBinDir)msgattrib</MsgAttrib>
+
+    <!-- gettext binaries -->
+    <PoBinDir Condition="$([MSBuild]::IsOsPlatform('Windows'))">$(ZouBinDir)</PoBinDir>
+    <XGetText>$(PoBinDir)xgettext</XGetText>
+    <MsgInit>$(PoBinDir)msginit</MsgInit>
+    <MsgMerge>$(PoBinDir)msgmerge</MsgMerge>
+    <MsgCat>$(PoBinDir)msgcat</MsgCat>
+    <MsgFmt>$(PoBinDir)msgfmt</MsgFmt>
+    <MsgAttrib>$(PoBinDir)msgattrib</MsgAttrib>
 
     <PoCopyright>EPSITEC SA, CH-1400 Yverdon-les-Bains, Switzerland</PoCopyright>
     <PoPackageName Condition="'$(ModuleName)' == ''">'$(BundleName)'</PoPackageName>
