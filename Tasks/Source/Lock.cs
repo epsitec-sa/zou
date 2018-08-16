@@ -1,6 +1,7 @@
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 using System;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading;
 
@@ -26,6 +27,11 @@ namespace Epsitec.Zou
 		}
 		public override bool				Execute()
 		{
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                // Unix does not support named semaphores (PlatformNotSupportedException)
+                return true;
+            }
 			try
 			{
 				string semName = Lock.GetName (this.Name, this.Global);
