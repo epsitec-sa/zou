@@ -22,11 +22,13 @@ Input parameters:
     <CustomBuild Include="@(ImportFile)">
       <Outputs Condition="'%(ImportPaths)' == ''">%(ImportDir)%(RecursiveDir)%(ImportFile)</Outputs>
       <Message Condition="'%(ImportPaths)' == ''">[+] %(FullPath) =^&gt; %(ImportDir)%(RecursiveDir)%(ImportFile)</Message>
-      <Command Condition="'%(ImportPaths)' == ''">copy "%(FullPath)" "%(ImportDir)%(RecursiveDir)%(ImportFile)" &gt;nul</Command>
+      <Command Condition="'%(ImportPaths)' == '' And  $([MSBuild]::IsOsPlatform('Windows'))">copy "%(FullPath)" "%(ImportDir)%(RecursiveDir)%(ImportFile)" &gt;$(Nul)</Command>
+      <Command Condition="'%(ImportPaths)' == '' And !$([MSBuild]::IsOsPlatform('Windows'))">cp '%(FullPath)' '%(ImportDir)%(RecursiveDir)%(ImportFile)' &gt;$(Nul)</Command>
 
       <Outputs Condition="'%(ImportPaths)' != ''">%(ImportPaths)</Outputs>
       <Message Condition="'%(ImportPaths)' != ''">[+] %(FullPath) =^&gt; %(ImportPaths)</Message>
-      <Command Condition="'%(ImportPaths)' != ''">for %%i in (%(ImportPaths)) do copy "%(FullPath)" "%%i" &gt;nul</Command>
+      <Command Condition="'%(ImportPaths)' != '' And  $([MSBuild]::IsOsPlatform('Windows'))">for %%i in (%(ImportPaths)) do copy "%(FullPath)" "%%i" &gt;nul</Command>
+      <Command Condition="'%(ImportPaths)' != '' And !$([MSBuild]::IsOsPlatform('Windows'))">IFS=';'; for i in '%(ImportPaths)'; do cp '%(FullPath)' "$i" &gt;nul; done</Command>
       <TreatOutputAsContent>true</TreatOutputAsContent>
     </CustomBuild>
   </ItemGroup>
