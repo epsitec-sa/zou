@@ -40,14 +40,40 @@
 
   <!-- ================ ImportProject ================ -->
 
+  <Target Name="InitProjectsToBuild" DependsOnTargets="AddBuildOptions">
+    
+    <ItemGroup>
+      <ProjectsToBuild>
+        <MSBuildCmd Condition="'%(RuntimeType)' != 'Full'">dotnet msbuild</MSBuildCmd>
+      </ProjectsToBuild>
+      <ProjectsToBuild>
+        <MSBuildCmd Condition="'%(MSBuildCmd)' == ''">"$(MSBuildToolsPath)\msbuild"</MSBuildCmd>
+        <MSBuildOptions>/nologo</MSBuildOptions>
+      </ProjectsToBuild>
+      <ProjectsToBuild>
+        <MSBuildOptions Condition="'%(BuildInParallel)' == 'false'">%(MSBuildOptions) /m:1 /nr:false</MSBuildOptions>
+      </ProjectsToBuild>
+      <ProjectsToBuild>
+        <MSBuildOptions Condition="'%(Verbosity)' != ''">%(MSBuildOptions) /v:%(Verbosity)</MSBuildOptions>
+      </ProjectsToBuild>
+      <ProjectsToBuild>
+        <MSBuildOptions Condition="'%(_Target)' != ''">%(MSBuildOptions) "/t:%(_Target)"</MSBuildOptions>
+      </ProjectsToBuild>
+      <ProjectsToBuild>
+        <MSBuildOptions Condition="'%(Properties)' != ''">%(MSBuildOptions) "/p:%(Properties)"</MSBuildOptions>
+      </ProjectsToBuild>
+    </ItemGroup>
+
+    <LogItems Items="@(ProjectsToBuild)" Title="ProjectsToBuild" />
+    <Message Text=" " />
+
+  </Target>
+  
   <!-- Target batching -->
   <Target Name="ImportProject"
           Condition="'@(ImportProject)' != ''"
-          DependsOnTargets="AddBuildOptions"
+          DependsOnTargets="InitProjectsToBuild"
           Returns="%(ProjectsToBuild.Identity)">
-
-    <!--<LogItems Items="@(ProjectsToBuild)" Title="ProjectsToBuild" />
-    <Message Text=" " />-->
     
     <!-- Restore nuget packages for solution... -->
     <Exec Condition="'%(ProjectsToBuild.Extension)' == '.sln'"
@@ -65,18 +91,14 @@
     Instead with use the Exec task which starts the MSBuild process.
 	  -->
 
-    <PropertyGroup>
-      <MSBuildCmd Condition="'%(ProjectsToBuild.RuntimeType)' != 'Full'">dotnet msbuild</MSBuildCmd>
-      <MSBuildCmd Condition="'$(MSBuildCmd)' == ''">"$(MSBuildToolsPath)\msbuild"</MSBuildCmd>
-      <MSBuildOptions>/nologo</MSBuildOptions>
-      <MSBuildOptions Condition="'%(ProjectsToBuild.BuildInParallel)' == 'false'">$(MSBuildOptions) /m:1 /nr:false</MSBuildOptions>
-      <MSBuildOptions Condition="'%(ProjectsToBuild.Verbosity)' != ''">$(MSBuildOptions) /v:%(ProjectsToBuild.Verbosity)</MSBuildOptions>
-      <MSBuildOptions Condition="'%(ProjectsToBuild.Targets)' != ''">$(MSBuildOptions) "/t:%(ProjectsToBuild.Targets)"</MSBuildOptions>
-      <MSBuildOptions Condition="'%(ProjectsToBuild.Properties)' != ''">$(MSBuildOptions) "/p:%(ProjectsToBuild.Properties)"</MSBuildOptions>
-    </PropertyGroup>
-    <!--<Message Importance="high" Text='$(MSBuildCmd) /t:%(Targets) /p:%(ProjectsToBuild.Properties) %(ProjectsToBuild.Identity)' />-->
-    <Exec Command='$(MSBuildCmd) $(MSBuildOptions) "%(ProjectsToBuild.Identity)"' />
+    <Message Importance="high" Text='%(MSBuildCmd) %(MSBuildOptions) "%(ProjectsToBuild.Identity)"' />
+    <!--<Exec Command='%(MSBuildCmd) %(MSBuildOptions) "%(ProjectsToBuild.Identity)"' />-->
     <CallTarget Targets="_DeleteLastBuildState" />
+  </Target>
+
+  <Target Name="_ImportProject">
+    <Message Importance="high" Text='$(MSBuildCmd) $(MSBuildOptions) "/t:%(MSBuildTarget.Identity)" "%(ProjectsToBuild.Identity)"' />
+
   </Target>
 
   </Project>

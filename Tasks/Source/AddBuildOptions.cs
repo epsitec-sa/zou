@@ -51,35 +51,42 @@ namespace Epsitec.Zou
 		}
 		public override bool			Execute()
 		{
-			this.ProjectsOutput = this.Projects.Select (project => this.AddOptions (project)).ToArray ();
+			this.ProjectsOutput = this.Projects.SelectMany (project => this.AddOptions (project)).ToArray ();
 			return !this.Log.HasLoggedErrors;
 		}
 
-		private ITaskItem				AddOptions(ITaskItem projectItem)
+		private IEnumerable<ITaskItem>	AddOptions(ITaskItem projectItem)
 		{
-			var project = new TaskItem (projectItem);
-			this.ProcessOptions (project);
+			var template = new TaskItem (projectItem);
+            this.ProcessOptions(template);
 
-			var names = project.CustomMetadataNames();
+            foreach (var target in template.GetMetadata("Targets").Split(';'))
+            {
+                var project = new TaskItem(template);
+                project.RemoveMetadata("Targets");
+                project.SetMetadata("_Target", target);
+                var names = project.CustomMetadataNames();
 
 
-			// Add Properties metadata
-			var properties = names
-				.Where (name => Mixins.IsBuildProperty (name))
-                .Select(name => Tuple.Create(name, project.GetMetadata(name)))
-                .Where(a => !string.IsNullOrWhiteSpace(a.Item2))
-                .OrderBy (a => a, BuildPropertyComparer.Default)
-				.Select (a => $"{a.Item1}={a.Item2}")
-				.ToArray ();
+                // Add Properties metadata
+                var properties = names
+                    .Where(name => Mixins.IsBuildProperty(name))
+                    .Select(name => Tuple.Create(name, project.GetMetadata(name)))
+                    .Where(a => !string.IsNullOrWhiteSpace(a.Item2))
+                    .OrderBy(a => a, BuildPropertyComparer.Default)
+                    .Select(a => $"{a.Item1}={a.Item2}")
+                    .ToArray();
 
-			var propertiesValue = string.Join (";", properties);
-			if (propertiesValue.EndsWith ("\\"))
-			{
-				propertiesValue += ";_=_";
-			}
-			project.SetMetadata ("Properties", propertiesValue);
+                var propertiesValue = string.Join(";", properties);
+                if (propertiesValue.EndsWith("\\"))
+                {
+                    propertiesValue += ";_=_";
+                }
+                project.SetMetadata("Properties", propertiesValue);
 
-			return project;
+                yield return project;
+
+            }
 		}
 		private void					ProcessOptions(ITaskItem project)
 		{
@@ -125,7 +132,7 @@ namespace Epsitec.Zou
 				var outDir = project.GetMetadata ("OutDir");
 				if (!string.IsNullOrEmpty(outDir))
 				{
-                    if (!project.GetMetadata("Targets").Contains("Publish"))
+                    if (0 != string.Compare("Publish", project.GetMetadata("_Target"), StringComparison.OrdinalIgnoreCase))
                     {
                         project.SetMetadata("OutputPath", outDir);
                     }
@@ -191,11 +198,14 @@ namespace Epsitec.Zou
 		{
 			get
 			{
-				yield return "BuildInParallel";
-				yield return "Targets";
-				yield return "OriginalItemSpec";
+                yield return "_Target";
+                yield return "BuildInParallel";
+                yield return "CopyToOutputDirectory";
 				yield return "Language";
 				yield return "Link";
+                yield return "OriginalItemSpec";
+                yield return "Targets";
+                yield return "Verbosity";
 			}
 		}
 
