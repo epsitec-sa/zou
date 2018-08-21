@@ -200,7 +200,6 @@ namespace Epsitec.Zou
 			{
                 yield return "_Target";
                 yield return "BuildInParallel";
-                yield return "CopyToOutputDirectory";
 				yield return "Language";
 				yield return "Link";
                 yield return "OriginalItemSpec";
