@@ -44,10 +44,10 @@
     
     <ItemGroup>
       <ProjectsToBuild>
-        <MSBuildCmd Condition="'%(RuntimeType)' != 'Full'">dotnet msbuild</MSBuildCmd>
+        <MSBuildCmd>"$(MSBuildToolsPath)\msbuild"</MSBuildCmd>
       </ProjectsToBuild>
       <ProjectsToBuild>
-        <MSBuildCmd Condition="'%(MSBuildCmd)' == ''">"$(MSBuildToolsPath)\msbuild"</MSBuildCmd>
+        <MSBuildCmd Condition="'%(RuntimeType)' != 'Full'">dotnet msbuild</MSBuildCmd>
         <MSBuildOptions>/nologo</MSBuildOptions>
       </ProjectsToBuild>
       <ProjectsToBuild>
