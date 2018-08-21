@@ -64,8 +64,8 @@
       </ProjectsToBuild>
     </ItemGroup>
 
-    <LogItems Items="@(ProjectsToBuild)" Title="ProjectsToBuild" />
-    <Message Text=" " />
+    <!--<LogItems Items="@(ProjectsToBuild)" Title="ProjectsToBuild" />
+    <Message Text=" " />-->
 
   </Target>
   
@@ -91,8 +91,8 @@
     Instead with use the Exec task which starts the MSBuild process.
 	  -->
 
-    <Message Importance="high" Text='%(MSBuildCmd) %(MSBuildOptions) "%(ProjectsToBuild.Identity)"' />
-    <!--<Exec Command='%(MSBuildCmd) %(MSBuildOptions) "%(ProjectsToBuild.Identity)"' />-->
+    <!--<Message Importance="high" Text='%(MSBuildCmd) %(MSBuildOptions) "%(ProjectsToBuild.Identity)"' />-->
+    <Exec Command='%(MSBuildCmd) %(MSBuildOptions) "%(ProjectsToBuild.Identity)"' />
     <CallTarget Targets="_DeleteLastBuildState" />
   </Target>
 
