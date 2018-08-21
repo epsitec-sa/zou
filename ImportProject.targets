@@ -6,7 +6,8 @@
   <ItemDefinitionGroup>
     <ImportProject>
       <RuntimeType>$(MSBuildRuntimeType)</RuntimeType>
-      <BuildInParallel>true</BuildInParallel>
+      <BuildInParallel>false</BuildInParallel>
+      <Verbosity>normal</Verbosity>
       <Configuration>$(Configuration)</Configuration>
       <Targets>Build</Targets>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -67,10 +68,14 @@
     <PropertyGroup>
       <MSBuildCmd Condition="'%(ProjectsToBuild.RuntimeType)' != 'Full'">dotnet msbuild</MSBuildCmd>
       <MSBuildCmd Condition="'$(MSBuildCmd)' == ''">"$(MSBuildToolsPath)\msbuild"</MSBuildCmd>
+      <MSBuildOptions>/nologo</MSBuildOptions>
+      <MSBuildOptions Condition="'%(ProjectsToBuild.BuildInParallel)' == 'false'">$(MSBuildOptions) /m:1 /nr:false</MSBuildOptions>
+      <MSBuildOptions Condition="'%(ProjectsToBuild.Verbosity)' != ''">$(MSBuildOptions) /v:%(ProjectsToBuild.Verbosity)</MSBuildOptions>
+      <MSBuildOptions Condition="'%(ProjectsToBuild.Targets)' != ''">$(MSBuildOptions) "/t:%(ProjectsToBuild.Targets)"</MSBuildOptions>
+      <MSBuildOptions Condition="'%(ProjectsToBuild.Properties)' != ''">$(MSBuildOptions) "/p:%(ProjectsToBuild.Properties)"</MSBuildOptions>
     </PropertyGroup>
     <!--<Message Importance="high" Text='$(MSBuildCmd) /t:%(Targets) /p:%(ProjectsToBuild.Properties) %(ProjectsToBuild.Identity)' />-->
-    <Exec Command='$(MSBuildCmd) /nologo /v:m /m "/t:%(Targets)" "/p:%(ProjectsToBuild.Properties)" "%(ProjectsToBuild.Identity)"' />
-
+    <Exec Command='$(MSBuildCmd) $(MSBuildOptions) "%(ProjectsToBuild.Identity)"' />
     <CallTarget Targets="_DeleteLastBuildState" />
   </Target>
 
