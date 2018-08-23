@@ -98,7 +98,7 @@ git config --global alias.vtagauto "!f() { vtag=$(git vcommit2tag); vnext=$(git 
 git config --global alias.vcommit2tag "!f() { git describe --tags --match 'v[0-9]*' $1 2>/dev/null || true; }; f"
 git config --global alias.vcommit2major "!f() { git vcommit2tag $1 |  sed -E 's,^v([0-9]+).*,\1,'; }; f"
 git config --global alias.vcommit2minor "!f() { git vcommit2tag $1 |  sed -E 's,^v([0-9]+\.[0-9]+).*,\1,'; }; f"
-git config --global alias.vcheckout "!f() { git vcommit2minor $1 | xargs git checkout >/dev/null; }; f"
+git config --global alias.vcheckout "!f() { git vcommit2minor $1 | xargs git checkout >/dev/null; git pull --all --prune; }; f"
 git config --global alias.vmajor "!f() { git vcommit2major $1 | xargs git vmax | xargs git vcheckout; }; f"
 git config --global alias.vminor "!f() { git vcommit2minor $1 | xargs git vmax | xargs git vcheckout; }; f"
 git config --global alias.vnext "!f() { git vmax $1 | xargs git vcheckout; }; f"
