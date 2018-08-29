@@ -47,7 +47,7 @@ git config --global alias.supdate 'submodule update --init --recursive'
 # Branch
 git config --global alias.issue '!f() { git checkout -b issue/$1 master && git push -u origin issue/$1; }; f'
 git config --global alias.zmaster '!git checkout master && git pull && git supdate'
-git config --global alias.smaster '!git for git zmaster'
+git config --global alias.smaster '!git sfor git zmaster'
 # rename local + remote branch 
 git config --global alias.mvbranch '!f() { local old=$1; local new=$2; git ls-remote --heads --exit-code origin $old >/dev/null || git push origin $old; git branch $new origin/$old >/dev/null 2>&1; git push origin --set-upstream $new >/dev/null 2>&1; git push --delete --force origin $old >/dev/null 2>&1; git branch -D $old >/dev/null 2>&1; }; f'
 git config --global alias.curbranch '!c=$(git rev-parse --abbrev-ref HEAD); [ $c == '"'"'HEAD'"'"' ] && git rev-parse --short HEAD || echo $c'
