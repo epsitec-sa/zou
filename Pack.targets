@@ -10,7 +10,7 @@
     <ItemGroup>
       <ProdBinInclude Include="$(OutDir)**\*" />
       <ProdBinExclude Include="$(OutDir)**\*.pdb" />
-      <ProdBinExclude Include="$(OutDir)**\*.map" />
+      <ProdBinExclude Include="$(OutDir)**\*.map" Exclude="$(OutDir)**\node_modules\**\*.map"/>
       <ProdBinExclude Include="$(OutDir)**\*.lib" />
       <ProdBinExclude Include="$(OutDir)**\*.exp" />
       <ProdBinExclude Include="$(OutDir)**\*.bsc" />
@@ -26,37 +26,40 @@
   <Target Name="PackCreate" DependsOnTargets="PackCreateDefault;PackFilter">
     <!-- Dispatch package content to respective folders -->
     <ItemGroup>
-      <!-- Production package -->
-      <PackFile Include="@(ProdBinInclude)" Exclude="@(ProdBinExclude)">
+      <PackCopyFile Include="@(ProdBinInclude)" Exclude="@(ProdBinExclude)" Condition="'$(OutDir)' != '$(PkgBinDir)'">
         <ImportDir>$(PkgBinDir)</ImportDir>
-      </PackFile>
-      <PackFile Include="@(ProdBinExclude)">
+      </PackCopyFile>
+      <PackCopyFile Include="@(ProdBinExclude)" Condition="'$(OutDir)' != '$(PkgDbgDir)'">
         <ImportDir>$(PkgDbgDir)</ImportDir>
-      </PackFile>
-      <PackFile Include="@(ProdAsmInclude)">
+      </PackCopyFile>
+      <PackCopyFile Include="@(ProdAsmInclude)" Condition="'$(AsmDir)' != '$(PkgAsmDir)'">
         <ImportDir>$(PkgAsmDir)</ImportDir>
-      </PackFile>
+      </PackCopyFile>
+      <PackDeleteFile Include="@(ProdBinExclude)" Condition="'$(OutDir)' == '$(PkgBinDir)' And '$(OutDir)' != '$(PkgDbgDir)'" />
     </ItemGroup>
   </Target>
 
-  <Target Name="PackImportClean"
+  <Target Name="PackDeleteAll"
           DependsOnTargets="PackCreate">
     
-    <Delete  Files="%(PackFile.ImportDir)%(RecursiveDir)%(FileName)%(Extension)" />
-    <Message Importance="high" Text="[-] %(PackFile.ImportDir)%(RecursiveDir)%(FileName)%(Extension)" Condition="'%(FileName)%(Extension)' != ''"/>
-  </Target>
-  
-  <Target Name="PackImport"
-          DependsOnTargets="_DeleteLastBuildState;PackCreate"
-          Inputs="@(PackFile)"
-          Outputs="%(PackFile.ImportDir)%(RecursiveDir)%(FileName)%(Extension)">
-    
-    <Message Importance="high" Text="[+] %(PackFile.Identity) =&gt; %(ImportDir)%(RecursiveDir)%(FileName)%(Extension)" />
-    <Copy SourceFiles="@(PackFile)" DestinationFiles="%(ImportDir)%(RecursiveDir)%(FileName)%(Extension)"  />
+    <Delete  Files="%(PackCopyFile.ImportDir)%(RecursiveDir)%(FileName)%(Extension)" />
+    <Message Importance="high" Text="[-] %(PackCopyFile.ImportDir)%(RecursiveDir)%(FileName)%(Extension)" Condition="'%(FileName)%(Extension)' != ''"/>
   </Target>
 
-  <Target Name="PackBuild" AfterTargets="Build"  DependsOnTargets="ImportProject;PackImport" />
-  <Target Name="PackClean" BeforeTargets="Clean" DependsOnTargets="PackImportClean;ImportProjectClean" />
+  <Target Name="PackCopy"
+          DependsOnTargets="_DeleteLastBuildState;PackCreate"
+          Inputs="@(PackCopyFile)"
+          Outputs="%(PackCopyFile.ImportDir)%(RecursiveDir)%(FileName)%(Extension)">
+
+    <Message Importance="high" Text="[+] %(PackCopyFile.Identity) =&gt; %(ImportDir)%(RecursiveDir)%(FileName)%(Extension)" />
+    <Copy SourceFiles="@(PackCopyFile)" DestinationFiles="%(ImportDir)%(RecursiveDir)%(FileName)%(Extension)"  />
+  </Target>
+
+  <Target Name="PackBuild" AfterTargets="Build"  DependsOnTargets="ImportProject;PackCopy">
+    <Delete Files="@(PackDeleteFile)" />
+  </Target>
+  <Target Name="PackClean" BeforeTargets="Clean" DependsOnTargets="PackDeleteAll;ImportProjectClean">
+  </Target>
 
   <Import Project="ImportProject.targets" />
 </Project>
