@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <!-- This property sheet defines the default debug settings for C++ projects. -->
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" TreatAsLocalProperty="AssemblerOutput">
   <PropertyGroup  Condition="'$(IsDebug)'=='true'">
     <_PropertySheetDisplayName Condition="'$(Platform)'=='Win32'">[zou] PDB for Edit and Continue, Enable Browse Information</_PropertySheetDisplayName>
     <_PropertySheetDisplayName Condition="'$(Platform)'=='x64'">[zou] PDB, Enable Browse Information</_PropertySheetDisplayName>
@@ -9,6 +9,14 @@
   <PropertyGroup Condition="'$(IsRelease)'=='true'">
     <_PropertySheetDisplayName>[zou] PDB, Map File, Assembly, Machine Code and Source, No Random Base Address</_PropertySheetDisplayName>
     <DbgSettings>true</DbgSettings>
+    <AssemblerOutput Condition="'$(AssemblerOutput)' == ''">All</AssemblerOutput>
+    <!--
+    NoListing,
+    AssemblyCode,
+    AssemblyAndMachineCode,
+    AssemblyAndSourceCode,
+    All
+    -->
   </PropertyGroup>
 
   <ItemDefinitionGroup Condition="'$(IsDebug)'=='true'">
@@ -25,7 +33,7 @@
   <ItemDefinitionGroup Condition="'$(IsRelease)'=='true'">
     <ClCompile>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <AssemblerOutput>All</AssemblerOutput>
+      <AssemblerOutput>$(AssemblerOutput)</AssemblerOutput>
       <AssemblerListingLocation>$(AsmProjDir)</AssemblerListingLocation>
     </ClCompile>
     <Link>
