@@ -3,7 +3,7 @@
     https://gist.github.com/asukakenji/f15ba7e588ac42795f421b48b8aede63
     https://stackoverflow.com/questions/49078510/trouble-compiling-windows-dll-using-golang-1-10
 -->
-<Project InitialTargets="GoAgentTrace;CheckMSBuildRuntimeType;CheckGoEnv;CheckMSysEnv">
+<Project InitialTargets="GoAgentTrace">
 
   <PropertyGroup>
     <_PropertySheetDisplayName>[zou] Go Agent</_PropertySheetDisplayName>
@@ -73,14 +73,14 @@
   </PropertyGroup>
   <Import Project="Agent.targets" />
 
-  <Target Name="CheckMSBuildRuntimeType">
+  <Target Name="CheckMSBuildRuntimeType" BeforeTargets="Build">
     <Error Text="Please use 'dotnet msbuild' command" Condition="'$(MSBuildRuntimeType)' != 'Core'" />
   </Target>
-  <Target Name="CheckGoEnv">
+  <Target Name="CheckGoEnv" BeforeTargets="Build">
     <Error Text="Go programming language not installed" Condition="'$(GOROOT)' == '' Or !$([System.IO.File]::Exists($(GOROOT)\bin\go.exe))" />
     <Error Text="GOPATH environment variable not set" Condition="'$(GOPATH)' == ''" />
   </Target>
-  <Target Name="CheckMSysEnv">
+  <Target Name="CheckMSysEnv" BeforeTargets="Build">
     <Error Text="MSYS not installed" Condition="!$([System.IO.File]::Exists($(MSysRoot)\mingw32.exe))" />
   </Target>
 
