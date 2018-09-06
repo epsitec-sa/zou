@@ -3,15 +3,10 @@
     https://gist.github.com/asukakenji/f15ba7e588ac42795f421b48b8aede63
     https://stackoverflow.com/questions/49078510/trouble-compiling-windows-dll-using-golang-1-10
 -->
-<Project InitialTargets="GoAgentTrace">
+<Project>
 
   <PropertyGroup>
     <_PropertySheetDisplayName>[zou] Go Agent</_PropertySheetDisplayName>
-  </PropertyGroup>
-
-  <PropertyGroup>
-    <Platform Condition="'$(Platform)' == ''">Win32</Platform>
-    <GoGetRoot Condition="'$(GoGetRoot)' == ''">git.epsitec.ch/epsitec</GoGetRoot>
   </PropertyGroup>
 
   <Import Project="Go.Boot.props" Condition="'$(GoBootImported)' == ''"/>
@@ -20,84 +15,28 @@
   <ImportGroup Label="PropertySheets">
     <Import Project="Com.WorkDir.props" />
     <Import Project="Tmp.IntDir.props" />
-    <Import Project="Cs.PkgDir.props" />
-    <Import Project="Cs.OutDir.props" />
+    <Import Project="Go.PkgDir.props" />
+    <Import Project="Go.OutDir.props" />
+
+    <Import Project="Tools.MSys.props"/>
+    <Import Project="Tools.Go.props"/>
   </ImportGroup>
 
-  <PropertyGroup>
-    <GoProjectDir>$(GOPATH)\src\$(GoGetRoot)\$(BundleRelativeProjectDir)</GoProjectDir>
-    <GoOutDir>$(GoProjectDir)bin\$(Platform)\</GoOutDir>
-  </PropertyGroup>
-
-  <PropertyGroup>
-    <MSysRoot Condition="'$(MSysRoot)' == ''">$([System.IO.Path]::Combine('C:$(V)','msys64'))</MSysRoot>
-    <MSysUsrBin>$([System.IO.Path]::Combine($(MSysRoot),'usr','bin'))</MSysUsrBin>
-    <Mingw32Bin>$([System.IO.Path]::Combine($(MSysRoot),'mingw32','bin'))</Mingw32Bin>
-    <Mingw64Bin>$([System.IO.Path]::Combine($(MSysRoot),'mingw64','bin'))</Mingw64Bin>
-
-    <GoBinDir>$([System.IO.Path]::Combine($(GOPATH),'bin'))</GoBinDir>
-    <GoSrcDir>$([System.IO.Path]::Combine($(GOPATH),'src'))</GoSrcDir>
-    <GoOS Condition="$([MSBuild]::IsOSPlatform(OSX))">darwin</GoOS>
-    <GoOS Condition="$([MSBuild]::IsOSPlatform(Linux))">linux</GoOS>
-    <GoOS Condition="'$(GoOS)' == ''">windows</GoOS>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Platform)' == 'Win32' Or '$(Platform)' == 'x86'">
-    <MSysPath>$(Mingw32Bin);$(MSysUsrBin)</MSysPath>
-    <MSysGcc>i686-w64-mingw32-gcc</MSysGcc>
-    <GoArch>386</GoArch>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Platform)' == 'x64'">
-    <MSysPath>$(Mingw64Bin);$(MSysUsrBin)</MSysPath>
-    <MSysGcc>x86_64-w64-mingw32-gcc</MSysGcc>
-    <GoArch>amd64</GoArch>
-  </PropertyGroup>
-
-  <PropertyGroup>
-    <CGoEnabled>1</CGoEnabled>
-    <GoExecPath>$(MSysPath);$(PATH)</GoExecPath>
-    <GoExecPath>$(GoExecPath.Replace(';', '%3B'))</GoExecPath>
-  </PropertyGroup>
-
-  <ItemGroup>
-    <GoBuildEnv Include="GOOS=$(GoOS)" />
-    <GoBuildEnv Include="GOARCH=$(GoArch)" />
-    <GoBuildEnv Include="CGO_ENABLED=$(CGoEnabled)" />
-    <GoBuildEnv Include="CC=$(MSysGcc)" />
-    <GoBuildEnv Include="PATH=$(GoExecPath)" />
-  </ItemGroup>
+  <Target Name="CheckMSBuildRuntimeType" BeforeTargets="Build">
+    <Error Text="Please use 'dotnet msbuild' command" Condition="'$(MSBuildRuntimeType)' != 'Core'" />
+  </Target>
 
   <PropertyGroup>
     <ImportMicrosoftCppTargets>false</ImportMicrosoftCppTargets>
   </PropertyGroup>
   <Import Project="Agent.targets" />
 
-  <Target Name="CheckMSBuildRuntimeType" BeforeTargets="Build">
-    <Error Text="Please use 'dotnet msbuild' command" Condition="'$(MSBuildRuntimeType)' != 'Core'" />
-  </Target>
-  <Target Name="CheckGoEnv" BeforeTargets="Build">
-    <Error Text="Go programming language not installed" Condition="'$(GOROOT)' == '' Or !$([System.IO.File]::Exists($(GOROOT)\bin\go.exe))" />
-    <Error Text="GOPATH environment variable not set" Condition="'$(GOPATH)' == ''" />
-  </Target>
-  <Target Name="CheckMSysEnv" BeforeTargets="Build">
-    <Error Text="MSYS not installed" Condition="!$([System.IO.File]::Exists($(MSysRoot)\mingw32.exe))" />
-  </Target>
-
-  <Target Name="GoAgentTrace" Condition="'$(ZouTraceProps)' == 'true'">
-    <Message Importance="normal" Text="GoProjectDir = $(GoProjectDir)" />
-    <Message Importance="normal" Text="GoOutDir     = $(GoOutDir)" />
-    <Message Importance="normal" Text="MSysRoot     = $(MSysRoot)" />
-    <Message Importance="normal" Text="MSysGcc      = $(MSysGcc)" />
-    <Message Importance="normal" Text="MSysPath     = $(MSysPath)" />
-    <Message Importance="normal" Text="GOROOT       = $(GOROOT)" />
-    <Message Importance="normal" Text="GOPATH       = $(GOPATH)" />
-    <Message Importance="normal" Text="GoBinDir     = $(GoBinDir)" />
-    <Message Importance="normal" Text="GoSrcDir     = $(GoSrcDir)" />
-    <Message Importance="normal" Text="GoOS         = $(GoOS)" />
-    <Message Importance="normal" Text="GoArch       = $(GoArch)" />
-    <Message Importance="normal" Text="CGoEnabled   = $(CGoEnabled)" />
-    <Message Importance="normal" Text="GoBuildEnv   = %(GoBuildEnv.Identity)" />
-  </Target>
+  <PropertyGroup>
+    <ForceGoGet Condition="'$(ForceGoGet)' == ''">false</ForceGoGet>
+    <TargetExt Condition="'$(TargetExt)' == ''">.exe</TargetExt>
+    <TargetName Condition="'$(TargetName)' == ''">$(MSBuildProjectName)</TargetName>
+    <TargetFileName>$(TargetName)$(TargetExt)</TargetFileName>
+    <TargetPath>$(TargetDir)$(TargetFileName)</TargetPath>
+  </PropertyGroup>
 
 </Project>
