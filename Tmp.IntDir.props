@@ -6,7 +6,7 @@
     <!-- For agent functions, redirect IntDir to temp folder to avoid cluttering the agent folder -->
     <PropertyGroup>
       <_PropertySheetDisplayName>Intermediate Directory: $(TMP)\_zou\...</_PropertySheetDisplayName>
-      <IntDir>$(TMP)\_zou\$(BundleName)\$(BundleRelativeProjectPath)\$(Platform)\$(PlatformToolset)\$(Configuration)\</IntDir>
+      <IntDir>$([System.IO.Path]::Combine('$(TMP)','_zou','$(BundleName)', '$(BundleRelativeProjectPath)', '$(Platform)', '$(PlatformToolset)', '$(Configuration)'))\</IntDir>
       <!-- Avoid MSB8029 warning -->
       <IgnoreWarnIntDirInTempDetected>true</IgnoreWarnIntDirInTempDetected>
     </PropertyGroup>

@@ -2,14 +2,14 @@
 <!-- Resolves missing properties when using 'dotnet msbuild' command. -->
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" >
 
-  <PropertyGroup   Condition="'$(MSBuildRuntimeType)' == 'Core'">
+  <PropertyGroup>
     <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
     <SolutionName  Condition="'$(SolutionName)'  == ''">*Undefined*</SolutionName>
     <SolutionDir   Condition="'$(SolutionDir)'   == ''">$(MSBuildProjectDirectory)$(V)</SolutionDir>
     <SolutionPath  Condition="'$(SolutionPath)'  == ''">*Undefined*</SolutionPath>
     <ProjectName   Condition="'$(ProjectName)'   == ''">$([System.IO.Path]::GetFileNameWithoutExtension('$(MSBuildProjectFile)'))</ProjectName>
     <ProjectDir    Condition="'$(ProjectDir)'    == ''">$(SolutionDir)</ProjectDir>
-    <ProjectPath   Condition="'$(ProjectPath)'   == ''">$(MSBuildProjectDirectory)$(V)$(MSBuildProjectFile)</ProjectPath>
+    <ProjectPath   Condition="'$(ProjectPath)'   == ''">$(ProjectDir)$(MSBuildProjectFile)</ProjectPath>
   </PropertyGroup>
 
 </Project>
