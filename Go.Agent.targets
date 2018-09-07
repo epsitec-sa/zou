@@ -1,0 +1,38 @@
+<Project>
+
+  <ItemGroup>
+    <GoBuild Include="$(GoWorkspace)**\*.go"  />
+    <GoBuild Include="$(GoWorkspace)**\*.h" />
+    <GoBuild Include="$(GoWorkspace)**\*.c" />
+    <GoResource Include="$(GoResourceDir)**\*" />
+  </ItemGroup>
+
+  <Target Name="GoBuildVersionInfo" DependsOnTargets="GoGetTools" BeforeTargets="Build">
+    <PropertyGroup>
+      <GoVersionInfoFlags Condition="'$(Platform)' == 'x64'">-64</GoVersionInfoFlags>
+    </PropertyGroup>
+    <Exec EnvironmentVariables="@(GoBuildEnv)" Command="$(GoBinDir)/goversioninfo $(GoVersionInfoFlags)" />
+  </Target>
+
+  <Target Name="Build" Inputs="@(GoBuild);@(GoResource)" Outputs="$(TargetPath)">
+    <PropertyGroup>
+      <GoBuildLDFlags Condition="'$(Subsystem)' == 'Windows'">-H windowsgui</GoBuildLDFlags>
+      <GoBuildFlags Condition="'$(GoBuildLDFlags)' != ''">-ldflags "$(GoBuildLDFlags)"</GoBuildFlags>
+    </PropertyGroup>
+    
+    <ItemGroup>
+      <GoBuildCommand Include="go generate" />
+      <GoBuildCommand Include='go build $(GoBuildFlags) -o $(TargetPath) -v' />
+      <GoBuildCommand Include='$(GoBinDir)/rice append --exec "$(TargetPath)" -i "$(GoResourceDir.TrimEnd(\/))"' />
+    </ItemGroup>
+
+    <Delete Files="$(TargetPath)" />
+    <Exec WorkingDirectory="$(ProjectDir)" EnvironmentVariables="@(GoBuildEnv)" Command="%(GoBuildCommand.Identity)" />
+  </Target>
+
+  <Target Name="Clean">
+    <Exec WorkingDirectory="$(ProjectDir)" Command="go clean" />
+    <Delete Files="$(TargetPath)" />
+  </Target>
+
+</Project>
