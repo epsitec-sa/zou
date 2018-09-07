@@ -10,6 +10,7 @@
   <Target Name="GoBuildVersionInfo" DependsOnTargets="GoGetTools" BeforeTargets="Build">
     <PropertyGroup>
       <GoVersionInfoFlags Condition="'$(Platform)' == 'x64'">-64</GoVersionInfoFlags>
+      <GoVersionInfoFlags Condition="Exists('$(TargetFileName).$(Configuration).manifest')">$(GoVersionInfoFlags) -manifest="$(TargetFileName).$(Configuration).manifest"</GoVersionInfoFlags>
     </PropertyGroup>
     <Exec EnvironmentVariables="@(GoBuildEnv)" Command="$(GoBinDir)/goversioninfo $(GoVersionInfoFlags)" />
   </Target>
