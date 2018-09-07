@@ -33,11 +33,15 @@
   
   <!-- get some go tools -->
   <Target Name="GoGetRice" Condition="!Exists('$(GoBinDir)\rice.exe')" BeforeTargets="Build">
-    <Exec Command="go get github.com/GeertJohan/go.rice/rice" />
+    <Exec Command="go get -u github.com/GeertJohan/go.rice/rice" />
   </Target>
 
   <Target Name="GoGetVersionInfo" Condition="!Exists('$(GoBinDir)\goversioninfo.exe')" BeforeTargets="Build">
-    <Exec Command="go get github.com/josephspurrier/goversioninfo/cmd/goversioninfo" />
+    <Exec Command="go get -u github.com/josephspurrier/goversioninfo/cmd/goversioninfo" />
+  </Target>
+
+  <Target Name="GoGetSwag" Condition="!Exists('$(GoBinDir)\swag.exe')" BeforeTargets="Build">
+    <Exec Command="go get -u github.com/swaggo/swag/cmd/swag" />
   </Target>
 
   <Target Name="GoGetTools" DependsOnTargets="GoGetRice;GoGetVersionInfo" />
