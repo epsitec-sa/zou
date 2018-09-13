@@ -1,12 +1,10 @@
 <!-- Import this script at the top of a C++ agent -->
 <Project>
   
-  <PropertyGroup>
-    <CppBootImported>true</CppBootImported>
-  </PropertyGroup>
-
-  <Import Project="zou.props" />
-  <Import Project="zou.Errors.props" />
+  <ImportGroup Condition="'$(ZouVersion)' == ''">
+    <Import Project="zou.props" />
+    <Import Project="zou.Errors.props" />
+  </ImportGroup>
 
   <PropertyGroup Condition="'$(MSBuildRuntimeType)' == 'Core'">
     <Platform Condition="'$(Platform)' == ''">Win32</Platform>

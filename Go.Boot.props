@@ -1,12 +1,10 @@
 <!-- Import this script at the top of a C# agent -->
 <Project>
   
-  <PropertyGroup>
-    <GoBootImported>true</GoBootImported>
-  </PropertyGroup>
-
-  <Import Project="zou.props" />
-  <Import Project="zou.Errors.props" />
+  <ImportGroup Condition="'$(ZouVersion)' == ''">
+    <Import Project="zou.props" />
+    <Import Project="zou.Errors.props" />
+  </ImportGroup>
 
   <PropertyGroup>
     <Platform Condition="'$(Platform)' == ''">x64</Platform>
