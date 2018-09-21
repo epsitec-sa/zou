@@ -4,6 +4,7 @@ Git aliases can be enabled by running `zou/bin/git_config.{bat|sh}` (see [git_co
 
 | Alias | Parameters | Description | Comment/Exemple
 |:-|:-|:-|:-
+| git **attach** | *[-c&#x7c;--commit COMMIT]<br>[-d&#x7c;--dev]<br>[-p&#x7c;--prod] [PATTERN]* | attach a detached head to the appropriate branch | `git attach --dev`<br>`git attach --dev sku/sal/dev`<br>`git attach --prod`
 | git **bundle-dir** | *[FOLDER]* | display the parent bundle directory (see **module-id**) | `git bundle-dir /s/devel/cresus-dev/zou`<br>*=> /s/devel/cresus-dev*
 | git **curbranch** | *[FOLDER]* | display the active branch in the given folder |
 | git **deltag** | *TAG* | delete a tag locally and remotely (see **newtag**, **mvtag**) | `git deltag v1.0.0`
