@@ -3,21 +3,21 @@
 :: Parse command line
 :parse
 if NOT '%1' == '' (
-	if /i '%1' == '-h' (
-		echo.
-		echo Usage:
-		echo   %0 [OPTIONS]
-		echo.
-		echo Options:
-		echo   -h		Help
-		echo   -r		Reset aliases
-		echo   -c		Create a copy to %USERPROFILE%\.gitconfig.cmd.zou
-		exit /b
-	)
-	if /i '%1' == '-r' set reset=true
-	if /i '%1' == '-c' set copy=true
-	shift
-	goto :parse
+    if /i '%1' == '-h' (
+        echo.
+        echo Usage:
+        echo   %0 [OPTIONS]
+        echo.
+        echo Options:
+        echo   -h		Help
+        echo   -r		Reset aliases
+        echo   -c		Create a copy to %USERPROFILE%\.gitconfig.cmd.zou
+        exit /b
+    )
+    if /i '%1' == '-r' set reset=true
+    if /i '%1' == '-c' set copy=true
+    shift
+    goto :parse
 )
 
 git config --global status.submoduleSummary true
@@ -61,7 +61,7 @@ git config --global alias.foldotags "!for t in $(git otags); do git mvtag $t oth
 git config --global alias.tags "!git tag; git ls-remote --tags origin | sed s,[[:alnum:]]*[[:space:]]*,,"
 git config --global alias.newtag-lo "!f() { local tag=$1; shift; local opt=$([[ -z \"$@\" ]] && echo -m$(git log -1 --pretty=%%B) || echo -a $@); git tag \"$opt\" $tag; }; f"
 git config --global alias.newtag "!f() { local tag=$1; git newtag-lo $@; git push origin $tag; }; f"
-git config --global alias.deltag "!f() { git tag --delete $1; git push --delete origin $1 >/dev/null 2>&1; }; f"	
+git config --global alias.deltag "!f() { git tag --delete $1; git push --delete origin $1 >/dev/null 2>&1; }; f"
 :: get short hash of given tag
 git config --global alias.tag2hash "!f() { git describe --tags --long $1 | sed s,.*-[0-9]*-g,,g; }; f"
 :: rename local + remote tag
@@ -103,6 +103,6 @@ git config --global alias.vmajor "!f() { git vcommit2major $1 | xargs git vmax |
 git config --global alias.vminor "!f() { git vcommit2minor $1 | xargs git vmax | xargs git vcheckout; }; f"
 git config --global alias.vnext "!f() { git vmax $1 | xargs git vcheckout; }; f"
 git config --global alias.vtable "!row() { local vminor; local vmajor; local module=$1; local head=$(git curbranch); local tag=$(git vcommit2tag | sed -E 's,(.*)-g[[:alnum:]]*$,\1,'); if [[ $tag =~ (.*)-([0-9]+)$ ]]; then local version=${BASH_REMATCH[1]}; local delta=${BASH_REMATCH[2]}; else local version=$tag; fi; local OIFS=$IFS; IFS=' '; local tags=$(git tag -l --sort=-v:refname); if [[ $version =~ ^v([0-9]+)\.([0-9]+) ]]; then local major=${BASH_REMATCH[1]}; local minor=${BASH_REMATCH[2]}; vminor=$(echo $tags | grep -m1 ^v$major\.$minor); vmajor=$(echo $tags | grep -m1 ^v$major\.); fi; local vnext=$(echo $tags | grep -m1 ^v[0-9]); local md_module=$module; local md_version=$version; [[ $version =~ ^.*-@$ || -n $delta ]] && md_module=\"##$module##\"; [[ $version =~ ^.*-@$ ]] && md_version=\"##$version##\"; [[ $version == $vminor ]] && unset vminor || vminor=\"#$vminor#\"; [[ $version == $vmajor ]] && unset vmajor || vmajor=\"#$vmajor#\"; [[ $version == $vnext ]] && unset vnext || vnext=\"#$vnext#\"; echo $module:_ $md_module _ $head _ $delta _ $md_version _ $vminor _ $vmajor _ $vnext; IFS=$OIFS; }; v1=`pwd`/_v1; [[ -f $v1 ]] && rm $v1; echo _ Module _ Head _ Delta _ Version _ vminor _ vmajor _ vnext >$v1; echo _:-_:-_:-_:-_:-_:-_:- >>$v1; row $(basename `pwd`) | cut -d':' -f2 >>$v1; export -f row; export v2=`pwd`/_v2; [[ -f $v2 ]] && rm $v2; git submodule foreach --recursive 'row $(git module-id) >>$v2'; [[ -f $v2 ]] && sort -t: -k1 $v2 | cut -d: -f2 >>$v1 && rm $v2; sed -E 's,_,|,g' $v1 | sed -E 's,#,\*,g' >versions.md; rm $v1"
-git config --global alias.attach "!f() { set -f; commit=HEAD; patterns=(); while [[ \"$#\" > 0 ]]; do case \"$1\" in -c|--commit) commit=\"$2\"; shift 2;; --commit=*) commit=\"${1#*=}\"; shift;; -d|--dev) opt_patterns+=('\bdev\b' '^master$'); shift;; -p|--prod) opt_patterns+=('[0-9]+\.[0-9]+' '\bprod\b' '^master$'); shift;; -*) echo \"unknown option: $1\" >&2; exit 1;; *) patterns+=(\"$1\"); shift 1;; esac done; patterns+=(${opt_patterns[@]}); [[ ${#patterns[@]} == 0 ]] && patterns+=('.*'); hash=$(git rev-parse $commit); branches=(); for b in $(git branch -a | grep -v HEAD); do [[ $(git rev-parse $b) == $hash ]] && branches+=(${b#remotes/origin/}); done; branches=(`echo ${branches[@]} | xargs -n1 echo | sort -u | xargs echo`); if [[ ${#branches[@]} == 1 ]]; then	branch=${branches[0]}; elif [[ ${#branches[@]} > 1 ]]; then	for p in ${patterns[@]}; do	for b in ${branches[@]}; do branch=$(echo $b | grep -E $p); [[ -n $branch ]] && break 2; done done fi; [[ -n \"$branch\" ]] && git checkout $branch; }; f"
+git config --global alias.attach "!f() { set -f; commit=HEAD; patterns=(); while [[ \"$#\" > 0 ]]; do case \"$1\" in -c|--commit) commit=\"$2\"; shift 2;; --commit=*) commit=\"${1#*=}\"; shift;; -d|--dev) opt_patterns+=('\bdev\b' '^master$'); shift;; -p|--prod) opt_patterns+=('[0-9]+\.[0-9]+' '\bprod\b' '^master$'); shift;; -*) echo \"unknown option: $1\" >&2; exit 1;; *) patterns+=(\"$1\"); shift 1;; esac done; patterns+=(${opt_patterns[@]}); [[ ${#patterns[@]} == 0 ]] && patterns+=('.*'); hash=$(git rev-parse $commit); branches=(); for b in $(git branch -a --merged $commit | grep -v HEAD); do [[ $(git rev-parse $b) == $hash ]] && branches+=(${b#remotes/origin/}); done; branches=(`echo ${branches[@]} | xargs -n1 echo | sort -u | xargs echo`); for b in $(git branch -a --no-merged $commit | grep -v HEAD); do for i in ${!branches[@]}; do [[ ${branches[i]} == $b ]] && unset branches[i]; done; done; if (( ${#branches[@]} >= 1 )); then for p in ${patterns[@]}; do for b in ${branches[@]}; do branch=$(echo $b | grep -E $p); [[ -n $branch ]] && break 2; done done fi; [[ -n \"$branch\" ]] && git checkout $branch || true; }; f"
 
 if '%copy%'=='true' copy /Y "%USERPROFILE%\.gitconfig" "%USERPROFILE%\.gitconfig.cmd.zou" >nul
