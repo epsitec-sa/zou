@@ -15,6 +15,7 @@ Git aliases can be enabled by running `zou/bin/git_config.{bat|sh}` (see [git_co
 | git **for-qr** | *COMMAND* | execute given command in bundle and all sub-modules --quiet -- recursive |
 | git **for-r** | *COMMAND* | execute given command in bundle and all sub-modules -- recursive |
 | git **issue** | *DESCR* | create an issue branch | `git issue 305-buggy`<br>*=> issue/305-buggy*
+| git **lsm** | | list submodules | `git lsm`
 | git **module-id** | *[FOLDER]* | display the module ID (relative path to bundle directory) of the given module folder (see **bundle-dir**) | `git module-id /s/devel/cresus-dev/zou/bin`<br>*=> zou*
 | git **mvbranch** | *OLD NEW* | rename a branch locally and remotely |
 | git **mvtag** | *OLD NEW* | rename a tag locally and remotely (see **deltag**, **newtag**) |

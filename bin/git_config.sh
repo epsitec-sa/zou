@@ -37,6 +37,7 @@ git config --global alias.for '!path=$(basename `pwd`); eval $@; git submodule f
 git config --global alias.for-r '!path=$(basename `pwd`); eval $@; git submodule foreach --recursive'
 git config --global alias.for-q '!path=$(basename `pwd`); eval $@; git submodule --quiet foreach'
 git config --global alias.for-qr '!path=$(basename `pwd`); eval $@; git submodule --quiet foreach --recursive'
+git config --global alias.lsm '!git config --file .gitmodules --get-regexp path | awk '"'"'{ print $2 }'"'"' | sort'
 
 git config --global alias.sdiff '!git for git diff'
 git config --global alias.spull '!git pull && git submodule sync --recursive && git submodule update --init --recursive'
