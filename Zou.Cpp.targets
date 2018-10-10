@@ -36,4 +36,9 @@
 
   <Import Project="$(MSBuildThisFileDirectory)Cpp.HelpProject.targets"/>
   <Import Project="$(MSBuildThisFileDirectory)ImportFile.targets"/>
+
+  <!-- Make Windows builds reproducible (https://github.com/jasonwhite/ducible) -->
+  <Target Name="Ducible" AfterTargets="Build" Condition="('$(ConfigurationType)' == 'DynamicLibrary' Or '$(ConfigurationType)' == 'Application') And '$(LinkIncremental)' == 'false'">
+    <Exec Command='"$(ZouBinDir)ducible" "$(TargetPath)" "$(OutDir)$(TargetName).pdb"' />
+  </Target>
 </Project>
