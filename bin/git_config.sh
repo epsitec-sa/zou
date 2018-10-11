@@ -42,7 +42,7 @@ git config --global alias.lsm '!git config --file .gitmodules --get-regexp path 
 git config --global alias.sdiff '!git for git diff'
 git config --global alias.spull '!git pull && git submodule sync --recursive && git submodule update --init --recursive'
 git config --global alias.spush 'push --recurse-submodules=on-demand'
-git config --global alias.zclean '![ -d node_modules ] && rm -rf node_modules; git clean -xdf -e packages'
+git config --global alias.zclean '![ -d node_modules ] && rm -rf node_modules; git clean -xdf -e packages; git checkout .'
 git config --global alias.sclean '!git for git zclean'
 git config --global alias.supdate 'submodule update --init --recursive'
 # Branch
