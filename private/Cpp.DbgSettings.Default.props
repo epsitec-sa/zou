@@ -40,6 +40,8 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <GenerateMapFile>true</GenerateMapFile>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <!-- Do not include full path of PDB in PE header to avoid non reproducibility of builds -->
+      <AdditionalOptions Condition="'%(Link.GenerateDebugInformation)' == 'true'">/PDBALTPATH:%_PDB% %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
 </Project>
