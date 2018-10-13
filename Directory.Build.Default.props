@@ -1,0 +1,25 @@
+<!-- Defines the default metadata for VS2017 .NET projects (prolog) -->
+<Project InitialTargets="CheckVersion">
+  
+  <!-- Versioning -->
+  <PropertyGroup Condition ="'$(AssemblyVersion)' == ''">
+    <AssemblyVersionUndefined>true</AssemblyVersionUndefined>
+    <AssemblyVersion>0.1.0</AssemblyVersion>
+  </PropertyGroup>
+  <PropertyGroup>
+    <AssemblyVersionUndefined Condition="'$(AssemblyVersion)' == ''">true</AssemblyVersionUndefined>
+    <Version Condition="'$(Version)' == ''">$(AssemblyVersion)</Version>
+    <AssemblyFileVersion Condition="'$(AssemblyFileVersion)' == ''">$(AssemblyVersion)</AssemblyFileVersion>
+    <FileVersion Condition="'$(FileVersion)' == ''">$(AssemblyFileVersion)</FileVersion>
+  </PropertyGroup>
+  <Target Name="CheckVersion">
+    <Warning Text="WARNING: AssemblyVersion property is not defined, using default versions" Condition="'$(AssemblyVersionUndefined)' == 'true'" />
+  </Target>
+  
+  <!-- Compiler -->
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+
+</Project>

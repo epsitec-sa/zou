@@ -1,0 +1,19 @@
+<!-- Defines the default metadata for VS2017 .NET projects (epilog) -->
+<Project>
+  <PropertyGroup>
+    <Authors Condition="'$(Authors)' == ''">$(Company)</Authors>
+    <PackageId Condition="'$(PackageId)' == ''">$(ProjectName)</PackageId>
+    <RepositoryUrl Condition="'$(RepositoryUrl)' == '' And '$(PackageProjectUrl)' != '' And '$(RepositoryType)' != ''">$(PackageProjectUrl).$(RepositoryType)</RepositoryUrl>
+
+    <!-- Remove following C# warning because we use a subset of the semantic versioning format   - major.minor.patch -->
+    <!-- warning CS7035: The specified version string does not conform to the recommended format - major.minor.build.revision -->
+    <NoWarn>$(NoWarn);7035</NoWarn>
+  </PropertyGroup>
+  
+  <!-- Make assembly internals visible to test projects (MySmartProject visible to MySmartProject.Test) -->
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>$(MSBuildProjectName).Test</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+</Project>
