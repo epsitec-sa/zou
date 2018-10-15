@@ -12,8 +12,8 @@
     <AssemblyFileVersion Condition="'$(AssemblyFileVersion)' == ''">$(AssemblyVersion)</AssemblyFileVersion>
     <FileVersion Condition="'$(FileVersion)' == ''">$(AssemblyFileVersion)</FileVersion>
   </PropertyGroup>
-  <Target Name="CheckVersion">
-    <Warning Text="WARNING: AssemblyVersion property not defined, using default version." Condition="'$(AssemblyVersionUndefined)' == 'true'" />
+  <Target Name="CheckVersion" Condition="'$(MSBuildProjectExtension)' == '.csproj'">
+    <Warning Text="AssemblyVersion property not defined, using default version" Condition="'$(AssemblyVersionUndefined)' == 'true'" />
   </Target>
   
   <!-- Compiler -->
