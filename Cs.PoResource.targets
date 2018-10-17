@@ -855,7 +855,7 @@ Pseudo-code:
 
   <Target Name="PoBuildCore" DependsOnTargets="$(PoBuildDependsOn)" />
 
-  <Target Name="PoBuild" BeforeTargets="ResolveReferences" Condition="'@(PoResource)' != ''" >
+  <Target Name="PoBuild" BeforeTargets="ResolveReferences" Condition="'@(PoResource)' != '' And '$(DesignTimeBuild)' != 'true' And '$(BuildingProject)' == 'true'" >
     <CallTarget Targets="PoLock;PoBuildCore;PoUnlock" RunEachTargetSeparately="true" />
   </Target>
   
