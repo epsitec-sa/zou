@@ -59,9 +59,10 @@ Layout:
 
   <Target Name="InteropBuild"
           BeforeTargets="ResolveReferences"
-          DependsOnTargets="CreateInteropContent" />
+          DependsOnTargets="CreateInteropContent"
+          Condition="'$(DesignTimeBuild)' != 'true' And '$(BuildingProject)' == 'true'"/>
 
   <Target Name="InteropClean"
-          AfterTargets="AfterClean"
+          AfterTargets="Clean"
           DependsOnTargets="ImportProjectClean" />
 </Project>
