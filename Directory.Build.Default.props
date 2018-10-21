@@ -21,13 +21,12 @@
     <AssemblyVersion>0.1.0</AssemblyVersion>
   </PropertyGroup>
   <PropertyGroup>
-    <AssemblyVersionUndefined Condition="'$(AssemblyVersion)' == ''">true</AssemblyVersionUndefined>
     <Version Condition="'$(Version)' == ''">$(AssemblyVersion)</Version>
     <AssemblyFileVersion Condition="'$(AssemblyFileVersion)' == ''">$(AssemblyVersion)</AssemblyFileVersion>
     <FileVersion Condition="'$(FileVersion)' == ''">$(AssemblyFileVersion)</FileVersion>
   </PropertyGroup>
   <Target Name="CheckVersion" Condition="'$(MSBuildProjectExtension)' == '.csproj'">
-    <Warning Text="AssemblyVersion property not defined, using default version" Condition="'$(AssemblyVersionUndefined)' == 'true'" />
+    <Warning Text="AssemblyVersion property not defined, using default version: $(AssemblyVersion)" Condition="'$(AssemblyVersionUndefined)' == 'true'" />
   </Target>
   
   <!-- Compiler -->
