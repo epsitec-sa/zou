@@ -1,0 +1,36 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!--
+The CopyFile.targets can be used to copy files.
+Input parameters:
+- @(MoveFile)
+  - %(TargetDir)  - default to OutDir
+  - %(TargetFile) - default to source file
+-->
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- Define move files default metadata -->
+  <ItemDefinitionGroup>
+    <MoveFile>
+      <TargetDir>$(OutDir)</TargetDir>
+      <TargetFile>%(FileName)%(Extension)</TargetFile>
+    </MoveFile>
+  </ItemDefinitionGroup>
+
+  <Target Name="Move"
+          Inputs="%(MoveFile.Identity)"
+          Outputs="%(MoveFile.TargetDir)%(RecursiveDir)%(TargetFile)"
+          BeforeTargets="Build">
+
+    <Message Importance="high" Text="[ ] %(MoveFile.Identity) =&gt; %(TargetDir)%(RecursiveDir)%(TargetFile)" />
+    <Move SourceFiles="%(MoveFile.Identity)" DestinationFiles="%(MoveFile.TargetDir)%(RecursiveDir)%(TargetFile)" />
+  </Target>
+  <Target Name="MoveClean" AfterTargets="Move">
+    <ItemGroup>
+      <Directory0 Include="@(MoveFile->DirectoryName())"/>
+    </ItemGroup>
+    <ItemGroup>
+      <Directory1 Include="@(Directory0->Distinct())"/>
+    </ItemGroup>
+
+  </Target>
+
+</Project>
