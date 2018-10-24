@@ -23,14 +23,5 @@ Input parameters:
     <Message Importance="high" Text="[ ] %(MoveFile.Identity) =&gt; %(TargetDir)%(RecursiveDir)%(TargetFile)" />
     <Move SourceFiles="%(MoveFile.Identity)" DestinationFiles="%(MoveFile.TargetDir)%(RecursiveDir)%(TargetFile)" />
   </Target>
-  <Target Name="MoveClean" AfterTargets="Move">
-    <ItemGroup>
-      <Directory0 Include="@(MoveFile->DirectoryName())"/>
-    </ItemGroup>
-    <ItemGroup>
-      <Directory1 Include="@(Directory0->Distinct())"/>
-    </ItemGroup>
-
-  </Target>
 
 </Project>
