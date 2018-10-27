@@ -20,6 +20,9 @@ if NOT '%1' == '' (
     goto :parse
 )
 
+:: save credentials on Windows
+git config --global credential.helper wincred
+
 git config --global status.submoduleSummary true
 git config --global diff.submodule log
 
