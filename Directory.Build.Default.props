@@ -1,5 +1,5 @@
 <!-- Defines the default metadata for VS2017 .NET projects (prolog) -->
-<Project InitialTargets="CheckVersion">
+<Project>
   <!-- Default properties (can be overloaded in bundle after importing this script) -->
   <PropertyGroup>
     <TargetFramework>net472</TargetFramework>
@@ -16,17 +16,21 @@
   </PropertyGroup>
 
   <!-- Versioning -->
-  <PropertyGroup Condition ="'$(AssemblyVersion)' == ''">
-    <AssemblyVersionUndefined>true</AssemblyVersionUndefined>
-    <AssemblyVersion>0.1.0</AssemblyVersion>
+  <!-- https://andrewlock.net/version-vs-versionsuffix-vs-packageversion-what-do-they-all-mean -->
+  <!-- https://stackoverflow.com/questions/42183300/what-is-the-difference-between-various-msbuild-version-properties-such-as-versi -->
+  <!-- For backward compatibility -->
+  <PropertyGroup Condition ="'$(AssemblyVersion)' != ''">
+    <VersionPrefix>$(AssemblyVersion)</VersionPrefix>
   </PropertyGroup>
-  <PropertyGroup>
-    <Version Condition="'$(Version)' == ''">$(AssemblyVersion)</Version>
-    <AssemblyFileVersion Condition="'$(AssemblyFileVersion)' == ''">$(AssemblyVersion)</AssemblyFileVersion>
-    <FileVersion Condition="'$(FileVersion)' == ''">$(AssemblyFileVersion)</FileVersion>
-  </PropertyGroup>
-  <Target Name="CheckVersion" Condition="'$(MSBuildProjectExtension)' == '.csproj'">
-    <Warning Text="AssemblyVersion property not defined, using default version: $(AssemblyVersion)" Condition="'$(AssemblyVersionUndefined)' == 'true'" />
+  
+  <Target Name="TraceVersion" AfterTargets="GetAssemblyAttributes" Condition="'$(ZouTrace)' == 'true' || $(TraceVersion)' == 'true'">
+    <Message Importance="high" Text="VersionPrefix        = $(VersionPrefix)" />
+    <Message Importance="high" Text="VersionSuffix        = $(VersionSuffix)" />
+    <Message Importance="high" Text="Version              = $(Version)" />
+    <Message Importance="high" Text="AssemblyVersion      = $(AssemblyVersion)" />
+    <Message Importance="high" Text="FileVersion          = $(FileVersion)" />
+    <Message Importance="high" Text="InformationalVersion = $(InformationalVersion)" />
+    <Message Importance="high" Text="PackageVersion       = $(PackageVersion)" />
   </Target>
   
   <!-- Compiler -->
