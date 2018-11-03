@@ -1,0 +1,8 @@
+#! /bin/sh
+
+r=${1:-`pwd -P`}
+while [[ -n "$r" && ! -d "$r/.git" ]]; do
+  r=${r%%/*}
+done
+
+echo $r

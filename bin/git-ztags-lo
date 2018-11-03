@@ -1,0 +1,35 @@
+#! /bin/sh
+
+# zouify tags (apply zou-flow):
+# 1. move non SemVer tags (otags) to other folder
+# 2. group tags pointing to the same commit hash - create a lookup table with the commit hash as key and the commit tags (space separated) as value.
+# 3. remove other folder's redondant tags
+
+for tag in $(git otags); do
+  echo Moving $tag to other folder
+  git mvtag-lo $tag \"other/$tag\"
+done
+
+declare -A lookup
+for tag in $(git tag); do
+  h=$(git tag2hash $tag)
+  if [ -z \"${lookup[$h]}\" ]; then
+    lookup[$h]=$tag
+    echo \"$h : ${lookup[$h]}\"
+  else
+    lookup[$h]=\"${lookup[$h]} $tag\"
+    echo \"$h : ${lookup[$h]}\"
+  fi
+done
+
+echo
+echo Redondant tags
+for k in ${!lookup[@]}; do
+  read -a r <<< \"${lookup[$k]}\"
+  if [[ ${#r[@]} > 1 ]]; then
+    echo ${#r[@]} $k = ${r[@]}
+    for tag in \"${r[@]}\"; do
+      [[ $tag == other/* ]] git tag --delete $tag
+    done
+  fi
+done

@@ -1,0 +1,18 @@
+#! /bin/bash
+
+b=$(git curbranch)
+[[ $b != master ]] && git checkout master
+
+if [[ -f Version.props ]]; then
+  v=$1
+  [ -z $v ] && v=$(git vtag2next);
+  v=${v#v*}
+  sed -i "s,<Version>.*</Version>,<Version>$v</Version>," Version.props
+  git add Version.props
+  git commit -m"msbuild: update version to $v"
+  
+  git vcheckout
+  git merge master
+  git checkout $b
+  git push --all
+fi

@@ -1,0 +1,9 @@
+#! /bin/sh
+
+local old=$1
+local new=$2
+git ls-remote --heads --exit-code origin $old >/dev/null || git push origin $old
+git branch $new origin/$old >/dev/null 2>&1
+git push origin --set-upstream $new >/dev/null 2>&1
+git push --delete --force origin $old >/dev/null 2>&1
+git branch -D $old >/dev/null 2>&1

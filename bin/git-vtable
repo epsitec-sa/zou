@@ -1,0 +1,50 @@
+#! /bin/bash
+
+row()
+{
+  local vminor
+  local vmajor
+  local module=$1
+  local head=$(git curbranch)
+  local tag=$(git vcommit2tag | sed -E 's,(.*)-g[[:alnum:]]*$,\1,')
+  if [[ $tag =~ (.*)-([0-9]+)$ ]]; then
+    local version=${BASH_REMATCH[1]}
+    local delta=${BASH_REMATCH[2]}
+  else
+    local version=$tag
+  fi
+  local OIFS=$IFS
+  IFS=' '
+  local tags=$(git tag -l --sort=-v:refname)
+  if [[ $version =~ ^v([0-9]+)\.([0-9]+) ]]; then
+    local major=${BASH_REMATCH[1]}
+    local minor=${BASH_REMATCH[2]}
+    vminor=$(echo $tags | grep -m1 ^v$major\.$minor)
+    vmajor=$(echo $tags | grep -m1 ^v$major\.)
+  fi
+  local vnext=$(echo $tags | grep -m1 ^v[0-9])
+  local md_module=$module
+  local md_version=$version
+  [[ $version =~ ^.*-@$ || -n $delta ]] && md_module="##$module##"
+  [[ $version =~ ^.*-@$ ]] && md_version="##$version##"
+  [[ $version == $vminor ]] && unset vminor || vminor="#$vminor#"
+  [[ $version == $vmajor ]] && unset vmajor || vmajor="#$vmajor#"
+  [[ $version == $vnext ]] && unset vnext || vnext="#$vnext#"
+  echo $module:_ $md_module _ $head _ $delta _ $md_version _ $vminor _ $vmajor _ $vnext
+  IFS=$OIFS
+}
+v1=`pwd`/_v1
+[[ -f $v1 ]] && rm $v1
+echo _ Module _ Head _ Delta _ Version _ vminor _ vmajor _ vnext >$v1
+echo _:-_:-_:-_:-_:-_:-_:- >>$v1
+row $(basename `pwd`) | cut -d':' -f2 >>$v1
+
+export -f row
+export v2=`pwd`/_v2
+[[ -f $v2 ]] && rm $v2
+git submodule foreach --recursive 'row $(git module-id) >>$v2'
+
+v="versions-$(git curbranch).md"
+[[ -f $v2 ]] && sort -t: -k1 $v2 | cut -d: -f2 >>$v1 && rm $v2
+sed -E 's,_,|,g' $v1 | sed -E 's,#,\*,g' >$v
+rm $v1
