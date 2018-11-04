@@ -7,28 +7,28 @@
 
 for tag in $(git otags); do
   echo Moving $tag to other folder
-  git mvtag-lo $tag \"other/$tag\"
+  git mvtag-lo $tag "other/$tag"
 done
 
 declare -A lookup
 for tag in $(git tag); do
   h=$(git tag2hash $tag)
-  if [ -z \"${lookup[$h]}\" ]; then
+  if [ -z "${lookup[$h]}" ]; then
     lookup[$h]=$tag
-    echo \"$h : ${lookup[$h]}\"
+    echo "$h : ${lookup[$h]}"
   else
-    lookup[$h]=\"${lookup[$h]} $tag\"
-    echo \"$h : ${lookup[$h]}\"
+    lookup[$h]="${lookup[$h]} $tag"
+    echo "$h : ${lookup[$h]}"
   fi
 done
 
 echo
 echo Redondant tags
 for k in ${!lookup[@]}; do
-  read -a r <<< \"${lookup[$k]}\"
+  read -a r <<< "${lookup[$k]}"
   if [[ ${#r[@]} > 1 ]]; then
     echo ${#r[@]} $k = ${r[@]}
-    for tag in \"${r[@]}\"; do
+    for tag in "${r[@]}"; do
       [[ $tag == other/* ]] git tag --delete $tag
     done
   fi

@@ -15,7 +15,7 @@ if [[ $tag =~ ^v([0-9]+)\\.([0-9]+)(\\.|-)(.*)-([0-9]+)-g([[:alnum:]]*)$ ]]; the
     fi
   fi
   if [[ $patch == '@' ]]; then
-    echo \"v$major.$minor.0\"
+    echo "v$major.$minor.0"
   elif [[ -n $delta ]]; then
     if [[ $patch =~ ([0-9]+)(-[[:alnum:]]+)?(\\+.+)?$ ]]; then
       patch=${BASH_REMATCH[1]}
@@ -23,9 +23,9 @@ if [[ $tag =~ ^v([0-9]+)\\.([0-9]+)(\\.|-)(.*)-([0-9]+)-g([[:alnum:]]*)$ ]]; the
       if [[ $suffix =~ -(alpha|beta|rc)([0-9]*) ]]; then
         prerel_label=${BASH_REMATCH[1]}
         prerel_rev=${BASH_REMATCH[2]}
-        echo \"v$major.$minor.$patch-$prerel_label$((prerel_rev+1))\"
+        echo "v$major.$minor.$patch-$prerel_label$((prerel_rev+1))"
       else
-        echo \"v$major.$minor.$((patch+1))\"
+        echo "v$major.$minor.$((patch+1))"
       fi
     fi
   fi

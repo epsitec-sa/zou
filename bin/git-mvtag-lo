@@ -1,12 +1,12 @@
 #! /bin/sh
 
 local tagger=$(git tagger-name $1)
-if [[ -z \"$tagger\" ]]; then
+if [[ -z "$tagger" ]]; then
   echo Renaming lightweight tag $1 to $2
   git tag -f $2 $1^{}
 else
   echo Renaming annotated tag $1 to $2
-  GIT_COMMITTER_NAME=$tagger GIT_COMMITTER_EMAIL=$(git tagger-email $1) GIT_COMMITTER_DATE=$(git tag-date $1) git tag -f -m \"$(git tag-comment $1)\" $2 $1^{}
+  GIT_COMMITTER_NAME=$tagger GIT_COMMITTER_EMAIL=$(git tagger-email $1) GIT_COMMITTER_DATE=$(git tag-date $1) git tag -f -m "$(git tag-comment $1)" $2 $1^{}
 fi
 
 [[ "$1" != "$2" ]] && git tag --delete $1 >/dev/null
