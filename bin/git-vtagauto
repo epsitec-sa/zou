@@ -1,3 +1,10 @@
 #! /bin/sh
 
-"!f() { vtag=$(git vcommit2tag); vnext=$(git vtag2next $vtag); [[ -z $vnext ]] && echo Current tag: $vtag || { git newtag $vnext; echo Tag created: $vnext; }; }; f"
+vtag=$(git vcommit2tag)
+vnext=$(git vtag2next $vtag)
+if [[ -z $vnext ]]; then
+    echo Current tag: $vtag
+else
+    git newtag $vnext
+    echo Tag created: $vnext
+fi

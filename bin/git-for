@@ -1,3 +1,23 @@
 #! /bin/sh
 
-"!path=$(basename `pwd`); eval $@; git submodule foreach"
+sm_only=false
+sm_opts=()
+fe_opts=()
+args=()
+
+while [[ "$#" > 0 ]]; do case "$1" in
+  -h|--help) git zou-help $0; exit 0;;
+  -s|--sm-only)   sm_only=true;;
+  -q|--quiet)     sm_opts+=('--quiet');;
+  -r|--recursive) fe_opts+=('--recursive');;
+  --) shift; args+=("$@"); break;;
+  *) args+=("$1");;
+esac; shift; done
+
+[[ $sm_only == false ]] && (
+    path=$(basename `pwd`)
+    sm_path=$path
+    [[ ! "${sm_opts[@]}" =~ "--quiet" ]] && echo Entering $path
+    eval "${args[@]}"
+)
+git submodule "${sm_opts[@]}" foreach "${fe_opts[@]}" "${args[@]}"

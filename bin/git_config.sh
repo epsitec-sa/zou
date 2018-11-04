@@ -25,75 +25,11 @@ git config --global diff.submodule log
 # Aliases
 [ "$reset" == 'true' ] && git config --global --remove-section alias >/dev/null 2>&1
 
-git config --global alias.oprune 'fetch origin --prune'
-# Bundle and sub-modules
-git config --global alias.bundle-dir '!f() { r=${1:-`pwd -P`}; while [[ -n "$r" && ! -d "$r/.git" ]]; do r=${r%/*}; done; echo $r; }; f'
-git config --global alias.module-id  '!f() { r=${1:-`pwd -P`}; c=$r; while [[ -n "$r" && ! -d "$r/.git" ]]; do r=${r%/*}; done; id=${c#$r}; id=${id#/}; echo ${id%/}; }; f'
-git config --global alias.sfor 'submodule foreach'
-git config --global alias.sfor-q 'submodule --quiet foreach'
-git config --global alias.sfor-r 'submodule foreach --recursive'
-git config --global alias.sfor-qr 'submodule --quiet foreach --recursive'
-git config --global alias.for '!path=$(basename `pwd`); eval $@; git submodule foreach'
-git config --global alias.for-r '!path=$(basename `pwd`); eval $@; git submodule foreach --recursive'
-git config --global alias.for-q '!path=$(basename `pwd`); eval $@; git submodule --quiet foreach'
-git config --global alias.for-qr '!path=$(basename `pwd`); eval $@; git submodule --quiet foreach --recursive'
-git config --global alias.lsm '!git config --file .gitmodules --get-regexp path | awk '"'"'{ print $2 }'"'"' | sort'
-
-git config --global alias.sdiff '!git for git diff'
-git config --global alias.spull '!git pull && git submodule sync --recursive && git submodule update --init --recursive'
-git config --global alias.spush 'push --recurse-submodules=on-demand'
-git config --global alias.zclean '![ -d node_modules ] && rm -rf node_modules; git clean -xdf -e packages; git checkout .'
-git config --global alias.sclean '!git for-r git zclean'
-git config --global alias.supdate 'submodule update --init --recursive'
-# Branch
-git config --global alias.issue '!f() { git checkout -b issue/$1 master && git push -u origin issue/$1; }; f'
-git config --global alias.zmaster '!git checkout master && git pull && git supdate'
-git config --global alias.smaster '!git sfor git zmaster'
-# rename local + remote branch 
-git config --global alias.mvbranch '!f() { local old=$1; local new=$2; git ls-remote --heads --exit-code origin $old >/dev/null || git push origin $old; git branch $new origin/$old >/dev/null 2>&1; git push origin --set-upstream $new >/dev/null 2>&1; git push --delete --force origin $old >/dev/null 2>&1; git branch -D $old >/dev/null 2>&1; }; f'
-git config --global alias.curbranch '!c=$(git rev-parse --abbrev-ref HEAD); [ $c == '"'"'HEAD'"'"' ] && git rev-parse --short HEAD || echo $c'
-
-# Tags
-git config --global alias.prunetags '!git tag -l | xargs git tag -d; git fetch -t'
-git config --global alias.foldtags '!f() { local suffix=$1; for t in $(git tag | grep -$suffix$); do st=$(echo $t | sed s,-$suffix$,,I); git mvtag $t $suffix/$st ; done; }; f'
-git config --global alias.otags '!git tag | grep -Ev '"'"'^v[0-9]+\.[0-9]+(-@|\.[0-9]+(-(alpha|beta|rc)[0-9A-Za-z-]*(\.[0-9A-Za-z-]*)*)?(\+[0-9A-Za-z-]+(\.[0-9A-Za-z-]*)*)?)$'"'"' | grep -Ev '"'"'^[^/]+/.+$'"'"' || true'
-git config --global alias.foldotags '!for t in $(git otags); do git mvtag $t other/$t; done'
-git config --global alias.tags '!git tag; git ls-remote --tags origin | sed s,[[:alnum:]]*[[:space:]]*,,'
-git config --global alias.newtag-lo '!f() { local tag=$1; shift; local opt=$([[ -z "$@" ]] && echo -m$(git log -1 --pretty=%B) || echo -a $@); git tag "$opt" $tag; }; f'
-git config --global alias.newtag '!f() { local tag=$1; git newtag-lo $@; git push origin $tag; }; f'
-git config --global alias.deltag '!f() { git tag --delete $1; git push --delete origin $1 >/dev/null 2>&1; }; f'
-# get short hash of given tag
-git config --global alias.tag2hash '!f() { git describe --tags --long $1 | sed s,.*-[0-9]*-g,,g; }; f'
-# rename local + remote tag 
-git config --global alias.tagger-name '!f() { git show $1 -q | grep Tagger: | sed -E '"'"'s,Tagger:\s+(.*)\s+<(.*)>,\1,'"'"'; }; f'
-git config --global alias.tagger-email '!f() { git show $1 -q | grep Tagger: | sed -E '"'"'s,Tagger:\s+(.*)\s+<(.*)>,\2,'"'"'; }; f'
-git config --global alias.tag-date '!f() { git show $1 -q | grep Date: | sed -E '"'"'s,Date:\s+(.*),\1,'"'"' | head -n 1; }; f'
-git config --global alias.tag-comment '!f() { git tag -l -n1 $1 | sed -E '"'"'s,\w+\s+(.*),\1,'"'"'; }; f'
-git config --global alias.mvtag '!f() { git mvtag-lo $@; [[ "$1" != "$2" ]] && git push --delete origin $1 >/dev/null 2>&1; git push origin $2 >/dev/null 2>&1; }; f'
-git config --global alias.mirrortags '!git push --tags --prune || true'
-git config --global alias.ztags '!f() { local z=$(git ztags-lo $@); [[ -n "$z" ]] && git mirrortags }; f'
-
 # Semantic versioning
 git config --global --remove-section versionsort >/dev/null 2>&1
 git config --global --add versionsort.suffix -@
 git config --global --add versionsort.suffix -alpha
 git config --global --add versionsort.suffix -beta
 git config --global --add versionsort.suffix -rc
-
-# VBranch
-git config --global alias.vbranch '!f() { git checkout -b $@ && git newtag v$1-@ && git push -u origin $1; }; f'
-# VTag
-git config --global alias.vmin '!f() { local version=$1; local regex; if [[ -z "$version" ]]; then regex=[0-9]; else regex=$(echo $version | sed s,[.],\\.,g); fi; git tag -l --sort=v:refname | grep -m1 ^v$regex || true; }; f'
-git config --global alias.vmax '!f() { local version=$1; local regex; if [[ -z "$version" ]]; then regex=[0-9]; else regex=$(echo $version | sed s,[.],\\.,g); fi; git tag -l --sort=-v:refname | grep -m1 ^v$regex || true; }; f'
-git config --global alias.vtags '!f() { local version=$1; local regex; if [[ -z "$version" ]]; then regex=[0-9]; else regex=$(echo $version | sed s,[.],\\.,g); fi; git tag -l --sort=-v:refname | grep ^v$regex || true; }; f'
-git config --global alias.vtagauto-lo '!f() { vtag=$(git vcommit2tag); vnext=$(git vtag2next $vtag); [[ -z $vnext ]] && echo Current tag: $vtag || { git newtag-lo $vnext; echo Tag created: $vnext; }; }; f'
-git config --global alias.vtagauto '!f() { vtag=$(git vcommit2tag); vnext=$(git vtag2next $vtag); [[ -z $vnext ]] && echo Current tag: $vtag || { git newtag $vnext; echo Tag created: $vnext; }; }; f'
-git config --global alias.vcommit2tag '!f() { git describe --tags --match '"'"'v[0-9]*'"'"' $1 2>/dev/null || true; }; f'
-git config --global alias.vcommit2major '!f() { git vcommit2tag $1 |  sed -E '"'"'s,^v([0-9]+).*,\1,'"'"'; }; f'
-git config --global alias.vcommit2minor '!f() { git vcommit2tag $1 |  sed -E '"'"'s,^v([0-9]+\.[0-9]+).*,\1,'"'"'; }; f'
-git config --global alias.vcheckout '!f() { git vcommit2minor $1 | xargs git checkout >/dev/null; git pull --all --prune; git supdate; }; f'
-git config --global alias.vmajor '!f() { git vcommit2major $1 | xargs git vmax | xargs git vcheckout; }; f'
-git config --global alias.vminor '!f() { git vcommit2minor $1 | xargs git vmax | xargs git vcheckout; }; f'
-git config --global alias.vnext '!f() { git vmax $1 | xargs git vcheckout; }; f'
 
 [ "$copy" == 'true' ] && cp -f "$USERPROFILE/.gitconfig" "$USERPROFILE/.gitconfig.bash.zou"

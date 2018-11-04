@@ -1,3 +1,6 @@
 #! /bin/sh
 
-"!f() { local tag=$1; shift; local opt=$([[ -z "$@" ]] && echo -m$(git log -1 --pretty=%%B) || echo -a $@); git tag "$opt" $tag; }; f"
+local tag=$1
+shift
+local opt=$([[ -z "$@" ]] && echo -m$(git log -1 --pretty=%%B) || echo -a $@)
+git tag "$opt" $tag
