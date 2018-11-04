@@ -1,8 +1,16 @@
 #! /bin/sh
 
-r=${1:-`pwd -P`}
-while [[ -n "$r" && ! -d "$r/.git" ]]; do
-  r=${r%%/*}
+dir=.
+
+while [[ "$#" > 0 ]]; do case "$1" in
+  -h|--help) git zou-help $0; exit 0;;
+  -*) echo "unknown option: $1" >&2; exit 1;;
+  *) dir=$1; break;;
+esac; shift; done
+
+dir=$(readlink -f $dir)
+while [[ -n "$dir" && ! -d "$dir/.git" ]]; do
+  dir=${dir%/*}
 done
 
-echo $r
+echo $dir
