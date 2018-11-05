@@ -1,6 +1,6 @@
 #! /bin/sh
 
-local tag=$1
+tag=$1
 shift
-local opt=$([[ -z "$@" ]] && echo -m$(git log -1 --pretty=%%B) || echo -a $@)
+opt=$([[ -z "$@" ]] && echo -m$(git log -1 --pretty=%B) || echo -a $@)
 git tag "$opt" $tag
