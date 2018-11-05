@@ -1,0 +1,14 @@
+#! /bin/sh
+
+dir=$(dirname $0)
+hdir=$(readlink -f "$dir/../help")
+htpldir=$hdir/template
+htpl=$htpldir/.cmd-template
+
+for cmd in $(find "$dir" -name 'git-*'); do
+  name=${cmd##*/}
+  cname=${name#git-}
+  hsrc=$hdir/$name
+  hdst=$htpldir/$name
+  [[ -f "$hsrc" ]] || { echo "create: $hdst"; cat "$htpl" | sed "s,##CMD##,$cname,g" >"$hdst"; }
+done

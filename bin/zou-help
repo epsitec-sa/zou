@@ -1,0 +1,10 @@
+#! /bin/sh
+
+hdir=$(readlink -f "$(dirname $1)/../help")
+hname=$(basename "$1")
+hpath="$hdir/$hname"
+if [[ -f $hpath ]]; then
+  cat "$hpath"
+else
+  echo help file not found: $hpath
+fi
