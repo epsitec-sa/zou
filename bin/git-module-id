@@ -1,11 +1,17 @@
 #! /bin/sh
 
-r=${1:-`pwd -P`}
-c=$r
-while [[ -n "$r" && ! -d "$r/.git" ]]; do
-    r=${r%%/*}
+bdir=.
+
+while [[ "$#" > 0 ]]; do case "$1" in
+  -h|--help) zou-help $0; exit 0;;
+  -*) echo "unknown option: $1" >&2; exit 1;;
+  *) bdir=$1; break;;
+esac; shift; done
+
+bdir=$(readlink -f $bdir)
+while [[ -n "$bdir" && ! -d "$bdir/.git" ]]; do
+  [[ -z "$mdir" && -f "$bdir/.git" ]] && mdir=$bdir
+  bdir=${bdir%/*}
 done
 
-id=${c#$r}
-id=${id#/}
-echo ${id%%/}
+[[ -n $mdir ]] && echo ${mdir#$bdir/}
