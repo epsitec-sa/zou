@@ -1,0 +1,140 @@
+#! /bin/bash
+
+source zou-git-vlib
+
+# fetch
+# get ltag
+
+while [[ "$#" > 0 ]]; do case "$1" in
+  -h|--help) zou-help $0; exit 0;;
+  --alpha) prerel_label='alpha';;
+  --beta)  prerel_label='beta';;
+  --rc)    prerel_label='rc';;
+  --rtm)   rtm=true;;
+  --debug) debug=true;;
+  -*) echo "unknown option: $1" >&2; exit 1;;
+  *) rev=$1;;
+esac; shift; done
+
+rev=${rev:-HEAD}
+commit=$(git rev-parse $rev)
+
+[[ -n $prerel_label ]] && prerel=-${prerel_label}1
+[[ -n $debug ]] && {
+  echo 0 tag = $tag
+  [[ -n $commit ]]       && echo 0 commit = $commit
+  [[ -n $rtm ]]          && echo 0 rtm = $rtm
+  [[ -n $prerel_label ]] && echo 0 prerel_label = $prerel_label
+  [[ -n $prerel ]]       && echo 0 prerel = $prerel
+}
+
+get_vnext()
+{
+  local ltag=$1
+  [[ -n $debug ]] && echo get_vnext.ltag = $ltag
+  
+  # ltag :=
+  #  <major>.<minor>-@
+  #  <major>.<minor>.<patch>[-<pre-release>][+<meta>]-<delta>-g<sha1>
+  if [[ $ltag =~ ^v([0-9]+)\.([0-9]+)(\.|-)(.*)-([0-9]+)-g([[:alnum:]]*)$ ]]; then
+    local major=${BASH_REMATCH[1]}
+    local minor=${BASH_REMATCH[2]}
+    local patch=${BASH_REMATCH[4]}
+    local delta=${BASH_REMATCH[5]}
+    local sha1=${BASH_REMATCH[6]}
+    if [[ $patch == '@' ]]; then
+      echo "v$major.$minor.0$prerel"
+    elif [[ -n $delta ]]; then
+      if [[ $patch =~ ([0-9]+)(-[[:alnum:]]+)?(\+.+)?$ ]]; then
+        patch=${BASH_REMATCH[1]}
+        prerel=${BASH_REMATCH[2]}
+        local meta=${BASH_REMATCH[3]}
+        if [[ $prerel =~ -(alpha|beta|rc)([0-9]*) ]]; then
+          if [[ -n $rtm ]]; then
+            echo "v$major.$minor.$patch"
+          else
+            local actual_prerel_label=${BASH_REMATCH[1]}
+            local prerel_rev=${BASH_REMATCH[2]}
+            [[ $prerel_label > $actual_prerel_label ]] && prerel_rev=1 || { prerel_label=$actual_prerel_label; prerel_rev=$((prerel_rev + 1)); }
+            
+            prerel=-$prerel_label$prerel_rev
+            echo "v$major.$minor.$patch$prerel"
+          fi
+        else
+          echo "v$major.$minor.$((patch+1))"
+        fi
+      fi
+    fi
+  fi
+}
+
+ltag=$(rev_find_vltag_ancestor $commit)
+
+if [[ -z $ltag ]]; then
+  zou-error "commit ($commit) has no vtag ancestor"
+else
+  stag=${ltag%-*-g*}
+  lsuf=${ltag#$stag}
+  
+  zou-success "ltag    = $ltag"
+  zou-success "stag    = $stag"
+  zou-success "lsuf    = $lsuf"
+
+  # check if distance between commit and tag is zero (ltag has no delta)
+  if  [[ -z $lsuf ]]; then
+    zou-warning "commit ($rev) == stag ($stag)"
+    vnext=${ltag/-@/.0}
+    [[ $ltag != $vnext ]] && zou-success "vnext = $vnext"
+  else
+    # fix stag and ltag when multiple tags point at same commit
+    # find owner vbranch
+    vinfo=$(rev_find_vtag_and_branch $commit $stag)
+
+    if [[ -z $vinfo ]]; then
+      zou-error "commit ($rev) does not belong to any branch"
+    else
+      zou-info "vinfo   = $vinfo"
+      vinfo=($vinfo)
+      stag=${vinfo[0]}
+      ltag=$stag$lsuf
+      vbranch=${vinfo[1]}
+      zou-message "ltag    = $ltag" info Green
+      zou-message "stag    = $stag" info Green
+      zou-message "vbranch = $vbranch" info Green
+
+      # commit is an ancestor of vbranch                                      
+      zou-success "commit ($rev) belongs to vbranch ($vbranch)"
+
+      # get range upper limit
+      vmax=$(get_vtag_descendant $stag $vbranch)
+      if [[ -n $vmax ]]; then
+        zou-message "vmax = $vmax" info Green
+      fi
+      exit 0
+      zou-success "vmax    = $vmax"
+      git merge-base --is-ancestor $commit $vmax
+      if (( $? != 0 )); then
+        # commit is a descendant of vmax
+        zou-success "commit ($rev) is a descendant of vmax ($vmax)"
+        vnext=$(get_vnext $ltag)
+        zou-success "vnext = $vnext"
+      else
+        # commit is an ancestor of vmax
+        if [[ $stag == $vmax ]]; then
+          zou-info "commit ($rev) == vmax ($vmax)"
+        else
+          zou-warning "commit ($rev) is an ancestor of ($vmax)"
+          vnext=$(get_vnext $ltag)
+          zou-warning "vnext = $vnext"
+          # TODO: compare vnext and vmax
+          if [[ $vnaxt == $vmax ]]; then
+            zou-error "vnext ($vnext) already exists"
+          else
+            zou-success 
+          fi
+        fi
+      fi
+    fi
+  fi
+fi
+
