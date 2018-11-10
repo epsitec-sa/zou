@@ -1,10 +1,24 @@
 #! /bin/sh
 
-hdir=$(readlink -f "$(dirname $1)/../help")
+hdir=$(readlink -f "$(dirname $0)/../help")
 hname=$(basename "$1")
-hpath="$hdir/$hname"
-if [[ -f $hpath ]]; then
-  cat "$hpath"
+hpath=$hdir/$hname
+if [[ -f "$hpath" ]]; then
+  help=$(cat "$hpath")
+  zou-info "$help" usage
 else
-  echo help file not found: $hpath
-fi
+  htpl=$hdir/template/$hname
+  if [[ -f "$htpl" ]]; then
+    zou-warning "help file not found at $hpath\n"
+    zou-info "use the following commands to create and edit the following template
+
+    mv \"$htpl\" \"$hpath\"
+    vim \"$hpath\"
+
+"
+    help=$(cat "$htpl")
+    zou-message "$help" usage Gray
+  else
+    zou-error "help file not found - $hpath"
+  fi
+fi 
