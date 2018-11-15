@@ -1,0 +1,62 @@
+#! /bin/bash
+
+declare -A io_color
+io_color[Default]='0'
+io_color[Black]='0;30'
+io_color[Blue]='0;34'
+io_color[Green]='0;32'
+io_color[Cyan]='0;36'
+io_color[Red]='0;31'
+io_color[Purple]='0;35'
+io_color[Brown]='0;33'
+io_color[LightGray]='0;37'
+io_color[DarkGray]='1;30'
+io_color[LightBlue]='1;34'
+io_color[LightGreen]='1;32'
+io_color[LightCyan]='1;36'
+io_color[LightRed]='1;31'
+io_color[LightPurple]='1;35'
+io_color[Yellow]='1;33'
+io_color[White]='1;37'
+
+# usage: io_color_escape_sequence <color>
+# - io_color_escape_sequence Cyan    => \033[0;36m
+# - io_color_escape_sequence Default => \033[0m
+io_color_escape_sequence()
+{
+     echo "\033[${io_color[$1]}m";
+}
+# usage: io_colorize <color> <message>
+# - io_colorize Cyan 'my message'
+io_colorize()
+{
+    local color=$(io_color_escape_sequence $1);
+    shift
+    printf "$color%b\033[0m" "$@"
+}
+# usage: io_message <message> [<prefix> [<color=LightCyan>]]
+# - io_message 'message' 'info' Cyan => info: message
+# - io_message 'message' '' Gray => message
+io_message()
+{
+    [[ -n $2 ]] && prefix="$2: "
+    colored=$(io_colorize ${3:-LightCyan} "$prefix$1")
+    printf "$colored\n"
+}
+io_info()     { io_message "$1" ${2:-info}; }
+io_success()  { io_message "$1" ${2:-info} LightGreen; }
+io_warning()  { io_message "$1" ${2:-warning} Yellow >&2; }
+io_error()    { io_message "$1" ${2:-error} LightRed >&2; }
+io_debug()    { [[ $debug == 'true' ]] && io_message "$1 = ${!1}" ${2:-debug} ${3:-Purple} >&2; }
+
+string_join() { local d=$1; shift; echo -n "$1"; shift; printf "%s" "${@/#/$d}"; }
+
+assert_equals()
+{
+    if [[ $1 != $2 ]]; then
+        io_error "expected \'$1\' but was \'$2\'" ${3:-assert}
+        exit 1
+    else
+        io_success 'OK' ${3:-assert}
+    fi
+}
