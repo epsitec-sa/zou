@@ -5,20 +5,20 @@ hname=$(basename "$1")
 hpath=$hdir/$hname
 if [[ -f "$hpath" ]]; then
   help=$(cat "$hpath")
-  zou-info "$help" usage
+  io_info "$help" usage
 else
   htpl=$hdir/template/$hname
   if [[ -f "$htpl" ]]; then
-    zou-warning "help file not found at $hpath\n"
-    zou-info "use the following commands to create and edit the following template
+    io_warning "help file not found at $hpath\n"
+    io_info "use the following commands to create and edit the following template
 
     mv \"$htpl\" \"$hpath\"
     vim \"$hpath\"
 
 "
     help=$(cat "$htpl")
-    zou-message "$help" usage Gray
+    io_message "$help" usage Gray
   else
-    zou-error "help file not found - $hpath"
+    io_error "help file not found - $hpath"
   fi
 fi 
