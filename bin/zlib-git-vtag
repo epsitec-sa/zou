@@ -1,0 +1,320 @@
+#! /bin/bash
+
+. zlib-core
+
+vtag_describe()
+{
+  # find first vtag ancestor starting from given commit
+  # input:
+  # - $1: commit hash (ex: e5d2fe9)
+  # output:
+  # - vtag description (ex: v1.0.0-rc1-5-ge5d2fe9)
+  git describe --first-parent --tags --match 'v[0-9]*' $1 2>/dev/null
+}
+vtag_vtags_at()
+{
+  # list all vtags pointing at given commit
+  # input:
+  # - $1: rev to list
+  # output:
+  # - list of vtags pointing at given commit (ex: v1.0.0-rc1 v1.0.0)
+  git tag --points-at $1^{} | grep ^v[0-9]
+}
+
+vtag_get_vbranch_name ()
+{
+  # extract vbranch name from vtag
+  # input:
+  # - $1: vtag (ex: v1.0.0-rc1)
+  # output:
+  # - vbranch name (ex: 1.0)
+  # - nothing if $1 is not a vtag
+  if [[ $1 =~ ^v([0-9]+)\.([0-9]+)(\.|-) ]]; then
+    local major=${BASH_REMATCH[1]}
+    local minor=${BASH_REMATCH[2]}
+    echo $major.$minor;
+  fi
+}
+vtag_get_vbranch()
+{
+    # find  local or remote vbranch - priority to local vbranch
+    # input:
+    # - $1: vtag (ex: v1.0.0-rc1)
+    # output:
+    # - local vbranch (ex: 1.0) if it exists
+    # - remote vbranch (ex: origin/1.0) if local vbranch does not exist
+    local vtag=$1
+    local vbranch=$(vtag_get_vbranch_name $vtag)
+    if [[ -n $(git show-ref refs/heads/$vbranch) ]]; then
+        # local vbranch
+        echo $vbranch
+    else
+        # local vbranch not found try remote vbranch
+        vbranch=$(git remote)/$vbranch
+        if [[ -n $(git show-ref refs/remotes/$vbranch) ]]; then
+          echo $vbranch
+        else
+          io_warning "vtag_get_vbranch: $vtag has no associated vbranch"
+        fi
+    fi
+}
+vtag_get_vbranch_tail()
+{
+  # get the vbranch tail starting from commit1 and containing commit2
+  # input:
+  # - $1: rev that points to the start of the tail (can be tagget with multiple vtags)
+  # - $2: vbranch marker (descendant of $1 that belongs to searched vbranch) 
+  # output
+  # - [0]: the start of tail vtag
+  # - [1]: the vbranch that contains marker
+  #
+  for vtag in $(vtag_vtags_at $1 | uniq); do
+    io_debug vtag vtag_get_vbranch_tail
+    local vbranch=$(vtag_get_vbranch $vtag)
+    if [[ -n $vbranch ]]; then
+      io_debug vbranch vtag_get_vbranch_tail
+      git merge-base --is-ancestor $2 $vbranch >&2
+      if (( $? == 0 )); then
+        echo $vtag $vbranch
+        break;
+      else
+        io_warning "vtag_get_vbranch_tail: $1 and $2 are not ancestors of $vbranch"
+      fi
+    fi
+  done
+}
+vtag_get_next_vtag()
+{
+  # get 
+  local vtag=$1
+  local vbranch=$2
+  local previous
+  for current in $(git vtags $vbranch); do
+    if [[ $current == $vtag ]]; then
+      if [[ -n $previous ]]; then
+        # previous should be a descendant of vtag
+        git merge-base --is-ancestor $vtag $previous >&2
+        if (( $? == 0 )); then
+          # previous should be an ancestor of vbranch
+          git merge-base --is-ancestor $previous $vbranch >&2
+          (( $? == 0 )) && echo $previous || io_error "vtag_get_next_vtag: $previous is not an ancestor of vbranch $vbranch"
+        else
+          io_error "vtag_get_next_vtag: $vtag is not an ancestor of $previous"
+        fi
+      fi
+    else
+      previous=$current
+    fi
+  done
+}
+vtag_compare_prerel()
+{
+  local p1=$1
+  local p2=$2
+  
+  io_debug p1 vtag_compare_prerel
+  io_debug p2 vtag_compare_prerel
+
+  [[ $p1 == $p2 ]] && return 0
+  [[ -n $p1 && -z $p2 ]] && return -1
+  [[ -z $p1 && -n $p2 ]] && return 1
+
+  local r1; local r2
+
+  if [[ $p1 =~ ^-([[:alpha:]]+)([0-9]+) ]]; then
+    p1=${BASH_REMATCH[1]}
+    r1=${BASH_REMATCH[2]}
+    io_debug p1 vtag_compare_prerel
+    io_debug r1 vtag_compare_prerel
+  fi
+  if [[ $p2 =~ ^-([[:alpha:]]+)([0-9]+) ]]; then
+    p2=${BASH_REMATCH[1]}
+    r2=${BASH_REMATCH[2]}
+    io_debug p2 vtag_compare_prerel
+    io_debug r2 vtag_compare_prerel
+  fi
+  [[ $p1 < $p2 ]] && return -1
+  [[ $p1 > $p2 ]] && return 1
+  (( r1 < r2 )) && return -1
+  (( r1 > r2 )) && return 1
+
+  return 0
+}
+vtag_compare()
+{
+  # output:
+  # - -1: $1 <  $2 (255)
+  # -  0: $1 == $2
+  # -  1: $1 >  $2
+
+  if [[ $1 =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)(-[[:alnum:]]+)?(\+.+)?$ ]]; then
+    local major1=${BASH_REMATCH[1]}
+    local minor1=${BASH_REMATCH[2]}
+    local patch1=${BASH_REMATCH[3]}
+    local prerel1=${BASH_REMATCH[4]}
+    local meta1=${BASH_REMATCH[5]}
+    if [[ $2 =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)(-[[:alnum:]]+)?(\+.+)?$ ]]; then
+      local major2=${BASH_REMATCH[1]}
+      local minor2=${BASH_REMATCH[2]}
+      local patch2=${BASH_REMATCH[3]}
+      local prerel2=${BASH_REMATCH[4]}
+      local meta2=${BASH_REMATCH[5]}
+
+      (( $major1 < $major2 )) && return -1
+      (( $major1 > $major2 )) && return  1
+      (( $minor1 < $minor2 )) && return -1
+      (( $minor1 > $minor2 )) && return  1
+      (( $patch1 < $patch2 )) && return -1
+      (( $patch1 > $patch2 )) && return  1
+
+      io_debug prerel1 vtag_compare
+      io_debug prerel2 vtag_compare
+      io_debug meta1 vtag_compare
+      io_debug meta2 vtag_compare
+
+      vtag_compare_prerel "$prerel1" "$prerel2"; local result=$?
+      (( $result == 255 )) && return -1
+      (( $result ==   1 )) && return  1
+
+      [[ $meta1 == $meta2 ]] && return 0
+      [[ -n $meta1 && -z $meta2 ]] && return 1
+      [[ -z $meta1 && -n $meta2 ]] && return -1
+      [[ $meta1 < $meta2 ]] && return -1
+      [[ $meta1 > $meta2 ]] && return 1
+      
+      return 0
+    else
+      io_error "vtag_compare: invalid vtag format: $2"
+    fi
+  else
+    io_error "vtag_compare: invalid vtag format: $1"
+  fi
+}
+vtag_increment()
+{
+  local vtag=$1
+  local prerel_prefix=$2
+  local prerel_default; local rtm; local result
+  [[ $prerel_prefix == 'rtm' ]] && { unset prerel_prefix; rtm=true; }
+  [[ -n $prerel_prefix ]] && prerel_default=-${prerel_prefix}1
+
+  io_debug vtag vtag_increment
+  io_debug prerel_prefix vtag_increment
+  io_debug prerel_default vtag_increment
+  io_debug rtm vtag_increment
+
+  #  <major>.<minor>-@
+  #  <major>.<minor>.<patch>[-<pre-release>][+<meta>]-<delta>-g<sha1>
+  if [[ $vtag =~ ^v([0-9]+)\.([0-9]+)(\.|-)(.*)$ ]]; then
+    local major=${BASH_REMATCH[1]}
+    local minor=${BASH_REMATCH[2]}
+    local patch=${BASH_REMATCH[4]}
+    io_debug major vtag_increment
+    io_debug minor vtag_increment
+
+    if [[ $patch == '@' ]]; then
+      io_debug patch vtag_increment
+      result="v$major.$minor.0$prerel_default"
+    elif [[ $patch =~ ([0-9]+)(-[[:alnum:]]+)?(\+.+)?$ ]]; then
+      patch=${BASH_REMATCH[1]}
+      local prerel=${BASH_REMATCH[2]}
+      local meta=${BASH_REMATCH[3]}
+      io_debug patch vtag_increment
+      io_debug prerel vtag_increment
+      io_debug meta vtag_increment
+      if [[ $prerel =~ -(alpha|beta|rc)([0-9]*) ]]; then
+        if [[ -n $rtm ]]; then
+          result="v$major.$minor.$patch"
+        else
+          local actual_prerel_prefix=${BASH_REMATCH[1]}
+          local prerel_rev=${BASH_REMATCH[2]}
+          io_debug actual_prerel_prefix vtag_increment
+          io_debug prerel_rev vtag_increment
+          [[ $prerel_prefix > $actual_prerel_prefix ]] && prerel_rev=1 || { prerel_prefix=$actual_prerel_prefix; prerel_rev=$((prerel_rev + 1)); }
+          
+          prerel=-$prerel_prefix$prerel_rev
+          io_debug prerel vtag_increment
+          result="v$major.$minor.$patch$prerel"
+        fi
+      else
+        result="v$major.$minor.$((patch+1))$prerel_default"
+      fi
+    fi
+  fi
+  if [[ -z $result ]]; then
+    io_error "vtag_increment: wrong vtag format: $vtag"
+  else
+    echo $result
+  fi
+}
+vtag_try_increment()
+{
+  local rev=$1
+  local prerel_prefix=$2
+
+  io_debug rev vtag_try_increment
+  io_debug prerel_prefix vtag_try_increment
+  
+  local commit=$(git rev-parse $rev^{})
+  local ltag=$(vtag_describe $commit)
+
+  io_debug commit vtag_try_increment
+  io_debug ltag vtag_try_increment
+
+  if [[ -z $ltag ]]; then
+    io_error "vtag_try_increment: unable to determine $rev has no vtag ancestor"
+  else
+    stag=${ltag%-*-g*}
+    lsuf=${ltag#$stag}
+
+    io_debug stag vtag_try_increment
+    io_debug lsuf vtag_try_increment
+
+    # fix stag and ltag when multiple tags point at same commit
+    vrange=$(vtag_get_vbranch_tail $stag $rev)
+    if [[ -z $vrange ]]; then
+      local revs=$(echo $rev $(vtag_vtags_at $rev) | xargs -n 1 | sort -u)
+      io_error "vtag_try_increment: unable to associate $(string_join ' or ' $revs) with a vbranch"
+    else
+      io_debug vrange vtag_try_increment
+
+      vrange=($vrange)
+      stag=${vrange[0]}
+      ltag=$stag$lsuf
+      vbranch=${vrange[1]}
+
+      io_debug ltag vtag_try_increment
+      io_debug stag vtag_try_increment
+      io_debug vbranch vtag_try_increment
+
+      # get range upper limit
+      utag=$(vtag_get_next_vtag $stag $vbranch)
+      if [[ -n $utag ]]; then
+        # upper limit exist
+        io_debug utag vtag_try_increment
+        vnext=$(vtag_increment $stag $prerel_prefix)
+        io_debug vnext vtag_try_increment
+        vtag_compare $vnext $utag
+        if (( $? == 255 )); then
+          echo $vnext
+        else
+          io_error "vtag_try_increment: unable to insert vtag between $stag and $utag"
+        fi
+      else
+        # no upper limit: compute vnext
+        vnext=$(vtag_increment $stag $prerel_prefix)
+        io_debug vnext vtag_try_increment
+        echo $vnext
+      fi
+    fi
+  fi
+}
+vtag_check()
+{
+  local vtag=$1
+  local vbranch=$(vtag_get_vbranch $vtag 2>/dev/null)
+  [[ -z $vbranch ]] && { io_error "vtag_check: $vtag has no associated vbranch"; return 1; }
+  git merge-base --is-ancestor $vtag $vbranch >&2
+  (( $? != 0 )) && { io_error "vtag_check: $vtag is not an ancestor of $vbranch"; return 2; }
+  return 0
+}
