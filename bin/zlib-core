@@ -53,10 +53,39 @@ string_join() { local d=$1; shift; echo -n "$1"; shift; printf "%s" "${@/#/$d}";
 
 assert_equals()
 {
-    if [[ $1 != $2 ]]; then
-        io_error "expected \'$1\' but was \'$2\'" ${3:-assert}
-        exit 1
-    else
-        io_success 'OK' ${3:-assert}
-    fi
+  local label=assert args=() no_exit
+  while [[ "$#" > 0 ]]; do case "$1" in
+    -l|--label) label="$2"; shift;;
+    -n|--no-exit) no_exit=true;;
+    -*) echo "unknown option: '$1'" >&2; exit 1;;
+    *) args+=("$1");;
+  esac; shift; done
+  local expected=${args[0]}
+  local value="${args[@]:1}"
+
+  if [[ "$expected" != "$value" ]]; then
+    io_error "expected '$expected' but was '$value'" "$label"
+    [[ -z $no_exit ]] && exit 1
+  else
+    io_success "expected '$value' OK" "$label"
+  fi
+}
+assert_exit_code()
+{
+  local status=$?
+  local label=assert args=() no_exit
+  while [[ "$#" > 0 ]]; do case "$1" in
+    -l|--label) label="$2"; shift;;
+    -n|--no-exit) no_exit=true;;
+    -*) echo "unknown option: '$1'" >&2; exit 1;;
+    *) args+=("$1");;
+  esac; shift; done
+  local expected=${args[0]}
+
+  if [[ $expected != $status ]]; then
+    io_error "expected exit code '$expected' but was '$status'" "$label"
+    [[ -z $no_exit ]] && exit $status
+  else
+    io_success "expected exit code '$status' OK" "$label"
+  fi
 }
