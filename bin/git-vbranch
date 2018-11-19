@@ -1,3 +1,22 @@
 #! /bin/sh
 
-git checkout -b $@ && git newtag v$1-@ && git push -u origin $1
+newtag_opts=()
+while [[ "$#" > 0 ]]; do case "$1" in
+  -h|--help) zou-help $0; exit 0;;
+  --debug)  newtag_opts+=($1); debug=true;;
+  --local)  newtag_opts+=($1); local=true;;
+  -c¦--checkout) checkout=true; shift;;
+  -m|--message) newtag_opts+=($1 "$2"); shift;;
+  -*) io_error "unknown option: $1"; exit 1;;
+  *) branch=$1;;
+esac; shift; done
+
+if [[ $branch =~ ^[0-9]+\.[0-9]+$ ]]; then
+    git checkout -b "$branch" >/dev/null
+    # create vnode
+    git newtag "${newtag_opts[@]@Q}" v$branch-@
+    [[ $local == true ]] || git push -u $(git remote) "$branch"
+    [[ $checkout == true ]] || git checkout - >/dev/null
+else
+    io_error "vbranch wrong format: ${branch@Q}"
+fi
