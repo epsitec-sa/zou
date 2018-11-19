@@ -43,11 +43,11 @@ io_message()
     colored=$(io_colorize ${3:-LightCyan} "$prefix$1")
     printf "$colored\n"
 }
-io_info()     { io_message "$1" ${2:-info}; }
-io_success()  { io_message "$1" ${2:-info} LightGreen; }
-io_warning()  { io_message "$1" ${2:-warning} Yellow >&2; }
-io_error()    { io_message "$1" ${2:-error} LightRed >&2; }
-io_debug()    { [[ $debug == 'true' ]] && io_message "$1 = ${!1}" ${2:-debug} ${3:-Purple} >&2; }
+io_info()     { io_message "$1" "${2:-info}"; }
+io_success()  { io_message "$1" "${2:-info}" LightGreen; }
+io_warning()  { io_message "$1" "${2:-warning}" Yellow 1>&2; }
+io_error()    { io_message "$1" "${2:-error}" LightRed 1>&2; }
+io_debug()    { [[ $debug == 'true' ]] && io_message "$1 = ${!1}" "${2:-debug}" ${3:-Purple} 1>&2; }
 
 string_join() { local d=$1; shift; echo -n "$1"; shift; printf "%s" "${@/#/$d}"; }
 
