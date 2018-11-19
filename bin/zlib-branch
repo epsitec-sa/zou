@@ -1,0 +1,44 @@
+#! /bin/bash
+# https://longair.net/blog/2009/04/16/git-fetch-and-merge/
+
+branch_list_local() { git for-each-ref --format='%(refname:short)' refs/heads/*; }
+branch_list_remote() { git for-each-ref --format='%(refname:short)' refs/remotes/origin/*; }
+branch_list_all() { branch_list_local; branch_list_remote; }
+branch_upstream() { git rev-parse --abbrev-ref $branch@{upstream} 2>/dev/null; }
+
+# https://stackoverflow.com/questions/3216360/merge-update-and-pull-git-branches-without-using-checkouts
+# branch_merge_ff() {
+#     local branch=$1
+#     local commit=$2
+
+#     local branch_orig_hash=$(git show-ref -s --verify refs/heads/$branch 2>/dev/null)
+#     if [ $? -ne 0 ]; then
+#         io_error "unknown branch $branch"
+#         return 1
+#     fi
+
+#     local commit_orig_hash="$(git rev-parse --verify $commit 2> /dev/null)"
+#     if [ $? -ne 0 ]; then
+#         io_error "unknown revision $commit"
+#         return 1
+#     fi
+
+#     if [ "$(git symbolic-ref HEAD)" = "refs/heads/$branch" ]; then
+#         git merge --ff-only "$commit"
+#     else
+#         if [ "$(git merge-base $branch_orig_hash $commit_orig_hash)" != "$branch_orig_hash" ]; then
+#             io_error "merging $commit into $branch would not be a fast-forward"
+#             exit 1
+#         fi
+#         io_info "Updating ${branch_orig_hash:0:7}..${commit_orig_hash:0:7}"
+#         if git update-ref -m "merge $commit: Fast forward" "refs/heads/$branch" "$commit_orig_hash" "$branch_orig_hash"; then
+#             if [ -z $quiet ]; then
+#                 echo "Fast forward"
+#                 git diff --stat "$branch@{1}" "$branch"
+#             fi
+#         else
+#             io_error "fast forward using update-ref failed"
+#         fi
+#     fi
+# }
+
