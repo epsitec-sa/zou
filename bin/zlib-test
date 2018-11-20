@@ -1,0 +1,27 @@
+#! /bin/bash
+
+. zlib-core
+
+test_dir()
+{
+  local fileName=${1##*/}
+  if [[ $fileName == bashdb ]]; then
+    # skip bashdb debugger when attached 
+    fileName=${BASH_SOURCE[-2]}
+  else
+    fileName=$1
+  fi
+  local testDir=$(dirname $fileName)
+  testDir=$(readlink -f "$testDir/../test-results")
+  [[ -d $testDir ]] || mkdir "$testDir"
+  echo $testDir
+}
+
+# echo ---------------------
+# echo "BASH_SOURCE[${#BASH_SOURCE[@]}]"
+# for i in "${!BASH_SOURCE[@]}"; do 
+#   printf "%s\t%s\n" "$i" "${BASH_SOURCE[$i]}"
+# done
+# echo ---------------------
+# echo ${BASH_SOURCE[-2]}
+# echo ---------------------
