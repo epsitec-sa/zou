@@ -1,5 +1,19 @@
 #! /bin/bash
 
+# reserved constants
+zou_startupPath=${BASH_SOURCE[-1]}
+zou_startupFileName=${zou_startupPath##*/}
+if [[ $zou_startupFileName == bashdb ]]; then
+  zou_startupPath=${BASH_SOURCE[-2]}
+  zou_startupFileName=${zou_startupPath##*/}
+fi
+zou_startupDir=${zou_startupPath%/*}
+
+io_debug zou_startupPath
+io_debug zou_startupDir
+io_debug zou_startupFileName
+
+# colors
 declare -A io_color
 io_color[Default]='0'
 io_color[Black]='0;30'
@@ -19,14 +33,6 @@ io_color[LightPurple]='1;35'
 io_color[Yellow]='1;33'
 io_color[White]='1;37'
 
-zou_startupPath=${BASH_SOURCE[-1]}
-zou_startupFileName=${zou_startupPath##*/}
-if [[ $zou_startupFileName == bashdb ]]; then
-  zou_startupPath=${BASH_SOURCE[-2]}
-  zou_startupFileName=${zou_startupPath##*/}
-fi
-zou_startupDir=${zou_startupPath%/*}
-
 # usage: io_color_escape_sequence <color>
 # - io_color_escape_sequence Cyan    => \033[0;36m
 # - io_color_escape_sequence Default => \033[0m
@@ -38,8 +44,7 @@ io_color_escape_sequence()
 # - io_colorize Cyan 'my message'
 io_colorize()
 {
-    local color=$(io_color_escape_sequence $1);
-    shift
+    local color=$(io_color_escape_sequence $1); shift
     printf "$color%b\033[0m" "$@"
 }
 # usage: io_message <message> [<prefix> [<color=LightCyan>]]
