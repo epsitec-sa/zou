@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # Parse
 while [[ $# -gt 0 ]]; do
