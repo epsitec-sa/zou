@@ -1,6 +1,6 @@
 #! /bin/bash
 
-# reserved constants
+# declare startup constants
 zou_startupPath=${BASH_SOURCE[-1]}
 zou_startupFileName=${zou_startupPath##*/}
 if [[ $zou_startupFileName == bashdb ]]; then
@@ -8,10 +8,6 @@ if [[ $zou_startupFileName == bashdb ]]; then
   zou_startupFileName=${zou_startupPath##*/}
 fi
 zou_startupDir=${zou_startupPath%/*}
-
-io_debug zou_startupPath
-io_debug zou_startupDir
-io_debug zou_startupFileName
 
 # colors
 declare -A io_color
@@ -102,3 +98,8 @@ assert_exit_code()
     io_success "expected exit code '$status' OK" "$label"
   fi
 }
+
+# trace constants (if debug == true)
+io_debug zou_startupPath
+io_debug zou_startupDir
+io_debug zou_startupFileName
