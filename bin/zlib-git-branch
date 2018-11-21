@@ -11,15 +11,15 @@ branch_sync_info()   { git for-each-ref --format="%(refname:short) %(upstream:sh
 branch_push()
 {
   local r=$1 l=$2
-  git push ${r%%/*} $l
+  git push ${r%%/*} $l &>/dev/null
 }
 branch_pull()
 {
   local r=$1 l=$2 ec=0
-  git fetch ${r%%/*} $l:$l || {
-    git checkout $l
-    git pull ${r%%/*} $l; ec=$?
-    git checkout -;
+  git fetch ${r%%/*} $l:$l &>/dev/null || {
+    git checkout $l &>/dev/null
+    git pull ${r%%/*} $l &>/dev/null; ec=$?
+    git checkout - &>/dev/null;
   }
   return $ec
 }
@@ -31,16 +31,16 @@ branch_sync()
 
 branch_sync_all()
 {
-  # start synchronization
-  git fetch --prune --all
-  repo_require_clean_work_tree 'synchronize'
+  io_info branch_sync_all
 
+  repo_require_clean_work_tree 'synchronize' || return 1
+  git fetch --prune --all &>/dev/null
   while read l r i; do
     io_warning "$l $r $i" 'sync info'
     case $i in
-      '>')  branch_push $r $l;; # ahead
-      '<')  branch_pull $r $l;; # behind
-      '<>') branch_sync $r $l;; # ahead and behind
+      '>')  branch_push $r $l || return 1;; # ahead
+      '<')  branch_pull $r $l || return 1;; # behind
+      '<>') branch_sync $r $l || return 1;; # ahead and behind
     esac
   done < <(branch_sync_info)
 }
