@@ -19,6 +19,9 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+# save credentials in ~/.git-credentials
+git config --global credential.helper store
+
 git config --global status.submoduleSummary true
 git config --global diff.submodule log
 
