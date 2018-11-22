@@ -20,7 +20,13 @@ branch_pull()
   local r=$1 l=$2 ec=0
   git fetch ${r%%/*} $l:$l &>/dev/null || {
     git checkout $l &>/dev/null
-    git pull ${r%%/*} $l &>/dev/null; ec=$?
+    if ! git pull ${r%%/*} $l &>/dev/null; then
+        ec=$?
+        io_error 'your have unmerged paths.'
+        io_message >&2 "$(repo_list_unmerged)" '' Red
+        io_message >&2 "fix conflicts and run 'git commit'." '' Yellow
+        return $ec
+    fi
     git checkout - &>/dev/null;
   }
   return $ec
@@ -35,7 +41,7 @@ branch_sync_all()
 {
   io_info branch_sync_all
 
-  repo_require_clean_work_tree 'synchronize' || return 1
+  repo_require_clean_work_tree || return 1
   git fetch --prune --all &>/dev/null
   while read l r i; do
     io_warning "$l $r $i" 'sync info'
