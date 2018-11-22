@@ -8,35 +8,41 @@ repo_list_untracked()  { git ls-files --exclude-standard --others; }
 repo_list_unstaged()   { git diff-files --name-only -r --ignore-submodules --; }
 repo_list_uncommited() { git diff-index --cached --name-only -r --ignore-submodules HEAD --; }
 repo_list_deleted()    { git ls-files --deleted; }
+repo_list_unmerged()   { git diff --name-only --diff-filter=U --ignore-submodules | cut -f1; }
 
 repo_require_clean_work_tree () {
     io_info >&2 "repo_require_clean_work_tree '$*'"
-    # Update the index
-    git update-index -q --ignore-submodules --refresh
     local err=0
-    local advise=()
+
+    # Update the index
+    if ! git update-index -q --ignore-submodules --refresh; then
+        io_error 'your have unmerged paths.'
+        io_message >&2 "$(repo_list_unmerged)" '' Red
+        io_message >&2 "fix conflicts and run 'git commit'." '' Yellow
+        err=1
+    fi
 
     # Disallow untracked changes in the working tree
     if ! test -z "$(git ls-files --exclude-standard --others)"; then
-        io_error 'your work tree contains untracked changes.' "cannot $1"
+        io_error 'your work tree contains untracked changes.'
         io_message >&2 "$(repo_list_untracked)" '' Red
-        io_message >&2 "Please ignore or add them to the index." '' Yellow
+        io_message >&2 "run 'git add'" '' Yellow
         err=1
     fi
 
     # Disallow unstaged changes in the working tree
     if ! git diff-files --quiet --ignore-submodules --; then
-        io_error 'you have unstaged changes.' "cannot $1"
+        io_error 'you have unstaged changes.'
         io_message >&2 "$(repo_list_unstaged)" '' Red
-        io_message >&2 "Please commit or stash them." '' Yellow
+        io_message >&2 "run 'git commit' or 'git stash'." '' Yellow
         err=1
     fi
 
     # Disallow uncommitted changes in the index
     if ! git diff-index --cached --quiet HEAD --ignore-submodules --; then
-        io_error 'your index contains uncommitted changes.' "cannot $1"
+        io_error 'your index contains uncommitted changes.'
         io_message >&2 "$(repo_list_uncommited)" '' Red
-        io_message >&2 "Please commit or stash them." '' Yellow
+        io_message >&2 "run 'git commit'." '' Yellow
         err=1
     fi
 
