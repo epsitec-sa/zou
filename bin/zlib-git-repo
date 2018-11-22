@@ -4,11 +4,13 @@
 
 . zlib-core
 
+# ISM='--ignore-submodules'
+
 repo_list_untracked()  { git ls-files --exclude-standard --others; }
-repo_list_unstaged()   { git diff-files --name-only -r --ignore-submodules --; }
-repo_list_uncommited() { git diff-index --cached --name-only -r --ignore-submodules HEAD --; }
+repo_list_unstaged()   { git diff-files --name-only -r $ISM --; }
+repo_list_uncommited() { git diff-index --cached --name-only -r $ISM HEAD --; }
 repo_list_deleted()    { git ls-files --deleted; }
-repo_list_unmerged()   { git diff --name-only --diff-filter=U --ignore-submodules | cut -f1; }
+repo_list_unmerged()   { git diff --name-only --diff-filter=U $ISM | cut -f1; }
 
 repo_require_clean_work_tree () {
     # io_info >&2 "repo_require_clean_work_tree"
@@ -17,7 +19,7 @@ repo_require_clean_work_tree () {
     local err=0
 
     # Update the index
-    if ! git update-index -q --ignore-submodules --refresh; then
+    if ! git update-index -q $ISM --refresh; then
         io_error 'your have unmerged paths.' "$prefix"
         io_message >&2 "$(repo_list_unmerged | sed 's/^/  /')" '' Red
         io_message >&2 "  fix conflicts and run 'git commit'." '' Yellow
@@ -33,7 +35,7 @@ repo_require_clean_work_tree () {
     fi
 
     # Disallow unstaged changes in the working tree
-    if ! git diff-files --quiet --ignore-submodules --; then
+    if ! git diff-files --quiet $ISM --; then
         io_error 'you have unstaged changes.' "$prefix"
         io_message >&2 "$(repo_list_unstaged | sed 's/^/  /')" '' Red
         io_message >&2 "  run 'git stash' or 'git add' and 'git commit'." '' Yellow
@@ -41,7 +43,7 @@ repo_require_clean_work_tree () {
     fi
 
     # Disallow uncommitted changes in the index
-    if ! git diff-index --cached --quiet HEAD --ignore-submodules --; then
+    if ! git diff-index --cached --quiet HEAD $ISM --; then
         io_error 'your index contains uncommitted changes.' "$prefix"
         io_message >&2 "$(repo_list_uncommited | sed 's/^/  /')" '' Red
         io_message >&2 "  run 'git commit'." '' Yellow
