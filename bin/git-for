@@ -1,22 +1,38 @@
 #! /bin/bash
 
-sm_only=false
+. zlib-core
+
 sm_opts=()
-fe_opts=()
+fe_opts=() 
 args=()
 
 while [[ "$#" > 0 ]]; do case "$1" in
-  --) shift; args+=("$@"); break;;
-  -h|--help) zou-help $0; exit 0;;
-  -s|--sm-only)   sm_only=true;;
-  -q|--quiet)     sm_opts+=('--quiet');;
-  -r|--recursive) fe_opts+=('--recursive');;
-  *) args+=("$1");;
+  --)                   shift; args+=("$@"); break;;
+  -h|--help)            zou-help $0; exit 0;;
+  -s|--sm-only)         sm_only=true;;
+  -q|--quiet)           sm_opts+=('--quiet');;
+  -r|--recursive)       recursive=true;;
+  -e|--stop-on-error)   stop_on_error=true;;
+  -1|--level1-only)     level1_only=true;;
+  *)                    args+=("$1");;
 esac; shift; done
 
-[[ $sm_only == false ]] && (
+[[ $level1_only == true ]] && {
+  [[ $recursive == true ]] && {
+    io_warning '--recursive option is not compatible with -1'
+    unset recursive;
+  }
+  sm_only=true;
+}
+[[ $recursive == true ]] && fe_opts+=('--recursive')
+
+command="${args[@]}"
+[[ $stop_on_error == true ]] || command="($command || true)"
+
+[[ $sm_only == true ]] || (
     path=$(basename `pwd`)
-    [[ ! "${sm_opts[@]}" =~ "--quiet" ]] && echo Entering $path
-    eval "${args[@]}"
-)
-git submodule "${sm_opts[@]}" foreach "${fe_opts[@]}" "${args[@]}"
+    [[ "${sm_opts[@]}" =~ "--quiet" ]] || echo Entering $path
+    eval "$command"
+); (( $? == 0 )) || exit $?
+
+git submodule "${sm_opts[@]}" foreach "${fe_opts[@]}" "$command" 2>&1 | sed -u '/^fatal:/q' | grep --line-buffered -v '^fatal:'
