@@ -9,6 +9,7 @@ args=()
 while [[ "$#" > 0 ]]; do case "$1" in
   --)                   shift; args+=("$@"); break;;
   -h|--help)            zou-help $0; exit 0;;
+  -l|--work-dir-last)   work_dir_last=true;;
   -s|--sm-only)         sm_only=true;;
   -q|--quiet)           sm_opts+=('--quiet');;
   -r|--recursive)       recursive=true;;
@@ -29,10 +30,16 @@ esac; shift; done
 command="${args[@]}"
 [[ $stop_on_error == true ]] || command="($command || true)"
 
-[[ $sm_only == true ]] || (
-    path=$(basename `pwd`)
-    [[ "${sm_opts[@]}" =~ "--quiet" ]] || echo Entering $path
-    eval "$command"
-); (( $? == 0 )) || exit $?
+run_in_working_dir()
+{
+  path=$(basename `pwd`)
+  [[ "${sm_opts[@]}" =~ "--quiet" ]] || echo Entering $path
+  eval "$command"
+}
 
-git submodule "${sm_opts[@]}" foreach "${fe_opts[@]}" "$command" 2>&1 | sed -u '/^fatal:/q' | grep --line-buffered -v '^fatal:'
+[[ $sm_only != true && $work_dir_last != true ]] && (run_in_working_dir || exit 1)
+
+git submodule "${sm_opts[@]}" foreach "${fe_opts[@]}" "$command" 2>&1 | sed -u '/^fatal:/q' | grep --line-buffered -v '^fatal:' && exit_code=1
+(( $exit_code != 0 )) && [[ $stop_on_error == true ]] && exit $exit_code
+
+[[ $sm_only != true && $work_dir_last == true ]] && run_in_working_dir
