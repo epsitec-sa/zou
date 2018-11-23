@@ -43,7 +43,13 @@ branch_sync_all()
   repo_require_clean_work_tree 'synchronize' || return 1
   git fetch --prune --all &>/dev/null
   while read l r i; do
-    io_warning "$l $i $r" 'synchronizing'
+    case $i in
+      '>')  color=Brown;;  # ahead
+      '<')  color=Yellow;; # behind
+      '<>') color=Yellow;; # ahead and behind
+      '=')  color=Green;;
+    esac
+    io_message "$l $i $r" 'synchronizing' $color
     case $i in
       '>')  branch_push $r $l || return 1;; # ahead
       '<')  branch_pull $r $l || return 1;; # behind
