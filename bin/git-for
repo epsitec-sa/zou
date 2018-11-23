@@ -39,6 +39,7 @@ run_in_working_dir()
 
 [[ $sm_only != true && $work_dir_last != true ]] && (run_in_working_dir || exit 1)
 
+exit_code=0
 git submodule "${sm_opts[@]}" foreach "${fe_opts[@]}" "$command" 2>&1 | sed -u '/^fatal:/q' | grep --line-buffered -v '^fatal:' && exit_code=1
 (( $exit_code != 0 )) && [[ $stop_on_error == true ]] && exit $exit_code
 
