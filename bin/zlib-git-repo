@@ -11,8 +11,17 @@ repo_list_unstaged()   { git diff-files --name-only -r $ISM_OPT --; }
 repo_list_uncommited() { git diff-index --cached --name-only -r $ISM_OPT HEAD --; }
 repo_list_deleted()    { git ls-files --deleted; }
 repo_list_unmerged()   { git diff --name-only --diff-filter=U $ISM_OPT | cut -f1; }
+repo_module_dir()      { git rev-parse --show-toplevel; }
 
-repo_module_id()
+repo_root_dir()
+{
+  local dir=$(readlink -f ${1:-.})
+  while [[ -n "$dir" && ! -d "$dir/.git" ]]; do
+    dir=${dir%/*}
+  done
+  echo $dir
+}
+repo_module_dir()
 {
   local bdir=$(readlink -f ${1:-.})
   local mdir
@@ -20,22 +29,25 @@ repo_module_id()
     [[ -z "$mdir" && -f "$bdir/.git" ]] && mdir=$bdir
     bdir=${bdir%/*}
   done
-  [[ -n $mdir ]] && echo ${mdir#$bdir/}
+  [[ -n $mdir ]] && echo "$mdir" || echo "$bdir"
+}
+
+repo_dir_url()
+{
+  cd "${1:-.}"
+  local url=$(git config remote.origin.url)
+  cd - >/dev/null
+  echo $url
+}
+repo_module_id()
+{
+  local url=$(repo_dir_url "$@")
+  local id=${url##*/} # get 'file name'
+  echo ${id%.git}     # remove 'extension'
 }
 repo_bundle_id()
 {
-  local bdir=$(readlink -f ${1:-.})
-  bdir=$(readlink -f $bdir)
-  while [[ -n "$bdir" && ! -d "$bdir/.git" ]]; do
-    bdir=${bdir%/*}
-  done
-
-  cd "$bdir"
-  local url=$(git config remote.origin.url)
-  cd - >/dev/null
-
-  local bid=${url##*/}; bid=${bid%.git}
-  echo $bid
+  repo_module_id $(repo_root_dir)
 }
 
 repo_require_clean_work_tree () {
