@@ -11,7 +11,6 @@ repo_list_unstaged()   { git diff-files --name-only -r $ISM_OPT --; }
 repo_list_uncommited() { git diff-index --cached --name-only -r $ISM_OPT HEAD --; }
 repo_list_deleted()    { git ls-files --deleted; }
 repo_list_unmerged()   { git diff --name-only --diff-filter=U $ISM_OPT | cut -f1; }
-repo_module_dir()      { git rev-parse --show-toplevel; }
 
 repo_root_dir()
 {
@@ -31,7 +30,6 @@ repo_module_dir()
   done
   [[ -n $mdir ]] && echo "$mdir" || echo "$bdir"
 }
-
 repo_dir_url()
 {
   cd "${1:-.}"
