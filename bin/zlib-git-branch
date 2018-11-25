@@ -23,8 +23,8 @@ branch_pull()
     if ! git pull ${r%%/*} $l &>/dev/null; then
         ec=$?
         io_error 'your have unmerged paths.'
-        io_message >&2 "$(repo_list_unmerged)" '' Red
-        io_message >&2 "fix conflicts and run 'git commit'." '' Yellow
+        io_message >&2 "$(repo_list_unmerged | sed 's/^/  /')" '' Red
+        io_message >&2 "  fix conflicts and run 'git commit'." '' Yellow
         return $ec
     fi
     git checkout - &>/dev/null;
