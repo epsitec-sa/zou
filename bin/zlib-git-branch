@@ -5,8 +5,8 @@
 . zlib-git-repo
 
 branch_current()     { git rev-parse --abbrev-ref HEAD; }
-branch_list_local()  { git for-each-ref --format='%(refname:short)' refs/heads/*; }
-branch_list_remote() { git for-each-ref --format='%(refname:short)' refs/remotes/origin/*; }
+branch_list_local()  { git for-each-ref --format='%(refname:short)' refs/heads; }
+branch_list_remote() { git for-each-ref --format='%(refname:short)' refs/remotes; }
 branch_list_all()    { branch_list_local; branch_list_remote; }
 branch_list_all_at() { git show-ref | grep $(git rev-parse ${1:-HEAD}) | cut -d ' ' -f2 | grep -v '^refs/tags/' | sed 's,^refs/[^/]*/,,'; }
 branch_upstream()    { git rev-parse --abbrev-ref $1@{upstream} 2>/dev/null; }
