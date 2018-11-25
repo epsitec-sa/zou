@@ -58,7 +58,7 @@ branch_sync_all()
 {
 #   io_info branch_sync_all
   local moduleId=$(repo_module_id)
-  repo_require_clean_work_tree 'synchronize [$moduleId]' || return 1
+  repo_require_clean_work_tree "synchronize [$moduleId]" || return 1
   git fetch --prune --all &>/dev/null
   while read l r i; do
     case $i in
