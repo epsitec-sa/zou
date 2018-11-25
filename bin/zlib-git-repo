@@ -12,6 +12,32 @@ repo_list_uncommited() { git diff-index --cached --name-only -r $ISM_OPT HEAD --
 repo_list_deleted()    { git ls-files --deleted; }
 repo_list_unmerged()   { git diff --name-only --diff-filter=U $ISM_OPT | cut -f1; }
 
+repo_module_id()
+{
+  local bdir=$(readlink -f ${1:-.})
+  local mdir
+  while [[ -n "$bdir" && ! -d "$bdir/.git" ]]; do
+    [[ -z "$mdir" && -f "$bdir/.git" ]] && mdir=$bdir
+    bdir=${bdir%/*}
+  done
+  [[ -n $mdir ]] && echo ${mdir#$bdir/}
+}
+repo_bundle_id()
+{
+  local bdir=$(readlink -f ${1:-.})
+  bdir=$(readlink -f $bdir)
+  while [[ -n "$bdir" && ! -d "$bdir/.git" ]]; do
+    bdir=${bdir%/*}
+  done
+
+  cd "$bdir"
+  local url=$(git config remote.origin.url)
+  cd - >/dev/null
+
+  local bid=${url##*/}; bid=${bid%.git}
+  echo $bid
+}
+
 repo_require_clean_work_tree () {
     # io_info >&2 "repo_require_clean_work_tree"
     local prefix="$*"
