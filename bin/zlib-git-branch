@@ -1,5 +1,6 @@
 #! /bin/bash
 # https://longair.net/blog/2009/04/16/git-fetch-and-merge/
+# https://stackoverflow.com/questions/501407/is-there-a-git-merge-dry-run-option
 
 . zlib-git-repo
 
@@ -10,6 +11,22 @@ branch_list_all()    { branch_list_local; branch_list_remote; }
 branch_upstream()    { git rev-parse --abbrev-ref $1@{upstream} 2>/dev/null; }
 branch_sync_info()   { git for-each-ref --format="%(refname:short) %(upstream:short) %(upstream:trackshort)" refs/heads "$@"; }
 
+branch_merge_in_memory()
+{
+  local r=$1 l=$2 mbase=$(git merge-base $r $l)
+  git merge-tree $mbase $l $r
+}
+branch_check_merge_conflicts()
+{
+  local conflicts=$(branch_merge_in_memory "$@")
+  echo $conflicts | grep -q -E '^[+-\ ]>{7}' || {
+    io_error "while auto-merging $r into $l."
+    io_message >&2 "$(echo "$conflicts" | sed 's/^/  /')" '' Red
+    io_message >&2 "  merge manually, resolve conflicts and run 'git commit'." '' Yellow
+    return 1
+  }
+}
+
 branch_push()
 {
   local r=$1 l=$2
@@ -18,17 +35,17 @@ branch_push()
 branch_pull()
 {
   local r=$1 l=$2 ec=0
+  # try fast-forward merge
   git fetch ${r%%/*} $l:$l &>/dev/null || {
-    git checkout $l &>/dev/null
-    if ! git pull ${r%%/*} $l &>/dev/null; then
-        ec=$?
-        io_error 'your have unmerged paths.'
-        io_message >&2 "$(repo_list_unmerged | sed 's/^/  /')" '' Red
-        io_message >&2 "  fix conflicts and run 'git commit'." '' Yellow
-        return $ec
-    fi
-    git checkout - &>/dev/null;
+    # check if there is merge conflicts
+    branch_check_merge_conflicts $r $l && {
+      # no conflict detected; do real merge
+      git checkout $l &>/dev/null || ec=$?
+      git pull ${r%%/*} $l &>/dev/null || ec=$?
+      git checkout - &>/dev/null || ec=$?
+    }
   }
+  (( $ec == 0 )) || io_error "while pulling $r branch"
   return $ec
 }
 branch_sync()
