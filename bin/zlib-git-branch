@@ -19,7 +19,7 @@ branch_merge_in_memory()
 branch_check_merge_conflicts()
 {
   local conflicts=$(branch_merge_in_memory "$@")
-  echo $conflicts | grep -q -E '^[+-\ ]>{7}' || {
+  echo "$conflicts" | grep -q -E '^[+-\ ]>{7}' && {
     io_error "while auto-merging $r into $l."
     io_message >&2 "$(echo "$conflicts" | sed 's/^/  /')" '' Red
     io_message >&2 "  merge manually, resolve conflicts and run 'git commit'." '' Yellow
@@ -57,7 +57,8 @@ branch_sync()
 branch_sync_all()
 {
 #   io_info branch_sync_all
-  repo_require_clean_work_tree 'synchronize' || return 1
+  local moduleId=$(repo_module_id)
+  repo_require_clean_work_tree 'synchronize [$moduleId]' || return 1
   git fetch --prune --all &>/dev/null
   while read l r i; do
     case $i in
@@ -66,7 +67,7 @@ branch_sync_all()
       '<>') color=Yellow;; # ahead and behind
       '=')  color=Green;;
     esac
-    io_message "$l $i $r" 'synchronizing' $color
+    io_message "$l $i $r" "[$moduleId] synchronizing" $color
     case $i in
       '>')  branch_push $r $l || return 1;; # ahead
       '<')  branch_pull $r $l || return 1;; # behind
