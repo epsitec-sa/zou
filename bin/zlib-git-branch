@@ -11,6 +11,9 @@ branch_list_all()    { branch_list_local; branch_list_remote; }
 branch_list_all_at() { git show-ref | grep $(git rev-parse ${1:-HEAD}) | cut -d ' ' -f2 | grep -v '^refs/tags/' | sed 's,^refs/[^/]*/,,'; }
 branch_upstream()    { git rev-parse --abbrev-ref $1@{upstream} 2>/dev/null; }
 branch_sync_info()   { git for-each-ref --format="%(refname:short) %(upstream:short) %(upstream:trackshort)" refs/heads "$@"; }
+branch_is_attached() { git symbolic-ref --short -q HEAD >/dev/null; }
+branch_is_remote()   { branch_list_remote | grep -q "$1"; }
+branch_without_remote_prefix() { branch_is_remote $1 && echo ${1#*/} || echo $1; }
 
 branch_merge_in_memory()
 {
@@ -53,6 +56,25 @@ branch_sync()
 {
   local r=$1 l=$2
   branch_pull $r $l && branch_push $r $l
+}
+
+branch_list_attach_candidates()
+{
+  if ! branch_is_attached; then
+    local branches=($(branch_list_all_at $1))
+    local l r i b
+    while read l r i; do
+        for i in "${!branches[@]}"; do
+          if [[ ${branches[i]} == $r ]]; then
+            unset 'branches[i]'
+          fi
+        done
+    done < <(branch_sync_info)
+    # get local name of remote branch (origin/wip -> wip)
+    for b in ${branches[@]}; do
+      echo $(branch_without_remote_prefix $b)
+    done
+  fi
 }
 
 branch_sync_all()
