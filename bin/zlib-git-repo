@@ -7,10 +7,11 @@
 [[ $SYNC_ISM == true ]] && ISM_OPT='--ignore-submodules'
 
 repo_list_untracked()  { git ls-files --exclude-standard --others; }
-repo_list_unstaged()   { git diff-files --name-only -r $ISM_OPT --; }
+repo_list_unstaged()   { git diff-files --name-only -r $ISM_OPT -- | sort -u; }
 repo_list_uncommited() { git diff-index --cached --name-only -r $ISM_OPT HEAD --; }
 repo_list_deleted()    { git ls-files --deleted; }
 repo_list_unmerged()   { git diff --name-only --diff-filter=U $ISM_OPT | cut -f1; }
+repo_is_merging()      { git merge HEAD &>/dev/null && return 1 || return 0; }
 
 repo_root_dir()
 {
