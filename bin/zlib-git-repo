@@ -60,7 +60,7 @@ repo_require_clean_work_tree () {
         io_error 'your have unmerged paths.' "$prefix"
         io_message >&2 "$(repo_list_unmerged | sed 's/^/  /')" '' Red
         io_message >&2 "  resolve conflicts and run 'git commit'." '' LightCyan
-        err=1
+        return 1
     fi
 
     # Disallow untracked changes in the working tree
