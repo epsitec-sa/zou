@@ -55,10 +55,10 @@ repo_require_clean_work_tree () {
     local err=0
 
     # Update the index
-    if ! git update-index -q $ISM_OPT --refresh; then
+    if ! git update-index -q $ISM_OPT --refresh &>/dev/null; then
         io_error 'your have unmerged paths.' "$prefix"
         io_message >&2 "$(repo_list_unmerged | sed 's/^/  /')" '' Red
-        io_message >&2 "  fix conflicts and run 'git commit'." '' LightCyan
+        io_message >&2 "  resolve conflicts and run 'git commit'." '' LightCyan
         err=1
     fi
 

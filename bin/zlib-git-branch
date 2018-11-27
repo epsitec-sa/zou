@@ -26,7 +26,7 @@ branch_check_merge_conflicts()
   echo "$conflicts" | grep -q -E '^[+-\ ]>{7}' && {
     io_error "while auto-merging $r into $l."
     io_message >&2 "$(echo "$conflicts" | sed 's/^/  /')" '' Red
-    io_message >&2 "  merge manually, resolve conflicts and run 'git commit'." '' Yellow
+    io_message >&2 "  merge manually, resolve conflicts and run 'git commit'." '' LightCyan
     return 1
   }
 }
@@ -89,6 +89,7 @@ branch_sync_all()
       '<')  color=Yellow;; # behind
       '<>') color=Yellow;; # ahead and behind
       '=')  color=Green;;
+      *) color=DarkGray
     esac
     io_message "$l $i $r" "[$moduleId] synchronizing" $color
     case $i in
