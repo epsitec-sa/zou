@@ -122,7 +122,7 @@ branch_merge_ff() {
     else
         if [ "$(git merge-base $branch_orig_hash $commit_orig_hash)" != "$branch_orig_hash" ]; then
             io_error "merging $commit into $branch would not be a fast-forward"
-            exit 1
+            return 1
         fi
         io_info "Updating ${branch_orig_hash:0:7}..${commit_orig_hash:0:7}"
         if git update-ref -m "merge $commit: Fast forward" "refs/heads/$branch" "$commit_orig_hash" "$branch_orig_hash"; then
@@ -132,6 +132,7 @@ branch_merge_ff() {
             fi
         else
             io_error "fast forward using update-ref failed"
+            return 1
         fi
     fi
 }
