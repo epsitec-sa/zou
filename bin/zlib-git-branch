@@ -21,43 +21,91 @@ branch_merge_in_memory()
   local r=$1 l=$2 mbase=$(git merge-base $r $l)
   git merge-tree $mbase $l $r
 }
-branch_check_merge_conflicts()
+branch_merge_dry_run()
 {
   local conflicts=$(branch_merge_in_memory "$@")
-  echo "$conflicts" | grep -q -E '^[+-\ ]>{7}' && {
-    io_error "while auto-merging $r into $l."
-    io_message >&2 "$(echo "$conflicts" | sed 's/^/  /')" '' Red
-    io_message >&2 "  merge manually, resolve conflicts and run 'git commit'." '' LightCyan
-    return 1
-  }
-  return 0
+  echo "$conflicts" | grep -q -E '^[+-\ ]>{7}' && return 1 || return 0
 }
-
+branch_merge_interactive()
+{
+  local ec=0
+  git mergetool >/dev/null || ec=1
+  if (( $ec == 0 )); then
+    git commit --no-edit >/dev/null
+    git push &>/dev/null
+  fi
+  # clean temp merge files
+  repo_list_untracked | grep -E '(\.orig$|_(BACKUP|BASE|LOCAL|REMOTE)_[0-9]+)' | xargs --no-run-if-empty rm --
+  return $ec
+}
 branch_push()
 {
   local r=$1 l=$2
   git push ${r%%/*} $l &>/dev/null
 }
-branch_pull()
+branch_merge()
 {
   local r=$1 l=$2 ec=0
   # try fast-forward merge
-  git fetch ${r%%/*} $l:$l &>/dev/null || {
-    # check if there is merge conflicts
-    branch_check_merge_conflicts $r $l && {
-      # no conflict detected; do real merge
-      git checkout $l &>/dev/null || ec=$?
-      git pull ${r%%/*} $l &>/dev/null || ec=$?
-      git checkout - &>/dev/null || ec=$?
-    }
-  }
-  (( $ec == 0 )) || io_error "while pulling $r branch"
+  if ! branch_merge_ff $l $r &>/dev/null; then
+    # fast forward failed
+    # on active branch...
+    if branch_is_head $l; then
+      # ... merge even if conflicts
+      if ! git merge $r &>/dev/null; then
+        if repo_is_merging; then
+          branch_merge_interactive || {
+            local conflicts=$(git diff)
+            io_error "while auto-merging $r into $l."
+            io_message >&2 "$(echo "$conflicts" | sed 's/^/  /')" '' Red
+            io_message >&2 "  configure your mergetool and run 'git sync' again" '' LightCyan
+            io_message >&2 "  ... or finaliuze the merge using the following commands:" '' LightCyan
+            io_message >&2 "    <merge-tool>" '' Brown
+            io_message >&2 "    git commit --no-edit" '' DarkGray
+            io_message >&2 "    git push" '' DarkGray
+          }
+        else
+          ec=$?
+        fi
+      fi
+    # on inactive branch check if there will be merge conflicts before switching
+    else
+      if branch_merge_dry_run $r $l; then
+        # no conflicts: merge
+        git checkout $l &>/dev/null && {
+          git merge $r &>/dev/null || ec=$?
+          git checkout - &>/dev/null || ec=$?
+        }
+      else
+        git checkout $l &>/dev/null && {
+          git merge $r &>/dev/null || branch_merge_interactive ||
+          {
+            local conflicts=$(git diff)
+            io_error "while auto-merging $r into $l."
+            io_message >&2 "$(echo "$conflicts" | sed 's/^/  /')" '' Red
+            io_message >&2 "  configure your mergetool and run 'git sync' again" '' LightCyan
+            io_message >&2 "  ... or merge $r into $l using the following commands:" '' LightCyan
+            io_message >&2 "    git checkout $l" '' DarkGray
+            io_message >&2 "    git pull" '' DarkGray
+            io_message >&2 "    <merge-tool>" '' Brown
+            io_message >&2 "    git commit --no-edit" '' DarkGray
+            io_message >&2 "    git push" '' DarkGray
+            io_message >&2 "    git checkout -" '' DarkGray
+            git merge --abort
+          }
+          git checkout - &>/dev/null || ec=$?
+        }
+
+      fi
+    fi
+  fi
+  (( $ec == 0 )) || io_error "while merging $r branch"
   return $ec
 }
 branch_sync()
 {
   local r=$1 l=$2
-  branch_pull $r $l && branch_push $r $l
+  branch_merge $r $l && branch_push $r $l
 }
 
 branch_list_attach_candidates()
@@ -96,7 +144,7 @@ branch_sync_all()
     io_message "$l $i $r" "[$moduleId] synchronizing" $color
     case $i in
       '>')  branch_push $r $l || return 1;; # ahead
-      '<')  branch_pull $r $l || return 1;; # behind
+      '<')  branch_merge $r $l || return 1;; # behind
       '<>') branch_sync $r $l || return 1;; # ahead and behind
     esac
   done < <(branch_sync_info)
