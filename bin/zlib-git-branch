@@ -142,8 +142,8 @@ branch_sync_all()
 {
 #   io_info branch_sync_all
   local moduleId=$(repo_module_id)
-  repo_require_clean_work_tree "synchronize [$moduleId]" || return 1
   git fetch --prune --all &>/dev/null
+  repo_require_clean_work_tree "synchronize [$moduleId]" || return 1
   while read l r i; do
     case $i in
       '>')  color=Brown;;  # ahead
@@ -160,7 +160,6 @@ branch_sync_all()
     esac
   done < <(branch_sync_info)
   git submodule update --recursive # --remote
-  branch_attach
 }
 
 # https://stackoverflow.com/questions/3216360/merge-update-and-pull-git-branches-without-using-checkouts
