@@ -216,3 +216,50 @@ branch_list_select_candidates()
     echo $(branch_without_remote_prefix $b)
   done
 }
+# Convert a development branch to a fallback list of development branches.
+branch_fallback_dev()
+{
+  local branch=$1
+  # io_warning "branch = $branch" 'dev_patterns'
+  if [[ $branch =~ ^([^/]+)/(.+)$ ]]; then
+    local kind=${BASH_REMATCH[1]}; io_debug kind
+    local config=${BASH_REMATCH[2]}; io_debug config
+    case $kind in
+      sku) echo $branch;;
+    esac
+    if [[ $config =~ ^([^/]+)/(.*)$ ]]; then
+      local product=${BASH_REMATCH[1]}; io_debug product
+      config=${BASH_REMATCH[2]}; io_debug config
+      case $kind in
+        sku) echo "$kind/$config";;
+        *) echo $branch;;
+      esac
+    fi
+  fi
+  echo 'master'
+}
+# Convert any branch to a fallback list of development branches.
+branch_fallback()
+{
+  local branch=$1
+  io_message "$branch" '' Brown >&2
+  if [[ $branch =~ ^(.*/)?([0-9]+\.[0-9]+)$ ]]; then
+    # prod branch
+    local prefix=${BASH_REMATCH[1]}
+    io_debug prefix
+    local version=${BASH_REMATCH[2]}
+    io_debug version
+    [[ -z $prefix ]] && branch_fallback_dev 'master' || branch_fallback_dev "${prefix}dev"
+  else
+    branch_fallback_dev $branch
+  fi
+}
+# Convert any branch to a fallback list of regex patterns.
+# Use this method to match submodules development branches
+# from any superproject branch.
+branch_fallback_patterns()
+{
+  for branch in $(branch_fallback $1); do
+    regex_whole $(regex_escape $branch)
+  done
+}
