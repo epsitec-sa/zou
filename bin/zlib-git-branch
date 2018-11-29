@@ -229,7 +229,6 @@ branch_merge_ff() {
 branch_fallback_dev()
 {
   local branch=$1
-  # io_warning "branch = $branch" 'dev_patterns'
   if [[ $branch =~ ^([^/]+)/(.+)$ ]]; then
     local kind=${BASH_REMATCH[1]}; io_debug kind
     local config=${BASH_REMATCH[2]}; io_debug config
@@ -247,8 +246,8 @@ branch_fallback_dev()
   fi
   echo 'master'
 }
-# Convert any branch to a fallback list of development branches.
-branch_fallback()
+# Convert any branch (dev or prod) to a fallback list of development branches.
+branch_best_match_fallback()
 {
   local branch=$1
   io_message "$branch" '' Brown >&2
@@ -264,11 +263,28 @@ branch_fallback()
   fi
 }
 # Convert any branch to a fallback list of regex patterns.
-# Use this method to match submodules development branches
-# from any superproject branch.
-branch_fallback_patterns()
+branch_best_match_patterns()
 {
-  for branch in $(branch_fallback $1); do
+  for branch in $(branch_best_match_fallback $1); do
     regex_whole $(regex_escape $branch)
   done
+}
+# Use this method to find the development branch which best matches
+# any superproject branch (dev|prod)
+branch_best_match()
+{
+  local patterns=( $(branch_best_match_patterns $1) )
+  local branches=( $(branch_flatten) )
+  # try to find a branch matching bundle branch name
+  for pattern in "${patterns[@]}"; do
+    # for candidate in $(branch_flatten | awk '{ print length, $0 }' | sort -n -s -r | cut -d' ' -f2-); do
+    for candidate in "${branches[@]}"; do
+      # echo "$candidate '=~' $pattern"
+      [[ $candidate =~ $pattern ]] && {
+        echo $candidate
+        return 0
+      }
+    done
+  done
+  return 1
 }
