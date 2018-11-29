@@ -1,6 +1,10 @@
 #! /bin/bash
 
-. zlib-core
+# Use the following statement to include current lib only once
+#   [[ -z $ZLIB_GIT_VTAG ]] && . zlib-git-vtag
+ZLIB_GIT_VTAG=true
+
+[[ -z $ZLIB_CORE ]] && . zlib-core
 
 vtag_describe()
 {

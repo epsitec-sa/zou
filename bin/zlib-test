@@ -1,6 +1,10 @@
 #! /bin/bash
 
-. zlib-core
+# Use the following statement to include current lib only once
+#   [[ -z $ZLIB_TEST ]] && . zlib-test
+ZLIB_TEST=true
+
+[[ -z $ZLIB_CORE ]] && . zlib-core
 
 # create test-results folder
 zou_testDir=$(readlink -f "$zou_startupDir/../test-results")

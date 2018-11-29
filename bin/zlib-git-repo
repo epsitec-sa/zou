@@ -2,7 +2,11 @@
 # http://schacon.github.io/git/git.html
 # https://stackoverflow.com/questions/2657935/checking-for-a-dirty-index-or-untracked-files-with-git/2658301
 
-. zlib-core
+# Use the following statement to include current lib only once
+#   [[ -z $ZLIB_GIT_REPO ]] && . zlib-git-repo
+ZLIB_GIT_REPO=true
+
+[[ -z $ZLIB_CORE ]] && . zlib-core
 
 [[ $SYNC_ISM == true ]] && ISM_OPT='--ignore-submodules'
 

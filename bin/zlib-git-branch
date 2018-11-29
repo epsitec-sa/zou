@@ -2,7 +2,12 @@
 # https://longair.net/blog/2009/04/16/git-fetch-and-merge/
 # https://stackoverflow.com/questions/501407/is-there-a-git-merge-dry-run-option
 
-. zlib-git-repo
+# Use the following statement to include current lib only once
+#   [[ -z $ZLIB_GIT_BRANCH ]] && . zlib-git-branch
+ZLIB_GIT_BRANCH=true
+
+[[ -z $ZLIB_GIT_REPO ]] && . zlib-git-repo
+[[ -z $ZLIB_GIT_VTAG ]] && . zlib-git-vtag
 
 branch_current()     { git rev-parse --abbrev-ref HEAD; }
 branch_list_local()  { git for-each-ref --format='%(refname:short)' refs/heads; }
