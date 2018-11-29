@@ -116,19 +116,37 @@ branch_sync()
   branch_merge $r $l && branch_push $r $l
 }
 
+branch_list_tracked()
+{
+  local l r i
+  while read l r i; do
+    echo $r
+  done < <(branch_sync_info)
+}
+branch_remove_tracked()
+{
+  local tracked=( $(branch_list_tracked) )
+  if [[ -z $1 ]]; then
+    local branches=( $(branch_list_all) )
+    array_remove_array branches[@] tracked[@]
+  else
+    array_remove_array $1 tracked[@]
+  fi
+}
+branch_flatten()
+{
+  local branches=( $(branch_remove_tracked $1) )
+  # get local name of remote branch (origin/wip -> wip)
+  for b in ${branches[@]}; do
+    echo $(branch_without_remote_prefix $b)
+  done
+}
 branch_list_attach_candidates()
 {
   if ! branch_is_attached; then
-    local branches=($(branch_list_all_at $1))
-    local l r i b
-    while read l r i; do
-        for i in "${!branches[@]}"; do
-          if [[ ${branches[i]} == $r ]]; then
-            unset 'branches[i]'
-          fi
-        done
-    done < <(branch_sync_info)
-    # get local name of remote branch (origin/wip -> wip)
+    local branches=( $(branch_list_all_at $1) )
+    branches=( $(branch_remove_tracked branches[@]) )
+    # remove remote prefix (origin/wip/1 -> wip/1)
     for b in ${branches[@]}; do
       echo $(branch_without_remote_prefix $b)
     done
@@ -207,22 +225,6 @@ branch_merge_ff() {
     fi
 }
 
-branch_list_select_candidates()
-{
-  local branches=($(branch_list_all))
-  local l r i b
-  while read l r i; do
-      for i in "${!branches[@]}"; do
-        if [[ ${branches[i]} == $r ]]; then
-          unset 'branches[i]'
-        fi
-      done
-  done < <(branch_sync_info)
-  # get local name of remote branch (origin/wip -> wip)
-  for b in ${branches[@]}; do
-    echo $(branch_without_remote_prefix $b)
-  done
-}
 # Convert a development branch to a fallback list of development branches.
 branch_fallback_dev()
 {
