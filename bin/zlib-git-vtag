@@ -72,7 +72,7 @@ vtag_get_vbranch_tail()
   # - [0]: the start of tail vtag
   # - [1]: the vbranch that contains marker
   #
-  for vtag in $(vtag_vtags_at $1 | uniq); do
+  for vtag in $(vtag_vtags_at $1 | sort -u); do
     io_debug vtag vtag_get_vbranch_tail
     local vbranch=$(vtag_get_vbranch $vtag)
     if [[ -n $vbranch ]]; then
@@ -219,11 +219,13 @@ vtag_increment()
     if [[ $patch == '@' ]]; then
       io_debug patch vtag_increment
       result="v$major.$minor.0$prerel_default"
-    elif [[ $patch =~ ([0-9]+)(-[[:alnum:]]+)?(\+.+)?$ ]]; then
+    elif [[ $patch =~ ^([0-9]+)(\.[0-9]+)?(-[[:alnum:]]+)?(\+.+)?$ ]]; then
       patch=${BASH_REMATCH[1]}
-      local prerel=${BASH_REMATCH[2]}
-      local meta=${BASH_REMATCH[3]}
+      local build=${BASH_REMATCH[2]}
+      local prerel=${BASH_REMATCH[3]}
+      local meta=${BASH_REMATCH[4]}
       io_debug patch vtag_increment
+      io_debug build vtag_increment
       io_debug prerel vtag_increment
       io_debug meta vtag_increment
       if [[ $prerel =~ -(alpha|beta|rc)([0-9]*) ]]; then
@@ -251,63 +253,66 @@ vtag_increment()
     echo $result
   fi
 }
-vtag_try_increment()
+
+vbranch_without_prefix() { [[ $1 =~ ^(.*/)?([0-9]+\.[0-9]+)$ ]] && echo "${BASH_REMATCH[2]}"; }
+
+vbranch_next_vtag()
 {
   local rev=$1
   local prerel_prefix=$2
 
-  io_debug rev vtag_try_increment
-  io_debug prerel_prefix vtag_try_increment
+  io_debug rev vbranch_next_vtag
+  io_debug prerel_prefix vbranch_next_vtag
   
-  local commit=$(git rev-parse $rev^{})
-  local ltag=$(vtag_describe $commit)
+  local commit=$(git rev-parse "$rev^{}")
+  local ltag=$(vtag_describe "$commit")
 
-  io_debug commit vtag_try_increment
-  io_debug ltag vtag_try_increment
+  io_debug commit vbranch_next_vtag
+  io_debug ltag vbranch_next_vtag
 
   if [[ -z $ltag ]]; then
-    io_error "vtag_try_increment: unable to determine $rev has no vtag ancestor"
+    io_error "vbranch_next_vtag: unable to determine $rev has no vtag ancestor"
   else
-    stag=${ltag%-*-g*}
-    lsuf=${ltag#$stag}
+    local stag=${ltag%-*-g*}
+    local lsuf=${ltag#$stag}
 
-    io_debug stag vtag_try_increment
-    io_debug lsuf vtag_try_increment
+    io_debug stag vbranch_next_vtag
+    io_debug lsuf vbranch_next_vtag
 
     # fix stag and ltag when multiple tags point at same commit
-    vrange=$(vtag_get_vbranch_tail $stag $rev)
+    local vrange=$(vtag_get_vbranch_tail $stag $rev)
     if [[ -z $vrange ]]; then
       local revs=$(echo $rev $(vtag_vtags_at $rev) | xargs -n 1 | sort -u)
-      io_error "vtag_try_increment: unable to associate $(string_join ' or ' $revs) with a vbranch"
+      io_error "vbranch_next_vtag: unable to associate $(string_join ' or ' $revs) with a vbranch"
     else
-      io_debug vrange vtag_try_increment
+      io_debug vrange vbranch_next_vtag
 
       vrange=($vrange)
       stag=${vrange[0]}
       ltag=$stag$lsuf
-      vbranch=${vrange[1]}
+      vbranch=$(vbranch_without_prefix "${vrange[1]}")
 
-      io_debug ltag vtag_try_increment
-      io_debug stag vtag_try_increment
-      io_debug vbranch vtag_try_increment
+      io_debug ltag vbranch_next_vtag
+      io_debug stag vbranch_next_vtag
+      io_debug vbranch vbranch_next_vtag
 
       # get range upper limit
-      utag=$(vtag_get_next_vtag $stag $vbranch)
+      local utag=$(vtag_get_next_vtag $stag $vbranch)
       if [[ -n $utag ]]; then
         # upper limit exist
-        io_debug utag vtag_try_increment
-        vnext=$(vtag_increment $stag $prerel_prefix)
-        io_debug vnext vtag_try_increment
+        io_debug utag vbranch_next_vtag
+        local vnext=$(vtag_increment $stag $prerel_prefix)
+        io_debug vnext vbranch_next_vtag
         vtag_compare $vnext $utag
         if (( $? == 255 )); then
           echo $vnext
         else
-          io_error "vtag_try_increment: unable to insert vtag between $stag and $utag"
+          io_error "vbranch_next_vtag: unable to insert vtag between $stag and $utag"
         fi
       else
         # no upper limit: compute vnext
         vnext=$(vtag_increment $stag $prerel_prefix)
-        io_debug vnext vtag_try_increment
+        io_debug vnext vbranch_next_vtag
         echo $vnext
       fi
     fi
