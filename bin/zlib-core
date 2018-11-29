@@ -106,6 +106,25 @@ assert_exit_code()
 regex_whole()  { echo "^$1$"; }
 regex_escape() { echo "${1//./\\.}"; }
 
+array_remove_array()
+{
+  # https://stackoverflow.com/questions/1063347/passing-arrays-as-parameters-in-bash
+  # example:
+  #   list_remove array[@] remove[@]
+  # array are passed by names: ${!1} is an indirection
+  local array=( "${!1}" )
+  local remove=( "${!2}" )
+  for i in ${!array[@]}; do
+    for r in ${remove[@]}; do
+      if [[ "${array[i]}" == "$r" ]]; then
+        unset 'array[i]'
+        break
+      fi
+    done
+  done
+  printf '%s\n' "${array[@]}"
+}
+
 # trace constants (if debug == true)
 io_debug zou_startupPath
 io_debug zou_startupDir
