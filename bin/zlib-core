@@ -75,7 +75,8 @@ assert_equals()
     *) args+=("$1");;
   esac; shift; done
   local expected=${args[0]}
-  local value="${args[@]:1}"
+  local value=${args[1]}
+  [[ -n ${args[2]} ]] && label=${args[2]}
 
   if [[ "$expected" != "$value" ]]; then
     io_error "expected '$expected' but was '$value'" "$label"
