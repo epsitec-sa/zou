@@ -23,6 +23,7 @@ branch_is_remote()      { branch_list_remote | grep -q "^$1$"; }
 branch_is_head()        { [ $(git rev-parse HEAD^{}) = $(git rev-parse $1^{}) ]; }
 
 branch_without_remote_prefix() { branch_is_remote $1 && echo ${1#*/} || echo $1; }
+branch_checkout() { [[ -n $1 ]] && git checkout "$(branch_without_remote_prefix $1)" >/dev/null; }
 
 branch_merge_in_memory()
 {
@@ -133,23 +134,11 @@ branch_remove_tracked()
     array_remove_array $1 tracked[@]
   fi
 }
-branch_flatten()
-{
-  local branches=( $(branch_remove_tracked $1) )
-  # get local name of remote branch (origin/wip -> wip)
-  for b in ${branches[@]}; do
-    echo $(branch_without_remote_prefix $b)
-  done
-}
 branch_list_attach_candidates()
 {
   if ! branch_is_attached; then
     local branches=( $(branch_list_all_at $1) )
-    branches=( $(branch_remove_tracked branches[@]) )
-    # remove remote prefix (origin/wip/1 -> wip/1)
-    for b in ${branches[@]}; do
-      echo $(branch_without_remote_prefix $b)
-    done
+    branch_remove_tracked branches[@]
   fi
 }
 branch_attach()
@@ -158,7 +147,7 @@ branch_attach()
   if ! branch_is_attached; then
     local branches=($(branch_list_attach_candidates $1))
     if (( ${#branches[@]} == 1 )); then
-      git checkout ${branches[0]} &>/dev/null
+      branch_checkout "${branches[0]}"
     fi
   fi
 }
@@ -226,7 +215,7 @@ branch_merge_ff() {
 }
 
 # Convert a development branch to a fallback list of development branches.
-branch_fallback_dev()
+branch_dev_fallback()
 {
   local branch=$1
   if [[ $branch =~ ^([^/]+)/(.+)$ ]]; then
@@ -247,40 +236,40 @@ branch_fallback_dev()
   echo 'master'
 }
 # Convert any branch (dev or prod) to a fallback list of development branches.
-branch_best_match_fallback()
+branch_best_match_dev_fallback()
 {
   local branch=$1
-  io_message "$branch" '' Brown >&2
+  [[ $debug == true ]] && io_message "$branch" 'branch_best_match_dev_fallback' Brown >&2
   if [[ $branch =~ ^(.*/)?([0-9]+\.[0-9]+)$ ]]; then
     # prod branch
     local prefix=${BASH_REMATCH[1]}
     io_debug prefix
     local version=${BASH_REMATCH[2]}
     io_debug version
-    [[ -z $prefix ]] && branch_fallback_dev 'master' || branch_fallback_dev "${prefix}dev"
+    [[ -z $prefix ]] && branch_dev_fallback 'master' || branch_dev_fallback "${prefix}dev"
   else
-    branch_fallback_dev $branch
+    branch_dev_fallback $branch
   fi
 }
 # Convert any branch to a fallback list of regex patterns.
-branch_best_match_patterns()
+branch_best_match_dev_patterns()
 {
-  for branch in $(branch_best_match_fallback $1); do
+  local branch
+  for branch in $(branch_best_match_dev_fallback $1); do
     regex_whole $(regex_escape $branch)
   done
 }
 # Use this method to find the development branch which best matches
 # any superproject branch (dev|prod)
-branch_best_match()
+branch_best_match_dev()
 {
-  local patterns=( $(branch_best_match_patterns $1) )
-  local branches=( $(branch_flatten) )
+  local patterns=( $(branch_best_match_dev_patterns $1) )
+  local branches=( $(branch_remove_tracked) )
   # try to find a branch matching bundle branch name
   for pattern in "${patterns[@]}"; do
-    # for candidate in $(branch_flatten | awk '{ print length, $0 }' | sort -n -s -r | cut -d' ' -f2-); do
     for candidate in "${branches[@]}"; do
-      # echo "$candidate '=~' $pattern"
-      [[ $candidate =~ $pattern ]] && {
+      local lcandidate=$(branch_without_remote_prefix $candidate)
+      [[ $lcandidate =~ $pattern ]] && {
         echo $candidate
         return 0
       }
@@ -288,3 +277,24 @@ branch_best_match()
   done
   return 1
 }
+branch_best_match_prod()
+{
+  local dev=$(branch_best_match_dev $1)
+  local ltag=$(vtag_describe $dev)
+  vtag_get_vbranch_name $ltag
+}
+branch_is_prod() { [[ $1 =~ ^(.*/)?([0-9]+\.[0-9]+)$ ]] && return 0 || return 1; }
+branch_best_match()
+{
+  local target=$1
+  if branch_is_prod $target; then
+    branch_best_match_prod $target
+  else
+    branch_best_match_dev $target
+  fi
+}
+branch_best_match_checkout()
+{
+  branch_checkout "$(branch_best_match $1)"
+}
+
