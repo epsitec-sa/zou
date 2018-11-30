@@ -8,8 +8,6 @@ ZLIB_GIT_REPO=true
 
 [[ -z $ZLIB_CORE ]] && . zlib-core
 
-[[ $SYNC_ISM == true ]] && ISM_OPT='--ignore-submodules'
-
 repo_list_untracked()  { git ls-files --exclude-standard --others; }
 repo_list_unstaged()   { git diff-files --name-only -r $ISM_OPT -- | sort -u; }
 repo_list_uncommited() { git diff-index --cached --name-only -r $ISM_OPT HEAD --; }
