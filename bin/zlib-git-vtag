@@ -6,6 +6,11 @@ ZLIB_GIT_VTAG=true
 
 [[ -z $ZLIB_CORE ]] && . zlib-core
 
+vtag_list()
+{
+  local regex=$(regex_escape "${1:-[0-9]}")
+  git tag -l --sort=-v:refname | grep ^v$regex || true
+}
 vtag_describe()
 {
   # find first vtag ancestor starting from given commit
@@ -93,7 +98,7 @@ vtag_get_next_vtag()
   local vtag=$1
   local vbranch=$2
   local previous
-  for current in $(git vtags $vbranch); do
+  for current in $(vtag_list "$vbranch"); do
     if [[ $current == $vtag ]]; then
       if [[ -n $previous ]]; then
         # previous should be a descendant of vtag
