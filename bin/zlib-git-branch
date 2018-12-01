@@ -165,9 +165,17 @@ branch_sync_all()
       '<')  color=Yellow;; # behind
       '<>') color=Yellow;; # ahead and behind
       '=')  color=Green;;
-      *) color=DarkGray
+      *) [[ -z $i ]] && i='?'; color=DarkGray;; # tracking branch deleted on remote ?
     esac
-    io_message "$l $i $r" "[$moduleId] synchronizing" $color
+    local linfo=$l
+    [[ $l == $(branch_current) ]] && linfo='*"$l"'
+    io_message "$linfo $i $r" "[$moduleId] synchronizing" $color
+    [[ $i == '?' ]] && {
+      io_error "  remote branch $r was deleted or renamed"
+      io_info >&2 "  rename $l and update its tracking information:"
+      io_info >&2 "    git branch -m $l <newbranch>" '' Gray
+      io_info >&2 "    git branch -u <upstream> <newbranch>" '' Gray
+    }
     case $i in
       '>')  branch_push $r $l || return 1;; # ahead
       '<')  branch_merge $r $l || return 1;; # behind
