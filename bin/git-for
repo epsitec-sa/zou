@@ -2,6 +2,8 @@
 
 . zoul-core
 
+export INSIDE_FOR=true
+
 sm_opts=()
 fe_opts=() 
 args=()
@@ -9,43 +11,59 @@ args=()
 while [[ "$#" > 0 ]]; do case "$1" in
   --)                   shift; args+=("$@"); break;;
   -h|--help)            zou-help $0; exit 0;;
-  -l|--work-dir-last)   work_dir_last=true;;
-  -s|--sm-only)         sm_only=true;;
   -q|--quiet)           sm_opts+=('--quiet');;
-  -r|--recursive)       recursive=true;;
-  -e|--stop-on-error)   stop_on_error=true;;
-  -1|--level1-only)     level1_only=true;;
+  -1|--level1-only)     FOR_LEVEL1_ONLY=true;;
+  -r|--recursive)       FOR_RECURSIVE=true;;
+  -s|--sm-only)         FOR_SUBMODULE_ONLY=true;;
+  -e|--stop-on-error)   FOR_STOP_ON_ERROR=true;;
+  -l|--root-last)       FOR_ROOT_LAST=true;;
   *)                    args+=("$1");;
 esac; shift; done
 
-[[ $level1_only == true ]] && {
-  [[ $recursive == true ]] && {
+[[ $FOR_LEVEL1_ONLY == true ]] && {
+  [[ $FOR_RECURSIVE == true ]] && {
     io_warning '--recursive option is not compatible with -1'
-    unset recursive;
+    unset FOR_RECURSIVE;
   }
-  sm_only=true;
+  FOR_SUBMODULE_ONLY=true;
 }
-[[ $recursive == true ]] && fe_opts+=('--recursive')
+[[ $FOR_RECURSIVE == true ]] && fe_opts+=('--recursive')
 
-command="${args[@]}"
-[[ $stop_on_error == true ]] || command="($command || true)"
+export FOR_LEVEL1_ONLY
+export FOR_RECURSIVE
+export FOR_SUBMODULE_ONLY
+export FOR_STOP_ON_ERROR
+export FOR_ROOT_LAST
 
-run_in_working_dir()
+zou_command="${args[@]}"
+[[ $FOR_STOP_ON_ERROR == true ]] || zou_command="($zou_command || true)"
+export zou_command
+
+run_inside_root()
 {
-  path=$(basename `pwd`)
+  local FOR_INSIDE_ROOT=true
+  local path=$(basename `pwd`)
   [[ "${sm_opts[@]}" =~ "--quiet" ]] || echo Entering $path
-  eval "$command"
+  eval "$zou_command"
 }
+run_inside_submodule()
+{
+  local FOR_INSIDE_SUBMODULE=true
+  eval "$zou_command"
+}
+export -f run_inside_submodule
 
-[[ $sm_only != true && $work_dir_last != true ]] && (run_in_working_dir || exit 1)
+[[ $FOR_SUBMODULE_ONLY != true && $FOR_ROOT_LAST != true ]] && (run_inside_root || exit 1)
 
 exit_code=0
-IFS=''
-while read line; do
-  echo $line | grep --line-buffered -v '^fatal:'
-  exit_code=$?
-done < <(git submodule "${sm_opts[@]}" foreach "${fe_opts[@]}" "$command" 2>&1 | sed -u '/^fatal:/q')
+(
+  IFS='' # IFS will be restored on subshell exit
+  while read line; do
+    echo "$line" | grep --line-buffered -v '^fatal:'
+    exit_code=$?
+  done < <(git submodule "${sm_opts[@]}" foreach "${fe_opts[@]}" "run_inside_submodule" 2>&1 | sed -u '/^fatal:/q')
+)
 
-(( $exit_code != 0 )) && [[ $stop_on_error == true ]] && exit $exit_code
+(( $exit_code != 0 )) && [[ $FOR_STOP_ON_ERROR == true ]] && exit $exit_code
 
-[[ $sm_only != true && $work_dir_last == true ]] && run_in_working_dir
+[[ $FOR_SUBMODULE_ONLY != true && $FOR_ROOT_LAST == true ]] && run_inside_root
