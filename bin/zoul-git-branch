@@ -238,13 +238,13 @@ branch_dev_fallback()
     local kind=${BASH_REMATCH[1]}; io_debug kind
     local config=${BASH_REMATCH[2]}; io_debug config
     case $kind in
-      sku) echo $branch;;
+      sku|wip) echo $branch;;
     esac
     if [[ $config =~ ^([^/]+)/(.*)$ ]]; then
       local product=${BASH_REMATCH[1]}; io_debug product
       config=${BASH_REMATCH[2]}; io_debug config
       case $kind in
-        sku) echo "$kind/$config";;
+        sku|wip) echo "$kind/$config";;
         *) echo $branch;;
       esac
     fi
