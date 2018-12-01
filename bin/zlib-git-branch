@@ -167,8 +167,8 @@ branch_sync_all()
       '=')  color=Green;;
       *) [[ -z $i ]] && i='?'; color=DarkGray;; # tracking branch deleted on remote ?
     esac
-    local linfo=$l
-    [[ $l == $(branch_current) ]] && linfo='*"$l"'
+    local linfo="  $l"
+    [[ $l == $(branch_current) ]] && linfo="* $l"
     io_message "$linfo $i $r" "[$moduleId] synchronizing" $color
     [[ $i == '?' ]] && {
       io_error "  remote branch $r was deleted or renamed"
