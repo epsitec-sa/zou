@@ -1,0 +1,13 @@
+#! /bin/bash
+
+. zlib-git-branch
+
+while [[ "$#" > 0 ]]; do case "$1" in
+  -h|--help) zou-help $0; exit 0;;
+  -*) echo "unknown option: $1" >&2; exit 1;;
+  *) target=$1;;
+esac; shift; done
+
+[[ -z $target ]] && target=$(branch_current)
+
+branch_best_match_checkout "$target"
