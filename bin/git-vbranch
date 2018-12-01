@@ -1,6 +1,7 @@
 #! /bin/bash
 
 newtag_opts=()
+args=()
 while [[ "$#" > 0 ]]; do case "$1" in
   -h|--help) zou-help $0; exit 0;;
   --debug)  newtag_opts+=($1); debug=true;;
@@ -8,15 +9,18 @@ while [[ "$#" > 0 ]]; do case "$1" in
   -c¦--checkout) checkout=true; shift;;
   -m|--message) newtag_opts+=($1 "$2"); shift;;
   -*) io_error "unknown option: $1"; exit 1;;
-  *) branch=$1;;
+  *) args+=("$1");;
 esac; shift; done
 
+branch="${args[0]}"
+commit="${args[1]}"
+
 if [[ $branch =~ ^[0-9]+\.[0-9]+$ ]]; then
-    git checkout -b "$branch" >/dev/null
-    # create vnode
-    git newtag "${newtag_opts[@]@Q}" v$branch-@
-    [[ $local == true ]] || git push -u $(git remote) "$branch"
-    [[ $checkout == true ]] || git checkout - >/dev/null
+  git branch "${args[@]}"
+  # create vnode
+  git newtag "${newtag_opts[@]}" "v$branch-@" "$commit"
+  [[ $local == true ]] || git push -u $(git remote) "$branch"
+  [[ $checkout == true ]] && git checkout "$branch" >/dev/null
 else
-    io_error "vbranch wrong format: ${branch@Q}"
+  io_error "vbranch wrong format: ${branch@Q}"
 fi
