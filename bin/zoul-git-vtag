@@ -18,7 +18,7 @@ vtag_describe()
   # - $1: commit hash (ex: e5d2fe9)
   # output:
   # - vtag description (ex: v1.0.0-rc1-5-ge5d2fe9)
-  git describe --first-parent --tags --match 'v[0-9]*' $1 2>/dev/null
+  git describe --first-parent --tags --match 'v[0-9]*' "${1:-HEAD}" 2>/dev/null
 }
 vtag_vtags_at()
 {
@@ -87,7 +87,8 @@ vtag_get_vbranch_tail()
         echo $vtag $vbranch
         break;
       else
-        io_warning "vtag_get_vbranch_tail: $1 and $2 are not ancestors of $vbranch"
+        io_warning "vtag_get_vbranch_tail: branch $(git rev-parse --abbrev-ref $2) is outside vbranch $vbranch"
+        return 1
       fi
     fi
   done
