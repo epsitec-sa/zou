@@ -255,15 +255,23 @@ branch_dev_fallback()
     local kind=${BASH_REMATCH[1]}; io_debug kind
     local config=${BASH_REMATCH[2]}; io_debug config
     case $kind in
-      sku|wip) echo $branch;;
+      sku|wip|issue) echo $branch;;
     esac
     if [[ $config =~ ^([^/]+)/(.*)$ ]]; then
       local product=${BASH_REMATCH[1]}; io_debug product
       config=${BASH_REMATCH[2]}; io_debug config
       case $kind in
-        sku|wip) echo "$kind/$config";;
+        sku|wip|issue) echo "$kind/$config";;
         *) echo $branch;;
       esac
+      if [[ $config =~ ^([^/]+)/(.*)$ ]]; then
+        local subkind=${BASH_REMATCH[1]}; io_debug subkind
+        config=${BASH_REMATCH[2]}; io_debug config
+        case $subkind in
+          sku|wip|issue) echo "$subkind/$config";;
+          *) echo $branch;;
+        esac
+      fi
     fi
   fi
   echo 'master'
