@@ -165,8 +165,8 @@ Il faut aussi créer le .pack et le .prepack dans le même dossier que le projet
 - zou.default
 
 
-### [*Cpp.OutDir.props*](Cpp.OutDir.props)
-### [*Cpp.OutDir.Default.props*](Cpp.OutDir.Default.props)
+### [*Cpp.OutDir.props*](../Cpp.OutDir.props)
+### [*Cpp.OutDir.Default.props*](../private/Cpp.OutDir.Default.props)
 
 Cette feuille de propriétés a été créée avec l'éditeur de propriétés de Visual Studio.  
 Elle définit et normalise les macros ***$(OutDir)*** et ***$(IntDir)***.
@@ -214,4 +214,4 @@ L'importation se fait comme ceci:
 	    </Project>
 
 
-## [Sous-modules facturation/salaires](.Documentation/Submodules.md)
+## [Sous-modules facturation/salaires](Submodules.md)
