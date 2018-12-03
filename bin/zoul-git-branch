@@ -18,9 +18,27 @@ branch_list_all()       { branch_list_local; branch_list_remote; }
 branch_list_all_at()    { git show-ref | grep $(git rev-parse ${1:-HEAD}) | cut -d ' ' -f2 | grep -v '^refs/tags/' | grep -v '/HEAD$' | sed 's,^refs/[^/]*/,,'; }
 branch_upstream()       { git rev-parse --abbrev-ref $1@{upstream} 2>/dev/null; }
 branch_sync_info()      { git for-each-ref --format="%(refname:short) %(upstream:short) %(upstream:trackshort)" refs/heads "$@"; }
-branch_is_attached()    { git symbolic-ref --short -q HEAD >/dev/null; }
-branch_is_remote()      { branch_list_remote | grep -q "^$1$"; }
+branch_is_attached()    { git symbolic-ref --short -q HEAD &/dev/null; }
+branch_is_local()       { git show-ref -s --verify "refs/heads/$1" &>/dev/null; }
+branch_is_remote()      { git show-ref -s --verify "refs/remotes/$1" &>/dev/null; }
 branch_is_head()        { [ $(git rev-parse HEAD^{}) = $(git rev-parse $1^{}) ]; }
+
+# Check if a given branch name exists and convert it to its remote counterpart if it does not exist
+# Display error and return empty if branch is unknown
+branch_realize()
+{
+  if branch_is_local "$1" || branch_is_remote "$1"; then
+    echo "$1"
+  else
+    local remote=$(git remote)
+    if branch_is_remote "$remote/$1"; then
+      echo "$remote/$1"
+    else
+      io_error "unknown branch $1"
+      return 1
+    fi
+  fi
+}
 
 branch_without_remote_prefix() { branch_is_remote $1 && echo ${1#*/} || echo $1; }
 branch_checkout() { [[ -n $1 ]] && git checkout "$(branch_without_remote_prefix $1)" >/dev/null; }
@@ -46,21 +64,19 @@ branch_merge_ff() {
     fi
 
     if [ "$(git symbolic-ref HEAD)" = "refs/heads/$branchMergeInto" ]; then
-        git merge --ff-only "$branchToMerge"
+        if ! git merge --ff-only "$branchToMerge"; then
+          io_error "merging $branchToMerge into $branchMergeInto would not be a fast-forward"
+          return 3
+        fi
     else
       if [ "$(git merge-base $hashMergeInto $hashToMerge)" != "$hashMergeInto" ]; then
         io_error "merging $branchToMerge into $branchMergeInto would not be a fast-forward"
-        return 3
+        return 4
       fi
       io_info "Updating ${hashMergeInto:0:7}..${hashToMerge:0:7}"
-      if git update-ref -m "merge $branchToMerge into $branchMergeInto (fast forward)" "refs/heads/$branchMergeInto" "$hashToMerge" "$hashMergeInto"; then
-        if [ -z $quiet ]; then
-          echo "Fast forward"
-          git diff --stat "$branchMergeInto@{1}" "$branchMergeInto"
-        fi
-      else
+      if ! git update-ref -m "merge $branchToMerge into $branchMergeInto (fast forward)" "refs/heads/$branchMergeInto" "$hashToMerge" "$hashMergeInto"; then
         io_error "fast forward using update-ref failed"
-        return 4
+        return 5
       fi
     fi
 }
