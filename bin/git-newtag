@@ -13,9 +13,12 @@ while [[ "$#" > 0 ]]; do case "$1" in
 esac; shift; done
 
 tag="${args[0]}"
-commit="${args[1]}"
+commit="${args[1]:-HEAD}"
+
+io_debug tag
+io_debug commit
 
 [[ -z $message ]] && message=$(git log -1 --pretty=%B "$commit")
 
-git tag -a -m "'$message'" "${args[@]}"
+git tag -a -m "'$message'" "$tag" "$commit"
 [[ $local == true ]] || git push $(git remote) "$tag"
