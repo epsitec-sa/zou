@@ -25,6 +25,45 @@ branch_is_head()        { [ $(git rev-parse HEAD^{}) = $(git rev-parse $1^{}) ];
 branch_without_remote_prefix() { branch_is_remote $1 && echo ${1#*/} || echo $1; }
 branch_checkout() { [[ -n $1 ]] && git checkout "$(branch_without_remote_prefix $1)" >/dev/null; }
 
+# https://stackoverflow.com/questions/3216360/merge-update-and-pull-git-branches-without-using-checkouts
+branch_merge_ff() {
+    # merge 'branchToMerge' (invariant) into 'branchMergeInto' < 'branchToMerge'
+    # 'branchMergeInto' should be a local branch with a symbolic name
+    local branchToMerge=$1
+    local branchMergeInto=$2
+    local hashToMerge hashMergeInto
+
+    hashMergeInto=$(git show-ref -s --verify "refs/heads/$branchMergeInto" 2>/dev/null)
+    if [ $? -ne 0 ]; then
+      io_error "not a local branch $branchMergeInto"
+      return 1
+    fi
+
+    hashToMerge="$(git rev-parse --verify $branchToMerge 2> /dev/null)"
+    if [ $? -ne 0 ]; then
+      io_error "unknown branch to merge $branchToMerge"
+      return 2
+    fi
+
+    if [ "$(git symbolic-ref HEAD)" = "refs/heads/$branchMergeInto" ]; then
+        git merge --ff-only "$branchToMerge"
+    else
+      if [ "$(git merge-base $hashMergeInto $hashToMerge)" != "$hashMergeInto" ]; then
+        io_error "merging $branchToMerge into $branchMergeInto would not be a fast-forward"
+        return 3
+      fi
+      io_info "Updating ${hashMergeInto:0:7}..${hashToMerge:0:7}"
+      if git update-ref -m "merge $branchToMerge into $branchMergeInto (fast forward)" "refs/heads/$branchMergeInto" "$hashToMerge" "$hashMergeInto"; then
+        if [ -z $quiet ]; then
+          echo "Fast forward"
+          git diff --stat "$branchMergeInto@{1}" "$branchMergeInto"
+        fi
+      else
+        io_error "fast forward using update-ref failed"
+        return 4
+      fi
+    fi
+}
 branch_merge_in_memory()
 {
   local branchToMerge=$1 branchMergeInto=$2 mbase
@@ -207,46 +246,6 @@ branch_sync_all()
     esac
   done < <(branch_sync_info)
   git submodule update --recursive # --remote
-}
-
-# https://stackoverflow.com/questions/3216360/merge-update-and-pull-git-branches-without-using-checkouts
-branch_merge_ff() {
-    # merge branchToMerge (invariant) into branch (< branchToMerge)
-    # branch has to be a local branch with a symbolic name
-    local branchToMerge=$1
-    local branchMergeInto=$2
-    local hashToMerge hashMergeInto
-
-    hashMergeInto=$(git show-ref -s --verify "refs/heads/$branchMergeInto" 2>/dev/null)
-    if [ $? -ne 0 ]; then
-      io_error "not a local branchMergeInto $branchMergeInto"
-      return 1
-    fi
-
-    hashToMerge="$(git rev-parse --verify $branchToMerge 2> /dev/null)"
-    if [ $? -ne 0 ]; then
-      io_error "unknown revision $branchToMerge"
-      return 2
-    fi
-
-    if [ "$(git symbolic-ref HEAD)" = "refs/heads/$branchMergeInto" ]; then
-        git merge --ff-only "$branchToMerge"
-    else
-      if [ "$(git merge-base $hashMergeInto $hashToMerge)" != "$hashMergeInto" ]; then
-        io_error "merging $branchToMerge into $branchMergeInto would not be a fast-forward"
-        return 3
-      fi
-      io_info "Updating ${hashMergeInto:0:7}..${hashToMerge:0:7}"
-      if git update-ref -m "merge $branchToMerge into $branchMergeInto (fast forward)" "refs/heads/$branchMergeInto" "$hashToMerge" "$hashMergeInto"; then
-        if [ -z $quiet ]; then
-          echo "Fast forward"
-          git diff --stat "$branchMergeInto@{1}" "$branchMergeInto"
-        fi
-      else
-        io_error "fast forward using update-ref failed"
-        return 4
-      fi
-    fi
 }
 
 # Convert a development branch to a fallback list of development branches.
