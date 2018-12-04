@@ -357,6 +357,13 @@ branch_select()
   if ! branch_is_head $branch; then
     if repo_require_clean_work_tree; then
       branch_checkout "$branch"
+      local update=true
+      if [[ $FOR_INSIDE_ROOT == true ]]; then
+        unset update
+      elif [[ $FOR_INSIDE_SUBMODULE == true ]]; then
+        [[ $FOR_RECURSIVE == true ]] && unset update
+      fi
+      [[ $update == true ]] && git submodule update --recursive
     fi
   fi
 }
