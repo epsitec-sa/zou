@@ -8,6 +8,6 @@ while [[ "$#" > 0 ]]; do case "$1" in
   *) target=$1;;
 esac; shift; done
 
-[[ -z $target ]] && target=$(branch_current)
+[[ -z $target ]] && io_error 'specify a branch to match'
 
-branch_best_match_checkout "$target"
+branch_select "$target"
