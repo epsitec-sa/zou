@@ -351,8 +351,13 @@ branch_best_match()
     branch_best_match_dev $target
   fi
 }
-branch_best_match_checkout()
+branch_select()
 {
-  branch_checkout "$(branch_best_match $1)"
+  local branch=$(branch_best_match $1)
+  if ! branch_is_head $branch; then
+    if repo_require_clean_work_tree; then
+      branch_checkout "$branch"
+    fi
+  fi
 }
 
