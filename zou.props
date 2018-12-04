@@ -30,8 +30,15 @@ This script can be imported anywhere before first MS import (Microsoft.Cpp.Defau
     <BundleDir>$([System.IO.Directory]::GetParent('$(MSBuildThisFileDirectory.TrimEnd('\/'))'))</BundleDir>
     <BundleName>$([System.IO.Path]::GetFileName('$(BundleDir)'))</BundleName>
     <BundleDir>$(BundleDir)$(V)</BundleDir>
+    <BundleId Condition="'$(BundleId)' == ''">$(BundleName)</BundleId>
     <!-- bundle/zou.cfg/ -->
     <ZouBundleDir Condition="'$(ZouBundleDir)' == ''">$(BundleDir)$(ZouCfg)</ZouBundleDir>
+  </PropertyGroup>
+
+  <!-- Bundle ID -->
+  <Import Project="$(BundleDir)BundleId.props" Condition="Exists('$(BundleDir)BundleId.props')" />
+  <PropertyGroup>
+    <BundleId Condition="'$(BundleId)' == ''">$(BundleName)</BundleId>
   </PropertyGroup>
 
   <!-- zou submodule -->
@@ -190,6 +197,7 @@ This script can be imported anywhere before first MS import (Microsoft.Cpp.Defau
     <Message Importance="normal" Text="  TargetFrameworks           = $(TargetFrameworks)" />
     <Message Importance="normal" Text="  RuntimeIdentifiers         = $(RuntimeIdentifiers)" />
     <Message Importance="normal" Text="+ NETSdkVersion              = $(NETSdkVersion)" />
+    <Message Importance="normal" Text="+ BundleId                   = $(BundleId)" />
     <Message Importance="normal" Text="+ BundleName                 = $(BundleName)" />
     <Message Importance="normal" Text="+ BundleDir                  = $(BundleDir)" />
     <Message Importance="normal" Text="+ ModuleId                   = $(ModuleId)" />

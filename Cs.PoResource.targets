@@ -42,7 +42,7 @@ Layout:
           domain2.mo
 
   where:
-      bundle1                                       $(BundleName)
+      bundle1                                       $(BundleId)
       module1                                       $(ModuleName)
       domain1                                       %(PoResource.DomainName)
       fr-CH                                         %(PoResource.Culture)
@@ -164,7 +164,7 @@ Pseudo-code:
     <MsgAttrib>$(PoBinDir)msgattrib</MsgAttrib>
 
     <PoCopyright>EPSITEC SA, CH-1400 Yverdon-les-Bains, Switzerland</PoCopyright>
-    <PoPackageName Condition="'$(ModuleName)' == ''">'$(BundleName)'</PoPackageName>
+    <PoPackageName Condition="'$(ModuleName)' == ''">'$(BundleId)'</PoPackageName>
     <PoPackageName Condition="'$(ModuleName)' != ''">'$(ModuleName)'</PoPackageName>
 
     <!-- Use default keyword to extract messages (same as NGetText.Catalog methods) -->
@@ -229,7 +229,7 @@ Pseudo-code:
         <DomainId>$(ProjectId):%(DomainName)</DomainId>
         <PotSourcePath>$(PoIntDir)%(DomainName).pot.src.zou</PotSourcePath>
         <PotDomainPath>$(PoIntDir)%(DomainName).pot</PotDomainPath>
-        <PoBundleFileName>$(BundleName).%(Culture).po</PoBundleFileName>
+        <PoBundleFileName>$(BundleId).%(Culture).po</PoBundleFileName>
         <PoModuleFileName Condition="'$(ModuleName)' != ''">$(ModuleName).%(Culture).po</PoModuleFileName>
         <MoDomainLinkDir>locale\%(Culture)\LC_MESSAGES\</MoDomainLinkDir>
         <MoDomainFileName>%(DomainName).mo</MoDomainFileName>
@@ -340,7 +340,7 @@ Pseudo-code:
     <!-- Clean -->
     <ItemGroup>
       <_PoFile Include="%(PoResource.FullPath)">
-        <Bundle>$(BundleName)</Bundle>
+        <Bundle>$(BundleId)</Bundle>
         <Module>$(ModuleName)</Module>
         <DomainName>%(PoResource.DomainName)</DomainName>
         <NoPotCreationDate>$(NoPotCreationDate)</NoPotCreationDate>
@@ -372,7 +372,7 @@ Pseudo-code:
     <!-- Clean -->
     <ItemGroup>
       <_PoFile Include="%(PoResource.FullPath)">
-        <Bundle>$(BundleName)</Bundle>
+        <Bundle>$(BundleId)</Bundle>
         <Module>$(ModuleName)</Module>
         <DomainName>%(PoResource.DomainName)</DomainName>
         <NoPotCreationDate>$(NoPotCreationDate)</NoPotCreationDate>
@@ -447,7 +447,7 @@ Pseudo-code:
     <ItemGroup>
       <_PoDomain2 Remove="@(_PoDomain2)" />
       <PoDomain Include="@(_PoDomain1)" Condition="Exists(%(Identity))">
-        <BundlePath>$(PoBundleRootDir)$(BundleName).%(Culture).po</BundlePath>
+        <BundlePath>$(PoBundleRootDir)$(BundleId).%(Culture).po</BundlePath>
       </PoDomain>
       <_PoDomain1 Remove="@(_PoDomain1)" />
     </ItemGroup>
@@ -486,7 +486,7 @@ Pseudo-code:
     <ItemGroup>
       <_PoModule2 Remove="@(_PoModule2)" />
       <PoModule Include="@(_PoModule1)">
-        <BundlePath>$(PoBundleRootDir)$(BundleName).%(Culture).po</BundlePath>
+        <BundlePath>$(PoBundleRootDir)$(BundleId).%(Culture).po</BundlePath>
       </PoModule>
       <_PoModule1 Remove="@(_PoModule1)" />
     </ItemGroup>
@@ -521,7 +521,7 @@ Pseudo-code:
     <!-- Clean -->
     <ItemGroup>
       <_PoFile Include="%(PoModule.FullPath)">
-        <Bundle>$(BundleName)</Bundle>
+        <Bundle>$(BundleId)</Bundle>
         <Module>$(ModuleName)</Module>
         <NoPotCreationDate>$(NoPotCreationDate)</NoPotCreationDate>
         <NoPoRevisionDate>$(NoPoRevisionDate)</NoPoRevisionDate>
@@ -545,7 +545,7 @@ Pseudo-code:
         <Culture>%(Identity)</Culture>
       </DomainCulture>
 
-      <_PoBundle1 Include="@(DomainCulture->'$(PoBundleRootDir)$(BundleName).%(Identity).po')" />
+      <_PoBundle1 Include="@(DomainCulture->'$(PoBundleRootDir)$(BundleId).%(Identity).po')" />
       <DomainCulture Remove="@(DomainCulture)" />
 
       <_ExistingPoModule Include="@(PoModule)" Condition="Exists(%(Identity))" />
@@ -594,7 +594,7 @@ Pseudo-code:
     <!-- Clean -->
     <ItemGroup>
       <_PoFile Include="%(PoBundle.FullPath)">
-        <Bundle>$(BundleName)</Bundle>
+        <Bundle>$(BundleId)</Bundle>
         <NoPotCreationDate>$(NoPotCreationDate)</NoPotCreationDate>
         <NoPoRevisionDate>$(NoPoRevisionDate)</NoPoRevisionDate>
       </_PoFile>
@@ -630,7 +630,7 @@ Pseudo-code:
     <!-- Clean -->
     <ItemGroup>
       <_PoFile Include="%(PoDomain.FullPath)">
-        <Bundle>$(BundleName)</Bundle>
+        <Bundle>$(BundleId)</Bundle>
         <Module>%(PoDomain.ModuleName)</Module>
         <Domain>%(PoDomain.DomainName)</Domain>
         <NoPotCreationDate>$(NoPotCreationDate)</NoPotCreationDate>
