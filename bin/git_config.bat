@@ -23,11 +23,11 @@ if NOT '%1' == '' (
 :: save credentials on Windows
 git config --global credential.helper wincred
 
-git config --global status.submoduleSummary true
-git config --global diff.submodule log
-
-:: Aliases
-if '%reset%'=='true' git config --global --remove-section alias >nul 2>&1
+if '%reset%'=='true' (
+	git config --global --remove-section status >nul 2>&1
+    git config --global --remove-section diff >nul 2>&1
+	git config --global --remove-section alias >nul 2>&1
+)
 
 :: Semantic versioning
 git config --global --remove-section versionsort >nul 2>&1

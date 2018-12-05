@@ -22,11 +22,11 @@ done
 # save credentials in ~/.git-credentials
 git config --global credential.helper store
 
-git config --global status.submoduleSummary true
-git config --global diff.submodule log
-
-# Aliases
-[ "$reset" == 'true' ] && git config --global --remove-section alias >/dev/null 2>&1
+[ "$reset" == 'true' ] && {
+	git config --global --remove-section status >/dev/null 2>&1
+	git config --global --remove-section diff >/dev/null 2>&1
+	git config --global --remove-section alias >/dev/null 2>&1
+}
 
 # Semantic versioning
 git config --global --remove-section versionsort >/dev/null 2>&1
