@@ -21,7 +21,16 @@ branch_sync_info()      { git for-each-ref --format="%(refname:short) %(upstream
 branch_is_attached()    { git symbolic-ref --short -q HEAD &>/dev/null; }
 branch_is_local()       { git show-ref -s --verify "refs/heads/$1" &>/dev/null; }
 branch_is_remote()      { git show-ref -s --verify "refs/remotes/$1" &>/dev/null; }
-branch_is_head()        { [ $(git rev-parse HEAD^{}) = $(git rev-parse $1^{}) ]; }
+branch_is_head()
+{
+  local hash1 hash2
+  hash1=$(git rev-parse HEAD^{} 2>/dev/null)
+  [ $? -ne 0 ] && return 1
+  hash2=$(git rev-parse $1^{} 2>/dev/null)
+  [ $? -ne 0 ] && return 1
+  [ $hash1 = $hash2 ]
+}
+branch_exists()         { git rev-parse --quiet --verify $1 >/dev/null; }
 
 # Check if a given branch name exists and convert it to its remote counterpart if it does not exist
 # Display error and return empty if branch is unknown
