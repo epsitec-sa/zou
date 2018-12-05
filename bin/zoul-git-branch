@@ -346,9 +346,15 @@ branch_best_match_dev()
 }
 branch_best_match_prod()
 {
-  local dev=$(branch_best_match_dev $1)
-  local ltag=$(vtag_describe $dev)
-  vtag_get_vbranch_name $ltag
+  local branch
+  branch=$(branch_realize $1 2>/dev/null)
+  if [ $? -eq 0 ]; then
+    echo $branch
+  else
+    local dev=$(branch_best_match_dev $1)
+    local ltag=$(vtag_describe $dev)
+    vtag_get_vbranch_name $ltag
+  fi
 }
 branch_is_prod() { [[ $1 =~ ^(.*/)?([0-9]+\.[0-9]+)$ ]] && return 0 || return 1; }
 branch_best_match()
