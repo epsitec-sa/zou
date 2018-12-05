@@ -18,7 +18,7 @@ branch_list_all()       { branch_list_local; branch_list_remote; }
 branch_list_all_at()    { git show-ref | grep $(git rev-parse ${1:-HEAD}) | cut -d ' ' -f2 | grep -v '^refs/tags/' | grep -v '/HEAD$' | sed 's,^refs/[^/]*/,,'; }
 branch_upstream()       { git rev-parse --abbrev-ref $1@{upstream} 2>/dev/null; }
 branch_sync_info()      { git for-each-ref --format="%(refname:short) %(upstream:short) %(upstream:trackshort)" refs/heads "$@"; }
-branch_is_attached()    { git symbolic-ref --short -q HEAD &/dev/null; }
+branch_is_attached()    { git symbolic-ref --short -q HEAD &>/dev/null; }
 branch_is_local()       { git show-ref -s --verify "refs/heads/$1" &>/dev/null; }
 branch_is_remote()      { git show-ref -s --verify "refs/remotes/$1" &>/dev/null; }
 branch_is_head()        { [ $(git rev-parse HEAD^{}) = $(git rev-parse $1^{}) ]; }
