@@ -43,7 +43,6 @@ branch_realize()
     if branch_is_remote "$remote/$1"; then
       echo "$remote/$1"
     else
-      io_error "unknown branch $1"
       return 1
     fi
   fi
@@ -366,20 +365,24 @@ branch_best_match()
     branch_best_match_dev $target
   fi
 }
+branch_select_update_submodules()
+{
+  local update=true
+  if [[ $FOR_INSIDE_ROOT == true ]]; then
+    unset update
+  elif [[ $FOR_INSIDE_SUBMODULE == true ]]; then
+    [[ $FOR_RECURSIVE == true ]] && unset update
+  fi
+  [[ $update == true ]] && git submodule update --recursive
+}
 branch_select()
 {
-  local branch=$(branch_best_match $1)
-  if ! branch_is_head $branch; then
-    if repo_require_clean_work_tree; then
-      branch_checkout "$branch"
-      local update=true
-      if [[ $FOR_INSIDE_ROOT == true ]]; then
-        unset update
-      elif [[ $FOR_INSIDE_SUBMODULE == true ]]; then
-        [[ $FOR_RECURSIVE == true ]] && unset update
-      fi
-      [[ $update == true ]] && git submodule update --recursive
-    fi
+  local bestMatch=$(branch_best_match $1)
+  if branch_is_head $bestMatch; then
+    branch_checkout "$bestMatch"
+  elif repo_require_clean_work_tree; then
+    branch_checkout "$bestMatch"
+    branch_select_update_submodules
   fi
 }
 
