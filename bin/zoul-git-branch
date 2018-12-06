@@ -9,15 +9,16 @@ ZOUL_GIT_BRANCH=true
 [[ -z $ZOUL_GIT_REPO ]] && . zoul-git-repo
 [[ -z $ZOUL_GIT_VTAG ]] && . zoul-git-vtag
 
+branch_exists()         { git rev-parse --quiet --verify $1 >/dev/null; }
 branch_current()        { git rev-parse --abbrev-ref HEAD; }
+branch_upstream()       { git rev-parse --abbrev-ref $1@{upstream} 2>/dev/null; }
+branch_sync_info()      { git for-each-ref --format="%(refname:short) %(upstream:short) %(upstream:trackshort)" refs/heads "$@"; }
 branch_list_local()     { git for-each-ref --format='%(refname:short)' refs/heads; }
 branch_list_local_at()  { git show-ref --heads | grep $(git rev-parse ${1:-HEAD}) | cut -d ' ' -f2 | sed 's,^refs/[^/]*/,,'; }
 branch_list_remote()    { git for-each-ref --format='%(refname:short)' refs/remotes | grep -v '/HEAD$'; }
 branch_list_remote_at() { git show-ref | grep $(git rev-parse ${1:-HEAD}) | cut -d ' ' -f2 | grep 'refs/remotes' | grep -v '/HEAD$' | sed 's,^refs/[^/]*/,,'; }
 branch_list_all()       { branch_list_local; branch_list_remote; }
 branch_list_all_at()    { git show-ref | grep $(git rev-parse ${1:-HEAD}) | cut -d ' ' -f2 | grep -v '^refs/tags/' | grep -v '/HEAD$' | sed 's,^refs/[^/]*/,,'; }
-branch_upstream()       { git rev-parse --abbrev-ref $1@{upstream} 2>/dev/null; }
-branch_sync_info()      { git for-each-ref --format="%(refname:short) %(upstream:short) %(upstream:trackshort)" refs/heads "$@"; }
 branch_is_attached()    { git symbolic-ref --short -q HEAD &>/dev/null; }
 branch_is_local()       { git show-ref -s --verify "refs/heads/$1" &>/dev/null; }
 branch_is_remote()      { git show-ref -s --verify "refs/remotes/$1" &>/dev/null; }
@@ -30,7 +31,23 @@ branch_is_head()
   [ $? -ne 0 ] && return 1
   [ $hash1 = $hash2 ]
 }
-branch_exists()         { git rev-parse --quiet --verify $1 >/dev/null; }
+branch_list_tracked()
+{
+  local l r i
+  while read l r i; do
+    echo $r
+  done < <(branch_sync_info)
+}
+branch_remove_tracked()
+{
+  local tracked=( $(branch_list_tracked) )
+  if [[ -z $1 ]]; then
+    local branches=( $(branch_list_all) )
+    array_remove_array branches[@] tracked[@]
+  else
+    array_remove_array $1 tracked[@]
+  fi
+}
 
 # Check if a given branch name exists and convert it to its remote counterpart if it does not exist
 # Display error and return empty if branch is unknown
@@ -112,12 +129,6 @@ branch_merge_interactive()
   repo_list_untracked | grep -E '(\.orig$|_(BACKUP|BASE|LOCAL|REMOTE)_[0-9]+)' | xargs --no-run-if-empty rm --
   return $ec
 }
-branch_push()
-{
-  # l > r -- move r
-  local r=$1 l=$2
-  git push ${r%%/*} $l &>/dev/null
-}
 branch_merge()
 {
   # merge branchToMerge into branchMergeInto
@@ -194,25 +205,14 @@ branch_merge()
     fi
   fi
 }
+branch_push()
+{
+  # l > r -- move r
+  local r=$1 l=$2
+  git push ${r%%/*} $l &>/dev/null
+}
 branch_sync() { branch_merge "$@" && branch_push "$@"; }
 
-branch_list_tracked()
-{
-  local l r i
-  while read l r i; do
-    echo $r
-  done < <(branch_sync_info)
-}
-branch_remove_tracked()
-{
-  local tracked=( $(branch_list_tracked) )
-  if [[ -z $1 ]]; then
-    local branches=( $(branch_list_all) )
-    array_remove_array branches[@] tracked[@]
-  else
-    array_remove_array $1 tracked[@]
-  fi
-}
 branch_list_attach_candidates()
 {
   if ! branch_is_attached; then
