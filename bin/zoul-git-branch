@@ -135,14 +135,19 @@ branch_merge()
   # before: branchMergeInto < branchToMerge
   # after : branchMergeInto = branchToMerge -- branchMergeInto moved towards branchToMerge
   local branchToMerge=$1 branchMergeInto=$2 ec=0
-  local notLocal
+  local targetBranchIsNotLocal
   # try fast-forward merge
   branch_merge_ff $branchToMerge $branchMergeInto &>/dev/null || ec=$?
   if (( $ec != 0 )); then
-    (( $ec == 1 )) && notLocal=true && ec=0
     # fast forward failed
+    if (( $ec == 1 )); then
+      targetBranchIsNotLocal=true
+      # ensure target branch name is realized
+      branchMergeInto=$(branch_realize $branchMergeInto 2>/dev/null)
+      ec=0
+    fi
     # on active branch...
-    if branch_is_head $branchMergeInto; then
+    if [[ -z $targetBranchIsNotLocal ]] && branch_is_head $branchMergeInto; then
       # ... merge even if conflicts
       if ! git merge $branchToMerge &>/dev/null; then
         if repo_is_merging; then
@@ -165,7 +170,7 @@ branch_merge()
     else
       if branch_merge_dry_run $branchToMerge $branchMergeInto; then
         # no conflicts: merge
-        [[ $notLocal == true ]] && branchMergeInto=$(branch_without_remote_prefix $branchMergeInto)
+        [[ $targetBranchIsNotLocal == true ]] && branchMergeInto=$(branch_without_remote_prefix $branchMergeInto)
         if git checkout $branchMergeInto &>/dev/null; then
           git merge $branchToMerge &>/dev/null || {
             io_error "unable to merge $branchToMerge into $branchMergeInto branch"
