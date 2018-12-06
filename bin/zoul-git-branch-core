@@ -1,0 +1,83 @@
+#!/bin/bash
+# https://longair.net/blog/2009/04/16/git-fetch-and-merge/
+# https://stackoverflow.com/questions/501407/is-there-a-git-merge-dry-run-option
+
+# Use the following statement to include current lib only once
+#   [[ -z $ZOUL_GIT_BRANCH_CORE ]] && . zoul-git-branch-core
+ZOUL_GIT_BRANCH_CORE=true
+
+branch_exists()         { git rev-parse --quiet --verify $1 >/dev/null; }
+branch_current()        { git rev-parse --abbrev-ref HEAD; }
+branch_upstream()       { git rev-parse --abbrev-ref $1@{upstream} 2>/dev/null; }
+branch_sync_info()      { git for-each-ref --format="%(refname:short) %(upstream:short) %(upstream:trackshort)" refs/heads "$@"; }
+branch_list_local()     { git for-each-ref --format='%(refname:short)' refs/heads; }
+branch_list_local_at()  { git show-ref --heads | grep $(git rev-parse ${1:-HEAD}) | cut -d ' ' -f2 | sed 's,^refs/[^/]*/,,'; }
+branch_list_remote()    { git for-each-ref --format='%(refname:short)' refs/remotes | grep -v '/HEAD$'; }
+branch_list_remote_at() { git show-ref | grep $(git rev-parse ${1:-HEAD}) | cut -d ' ' -f2 | grep 'refs/remotes' | grep -v '/HEAD$' | sed 's,^refs/[^/]*/,,'; }
+branch_list_all()       { branch_list_local; branch_list_remote; }
+branch_list_all_at()    { git show-ref | grep $(git rev-parse ${1:-HEAD}) | cut -d ' ' -f2 | grep -v '^refs/tags/' | grep -v '/HEAD$' | sed 's,^refs/[^/]*/,,'; }
+branch_is_attached()    { git symbolic-ref --short -q HEAD &>/dev/null; }
+branch_is_local()       { git show-ref -s --verify "refs/heads/$1" &>/dev/null; }
+branch_is_remote()      { git show-ref -s --verify "refs/remotes/$1" &>/dev/null; }
+branch_is_head()
+{
+  local hash1 hash2
+  hash1=$(git rev-parse HEAD^{} 2>/dev/null)
+  [ $? -ne 0 ] && return 1
+  hash2=$(git rev-parse $1^{} 2>/dev/null)
+  [ $? -ne 0 ] && return 1
+  [ $hash1 = $hash2 ]
+}
+branch_list_tracked()
+{
+  local l r i
+  while read l r i; do
+    echo $r
+  done < <(branch_sync_info)
+}
+branch_remove_tracked()
+{
+  local tracked=( $(branch_list_tracked) )
+  if [[ -z $1 ]]; then
+    local branches=( $(branch_list_all) )
+    array_remove_array branches[@] tracked[@]
+  else
+    array_remove_array $1 tracked[@]
+  fi
+}
+# Check if a given branch name exists and convert it to its remote counterpart if it does not exist
+# Display error and return empty if branch is unknown
+branch_realize()
+{
+  if branch_is_local "$1" || branch_is_remote "$1"; then
+    echo "$1"
+  else
+    local remote=$(git remote)
+    if branch_is_remote "$remote/$1"; then
+      echo "$remote/$1"
+    else
+      return 1
+    fi
+  fi
+}
+
+branch_without_remote_prefix() { branch_is_remote $1 && echo ${1#*/} || echo $1; }
+branch_checkout() { [[ -n $1 ]] && git checkout "$(branch_without_remote_prefix $1)" >/dev/null; }
+
+branch_list_attach_candidates()
+{
+  if ! branch_is_attached; then
+    local branches=( $(branch_list_all_at $1) )
+    branch_remove_tracked branches[@]
+  fi
+}
+branch_attach()
+{
+  # attach a detached head to the unique local branch that's pointing at
+  if ! branch_is_attached; then
+    local branches=($(branch_list_attach_candidates $1))
+    if (( ${#branches[@]} == 1 )); then
+      branch_checkout "${branches[0]}"
+    fi
+  fi
+}
