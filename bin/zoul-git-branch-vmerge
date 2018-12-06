@@ -1,0 +1,21 @@
+#!/bin/bash
+
+# Use the following statement to include current lib only once
+#   [[ -z $ZOUL_GIT_BRANCH_VMERGE ]] && . zoul-git-branch-vmerge
+ZOUL_GIT_BRANCH_VMERGE=true
+
+[[ -z $ZOUL_GIT_VBRANCH ]]      && . zoul-git-vbranch
+[[ -z $ZOUL_GIT_BRANCH_MERGE ]] && . zoul-git-branch-merge
+
+branch_to_vbranch()
+{
+    local ltag=$(vtag_describe ${1:-HEAD})
+    vtag_get_vbranch_name $ltag
+}
+branch_vmerge()
+{
+  local branch=${1:-HEAD}
+  local vbranch=$(branch_to_vbranch $branch)
+  branch_merge $branch $vbranch
+}
+
