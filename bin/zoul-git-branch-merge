@@ -11,40 +11,40 @@ ZOUL_GIT_BRANCH_MERGE=true
 [[ -z $ZOUL_GIT_BRANCH_CORE ]] && . zoul-git-branch-core
 
 branch_merge_ff() {
-    # merge 'branchToMerge' (invariant) into 'branchMergeInto' < 'branchToMerge'
-    # 'branchMergeInto' should be a local branch with a symbolic name
-    local branchToMerge=$1
-    local branchMergeInto=$2
-    local hashToMerge hashMergeInto
+  # merge 'branchToMerge' (invariant) into 'branchMergeInto' < 'branchToMerge'
+  # 'branchMergeInto' should be a local branch with a symbolic name
+  local branchToMerge=$1
+  local branchMergeInto=$2
+  local hashToMerge hashMergeInto
 
-    hashMergeInto=$(git show-ref -s --verify "refs/heads/$branchMergeInto" 2>/dev/null)
-    if [ $? -ne 0 ]; then
-      io_error "not a local branch $branchMergeInto"
-      return 1
-    fi
+  hashMergeInto=$(git show-ref -s --verify "refs/heads/$branchMergeInto" 2>/dev/null)
+  if [ $? -ne 0 ]; then
+    io_error "not a local branch $branchMergeInto"
+    return 1
+  fi
 
-    hashToMerge="$(git rev-parse --verify $branchToMerge 2> /dev/null)"
-    if [ $? -ne 0 ]; then
-      io_error "unknown branch to merge $branchToMerge"
-      return 2
-    fi
+  hashToMerge="$(git rev-parse --verify $branchToMerge 2> /dev/null)"
+  if [ $? -ne 0 ]; then
+    io_error "unknown branch to merge $branchToMerge"
+    return 2
+  fi
 
-    if [ "$(git symbolic-ref HEAD)" = "refs/heads/$branchMergeInto" ]; then
-        if ! git merge --ff-only "$branchToMerge"; then
-          io_error "merging $branchToMerge into $branchMergeInto would not be a fast-forward"
-          return 3
-        fi
-    else
-      if [ "$(git merge-base $hashMergeInto $hashToMerge)" != "$hashMergeInto" ]; then
+  if [ "$(git symbolic-ref HEAD)" = "refs/heads/$branchMergeInto" ]; then
+      if ! git merge --ff-only "$branchToMerge"; then
         io_error "merging $branchToMerge into $branchMergeInto would not be a fast-forward"
-        return 4
+        return 3
       fi
-      io_info "Updating ${hashMergeInto:0:7}..${hashToMerge:0:7}"
-      if ! git update-ref -m "merge $branchToMerge into $branchMergeInto (fast forward)" "refs/heads/$branchMergeInto" "$hashToMerge" "$hashMergeInto"; then
-        io_error "fast forward using update-ref failed"
-        return 5
-      fi
+  else
+    if [ "$(git merge-base $hashMergeInto $hashToMerge)" != "$hashMergeInto" ]; then
+      io_error "merging $branchToMerge into $branchMergeInto would not be a fast-forward"
+      return 4
     fi
+    io_info "Updating ${hashMergeInto:0:7}..${hashToMerge:0:7}"
+    if ! git update-ref -m "merge $branchToMerge into $branchMergeInto (fast forward)" "refs/heads/$branchMergeInto" "$hashToMerge" "$hashMergeInto"; then
+      io_error "fast forward using update-ref failed"
+      return 5
+    fi
+  fi
 }
 branch_merge_in_memory()
 {
