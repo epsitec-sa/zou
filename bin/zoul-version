@@ -1,0 +1,59 @@
+#!/bin/bash
+
+# Use the following statement to include current lib only once
+#   [[ -z $ZOUL_VERSION ]] && . zoul-version
+ZOUL_VERSION=true
+
+version_commit_files()
+{
+  local version=$1; shift
+  git add "$@"
+  git commit -m"Update technical version to $version"
+}
+
+# Update Version tag in Version.props XML file
+#
+# Example:
+#   version_update_version_props v3.0.5-rc1
+#
+# Version.props format:
+#   <Project>
+#     <PropertyGroup>
+#       <Version>3.0.5</Version>
+#     </PropertyGroup>
+#   </Project>
+version_update_version_props_recursive()
+{
+  local version=${1#v*}
+  local file=$2
+  for file in $(find -type f -iname "$file"); do
+    sed -i -E "s,(<Version>).*(</Version>),\1$version\2," "$file"
+    echo $(readlink -f "$file")
+  done
+}
+version_update_version_props()
+{
+  local version=${1#v*}
+  local file=${2:-Version.props}
+  sed -i -E "s,(<Version>).*(</Version>),\1$version\2," "$file"
+  echo $(readlink -f "$file")
+}
+
+version_update_custom()
+{
+  local version=${1#v*}
+  local updater=${2:-'update-version'}
+  [[ -f "$PWD/$updater" ]] && updater="$PWD/$updater"
+  if [[ $version =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)(-[[:alnum:]]+)?(\+.+)?$ ]]; then
+    local varray=( ${BASH_REMATCH[@]} )
+    "$updater" "${varray[@]}" 2>/dev/null
+  else
+    "$updater" "$version" 2>/dev/null
+  fi
+}
+
+version_update()
+{
+  version_update_custom $1 || \
+  version_update_version_props $1
+}
