@@ -113,9 +113,19 @@ branch_select_update_submodules()
   fi
   [[ $update == true ]] && git submodule update --recursive
 }
+branch_current_root_branch()
+{
+  cd "$(repo_root_dir)"
+  local branch=$(branch_current)
+  cd - >/dev/null
+  echo $branch
+}
 branch_select()
 {
-  local bestMatch=$(branch_best_match $1)
+  local branch=$1
+  [[ -z $branch ]] && branch=$(branch_current_root_branch)
+  [[ -z $branch ]] && io_error 'branch_select: specify a branch to match' && return 1
+  local bestMatch=$(branch_best_match $branch)
   if branch_is_head $bestMatch; then
     branch_checkout "$bestMatch"
   elif repo_require_clean_work_tree; then
