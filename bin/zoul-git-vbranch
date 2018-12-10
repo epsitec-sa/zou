@@ -35,7 +35,7 @@ vbranch_next_vtag()
     # fix stag and ltag when multiple tags point at same commit
     local vrange=$(vtag_get_vbranch_tail $stag $rev)
     if [[ -z $vrange ]]; then
-      local revs=$(echo $rev $(vtag_vtags_at $rev) | xargs -n 1 git rev-parse --abbrev-ref | sort -u)
+      local revs=$(echo $rev $(vtag_vtags_at $rev) | xargs -n 1 git rev-parse --abbrev-ref)
       io_error "vbranch_next_vtag: unable to associate $(string_join ' or ' $revs) with a vbranch"
       return 1
     else
@@ -43,25 +43,33 @@ vbranch_next_vtag()
 
       vrange=($vrange)
       stag=${vrange[0]}
+      vbranch=${vrange[1]}
+      status=${vrange[2]}
       ltag=$stag$lsuf
-      vbranch=$(vbranch_without_prefix "${vrange[1]}")
+      # vbranch=$(vbranch_without_prefix "${vrange[1]}")
 
       io_debug ltag vbranch_next_vtag
       io_debug stag vbranch_next_vtag
       io_debug vbranch vbranch_next_vtag
+      io_debug status vbranch_next_vtag
+
+      if [[ $status == 'full' ]]; then
+        io_warning "vbranch_next_vtag: unable to insert a new vtag between $stag and $vbranch"
+        return 1
+      fi
 
       # get range upper limit
-      local utag=$(vtag_get_next_vtag $stag $vbranch)
+      local vnext utag=$(vtag_get_next_vtag $stag $vbranch)
       if [[ -n $utag ]]; then
         # upper limit exist
         io_debug utag vbranch_next_vtag
-        local vnext=$(vtag_increment $stag $prerel_prefix)
+        vnext=$(vtag_increment $stag $prerel_prefix)
         io_debug vnext vbranch_next_vtag
         vtag_compare $vnext $utag
         if (( $? == 255 )); then
           echo $vnext
         else
-          io_error "vbranch_next_vtag: unable to insert vtag between $stag and $utag"
+          io_warning "vbranch_next_vtag: unable to insert a new vtag between $stag and $utag"
           return 1
         fi
       else
