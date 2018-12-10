@@ -19,26 +19,3 @@ branch_vmerge()
   branch_merge $branch $vbranch
   echo $vbranch
 }
-branch_release()
-{
-  local branch=$1 vbranch
-  [[ -z $branch ]] && branch=$(branch_current)
-  vbranch=$(branch_vmerge "$branch")
-  [ $? -ne 0 ] && return 1
-
-  # compute next vtag
-  local vtag
-  vtag=$(vbranch_next_vtag $branch)
-  [ $? -ne 0 ] && return 1
-
-  # set technical version - modify resources files
-  local files
-  files=( $(version_update $vtag) )
-  version_commit_files "$vtag" "${files[@]}"
-  # ff merge
-  branch_merge $branch $vbranch
-
-  # create vtag
-  git tag -a -m "Branch '$branch' released" $vtag $branch
-  [[ $local == true ]] || git push $(git remote) "$vtag"
-}
