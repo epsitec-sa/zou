@@ -6,6 +6,7 @@ ZOUL_GIT_VTAG=true
 
 [[ -z $ZOUL_CORE ]] && . zoul-core
 
+vtag_is_vnode() { [[ $1 =~ ^v[0-9]+\.[0-9]+-@ ]]; }
 vtag_list()
 {
   local regex=$(regex_escape "${1:-[0-9]}")
@@ -27,7 +28,7 @@ vtag_vtags_at()
   # - $1: rev to list
   # output:
   # - list of vtags pointing at given commit (ex: v1.0.0-rc1 v1.0.0)
-  git tag --points-at $1^{} | grep ^v[0-9]
+  git tag --sort=-v:refname --points-at $1^{} | grep ^v[0-9]
 }
 
 vtag_get_vbranch_name ()
@@ -74,17 +75,23 @@ vtag_get_vbranch_tail()
   # - $1: rev that points to the start of the tail (can be tagget with multiple vtags)
   # - $2: vbranch marker (descendant of $1 that belongs to searched vbranch) 
   # output
-  # - [0]: the start of tail vtag
-  # - [1]: the vbranch that contains marker
-  #
-  for vtag in $(vtag_vtags_at $1 | sort -u); do
+  # - [0]: the vtag that starts the vbranch tail
+  # - [1]: the vbranch that contains the given vbranch marker
+  # - [2]: a status indicating if the vbranch tail does not contain any vtag
+  for vtag in $(vtag_vtags_at $1); do
     io_debug vtag vtag_get_vbranch_tail
     local vbranch=$(vtag_get_vbranch $vtag)
     if [[ -n $vbranch ]]; then
       io_debug vbranch vtag_get_vbranch_tail
       git merge-base --is-ancestor $2 $vbranch >&2
-      if (( $? == 0 )); then
-        echo $vtag $vbranch
+      if [ $? -eq 0 ]; then
+        local status='empty'
+        if ! vtag_is_vnode $vtag; then
+          local hash1=$(git rev-parse "$vtag^{}")
+          local hash2=$(git rev-parse "$vbranch^{}")
+          [[ $hash1 == $hash2 ]] && status='full'
+        fi
+        echo $vtag $vbranch $status
         break;
       else
         io_warning "vtag_get_vbranch_tail: branch $(git rev-parse --abbrev-ref $2) is outside vbranch $vbranch"
