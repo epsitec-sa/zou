@@ -75,8 +75,8 @@ branch_merge()
   # merge branchToMerge into branchMergeInto
   # before: branchMergeInto < branchToMerge
   # after : branchMergeInto = branchToMerge -- branchMergeInto moved towards branchToMerge
-  local branchToMerge=$1 branchMergeInto=$2 ec=0
-  local targetBranchIsNotLocal
+  local branchToMerge=${1:-HEAD} branchMergeInto=$2 ec=0 targetBranchIsNotLocal
+  branchToMerge=$(git rev-parse $branchToMerge^{})
   # try fast-forward merge
   branch_merge_ff $branchToMerge $branchMergeInto &>/dev/null || ec=$?
   if (( $ec != 0 )); then
