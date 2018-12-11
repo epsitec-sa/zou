@@ -21,6 +21,7 @@ branch_visit_sync_info()
   local visitor=$1
   local label=$2
   while read l r i; do
+    $visitor $r $l $i || return 1
     case $i in
       '>')  color=Brown;;  # ahead
       '<')  color=Yellow;; # behind
@@ -45,7 +46,6 @@ branch_visit_sync_info()
       io_message >&2 "    git branch -m $l <newbranch>" '' Gray
       io_message >&2 "    git branch -u <upstream> <newbranch>" '' Gray
     }
-    $visitor $r $l $i || return 1
   done < <(branch_sync_info)
 }
 branch_sync_all_visitor()
@@ -60,9 +60,10 @@ branch_sync_all_visitor()
 }
 branch_sync_all()
 {
-  local moduleId=$(repo_module_id)
+  local moduleName=$(repo_module_name)
   git fetch --prune --all &>/dev/null
-  repo_require_clean_work_tree "synchronize [$moduleId]" || return 1
-  branch_visit_sync_info branch_sync_all_visitor "[$moduleId] synchronizing"
-  git submodule update --recursive
+  repo_require_clean_work_tree "[$moduleName] cannot synchronize" || return 1
+  branch_visit_sync_info branch_sync_all_visitor "[$moduleName] synchronized" 
+
+  repo_update_submodules $moduleId
 }
