@@ -12,7 +12,6 @@ while [[ "$#" > 0 ]]; do case "$1" in
   --)                   shift; args+=("$@"); break;;
   -h|--help)            zou-help $0; exit 0;;
   -q|--quiet)           sm_opts+=('--quiet');;
-  -1|--level1-only)     FOR_LEVEL1_ONLY=true;;
   -r|--recursive)       FOR_RECURSIVE=true;;
   -s|--sm-only)         FOR_SUBMODULE_ONLY=true;;
   -e|--stop-on-error)   FOR_STOP_ON_ERROR=true;;
@@ -20,16 +19,8 @@ while [[ "$#" > 0 ]]; do case "$1" in
   *)                    args+=("$1");;
 esac; shift; done
 
-[[ $FOR_LEVEL1_ONLY == true ]] && {
-  [[ $FOR_RECURSIVE == true ]] && {
-    io_warning '--recursive option is not compatible with -1'
-    unset FOR_RECURSIVE;
-  }
-  FOR_SUBMODULE_ONLY=true;
-}
 [[ $FOR_RECURSIVE == true ]] && fe_opts+=('--recursive')
 
-export FOR_LEVEL1_ONLY
 export FOR_RECURSIVE
 export FOR_SUBMODULE_ONLY
 export FOR_STOP_ON_ERROR
@@ -53,7 +44,7 @@ run_inside_submodule()
 }
 export -f run_inside_submodule
 
-[[ $FOR_SUBMODULE_ONLY != true && $FOR_ROOT_LAST != true ]] && (run_inside_root || exit 1)
+[[ $FOR_SUBMODULE_ONLY != true && $FOR_ROOT_LAST != true ]] && { run_inside_root || exit 1; }
 
 exit_code=0
 (
