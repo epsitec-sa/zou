@@ -1,7 +1,13 @@
 git sync [<options>] - Synchronize changes and update submodules
 
     -h|--help               display help
-    -0|--ignore-submodules  ignore unstaged or uncommitted submodules
+    -q|--quiet              don't print submodule name when synchronizing
+    -0|--level0             do not synchronize submodules (only working directory)
+    -s|--sm-only            synchronize submodules only (skip working directory)
+    -e|--stop-on-error      stop looping as soon as command fails (exit code != 0)
+    -k|--keep-submodules    keep unstaged or uncommitted submodules
     
 example:
-    git for -r git sync
+    git sync                # synchronize working dir and submodules recursively
+    git sync -0             # synchronize working dir only and update submodules
+    git sync -s             # synchronize submodules recursively (skip working directory)
