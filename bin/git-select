@@ -2,11 +2,31 @@
 
 . zoul-git-branch-select
 
+cmdOpts=()
+forOpts=()
+args=()
 while [[ "$#" > 0 ]]; do case "$1" in
+  --) shift; args+=("$@"); break;;
   -h|--help) zou-help $0; exit 0;;
-  -0|--ignore-submodules) ISM_OPT='--ignore-submodules';;
+  -k|--keep-submodules) KEEP_SUBMODULES=true; cmdOpts+=($1);;
+  -0|--level0) level0=true;;
+  -q|--quiet| \
+  -r|--recursive| \
+  -s|--sm-only| \
+  -e|--stop-on-error) forOpts+=($1);;
   -*) echo "unknown option: $1" >&2; exit 1;;
-  *) target=$1;;
+  *) args=($1);;
 esac; shift; done
 
-branch_select "$target"
+if [ ${#args[@]} -eq 0 ]; then
+  args=( $(branch_current_root_branch) )
+fi
+if [[ $level0 == true ]]; then
+  branch_select "${args[@]}"
+# elif [[ -z $KEEP_SUBMODULES ]]; then
+#   git for -l ${forOpts[@]} git select -0 ${cmdOpts[@]} -- "${args[@]}"
+else
+  git for ${forOpts[@]} git select -0 ${cmdOpts[@]} -- "${args[@]}"
+  KEEP_SUBMODULES=true
+  repo_require_clean_work_tree "select"
+fi
