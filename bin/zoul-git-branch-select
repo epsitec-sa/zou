@@ -111,7 +111,9 @@ branch_select_update_submodules()
   else
     [[ $FOR_RECURSIVE == true ]] && unset update
   fi
-  [[ $update == true ]] && git submodule update --recursive
+  if [[ $update == true ]]; then
+    git submodule update --recursive
+  fi
 }
 branch_current_root_branch()
 {
@@ -128,7 +130,7 @@ branch_select()
   local bestMatch=$(branch_best_match $branch)
   if branch_is_head $bestMatch; then
     branch_checkout "$bestMatch"
-  elif repo_require_clean_work_tree; then
+  elif repo_require_clean_work_tree 'cannot select'; then
     branch_checkout "$bestMatch"
     branch_select_update_submodules
   fi
