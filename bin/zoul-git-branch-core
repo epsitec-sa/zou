@@ -28,6 +28,13 @@ branch_is_head()
   [ $? -ne 0 ] && return 1
   [ $hash1 = $hash2 ]
 }
+branch_current_root_branch()
+{
+  cd "$(repo_root_dir)"
+  local branch=$(branch_current)
+  cd - >/dev/null
+  echo $branch
+}
 branch_list_tracked()
 {
   local l r i
