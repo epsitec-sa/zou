@@ -2,31 +2,27 @@
 
 . zoul-git-branch-select
 
-cmdOpts=()
 forOpts=()
-args=()
 while [[ "$#" > 0 ]]; do case "$1" in
   --) shift; args+=("$@"); break;;
   -h|--help) zou-help $0; exit 0;;
-  -k|--keep-submodules) KEEP_SUBMODULES=true; cmdOpts+=($1);;
-  -0|--level0) level0=true;;
-  -q|--quiet| \
-  -r|--recursive| \
-  -s|--sm-only| \
+  -q|--quiet) quiet=true; forOpts+=($1);;
   -e|--stop-on-error) forOpts+=($1);;
   -*) echo "unknown option: $1" >&2; exit 1;;
-  *) args=($1);;
+  *) branch=$1;;
 esac; shift; done
 
-if [ ${#args[@]} -eq 0 ]; then
-  args=( $(branch_current_root_branch) )
-fi
-if [[ $level0 == true ]]; then
-  branch_select "${args[@]}"
-# elif [[ -z $KEEP_SUBMODULES ]]; then
-#   git for -l ${forOpts[@]} git select -0 ${cmdOpts[@]} -- "${args[@]}"
+if repo_is_submodule_level1; then
+  [[ -z $branch ]] && branch=$(branch_current_root_branch)
+  branch_select $branch
+  repo_update_submodules
+  repo_commit_submodules
+elif repo_is_root; then
+  [[ -z $quiet ]] && echo "Entering $(basename `pwd`)"
+  [[ -z $branch ]] && branch=$(branch_current)
+  branch_select $branch
+  git for -s ${forOpts[@]} git select
+  repo_commit_submodules
 else
-  git for ${forOpts[@]} git select -0 ${cmdOpts[@]} -- "${args[@]}"
-  KEEP_SUBMODULES=true
-  repo_require_clean_work_tree "select"
+  exit 1
 fi

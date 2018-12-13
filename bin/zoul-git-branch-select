@@ -103,28 +103,12 @@ branch_best_match()
     branch_best_match_dev $target
   fi
 }
-branch_select_update_submodules()
-{
-  local update=true
-  if [[ $FOR_INSIDE_ROOT == true ]]; then
-    unset update
-  else
-    [[ $FOR_RECURSIVE == true ]] && unset update
-  fi
-  if [[ $update == true ]]; then
-    git submodule update --recursive
-  fi
-}
 branch_select()
 {
   local branch=$1
-  [[ -z $branch ]] && branch=$(branch_current_root_branch)
   [[ -z $branch ]] && io_error 'branch_select: specify a branch to match' && return 1
   local bestMatch=$(branch_best_match $branch)
-  if branch_is_head $bestMatch; then
+  if branch_is_head $bestMatch || repo_require_clean_work_tree 'cannot select'; then
     branch_checkout "$bestMatch"
-  elif repo_require_clean_work_tree 'cannot select'; then
-    branch_checkout "$bestMatch"
-    branch_select_update_submodules
   fi
 }
