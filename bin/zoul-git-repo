@@ -18,6 +18,22 @@ repo_is_merging()      { git merge HEAD &>/dev/null && return 1 || return 0; }
 
 repo_is_submodule()    { [[ -d "$1" && -f "${1}/.git" ]]; }
 
+repo_list_unstaged_submodules()
+{
+  local x
+  OIFS=$IFS; IFS=$'\n'
+  for x in $(git diff-files --name-only -r); do
+    repo_is_submodule "$x" && echo $x
+  done
+  IFS=$OIFS
+}
+repo_commit_submodules()
+{
+  local unstaged=( $(repo_list_unstaged_submodules) )
+  [ ${#unstaged[@]} -eq 0 ] && return 1
+  local message="USMR: $(string_join ', ' "${unstaged[@]}")"
+  git commit -m "$message" -- "${unstaged[@]}"
+}
 repo_list_untracked()
 {
   local x
