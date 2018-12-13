@@ -36,7 +36,7 @@ repo_list_dangling_submodules()
   done
   IFS=$OIFS
 }
-repo_remove_dangling_submodules() { repo_list_dangling_submodules | xargs -n 1 rm -rf; }
+repo_remove_dangling_submodules() { repo_list_dangling_submodules | xargs -I{} rm -rf "{}"; }
 
 repo_root_dir()
 {
