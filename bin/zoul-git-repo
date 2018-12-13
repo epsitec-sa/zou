@@ -21,16 +21,20 @@ repo_is_submodule()    { [[ -d "$1" && -f "${1}/.git" ]]; }
 repo_list_untracked()
 {
   local x
+  OIFS=$IFS; IFS=$'\n'
   for x in $(git ls-files --exclude-standard --others); do
     repo_is_submodule "$x" || echo $x
   done
+  IFS=$OIFS
 }
 repo_list_dangling_submodules()
 {
   local x
+  OIFS=$IFS; IFS=$'\n'
   for x in $(git ls-files --exclude-standard --others); do
     repo_is_submodule "$x" && echo $x
   done
+  IFS=$OIFS
 }
 repo_remove_dangling_submodules() { repo_list_dangling_submodules | xargs -n 1 rm -rf; }
 
