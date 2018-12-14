@@ -32,8 +32,10 @@ repo_commit_submodules()
 {
   local unstaged=( $(repo_list_unstaged_submodules) )
   [ ${#unstaged[@]} -eq 0 ] && return 1
-  local message="USMR: $(string_join ', ' "${unstaged[@]}")"
-  git commit -m "$message" -- "${unstaged[@]}"
+  local cslist=$(string_join ', ' "${unstaged[@]}")
+  local message="USMR: $cslist"
+  git commit -m "$message" -- "${unstaged[@]}" >/dev/null
+  io_warning "$cslist" "[$(repo_module_id)] commited"
 }
 repo_list_untracked()
 {
