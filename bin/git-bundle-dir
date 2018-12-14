@@ -8,7 +8,7 @@ while [[ "$#" > 0 ]]; do case "$1" in
   *) bdir=$1;;
 esac; shift; done
 
-bdir=$(readlink -f "$bdir")
+bdir=$(realpath "$bdir")
 while [[ -n "$bdir" && ! -d "$bdir/.git" ]]; do
   bdir=${bdir%/*}
 done
