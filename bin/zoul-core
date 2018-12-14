@@ -34,36 +34,71 @@ io_color[Yellow]='1;33'
 io_color[White]='1;37'
 
 # usage: io_color_escape_sequence <color>
-# - io_color_escape_sequence Cyan    => \033[0;36m
-# - io_color_escape_sequence Default => \033[0m
+# example:
+#   $ io_color_escape_sequence Cyan
+#   \033[0;36m
+#   $ io_color_escape_sequence Default
+#   \033[0m
 io_color_escape_sequence()
 {
-     echo "\033[${io_color[$1]}m";
+  echo "\033[${io_color[$1]}m";
 }
 # usage: io_colorize <color> <message>
-# - io_colorize Cyan 'my message'
+# example:
+#   $ io_colorize Cyan 'my message'
 io_colorize()
 {
-    local color=$(io_color_escape_sequence $1); shift
-    printf "$color%b\033[0m" "$@"
+  local color=$(io_color_escape_sequence $1); shift
+  printf "$color%b\033[0m" "$@"
 }
 # usage: io_message <message> [<prefix> [<color=LightCyan>]]
-# - io_message 'message' 'info' Cyan => info: message
-# - io_message 'message' '' Gray => message
+#   <prefix>:: <prefix-name>[<indent>]
+#   <indent>:: %<number>s
+# example:
+#   $ io_message 'message' 'info' Cyan
+#   info: message
+#   $ io_message 'message' '' Gray
+#   message
+#   $ io_message 'message' 'info%2s'
+#   info:
+#     message
 io_message()
 {
-    local prefix
-    [[ -n $2 ]] && prefix="$2: "
-    colored=$(io_colorize ${3:-LightCyan} "$prefix$1")
-    printf "$colored\n"
+  local message=$1
+  local prefix indent
+  [[ $2 =~ ^([^\%]*)(%[0-9]+s)?$ ]] && {
+    prefix=${BASH_REMATCH[1]}
+    indent=${BASH_REMATCH[2]}
+    [[ -n $prefix ]] && prefix="$prefix: "
+    [[ -n $indent ]] && printf -v indent "$indent" ''
+  }
+  if [[ $message == *$'\n'* ]]; then
+    # more than one line
+    if [[ -n $indent ]]; then
+      message=$(echo "$message" | sed "s/^/$indent/")
+    fi
+    if [[ -n $prefix ]]; then
+      printf -v message '%s\n%s' "$prefix" "$message"
+    fi
+  elif [[ -n $indent ]]; then
+    message=$indent$message
+    if [[ -n $prefix ]]; then
+      printf -v message '%s\n%s' "$prefix" "$message"
+    fi
+  else
+    message=$prefix$message
+  fi
+  colored=$(io_colorize ${3:-LightCyan} "$message")
+  printf "$colored\n" 1>&2
 }
 io_info()     { io_message "$1" "${2:-info}"; }
 io_success()  { io_message "$1" "${2:-info}" LightGreen; }
-io_warning()  { io_message "$1" "${2:-warning}" Yellow 1>&2; }
-io_error()    { io_message "$1" "${2:-error}" LightRed 1>&2; }
-io_debug()    { [[ $debug == 'true' ]] && io_message "$1 = ${!1}" "${2:-debug}" ${3:-Purple} 1>&2; }
+io_warning()  { io_message "$1" "${2:-warning}" Yellow; }
+io_error()    { io_message "$1" "${2:-error}" LightRed; }
+io_debug()    { [[ $debug == 'true' ]] && io_message "$1 = ${!1}" "${2:-debug}" ${3:-Purple}; }
 
-string_join() { local d=$1; shift; echo -n "$1"; shift; printf "%s" "${@/#/$d}"; }
+string_join()   { local d=$1; shift; echo -n "$1"; shift; printf "%s" "${@/#/$d}"; }
+string_indent() { local n=$1; shift; printf "%${n}s%s" '' "$*"; }
 
 assert_equals()
 {
@@ -111,7 +146,7 @@ array_remove_array()
 {
   # https://stackoverflow.com/questions/1063347/passing-arrays-as-parameters-in-bash
   # example:
-  #   list_remove array[@] remove[@]
+  #   $ list_remove array[@] remove[@]
   # array are passed by names: ${!1} is an indirection
   local array=( "${!1}" )
   local remove=( "${!2}" )

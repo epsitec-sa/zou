@@ -152,32 +152,32 @@ repo_require_clean_work_tree () {
     # Update the index
     if ! git update-index -q --ignore-submodules --refresh &>/dev/null; then
         io_error 'your have unmerged paths.' "$prefix"
-        io_message >&2 "$(repo_list_unmerged | sed 's/^/  /')" '' Red
-        io_message >&2 "  resolve conflicts and run 'git commit'." '' LightCyan
+        io_error "$(repo_list_unmerged)" '%2s'
+        io_info  "resolve conflicts and run 'git commit'." '%2s'
         return 1
     fi
 
     # Disallow untracked changes in the working tree
     if ! test -z "$(repo_list_untracked)"; then
         io_error 'your work tree contains untracked changes.' "$prefix"
-        io_message >&2 "$(repo_list_untracked | sed 's/^/  /')" '' Red
-        io_message >&2 "  run 'git add'" '' LightCyan
+        io_error "$(repo_list_untracked)" '%2s'
+        io_info  "run 'git add'" '%2s'
         err=1
     fi
 
     # Disallow unstaged changes in the working tree
     if ! git diff-files --quiet --ignore-submodules --; then
         io_error 'you have unstaged changes.' "$prefix"
-        io_message >&2 "$(repo_list_unstaged | sed 's/^/  /')" '' Red
-        io_message >&2 "  run 'git stash' or 'git add' and 'git commit'." '' LightCyan
+        io_error "$(repo_list_unstaged)" '%2s'
+        io_info  "run 'git stash' or 'git add' and 'git commit'." '%2s'
         err=1
     fi
 
     # Disallow uncommitted changes in the index
     if ! git diff-index --cached --quiet HEAD --ignore-submodules --; then
         io_error 'your index contains uncommitted changes.' "$prefix"
-        io_message >&2 "$(repo_list_uncommited | sed 's/^/  /')" '' Red
-        io_message >&2 "  run 'git commit'." '' LightCyan
+        io_error "$(repo_list_uncommited)" '%2s'
+        io_info  "run 'git commit'." '%2s'
         err=1
     fi
 
