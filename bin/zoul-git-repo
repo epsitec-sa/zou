@@ -56,7 +56,7 @@ repo_list_dangling_submodules()
 }
 repo_remove_dangling_submodules() { repo_list_dangling_submodules | xargs -I{} rm -rf "{}"; }
 
-repo_root_dir()
+repo_bundle_dir()
 {
   local dir=$(realpath ${1:-.})
   while [[ -n "$dir" && ! -d "$dir/.git" ]]; do
@@ -94,7 +94,7 @@ repo_module_id()
 }
 repo_bundle_id()
 {
-  repo_module_id $(repo_root_dir)
+  repo_module_id $(repo_bundle_dir)
 }
 
 repo_update_submodules()
