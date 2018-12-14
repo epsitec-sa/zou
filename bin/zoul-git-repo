@@ -99,6 +99,13 @@ repo_module_and_bundle_dirs()
   done
   return 1
 }
+repo_bundle_relative_to_path()
+{
+  local path=${1:-.} bdir
+  bdir=$(repo_bundle_dir "$@")
+  [ $? -ne 0 ] && return 1
+  echo $(realpath --relative-to="$path" "$bdir")
+}
 repo_url_from_dir()
 {
   cd "${1:-.}"
