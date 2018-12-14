@@ -8,12 +8,11 @@ ZOUL_GIT_REPO=true
 
 [[ -z $ZOUL_CORE ]] && . zoul-core
 
-repo_ism_opt()         { [[ -z $KEEP_SUBMODULES ]] && echo '--ignore-submodules'; }
 repo_list_submodules() { git config --file .gitmodules --get-regexp path | cut -d' ' -f2; }
 repo_list_deleted()    { git ls-files --deleted; }
-repo_list_unstaged()   { git diff-files --name-only -r $(repo_ism_opt) --; }
-repo_list_uncommited() { git diff-index --cached --name-only -r $(repo_ism_opt) HEAD --; }
-repo_list_unmerged()   { git diff --name-only --diff-filter=U $(repo_ism_opt) | cut -f1; }
+repo_list_unstaged()   { git diff-files --name-only -r --ignore-submodules --; }
+repo_list_uncommited() { git diff-index --cached --name-only -r --ignore-submodules HEAD --; }
+repo_list_unmerged()   { git diff --name-only --diff-filter=U --ignore-submodules | cut -f1; }
 repo_is_merging()      { git merge HEAD &>/dev/null && return 1 || return 0; }
 
 repo_is_root()             { [[ -d "${1:-.}/.git" ]]; }
@@ -142,7 +141,7 @@ repo_require_clean_work_tree () {
     local err=0
 
     # Update the index
-    if ! git update-index -q $(repo_ism_opt) --refresh &>/dev/null; then
+    if ! git update-index -q --ignore-submodules --refresh &>/dev/null; then
         io_error 'your have unmerged paths.' "$prefix"
         io_message >&2 "$(repo_list_unmerged | sed 's/^/  /')" '' Red
         io_message >&2 "  resolve conflicts and run 'git commit'." '' LightCyan
@@ -158,7 +157,7 @@ repo_require_clean_work_tree () {
     fi
 
     # Disallow unstaged changes in the working tree
-    if ! git diff-files --quiet $(repo_ism_opt) --; then
+    if ! git diff-files --quiet --ignore-submodules --; then
         io_error 'you have unstaged changes.' "$prefix"
         io_message >&2 "$(repo_list_unstaged | sed 's/^/  /')" '' Red
         io_message >&2 "  run 'git stash' or 'git add' and 'git commit'." '' LightCyan
@@ -166,7 +165,7 @@ repo_require_clean_work_tree () {
     fi
 
     # Disallow uncommitted changes in the index
-    if ! git diff-index --cached --quiet HEAD $(repo_ism_opt) --; then
+    if ! git diff-index --cached --quiet HEAD --ignore-submodules --; then
         io_error 'your index contains uncommitted changes.' "$prefix"
         io_message >&2 "$(repo_list_uncommited | sed 's/^/  /')" '' Red
         io_message >&2 "  run 'git commit'." '' LightCyan

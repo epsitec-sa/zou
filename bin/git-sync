@@ -2,11 +2,9 @@
 
 . zoul-git-branch-sync
 
-cmdOpts=()
 forOpts=()
 while [[ "$#" > 0 ]]; do case "$1" in
   -h|--help) zou-help $0; exit 0;;
-  -k|--keep-submodules) KEEP_SUBMODULES=true; cmdOpts+=($1);;
   -0|--level0) level0=true;;
   -q|--quiet| \
   -s|--sm-only| \
@@ -15,10 +13,8 @@ while [[ "$#" > 0 ]]; do case "$1" in
   *) ;;
 esac; shift; done
 
-export KEEP_SUBMODULES
-
 if [[ $level0 == true ]]; then
   branch_sync_all
 else
-  git for -r ${forOpts[@]} git sync -0 ${cmdOpts[@]}
+  git for -r ${forOpts[@]} git sync -0
 fi
