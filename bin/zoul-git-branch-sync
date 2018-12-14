@@ -60,10 +60,10 @@ branch_sync_all_visitor()
 }
 branch_sync_all()
 {
-  local moduleName=$(repo_module_name)
+  local moduleId=$(repo_module_id)
   git fetch --prune --all &>/dev/null
-  repo_require_clean_work_tree "[$moduleName] cannot synchronize" || return 1
-  branch_visit_sync_info branch_sync_all_visitor "[$moduleName] synchronized" 
+  repo_require_clean_work_tree "[$moduleId] cannot synchronize" || return 1
+  branch_visit_sync_info branch_sync_all_visitor "[$moduleId] synchronized" 
 
-  repo_update_submodules $moduleName
+  repo_update_submodules $moduleId
 }

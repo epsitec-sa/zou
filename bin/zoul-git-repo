@@ -62,24 +62,43 @@ repo_bundle_dir()
   while [[ -n "$dir" && ! -d "$dir/.git" ]]; do
     dir=${dir%/*}
   done
+  [[ -z $dir ]] && return 1
   echo $dir
 }
 repo_module_dir()
 {
-  local bdir=$(realpath ${1:-.})
-  local mdir
-  while [[ -n "$bdir" && ! -d "$bdir/.git" ]]; do
-    [[ -z "$mdir" && -f "$bdir/.git" ]] && mdir=$bdir
-    bdir=${bdir%/*}
+  local dir=$(realpath ${1:-.})
+  while [[ -n "$dir" ]]; do
+    if [[ -f "$dir/.git" || -d "$dir/.git" ]]; then
+      echo $dir
+      return 0
+    fi
+    dir=${dir%/*}
   done
-  [[ -n $mdir ]] && echo "$mdir" || echo "$bdir"
+  return 1
 }
-repo_module_name()
+repo_module_and_bundle_dirs()
 {
-  local mdir=$(repo_module_dir "$@")
-  echo ${mdir##*/}
+  local dir=$(realpath ${1:-.}) mdir bdir
+  while [[ -n "$dir" ]]; do
+    if [[ -f "$dir/.git" ]]; then
+      mdir=$dir
+      echo $mdir
+    fi
+    if [[ -d "$dir/.git" ]]; then
+      if [[ -z $mdir ]]; then
+        mdir=$dir
+        echo $mdir
+      fi
+      bdir=$dir
+      echo $bdir
+      return 0
+    fi
+    dir=${dir%/*}
+  done
+  return 1
 }
-repo_dir_url()
+repo_url_from_dir()
 {
   cd "${1:-.}"
   local url=$(git config remote.origin.url)
@@ -88,29 +107,38 @@ repo_dir_url()
 }
 repo_module_id()
 {
-  local url=$(repo_dir_url "$@")
-  local id=${url##*/} # get 'file name'
-  echo ${id%.git}     # remove 'extension'
+  local dirs
+  dirs=( $(repo_module_and_bundle_dirs "$@") )
+  [ $? -ne 0 ] && return 1
+  local mdir=${dirs[0]} bdir=${dirs[1]}
+  if [[ $mdir == $bdir ]]; then
+    echo ${bdir##*/}
+  else
+    echo ${mdir#$bdir/}
+  fi
 }
 repo_bundle_id()
 {
-  repo_module_id $(repo_bundle_dir)
+  local dir
+  dir=$(repo_bundle_dir)
+  [ $? -ne 0 ] && return 1
+  echo ${bdir##*/}
 }
 
 repo_update_submodules()
 {
-  local moduleName=$1
-  [[ -z $moduleName ]] && moduleName=$(repo_module_name)
+  local moduleId=$1
+  [[ -z $moduleId ]] && moduleId=$(repo_module_id)
   local submodules=( $(repo_list_submodules) )
   if [ ${#submodules[@]} -ne 0 ]; then
-    io_info 'updating submodules...' "[$moduleName]"
+    io_info 'updating submodules...' "[$moduleId]"
     git submodule update --recursive
   fi
 }
 repo_require_clean_work_tree () {
     # io_info >&2 "repo_require_clean_work_tree"
     local prefix="$*"
-    [[ $prefix =~ ^\[ ]] || prefix="[$(repo_module_name)] $prefix"
+    [[ $prefix =~ ^\[ ]] || prefix="[$(repo_module_id)] $prefix"
     local err=0
 
     # Update the index
