@@ -6,23 +6,25 @@ forOpts=()
 while [[ "$#" > 0 ]]; do case "$1" in
   --) shift; args+=("$@"); break;;
   -h|--help) zou-help $0; exit 0;;
+  -0|--level0) level0=true;;
   -q|--quiet) quiet=true; forOpts+=($1);;
   -e|--stop-on-error) forOpts+=($1);;
   -*) echo "unknown option: $1" >&2; exit 1;;
   *) branch=$1;;
 esac; shift; done
 
-if repo_is_submodule_level1; then
-  [[ -z $branch ]] && branch=$(branch_current_root_branch)
+[[ -z $branch ]] && branch=$(branch_current_root_branch)
+
+if [[ $level0 == true ]]; then
   branch_select $branch
-  repo_update_submodules
-  repo_commit_submodules
-elif repo_is_root; then
-  [[ -z $quiet ]] && echo "Entering $(basename `pwd`)"
-  [[ -z $branch ]] && branch=$(branch_current)
-  branch_select $branch
-  git for -s ${forOpts[@]} git select
-  repo_commit_submodules
+  # TODO: implement select disabling (see branch_is_vmerge_disabled)
+  if [[ -n $selectDisabled ]]; then
+    repo_update_submodules --recursive
+  else
+    git for -s ${forOpts[@]} git select -0 $branch
+    repo_commit_submodules
+  fi
 else
-  exit 1
+  [[ -z $quiet ]] && echo Entering "'$(repo_bundle_relative_to_path "$PWD")'"
+  git select -0 $branch
 fi

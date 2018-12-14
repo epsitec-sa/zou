@@ -108,7 +108,9 @@ branch_select()
   local branch=$1
   [[ -z $branch ]] && io_error 'branch_select: specify a branch to match' && return 1
   local bestMatch=$(branch_best_match $branch)
-  if branch_is_head $bestMatch || repo_require_clean_work_tree 'cannot select'; then
-    branch_checkout "$bestMatch"
+  branch_checkout "$bestMatch" 2>/dev/null
+  if [ $? -ne 0 ]; then
+    repo_require_clean_work_tree 'cannot select'
+    return 1
   fi
 }

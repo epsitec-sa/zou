@@ -135,12 +135,16 @@ repo_bundle_id()
 
 repo_update_submodules()
 {
-  local moduleId=$1
-  [[ -z $moduleId ]] && moduleId=$(repo_module_id)
+  local moduleId recursive
+  while [[ "$#" > 0 ]]; do case "$1" in
+    --recursive) recursive=$1;;
+    *) moduleId=$1;;
+  esac; shift; done
   local submodules=( $(repo_list_submodules) )
   if [ ${#submodules[@]} -ne 0 ]; then
+    [[ -z $moduleId ]] && moduleId=$(repo_module_id)
     io_info 'updating submodules...' "[$moduleId]"
-    git submodule update --recursive
+    git submodule update --init $recursive
   fi
 }
 repo_require_clean_work_tree () {
