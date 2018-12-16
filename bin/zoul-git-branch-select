@@ -10,6 +10,114 @@ ZOUL_GIT_BRANCH_SELECT=true
 [[ -z $ZOUL_GIT_VTAG ]]        && . zoul-git-vtag
 [[ -z $ZOUL_GIT_BRANCH_CORE ]] && . zoul-git-branch-core
 
+# csm = children selection mode (enabled/disabled)
+# .zou-flow
+#
+# branch_disable_select master
+#   [select]
+#     default = enabled
+#     disabled = master
+#
+# branch_enable_select master
+#   [select]
+#     default = disabled
+#     enabled = master
+
+csm_get_default()
+{
+  git config --file "$ZOU_FLOW_CONFIG" --get 'select.default' || {
+    repo_is_root && echo 'enabled' || echo 'disabled'
+  }
+}
+csm_set_default()
+{
+  local default=${1:-enabled}
+  local actualDefault
+  actualDefault=$(csm_get_default)
+  if [[ $default != $actualDefault ]]; then
+    git config --file "$ZOU_FLOW_CONFIG" --unset-all "select.$actualDefault"
+    git config --file "$ZOU_FLOW_CONFIG" 'select.default' $default
+  else
+    return 1 # no change
+  fi
+}
+
+# csm_enable '*'
+#   [select]
+#     default = enabled
+#     disabled = master
+# csm_enable '**'
+#   [select]
+#     default = enabled
+# csm_enable master
+#   [select]
+#     default = disabled
+#     enabled = master
+csm_enable()
+{
+  set -f
+  local branch=$1 branchLabel='all branches'
+  [[ -z $branch ]] && branch="$(branch_current)"
+  if [[ $branch == '*' ]]; then
+    csm_set_default 'enabled'
+  elif [[ $branch == '**' ]]; then
+    csm_set_default 'enabled'
+    git config --file "$ZOU_FLOW_CONFIG" --unset-all "select.disabled" &>/dev/null
+  else
+    branchLabel="'$branch' only"
+    csm_set_default 'disabled'
+    git config --file "$ZOU_FLOW_CONFIG" --add 'select.enabled' "$branch" &>/dev/null
+  fi
+  git update-index --add -- "$ZOU_FLOW_CONFIG" &>/dev/null && \
+  git commit -m "zou-flow: enable select for $branchLabel" -- "$ZOU_FLOW_CONFIG" &>/dev/null
+  set +f
+}
+# csm_disable '*'
+#   [select]
+#     default = disabled
+#     enabled = master
+# csm_disable '**'
+#   [select]
+#     default = disabled
+# csm_disable master
+#   [select]
+#     default = enabled
+#     disabled = master
+
+csm_disable()
+{
+  set -f
+  local branch=$1 branchLabel='all branches'
+  [[ -z $branch ]] && branch="$(branch_current)"
+  if [[ $branch == '*' ]]; then
+    csm_set_default 'disabled'
+  elif [[ $branch == '**' ]]; then
+    csm_set_default 'disabled'
+    git config --file "$ZOU_FLOW_CONFIG" --unset-all "select.enabled" &>/dev/null
+  else
+    branchLabel="'$branch' branch"
+    csm_set_default 'enabled'
+    git config --file "$ZOU_FLOW_CONFIG" --add 'select.disabled' "$branch" &>/dev/null
+  fi
+  git update-index --add -- "$ZOU_FLOW_CONFIG" &>/dev/null && \
+  git commit -m "zou-flow: disable select for $branchLabel" -- "$ZOU_FLOW_CONFIG" &>/dev/null
+  set +f
+}
+csm_is_disabled()
+{
+  set -f
+  local branch=${1:-$(branch_current)} ec=0
+  local default=$(csm_get_default)
+  if [[ $default == 'enabled' ]]; then
+    git config --file "$ZOU_FLOW_CONFIG" --get-all 'select.disabled' "$branch" &>/dev/null
+    ec=$?
+  else
+    git config --file "$ZOU_FLOW_CONFIG" --get-all 'select.enabled' "$branch" &>/dev/null
+    [ $? -eq 0 ] && ec=1
+  fi
+  set +f
+  return $ec
+}
 # Convert a development branch to a fallback list of development branches.
 branch_dev_fallback()
 {
@@ -113,4 +221,5 @@ branch_select()
     repo_require_clean_work_tree 'cannot select'
     return 1
   fi
+  echo "$bestMatch"
 }

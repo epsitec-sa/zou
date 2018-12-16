@@ -16,9 +16,8 @@ esac; shift; done
 [[ -z $branch ]] && branch=$(branch_current_root_branch)
 
 if [[ $level0 == true ]]; then
-  branch_select $branch
-  # TODO: implement select disabling (see branch_is_vmerge_disabled)
-  if [[ -n $selectDisabled ]]; then
+  selectedBranch=$(branch_select $branch)
+  if csm_is_disabled "$selectedBranch"; then
     repo_update_submodules --recursive
   else
     git for -s ${forOpts[@]} git select -0 $branch
