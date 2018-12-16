@@ -10,11 +10,13 @@ while [[ "$#" > 0 ]]; do case "$1" in
   -s|--sm-only| \
   -e|--stop-on-error) forOpts+=($1);;
   -*) echo "unknown option: $1" >&2; exit 1;;
-  *) ;;
+  *) branch=$1;;
 esac; shift; done
 
 if [[ $level0 == true ]]; then
   branch_sync_all
 else
-  git for -r ${forOpts[@]} git sync -0
+  [[ "${forOpts[@]}" =~ "--quiet" ]] || echo Entering "'$(repo_module_relative_to_path "$PWD")'"
+  branch_sync_all $branch
+  git for -s -r ${forOpts[@]} git sync -0
 fi
