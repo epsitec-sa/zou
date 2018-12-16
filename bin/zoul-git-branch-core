@@ -69,6 +69,19 @@ branch_realize()
     fi
   fi
 }
+branch_list_remote_untracked()
+{
+  local remotes=( $(branch_list_remote) )
+  branch_remove_tracked remotes[@]
+}
+branch_list_all_flatten()
+{
+  branch_list_local
+  local b
+  for b in $(branch_list_remote_untracked); do
+    echo ${b#*/}
+  done
+}
 
 branch_without_remote_prefix() { branch_is_remote $1 && echo ${1#*/} || echo $1; }
 branch_checkout() { [[ -n $1 ]] && git checkout "$(branch_without_remote_prefix $1)" >/dev/null; }
