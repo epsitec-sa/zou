@@ -35,6 +35,7 @@ branch_list_vmerge_disabled()
 }
 branch_is_vmerge_disabled()
 {
+  local b
   for b in $(branch_list_vmerge_disabled); do
     git merge-base --is-ancestor $1^{} $b^{} &>/dev/null
     [ $? -eq 0 ] && return 0
