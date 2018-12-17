@@ -9,7 +9,10 @@
     <VS140RootDir Condition="'$(VS140RootDir)' == ''">$([MSBuild]::GetRegistryValue('HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Microsoft\VisualStudio\14.0', 'ShellFolder'))</VS140RootDir>
     <VS140RootDir Condition="'$(VS140RootDir)' == ''">$([MSBuild]::GetRegistryValue('HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\VisualStudio\14.0', 'ShellFolder'))</VS140RootDir>
     <VS150RootDir Condition="'$(VS150RootDir)' == ''">$([MSBuild]::GetRegistryValue('HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\VisualStudio\SxS\VS7', '15.0'))</VS150RootDir>
-    <VS150RootDir Condition="'$(VS150RootDir)' == ''">$([MSBuild]::GetRegistryValue('HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\VisualStudio\SxS\VS7', '15.0''))</VS150RootDir>
+    <VS150RootDir Condition="'$(VS150RootDir)' == ''">$([MSBuild]::GetRegistryValue('HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\VisualStudio\SxS\VS7', '15.0'))</VS150RootDir>
+    <VS160RootDir Condition="'$(VS160RootDir)' == ''">$([MSBuild]::GetRegistryValue('HKEY_LOCAL_MACHINE\SOFTWARE\Classes\VisualStudio.sln.9e516cb4\shell\Open\Command', ''))</VS160RootDir>
+    <VS160RootDir Condition="'$(VS160RootDir)' != ''">$(VS160RootDir.Substring(1, $(VS160RootDir.IndexOf('\Common7'))))</VS160RootDir>
+    <VSRootDir Condition="'$(VSRootDir)' == ''">$(VS160RootDir)</VSRootDir>
     <VSRootDir Condition="'$(VSRootDir)' == ''">$(VS150RootDir)</VSRootDir>
     <VSRootDir Condition="'$(VSRootDir)' == ''">$(VS140RootDir)</VSRootDir>
     <VSRootDir Condition="'$(VSRootDir)' == ''">$(VS120RootDir)</VSRootDir>
@@ -29,6 +32,9 @@
     <VS140ToolsDir Condition="'$(VS140ToolsDir)' == ''">$([MSBuild]::GetRegistryValue('HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\VisualStudio\14.0', 'InstallDir'))</VS140ToolsDir>
     <VS150ToolsDir Condition="'$(VS150COMNTOOLS)' != ''">$(VS150COMNTOOLS)</VS150ToolsDir>
     <VS150ToolsDir Condition="'$(VS150ToolsDir)' == ''">$(VS150RootDir)Common7\Tools\</VS150ToolsDir>
+    <VS160ToolsDir Condition="'$(VS160COMNTOOLS)' != ''">$(VS160COMNTOOLS)</VS160ToolsDir>
+    <VS160ToolsDir Condition="'$(VS160ToolsDir)' == ''">$(VS160RootDir)Common7\Tools\</VS160ToolsDir>
+    <VSToolsDir Condition="'$(VSToolsDir)' == ''">$(VS160ToolsDir)</VSToolsDir>
     <VSToolsDir Condition="'$(VSToolsDir)' == ''">$(VS150ToolsDir)</VSToolsDir>
     <VSToolsDir Condition="'$(VSToolsDir)' == ''">$(VS140ToolsDir)</VSToolsDir>
     <VSToolsDir Condition="'$(VSToolsDir)' == ''">$(VS120ToolsDir)</VSToolsDir>
@@ -50,10 +56,12 @@
     <Message Importance="normal" Text="  VS120RootDir     = $(VS120RootDir)"     Condition="'$(VS120RootDir)' != ''"/>
     <Message Importance="normal" Text="  VS140RootDir     = $(VS140RootDir)"     Condition="'$(VS140RootDir)' != ''"/>
     <Message Importance="normal" Text="  VS150RootDir     = $(VS150RootDir)"     Condition="'$(VS150RootDir)' != ''"/>
+    <Message Importance="normal" Text="  VS160RootDir     = $(VS160RootDir)"     Condition="'$(VS160RootDir)' != ''"/>
     <Message Importance="normal" Text=" "/>                                      
     <Message Importance="normal" Text="  VS120ToolsDir    = $(VS120ToolsDir)"    Condition="'$(VS120ToolsDir)' != ''"/>
     <Message Importance="normal" Text="  VS140ToolsDir    = $(VS140ToolsDir)"    Condition="'$(VS140ToolsDir)' != ''"/>
     <Message Importance="normal" Text="  VS150ToolsDir    = $(VS150ToolsDir)"    Condition="'$(VS150ToolsDir)' != ''"/>
+    <Message Importance="normal" Text="  VS160ToolsDir    = $(VS160ToolsDir)"    Condition="'$(VS160ToolsDir)' != ''"/>
     <Message Importance="normal" Text=" "/>                                      
     <Message Importance="normal" Text="  VC140RootDir     = $(VC140RootDir)"     Condition="'$(VC140RootDir)' != ''"/>
     <Message Importance="normal" Text=" "/>                                      
