@@ -5,6 +5,7 @@
 ZOUL_GIT_BRANCH_PUBLISH=true
 
 [[ -z $ZOUL_GIT_BRANCH_VMERGE ]] && . zoul-git-branch-vmerge
+[[ -z $ZOUL_VERSION ]]           && . zoul-version
 
 branch_publish()
 {
@@ -26,6 +27,6 @@ branch_publish()
   branch_merge $branch $vbranch
 
   # create vtag
-  git tag -a -m "Branch '$branch' released" $vtag $branch
-  [[ $local == true ]] || git push $(git remote) "$vtag"
+  git tag -a -m "Branch '$branch' published" $vtag $branch
+  echo $vtag
 }
