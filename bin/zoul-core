@@ -5,13 +5,14 @@
 ZOUL_CORE=true
 
 # declare startup constants
-zou_startupPath=${BASH_SOURCE[-1]}
-zou_startupFileName=${zou_startupPath##*/}
-if [[ $zou_startupFileName == bashdb ]]; then
-  zou_startupPath=${BASH_SOURCE[-2]}
-  zou_startupFileName=${zou_startupPath##*/}
+zou_startupPath="${BASH_SOURCE[-1]}"
+zou_startupFileName="${zou_startupPath##*/}"
+if [[ "$zou_startupFileName" == bashdb ]]; then
+  zou_startupPath="${BASH_SOURCE[-2]}"
+  zou_startupFileName="${zou_startupPath##*/}"
 fi
-zou_startupDir=${zou_startupPath%/*}
+zou_startupDir="${zou_startupPath%/*}"
+zou_binDir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 
 # colors
 declare -A io_color
@@ -171,3 +172,4 @@ array_contains_element()
 io_debug zou_startupPath
 io_debug zou_startupDir
 io_debug zou_startupFileName
+io_debug zou_binDir
