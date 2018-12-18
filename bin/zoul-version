@@ -28,6 +28,7 @@ version_update_version_props_recursive()
   local file=$2
   for file in $(find -type f -iname "$file"); do
     sed -i -E "s,(<Version>).*(</Version>),\1$version\2," "$file"
+    sed -i -E "s,(<AssemblyVersion>).*(</AssemblyVersion>),\1$version\2," "$file"
     echo $(realpath "$file")
   done
 }
@@ -36,6 +37,7 @@ version_update_version_props()
   local version=${1#v*}
   local file=${2:-Version.props}
   sed -i -E "s,(<Version>).*(</Version>),\1$version\2," "$file"
+  sed -i -E "s,(<AssemblyVersion>).*(</AssemblyVersion>),\1$version\2," "$file"
   echo $(realpath "$file")
 }
 
