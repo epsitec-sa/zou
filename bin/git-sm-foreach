@@ -1,0 +1,75 @@
+#!/bin/bash
+
+. zoul-git-repo
+. test-git-repo-data
+
+# cd "$sat1Dir"
+
+# sm_opts=()
+# fe_opts=() 
+# args=()
+
+# while [[ "$#" > 0 ]]; do case "$1" in
+#   --)                   shift; args+=("$@"); break;;
+#   -h|--help)            zou-help $0; exit 0;;
+#   -q|--quiet)           sm_opts+=('--quiet');;
+#   -r|--recursive)       FOR_RECURSIVE=true;;
+#   -e|--stop-on-error)   FOR_STOP_ON_ERROR=true;;
+#   *)                    args+=("$1");;
+# esac; shift; done
+
+sm_visit()
+{
+  local path="$1" smPath="$2" cmd="${*:3}" opwd="$PWD" ec=0 smDir
+  cd "$smPath"
+  eval "f() { local path="$path"; "$cmd"; }; f"
+  for smDir in $(repo_list_submodules); do
+    sm_visit "$path/$smDir" "$smDir" "$cmd" || ec=$?
+  done
+  cd "$opwd"
+  return $ec
+}
+
+sm_visit . . 'echo $path'
+
+# git submodule foreach --recursive 'echo $path'
+
+# [[ $FOR_RECURSIVE == true ]] && fe_opts+=('--recursive')
+
+# export FOR_RECURSIVE
+# export FOR_SUBMODULE_ONLY
+# export FOR_STOP_ON_ERROR
+# export FOR_ROOT_LAST
+
+# zou_command="${args[@]}"
+# [[ $FOR_STOP_ON_ERROR == true ]] || zou_command="($zou_command || true)"
+# export zou_command
+
+# run_inside_root()
+# {
+#   local FOR_INSIDE_ROOT=true
+#   local path=$(repo_module_id)
+#   [[ "${sm_opts[@]}" =~ "--quiet" ]] || echo Entering "'$(repo_module_relative_to_path "$PWD")'"
+#   eval "$zou_command"
+# }
+# run_inside_submodule()
+# {
+#   local FOR_INSIDE_SUBMODULE=true
+#   eval "$zou_command"
+# }
+# export -f run_inside_submodule
+
+# [[ $FOR_SUBMODULE_ONLY != true && $FOR_ROOT_LAST != true ]] && { run_inside_root || exit 1; }
+
+# exit_code=0
+# (
+#   IFS='' # IFS will be restored on subshell exit
+#   while read line; do
+#     echo "$line" | grep --line-buffered -v '^fatal:'
+#     exit_code=$?
+#   done < <(git submodule "${sm_opts[@]}" foreach "${fe_opts[@]}" "run_inside_submodule" 2>&1 | sed -u '/^fatal:/q')
+# )
+
+# (( $exit_code != 0 )) && [[ $FOR_STOP_ON_ERROR == true ]] && exit $exit_code
+
+# [[ $FOR_SUBMODULE_ONLY != true && $FOR_ROOT_LAST == true ]] && run_inside_root
