@@ -1,5 +1,24 @@
 #!/bin/bash
 
+pad()
+{
+  padlimit=$1
+  pad=$(printf '%*s' "$padlimit")
+  pad=${pad// /-}
+  echo $pad
+}
+print_row()
+{
+  # TODO: improve by computing the best width according to the longest string.
+  # It needs to have two passes; the first one for computing, and the second
+  # one for printing.
+  printf "_ %-40s _ %-20s _ %-20s _ %-20s _ %-20s _ %-20s _ %-20s _\n" $1 $2 $3 $4 $5 $6 $7
+}
+print_head()
+{
+  print_row Module Head Delta Version vminor vmajor vnext
+  print_row :$(pad 39) :$(pad 19) :$(pad 19) :$(pad 19) :$(pad 19) :$(pad 19) :$(pad 19)
+}
 row()
 {
   local vminor
@@ -30,16 +49,15 @@ row()
   [[ $version == $vminor ]] && unset vminor || vminor="#$vminor#"
   [[ $version == $vmajor ]] && unset vmajor || vmajor="#$vmajor#"
   [[ $version == $vnext ]] && unset vnext || vnext="#$vnext#"
-  echo $module:_ $md_module _ $head _ $delta _ $md_version _ $vminor _ $vmajor _ $vnext
+  echo "$module:$(print_row $md_module $head $delta $md_version $vminor $vmajor $vnext)"
   IFS=$OIFS
 }
 v1=`pwd`/_v1
 [[ -f $v1 ]] && rm $v1
-echo _ Module _ Head _ Delta _ Version _ vminor _ vmajor _ vnext >$v1
-echo _:-_:-_:-_:-_:-_:-_:- >>$v1
+print_head >>$v1
 row $(basename `pwd`) | cut -d':' -f2 >>$v1
 
-export -f row
+export -f row print_row
 export v2=`pwd`/_v2
 [[ -f $v2 ]] && rm $v2
 git submodule foreach --recursive 'row $(git module-id) >>$v2'
