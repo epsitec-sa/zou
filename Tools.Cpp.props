@@ -3,6 +3,8 @@
          InitialTargets="ToolsCppTrace">
 
   <PropertyGroup Label="VisualStudio">
+    <VS2019PreviewDir1>C:\Program Files (x86)\Microsoft Visual Studio\2019\Preview</VS2019PreviewDir1>
+    <VS2019PreviewDir2>D:\Program Files (x86)\Microsoft Visual Studio\2019\Preview</VS2019PreviewDir2>
     <!-- VS Root Dir -->
     <VS120RootDir Condition="'$(VS120RootDir)' == ''">$([MSBuild]::GetRegistryValue('HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Microsoft\VisualStudio\12.0', 'ShellFolder'))</VS120RootDir>
     <VS120RootDir Condition="'$(VS120RootDir)' == ''">$([MSBuild]::GetRegistryValue('HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\VisualStudio\12.0', 'ShellFolder'))</VS120RootDir>
@@ -10,8 +12,8 @@
     <VS140RootDir Condition="'$(VS140RootDir)' == ''">$([MSBuild]::GetRegistryValue('HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\VisualStudio\14.0', 'ShellFolder'))</VS140RootDir>
     <VS150RootDir Condition="'$(VS150RootDir)' == ''">$([MSBuild]::GetRegistryValue('HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\VisualStudio\SxS\VS7', '15.0'))</VS150RootDir>
     <VS150RootDir Condition="'$(VS150RootDir)' == ''">$([MSBuild]::GetRegistryValue('HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\VisualStudio\SxS\VS7', '15.0'))</VS150RootDir>
-    <VS160RootDir Condition="'$(VS160RootDir)' == ''">$([MSBuild]::GetRegistryValue('HKEY_LOCAL_MACHINE\SOFTWARE\Classes\VisualStudio.sln.9e516cb4\shell\Open\Command', ''))</VS160RootDir>
-    <VS160RootDir Condition="'$(VS160RootDir)' != ''">$(VS160RootDir.Substring(1, $(VS160RootDir.IndexOf('\Common7'))))</VS160RootDir>
+    <VS160RootDir Condition="'$(VS160RootDir)' == '' And Exists('$(VS2019PreviewDir1)')">$(VS2019PreviewDir1)</VS160RootDir>
+    <VS160RootDir Condition="'$(VS160RootDir)' == '' And Exists('$(VS2019PreviewDir2)')">$(VS2019PreviewDir2)</VS160RootDir>
     <VSRootDir Condition="'$(VSRootDir)' == ''">$(VS160RootDir)</VSRootDir>
     <VSRootDir Condition="'$(VSRootDir)' == ''">$(VS150RootDir)</VSRootDir>
     <VSRootDir Condition="'$(VSRootDir)' == ''">$(VS140RootDir)</VSRootDir>
