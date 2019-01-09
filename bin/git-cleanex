@@ -2,10 +2,21 @@
 
 . zoul-git-repo
 
-# TODO: add an option to force remove dangling submodules
-repo_require_clean_work_tree 'cannot clean'
-repo_remove_dangling_submodules
+while [[ "$#" > 0 ]]; do case "$1" in
+  -h|--help) zou-help $0; exit 0;;
+  -d|--rdsm) removeDanglingSubmodules=true;;
+  -*) echo "unknown option: $1" >&2; exit 1;;
+esac; shift; done
 
-[ -d node_modules ] && rm -rf node_modules
+repo_require_clean_work_tree 'cannot clean'
+[[ $removeDanglingSubmodules == true ]] && {
+  io_info 'removing dangling submodules...' "[$(repo_module_id)]"
+  repo_remove_dangling_submodules
+}
+
+[ -d node_modules ] && {
+  io_info 'removing node modules...' "[$(repo_module_id)]"
+  rm -rf node_modules
+}
 git clean -xdf -e packages
 git checkout .
