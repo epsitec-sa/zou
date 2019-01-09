@@ -11,36 +11,36 @@ ZOUL_GIT_BRANCH_MERGE=true
 [[ -z $ZOUL_GIT_BRANCH_CORE ]] && . zoul-git-branch-core
 
 branch_merge_ff() {
-  # merge 'branchToMerge' (invariant) into 'branchMergeInto' < 'branchToMerge'
-  # 'branchMergeInto' should be a local branch with a symbolic name
-  local branchToMerge=$1
-  local branchMergeInto=$2
+  # merge 'toMerge' (invariant) into 'intoBranch' < 'toMerge'
+  # 'intoBranch' should be a local branch with a symbolic name
+  local toMerge=$1
+  local intoBranch=$2
   local hashToMerge hashMergeInto
 
-  hashMergeInto=$(git show-ref -s --verify "refs/heads/$branchMergeInto" 2>/dev/null)
+  hashMergeInto=$(git show-ref -s --verify "refs/heads/$intoBranch" 2>/dev/null)
   if [ $? -ne 0 ]; then
-    io_error "not a local branch $branchMergeInto"
+    io_error "not a local branch $intoBranch"
     return 1
   fi
 
-  hashToMerge="$(git rev-parse --verify $branchToMerge 2> /dev/null)"
+  hashToMerge="$(git rev-parse --verify $toMerge 2> /dev/null)"
   if [ $? -ne 0 ]; then
-    io_error "unknown branch to merge $branchToMerge"
+    io_error "unknown branch to merge $toMerge"
     return 2
   fi
 
-  if [ "$(git symbolic-ref HEAD)" = "refs/heads/$branchMergeInto" ]; then
-      if ! git merge --ff-only "$branchToMerge"; then
-        io_error "merging $branchToMerge into $branchMergeInto would not be a fast-forward"
+  if [ "$(git symbolic-ref HEAD)" = "refs/heads/$intoBranch" ]; then
+      if ! git merge --ff-only "$toMerge"; then
+        io_error "merging $toMerge into $intoBranch would not be a fast-forward"
         return 3
       fi
   else
     if [ "$(git merge-base $hashMergeInto $hashToMerge)" != "$hashMergeInto" ]; then
-      io_error "merging $branchToMerge into $branchMergeInto would not be a fast-forward"
+      io_error "merging $toMerge into $intoBranch would not be a fast-forward"
       return 4
     fi
     io_info "Updating ${hashMergeInto:0:7}..${hashToMerge:0:7}"
-    if ! git update-ref -m "merge $branchToMerge into $branchMergeInto (fast forward)" "refs/heads/$branchMergeInto" "$hashToMerge" "$hashMergeInto"; then
+    if ! git update-ref -m "merge $toMerge into $intoBranch (fast forward)" "refs/heads/$intoBranch" "$hashToMerge" "$hashMergeInto"; then
       io_error "fast forward using update-ref failed"
       return 5
     fi
@@ -48,9 +48,9 @@ branch_merge_ff() {
 }
 branch_merge_in_memory()
 {
-  local branchToMerge=$1 branchMergeInto=$2 mbase
-  mbase=$(git merge-base $branchToMerge $branchMergeInto)
-  git merge-tree $mbase $branchMergeInto $branchToMerge
+  local toMerge=$1 intoBranch=$2 mbase
+  mbase=$(git merge-base $toMerge $intoBranch)
+  git merge-tree $mbase $intoBranch $toMerge
 }
 branch_merge_dry_run()
 {
@@ -61,10 +61,9 @@ branch_merge_dry_run()
 branch_merge_interactive()
 {
   local ec=0
-  git mergetool >/dev/null || ec=1
+  git mergetool || ec=1
   if (( $ec == 0 )); then
     git commit --no-edit >/dev/null
-    git push &>/dev/null
   fi
   # clean temp merge files
   repo_list_untracked | grep -E '(\.orig$|_(BACKUP|BASE|LOCAL|REMOTE)_[0-9]+)' | xargs --no-run-if-empty rm --
@@ -72,29 +71,29 @@ branch_merge_interactive()
 }
 branch_merge()
 {
-  # merge branchToMerge into branchMergeInto
-  # before: branchMergeInto < branchToMerge
-  # after : branchMergeInto = branchToMerge -- branchMergeInto moved towards branchToMerge
-  local branchToMerge=${1:-HEAD} branchMergeInto=$2 ec=0 targetBranchIsNotLocal
-  branchToMerge=$(git rev-parse $branchToMerge^{})
+  # merge toMerge into intoBranch
+  # before: intoBranch < toMerge
+  # after : intoBranch = toMerge -- intoBranch moved towards toMerge
+  local toMerge=$1 intoBranch=$2 ec=0 targetBranchIsNotLocal
+  toMerge=$(git rev-parse $toMerge^{})
   # try fast-forward merge
-  branch_merge_ff $branchToMerge $branchMergeInto &>/dev/null || ec=$?
+  branch_merge_ff $toMerge $intoBranch &>/dev/null || ec=$?
   if (( $ec != 0 )); then
     # fast forward failed
     if (( $ec == 1 )); then
       targetBranchIsNotLocal=true
       # ensure target branch name is realized
-      branchMergeInto=$(branch_realize $branchMergeInto 2>/dev/null)
+      intoBranch=$(branch_realize $intoBranch 2>/dev/null)
       ec=0
     fi
     # on active branch...
-    if [[ -z $targetBranchIsNotLocal ]] && branch_is_head $branchMergeInto; then
+    if [[ -z $targetBranchIsNotLocal ]] && branch_is_head $intoBranch; then
       # ... merge even if conflicts
-      if ! git merge $branchToMerge &>/dev/null; then
+      if ! git merge $toMerge &>/dev/null; then
         if repo_is_merging; then
           branch_merge_interactive || {
             local conflicts=$(git diff)
-            io_error "while auto-merging $branchToMerge into $branchMergeInto."
+            io_error "while auto-merging $toMerge into $intoBranch."
             io_message >&2 "$(echo "$conflicts" | sed 's/^/  /')" '' Red
             io_message >&2 "  configure your mergetool and run 'git sync' again" '' LightCyan
             io_message >&2 "  ... or finalize the merge using the following commands:" '' LightCyan
@@ -109,30 +108,30 @@ branch_merge()
       fi
     # on inactive branch check if there will be merge conflicts before switching
     else
-      if branch_merge_dry_run $branchToMerge $branchMergeInto; then
+      if branch_merge_dry_run $toMerge $intoBranch; then
         # no conflicts: merge
-        [[ $targetBranchIsNotLocal == true ]] && branchMergeInto=$(branch_without_remote_prefix $branchMergeInto)
-        if git checkout $branchMergeInto &>/dev/null; then
-          git merge $branchToMerge &>/dev/null || {
-            io_error "unable to merge $branchToMerge into $branchMergeInto branch"
+        [[ $targetBranchIsNotLocal == true ]] && intoBranch=$(branch_without_remote_prefix $intoBranch)
+        if git checkout $intoBranch &>/dev/null; then
+          git merge $toMerge &>/dev/null || branch_merge_interactive || {
+            io_error "unable to merge $toMerge into $intoBranch branch"
             ec=1
           }
           git checkout - &>/dev/null
           return $ec
         else
-          io_error "unable to checkout $branchMergeInto branch"
+          io_error "unable to checkout $intoBranch branch"
           return 1
         fi
       else
-        if git checkout $branchMergeInto &>/dev/null; then
-          git merge $branchToMerge &>/dev/null || branch_merge_interactive ||
+        if git checkout $intoBranch &>/dev/null; then
+          git merge $toMerge &>/dev/null || branch_merge_interactive ||
           {
             local conflicts=$(git diff)
-            io_error "while auto-merging $branchToMerge into $branchMergeInto."
+            io_error "while auto-merging $toMerge into $intoBranch."
             io_message >&2 "$(echo "$conflicts" | sed 's/^/  /')" '' Red
             io_message >&2 "  configure your mergetool and run 'git sync' again" '' LightCyan
-            io_message >&2 "  ... or merge $branchToMerge into $branchMergeInto using the following commands:" '' LightCyan
-            io_message >&2 "    git checkout $branchMergeInto" '' DarkGray
+            io_message >&2 "  ... or merge $toMerge into $intoBranch using the following commands:" '' LightCyan
+            io_message >&2 "    git checkout $intoBranch" '' DarkGray
             io_message >&2 "    git pull" '' DarkGray
             io_message >&2 "    <merge-tool>" '' Brown
             io_message >&2 "    git commit --no-edit" '' DarkGray
@@ -144,7 +143,7 @@ branch_merge()
           git checkout - &>/dev/null
           return $ec
         else
-          io_error "unable to checkout $branchMergeInto branch"
+          io_error "unable to checkout $intoBranch branch"
           return 1
         fi
       fi
