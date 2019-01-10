@@ -72,12 +72,12 @@ vtag_get_vbranch_tail()
 {
   # get the vbranch tail starting from commit1 and containing commit2
   # input:
-  # - $1: rev that points to the start of the tail (can be tagget with multiple vtags)
+  # - $1: rev that points to the start of the tail (can be tagged with multiple vtags)
   # - $2: vbranch marker (descendant of $1 that belongs to searched vbranch) 
   # output
   # - [0]: the vtag that starts the vbranch tail
   # - [1]: the vbranch that contains the given vbranch marker
-  # - [2]: a status indicating if the vbranch tail does not contain any vtag
+  # - [2]: a status (empty|full) indicating if the vbranch tail does not contain any vtag
   for vtag in $(vtag_vtags_at $1); do
     io_debug vtag vtag_get_vbranch_tail
     local vbranch=$(vtag_get_vbranch $vtag)
