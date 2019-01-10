@@ -9,7 +9,6 @@ ZOUL_GIT_BRANCH_CORE=true
 ZOU_FLOW_CONFIG='.zou-flow'
 
 branch_exists()         { git rev-parse --quiet --verify $1 >/dev/null; }
-branch_current()        { git rev-parse --abbrev-ref HEAD; }
 branch_upstream()       { git rev-parse --abbrev-ref $1@{upstream} 2>/dev/null; }
 branch_sync_info()      { git for-each-ref --format="%(refname:short) %(upstream:short) %(upstream:trackshort)" refs/heads "$@"; }
 branch_list_local()     { git for-each-ref --format='%(refname:short)' refs/heads; }
@@ -29,6 +28,11 @@ branch_is_head()
   hash2=$(git rev-parse $1^{} 2>/dev/null)
   [ $? -ne 0 ] && return 1
   [ $hash1 = $hash2 ]
+}
+branch_current()
+{
+  local c=$(git rev-parse --abbrev-ref HEAD)
+  [ $c == 'HEAD' ] && git rev-parse --short HEAD || echo $c
 }
 branch_current_root_branch()
 {
