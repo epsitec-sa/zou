@@ -11,19 +11,18 @@ print_row()
   # TODO: improve by computing the best width according to the longest string.
   # It needs to have two passes; the first one for computing, and the second
   # one for printing.
-  printf "_ %-40s _ %-20s _ %-20s _ %-20s _ %-20s _ %-20s _ %-20s _\n" "$@"
+  printf "_ %-40s _ %-20s _ %-20s _ %-20s _ %-20s _ %-20s _ %-20s _ %-20s _\n" "$@"
 }
 print_head()
 {
-  print_row Module Head Delta Version vminor vmajor vnext
-  print_row :$(pad 39) :$(pad 19) :$(pad 19) :$(pad 19) :$(pad 19) :$(pad 19) :$(pad 19)
+  print_row Module Head Hash Delta Version vminor vmajor vnext
+  print_row :$(pad 39) :$(pad 19) :$(pad 19) :$(pad 19) :$(pad 19) :$(pad 19) :$(pad 19) :$(pad 19)
 }
 row()
 {
-  local vminor
-  local vmajor
-  local module=$1
+  local vminor vmajor module=$1
   local head=$(git curbranch)
+  local hash=$(git rev-parse --short HEAD 2>/dev/null)
   local tag=$(git vcommit2tag | sed -E 's,(.*)-g[[:alnum:]]*$,\1,')
   if [[ $tag =~ (.*)-([0-9]+)$ ]]; then
     local version=${BASH_REMATCH[1]}
@@ -48,7 +47,7 @@ row()
   [[ $version == $vminor ]] && unset vminor || vminor="#$vminor#"
   [[ $version == $vmajor ]] && unset vmajor || vmajor="#$vmajor#"
   [[ $version == $vnext ]] && unset vnext || vnext="#$vnext#"
-  local module_content=$(print_row "$md_module" "$head" "$delta" "$md_version" "$vminor" "$vmajor" "$vnext")
+  local module_content=$(print_row "$md_module" "$head" "$hash" "$delta" "$md_version" "$vminor" "$vmajor" "$vnext")
   echo "$module:$module_content"
   IFS=$OIFS
 }
