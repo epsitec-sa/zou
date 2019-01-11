@@ -13,7 +13,7 @@ branch_push()
 {
   # l > r -- move r
   local r=$1 l=$2
-  git push ${r%%/*} $l &>/dev/null
+  git push --follow-tags ${r%%/*} $l &>/dev/null
 }
 branch_sync() { branch_merge "$@" && branch_push "$@"; }
 branch_visit_sync_info() 

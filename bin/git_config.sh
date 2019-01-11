@@ -19,6 +19,9 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+# https://stackoverflow.com/questions/5195859/how-do-you-push-a-tag-to-a-remote-repository-using-git
+git config --global push.followTags true
+
 # save credentials in ~/.git-credentials
 git config --global credential.helper store
 

@@ -20,6 +20,9 @@ if NOT '%1' == '' (
     goto :parse
 )
 
+:: https://stackoverflow.com/questions/5195859/how-do-you-push-a-tag-to-a-remote-repository-using-git
+git config --global push.followTags true
+
 :: save credentials on Windows
 git config --global credential.helper wincred
 
