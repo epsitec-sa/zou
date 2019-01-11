@@ -4,7 +4,19 @@
 #   [[ -z $ZOUL_VERSION ]] && . zoul-version
 ZOUL_VERSION=true
 
+version_parse()
+{
+  local version=${1#v*}
+  local varray=()
+  if [[ $version =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)(-[[:alnum:]]+)?(\+.+)?$ ]]; then
+    echo ${BASH_REMATCH[@]}
+  else
+    io_error "'$1' - bad version format"
+    return 1
+  fi
+}
 version_technical() { echo "${2}.${3}.${4}.$(date +%y%V)${5}${6}"; }
+version_technical_short() { echo "${2}.${3}.${4}.$(date +%y%V)"; }
 version_commit_files()
 {
   local techver=$1; shift
@@ -12,6 +24,27 @@ version_commit_files()
   git commit -m"zou-flow: update technical version to $techver"
 }
 
+# Update Version tag in AssemblyInfo.cs file
+#
+# Example:
+#   version_update_assembly_info_recursive v3.0.5-rc1
+#
+# AssemblyInfo.cs format:
+# [assembly: AssemblyVersion ("2.40.0.1849")]
+# [assembly: AssemblyFileVersion ("2.40.0.1849")]
+version_update_assembly_info_recursive()
+{
+  local techver=$1
+  local varray=( ${!2} )
+  local file=${3:-AssemblyInfo.cs}
+  local stechver=$(version_technical_short "${varray[@]}")
+  # find files not in submodules (find -type f -iname <file-name>[ -not -path './<sm-path>/*'] ...)
+  for file in $(git config --file .gitmodules --get-regexp path | cut -d' ' -f2 | sed "s,\(.*\),-not -path '\./\1/\*'," | xargs find -type f -iname "$file"); do
+    sed -i -E "s,(\[assembly: AssemblyVersion \(\").*(\"\)\]),\1$stechver\2," "$file"
+    sed -i -E "s,(\[assembly: AssemblyFileVersion \(\").*(\"\)\]),\1$stechver\2," "$file"
+    echo $(realpath "$file")
+  done
+}
 # Update Version tag in Version.props XML file
 #
 # Example:
@@ -23,25 +56,15 @@ version_commit_files()
 #       <Version>3.0.5</Version>
 #     </PropertyGroup>
 #   </Project>
-version_update_version_props_recursive()
-{
-  local techver=$(version_technical "$@")
-  local file='Version.props'
-  for file in $(find -type f -iname "$file"); do
-    sed -i -E "s,(<Version>).*(</Version>),\1$techver\2," "$file"
-    sed -i -E "s,(<AssemblyVersion>).*(</AssemblyVersion>),\1$techver\2," "$file"
-    echo $(realpath "$file")
-  done
-}
 version_update_version_props()
 {
-  local techver=$(version_technical "$@")
-  local file="$PWD/Version.props"
+  local techver=$1
+  local varray=( ${!2} )
+  local file="${3:-$PWD/Version.props}"
   if [[ -f $file ]]; then
     sed -i -E "s,(<Version>).*(</Version>),\1$techver\2," "$file"
     sed -i -E "s,(<AssemblyVersion>).*(</AssemblyVersion>),\1$techver\2," "$file"
     file=$(realpath "$file")
-    echo "$techver"
     echo "$file"
   else
     return 1
@@ -49,11 +72,11 @@ version_update_version_props()
 }
 version_update_custom()
 {
-  local updater="$PWD/update-version"
+  local techver=$1
+  local varray=( ${!2} )
+  local updater="${3:-$PWD/update-version}"
   if [[ -f "$updater" ]]; then
-    local techver=$(version_technical "$@")
-    echo "$techver"
-    "$updater" "$@"
+    "$updater" "${varray[@]}"
   else
     return 1
   fi
@@ -61,15 +84,14 @@ version_update_custom()
 
 version_update()
 {
-  local version=${1#v*}
   local varray=()
-  if [[ $version =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)(-[[:alnum:]]+)?(\+.+)?$ ]]; then
-    varray+=( ${BASH_REMATCH[@]} )
-  else
-    io_error "'$1' - bad version format"
-    return 1
-  fi
-
-  version_update_custom "${varray[@]}" || \
-  version_update_version_props "${varray[@]}"
+  varray+=( $(version_parse "$1") )
+  [ $? -eq 0 ] && {
+    local techver=$(version_technical "${varray[@]}")
+    echo "$techver"
+    version_update_custom $techver 'varray[@]' './update-version' || {
+      version_update_version_props $techver 'varray[@]' 'Version.props'
+      version_update_assembly_info_recursive $techver 'varray[@]' 'AssemblyInfo.cs'
+    }
+  }
 }
