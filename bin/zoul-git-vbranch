@@ -54,7 +54,7 @@ vbranch_next_vtag()
       io_debug status vbranch_next_vtag
 
       if [[ $status == 'full' ]]; then
-        io_warning "vbranch_next_vtag: unable to insert a new vtag between $stag and $vbranch"
+        io_warning "vbranch_next_vtag: unable to insert a new vtag between '$stag' tag and '$vbranch' branch tip"
         return 1
       fi
 
@@ -69,7 +69,7 @@ vbranch_next_vtag()
         if (( $? == 255 )); then
           echo $vnext
         else
-          io_warning "vbranch_next_vtag: unable to insert a new vtag between $stag and $utag"
+          io_warning "vbranch_next_vtag: unable to insert a new vtag between '$stag' and '$utag' tags"
           return 1
         fi
       else
