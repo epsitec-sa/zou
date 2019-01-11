@@ -19,14 +19,16 @@ branch_publish()
   vtag=$(vbranch_next_vtag $branch)
   [ $? -ne 0 ] && return 1
 
-  # set technical version - modify resources files
-  local files
-  files=( $(version_update $vtag) )
-  version_commit_files "$vtag" "${files[@]}"
-  # ff merge
-  branch_merge $branch $vbranch
+  # update technical version - modify resources files
+  local vinfo=( $(version_update $vtag) )
+  if (( ${#vinfo[@]} > 0 )); then
+    version_commit_files "${vinfo[@]}"
+    branch_merge $branch $vbranch
 
-  # create vtag
-  git tag -a -m "Branch '$branch' published" $vtag $branch
-  echo $vtag
+    # create vtag
+    local comment="branch '$branch' published as '${vinfo[0]}'"
+    git tag -a -m "zou-flow: $comment" $vtag $branch
+    io_info "$comment" 'zou-flow'
+    echo $vtag
+  fi
 }
