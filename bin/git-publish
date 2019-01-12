@@ -6,11 +6,11 @@ args=()
 while [[ "$#" > 0 ]]; do case "$1" in
   --) shift; args+=("$@"); break;;
   -h|--help) zou-help $0; exit 0;;
-  -l|--local) local=true;;
+  --push) push=true;;
   -*) echo "unknown option: $1" >&2; exit 1;;
   *) args+=("$1");;
 esac; shift; done
 
 vtag=$(branch_publish "${args[@]}")
 
-[[ -n $vtag && $local != true ]] && git push $(git remote) "$vtag"
+[[ -n $vtag && $push == true ]] && git push $(git remote) "$vtag"
