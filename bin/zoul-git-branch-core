@@ -88,8 +88,13 @@ branch_list_all_flatten()
 }
 
 branch_without_remote_prefix() { branch_is_remote $1 && echo ${1#*/} || echo $1; }
-branch_checkout() { [[ -n $1 ]] && git checkout "$(branch_without_remote_prefix $1)" >/dev/null; }
 
+branch_checkout()
+{
+  if [[ -n $1 && $1 != $(branch_current) ]]; then
+    git checkout "$(branch_without_remote_prefix $1)" >/dev/null
+  fi
+}
 branch_list_attach_candidates()
 {
   if ! branch_is_attached; then
