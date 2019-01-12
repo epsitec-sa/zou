@@ -6,8 +6,8 @@ newtag_opts=()
 args=()
 while [[ "$#" > 0 ]]; do case "$1" in
   -h|--help) zou-help $0; exit 0;;
-  --debug)  newtag_opts+=($1); debug=true;;
-  --local)  newtag_opts+=($1); local=true;;
+  --debug) newtag_opts+=($1); debug=true;;
+  --push)  newtag_opts+=($1); push=true;;
   -c¦--checkout) checkout=true; shift;;
   -m|--message) newtag_opts+=($1 "$2"); shift;;
   -*) io_error "unknown option: $1"; exit 1;;
@@ -24,7 +24,7 @@ if [[ $branch =~ ^[0-9]+\.[0-9]+$ ]]; then
   git branch "${args[@]}"
   # create vnode
   git newtag "${newtag_opts[@]}" "v$branch-@" "$commit"
-  [[ $local == true ]] || git push -u $(git remote) "$branch"
+  [[ $push == true ]] || git push -u $(git remote) "$branch"
   [[ $checkout == true ]] && git checkout "$branch" >/dev/null
 else
   io_error "vbranch wrong format: ${branch@Q}"
