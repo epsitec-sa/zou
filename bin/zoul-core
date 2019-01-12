@@ -145,19 +145,39 @@ regex_escape() { echo "${1//./\\.}"; }
 
 array_remove_array()
 {
-  # https://stackoverflow.com/questions/1063347/passing-arrays-as-parameters-in-bash
-  # example:
-  #   $ list_remove array[@] remove[@]
-  # array are passed by names: ${!1} is an indirection
-  local array=( "${!1}" )
-  local remove=( "${!2}" )
+  # usage:
+  #   if there is spaces in array elements:
+  #     mapfile -t result <<< "$(array_remove_array array[@] remove[@])"
+  #   else
+  #     result=( $(array_remove_array array[@] remove[@]) )
+  # note:
+  #   array are passed by names: ${!1} is an indirection
+  local array=( "${!1}" ) remove=( "${!2}" ) i r
   for i in ${!array[@]}; do
-    for r in ${remove[@]}; do
+    for r in "${remove[@]}"; do
       if [[ "${array[i]}" == "$r" ]]; then
         unset 'array[i]'
         break
       fi
     done
+  done
+  printf '%s\n' "${array[@]}"
+}
+array_remove_element()
+{
+  # usage:
+  #   if there is spaces in array elements:
+  #     mapfile -t result <<< "$(array_remove_element array[@] "$element")"
+  #   else
+  #     result=( $(array_remove_element array[@] "$element") )
+  # note:
+  #   array are passed by names: ${!1} is an indirection
+  local array=( "${!1}" ) i
+  for i in ${!array[@]}; do
+    if [[ "${array[i]}" == "$2" ]]; then
+      unset 'array[i]'
+      break
+    fi
   done
   printf '%s\n' "${array[@]}"
 }
