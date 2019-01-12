@@ -20,10 +20,32 @@ version_technical_short() { echo "${2}.${3}.${4}.$(date +%y%V)"; }
 version_commit_files()
 {
   local techver=$1; shift
-  git add "$@"
-  git commit -m"zou-flow: update technical version to $techver"
+  [ $# -ne 0 ] && {
+    git add "$@"
+    git commit -m"zou-flow: update technical version to $techver"
+  }
 }
 
+# Update Version tags in *.csproj file
+#
+# Example:
+#   version_update_csproj_recursive v3.0.5-rc1
+#
+# *.csproj format:
+# <ApplicationVersion>2.38.2.1844</ApplicationVersion>
+version_update_csproj_recursive()
+{
+  local techver=$1
+  local varray=( ${!2} )
+  local file=${3:-*.csproj}
+  local stechver=$(version_technical_short "${varray[@]}")
+  # find files not in submodules (find -type f -iname <file-name>[ -not -path './<sm-path>/*'] ...)
+  for file in $(git config --file .gitmodules --get-regexp path | cut -d' ' -f2 | sed "s,\(.*\),-not -path '\./\1/\*'," | xargs find -type f -iname "$file"); do
+    sed -i -E "0,/<ProductVersion>/{s,(<ProductVersion>).*(</ProductVersion>),\1$stechver\2,}" "$file"
+    sed -i -E "0,/<ApplicationVersion>/{s,(<ApplicationVersion>).*(</ApplicationVersion>),\1$stechver\2,}" "$file"
+    echo $(realpath "$file")
+  done
+}
 # Update Version tag in AssemblyInfo.cs file
 #
 # Example:
@@ -36,7 +58,7 @@ version_update_assembly_info_recursive()
 {
   local techver=$1
   local varray=( ${!2} )
-  local file=${3:-AssemblyInfo.cs}
+  local file=${3:-AssemblyInfo*.cs}
   local stechver=$(version_technical_short "${varray[@]}")
   # find files not in submodules (find -type f -iname <file-name>[ -not -path './<sm-path>/*'] ...)
   for file in $(git config --file .gitmodules --get-regexp path | cut -d' ' -f2 | sed "s,\(.*\),-not -path '\./\1/\*'," | xargs find -type f -iname "$file"); do
@@ -91,7 +113,8 @@ version_update()
     echo "$techver"
     version_update_custom $techver 'varray[@]' './update-version' || {
       version_update_version_props $techver 'varray[@]' 'Version.props'
-      version_update_assembly_info_recursive $techver 'varray[@]' 'AssemblyInfo.cs'
+      version_update_assembly_info_recursive $techver 'varray[@]' 'AssemblyInfo*.cs'
+      version_update_csproj_recursive $techver 'varray[@]' '*.csproj'
     }
   }
 }
