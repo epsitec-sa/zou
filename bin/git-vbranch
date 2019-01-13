@@ -24,7 +24,7 @@ if [[ $branch =~ ^[0-9]+\.[0-9]+$ ]]; then
   git branch "${args[@]}"
   # create vnode
   git newtag "${newtag_opts[@]}" "v$branch-@" "$commit"
-  [[ $push == true ]] || git push -u $(git remote) "$branch"
+  [[ $push == true ]] && git push -u $(git remote) "$branch"
   [[ $checkout == true ]] && git checkout "$branch" >/dev/null
 else
   io_error "vbranch wrong format: ${branch@Q}"
