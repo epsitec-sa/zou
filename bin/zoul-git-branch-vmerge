@@ -50,7 +50,11 @@ branch_vmerge()
     io_warning "vmerge is disabled for $branch"
   else
     local vbranch=$(branch_get_vbranch_name $branch)
-    branch_merge $branch $vbranch
-    echo $vbranch
+    if [[ -z $vbranch ]]; then
+      return 1
+    else
+      branch_merge $branch $vbranch
+      echo $vbranch
+    fi
   fi
 }
