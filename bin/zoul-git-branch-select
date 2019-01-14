@@ -64,12 +64,12 @@ csm_enable()
     csm_set_default 'enabled'
     git config --file "$ZOU_FLOW_CONFIG" --unset-all "select.disabled" &>/dev/null
   else
-    branchLabel="'$branch' only"
+    branchLabel="branch '$branch'"
     csm_set_default 'disabled'
     git config --file "$ZOU_FLOW_CONFIG" --add 'select.enabled' "$branch" &>/dev/null
   fi
   git update-index --add -- "$ZOU_FLOW_CONFIG" &>/dev/null && \
-  git commit -m "zou-flow: enable select for $branchLabel" -- "$ZOU_FLOW_CONFIG" &>/dev/null
+  git commit -m "zou-flow: enable children select on $branchLabel" -- "$ZOU_FLOW_CONFIG" &>/dev/null
   set +f
 }
 # csm_disable '*'
