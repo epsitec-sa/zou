@@ -4,6 +4,7 @@
 #   [[ -z $ZOUL_GIT_BRANCH_VMERGE ]] && . zoul-git-branch-vmerge
 ZOUL_GIT_BRANCH_VMERGE=true
 
+[[ -z $ZOUL_GIT_REPO ]]         && . zoul-git-repo
 [[ -z $ZOUL_GIT_VBRANCH ]]      && . zoul-git-vbranch
 [[ -z $ZOUL_GIT_BRANCH_MERGE ]] && . zoul-git-branch-merge
 
@@ -47,11 +48,13 @@ branch_vmerge()
 {
   local branch=${1:-HEAD}
   if branch_is_vmerge_disabled $branch; then
-    io_warning "vmerge is disabled for $branch"
+    io_warning "publish is disabled for branch '$branch'" "[$(repo_module_id)] $zou_command"
+    return 1
   else
     local vbranch=$(branch_get_vbranch_name $branch)
     if [[ -z $vbranch ]]; then
-      return 1
+      io_warning "'$branch' is not associated with a vbranch" "[$(repo_module_id)] $zou_command"
+      return 2
     else
       branch_merge $branch $vbranch
       echo $vbranch

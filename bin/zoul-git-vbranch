@@ -4,6 +4,7 @@
 #   [[ -z $ZOUL_GIT_VBRANCH ]] && . zoul-git-vbranch
 ZOUL_GIT_VBRANCH=true
 
+[[ -z $ZOUL_GIT_REPO ]] && . zoul-git-repo
 [[ -z $ZOUL_GIT_VTAG ]] && . zoul-git-vtag
 
 vbranch_without_prefix() { [[ $1 =~ ^(.*/)?([0-9]+\.[0-9]+)$ ]] && echo "${BASH_REMATCH[2]}"; }
@@ -23,7 +24,7 @@ vbranch_next_vtag()
   io_debug ltag vbranch_next_vtag
 
   if [[ -z $ltag ]]; then
-    io_error "vbranch_next_vtag: $rev has no vtag ancestor"
+    io_error "vbranch_next_vtag: $rev has no vtag ancestor" "[$(repo_module_id)] $zou_command"
     return 1
   else
     local stag=${ltag%-*-g*}
@@ -36,8 +37,8 @@ vbranch_next_vtag()
     local vrange=$(vtag_get_vbranch_tail $stag $rev)
     if [[ -z $vrange ]]; then
       local revs=$(echo $rev $(vtag_vtags_at $rev) | xargs -n 1 git rev-parse --abbrev-ref)
-      io_error "vbranch_next_vtag: unable to associate $(string_join ' or ' $revs) with a vbranch"
-      return 1
+      io_error "vbranch_next_vtag: unable to associate $(string_join ' or ' $revs) with a vbranch" "[$(repo_module_id)] $zou_command"
+      return 2
     else
       io_debug vrange vbranch_next_vtag
 
@@ -54,8 +55,8 @@ vbranch_next_vtag()
       io_debug status vbranch_next_vtag
 
       if [[ $status == 'full' ]]; then
-        io_warning "vbranch_next_vtag: unable to insert a new vtag between '$stag' tag and '$vbranch' branch tip"
-        return 1
+        io_info "'$rev' already published at '$stag'" "[$(repo_module_id)] $zou_command"
+        return 3
       fi
 
       # get range upper limit
@@ -69,8 +70,8 @@ vbranch_next_vtag()
         if (( $? == 255 )); then
           echo $vnext
         else
-          io_warning "vbranch_next_vtag: unable to insert a new vtag between '$stag' and '$utag' tags"
-          return 1
+         io_warning "cannot publish '$rev' between '$stag' and '$utag'" "[$(repo_module_id)] $zou_command"
+          return 4
         fi
       else
         # no upper limit: compute vnext
