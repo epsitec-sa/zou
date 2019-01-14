@@ -82,17 +82,17 @@ repo_module_and_bundle_dirs()
 {
   local dir=$(realpath ${1:-.}) mdir bdir
   while [[ -n "$dir" ]]; do
-    if [[ -f "$dir/.git" ]]; then
+    if [[ -z "$mdir" && -f "$dir/.git" ]]; then
       mdir=$dir
-      echo $mdir
+      echo "$mdir"
     fi
     if [[ -d "$dir/.git" ]]; then
-      if [[ -z $mdir ]]; then
+      if [[ -z "$mdir" ]]; then
         mdir=$dir
-        echo $mdir
+        echo "$mdir"
       fi
       bdir=$dir
-      echo $bdir
+      echo "$bdir"
       return 0
     fi
     dir=${dir%/*}
