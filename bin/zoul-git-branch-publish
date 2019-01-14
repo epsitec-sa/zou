@@ -4,31 +4,32 @@
 #   [[ -z $ZOUL_GIT_BRANCH_PUBLISH ]] && . zoul-git-branch-publish
 ZOUL_GIT_BRANCH_PUBLISH=true
 
+[[ -z $ZOUL_GIT_REPO ]]          && . zoul-git-repo
 [[ -z $ZOUL_GIT_BRANCH_VMERGE ]] && . zoul-git-branch-vmerge
 [[ -z $ZOUL_VERSION ]]           && . zoul-version
 
 branch_publish()
 {
-  local branch=$1 vbranch
+  local branch=$1 prerelPrefix=$2 vbranch
   [[ -z $branch ]] && branch=$(branch_current)
   vbranch=$(branch_vmerge "$branch")
   [ $? -ne 0 ] && return 1
 
   # compute next vtag
   local vtag
-  vtag=$(vbranch_next_vtag $branch)
-  [ $? -ne 0 ] && return 1
+  vtag=$(vbranch_next_vtag $branch $prerelPrefix)
+  [ $? -ne 0 ] && return 2
 
   # update technical version - modify resources files
   local vinfo=( $(version_update $vtag) )
   if (( ${#vinfo[@]} > 0 )); then
-    version_commit_files "${vinfo[@]}"
+    version_commit_files "${vinfo[@]}" $(repo_list_unstaged_submodules)
     branch_merge $branch $vbranch
 
     # create vtag
     local comment="branch '$branch' published as '${vinfo[0]}'"
     git tag -a -m "zou-flow: $comment" $vtag $branch
-    io_info "$comment" 'zou-flow'
+    io_info "$comment" "[$(repo_module_id)] $zou_command"
     echo $vtag
   fi
 }

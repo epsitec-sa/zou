@@ -5,22 +5,27 @@
 forOpts=()
 cmdOpts=()
 while [[ "$#" > 0 ]]; do case "$1" in
-  --) shift; args+=("$@"); break;;
   -h|--help) zou-help $0; exit 0;;
   -0|--level0) level0=true;;
   -q|--quiet) quiet=true; forOpts+=($1);;
   -e|--stop-on-error) forOpts+=($1);;
-  --push) cmdOpts+=($1); push=true;;
+  -r|--recursive) cmdOpts+=($1); recursive=true;;
+  --push)  cmdOpts+=($1); push=true;;
+  --alpha) cmdOpts+=($1); prerelPrefix='alpha';;
+  --beta)  cmdOpts+=($1); prerelPrefix='beta';;
+  --rc)    cmdOpts+=($1); prerelPrefix='rc';;
+  --rtm)   cmdOpts+=($1); prerelPrefix='rtm';;
   -*) echo "unknown option: $1" >&2; exit 1;;
 esac; shift; done
 
+cmdOpts+=( "${forOpts[@]}" )
+
 if [[ $level0 == true ]]; then
-  vtag=$(branch_publish)
+  [[ $recursive == true ]] && git for -s ${forOpts[@]} -- git publish -0 ${cmdOpts[@]}
+  branch=$(branch_current)
+  vtag=$(branch_publish $branch $prerelPrefix)
+  # [ $? -ne 0 ] && repo_commit_submodules
   [[ -n $vtag && $push == true ]] && git push $(git remote) "$vtag"
-  if [ $? -eq 0 ]; then
-    git for -s ${forOpts[@]} git publish -0 ${cmdOpts[@]}
-    repo_commit_submodules
-  fi
 else
   [[ -z $quiet ]] && echo Entering "'$(repo_module_relative_to_path "$PWD")'"
   git publish -0 ${cmdOpts[@]}
