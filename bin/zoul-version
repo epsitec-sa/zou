@@ -21,8 +21,8 @@ version_commit_files()
 {
   local techver=$1; shift
   [ $# -ne 0 ] && {
-    git add "$@"
-    git commit -m"zou-flow: update technical version to $techver"
+    # git add "$@"
+    git commit -m"zou-flow: update technical version to $techver" -- "$@" >/dev/null
   }
 }
 
@@ -62,8 +62,8 @@ version_update_assembly_info_recursive()
   local stechver=$(version_technical_short "${varray[@]}")
   # find files not in submodules (find -type f -iname <file-name>[ -not -path './<sm-path>/*'] ...)
   for file in $(git config --file .gitmodules --get-regexp path | cut -d' ' -f2 | sed "s,\(.*\),-not -path '\./\1/\*'," | xargs find -type f -iname "$file"); do
-    sed -i -E "s,(\[assembly: AssemblyVersion \(\").*(\"\)\]),\1$stechver\2," "$file"
-    sed -i -E "s,(\[assembly: AssemblyFileVersion \(\").*(\"\)\]),\1$stechver\2," "$file"
+    sed -i -E "s,^(\[assembly:[[:space:]]*AssemblyVersion[[:space:]]*\(\").*(\"\)\]),\1$stechver\2," "$file"
+    sed -i -E "s,^(\[assembly:[[:space:]]*AssemblyFileVersion[[:space:]]*\(\").*(\"\)\]),\1$stechver\2," "$file"
     echo $(realpath "$file")
   done
 }
