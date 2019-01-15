@@ -4,6 +4,10 @@
 #   [[ -z $ZOUL_VERSION ]] && . zoul-version
 ZOUL_VERSION=true
 
+[[ -z $ZOUL_CORE ]] && . zoul-core
+
+ZOU_FLOW_CONFIG='.zou-flow'
+
 version_parse()
 {
   local version=${1#v*}
@@ -33,18 +37,13 @@ version_commit_files()
 #
 # *.csproj format:
 # <ApplicationVersion>2.38.2.1844</ApplicationVersion>
-version_update_csproj_recursive()
+version_update_csproj()
 {
-  local techver=$1
-  local varray=( ${!2} )
-  local file=${3:-*.csproj}
-  local stechver=$(version_technical_short "${varray[@]}")
-  # find files not in submodules (find -type f -iname <file-name>[ -not -path './<sm-path>/*'] ...)
-  for file in $(git config --file .gitmodules --get-regexp path | cut -d' ' -f2 | sed "s,\(.*\),-not -path '\./\1/\*'," | xargs find -type f -iname "$file"); do
-    sed -i -E "0,/<ProductVersion>/{s,(<ProductVersion>).*(</ProductVersion>),\1$stechver\2,}" "$file"
-    sed -i -E "0,/<ApplicationVersion>/{s,(<ApplicationVersion>).*(</ApplicationVersion>),\1$stechver\2,}" "$file"
-    echo $(realpath "$file")
-  done
+  local file=$1; shift
+  local techver=$1; shift
+  local stechver=$1; shift
+  sed -i -E "0,/<ProductVersion>/{s,(<ProductVersion>).*(</ProductVersion>),\1$stechver\2,}" "$file"
+  sed -i -E "0,/<ApplicationVersion>/{s,(<ApplicationVersion>).*(</ApplicationVersion>),\1$stechver\2,}" "$file"
 }
 # Update Version tag in AssemblyInfo.cs file
 #
@@ -54,18 +53,13 @@ version_update_csproj_recursive()
 # AssemblyInfo.cs format:
 # [assembly: AssemblyVersion ("2.40.0.1849")]
 # [assembly: AssemblyFileVersion ("2.40.0.1849")]
-version_update_assembly_info_recursive()
+version_update_assembly_info()
 {
-  local techver=$1
-  local varray=( ${!2} )
-  local file=${3:-AssemblyInfo*.cs}
-  local stechver=$(version_technical_short "${varray[@]}")
-  # find files not in submodules (find -type f -iname <file-name>[ -not -path './<sm-path>/*'] ...)
-  for file in $(git config --file .gitmodules --get-regexp path | cut -d' ' -f2 | sed "s,\(.*\),-not -path '\./\1/\*'," | xargs find -type f -iname "$file"); do
-    sed -i -E "s,^(\[assembly:[[:space:]]*AssemblyVersion[[:space:]]*\(\").*(\"\)\]),\1$stechver\2," "$file"
-    sed -i -E "s,^(\[assembly:[[:space:]]*AssemblyFileVersion[[:space:]]*\(\").*(\"\)\]),\1$stechver\2," "$file"
-    echo $(realpath "$file")
-  done
+  local file=$1; shift
+  local techver=$1; shift
+  local stechver=$1; shift
+  sed -i -E "s,^(\[assembly:[[:space:]]*AssemblyVersion[[:space:]]*\(\").*(\"\)\]),\1$stechver\2," "$file"
+  sed -i -E "s,^(\[assembly:[[:space:]]*AssemblyFileVersion[[:space:]]*\(\").*(\"\)\]),\1$stechver\2," "$file"
 }
 # Update Version tag in Version.props XML file
 #
@@ -80,17 +74,11 @@ version_update_assembly_info_recursive()
 #   </Project>
 version_update_version_props()
 {
-  local techver=$1
-  local varray=( ${!2} )
-  local file="${3:-$PWD/Version.props}"
-  if [[ -f $file ]]; then
-    sed -i -E "s,(<Version>).*(</Version>),\1$techver\2," "$file"
-    sed -i -E "s,(<AssemblyVersion>).*(</AssemblyVersion>),\1$techver\2," "$file"
-    file=$(realpath "$file")
-    echo "$file"
-  else
-    return 1
-  fi
+  local file=$1; shift
+  local techver=$1; shift
+  local stechver=$1; shift
+  sed -i -E "s,(<Version>).*(</Version>),\1$techver\2," "$file"
+  sed -i -E "s,(<AssemblyVersion>).*(</AssemblyVersion>),\1$techver\2," "$file"
 }
 version_update_custom()
 {
@@ -104,17 +92,97 @@ version_update_custom()
   fi
 }
 
+version_list_file_spec()
+{
+  git config --file "$ZOU_FLOW_CONFIG" --get-all update-version.$1
+}
+version_add_file_spec()
+{
+  local file key=$1 specs=$(version_list_file_spec $1); shift
+  for file in "$@"; do
+    if ! array_contains_element "$file" $specs; then
+      git config --file "$ZOU_FLOW_CONFIG" --add update-version.$key $file
+    fi
+  done
+  git update-index --add -- "$ZOU_FLOW_CONFIG" &>/dev/null && \
+  git commit -m "zou-flow: register '$@' for version update" -- "$ZOU_FLOW_CONFIG" &>/dev/null
+}
+version_remove_file_spec()
+{
+  local file key=$1; shift
+  for file in "$@"; do
+    git config --file "$ZOU_FLOW_CONFIG" --unset update-version.$key $file
+  done
+  git commit -m "zou-flow: unregister '$@' from version update" -- "$ZOU_FLOW_CONFIG" &>/dev/null
+}
+
+version_default_version_props() { echo './Version.props'; }
+version_default_assembly_info() { echo '*/AssemblyInfo*.cs'; }
+version_default_csproj()        { echo '*/*.csproj'; }
+
+version_list_version_props() { version_list_file_spec 'version-props'; }
+version_list_assembly_info() { version_list_file_spec 'assembly-info'; }
+version_list_csproj()        { version_list_file_spec 'csproj'; }
+
+version_add_version_props() { version_add_file_spec 'version-props' "$@"; }
+version_add_assembly_info() { version_add_file_spec 'assembly-info' "$@"; }
+version_add_csproj()        { version_add_file_spec 'csproj' "$@"; }
+
+version_remove_version_props() { version_remove_file_spec 'version-props' "$@"; }
+version_remove_assembly_info() { version_remove_file_spec 'assembly-info' "$@"; }
+version_remove_csproj()        { version_remove_file_spec 'csproj' "$@"; }
+
+version_update_file_spec()
+{
+  local specs=$($1); shift
+  local func=$1; shift
+  local techver=$1; shift
+  local stechver=$1; shift
+  local fileSpec file hasSpec
+  for fileSpec in $specs; do
+    hasSpec=1
+    # echo find -type f -ipath "$fileSpec" "$@"
+    for file in $(find -type f -ipath "$fileSpec" "$@"); do
+      # echo "version_update_$func" "$file" "$techver" "$stechver"
+      "version_update_$func" "$file" "$techver" "$stechver"
+      realpath "$file"
+    done
+  done
+  return $hasSpec
+}
+version_update_config()
+{
+  local func=$1; shift
+  version_update_file_spec "version_list_$func" "$func" "$@"
+}
+version_update_default()
+{
+  local func=$1; shift
+  version_update_file_spec "version_default_$func" "$func" "$@"
+}
+
 version_update()
 {
+  set -f
   local varray=()
   varray+=( $(version_parse "$1") )
   [ $? -eq 0 ] && {
     local techver=$(version_technical "${varray[@]}")
     echo "$techver"
-    version_update_custom $techver 'varray[@]' './update-version' || {
-      version_update_version_props $techver 'varray[@]' 'Version.props'
-      version_update_assembly_info_recursive $techver 'varray[@]' 'AssemblyInfo*.cs'
-      version_update_csproj_recursive $techver 'varray[@]' '*.csproj'
-    }
+    if ! version_update_custom $techver 'varray[@]' './update-version'; then
+      local stechver=$(version_technical_short "${varray[@]}") hasSpec=0 
+      # exclude submodules from find file (-not -path './<sm-path>/*'] ...)
+      local findNotPaths=$(git config --file .gitmodules --get-regexp path | cut -d' ' -f2 | sed "s,\(.*\),-not -path \./\1/\*,")
+      version_update_config 'version_props' $techver $stechver $findNotPaths; [ $? -ne 0 ] && hasSpec=1
+      version_update_config 'assembly_info' $techver $stechver $findNotPaths; [ $? -ne 0 ] && hasSpec=1
+      version_update_config 'csproj'        $techver $stechver $findNotPaths; [ $? -ne 0 ] && hasSpec=1
+      # if no spec in .zou-flow update default files.
+      [ $hasSpec -eq 0 ] && {
+        version_update_default 'version_props' $techver $stechver $findNotPaths
+        version_update_default 'assembly_info' $techver $stechver $findNotPaths
+        version_update_default 'csproj'        $techver $stechver $findNotPaths
+      }
+    fi
   }
+  set +f
 }
