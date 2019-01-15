@@ -49,7 +49,8 @@ branch_merge_ff() {
 branch_merge_in_memory()
 {
   local toMerge=$1 intoBranch=$2 mbase
-  mbase=$(git merge-base $toMerge $intoBranch)
+  mbase=$(git merge-base $toMerge $intoBranch 2>/dev/null)
+  [ $? -ne 0 ] && return 1
   git merge-tree $mbase $intoBranch $toMerge
 }
 branch_merge_dry_run()
