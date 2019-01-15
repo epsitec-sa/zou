@@ -1,7 +1,11 @@
 #!/bin/bash
 
 . zoul-version
+. test-git-repo-data
 
+cd "$sat1Dir/sm1"
+
+set -f
 versionProps=()
 assemblyInfo=()
 csProj=()
@@ -9,14 +13,16 @@ action='add'
 while [[ "$#" > 0 ]]; do case "$1" in
   --) shift; args+=("$@"); break;;
   -h|--help) zou-help $0; exit 0;;
-  --version-props) versionProps+=("$2"); shift;;
-  --assembly-info) assemblyInfo+=("$2"); shift;;
-  --csproj) csProj+=("$2"); shift;;
-  --remove) action='remove';;
+  --version-props=*) versionProps+=("${1#*=}");;
+  --assembly-info=*) assemblyInfo+=("${1#*=}");;
+  --csproj=*)        csProj+=("${1#*=}");;
+  --version-props)   versionProps+=('./Version.props');;
+  --assembly-info)   assemblyInfo+=('*/AssemblyInfo*.cs');;
+  --csproj)          csProj+=('*/*.csproj');;
+  --remove)          action='remove';;
   -*) echo "unknown option: $1" >&2; exit 1;;
 esac; shift; done
 
-set -f
 if [ ${#versionProps[@]} -ne 0 ]; then
   version_${action}_version_props "${versionProps[@]}"
 fi
