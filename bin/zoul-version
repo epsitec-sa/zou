@@ -105,20 +105,17 @@ version_add_file_spec()
     fi
   done
   git update-index --add -- "$ZOU_FLOW_CONFIG" &>/dev/null && \
-  git commit -m "zou-flow: register '$@' for version update" -- "$ZOU_FLOW_CONFIG" &>/dev/null
+  git commit -m "zou-flow: register '$@' for technical version update" -- "$ZOU_FLOW_CONFIG" &>/dev/null
 }
 version_remove_file_spec()
 {
-  local file key=$1; shift
-  for file in "$@"; do
-    git config --file "$ZOU_FLOW_CONFIG" --unset update-version.$key $file
-  done
-  git commit -m "zou-flow: unregister '$@' from version update" -- "$ZOU_FLOW_CONFIG" &>/dev/null
+  git config --file "$ZOU_FLOW_CONFIG" --unset update-version.$1 && \
+  git commit -m "zou-flow: unregister '$@' from technical version update" -- "$ZOU_FLOW_CONFIG" &>/dev/null
 }
 
-version_default_version_props() { echo './Version.props'; }
-version_default_assembly_info() { echo '*/AssemblyInfo*.cs'; }
-version_default_csproj()        { echo '*/*.csproj'; }
+# version_default_version_props() { echo './Version.props'; }
+# version_default_assembly_info() { echo '*/AssemblyInfo*.cs'; }
+# version_default_csproj()        { echo '*/*.csproj'; }
 
 version_list_version_props() { version_list_file_spec 'version-props'; }
 version_list_assembly_info() { version_list_file_spec 'assembly-info'; }
@@ -155,11 +152,11 @@ version_update_config()
   local func=$1; shift
   version_update_file_spec "version_list_$func" "$func" "$@"
 }
-version_update_default()
-{
-  local func=$1; shift
-  version_update_file_spec "version_default_$func" "$func" "$@"
-}
+# version_update_default()
+# {
+#   local func=$1; shift
+#   version_update_file_spec "version_default_$func" "$func" "$@"
+# }
 
 version_update()
 {
@@ -169,19 +166,19 @@ version_update()
   [ $? -eq 0 ] && {
     local techver=$(version_technical "${varray[@]}")
     echo "$techver"
-    if ! version_update_custom $techver 'varray[@]' './update-version'; then
+    if ! version_update_custom $techver 'varray[@]' './update-version' && [[ -f "$ZOU_FLOW_CONFIG" ]]; then
       local stechver=$(version_technical_short "${varray[@]}") hasSpec=0 
       # exclude submodules from find file (-not -path './<sm-path>/*'] ...)
       local findNotPaths=$(git config --file .gitmodules --get-regexp path | cut -d' ' -f2 | sed "s,\(.*\),-not -path \./\1/\*,")
       version_update_config 'version_props' $techver $stechver $findNotPaths; [ $? -ne 0 ] && hasSpec=1
       version_update_config 'assembly_info' $techver $stechver $findNotPaths; [ $? -ne 0 ] && hasSpec=1
       version_update_config 'csproj'        $techver $stechver $findNotPaths; [ $? -ne 0 ] && hasSpec=1
-      # if no spec in .zou-flow update default files.
-      [ $hasSpec -eq 0 ] && {
-        version_update_default 'version_props' $techver $stechver $findNotPaths
-        version_update_default 'assembly_info' $techver $stechver $findNotPaths
-        version_update_default 'csproj'        $techver $stechver $findNotPaths
-      }
+      # # if no spec in .zou-flow update default files.
+      # [ $hasSpec -eq 0 ] && {
+      #   version_update_default 'version_props' $techver $stechver $findNotPaths
+      #   version_update_default 'assembly_info' $techver $stechver $findNotPaths
+      #   version_update_default 'csproj'        $techver $stechver $findNotPaths
+      # }
     fi
   }
   set +f
