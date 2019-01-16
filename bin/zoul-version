@@ -113,10 +113,6 @@ version_remove_file_spec()
   git commit -m "zou-flow: unregister '$@' from technical version update" -- "$ZOU_FLOW_CONFIG" &>/dev/null
 }
 
-# version_default_version_props() { echo './Version.props'; }
-# version_default_assembly_info() { echo '*/AssemblyInfo*.cs'; }
-# version_default_csproj()        { echo '*/*.csproj'; }
-
 version_list_version_props() { version_list_file_spec 'version-props'; }
 version_list_assembly_info() { version_list_file_spec 'assembly-info'; }
 version_list_csproj()        { version_list_file_spec 'csproj'; }
@@ -138,9 +134,7 @@ version_update_file_spec()
   local fileSpec file hasSpec
   for fileSpec in $specs; do
     hasSpec=1
-    # echo find -type f -ipath "$fileSpec" "$@"
     for file in $(find -type f -ipath "$fileSpec" "$@"); do
-      # echo "version_update_$func" "$file" "$techver" "$stechver"
       "version_update_$func" "$file" "$techver" "$stechver"
       realpath "$file"
     done
@@ -152,11 +146,6 @@ version_update_config()
   local func=$1; shift
   version_update_file_spec "version_list_$func" "$func" "$@"
 }
-# version_update_default()
-# {
-#   local func=$1; shift
-#   version_update_file_spec "version_default_$func" "$func" "$@"
-# }
 
 version_update()
 {
@@ -167,18 +156,12 @@ version_update()
     local techver=$(version_technical "${varray[@]}")
     echo "$techver"
     if ! version_update_custom $techver 'varray[@]' './update-version' && [[ -f "$ZOU_FLOW_CONFIG" ]]; then
-      local stechver=$(version_technical_short "${varray[@]}") hasSpec=0 
+      local stechver=$(version_technical_short "${varray[@]}")
       # exclude submodules from find file (-not -path './<sm-path>/*'] ...)
       local findNotPaths=$(git config --file .gitmodules --get-regexp path | cut -d' ' -f2 | sed "s,\(.*\),-not -path \./\1/\*,")
-      version_update_config 'version_props' $techver $stechver $findNotPaths; [ $? -ne 0 ] && hasSpec=1
-      version_update_config 'assembly_info' $techver $stechver $findNotPaths; [ $? -ne 0 ] && hasSpec=1
-      version_update_config 'csproj'        $techver $stechver $findNotPaths; [ $? -ne 0 ] && hasSpec=1
-      # # if no spec in .zou-flow update default files.
-      # [ $hasSpec -eq 0 ] && {
-      #   version_update_default 'version_props' $techver $stechver $findNotPaths
-      #   version_update_default 'assembly_info' $techver $stechver $findNotPaths
-      #   version_update_default 'csproj'        $techver $stechver $findNotPaths
-      # }
+      version_update_config 'version_props' $techver $stechver $findNotPaths
+      version_update_config 'assembly_info' $techver $stechver $findNotPaths
+      version_update_config 'csproj'        $techver $stechver $findNotPaths
     fi
   }
   set +f
