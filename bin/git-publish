@@ -24,7 +24,6 @@ if [[ $level0 == true ]]; then
   [[ $recursive == true ]] && git for -s ${forOpts[@]} -- git publish -0 ${cmdOpts[@]}
   branch=$(branch_current)
   vtag=$(branch_publish $branch $prerelPrefix)
-  # [ $? -ne 0 ] && repo_commit_submodules
   [[ -n $vtag && $push == true ]] && git push $(git remote) "$vtag"
 else
   [[ -z $quiet ]] && echo Entering "'$(repo_module_relative_to_path "$PWD")'"
