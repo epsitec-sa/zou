@@ -158,7 +158,9 @@ version_update()
   [ $? -eq 0 ] && {
     local techver=$(version_technical "${varray[@]}")
     echo "$techver"
-    if ! version_update_custom $techver 'varray[@]' './update-version' && [[ -f "$ZOU_FLOW_CONFIG" ]]; then
+
+    # execute .net zou-flow updaters
+    if [[ -f "$ZOU_FLOW_CONFIG" ]]; then
       local stechver=$(version_technical_short "${varray[@]}")
       # exclude submodules from find file (-not -path './<sm-path>/*'] ...)
       local findNotPaths=$(git config --file .gitmodules --get-regexp path | cut -d' ' -f2 | sed "s,\(.*\),-not -path \./\1/\*,")
@@ -166,6 +168,8 @@ version_update()
       version_update_config 'assembly_info' $techver $stechver $findNotPaths
       version_update_config 'csproj'        $techver $stechver $findNotPaths
     fi
+    # execute custom updater (use git vconfig --custom to create one)
+    version_update_custom $techver 'varray[@]' './update-version'
   }
   set +f
 }
