@@ -1,9 +1,6 @@
 #!/bin/bash
 
 . zoul-version
-. test-git-repo-data
-
-cd "$sat1Dir/sm1"
 
 set -f
 versionProps=()
@@ -19,6 +16,7 @@ while [[ "$#" > 0 ]]; do case "$1" in
   --version-props)   versionProps+=('./Version.props');;
   --assembly-info)   assemblyInfo+=('*/AssemblyInfo*.cs');;
   --csproj)          csProj+=('*/*.csproj');;
+  --custom)          customDir='.';;
   --remove)          action='remove';;
   -*) echo "unknown option: $1" >&2; exit 1;;
 esac; shift; done
@@ -31,5 +29,58 @@ if [ ${#assemblyInfo[@]} -ne 0 ]; then
 fi
 if [ ${#csProj[@]} -ne 0 ]; then
   version_${action}_csproj "${csProj[@]}"
+fi
+
+create_custom()
+{
+  local dir=${1:-.}
+  local file="$dir/update-version"
+  [ -f "$file" ] || {
+    mkdir -p "$dir"
+    cat >"$file" <<\EOF
+#!/bin/bash
+
+# Update technical version
+# Triggered by git publish
+
+update_version()
+{
+  local version=$1 major=$2 minor=$3 patch=$4 prerelease=$5 meta=$6
+
+  # modify and return version associated files
+
+  # example 1 : compta
+  #
+  # local file='libcompta/version.h'
+  # 
+  # sed -i -E "\
+  # s,(MAJREV_SHOW[[:blank:]]+)[0-9]+,\1$major,; \
+  # s,(MINREV_SHOW[[:blank:]]+)[0-9]+,\1$minor,; \
+  # s,(PROVREV_SHOW[[:blank:]]+)[0-9]+,\1$patch," "$file"
+  # 
+  # realpath "$file"
+
+  # example 2 : salaires
+  #
+  # local yyww=$(date +%y%V)
+  # local file='sal.version.ini'
+  # 
+  # sed -i -E "\
+  #   s/(INTERNAL[[:blank:]]+)[0-9\.]+/\1$major.$minor.$patch.$yyww/; \
+  #   s/(INTERNALRC[[:blank:]]+)[0-9\,]+/\1$major,$minor,$patch,$yyww/" "$file"
+  # 
+  # realpath "$file"
+}
+
+update_version "$@"
+EOF
+  }
+
+  realpath $file
+}
+if [[ -n $customDir ]]; then
+  customFile=$(create_custom "$customDir")
+  command=$(git config core.editor)
+  exec "$command '$customFile'"
 fi
 set +f
