@@ -76,8 +76,11 @@ branch_sync_all()
   local moduleId=$(repo_module_id)
   git fetch --prune --all &>/dev/null
   repo_require_clean_work_tree "[$moduleId] cannot synchronize" || return 1
-  branch_checkout "$1"
-  branch_visit_sync_info branch_sync_all_visitor "[$moduleId] synchronized" 
+
+  local info=$(branch_checkout "$1" 2>&1)
+  [[ -n $info ]] && io_info "$info" "[$(repo_module_id)]"
+
+  branch_visit_sync_info branch_sync_all_visitor "[$moduleId] synchronized" || return 1
 
   repo_update_submodules $moduleId
 }
