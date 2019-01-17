@@ -99,6 +99,12 @@ io_warning()  { io_message "$1" "${2:-warning}" Yellow; }
 io_error()    { io_message "$1" "${2:-error}" LightRed; }
 io_debug()    { [[ $debug == 'true' ]] && io_message "$1 = ${!1}" "${2:-debug}" ${3:-Purple}; }
 
+io_pause()
+{
+  local label=$(io_warning "press any key to continue..." "$@" 2>&1)
+  read -n1 -s -r -p "${label:0:-1}"
+  echo $'\n'
+}
 string_join()   { local d=$1; shift; echo -n "$1"; shift; printf "%s" "${@/#/$d}"; }
 string_indent() { local n=$1; shift; printf "%${n}s%s" '' "$*"; }
 
