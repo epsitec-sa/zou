@@ -1,0 +1,36 @@
+#!/bin/bash
+
+# Use the following statement to include current lib only once
+#   [[ -z $ZOUL_CONFIG ]] && . zoul-config
+ZOUL_CONFIG=true
+
+[[ -z $ZOUL_CORE ]] && . zoul-core
+
+config_reset() { git config --global --unset 'zou.initialized'; }
+
+config_setup()
+{
+  [[ $(git config --global 'zou.initialized') == true ]] || {
+
+    cp -f "$(realPath ~/.gitconfig)" "$(realpath ~/.gitconfig.backup)"
+    
+    # https://stackoverflow.com/questions/5195859/how-do-you-push-a-tag-to-a-remote-repository-using-git
+    git config --global push.followTags true
+
+    # setup default credential helper (save credentials in ~/.git-credentials)
+    ! git config --global credential.helper &>/dev/null && git config --global credential.helper store
+
+    git config --global --remove-section status &>/dev/null
+    git config --global --remove-section diff &>/dev/null
+    git config --global --remove-section alias &>/dev/null
+
+    # Semantic versioning
+    git config --global --remove-section versionsort &>/dev/null
+    git config --global --add versionsort.suffix -@
+    git config --global --add versionsort.suffix -alpha
+    git config --global --add versionsort.suffix -beta
+    git config --global --add versionsort.suffix -rc
+
+    git config --global zou.initialized true
+  }
+}
