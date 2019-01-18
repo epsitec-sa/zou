@@ -1,0 +1,22 @@
+#!/bin/bash
+
+. zoul-git-branch-select
+
+args=()
+while [[ "$#" > 0 ]]; do case "$1" in
+  --) shift; args+=("$@"); break;;
+  -h|--help) zou-help $0; exit 0;;
+  -0|--disable) disable=true;;
+  -1|--enable) enable=true;;
+  -q|--quiet) quiet=true;;
+  -*) echo "unknown option: $1" >&2; exit 1;;
+  *) args+=( "$1" )
+esac; shift; done
+
+if [[ $enable == true ]]; then
+  [[ $disable == true ]] && io_error 'options conflict'
+  csm_enable "${args[@]}"
+elif [[ $disable == true ]]; then
+  csm_disable "${args[@]}"
+fi
+[[ $quiet == true ]] || csm_status
