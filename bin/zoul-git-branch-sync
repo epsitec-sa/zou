@@ -17,7 +17,20 @@ branch_push()
   local r=$1 l=$2
   git push --follow-tags ${r%%/*} $l &>/dev/null
 }
-branch_sync() { branch_merge "$@" && branch_push "$@"; }
+branch_sync()
+{
+  branch_merge "$@" && branch_push "$@"
+}
+branch_sync_visitor()
+{
+  local r=$1 l=$2 i=$3
+  case $i in
+    '>')  branch_push  $r $l || return 1;; # l > r ahead   -- move r
+    '<')  branch_merge $r $l || return 1;; # l < r behind  -- move l
+    '<>') branch_sync  $r $l || return 1;; # ahead and behind
+  esac
+  branch_try_attach &>/dev/null
+}
 branch_visit_sync_info() 
 {
   local visitor=$1
@@ -60,22 +73,14 @@ branch_visit_sync_info()
     }
   done < <(branch_sync_info)
 }
-branch_sync_all_visitor()
-{
-  local r=$1 l=$2 i=$3
-  case $i in
-    '>')  branch_push  $r $l || return 1;; # l > r ahead   -- move r
-    '<')  branch_merge $r $l || return 1;; # l < r behind  -- move l
-    '<>') branch_sync  $r $l || return 1;; # ahead and behind
-  esac
-  branch_try_attach &>/dev/null
-}
 branch_sync_all()
 {
   local moduleId=$(repo_module_id)
+
   git fetch --prune --all &>/dev/null
   repo_require_clean_work_tree "[$moduleId] cannot synchronize" || return 1
-  branch_visit_sync_info branch_sync_all_visitor "[$moduleId] synchronized" 
+
+  branch_visit_sync_info branch_sync_visitor "[$moduleId] synchronized" 
 
   repo_update_submodules $moduleId
 }
