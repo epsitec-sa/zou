@@ -12,7 +12,6 @@ while [[ "$#" > 0 ]]; do case "$1" in
   -e|--stop-on-error) forOpts+=($1);;
   -c|--clean) cmdOpts+=($1); cleanLocalBranches=true;;
   -*) echo "unknown option: $1" >&2; exit 1;;
-  *) branch=$1;;
 esac; shift; done
 
 clean_local_branches()
@@ -29,6 +28,6 @@ if [[ $level0 == true ]]; then
   branch_sync_all && clean_local_branches
 else
   [[ "${forOpts[@]}" =~ "--quiet" ]] || echo Entering "'$(repo_module_relative_to_path "$PWD")'"
-  branch_sync_all $branch && clean_local_branches
+  branch_sync_all && clean_local_branches
   git for -s -r "${forOpts[@]}" git sync -0 "${cmdOpts[@]}"
 fi
