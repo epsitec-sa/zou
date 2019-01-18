@@ -75,8 +75,10 @@ branch_merge()
   # merge toMerge into intoBranch
   # before: intoBranch < toMerge
   # after : intoBranch = toMerge -- intoBranch moved towards toMerge
-  local toMerge=$1 intoBranch=$2 ec=0 targetBranchIsNotLocal
-  toMerge=$(git rev-parse $toMerge^{})
+  local toMerge=$1; shift
+  local intoBranch=$1; shift
+  local ec=0 targetBranchIsNotLocal
+  # toMerge=$(git rev-parse $toMerge^{})
   # try fast-forward merge
   branch_merge_ff $toMerge $intoBranch &>/dev/null || ec=$?
   if (( $ec != 0 )); then
@@ -90,7 +92,7 @@ branch_merge()
     # on active branch...
     if [[ -z $targetBranchIsNotLocal ]] && branch_is_head $intoBranch; then
       # ... merge even if conflicts
-      if ! git merge $toMerge &>/dev/null; then
+      if ! git merge "$@" $toMerge &>/dev/null; then
         if repo_is_merging; then
           branch_merge_interactive || {
             local conflicts=$(git diff)
@@ -113,7 +115,8 @@ branch_merge()
         # no conflicts: merge
         [[ $targetBranchIsNotLocal == true ]] && intoBranch=$(branch_without_remote_prefix $intoBranch)
         if git checkout $intoBranch &>/dev/null; then
-          git merge $toMerge &>/dev/null || branch_merge_interactive || {
+          ec=0
+          git merge "$@" $toMerge &>/dev/null || branch_merge_interactive || {
             io_error "unable to merge $toMerge into $intoBranch branch"
             ec=1
           }
@@ -125,7 +128,7 @@ branch_merge()
         fi
       else
         if git checkout $intoBranch &>/dev/null; then
-          git merge $toMerge &>/dev/null || branch_merge_interactive ||
+          git merge "$@" $toMerge &>/dev/null || branch_merge_interactive ||
           {
             local conflicts=$(git diff)
             io_error "while auto-merging $toMerge into $intoBranch."
