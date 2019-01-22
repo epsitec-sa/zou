@@ -108,62 +108,86 @@ csm_status()
     done
   fi
 }
-# Convert a development branch to a fallback list of development branches.
-branch_dev_fallback()
+branch_scan_sku()
 {
-  local branch=$1
-  if [[ $branch =~ ^([^/]+)/(.+)$ ]]; then
-    local kind=${BASH_REMATCH[1]}
-    local config=${BASH_REMATCH[2]}
-    io_debug kind
-    io_debug config
-    case $kind in
-      sku|wip|issue) echo $branch;;
-    esac
-    if [[ $config =~ ^([^/]+)/(.*)$ ]]; then
-      local product=${BASH_REMATCH[1]}
-      config=${BASH_REMATCH[2]}
-      io_debug product
-      io_debug config
-      case $kind in
-        sku|wip|issue) echo "$kind/$config";;
-        *) echo $branch;;
-      esac
-      if [[ $config =~ ^([^/]+)/(.*)$ ]]; then
-        local subkind=${BASH_REMATCH[1]}
-        config=${BASH_REMATCH[2]}
-        io_debug subkind
-        io_debug config
-        case $subkind in
-          sku|wip|issue) echo "$subkind/$config";;
-          *) echo $branch;;
-        esac
-      fi
-    fi
-  fi
-  echo 'master'
+  echo $1
+  local name00=$1 name10=$1
+  local name01=${1#*/} name11=${1%/*}
+  while [[ $name00 != $name01 ]]; do
+    echo $name01
+    name00=$name01
+    name01=${name01#*/}
+    echo $name11
+    name10=$name11
+    name11=${name11%/*}
+  done
 }
 # Convert any branch (dev or prod) to a fallback list of development branches.
-branch_best_match_dev_fallback()
+#   branch:: kind[/name][/mode]
+#   kind:: word
+#   name:: word[/word]...
+#   mode:: 'dev' | n.n
+# example:
+#   master                kind = master
+#   sku/sal/dev           kind = sku, name = sal,              mode = dev
+#   sku/sal/13.1          kind = sku, name = sal,              mode = 13.1  (prod)
+#   sku/compta/mch/dev    kind = sku, name = compta/mch,       mode = dev
+#   wip/zou/git-commands  kind = wip, name = zou/git-commands, mode = 
+branch_dev_fallback()
 {
-  local branch=$1
-  [[ $debug == true ]] && io_message "$branch" 'branch_best_match_dev_fallback' Brown >&2
-  if [[ $branch =~ ^(.*/)?([0-9]+\.[0-9]+)$ ]]; then
-    # prod branch
-    local prefix=${BASH_REMATCH[1]}
-    local version=${BASH_REMATCH[2]}
-    io_debug prefix
-    io_debug version
-    [[ -z $prefix ]] && branch_dev_fallback 'master' || branch_dev_fallback "${prefix}dev"
+  local branch=$1 kind name mode
+
+  kind=${branch%%/*}
+  mode=${branch##*/}
+  io_debug kind
+
+  if [[ $mode =~ ^(dev|[0-9]+\.[0-9]+)$ ]]; then
+    # mode is dev or prod
+    io_debug mode
+    if [[ $mode == $branch ]]; then
+      echo 'dev'
+      echo 'master'
+      return 0
+    fi
+
+    name=${branch#*/}
+    name=${name%/*}
+    [[ $name == $mode ]] && name=""
+    [[ $mode != 'dev' ]] && mode=""
+    io_debug name
+
+    if [[ -z $name ]]; then
+      echo "$kind/dev"
+      echo "$kind"
+    else
+      for name in $(branch_scan_sku $name); do
+        echo "$kind/$name/dev"
+        echo "$kind/$name"
+      done
+      [[ "$kind/dev" != "$branch" ]] && echo "$kind/dev"
+      [[ "$kind" != "$branch" ]] && echo "$kind"
+    fi
   else
-    branch_dev_fallback $branch
+    # mode not defined
+    name=${branch#*/}
+    [[ $name == $kind ]] && name=""
+    io_debug name
+    if [[ -n $name ]]; then
+      for name in $(branch_scan_sku $name); do
+        echo "$kind/$name/dev"
+        echo "$kind/$name"
+      done
+    fi
+    echo "$kind/dev"
+    echo "$kind"
   fi
+  [[ $branch != master ]] && echo master
 }
 # Convert any branch to a fallback list of regex patterns.
-branch_best_match_dev_patterns()
+branch_dev_patterns()
 {
   local branch
-  for branch in $(branch_best_match_dev_fallback $1); do
+  for branch in $(branch_dev_fallback $1); do
     regex_whole $(regex_escape $branch)
   done
 }
@@ -171,14 +195,18 @@ branch_best_match_dev_patterns()
 # any superproject branch (dev|prod)
 branch_best_match_dev()
 {
-  local patterns=( $(branch_best_match_dev_patterns $1) )
-  local branches=( $(branch_remove_tracked) )
+  local patterns=$(branch_dev_patterns $1)
+  local branches=( $(branch_list_local_tracked) )
+  local remoteIndex=${#branches[@]}
+  branches+=( $(branch_list_remote_untracked) )
+  local pattern i branch lbranch
   # try to find a branch matching bundle branch name
-  for pattern in "${patterns[@]}"; do
-    for candidate in "${branches[@]}"; do
-      local lcandidate=$(branch_without_remote_prefix $candidate)
-      [[ $lcandidate =~ $pattern ]] && {
-        echo $candidate
+  for pattern in $patterns; do
+    for i in ${!branches[@]}; do
+      branch=${branches[i]}
+      (( $i < $remoteIndex )) && lbranch=$branch || lbranch=${branch#*/}
+      [[ $lbranch =~ $pattern ]] && {
+        echo $branch
         return 0
       }
     done
