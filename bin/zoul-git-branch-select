@@ -113,21 +113,27 @@ branch_dev_fallback()
 {
   local branch=$1
   if [[ $branch =~ ^([^/]+)/(.+)$ ]]; then
-    local kind=${BASH_REMATCH[1]}; io_debug kind
-    local config=${BASH_REMATCH[2]}; io_debug config
+    local kind=${BASH_REMATCH[1]}
+    local config=${BASH_REMATCH[2]}
+    io_debug kind
+    io_debug config
     case $kind in
       sku|wip|issue) echo $branch;;
     esac
     if [[ $config =~ ^([^/]+)/(.*)$ ]]; then
-      local product=${BASH_REMATCH[1]}; io_debug product
-      config=${BASH_REMATCH[2]}; io_debug config
+      local product=${BASH_REMATCH[1]}
+      config=${BASH_REMATCH[2]}
+      io_debug product
+      io_debug config
       case $kind in
         sku|wip|issue) echo "$kind/$config";;
         *) echo $branch;;
       esac
       if [[ $config =~ ^([^/]+)/(.*)$ ]]; then
-        local subkind=${BASH_REMATCH[1]}; io_debug subkind
-        config=${BASH_REMATCH[2]}; io_debug config
+        local subkind=${BASH_REMATCH[1]}
+        config=${BASH_REMATCH[2]}
+        io_debug subkind
+        io_debug config
         case $subkind in
           sku|wip|issue) echo "$subkind/$config";;
           *) echo $branch;;
@@ -145,8 +151,8 @@ branch_best_match_dev_fallback()
   if [[ $branch =~ ^(.*/)?([0-9]+\.[0-9]+)$ ]]; then
     # prod branch
     local prefix=${BASH_REMATCH[1]}
-    io_debug prefix
     local version=${BASH_REMATCH[2]}
+    io_debug prefix
     io_debug version
     [[ -z $prefix ]] && branch_dev_fallback 'master' || branch_dev_fallback "${prefix}dev"
   else
