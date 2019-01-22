@@ -96,13 +96,22 @@ branch_list_all_untracked()
   local tracked=( $(branch_list_all_tracked) )
   array_remove_array branches[@] tracked[@]
 }
-branch_list_all_flatten()
+branch_list_remote_untracked_flatten()
 {
-  branch_list_local
   local b
   for b in $(branch_list_remote_untracked); do
     echo ${b#*/}
   done
+}
+branch_list_all_flatten()
+{
+  branch_list_local
+  branch_list_remote_untracked_flatten
+}
+branch_list_tracked_flatten()
+{
+  branch_list_local_tracked
+  branch_list_remote_untracked_flatten
 }
 
 branch_remove_tracked()
