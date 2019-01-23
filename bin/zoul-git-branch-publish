@@ -5,13 +5,14 @@
 ZOUL_GIT_BRANCH_PUBLISH=true
 
 [[ -z $ZOUL_GIT_REPO ]]         && . zoul-git-repo
+[[ -z $ZOUL_GIT_COMMIT ]]       && . zoul-git-commit
 [[ -z $ZOUL_VERSION ]]          && . zoul-version
 [[ -z $ZOUL_GIT_VBRANCH ]]      && . zoul-git-vbranch
 [[ -z $ZOUL_GIT_BRANCH_MERGE ]] && . zoul-git-branch-merge
 
 branch_get_vbranch_name()
 {
-    local ltag=$(vtag_describe ${1:-HEAD})
+    local ltag=$(vtag_describe $1)
     vtag_get_vbranch_name $ltag
 }
 branch_enable_vmerge()
@@ -66,6 +67,9 @@ branch_publish()
     io_warning "branch '$branch' is not associated with a vbranch" "[$moduleId] $zou_command"
     return 2
   fi
+
+  # synchonize submodules to avoid merge conflicts
+  commit_sync_submodules $branch $vbranch
 
   # merge
   branch_merge $branch $vbranch || return 3
