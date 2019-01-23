@@ -6,11 +6,29 @@ ZOUL_GIT_VTAG=true
 
 [[ -z $ZOUL_CORE ]] && . zoul-core
 
-vtag_is_vnode() { [[ $1 =~ ^v[0-9]+\.[0-9]+-@ ]]; }
+vtag_is_vnode() { [[ $1 =~ ^(.*/)?v[0-9]+\.[0-9]+-@ ]]; }
 vtag_list()
 {
-  local regex=$(regex_escape "${1:-[0-9]}")
-  git tag -l --sort=-v:refname | grep ^v$regex || true
+  # input             output
+  # 1.0               v1.0-@ v1.0.0
+  # sku/sal/1.0       sku/sal/v1.0-@
+  local vbranch=$1
+  local regex
+  if [[ -z $vbranch ]]; then
+    regex='v[0-9]+\.[0-9]+(\.|-)'
+  elif [[ $vbranch =~ ^(.*/)?([0-9]+\.[0-9]+) ]]; then
+    # vbranch
+    local prefix=${BASH_REMATCH[1]}
+    local version=${BASH_REMATCH[2]}
+    regex="^$(regex_escape $prefix)v$(regex_escape $version)"
+    io_debug prefix vtag_list
+    io_debug version vtag_list
+  else
+    io_error "vtag invalid format : '$1'"
+    return 1
+  fi
+  io_debug regex vtag_list
+  git tag -l --sort=-v:refname | grep -E $regex | grep -v '^other/' || true
 }
 vtag_describe()
 {
@@ -19,7 +37,8 @@ vtag_describe()
   # - $1: commit hash (ex: e5d2fe9)
   # output:
   # - vtag description (ex: v1.0.0-rc1-5-ge5d2fe9)
-  git describe --first-parent --tags --match 'v[0-9]*' "${1:-HEAD}" 2>/dev/null
+  git describe --first-parent --tags --match 'v[0-9]*' --match '*/v[0-9]*' --exclude 'other/*' "${1:-HEAD}" 2>/dev/null
+  # git describe --first-parent --tags --match '*/v[0-9]*' "${1:-HEAD}" 2>/dev/null
 }
 vtag_vtags_at()
 {
@@ -28,7 +47,7 @@ vtag_vtags_at()
   # - $1: rev to list
   # output:
   # - list of vtags pointing at given commit (ex: v1.0.0-rc1 v1.0.0)
-  git tag --sort=-v:refname --points-at $1^{} | grep ^v[0-9]
+  git tag --sort=-v:refname --points-at $1^{} | grep -E '^(.*/)?v[0-9]+\.[0-9]+(\.|-)' | grep -v '^other/'
 }
 
 vtag_get_vbranch_name ()
@@ -39,10 +58,11 @@ vtag_get_vbranch_name ()
   # output:
   # - vbranch name (ex: 1.0)
   # - nothing if $1 is not a vtag
-  if [[ $1 =~ ^v([0-9]+)\.([0-9]+)(\.|-) ]]; then
-    local major=${BASH_REMATCH[1]}
-    local minor=${BASH_REMATCH[2]}
-    echo $major.$minor;
+  if [[ $1 =~ ^(.*/)?v([0-9]+)\.([0-9]+)(\.|-) ]]; then
+    local prefix=${BASH_REMATCH[1]}
+    local major=${BASH_REMATCH[2]}
+    local minor=${BASH_REMATCH[3]}
+    echo ${prefix}$major.$minor;
   fi
 }
 vtag_get_vbranch()
@@ -222,16 +242,18 @@ vtag_increment()
 
   #  <major>.<minor>-@
   #  <major>.<minor>.<patch>[-<pre-release>][+<meta>]-<delta>-g<sha1>
-  if [[ $vtag =~ ^v([0-9]+)\.([0-9]+)(\.|-)(.*)$ ]]; then
-    local major=${BASH_REMATCH[1]}
-    local minor=${BASH_REMATCH[2]}
-    local patch=${BASH_REMATCH[4]}
+  if [[ $vtag =~ ^(.*/)?v([0-9]+)\.([0-9]+)(\.|-)(.*)$ ]]; then
+    local prefix=${BASH_REMATCH[1]}
+    local major=${BASH_REMATCH[2]}
+    local minor=${BASH_REMATCH[3]}
+    local patch=${BASH_REMATCH[5]}
+    io_debug prefix vtag_increment
     io_debug major vtag_increment
     io_debug minor vtag_increment
 
     if [[ $patch == '@' ]]; then
       io_debug patch vtag_increment
-      result="v$major.$minor.0$prerel_default"
+      result="${prefix}v$major.$minor.0$prerel_default"
     elif [[ $patch =~ ^([0-9]+)(\.[0-9]+)?(-[[:alnum:]]+)?(\+.+)?$ ]]; then
       patch=${BASH_REMATCH[1]}
       local build=${BASH_REMATCH[2]}
@@ -243,7 +265,7 @@ vtag_increment()
       io_debug meta vtag_increment
       if [[ $prerel =~ -(alpha|beta|rc)([0-9]*) ]]; then
         if [[ -n $rtm ]]; then
-          result="v$major.$minor.$patch"
+          result="${prefix}v$major.$minor.$patch"
         else
           local actual_prerel_prefix=${BASH_REMATCH[1]}
           local prerel_rev=${BASH_REMATCH[2]}
@@ -253,10 +275,10 @@ vtag_increment()
           
           prerel=-$prerel_prefix$prerel_rev
           io_debug prerel vtag_increment
-          result="v$major.$minor.$patch$prerel"
+          result="${prefix}v$major.$minor.$patch$prerel"
         fi
       else
-        result="v$major.$minor.$((patch+1))$prerel_default"
+        result="${prefix}v$major.$minor.$((patch+1))$prerel_default"
       fi
     fi
   fi
