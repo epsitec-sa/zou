@@ -30,6 +30,24 @@ vtag_list()
   io_debug regex vtag_list
   git tag -l --sort=-v:refname | grep -E $regex | grep -v '^other/' || true
 }
+vtag_scan_branch_path()
+{
+  local b0=$1
+  local b1=${1%/*}
+  while [[ $b0 != $b1 ]]; do
+    echo $b1
+    b0=$b1
+    b1=${b1%/*}
+  done
+}
+vtag_symbolic_ref()
+{
+  if [[ -z $1 || $1 == 'HEAD' ]]; then
+    git symbolic-ref --short HEAD &>/dev/null
+  else
+    echo $1
+  fi
+}
 vtag_describe()
 {
   # find first vtag ancestor starting from given commit
@@ -37,8 +55,12 @@ vtag_describe()
   # - $1: commit hash (ex: e5d2fe9)
   # output:
   # - vtag description (ex: v1.0.0-rc1-5-ge5d2fe9)
-  git describe --first-parent --tags --match 'v[0-9]*' --match '*/v[0-9]*' --exclude 'other/*' "${1:-HEAD}" 2>/dev/null
-  # git describe --first-parent --tags --match '*/v[0-9]*' "${1:-HEAD}" 2>/dev/null
+  local branch=$(vtag_symbolic_ref $1)
+  local b
+  for b in $(vtag_scan_branch_path $branch); do
+    git describe --first-parent --tags --match "${b}/v[0-9]*" --exclude 'other/*' "$branch" 2>/dev/null && return 0
+  done
+  git describe --first-parent --tags --match "v[0-9]*" --exclude 'other/*' "$branch" 2>/dev/null;
 }
 vtag_vtags_at()
 {
