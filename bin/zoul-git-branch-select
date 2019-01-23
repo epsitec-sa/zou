@@ -158,14 +158,11 @@ branch_dev_fallback()
 
     if [[ -z $name ]]; then
       echo "$kind/dev"
-      echo "$kind"
     else
       for name in $(branch_scan_sku $name); do
         echo "$kind/$name/dev"
-        echo "$kind/$name"
       done
       [[ "$kind/dev" != "$branch" ]] && echo "$kind/dev"
-      [[ "$kind" != "$branch" ]] && echo "$kind"
     fi
   else
     # mode not defined
@@ -175,11 +172,9 @@ branch_dev_fallback()
     if [[ -n $name ]]; then
       for name in $(branch_scan_sku $name); do
         echo "$kind/$name/dev"
-        echo "$kind/$name"
       done
     fi
     echo "$kind/dev"
-    echo "$kind"
   fi
   [[ $branch != master ]] && echo master
 }
