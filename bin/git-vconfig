@@ -1,6 +1,7 @@
 #!/bin/bash
 
 . zoul-version
+. zoul-git-repo
 
 set -f
 versionProps=()
@@ -17,6 +18,7 @@ while [[ "$#" > 0 ]]; do case "$1" in
   --assembly-info)   assemblyInfo+=('*/AssemblyInfo*.cs');;
   --csproj)          csProj+=('*/*.csproj');;
   --custom)          customDir='.';;
+  --no-edit)         noEdit=true;;
   --remove)          action='remove';;
   -*) echo "unknown option: $1" >&2; exit 1;;
 esac; shift; done
@@ -81,6 +83,12 @@ EOF
 if [[ -n $customDir ]]; then
   customFile=$(create_custom "$customDir")
   command=$(git config core.editor)
-  exec "$command '$customFile'"
+  if [[ $noEdit == true ]]; then
+    io_message '' "[$(repo_module_id)] modify the version updater script with the following command"
+    io_message
+    io_message "    $command '$customFile'" '' Gray
+  else
+    eval "$command '$customFile'"
+  fi
 fi
 set +f
