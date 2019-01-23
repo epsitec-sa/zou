@@ -20,10 +20,16 @@ commit="${args[1]:-HEAD}"
 io_debug branch
 io_debug commit
 
-if [[ $branch =~ ^[0-9]+\.[0-9]+$ ]]; then
+if [[ $branch =~ ^(.*/)?([0-9]+\.[0-9]+)$ ]]; then
+  prefix=${BASH_REMATCH[1]}
+  version=${BASH_REMATCH[2]}
+  vnode="${prefix}v${version}-@"
+  io_debug prefix
+  io_debug version
+  io_debug vnode
   git branch "${args[@]}"
   # create vnode
-  git newtag "${newtag_opts[@]}" "v$branch-@" "$commit"
+  git newtag "${newtag_opts[@]}" "$vnode" "$commit"
   [[ $push == true ]] && git push -u $(git remote) "$branch"
   [[ $checkout == true ]] && git checkout "$branch" >/dev/null
 else
