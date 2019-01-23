@@ -10,17 +10,17 @@ ZOU_FLOW_CONFIG='.zou-flow'
 
 version_parse()
 {
-  local version=${1#v*}
+  local version=$1
   local varray=()
-  if [[ $version =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)(-[[:alnum:]]+)?(\+.+)?$ ]]; then
-    echo ${BASH_REMATCH[@]}
+  if [[ $version =~ ^(.*/)?v([0-9]+)\.([0-9]+)\.([0-9]+)(-[[:alnum:]]+)?(\+.+)?$ ]]; then
+    echo ${BASH_REMATCH[0]} ${BASH_REMATCH[@]:2}  # skip prefix
   else
     io_error "'$1' - bad version format"
     return 1
   fi
 }
-version_technical() { echo "${2}.${3}.${4}.$(date +%y%V)${5}${6}"; }
-version_technical_short() { echo "${2}.${3}.${4}.$(date +%y%V)"; }
+version_technical()       { shift; echo "${1}.${2}.${3}.$(date +%y%V)${4}${5}"; }
+version_technical_short() { shift; echo "${1}.${2}.${3}.$(date +%y%V)"; }
 version_commit_files()
 {
   local techver=$1; shift
@@ -157,6 +157,7 @@ version_update()
   varray+=( $(version_parse "$1") )
   [ $? -eq 0 ] && {
     local techver=$(version_technical "${varray[@]}")
+    io_debug techver version_update
     echo "$techver"
 
     # execute .net zou-flow updaters
