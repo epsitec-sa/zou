@@ -17,10 +17,8 @@ vbranch_next_vtag()
   io_debug rev vbranch_next_vtag
   io_debug prerel_prefix vbranch_next_vtag
   
-  local commit=$(git rev-parse "$rev^{}")
-  local ltag=$(vtag_describe "$commit")
+  local ltag=$(vtag_describe "$rev")
 
-  io_debug commit vbranch_next_vtag
   io_debug ltag vbranch_next_vtag
 
   if [[ -z $ltag ]]; then
