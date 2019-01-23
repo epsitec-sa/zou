@@ -1,11 +1,6 @@
 #!/bin/bash
 
-pad()
-{
-  local padlimit=$1
-  local pad=$(printf '%*s' "$padlimit")
-  echo ${pad// /-}
-}
+pad() { eval "printf '%.s-' {1..$1}"; }
 print_row()
 {
   # TODO: improve by computing the best width according to the longest string.
