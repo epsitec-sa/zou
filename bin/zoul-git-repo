@@ -55,8 +55,19 @@ repo_list_dangling_submodules()
   done
   IFS=$OIFS
 }
-repo_remove_dangling_submodules() { repo_list_dangling_submodules | xargs -I{} rm -rf "{}"; }
-
+repo_remove_dangling_submodule()
+{
+  local path=$1 sm=${1%/}
+  git submodule deinit $sm 2>/dev/null && git rm --cached $sm 2>/dev/null
+  rm -rf $path
+}
+repo_remove_dangling_submodules()
+{
+  local sm
+  for sm in $(repo_list_dangling_submodules); do
+    repo_remove_dangling_submodule $sm
+  done
+}
 repo_bundle_dir()
 {
   local dir=$(realpath ${1:-.})

@@ -4,14 +4,18 @@
 
 while [[ "$#" > 0 ]]; do case "$1" in
   -h|--help) zou-help $0; exit 0;;
-  -d|--rdsm) removeDanglingSubmodules=true;;
+  --sm) cleanSubmodules=true;;
   -*) echo "unknown option: $1" >&2; exit 1;;
 esac; shift; done
 
 repo_require_clean_work_tree 'cannot clean' || exit 1
-[[ $removeDanglingSubmodules == true ]] && {
-  io_info 'removing dangling submodules...' "[$(repo_module_id)]"
-  repo_remove_dangling_submodules
+[[ $cleanSubmodules == true ]] && {
+  moduleId=$(repo_module_id)
+  for sm in $(repo_list_dangling_submodules); do
+    io_info "removing '${sm%/}' dangling submodule..." "[$moduleId] clean"
+    repo_remove_dangling_submodule $sm
+  done
+  exit $?
 }
 
 [ -d node_modules ] && {
