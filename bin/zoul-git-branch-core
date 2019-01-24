@@ -124,7 +124,7 @@ branch_remove_tracked()
 # Display error and return empty if branch is unknown
 branch_realize()
 {
-  if branch_is_local "$1" || branch_is_remote "$1"; then
+  if branch_is_local "$1" || branch_is_remote "$1" || [[ $1 == HEAD ]]; then
     echo "$1"
   else
     local remote=$(git remote)
@@ -138,6 +138,13 @@ branch_realize()
 
 branch_without_remote_prefix() { branch_is_remote $1 && echo ${1#*/} || echo $1; }
 
+branch_ensure_local()
+{
+  if ! git show-ref -s --verify "refs/heads/$1" 2>/dev/null; then
+    git checkout $1 &>/dev/null
+    git checkout - &>/dev/null
+  fi
+}
 branch_checkout()
 {
   if [[ -n $1 && $1 != $(branch_current) ]]; then
