@@ -9,7 +9,7 @@ ZOUL_GIT_COMMIT=true
 commit_list_submodules()
 {
   local rev=${1:-HEAD}
-  git ls-tree -d --full-tree $rev | grep -E '^[0-9]+[[:space:]]+commit' | cut -d ' ' -f 3-
+  git ls-tree -d --full-tree "$rev" | grep -E '^[0-9]+[[:space:]]+commit' | cut -d ' ' -f 3-
 }
 commit_sync_submodules()
 {
@@ -18,10 +18,10 @@ commit_sync_submodules()
   local sha name k
   while read sha name; do
     a[$name]=$sha
-  done < <(commit_list_submodules $1)
+  done < <(commit_list_submodules "$1")
   while read sha name; do
     b[$name]=$sha
-  done < <(commit_list_submodules $2)
+  done < <(commit_list_submodules "$2")
   [[ $debug == true ]] && {
     for k in ${!a[@]}; do
       echo $1: [$k] ${a[$k]}

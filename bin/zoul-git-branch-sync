@@ -49,10 +49,10 @@ branch_visit_sync_info()
           color=Red
         else
           # nothing tracked
-          if branch_is_vbranch $l; then
+          if branch_is_vbranch "$l"; then
             # automatically track vbranches
             local remote=$(git remote)
-            git push -u $(git remote) "$l" &>/dev/null && {
+            git push -u $remote "$l" &>/dev/null && {
               r="$remote/$l"
               i='>'
               color=Brown
