@@ -139,44 +139,48 @@ branch_dev_fallback()
 
   kind=${branch%%/*}
   mode=${branch##*/}
-  io_debug kind
+  # io_debug branch
+  # io_debug kind
+  # io_debug mode
 
-  if [[ $mode =~ ^(dev|[0-9]+\.[0-9]+)$ ]]; then
+  if [[ $kind == $branch ]]; then
+    # [[ $debug == true ]] && io_message 'kind == branch' '1'
+    [[ $branch != master ]] && echo "$kind/dev"
+    echo $branch
+  elif [[ $mode =~ ^(dev|[0-9]+\.[0-9]+)$ ]]; then
     # mode is dev or prod
-    io_debug mode
-    if [[ $mode == $branch ]]; then
-      echo 'dev'
-      echo 'master'
-      return 0
-    fi
+    # [[ $debug == true ]] && io_message 'mode == dev|prod' '2.0'
 
     name=${branch#*/}
     name=${name%/*}
-    [[ $name == $mode ]] && name=""
-    [[ $mode != 'dev' ]] && mode=""
-    io_debug name
+    # io_debug mode
+    # io_debug name
 
-    if [[ -z $name ]]; then
+    if [[ $name == $mode ]]; then
+      # [[ $debug == true ]] && io_message 'name == mode' '2.1'
       echo "$kind/dev"
     else
       for name in $(branch_scan_sku $name); do
+        # [[ $debug == true ]] && io_message 'name != mode' '2.2'
         echo "$kind/$name/dev"
+        echo "$kind/$name"
       done
+      # [[ $debug == true ]] && io_message 'without name' '2.3'
       [[ "$kind/dev" != "$branch" ]] && echo "$kind/dev"
     fi
   else
+    # [[ $debug == true ]] && io_message 'without mode' '3.0'
     # mode not defined
     name=${branch#*/}
-    [[ $name == $kind ]] && name=""
-    io_debug name
-    if [[ -n $name ]]; then
-      for name in $(branch_scan_sku $name); do
-        echo "$kind/$name/dev"
-      done
-    fi
-    [[ $branch != master ]] && echo "$kind/dev"
-    echo "$kind"
+    # io_debug name
+    for name in $(branch_scan_sku $name); do
+      echo "$kind/$name/dev"
+      echo "$kind/$name"
+    done
+    # [[ $debug == true ]] && io_message '' '3.3'
+    echo "$kind/dev"
   fi
+  # [[ $debug == true ]] && io_message 'branch != master' '4'
   [[ $branch != master ]] && echo master
 }
 # Convert any branch to a fallback list of regex patterns.
