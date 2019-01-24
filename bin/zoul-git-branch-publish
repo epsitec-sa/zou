@@ -71,8 +71,12 @@ branch_publish()
   # synchonize submodules to avoid merge conflicts
   commit_sync_submodules $branch $vbranch
 
-  # merge
-  branch_merge $branch $vbranch || return 3
+  # synchronize branches
+  if branch_is_merged $branch $vbranch; then
+    branch_merge_ff $vbranch $branch &>/dev/null || return 3
+  else
+    branch_merge_core $branch $vbranch || return 3
+  fi
 
   # compute next vtag
   local vtag
@@ -86,6 +90,9 @@ branch_publish()
   # merge resource files 
   [ $? -eq 0 ] && branch_merge $branch $vbranch '-Xtheirs'
   [[ -n $needCheckout ]] && git checkout $obranch &>/dev/null
+
+  # be sure dev == prod
+  branch_merge $vbranch $branch
 
   # tag
   local comment="branch '$branch' published as '${vinfo[0]}'"
