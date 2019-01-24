@@ -37,12 +37,6 @@ run_inside_root()
   [[ "${sm_opts[@]}" =~ "--quiet" ]] || echo Entering "'$(repo_module_relative_to_path "$PWD")'"
   eval "$zou_command"
 }
-run_inside_submodule()
-{
-  local FOR_INSIDE_SUBMODULE=true
-  eval "$zou_command"
-}
-export -f run_inside_submodule
 
 [[ $FOR_SUBMODULE_ONLY != true && $FOR_ROOT_LAST != true ]] && { run_inside_root || exit 1; }
 
@@ -52,7 +46,7 @@ exit_code=0
   while read line; do
     echo "$line" | grep --line-buffered -v '^fatal:'
     exit_code=$?
-  done < <(git submodule "${sm_opts[@]}" foreach "${fe_opts[@]}" "run_inside_submodule" 2>&1 | sed -u '/^fatal:/q')
+  done < <(git submodule "${sm_opts[@]}" foreach "${fe_opts[@]}" "{ FOR_INSIDE_SUBMODULE=true; $zou_command 2>&1; }" | sed -u '/^fatal:/q')
 )
 
 (( $exit_code != 0 )) && [[ $FOR_STOP_ON_ERROR == true ]] && exit $exit_code
