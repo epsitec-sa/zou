@@ -10,6 +10,11 @@ ZOUL_GIT_BRANCH_MERGE=true
 [[ -z $ZOUL_GIT_REPO ]]        && . zoul-git-repo
 [[ -z $ZOUL_GIT_BRANCH_CORE ]] && . zoul-git-branch-core
 
+branch_is_merged()
+{
+  local isMerged=$1 into=$2
+  git branch --merged $into | grep -E "^(\*|\ )\ $isMerged" &>/dev/null
+}
 branch_merge_ff() {
   # merge 'toMerge' (invariant) into 'intoBranch' < 'toMerge'
   # 'intoBranch' should be a local branch with a symbolic name
@@ -29,13 +34,13 @@ branch_merge_ff() {
     return 2
   fi
 
-  if [ "$(git symbolic-ref HEAD)" = "refs/heads/$intoBranch" ]; then
-      if ! git merge --ff-only "$toMerge"; then
-        io_error "merging $toMerge into $intoBranch would not be a fast-forward"
-        return 3
-      fi
+  if [[ "$(git symbolic-ref HEAD)" == "refs/heads/$intoBranch" ]]; then
+    if ! git merge --ff-only "$toMerge"; then
+      io_error "merging $toMerge into $intoBranch would not be a fast-forward"
+      return 3
+    fi
   else
-    if [ "$(git merge-base $hashMergeInto $hashToMerge)" != "$hashMergeInto" ]; then
+    if [[ "$(git merge-base $hashMergeInto $hashToMerge)" != "$hashMergeInto" ]]; then
       io_error "merging $toMerge into $intoBranch would not be a fast-forward"
       return 4
     fi
@@ -72,11 +77,17 @@ branch_merge_interactive()
 }
 branch_merge()
 {
+  branch_is_merged "$1" "$2" && return 0
+  branch_merge_core "$@"
+}
+branch_merge_core()
+{
   # merge toMerge into intoBranch
   # before: intoBranch < toMerge
   # after : intoBranch = toMerge -- intoBranch moved towards toMerge
   local toMerge=$1; shift
   local intoBranch=$1; shift
+
   local ec=0 targetBranchIsNotLocal
   # toMerge=$(git rev-parse $toMerge^{})
   # try fast-forward merge
