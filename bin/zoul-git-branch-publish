@@ -68,7 +68,10 @@ branch_publish()
     return 2
   fi
 
-  branch_ensure_local $vbranch
+  if ! branch_ensure_local $vbranch; then
+    io_warning "vbranch '$vbranch' does not exist" "[$moduleId] $zou_command"
+    return 2
+  fi
 
   # synchonize submodules to avoid merge conflicts
   commit_sync_submodules $branch $vbranch
