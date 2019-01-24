@@ -34,16 +34,20 @@ vtag_scan_branch_path()
 {
   local b0=$1
   local b1=${1%/*}
-  while [[ $b0 != $b1 ]]; do
+  if [[ $b0 == $b1 ]]; then
     echo $b1
-    b0=$b1
-    b1=${b1%/*}
-  done
+  else
+    while [[ $b0 != $b1 ]]; do
+      echo $b1
+      b0=$b1
+      b1=${b1%/*}
+    done
+  fi
 }
 vtag_symbolic_ref()
 {
   if [[ -z $1 || $1 == 'HEAD' ]]; then
-    git symbolic-ref --short HEAD &>/dev/null
+    git symbolic-ref --short HEAD &>/dev/null || echo 'HEAD'
   else
     echo $1
   fi
@@ -55,7 +59,7 @@ vtag_describe()
   # - $1: commit hash (ex: e5d2fe9)
   # output:
   # - vtag description (ex: v1.0.0-rc1-5-ge5d2fe9)
-  local branch=$(vtag_symbolic_ref $1)
+  local branch=$(vtag_symbolic_ref ${1:-HEAD})
   local b
   for b in $(vtag_scan_branch_path $branch); do
     git describe --first-parent --tags --match "${b}/v[0-9]*" --exclude 'other/*' "$branch" 2>/dev/null && return 0
