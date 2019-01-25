@@ -5,3 +5,12 @@
 ZOUL_GIT_CORE=true
 
 ZOU_FLOW_CONFIG='.zou-flow'
+
+git_symbolic_ref()
+{
+  if [[ -z $1 || $1 == 'HEAD' ]]; then
+    git symbolic-ref --short HEAD &>/dev/null || echo 'HEAD'
+  else
+    echo $1
+  fi
+}

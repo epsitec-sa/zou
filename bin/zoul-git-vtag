@@ -4,7 +4,8 @@
 #   [[ -z $ZOUL_GIT_VTAG ]] && . zoul-git-vtag
 ZOUL_GIT_VTAG=true
 
-[[ -z $ZOUL_CORE ]] && . zoul-core
+[[ -z $ZOUL_CORE ]]     && . zoul-core
+[[ -z $ZOUL_GIT_CORE ]] && . zoul-git-core
 
 vtag_is_vnode() { [[ $1 =~ ^(.*/)?v[0-9]+\.[0-9]+-@ ]]; }
 vtag_list()
@@ -44,14 +45,6 @@ vtag_scan_branch_path()
     done
   fi
 }
-vtag_symbolic_ref()
-{
-  if [[ -z $1 || $1 == 'HEAD' ]]; then
-    git symbolic-ref --short HEAD &>/dev/null || echo 'HEAD'
-  else
-    echo $1
-  fi
-}
 vtag_describe()
 {
   # find first vtag ancestor starting from given commit
@@ -59,7 +52,7 @@ vtag_describe()
   # - $1: commit hash (ex: e5d2fe9)
   # output:
   # - vtag description (ex: v1.0.0-rc1-5-ge5d2fe9)
-  local branch=$(vtag_symbolic_ref ${1:-HEAD})
+  local branch=$(git_symbolic_ref ${1:-HEAD})
   local b
   for b in $(vtag_scan_branch_path $branch); do
     git describe --first-parent --tags --match "${b}/v[0-9]*" --exclude 'other/*' "$branch" 2>/dev/null && return 0
