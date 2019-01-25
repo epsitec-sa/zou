@@ -15,31 +15,31 @@ branch_get_vbranch_name()
     local ltag=$(vtag_describe $1)
     vtag_get_vbranch_name $ltag
 }
-branch_enable_vmerge()
+pconfig_enable_publish()
 {
   local branch=$1
   [[ -z $branch ]] && branch=$(branch_current)
-  git config --file "$ZOU_FLOW_CONFIG" --unset-all vmerge.disabled $branch && \
+  git config --file "$ZOU_FLOW_CONFIG" --unset-all publish.disabled $branch && \
     git update-index --add -- "$ZOU_FLOW_CONFIG" &>/dev/null && \
     git commit -m "zou-flow: enable publish for branch '$branch'" -- "$ZOU_FLOW_CONFIG" &>/dev/null
 }
-branch_disable_vmerge()
+pconfig_disable_publish()
 {
   local branch=$1
   [[ -z $branch ]] && branch=$(branch_current)
-  git config --file "$ZOU_FLOW_CONFIG" --unset-all vmerge.disabled $branch
-  git config --file "$ZOU_FLOW_CONFIG" --add vmerge.disabled $branch && \
+  git config --file "$ZOU_FLOW_CONFIG" --unset-all publish.disabled $branch
+  git config --file "$ZOU_FLOW_CONFIG" --add publish.disabled $branch && \
     git update-index --add -- "$ZOU_FLOW_CONFIG" &>/dev/null && \
     git commit -m "zou-flow: disable publish for branch '$branch'" -- "$ZOU_FLOW_CONFIG" &>/dev/null
 }
-branch_list_vmerge_disabled()
+pconfig_list_publish_disabled()
 {
-  git config --file "$ZOU_FLOW_CONFIG" --get-all vmerge.disabled $1
+  git config --file "$ZOU_FLOW_CONFIG" --get-all publish.disabled $1
 }
-branch_is_vmerge_disabled()
+pconfig_is_publish_disabled()
 {
   local b
-  for b in $(branch_list_vmerge_disabled); do
+  for b in $(pconfig_list_publish_disabled); do
     git merge-base --is-ancestor $1^{} $b^{} &>/dev/null
     [ $? -eq 0 ] && return 0
   done
@@ -57,7 +57,7 @@ branch_publish()
   fi
   local moduleId=$(repo_module_id)
 
-  if branch_is_vmerge_disabled $branch; then
+  if pconfig_is_publish_disabled $branch; then
     io_warning "publish is disabled for branch '$branch'" "[$moduleId] $zou_command"
     return 1
   fi
