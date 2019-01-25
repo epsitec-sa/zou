@@ -10,11 +10,7 @@ ZOUL_GIT_BRANCH_PUBLISH=true
 [[ -z $ZOUL_GIT_VBRANCH ]]      && . zoul-git-vbranch
 [[ -z $ZOUL_GIT_BRANCH_MERGE ]] && . zoul-git-branch-merge
 
-branch_get_vbranch_name()
-{
-    local ltag=$(vtag_describe $1)
-    vtag_get_vbranch_name $ltag
-}
+
 pconfig_enable_publish()
 {
   local branch=$1
@@ -46,6 +42,11 @@ pconfig_is_publish_disabled()
   return 1
 }
 
+branch_get_vbranch_name()
+{
+  local ltag=$(vtag_describe $1)
+  vtag_get_vbranch_name $ltag
+}
 branch_publish()
 {
   local branch=$1 prerelPrefix=$2 needCheckout obranch
