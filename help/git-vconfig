@@ -5,12 +5,14 @@ git vconfig --remove [<options>] - Remove version configuration options.
 
 'update-version' section:
 
-    --version-props[=FILE]  Use Version.props style files (default to './Version.props').
-    --assembly-info[=FILE]  Use AssemblyInfo.cs style files (default to '*/AssemblyInfo*.cs').
-    --csproj[=FILE]         Use .NET Framework C# project style files (default to '*/*.cspro').
-    --custom                Add a custom version updater template file (update-version).
+    --vp|--version-props[=FILE]  Use Version.props style files (default to './Version.props').
+    --ai|--assembly-info[=FILE]  Use AssemblyInfo.cs style files (default to '*/AssemblyInfo*.cs').
+    --cs|--csproj[=FILE]         Use .NET Framework C# project style files (default to '*/*.cspro').
+    --custom                     Add a custom version updater template file (update-version).
+    --no-edit                    Do not edit custom version updater
+    --remove                     Remove specified option
     
     example:
-        git vconfig --version-props                     # update_version.version-props = ./Version.props
-        git vconfig --version-props --remove            # remove 'update_version.version-props' key
-        git vconfig --assembly-info='./AssemblyInfo.cs' # update_version.version-props = ./AssemblyInfo.cs
+        git vconfig --vp                     # add 'update_version.version-props = ./Version.props'
+        git vconfig --vp --remove            # remove 'update_version.version-props' key
+        git vconfig --ai='./AssemblyInfo.cs' # add 'update_version.assembly-info = ./AssemblyInfo.cs'

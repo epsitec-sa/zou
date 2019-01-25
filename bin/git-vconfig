@@ -11,15 +11,15 @@ action='add'
 while [[ "$#" > 0 ]]; do case "$1" in
   --) shift; args+=("$@"); break;;
   -h|--help) zou-help $0; exit 0;;
-  --version-props=*) versionProps+=("${1#*=}");;
-  --assembly-info=*) assemblyInfo+=("${1#*=}");;
-  --csproj=*)        csProj+=("${1#*=}");;
-  --version-props)   versionProps+=('./Version.props');;
-  --assembly-info)   assemblyInfo+=('*/AssemblyInfo*.cs');;
-  --csproj)          csProj+=('*/*.csproj');;
-  --custom)          customDir='.';;
-  --no-edit)         noEdit=true;;
-  --remove)          action='remove';;
+  --vp|--version-props=*) versionProps+=("${1#*=}");;
+  --ai|--assembly-info=*) assemblyInfo+=("${1#*=}");;
+  --cs|--csproj=*)        csProj+=("${1#*=}");;
+  --vp|--version-props)   versionProps+=('./Version.props');;
+  --ai|--assembly-info)   assemblyInfo+=('*/AssemblyInfo*.cs');;
+  --cs|--csproj)          csProj+=('*/*.csproj');;
+  --custom)               customDir='.';;
+  --no-edit)              noEdit=true;;
+  --remove)               action='remove';;
   -*) echo "unknown option: $1" >&2; exit 1;;
 esac; shift; done
 
@@ -33,54 +33,8 @@ if [ ${#csProj[@]} -ne 0 ]; then
   version_${action}_csproj "${csProj[@]}"
 fi
 
-create_custom()
-{
-  local dir=${1:-.}
-  local file="$dir/update-version"
-  [ -f "$file" ] || {
-    mkdir -p "$dir"
-    cat >"$file" <<\EOF
-#!/bin/bash
-
-# Update technical version
-# Triggered by git publish
-
-update_version()
-{
-  local version=$1 major=$2 minor=$3 patch=$4 prerelease=$5 meta=$6
-
-  # modify and return version associated files
-
-  # example 1 : compta
-  #
-  # local file='libcompta/version.h'
-  # 
-  # sed -i -E "\
-  # s,(MAJREV_SHOW[[:blank:]]+)[0-9]+,\1$major,; \
-  # s,(MINREV_SHOW[[:blank:]]+)[0-9]+,\1$minor,; \
-  # s,(PROVREV_SHOW[[:blank:]]+)[0-9]+,\1$patch," "$file"
-  # 
-  # realpath "$file"
-
-  # example 2 : salaires
-  #
-  # local yyww=$(date +%y%V)
-  # local file='sal.version.ini'
-  # 
-  # sed -i -E "\
-  #   s/(INTERNAL[[:blank:]]+)[0-9\.]+/\1$major.$minor.$patch.$yyww/; \
-  #   s/(INTERNALRC[[:blank:]]+)[0-9\,]+/\1$major,$minor,$patch,$yyww/" "$file"
-  # 
-  # realpath "$file"
-}
-
-update_version "$@"
-EOF
-    realpath $file
-  }
-}
 if [[ -n $customDir ]]; then
-  customFile=$(create_custom "$customDir")
+  customFile=$(version_create_custom "$customDir")
   if [[ -n $customFile ]]; then
     command=$(git config core.editor)
     if [[ $noEdit == true ]]; then

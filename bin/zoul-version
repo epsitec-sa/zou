@@ -93,6 +93,52 @@ version_update_custom()
     return 1
   fi
 }
+version_create_custom()
+{
+  local dir=${1:-.}
+  local file="$dir/update-version"
+  [ -f "$file" ] || {
+    mkdir -p "$dir"
+    cat >"$file" <<\EOF
+#!/bin/bash
+
+# Update technical version
+# Triggered by git publish
+
+update_version()
+{
+  local version=$1 major=$2 minor=$3 patch=$4 prerelease=$5 meta=$6
+
+  # modify and return version associated files
+
+  # example 1 : compta
+  #
+  # local file='libcompta/version.h'
+  # 
+  # sed -i -E "\
+  # s,(MAJREV_SHOW[[:blank:]]+)[0-9]+,\1$major,; \
+  # s,(MINREV_SHOW[[:blank:]]+)[0-9]+,\1$minor,; \
+  # s,(PROVREV_SHOW[[:blank:]]+)[0-9]+,\1$patch," "$file"
+  # 
+  # realpath "$file"
+
+  # example 2 : salaires
+  #
+  # local yyww=$(date +%y%V)
+  # local file='sal.version.ini'
+  # 
+  # sed -i -E "\
+  #   s/(INTERNAL[[:blank:]]+)[0-9\.]+/\1$major.$minor.$patch.$yyww/; \
+  #   s/(INTERNALRC[[:blank:]]+)[0-9\,]+/\1$major,$minor,$patch,$yyww/" "$file"
+  # 
+  # realpath "$file"
+}
+
+update_version "$@"
+EOF
+    realpath $file
+  }
+}
 
 version_list_file_spec()
 {
