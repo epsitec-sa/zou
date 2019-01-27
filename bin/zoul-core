@@ -194,6 +194,12 @@ array_contains_element()
   for e; do [[ "$e" == "$match" ]] && return 0; done
   return 1
 }
+path_make_relative()
+{
+  local path=$(realpath "$1")
+  local relativeTo=$(realpath "${2:-.}")
+  realpath --relative-to="$relativeTo" "$path"
+}
 
 # trace constants (if debug == true)
 io_debug zou_startupPath
