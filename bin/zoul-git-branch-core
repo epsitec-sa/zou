@@ -114,9 +114,9 @@ branch_list_tracked_flatten()
   branch_list_remote_untracked_flatten
 }
 
-branch_remove_tracked()
+branch_remove_remote_tracked()
 {
-  local tracked=( $(branch_list_all_tracked) )
+  local tracked=( $(branch_list_remote_tracked) )
   array_remove_array $1 tracked[@]
 }
 
@@ -155,7 +155,7 @@ branch_list_attach_candidates()
 {
   if ! branch_is_attached; then
     local branches=( $(branch_list_all_at $1) )
-    branch_remove_tracked branches[@]
+    branch_remove_remote_tracked branches[@]
   fi
 }
 branch_try_attach()

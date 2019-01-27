@@ -8,7 +8,8 @@ ZOUL_GIT_REPO=true
 
 [[ -z $ZOUL_CORE ]] && . zoul-core
 
-repo_list_submodules() { git config --file .gitmodules --get-regexp path | cut -d' ' -f2; }
+repo_gitmodules_path() { echo "$(repo_module_dir)/.gitmodules"; }
+repo_list_submodules() { git config --file "$(repo_gitmodules_path)" --get-regexp '^submodule\..*\.path$' | cut -d' ' -f2; }
 repo_list_deleted()    { git ls-files --deleted; }
 repo_list_unstaged()   { git diff-files --name-only -r --ignore-submodules --; }
 repo_list_uncommited() { git diff-index --cached --name-only -r --ignore-submodules HEAD --; }
@@ -70,25 +71,43 @@ repo_remove_dangling_submodules()
 }
 repo_bundle_dir()
 {
-  local dir=$(realpath ${1:-.})
+  local dir
+  dir=$(realpath "${1:-.}") || return $?
   while [[ -n "$dir" && ! -d "$dir/.git" ]]; do
-    dir=${dir%/*}
+    dir="${dir%/*}"
   done
   [[ -z $dir ]] && return 1
-  echo $dir
+  echo "$dir"
 }
 repo_module_dir()
 {
-  local dir=$(realpath ${1:-.})
+  local dir
+  dir=$(realpath "${1:-.}") || return $?
   while [[ -n "$dir" ]]; do
     if [[ -f "$dir/.git" || -d "$dir/.git" ]]; then
-      echo $dir
+      echo "$dir"
       return 0
     fi
-    dir=${dir%/*}
+    dir="${dir%/*}"
   done
   return 1
 }
+repo_parent_module_dir()
+{
+  local moduleDir
+  moduleDir=$(repo_module_dir "$@") || return $?
+  repo_module_dir "$moduleDir/.."
+}
+
+# return module path relative to parent module
+repo_module_path()
+{
+  local mdir pdir
+  mdir=$(repo_module_dir "${1:-.}") || return $?
+  pdir=$(repo_module_dir "$mdir/..") || { realpath "${1:-.}"; return 0; }
+  realpath --relative-to="$pdir" "$mdir"
+}
+
 repo_module_and_bundle_dirs()
 {
   local dir=$(realpath ${1:-.}) mdir bdir
@@ -110,19 +129,32 @@ repo_module_and_bundle_dirs()
   done
   return 1
 }
-repo_bundle_relative_to_path()
-{
-  local path=${1:-.} bdir
-  bdir=$(repo_bundle_dir "$@")
-  [ $? -ne 0 ] && return 1
-  echo $(realpath --relative-to="$path" "$bdir")
-}
 repo_module_relative_to_path()
 {
-  local path=${1:-.} mdir
-  mdir=$(repo_module_dir "$@")
-  [ $? -ne 0 ] && return 1
-  echo $(realpath --relative-to="$path" "$mdir")
+  local path=$(realpath "${1:-.}") mdir
+  mdir=$(repo_module_dir "${2:-.}") || return $?
+  realpath --relative-to="$path" "$mdir"
+}
+# return the path relative to a bundle folder
+# input:
+#  $1 : the path to compute the relative path
+#  $2 : any folder path inside the reference bundle
+repo_path_relative_to_bundle()
+{
+  local path bdir
+  path=$(realpath "${1:-.}") || return $?
+  bdir=$(repo_bundle_dir "${2:-.}") || return $?
+  realpath --relative-to="$bdir" "$path"
+}
+# return the path relative to a module folder
+# input:
+#  $1 : the path to compute the relative path
+#  $2 : any folder path inside the reference module
+repo_path_relative_to_module()
+{
+  local path=$(realpath "${1:-.}") mdir
+  mdir=$(repo_module_dir "${2:-.}") || return $?
+  realpath --relative-to="$mdir" "$path"
 }
 repo_url_from_dir()
 {
