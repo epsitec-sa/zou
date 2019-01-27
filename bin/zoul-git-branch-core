@@ -148,7 +148,7 @@ branch_ensure_local()
 branch_checkout()
 {
   if [[ -n $1 && $1 != $(branch_current) ]]; then
-    git checkout "$(branch_without_remote_prefix $1)" >/dev/null
+    git checkout "$(branch_without_remote_prefix $1)" 2>/dev/null
   fi
 }
 branch_list_attach_candidates()
@@ -165,6 +165,9 @@ branch_try_attach()
     local branches=($(branch_list_attach_candidates $1))
     if (( ${#branches[@]} == 1 )); then
       branch_checkout "${branches[0]}"
+      echo "${branches[0]}"
+    else
+      return 1
     fi
   fi
 }

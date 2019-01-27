@@ -1,0 +1,23 @@
+#!/bin/bash
+
+. zoul-git-config-publish
+
+while [[ "$#" > 0 ]]; do case "$1" in
+  --) shift; args+=("$@"); break;;
+  -h|--help) zou-help $0; exit 0;;
+  --enable)  enable=true;;
+  --disable) disable=true;;
+  -*) echo "unknown option: $1" >&2; exit 1;;
+  *) branch=$1
+esac; shift; done
+
+[[ -z $branch ]] && branch=$(branch_ensure_current)
+configFile=$(repo_zouflow_path)
+
+if [[ $disable == true ]]; then
+  config_publish_disable "$branch" "$configFile"
+elif [[ $enable == true ]]; then
+  config_publish_enable "$branch" "$configFile"
+else
+  config_publish_status "$branch" "$configFile"
+fi

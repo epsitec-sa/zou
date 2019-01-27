@@ -17,7 +17,7 @@ esac; shift; done
 
 if [[ $level0 == true ]]; then
   selectedBranch=$(branch_select $branch)
-  if csm_is_disabled "$selectedBranch"; then
+  if config_select_is_disabled "$selectedBranch"; then
     repo_update_submodules --recursive
   else
     git for -s ${forOpts[@]} git select -0 $branch

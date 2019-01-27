@@ -1,0 +1,208 @@
+#!/bin/bash
+
+# Use the following statement to include current lib only once
+#   [[ -z $ZOUL_GIT_SCONFIG ]] && . zoul-git-sconfig
+ZOUL_GIT_SCONFIG=true
+
+[[ -z $ZOUL_GIT_BRANCH_SELECT ]] && . zoul-git-branch-select
+
+#################################################################
+# UNDER CONSTRUCTION
+#################################################################
+
+# configure select submodules
+# modify .zou-flow configuration file
+#
+# bundle: all included
+# submodule level 1: all excluded
+#
+# [select "sku/sal/dev"]
+#   include = sm1
+#   include = sm2
+
+config_select_include()
+{
+  [ repo_is_root ] && return 1
+  local path branch configFile
+  path=${1:-$(repo_path_relative_to_module)} || return 1
+  branch=${2:-$(branch_ensure_current)} || return 1
+  configFile=${3:-$(repo_zouflow_path)} || return 1
+  local rePath=$(regex_escape "$path")
+  git config --file "$configFile" --get-all "select.$branch.include" "$rePath" >/dev/null \
+  || git config --file "$configFile" --add "select.$branch.include" "$path"
+
+  git update-index --add -- "$configFile" &>/dev/null \
+  && git commit -m "zou-flow: enable select for submodule '$path' on branch '$branch'" -- "$configFile" &>/dev/null
+}
+config_select_include_all()
+{
+  [ repo_is_root ] && return 1
+  local paths=( $(repo_list_submodules) )
+  config_select_include_many paths[@] "$@"
+}
+config_select_include_many()
+{
+  [ repo_is_root ] && return 1
+  local paths=( "${!1}" ) path branch configFile
+  branch=${2:-$(branch_ensure_current)} || return 1
+  configFile=${3:-$(repo_zouflow_path)} || return 1
+  for path in ${paths[@]}; do
+    local rePath=$(regex_escape "$path")
+    git config --file "$configFile" --get-all "select.$branch.include" "$rePath" >/dev/null \
+    || git config --file "$configFile" --add "select.$branch.include" "$path"
+  done
+
+  git update-index --add -- "$configFile" &>/dev/null && \
+  git commit -m "zou-flow: enable select for submodules '$(string_join ', ' ${paths[@]})' on branch '$branch'" -- "$configFile" &>/dev/null
+}
+config_select_exclude_all()
+{
+  [ repo_is_root ] && return 1
+  local branch configFile
+  branch=${1:-$(branch_ensure_current)} || return 1
+  configFile=${2:-$(repo_zouflow_path)} || return 1
+  git config --file "$configFile" --remove-section "select.$branch" &>/dev/null
+
+  git update-index --add -- "$configFile" &>/dev/null \
+  && git commit -m "zou-flow: disable select fo all submodules on branch '$branch'" -- "$configFile" &>/dev/null
+}
+config_select_exclude()
+{
+  [ repo_is_root ] && return 1
+  local path branch configFile
+  path=${1:-$(repo_path_relative_to_module)} || return 1
+  branch=${2:-$(branch_ensure_current)} || return 1
+  configFile=${3:-$(repo_zouflow_path)} || return 1
+  local rePath=$(regex_escape "$path")
+  git config --file "$configFile" --unset-all "select.$branch.include" "$rePath"
+
+  git update-index --add -- "$configFile" &>/dev/null \
+  && git commit -m "zou-flow: disable select for submodule '$path' on branch '$branch'" -- "$configFile" &>/dev/null
+}
+config_select_is_excluded() { ! config_select_is_included "$@"; }
+config_select_is_included()
+{
+  local path branch configFile
+  path=${1:-$(repo_path_relative_to_module)} || return 1
+  branch=${2:-$(branch_ensure_current)} || return 1
+  configFile=${3:-$(repo_zouflow_path)} || return 1
+  local rePath=$(regex_escape "$path")
+  git config --file "$configFile" --get-all "select.$branch.include" "$rePath" >/dev/null
+}
+config_select_list_included()
+{
+  local branch configFile
+  branch=${1:-$(branch_ensure_current)} || return 1
+  configFile=${2:-$(repo_zouflow_path)} || return 1
+  git config --file "$configFile" --get-all "select.$branch.include"
+}
+config_select_list_excluded()
+{
+  local branch configFile
+  branch=${1:-$(branch_ensure_current)} || return 1
+  configFile=${2:-$(repo_zouflow_path)} || return 1
+  local sku=( $(repo_list_submodules) )
+  local excluded=( $(config_select_list_included "$@") )
+  array_remove_array sku[@] excluded[@]
+}
+config_select_status()
+{
+  local branch configFile
+  branch=${1:-$(branch_ensure_current)} || return 1
+  configFile=${2:-$(repo_zouflow_path)} || return 1
+  io_message "'$branch'" "SKU"
+  for path in $(config_select_list_included "$@"); do
+    io_message "  $path" ''
+  done
+  for path in $(config_select_list_excluded "$@"); do
+    io_message "x $path" ''
+  done
+}
+#################################################################
+# DEPRECATED
+#################################################################
+config_select_get_default()
+{
+  git config --file "$ZOU_FLOW_CONFIG" --get 'select.default' || {
+    repo_is_root && echo 'enabled' || echo 'disabled'
+  }
+}
+config_select_set_default()
+{
+  local default=${1:-enabled}
+  git config --file "$ZOU_FLOW_CONFIG" --unset-all "select.$default"
+  git config --file "$ZOU_FLOW_CONFIG" 'select.default' $default
+}
+
+# config_select_enable
+#   [select]
+#     default = enabled
+# config_select_enable master
+#   [select]
+#     default = disabled
+#     enabled = master
+config_select_enable()
+{
+  local branch branchLabel
+  if [ $# -eq 0 ]; then
+    branchLabel='all branches'
+    config_select_set_default 'enabled'
+    git config --file "$ZOU_FLOW_CONFIG" --unset-all "select.disabled" &>/dev/null
+  else
+    branchLabel="branch '$branch'"
+    config_select_set_default 'disabled'
+    for branch in "$@"; do
+      git config --file "$ZOU_FLOW_CONFIG" --add 'select.enabled' "$branch" &>/dev/null
+    done
+  fi
+  git update-index --add -- "$ZOU_FLOW_CONFIG" &>/dev/null && \
+  git commit -m "zou-flow: enable child selection mode for $branchLabel" -- "$ZOU_FLOW_CONFIG" &>/dev/null
+}
+# config_select_disable
+#   [select]
+#     default = disabled
+# config_select_disable master
+#   [select]
+#     default = enabled
+#     disabled = master
+config_select_disable()
+{
+  local branch branchLabel
+  if [ $# -eq 0 ]; then
+    branchLabel='all branches'
+    config_select_set_default 'disabled'
+    git config --file "$ZOU_FLOW_CONFIG" --unset-all "select.enabled" &>/dev/null
+  else
+    branchLabel="branch '$branch'"
+    config_select_set_default 'enabled'
+    for branch in "$@"; do
+      git config --file "$ZOU_FLOW_CONFIG" --add 'select.disabled' "$branch" &>/dev/null
+    done
+  fi
+  git update-index --add -- "$ZOU_FLOW_CONFIG" &>/dev/null && \
+  git commit -m "zou-flow: disable child selection mode for $branchLabel" -- "$ZOU_FLOW_CONFIG" &>/dev/null
+}
+config_select_is_disabled()
+{
+  local branch=${1:-$(branch_current)}
+  local default=$(config_select_get_default)
+  if [[ $default == 'enabled' ]]; then
+    git config --file "$ZOU_FLOW_CONFIG" --get-all 'select.disabled' "$branch" &>/dev/null || return 1
+  else
+    git config --file "$ZOU_FLOW_CONFIG" --get-all 'select.enabled' "$branch" &>/dev/null && return 1 || return 0
+  fi
+}
+config_select_status()
+{ 
+  local default=$(config_select_get_default) branch
+  io_message "\n  default = $default" "child selection mode"
+  if [[ $default == 'enabled' ]]; then
+    for branch in $(git config --file "$ZOU_FLOW_CONFIG" --get-all 'select.disabled'); do
+      io_message "  disabled = $branch" ''
+    done
+  else
+    for branch in $(git config --file "$ZOU_FLOW_CONFIG" --get-all 'select.enabled'); do
+      io_message "  enabled = $branch" ''
+    done
+  fi
+}

@@ -53,7 +53,7 @@ vbranch_next_vtag()
       io_debug status vbranch_next_vtag
 
       if [[ $status == 'full' ]]; then
-        io_info "'$rev' already published at '$stag'" "[$(repo_module_id)] $zou_command"
+        io_info "already published at '$stag'" "[$(repo_module_id)]"
         return 3
       fi
 
@@ -68,7 +68,7 @@ vbranch_next_vtag()
         if (( $? == 255 )); then
           echo $vnext
         else
-         io_warning "cannot publish '$rev' between '$stag' and '$utag'" "[$(repo_module_id)] $zou_command"
+          io_warning "cannot publish '$rev' between '$stag' and '$utag'" "[$(repo_module_id)]"
           return 4
         fi
       else

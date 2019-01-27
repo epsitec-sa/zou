@@ -10,103 +10,13 @@ ZOUL_GIT_BRANCH_SELECT=true
 [[ -z $ZOUL_GIT_VTAG ]]        && . zoul-git-vtag
 [[ -z $ZOUL_GIT_BRANCH_CORE ]] && . zoul-git-branch-core
 
-# csm = children selection mode (enabled/disabled)
-# modify .zou-flow configuration file
-#
-# csm_disable master
-#   [select]
-#     default = enabled
-#     disabled = master
-#
-# csm_enable master
-#   [select]
-#     default = disabled
-#     enabled = master
-
-csm_get_default()
+branch_ensure_current()
 {
-  git config --file "$ZOU_FLOW_CONFIG" --get 'select.default' || {
-    repo_is_root && echo 'enabled' || echo 'disabled'
-  }
-}
-csm_set_default()
-{
-  local default=${1:-enabled}
-  git config --file "$ZOU_FLOW_CONFIG" --unset-all "select.$default"
-  git config --file "$ZOU_FLOW_CONFIG" 'select.default' $default
-}
-
-# csm_enable
-#   [select]
-#     default = enabled
-# csm_enable master
-#   [select]
-#     default = disabled
-#     enabled = master
-csm_enable()
-{
-  local branch branchLabel
-  if [ $# -eq 0 ]; then
-    branchLabel='all branches'
-    csm_set_default 'enabled'
-    git config --file "$ZOU_FLOW_CONFIG" --unset-all "select.disabled" &>/dev/null
-  else
-    branchLabel="branch '$branch'"
-    csm_set_default 'disabled'
-    for branch in "$@"; do
-      git config --file "$ZOU_FLOW_CONFIG" --add 'select.enabled' "$branch" &>/dev/null
-    done
+  local branch=$(git rev-parse --abbrev-ref HEAD)
+  if ! branch_is_local "$branch"; then
+    branch=$(branch_select $(branch_current_root_branch))
   fi
-  git update-index --add -- "$ZOU_FLOW_CONFIG" &>/dev/null && \
-  git commit -m "zou-flow: enable child selection mode for $branchLabel" -- "$ZOU_FLOW_CONFIG" &>/dev/null
-}
-# csm_disable
-#   [select]
-#     default = disabled
-# csm_disable master
-#   [select]
-#     default = enabled
-#     disabled = master
-csm_disable()
-{
-  local branch branchLabel
-  if [ $# -eq 0 ]; then
-    branchLabel='all branches'
-    csm_set_default 'disabled'
-    git config --file "$ZOU_FLOW_CONFIG" --unset-all "select.enabled" &>/dev/null
-  else
-    branchLabel="branch '$branch'"
-    csm_set_default 'enabled'
-    for branch in "$@"; do
-      git config --file "$ZOU_FLOW_CONFIG" --add 'select.disabled' "$branch" &>/dev/null
-    done
-  fi
-  git update-index --add -- "$ZOU_FLOW_CONFIG" &>/dev/null && \
-  git commit -m "zou-flow: disable child selection mode for $branchLabel" -- "$ZOU_FLOW_CONFIG" &>/dev/null
-}
-csm_is_disabled()
-{
-  local branch=${1:-$(branch_current)}
-  local default=$(csm_get_default)
-  if [[ $default == 'enabled' ]]; then
-    git config --file "$ZOU_FLOW_CONFIG" --get-all 'select.disabled' "$branch" &>/dev/null || return 1
-  else
-    git config --file "$ZOU_FLOW_CONFIG" --get-all 'select.enabled' "$branch" &>/dev/null && return 1 || return 0
-  fi
-}
-csm_status()
-{ 
-  local default=$(csm_get_default) branch
-  io_message "\n  default = $default" "child selection mode"
-  if [[ $default == 'enabled' ]]; then
-    for branch in $(git config --file "$ZOU_FLOW_CONFIG" --get-all 'select.disabled'); do
-      io_message "  disabled = $branch" ''
-    done
-  else
-    for branch in $(git config --file "$ZOU_FLOW_CONFIG" --get-all 'select.enabled'); do
-      io_message "  enabled = $branch" ''
-    done
-  fi
+  echo $branch
 }
 branch_scan_sku()
 {

@@ -11,37 +11,6 @@ ZOUL_GIT_BRANCH_PUBLISH=true
 [[ -z $ZOUL_GIT_BRANCH_MERGE ]] && . zoul-git-branch-merge
 
 
-pconfig_enable_publish()
-{
-  local branch=$1
-  [[ -z $branch ]] && branch=$(branch_current)
-  git config --file "$ZOU_FLOW_CONFIG" --unset-all publish.disabled $branch && \
-    git update-index --add -- "$ZOU_FLOW_CONFIG" &>/dev/null && \
-    git commit -m "zou-flow: enable publish for branch '$branch'" -- "$ZOU_FLOW_CONFIG" &>/dev/null
-}
-pconfig_disable_publish()
-{
-  local branch=$1
-  [[ -z $branch ]] && branch=$(branch_current)
-  git config --file "$ZOU_FLOW_CONFIG" --unset-all publish.disabled $branch
-  git config --file "$ZOU_FLOW_CONFIG" --add publish.disabled $branch && \
-    git update-index --add -- "$ZOU_FLOW_CONFIG" &>/dev/null && \
-    git commit -m "zou-flow: disable publish for branch '$branch'" -- "$ZOU_FLOW_CONFIG" &>/dev/null
-}
-pconfig_list_publish_disabled()
-{
-  git config --file "$ZOU_FLOW_CONFIG" --get-all publish.disabled $1
-}
-pconfig_is_publish_disabled()
-{
-  local b
-  for b in $(pconfig_list_publish_disabled); do
-    git merge-base --is-ancestor $1^{} $b^{} &>/dev/null
-    [ $? -eq 0 ] && return 0
-  done
-  return 1
-}
-
 branch_get_vbranch_name()
 {
   local ltag=$(vtag_describe $1)
@@ -58,10 +27,10 @@ branch_publish()
   fi
   local moduleId=$(repo_module_id)
 
-  if pconfig_is_publish_disabled $branch; then
-    io_warning "publish is disabled for branch '$branch'" "[$moduleId] $zou_command"
-    return 1
-  fi
+  # if ! config_publish_is_enabled $branch; then
+  #   io_warning "publish is disabled for branch '$branch'" "[$moduleId] $zou_command"
+  #   return 1
+  # fi
 
   local vbranch=$(branch_get_vbranch_name $branch)
   if [[ -z $vbranch ]]; then

@@ -1,0 +1,141 @@
+#!/bin/bash
+
+# Use the following statement to include current lib only once
+#   [[ -z $ZOUL_GIT_CONFIG_PUBLISH ]] && . zoul-git-config-publish
+ZOUL_GIT_PCONFIG=true
+
+[[ -z $ZOUL_CORE ]]     && . zoul-core
+[[ -z $ZOUL_GIT_CORE ]] && . zoul-git-core
+[[ -z $ZOUL_GIT_REPO ]] && . zoul-git-repo
+[[ -z $ZOUL_GIT_SCONFIG ]] && . zoul-git-sconfig
+[[ -z $ZOUL_GIT_BRANCH_SELECT ]] && . zoul-git-branch-select
+
+# UNDER CONSTRUCTION
+pconfig_create()
+{
+  local branch configFile
+  branch=${1:-$(branch_ensure_current)} || return 1
+  configFile=${2:-$(repo_zouflow_path)} || return 1
+  _pconfig_get_all "$branch" "$configFile" &>/dev/null \
+  || _pconfig_init "$branch" "$configFile"
+}
+pconfig_reset()
+{
+  local branch configFile
+  branch=${1:-$(branch_ensure_current)} || return 1
+  configFile=${2:-$(repo_zouflow_path)} || return 1
+  _pconfig_delete "$branch" "$configFile"
+  _pconfig_init "$branch" "$configFile"
+}
+
+pconfig_enable_all()  { _pconfig_set_all 'enable'  "$@"; }
+pconfig_disable_all() { _pconfig_set_all 'disable' "$@"; }
+pconfig_enable()      { _pconfig_set 'enable'  "$@"; }
+pconfig_disable()     { _pconfig_set 'disable' "$@"; }
+
+pconfig_log()
+{
+  local branch configFile
+  branch=${1:-$(branch_ensure_current)} || return 1
+  configFile=${2:-$(repo_zouflow_path)} || return 1
+  _pconfig_get_all "$branch" "$configFile"
+}
+
+pconfig_list()
+{
+  local branch configFile
+  branch=${2:-$(branch_ensure_current)} || return 1
+  configFile=${3:-$(repo_zouflow_path)} || return 1
+  git config --file "$configFile" --get-regexp "^publish\.$branch\.(en|dis)able$" | cut -d ' ' -f2
+}
+pconfig_list_enabled()  { _pconfig_list_verb 'enable' "$@"; }
+pconfig_list_disabled() { _pconfig_list_verb 'disable' "$@"; }
+
+pconfig_is_defined()
+{
+  local path branch configFile
+  path=${1:-$(repo_path_relative_to_module)} || return 1
+  branch=${2:-$(branch_ensure_current)} || return 1
+  configFile=${3:-$(repo_zouflow_path)} || return 1
+  local rePath=$(regex_escape "$path")
+  git config --file "$configFile" --get-regexp "^publish\.$branch\.(en|dis)able$" "$rePath" >/dev/null
+}
+pconfig_is_enabled()
+{
+  local path branch configFile
+  path=${1:-$(repo_path_relative_to_module)} || return 1
+  branch=${2:-$(branch_ensure_current)} || return 1
+  configFile=${3:-$(repo_zouflow_path)} || return 1
+
+  if _pconfig_get "$path" "$branch" "$configFile" >/dev/null; then
+    # path is defined, check if enabled
+    local rePath=$(regex_escape "$path")
+    git config --file "$configFile" --get-all "publish.$branch.enable" "$rePath" >/dev/null
+  else
+    # by default current folder is enabled and submodules are disabled
+    [[ $path == '.' ]] && return 0 || return 1
+  fi
+}
+
+_pconfig_init()
+{
+  local branch=$1 configFile=$2 path
+  git config --file "$configFile" --add "publish.$branch.enable" '.'
+  for path in $(repo_list_submodules); do
+    git config --file "$configFile" --add "publish.$branch.disable" "$path"
+  done
+  git update-index --add -- "$configFile" &>/dev/null && \
+  git commit -m "zou-flow: init publish on branch '$branch'" -- "$configFile" &>/dev/null
+}
+_pconfig_delete()
+{
+  local branch=$1 configFile=$2
+  git config --file "$configFile" --remove-section "publish.$branch" &>/dev/null
+}
+_pconfig_set_all()
+{
+  local verb=$1 path branch configFile
+  branch=${2:-$(branch_ensure_current)} || return 1
+  configFile=${3:-$(repo_zouflow_path)} || return 1
+  git config --file "$configFile" --remove-section "publish.$branch" &>/dev/null
+  git config --file "$configFile" --add "publish.$branch.$verb" '.'
+  for path in $(repo_list_submodules); do
+    git config --file "$configFile" --add "publish.$branch.$verb" "$path"
+  done
+  git update-index --add -- "$configFile" &>/dev/null && \
+  git commit -m "zou-flow: $verb publish on branch '$branch'" -- "$configFile" &>/dev/null
+}
+_pconfig_set()
+{
+  local verb=$1 path branch configFile
+  path=${2:-$(repo_path_relative_to_module)} || return 1
+  branch=${3:-$(branch_ensure_current)} || return 1
+  configFile=${4:-$(repo_zouflow_path)} || return 1
+  local rePath=$(regex_escape "$path")
+  git config --file "$configFile" --get-all "publish.$branch.$verb" "$rePath" &>/dev/null
+  if [ $? -ne 0 ]; then
+    local overb; [[ $verb == 'enable' ]] && overb='disable' || overb='enable'
+    git config --file "$configFile" --unset-all "publish.$branch.$overb" "$rePath"
+    git config --file "$configFile" --add "publish.$branch.$verb" "$path"
+  fi
+  git update-index --add -- "$configFile" &>/dev/null && \
+  git commit -m "zou-flow: $verb publish for path '$path' on branch '$branch'" -- "$configFile" &>/dev/null
+}
+_pconfig_list_verb()
+{
+  local verb=$1 branch configFile
+  branch=${2:-$(branch_ensure_current)} || return 1
+  configFile=${3:-$(repo_zouflow_path)} || return 1
+  git config --file "$configFile" --get-all "publish.$branch.$verb"
+}
+_pconfig_get_all()
+{
+  local branch=$1 configFile=$2
+  git config --file "$configFile" --get-regexp "^publish\.$branch\..*$"
+}
+_pconfig_get()
+{
+  local path=$1 branch=$2 configFile=$3
+  local rePath=$(regex_escape "$path")
+  git config --file "$configFile" --get-regexp "^publish\.$branch\..*$" "$rePath"
+}

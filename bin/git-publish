@@ -1,6 +1,10 @@
 #!/bin/bash
 
 . zoul-git-branch-publish
+. zoul-git-config-publish
+
+. test-git-repo-data
+cd "$sat1Dir"
 
 forOpts=()
 cmdOpts=()
@@ -15,17 +19,47 @@ while [[ "$#" > 0 ]]; do case "$1" in
   --beta)  cmdOpts+=($1); prerelPrefix='beta';;
   --rc)    cmdOpts+=($1); prerelPrefix='rc';;
   --rtm)   cmdOpts+=($1); prerelPrefix='rtm';;
+  --debug) cmdOpts+=($1); debug=true;;
+  --root=*) cmdOpts+=($1); root=$(echo ${1#*=} | xargs echo);;  # remove single quotes
   -*) echo "unknown option: $1" >&2; exit 1;;
 esac; shift; done
 
 cmdOpts+=( "${forOpts[@]}" )
 
+publish_submodules()
+{
+  local path opath ec=0
+  for path in $(config_sku_list_included); do
+    opath="$PWD"; cd "$path"
+    [[ $quiet == true ]] || echo Entering "'$(path_make_relative '.' "$root")'"
+    git publish -0 ${cmdOpts[@]} || ec=1
+    cd "$opath"
+  done
+  return $ec
+}
+
 if [[ $level0 == true ]]; then
-  [[ $recursive == true ]] && git for -s ${forOpts[@]} -- git publish -0 ${cmdOpts[@]}
+  if [[ $recursive == true ]]; then
+    publish_submodules
+  fi
   branch=$(branch_current)
-  vtag=$(branch_publish $branch $prerelPrefix)
-  [[ -n $vtag && $push == true ]] && git push $(git remote) "$vtag"
+  vtag=$(vtag_at_vtag "$branch")
+  if [ $? -eq 0 ]; then
+    if branch_is_local "$branch"; then
+      io_info "already published at '$vtag'" "[$(repo_module_id)] $branch"
+    else
+      io_info "publish detached head ($branch) at '$vtag'" "[$(repo_module_id)]"
+    fi
+  elif config_publish_is_enabled; then
+    vtag=$(branch_publish $branch $prerelPrefix)
+    [[ -n $vtag && $push == true ]] && git push $(git remote) "$vtag"
+  else
+    ltag=$(vtag_describe "$branch")
+    stag=${ltag%-*-g*}
+    branch_checkout "$stag" &>/dev/null
+    io_info "publish disabled, checking out '$stag'" "[$(repo_module_id)] $branch"
+  fi
 else
   [[ -z $quiet ]] && echo Entering "'$(repo_module_relative_to_path "$PWD")'"
-  git publish -0 ${cmdOpts[@]}
+  git publish -0 --root="'$(repo_module_dir)'" ${cmdOpts[@]} # single quote root to avoid shell path expansion on Windows
 fi

@@ -1,0 +1,47 @@
+#!/bin/bash
+
+# Use the following statement to include current lib only once
+#   [[ -z $ZOUL_GIT_CONFIG_PUBLISH ]] && . zoul-git-config-publish
+ZOUL_GIT_PCONFIG=true
+
+[[ -z $ZOUL_GIT_REPO ]] && . zoul-git-repo
+[[ -z $ZOUL_GIT_BRANCH_SELECT ]] && . zoul-git-branch-select
+
+config_publish_disable()
+{
+  local branch configFile
+  branch=${1:-$(branch_ensure_current)} || return 1
+  configFile=${2:-$(repo_zouflow_path)} || return 1
+  git config --file "$configFile" "publish.$branch.disable" 'true'
+
+  git update-index --add -- "$configFile" &>/dev/null \
+  && git commit -m "zou-flow: disable publish for branch '$branch'" -- "$configFile" &>/dev/null
+}
+config_publish_enable()
+{
+  local branch configFile
+  branch=${1:-$(branch_ensure_current)} || return 1
+  configFile=${2:-$(repo_zouflow_path)} || return 1
+  git config --file "$configFile" --remove-section "publish.$branch" &>/dev/null
+
+  git update-index --add -- "$configFile" &>/dev/null \
+  && git commit -m "zou-flow: enable publish for branch '$branch'" -- "$configFile" &>/dev/null
+}
+config_publish_is_disabled()
+{
+  local branch configFile disabled
+  branch=${1:-$(branch_ensure_current)} || return 1
+  configFile=${2:-$(repo_zouflow_path)} || return 1
+  disabled=$(git config --file "$configFile" --get "publish.$branch.disable") || return 1
+  [[ $disabled == true ]] && return 0 || return 1
+}
+config_publish_is_enabled() { ! config_publish_is_disabled "$@"; }
+config_publish_status()
+{
+  local branch configFile
+  branch=${1:-$(branch_ensure_current)} || return 1
+  configFile=${2:-$(repo_zouflow_path)} || return 1
+  config_publish_is_disabled "$@" \
+  && io_message 'publish disabled' "[$branch]" \
+  || io_message 'publish enabled' "[$branch]"
+}

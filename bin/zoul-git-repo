@@ -8,6 +8,7 @@ ZOUL_GIT_REPO=true
 
 [[ -z $ZOUL_CORE ]] && . zoul-core
 
+repo_zouflow_path()    { echo "$(repo_module_dir)/$ZOU_FLOW_CONFIG"; }
 repo_gitmodules_path() { echo "$(repo_module_dir)/.gitmodules"; }
 repo_list_submodules() { git config --file "$(repo_gitmodules_path)" --get-regexp '^submodule\..*\.path$' | cut -d' ' -f2; }
 repo_list_deleted()    { git ls-files --deleted; }

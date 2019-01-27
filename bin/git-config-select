@@ -15,8 +15,8 @@ esac; shift; done
 
 if [[ $enable == true ]]; then
   [[ $disable == true ]] && io_error 'options conflict'
-  csm_enable "${args[@]}"
+  config_select_enable "${args[@]}"
 elif [[ $disable == true ]]; then
-  csm_disable "${args[@]}"
+  config_select_disable "${args[@]}"
 fi
-[[ $quiet == true ]] || csm_status
+[[ $quiet == true ]] || config_select_status

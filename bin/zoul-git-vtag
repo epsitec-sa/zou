@@ -8,6 +8,14 @@ ZOUL_GIT_VTAG=true
 [[ -z $ZOUL_GIT_CORE ]] && . zoul-git-core
 
 vtag_is_vnode() { [[ $1 =~ ^(.*/)?v[0-9]+\.[0-9]+-@ ]]; }
+vtag_is_vtag() { [[ $1 =~ ^(.*/)?v[0-9]+\.[0-9]+\.[0-9] ]]; }
+vtag_at_vtag()
+{
+  local tag
+  tag=$(git describe --exact-match "$1" 2>/dev/null) || return 1
+  vtag_is_vtag "$tag"
+  echo $tag
+}
 vtag_list()
 {
   # input             output
