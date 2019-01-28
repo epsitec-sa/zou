@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Use the following statement to include current lib only once
-#   [[ -z $ZOUL_VERSION ]] && . zoul-version
-ZOUL_VERSION=true
+#   [[ -z $ZOUL_GIT_CONFIG_VERSION ]] && . zoul-git-config-version
+ZOUL_GIT_CONFIG_VERSION=true
 
 [[ -z $ZOUL_CORE ]]     && . zoul-core
 [[ -z $ZOUL_GIT_CORE ]] && . zoul-git-core
@@ -214,7 +214,7 @@ version_update()
       version_update_config 'assembly_info' $techver $stechver $findNotPaths
       version_update_config 'csproj'        $techver $stechver $findNotPaths
     fi
-    # execute custom updater (use git vconfig --custom to create one)
+    # execute custom updater (use git config-version --custom to create one)
     version_update_custom $techver 'varray[@]' './update-version'
   }
   set +f
