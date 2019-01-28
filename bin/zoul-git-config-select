@@ -1,24 +1,26 @@
 #!/bin/bash
 
 # Use the following statement to include current lib only once
-#   [[ -z $ZOUL_GIT_SCONFIG ]] && . zoul-git-sconfig
-ZOUL_GIT_SCONFIG=true
+#   [[ -z $ZOUL_GIT_CONFIG_SELECT ]] && . zoul-git-config-select
+ZOUL_GIT_CONFIG_SELECT=true
 
 [[ -z $ZOUL_GIT_BRANCH_SELECT ]] && . zoul-git-branch-select
-
-#################################################################
-# UNDER CONSTRUCTION
-#################################################################
 
 # configure select submodules
 # modify .zou-flow configuration file
 #
-# bundle: all included
-# submodule level 1: all excluded
+# submodule level 0: all included
 #
-# [select "sku/sal/dev"]
+# [select "master"]
+#   exclude = fact
+#   exclude = compta
+#
+# submodule level > 0: all excluded
+#
+# [select "master"]
 #   include = sm1
 #   include = sm2
+#
 
 _config_select_default_verb() { repo_is_root && echo 'include' || echo 'exclude'; }
 _config_select_anti_verb()    { [[ $1 == 'exclude' ]] && echo 'include' || echo 'exclude'; }

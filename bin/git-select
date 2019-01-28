@@ -1,29 +1,64 @@
 #!/bin/bash
 
-. zoul-git-branch-select
+[[ -z $ZOUL_GIT_CONFIG_SKU ]]    && . zoul-git-config-sku
+[[ -z $ZOUL_GIT_CONFIG_SELECT ]] && . zoul-git-config-select
+[[ -z $ZOUL_GIT_BRANCH_CORE ]]   && . zoul-git-branch-core
+[[ -z $ZOUL_GIT_BRANCH_SELECT ]] && . zoul-git-branch-select
 
-forOpts=()
+. test-git-repo-data
+cd "$sat1Dir"
+
+cmdOpts=()
 while [[ "$#" > 0 ]]; do case "$1" in
   --) shift; args+=("$@"); break;;
   -h|--help) zou-help $0; exit 0;;
   -0|--level0) level0=true;;
-  -q|--quiet) quiet=true; forOpts+=($1);;
-  -e|--stop-on-error) forOpts+=($1);;
+  -q|--quiet)         cmdOpts+=($1); quiet=true;;
+  -e|--stop-on-error) cmdOpts+=($1); stopOnError=true;;
+  --_root)            cmdOpts+=($1 $2); root=$(echo $2 | xargs echo); shift;;  # remove single quotes
   -*) echo "unknown option: $1" >&2; exit 1;;
   *) branch=$1;;
 esac; shift; done
 
 [[ -z $branch ]] && branch=$(branch_current_root_branch)
 
+select_submodules()
+{
+  local branch=$1 configFile skuExclude include exclude path opath ec=0
+  configFile=$(repo_zouflow_path) || return 1
+  skuExclude=( $(config_sku_list_excluded "$branch" "$configFile") )
+  echo TEST1
+  include=( $(config_select_list_included "$branch" "$configFile") ) || return 1
+  echo include = $(array_remove_array 'include[@]' 'skuExclude[@]')
+  # for path in $(array_remove_array 'include[@]' 'skuExclude[@]'); do
+  #   opath="$PWD"; cd "$path"
+  #   [[ $quiet == true ]] || echo Entering "'$(path_make_relative '.' "$root")'"
+  #   git select -0 ${cmdOpts[@]} "$branch" || ec=1
+  #   cd "$opath"
+  #   [[ $ec == 1 && $stopOnError == true ]] && break
+  # done
+  
+  exclude=( $(config_select_list_excluded "$branch" "$configFile") ) || return 1
+  echo exclude = $(array_remove_array 'exclude[@]' 'skuExclude[@]')
+  # for path in $(array_remove_array 'exclude[@]' 'skuExclude[@]'); do
+  #   opath="$PWD"; cd "$path"
+  #   [[ $quiet == true ]] || echo Entering "'$(path_make_relative '.' "$root")'"
+  #   repo_update_submodules --recursive
+  #   cd "$opath"
+  # done
+  return $ec
+}
+select_core()
+{
+  local branch=$1
+  branch_select "$branch" >/dev/null || return 1
+  select_submodules "$branch" || return 1
+  repo_commit_submodules
+}
+
 if [[ $level0 == true ]]; then
-  selectedBranch=$(branch_select $branch)
-  if config_select_is_disabled "$selectedBranch"; then
-    repo_update_submodules --recursive
-  else
-    git for -s ${forOpts[@]} git select -0 $branch
-    repo_commit_submodules
-  fi
+  select_core $branch
 else
-  [[ -z $quiet ]] && echo Entering "'$(repo_module_relative_to_path "$PWD")'"
-  git select -0 $branch
+  [[ -z $quiet ]] && echo Entering "'$(repo_module_relative_to_path)'"
+  git select -0 --_root "'$(repo_module_dir)'" ${cmdOpts[@]} "$branch"   # single quote root to avoid shell path expansion on Windows
 fi
