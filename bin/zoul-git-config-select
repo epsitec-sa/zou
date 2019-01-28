@@ -131,12 +131,14 @@ config_select_exclude_many()
 config_select_is_excluded() { ! config_select_is_included "$@"; }
 config_select_is_included()
 {
-  local path branch configFile
+  local path branch configFile p
   path=${1:-$(repo_path_relative_to_module)} || return 1
   branch=${2:-$(branch_ensure_current)} || return 1
   configFile=${3:-$(repo_zouflow_path)} || return 1
-  local rePath=$(regex_escape "$path")
-  git config --file "$configFile" --get-all "select.$branch.include" "$rePath" >/dev/null
+  for p in $(config_select_list_included "$path" "$configFile"); do
+     [[ $p == $path ]] && return 0
+  done
+  return 1
 }
 config_select_list_included()
 {
@@ -144,12 +146,12 @@ config_select_list_included()
   branch=${1:-$(branch_ensure_current)} || return 1
   configFile=${2:-$(repo_zouflow_path)} || return 1
   local defaultVerb=$(_config_select_default_verb)
-  if [[ $defaultVerb == 'exclude' ]]; then
-    git config --file "$configFile" --get-all "select.$branch.include"
-  else
+  if [[ $defaultVerb == 'include' ]]; then
     local submodules=( $(repo_list_submodules) )
     local excluded=( $(git config --file "$configFile" --get-all "select.$branch.exclude") )
     array_remove_array submodules[@] excluded[@]
+  else
+    git config --file "$configFile" --get-all "select.$branch.include"
   fi
 }
 config_select_list_excluded()
@@ -158,12 +160,12 @@ config_select_list_excluded()
   branch=${1:-$(branch_ensure_current)} || return 1
   configFile=${2:-$(repo_zouflow_path)} || return 1
   local defaultVerb=$(_config_select_default_verb)
-  if [[ $defaultVerb == 'include' ]]; then
-    git config --file "$configFile" --get-all "select.$branch.exclude"
-  else
+  if [[ $defaultVerb == 'exclude' ]]; then
     local submodules=( $(repo_list_submodules) )
     local included=( $(git config --file "$configFile" --get-all "select.$branch.include") )
     array_remove_array submodules[@] excluded[@]
+  else
+    git config --file "$configFile" --get-all "select.$branch.exclude"
   fi
 }
 config_select_status()
