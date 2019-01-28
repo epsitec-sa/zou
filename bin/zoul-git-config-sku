@@ -26,34 +26,20 @@ config_sku_exclude()
   git update-index --add -- "$configFile" &>/dev/null \
   && git commit -m "zou-flow: exclude submodule '$path' from SKU '$branch'" -- "$configFile" &>/dev/null
 }
-config_sku_exclude_all()
-{
-  local paths=( $(repo_list_submodules) )
-  config_sku_exclude_many paths[@] "$@"
-}
+config_sku_exclude_all() { config_sku_exclude_many "$@" $(repo_list_submodules); }
 config_sku_exclude_many()
 {
-  local paths=( "${!1}" ) path branch configFile
-  branch=${2:-$(branch_ensure_current)} || return 1
-  configFile=${3:-$(repo_zouflow_path)} || return 1
-  for path in ${paths[@]}; do
-    local rePath=$(regex_escape "$path")
+  local branch configFile path rePath
+  branch=${1:-$(branch_ensure_current)} || return 1; shift
+  configFile=${1:-$(repo_zouflow_path)} || return 1; shift
+  for path in $@; do
+    rePath=$(regex_escape "$path")
     git config --file "$configFile" --get-all "sku.$branch.exclude" "$rePath" >/dev/null \
     || git config --file "$configFile" --add "sku.$branch.exclude" "$path"
   done
 
   git update-index --add -- "$configFile" &>/dev/null && \
-  git commit -m "zou-flow: exclude submodules '$(string_join ', ' ${paths[@]})' from SKU '$branch'" -- "$configFile" &>/dev/null
-}
-config_sku_include_all()
-{
-  local branch configFile
-  branch=${1:-$(branch_ensure_current)} || return 1
-  configFile=${2:-$(repo_zouflow_path)} || return 1
-  git config --file "$configFile" --remove-section "sku.$branch" &>/dev/null
-
-  git update-index --add -- "$configFile" &>/dev/null \
-  && git commit -m "zou-flow: include all submodules in SKU '$branch'" -- "$configFile" &>/dev/null
+  git commit -m "zou-flow: exclude submodules '$(string_join ', ' $@)' from SKU '$branch'" -- "$configFile" &>/dev/null
 }
 config_sku_include()
 {
@@ -66,6 +52,29 @@ config_sku_include()
 
   git update-index --add -- "$configFile" &>/dev/null \
   && git commit -m "zou-flow: include submodule '$path' in SKU '$branch'" -- "$configFile" &>/dev/null
+}
+config_sku_include_all()
+{
+  local branch configFile
+  branch=${1:-$(branch_ensure_current)} || return 1
+  configFile=${2:-$(repo_zouflow_path)} || return 1
+  git config --file "$configFile" --remove-section "sku.$branch" &>/dev/null
+
+  git update-index --add -- "$configFile" &>/dev/null \
+  && git commit -m "zou-flow: include all submodules in SKU '$branch'" -- "$configFile" &>/dev/null
+}
+config_sku_include_many()
+{
+  local branch configFile path rePath
+  branch=${1:-$(branch_ensure_current)} || return 1; shift
+  configFile=${1:-$(repo_zouflow_path)} || return 1; shift
+  for path in $@; do
+    rePath=$(regex_escape "$path")
+    git config --file "$configFile" --unset-all "sku.$branch.exclude" "$rePath"
+  done
+
+  git update-index --add -- "$configFile" &>/dev/null && \
+  git commit -m "zou-flow: include submodules '$(string_join ', ' $@)' in SKU '$branch'" -- "$configFile" &>/dev/null
 }
 config_sku_is_included() { ! config_sku_is_excluded "$@"; }
 config_sku_is_excluded()
@@ -99,10 +108,10 @@ config_sku_status()
   branch=${1:-$(branch_ensure_current)} || return 1
   configFile=${2:-$(repo_zouflow_path)} || return 1
   io_message "'$branch'" "SKU"
-  for path in $(config_sku_list_included "$@"); do
-    io_message "  $path" ''
+  for path in $(config_sku_list_included "$@" | sort); do
+    io_message "   $path" ''
   done
-  for path in $(config_sku_list_excluded "$@"); do
-    io_message "x $path" ''
+  for path in $(config_sku_list_excluded "$@" | sort); do
+    io_message " x $path" ''
   done
 }

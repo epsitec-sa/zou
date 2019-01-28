@@ -8,9 +8,9 @@ exclude=()
 while [[ "$#" > 0 ]]; do case "$1" in
   --) shift; args+=("$@"); break;;
   -h|--help) zou-help $0; exit 0;;
-  --include) mode='include';;
-  --exclude) mode='exclude';;
-  --branch)  branch=$1;;
+  -i|--include) [[ $mode == 'exclude' ]] && { io_error 'options conflict'; exit 1; } || mode='include';;
+  -x|--exclude) [[ $mode == 'include' ]] && { io_error 'options conflict'; exit 1; } || mode='exclude';;
+  -b|-branch) branch=$1;;
   -*) echo "unknown option: $1" >&2; exit 1;;
   *)
     case "$mode" in
@@ -22,15 +22,24 @@ esac; shift; done
 [[ -z $branch ]] && branch=$(branch_ensure_current)
 configFile=$(repo_zouflow_path)
 
-for path in "${include[@]}"; do
-  config_sku_include "$path" "$branch" "$configFile"
-done
-for path in "${exclude[@]}"; do
-  config_sku_exclude "$path" "$branch" "$configFile"
-done
+if [ ${#include[@]} -ne 0 ]; then
+  if [ ${#include[@]} -eq 1 ]; then
+    config_sku_include "${include[0]}" "$branch" "$configFile"
+  else
+    config_sku_include_many "$branch" "$configFile" "${include[@]}"
+  fi
+fi
+if [ ${#exclude[@]} -ne 0 ]; then
+  if [ ${#exclude[@]} -eq 1 ]; then
+    config_sku_exclude "${exclude[0]}" "$branch" "$configFile"
+  else
+    config_sku_exclude_many "$branch" "$configFile" "${exclude[@]}"
+  fi
+fi
 
 case "$mode" in
   include) [ ${#include[@]} -eq 0 ] && config_sku_include_all "$branch" "$configFile";;
   exclude) [ ${#exclude[@]} -eq 0 ] && config_sku_exclude_all "$branch" "$configFile";;
-  status) config_sku_status "$branch" "$configFile";;
 esac
+
+config_sku_status "$branch" "$configFile"
