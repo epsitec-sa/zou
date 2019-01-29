@@ -28,8 +28,8 @@ publish_submodules()
   local branch configFile include exclude path opath ec=0
   branch=$(branch_ensure_current) || return 1
   configFile=$(repo_zouflow_path) || return 1
-  include=( $(config_sku_list_included "$branch" "$configFile") ) || return 1
-  exclude=( $(config_select_list_excluded "$branch" "$configFile") ) || return 1
+  include=( $(config_sku_list_included "$branch" "$configFile") )
+  exclude=( $(config_select_list_excluded "$branch" "$configFile") )
   for path in $(array_remove_array 'include[@]' 'exclude[@]'); do
     opath="$PWD"; cd "$path"
     [[ $quiet == true ]] || echo Entering "'$(path_make_relative '.' "$root")'"
