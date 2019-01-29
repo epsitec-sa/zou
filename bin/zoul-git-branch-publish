@@ -27,51 +27,61 @@ branch_publish()
   fi
   local moduleId=$(repo_module_id)
 
-  # if ! config_publish_is_enabled $branch; then
-  #   io_warning "publish is disabled for branch '$branch'" "[$moduleId] $zou_command"
-  #   return 1
-  # fi
-
-  local vbranch=$(branch_get_vbranch_name $branch)
-  if [[ -z $vbranch ]]; then
-    io_warning "branch '$branch' is not associated with a vbranch" "[$moduleId] $zou_command"
-    return 2
-  fi
-
-  if ! branch_ensure_local $vbranch; then
-    io_warning "vbranch '$vbranch' does not exist" "[$moduleId] $zou_command"
-    return 2
-  fi
-
-  # synchonize submodules to avoid merge conflicts
-  commit_sync_submodules $branch $vbranch
-
-  # synchronize branches
-  if branch_is_merged $branch $vbranch; then
-    branch_merge_ff $vbranch $branch &>/dev/null || return 3
+  if ! branch_is_local "$branch"; then
+    # detached head
+    local vtags=( $(vtag_vtags_at $branch | grep -v '-@$') )
+    if [ ${#vtags[@]} -ne 0 ]; then
+      io_info "Published detached head '$branch' at '${vtags[0]}'" "[$moduleId]"
+    else
+      io_warning "Detached head '$branch' cannot be published" "[$moduleId]"
+    fi
   else
-    branch_merge_core $branch $vbranch || return 3
-  fi
+    local vbranch=$(branch_get_vbranch_name $branch)
+    if [[ -z $vbranch ]]; then
+      io_warning "Branch '$branch' is not associated with a vbranch" "[$moduleId]"
+      return 2
+    fi
 
-  # compute next vtag
-  local vtag
-  vtag=$(vbranch_next_vtag $vbranch $prerelPrefix)
-  [ $? -ne 0 ] && return 4
+    if ! branch_ensure_local $vbranch; then
+      io_warning "The vbranch '$vbranch' does not exist" "[$moduleId]"
+      return 2
+    fi
 
-  # update technical version - modify resources files
-  [[ -n $needCheckout ]] && git checkout $branch &>/dev/null
-  local vinfo=( $(version_update $vtag) )
-  version_commit_files "${vinfo[@]}" $(repo_list_unstaged_submodules)
-  # merge resource files 
-  [ $? -eq 0 ] && branch_merge $branch $vbranch '-Xtheirs'
-  [[ -n $needCheckout ]] && git checkout $obranch &>/dev/null
+    # synchonize submodules to avoid merge conflicts
+    commit_sync_submodules $branch $vbranch
 
-  # be sure dev == prod
-  branch_merge $vbranch $branch
+    # synchronize branches
+    if branch_is_merged $branch $vbranch; then
+      branch_merge_ff $vbranch $branch &>/dev/null || return 3
+    else
+      branch_merge_core $branch $vbranch || return 3
+    fi
+
+    # compute next vtag
+    local vtag ec=0
+    vtag=$(vbranch_next_vtag $vbranch $prerelPrefix) || ec=$?
+    [ $ec -eq 3 ] && {
+      # already published
+      echo $vtag
+      return 0
+    }
+    [ $ec -ne 0 ] && return 4
+
+    # update technical version - modify resources files
+    [[ -n $needCheckout ]] && git checkout $branch &>/dev/null
+    local vinfo=( $(version_update $vtag) )
+    version_commit_files "${vinfo[@]}" $(repo_list_unstaged_submodules)
+    # merge resource files 
+    [ $? -eq 0 ] && branch_merge $branch $vbranch '-Xtheirs'
+    [[ -n $needCheckout ]] && git checkout $obranch &>/dev/null
+
+    # be sure dev == prod
+    branch_merge $vbranch $branch
 
     # tag
     local comment="publish branch '$branch' as '${vinfo[0]}'"
     git tag -a -m "zou-flow: $comment" $vtag $vbranch
     io_info "Published branch '$branch' at '$vtag'" "[$(repo_module_id)]"
     echo $vtag
+  fi
 }

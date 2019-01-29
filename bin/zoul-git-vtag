@@ -72,8 +72,30 @@ vtag_vtags_at()
   # input:
   # - $1: rev to list
   # output:
-  # - list of vtags pointing at given commit (ex: v1.0.0-rc1 v1.0.0)
-  git tag --sort=-v:refname --points-at $1^{} | grep -E '^(.*/)?v[0-9]+\.[0-9]+(\.|-)' | grep -v '^other/'
+  # - list of vtags pointing at given commit (ex: v1.0-@ v1.0.0-rc1 v1.0.0)
+  git tag --sort=-v:refname --points-at "${1:-HEAD}^{}" | grep -E '^(.*/)?v[0-9]+\.[0-9]+(\.|-)' | grep -v '^other/'
+}
+vtag_best_match_vtag_at()
+{
+  # get best match vtag at given commit
+  # input:
+  # - $1: branch (ex: sku/dev, master)
+  # output:
+  # - best match vtag  (ex: sku/dev -> sku/v1.0.0, master -> v2.0.0)
+  local branch=$1 hint reHint
+  local vtags=( $(vtag_vtags_at $branch) )
+  if [ ${#vtags[@]} -ne 0 ]; then
+    for hint in $(vtag_scan_branch_path $branch); do
+      reHint=$(regex_escape $hint)
+      for tag in $(echo "${vtags[@]}" | xargs -n 1 | grep "^$reHint"); do
+        echo $tag
+        return 0
+      done
+    done
+    echo ${vtags[0]}
+  else
+    return 1
+  fi
 }
 vtag_get_vbranch_name ()
 {
@@ -123,7 +145,7 @@ vtag_get_vbranch_tail()
   # - [0]: the vtag that starts the vbranch tail
   # - [1]: the vbranch that contains the given vbranch marker
   # - [2]: a status (empty|full) indicating if the vbranch tail does not contain any vtag
-  for vtag in $(vtag_vtags_at $1); do
+  for vtag in $(vtag_best_match_vtag_at $1); do
     io_debug vtag vtag_get_vbranch_tail
     local vbranch=$(vtag_get_vbranch $vtag)
     if [[ -n $vbranch ]]; then

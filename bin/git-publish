@@ -43,16 +43,9 @@ publish_core()
 {
   local branch vtag ltag stag
   branch=$(branch_current) || return 1
-  vtag=$(vtag_at_vtag "$branch")
-  if [ $? -eq 0 ]; then
-    if branch_is_local "$branch"; then
-      io_info "already published at '$vtag'" "[$(repo_module_id)] $branch"
-    else
-      io_info "publish detached head ($branch) at '$vtag'" "[$(repo_module_id)]"
-    fi
-  elif config_publish_is_enabled; then
-    vtag=$(branch_publish $branch $prerelPrefix) || return 1
-    [[ -n $vtag && $push == true ]] && git push $(git remote) "$vtag"
+  if config_publish_is_enabled; then
+    vtag=$(branch_publish "$branch" "$prerelPrefix") || return 1
+    [[ -n $vtag && $push == true ]] && git push $(git remote) "$vtag" || true
   else
     ltag=$(vtag_describe "$branch") || return 1
     stag=${ltag%-*-g*}
