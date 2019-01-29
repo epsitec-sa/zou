@@ -8,9 +8,10 @@ ZOUL_GIT_REPO=true
 
 [[ -z $ZOUL_CORE ]] && . zoul-core
 
+declare -A smPathLookup
+export smPathLookup
+
 repo_zouflow_path()    { echo "$(repo_module_dir)/$ZOU_FLOW_CONFIG"; }
-repo_gitmodules_path() { echo "$(repo_module_dir)/.gitmodules"; }
-repo_list_submodules() { git config --file "$(repo_gitmodules_path)" --get-regexp '^submodule\..*\.path$' | cut -d' ' -f2; }
 repo_list_deleted()    { git ls-files --deleted; }
 repo_list_unstaged()   { git diff-files --name-only -r --ignore-submodules --; }
 repo_list_uncommited() { git diff-index --cached --name-only -r --ignore-submodules HEAD --; }
@@ -21,6 +22,17 @@ repo_is_root()             { [[ -d "${1:-.}/.git" ]]; }
 repo_is_submodule()        { [[ -f "${1:-.}/.git" ]]; }
 repo_is_submodule_level1() { repo_is_submodule "$1" && repo_is_root "${1:-.}/.." ]]; }
 
+repo_list_submodules()
+{
+  local key value
+  key=$(repo_module_dir) || return 1
+  value=${smPathLookup[$key]}
+  if [[ -z $value ]]; then
+    value=$(git config --file "$key/.gitmodules" --get-regexp '^submodule\..*\.path$' | cut -d' ' -f2)
+    smPathLookup[$key]=$value
+  fi
+  echo $value
+}
 repo_list_unstaged_submodules()
 {
   local x
