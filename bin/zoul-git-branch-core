@@ -141,7 +141,7 @@ branch_without_remote_prefix() { branch_is_remote $1 && echo ${1#*/} || echo $1;
 
 branch_ensure_local()
 {
-  if ! git show-ref -s --verify "refs/heads/$1" 2>/dev/null; then
+  if ! git show-ref -s --verify "refs/heads/$1" &>/dev/null; then
     git checkout $1 &>/dev/null || return 1
     git checkout - &>/dev/null
   fi
