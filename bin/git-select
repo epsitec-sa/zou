@@ -15,21 +15,21 @@ while [[ "$#" > 0 ]]; do case "$1" in
   -a|--all)           cmdOpts+=($1); all=true;;
   --_root)            cmdOpts+=($1 $2); root=$(echo $2 | xargs echo); shift;;  # remove single quotes
   -*) echo "unknown option: $1" >&2; exit 1;;
-  *) branch=$1;;
+  *) rootBranch=$1;;
 esac; shift; done
 
-[[ -z $branch ]] && branch=$(branch_current_root_branch)
+[[ -z $rootBranch ]] && rootBranch=$(branch_current_root_branch)
 
 select_submodules()
 {
-  local branch=$1 selectedBranch=$2 configFile skuExclude include exclude path opath ec=0
+  local rootBranch=$1 selectedBranch=$2 configFile skuExclude include exclude path opath ec=0
   configFile=$(repo_zouflow_path) || return 1
-  skuExclude=( $(config_sku_list_excluded "$branch" "$configFile") )
+  [[ $all == true ]] && skuExclude=() || skuExclude=( $(config_sku_list_excluded "$rootBranch" "$configFile") )
   include=( $(config_select_list_included "$selectedBranch" "$configFile") )
   for path in $(array_remove_array 'include[@]' 'skuExclude[@]'); do
     opath="$PWD"; cd "$path"
     [[ $quiet == true ]] || echo Entering "'$(path_make_relative '.' "$root")'"
-    git select -0 ${cmdOpts[@]} "$branch" || ec=1
+    git select -0 ${cmdOpts[@]} "$rootBranch" || ec=1
     cd "$opath"
     [[ $ec != 0 && $stopOnError == true ]] && break
   done
@@ -39,17 +39,17 @@ select_submodules()
   done
   return $ec
 }
-select_core()
+select_tree()
 {
-  local branch=$1 selectedBranch
-  selectedBranch=$(branch_select "$branch") || return 1
-  select_submodules "$branch" "$selectedBranch" || return 1
+  local rootBranch=$1 selectedBranch
+  selectedBranch=$(branch_select "$rootBranch") || return 1
+  select_submodules "$rootBranch" "$selectedBranch" || return 1
   repo_commit_submodules || true
 }
 
 if [[ $level0 == true ]]; then
-  select_core $branch
+  select_tree $rootBranch
 else
   [[ -z $quiet ]] && echo Entering "'$(repo_module_relative_to_path)'"
-  git select -0 --_root "'$(repo_module_dir)'" ${cmdOpts[@]} "$branch"   # single quote root to avoid shell path expansion on Windows
+  git select -0 --_root "'$(repo_module_dir)'" ${cmdOpts[@]} "$rootBranch"   # single quote root to avoid shell path expansion on Windows
 fi
