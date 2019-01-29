@@ -29,7 +29,7 @@ branch_sync_visitor()
     '<')  branch_merge $r $l || return 1;; # l < r behind  -- move l
     '<>') branch_sync  $r $l || return 1;; # ahead and behind
   esac
-  branch_try_attach &>/dev/null
+  branch_try_attach &>/dev/null || true
 }
 branch_visit_sync_info() 
 {
