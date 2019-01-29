@@ -25,6 +25,7 @@ select_submodules()
   local rootBranch=$1 selectedBranch=$2 configFile skuExclude include exclude path opath ec=0
   configFile=$(repo_zouflow_path) || return 1
   [[ $all == true ]] && skuExclude=() || skuExclude=( $(config_sku_list_excluded "$rootBranch" "$configFile") )
+  # select active submodules which are included in select
   include=( $(config_select_list_included "$selectedBranch" "$configFile") )
   for path in $(array_remove_array 'include[@]' 'skuExclude[@]'); do
     opath="$PWD"; cd "$path"
@@ -33,9 +34,16 @@ select_submodules()
     cd "$opath"
     [[ $ec != 0 && $stopOnError == true ]] && break
   done
+  # update active submodules which are excluded from select
   exclude=( $(config_select_list_excluded "$selectedBranch" "$configFile") )
   for path in $(array_remove_array 'exclude[@]' 'skuExclude[@]'); do
     repo_update_submodule "$path"
+  done
+  # discard inactive submodules
+  local unstaged=( $(repo_list_unstaged_submodules) ) moduleId=$(repo_module_id)
+  for path in $(array_intersect_array 'unstaged[@]' 'skuExclude[@]'); do
+    git submodule update --recursive "$path" &>/dev/null
+    io_warning "$path" "[$moduleId] discarded"
   done
   return $ec
 }
