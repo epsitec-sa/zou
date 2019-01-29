@@ -12,6 +12,7 @@ while [[ "$#" > 0 ]]; do case "$1" in
   -0|--level0) level0=true;;
   -q|--quiet)         cmdOpts+=($1); quiet=true;;
   -e|--stop-on-error) cmdOpts+=($1); stopOnError=true;;
+  -a|--all)           cmdOpts+=($1); all=true;;
   --_root)            cmdOpts+=($1 $2); root=$(echo $2 | xargs echo); shift;;  # remove single quotes
   -*) echo "unknown option: $1" >&2; exit 1;;
   *) branch=$1;;
