@@ -21,10 +21,10 @@ esac; shift; done
 
 select_submodules()
 {
-  local branch=$1 configFile skuExclude include exclude path opath ec=0
+  local branch=$1 selectedBranch=$2 configFile skuExclude include exclude path opath ec=0
   configFile=$(repo_zouflow_path) || return 1
   skuExclude=( $(config_sku_list_excluded "$branch" "$configFile") )
-  include=( $(config_select_list_included "$branch" "$configFile") )
+  include=( $(config_select_list_included "$selectedBranch" "$configFile") )
   for path in $(array_remove_array 'include[@]' 'skuExclude[@]'); do
     opath="$PWD"; cd "$path"
     [[ $quiet == true ]] || echo Entering "'$(path_make_relative '.' "$root")'"
@@ -32,7 +32,7 @@ select_submodules()
     cd "$opath"
     [[ $ec != 0 && $stopOnError == true ]] && break
   done
-  exclude=( $(config_select_list_excluded "$branch" "$configFile") )
+  exclude=( $(config_select_list_excluded "$selectedBranch" "$configFile") )
   for path in $(array_remove_array 'exclude[@]' 'skuExclude[@]'); do
     repo_update_submodule "$path"
   done
@@ -40,9 +40,9 @@ select_submodules()
 }
 select_core()
 {
-  local branch=$1
-  branch_select "$branch" >/dev/null || return 1
-  select_submodules "$branch" || return 1
+  local branch=$1 selectedBranch
+  selectedBranch=$(branch_select "$branch") || return 1
+  select_submodules "$branch" "$selectedBranch" || return 1
   repo_commit_submodules || true
 }
 
