@@ -210,6 +210,12 @@ repo_update_submodules()
     git submodule update --init $recursive
   fi
 }
+repo_update_submodule()
+{
+  local path=$1
+  io_info 'updating submodule '$path'...' "[$(repo_module_id)]"
+  git submodule update --init --recursive "$path"
+}
 repo_require_clean_work_tree () {
     # io_info >&2 "repo_require_clean_work_tree"
     local prefix="$*"
