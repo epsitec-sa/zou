@@ -47,9 +47,8 @@ repo_commit_submodules()
   local unstaged=( $(repo_list_unstaged_submodules) )
   [ ${#unstaged[@]} -eq 0 ] && return 1
   local cslist=$(string_join ', ' "${unstaged[@]}")
-  local message="USMR: $cslist"
-  git commit -m "$message" -- "${unstaged[@]}" >/dev/null
-  io_warning "$cslist" "[$(repo_module_id)] commited"
+  git commit -m "zou-flow: update submodules '$cslist'" -- "${unstaged[@]}" >/dev/null
+  io_warning "Commited submodules '$cslist'" "[$(repo_module_id)]"
 }
 repo_list_untracked()
 {
@@ -206,51 +205,50 @@ repo_update_submodules()
   local submodules=( $(repo_list_submodules) )
   if [ ${#submodules[@]} -ne 0 ]; then
     [[ -z $moduleId ]] && moduleId=$(repo_module_id)
-    io_info 'updating submodules...' "[$moduleId]"
+    io_info 'Updating submodules...' "[$moduleId]"
     git submodule update --init $recursive
   fi
 }
 repo_update_submodule()
 {
   local path=$1
-  io_info 'updating submodule '$path'...' "[$(repo_module_id)]"
+  io_info 'Updating submodule '$path'...' "[$(repo_module_id)]"
   git submodule update --init --recursive "$path"
 }
 repo_require_clean_work_tree () {
-    # io_info >&2 "repo_require_clean_work_tree"
     local prefix="$*"
     [[ $prefix =~ ^\[ ]] || prefix="[$(repo_module_id)] $prefix"
     local err=0
 
     # Update the index
     if ! git update-index -q --ignore-submodules --refresh &>/dev/null; then
-        io_error 'your have unmerged paths.' "$prefix"
+        io_error 'You have unmerged paths.' "$prefix"
         io_error "$(repo_list_unmerged)" '%2s'
-        io_info  "resolve conflicts and run 'git commit'." '%2s'
+        io_info  "Resolve conflicts and run 'git commit'." '%2s'
         return 1
     fi
 
     # Disallow untracked changes in the working tree
     if ! test -z "$(repo_list_untracked)"; then
-        io_error 'your work tree contains untracked changes.' "$prefix"
+        io_error 'Your work tree contains untracked changes.' "$prefix"
         io_error "$(repo_list_untracked)" '%2s'
-        io_info  "run 'git add'" '%2s'
+        io_info  "Run 'git add'" '%2s'
         err=1
     fi
 
     # Disallow unstaged changes in the working tree
     if ! git diff-files --quiet --ignore-submodules --; then
-        io_error 'you have unstaged changes.' "$prefix"
+        io_error 'You have unstaged changes.' "$prefix"
         io_error "$(repo_list_unstaged)" '%2s'
-        io_info  "run 'git stash' or 'git add' and 'git commit'." '%2s'
+        io_info  "Run 'git stash' or 'git add' and 'git commit'." '%2s'
         err=1
     fi
 
     # Disallow uncommitted changes in the index
     if ! git diff-index --cached --quiet HEAD --ignore-submodules --; then
-        io_error 'your index contains uncommitted changes.' "$prefix"
+        io_error 'Your index contains uncommitted changes.' "$prefix"
         io_error "$(repo_list_uncommited)" '%2s'
-        io_info  "run 'git commit'." '%2s'
+        io_info  "Run 'git commit'." '%2s'
         err=1
     fi
 

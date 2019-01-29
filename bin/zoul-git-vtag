@@ -75,7 +75,6 @@ vtag_vtags_at()
   # - list of vtags pointing at given commit (ex: v1.0.0-rc1 v1.0.0)
   git tag --sort=-v:refname --points-at $1^{} | grep -E '^(.*/)?v[0-9]+\.[0-9]+(\.|-)' | grep -v '^other/'
 }
-
 vtag_get_vbranch_name ()
 {
   # extract vbranch name from vtag
@@ -110,7 +109,7 @@ vtag_get_vbranch()
         if [[ -n $(git show-ref refs/remotes/$vbranch) ]]; then
           echo $vbranch
         else
-          io_warning "vtag_get_vbranch: $vtag has no associated vbranch"
+          io_warning "vtag_get_vbranch: vtag '$vtag' has no associated vbranch"
         fi
     fi
 }
@@ -142,7 +141,7 @@ vtag_get_vbranch_tail()
       fi
     fi
   done
-  io_warning "vtag_get_vbranch_tail: branch $(git rev-parse --abbrev-ref $2) is outside vbranch $vbranch"
+  io_warning "vtag_get_vbranch_tail: branch '$(git rev-parse --abbrev-ref $2)' is outside vbranch '$vbranch'"
   return 1
 }
 vtag_get_next_vtag()
@@ -318,7 +317,7 @@ vtag_check()
 {
   local vtag=$1 ec=0
   if [[ ! $vtag =~ ^v[0-9]+\.[0-9]+(-@|\.[0-9]+(-[[:alnum:]]+)?(\+.+)?)$ ]]; then
-    io_warning "$vtag does not respect semantic versioning" 'vtag_check'
+    io_warning "'$vtag' does not respect semantic versioning" 'vtag_check'
     ec=1
   fi
   local vbranch=$(vtag_get_vbranch $vtag 2>/dev/null)

@@ -34,7 +34,7 @@ branch_sync_visitor()
 branch_visit_sync_info() 
 {
   local visitor=$1
-  local label=$2
+  local moduleId=$(repo_module_id)
   while read l r i; do
     $visitor $r $l $i || return 1
     case $i in
@@ -64,7 +64,7 @@ branch_visit_sync_info()
     esac
     local linfo="  $l"
     [[ $l == $(branch_current) ]] && linfo="* $l"
-    io_message "$linfo $i $r" "$label" $color
+    io_message "$linfo $i $r" "[$moduleId]" $color
     [[ $i == '?' ]] && {
       io_message >&2 "  remote branch $r was deleted or renamed" ''
       io_message >&2 "  rename $l and update its tracking information:" ''
@@ -79,9 +79,9 @@ branch_sync_all()
   local moduleId=$(repo_module_id)
 
   git fetch --prune --all &>/dev/null
-  repo_require_clean_work_tree "[$moduleId] cannot synchronize" || return 1
+  repo_require_clean_work_tree "[$moduleId]" || return 1
 
-  branch_visit_sync_info branch_sync_visitor "[$moduleId] synchronized" 
+  branch_visit_sync_info branch_sync_visitor
 
   repo_update_submodules $moduleId
 }

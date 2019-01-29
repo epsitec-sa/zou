@@ -43,7 +43,7 @@ select_submodules()
   local unstaged=( $(repo_list_unstaged_submodules) ) moduleId=$(repo_module_id)
   for path in $(array_intersect_array 'unstaged[@]' 'skuExclude[@]'); do
     git submodule update --recursive "$path" &>/dev/null
-    io_warning "$path" "[$moduleId] discarded"
+    io_info "Discarded submodule '$path'" "[$moduleId]"
   done
   return $ec
 }
