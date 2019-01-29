@@ -9,17 +9,17 @@
 cmdOpts=()
 while [[ "$#" > 0 ]]; do case "$1" in
   -h|--help) zou-help $0; exit 0;;
-  -0|--level0) level0=true;;
+  -0|--level0)        level0=true;;
   -q|--quiet)         cmdOpts+=($1); quiet=true;;
   -e|--stop-on-error) cmdOpts+=($1); stopOnError=true;;
   -r|--recursive)     cmdOpts+=($1); recursive=true;;
-  --push)   cmdOpts+=($1); push=true;;
-  --alpha)  cmdOpts+=($1); prerelPrefix='alpha';;
-  --beta)   cmdOpts+=($1); prerelPrefix='beta';;
-  --rc)     cmdOpts+=($1); prerelPrefix='rc';;
-  --rtm)    cmdOpts+=($1); prerelPrefix='rtm';;
-  --debug)  cmdOpts+=($1); debug=true;;
-  --_root)  cmdOpts+=($1 $2); root=$(echo $2 | xargs echo); shift;;  # remove single quotes
+  --push)             cmdOpts+=($1); push=true;;
+  --alpha)            cmdOpts+=($1); prerelPrefix='alpha';;
+  --beta)             cmdOpts+=($1); prerelPrefix='beta';;
+  --rc)               cmdOpts+=($1); prerelPrefix='rc';;
+  --rtm)              cmdOpts+=($1); prerelPrefix='rtm';;
+  --debug)            cmdOpts+=($1); debug=true;;
+  --_root)            cmdOpts+=($1 $2); root=$(echo $2 | xargs echo); shift;;  # remove single quotes
   -*) echo "unknown option: $1" >&2; exit 1;;
 esac; shift; done
 

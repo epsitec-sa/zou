@@ -30,7 +30,7 @@ select_submodules()
     [[ $quiet == true ]] || echo Entering "'$(path_make_relative '.' "$root")'"
     git select -0 ${cmdOpts[@]} "$branch" || ec=1
     cd "$opath"
-    [[ $ec == 1 && $stopOnError == true ]] && break
+    [[ $ec != 0 && $stopOnError == true ]] && break
   done
   exclude=( $(config_select_list_excluded "$branch" "$configFile") )
   for path in $(array_remove_array 'exclude[@]' 'skuExclude[@]'); do
