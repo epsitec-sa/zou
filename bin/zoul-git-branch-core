@@ -6,6 +6,7 @@
 #   [[ -z $ZOUL_GIT_BRANCH_CORE ]] && . zoul-git-branch-core
 ZOUL_GIT_BRANCH_CORE=true
 
+[[ -z $ZOUL_CORE ]]     && . zoul-core
 [[ -z $ZOUL_GIT_CORE ]] && . zoul-git-core
 
 branch_exists()         { git rev-parse --quiet --verify $1 >/dev/null; }
@@ -147,9 +148,15 @@ branch_ensure_local()
 }
 branch_checkout()
 {
-  if [[ -n $1 && $1 != $(branch_current) ]]; then
-    git checkout "$(branch_without_remote_prefix $1)" 2>/dev/null
-  fi
+  local info
+  info=$(git checkout "$(branch_without_remote_prefix $1)" 2>&1 >/dev/null)
+  [ $? -ne 0 ] && return $?
+  [[ -n $info ]] && {
+    local line moduleId=$(repo_module_id)
+    while read -r line; do
+      io_info "$line" "[$moduleId]"
+    done <<< "$info"
+  }
 }
 branch_list_attach_candidates()
 {

@@ -150,12 +150,9 @@ branch_select()
   local branch=$1
   [[ -z $branch ]] && io_error 'branch_select: specify a branch to match' && return 1
   local bestMatch=$(branch_best_match $branch)
-  local info=$(branch_checkout "$bestMatch" 2>&1)
-  if [ $? -ne 0 ]; then
+  if ! branch_checkout "$bestMatch"; then
     repo_require_clean_work_tree 'cannot select'
     return 1
-  else
-    [[ -n $info ]] && io_info "$info" "[$(repo_module_id)]"
   fi
   echo "$bestMatch"
 }
