@@ -5,9 +5,6 @@
 [[ -z $ZOUL_GIT_BRANCH_CORE ]]   && . zoul-git-branch-core
 [[ -z $ZOUL_GIT_BRANCH_SELECT ]] && . zoul-git-branch-select
 
-. test-git-repo-data
-cd "$sat1Dir"
-
 cmdOpts=()
 while [[ "$#" > 0 ]]; do case "$1" in
   --) shift; args+=("$@"); break;;
@@ -27,25 +24,18 @@ select_submodules()
   local branch=$1 configFile skuExclude include exclude path opath ec=0
   configFile=$(repo_zouflow_path) || return 1
   skuExclude=( $(config_sku_list_excluded "$branch" "$configFile") )
-  echo TEST1
-  include=( $(config_select_list_included "$branch" "$configFile") ) || return 1
-  echo include = $(array_remove_array 'include[@]' 'skuExclude[@]')
-  # for path in $(array_remove_array 'include[@]' 'skuExclude[@]'); do
-  #   opath="$PWD"; cd "$path"
-  #   [[ $quiet == true ]] || echo Entering "'$(path_make_relative '.' "$root")'"
-  #   git select -0 ${cmdOpts[@]} "$branch" || ec=1
-  #   cd "$opath"
-  #   [[ $ec == 1 && $stopOnError == true ]] && break
-  # done
-  
-  exclude=( $(config_select_list_excluded "$branch" "$configFile") ) || return 1
-  echo exclude = $(array_remove_array 'exclude[@]' 'skuExclude[@]')
-  # for path in $(array_remove_array 'exclude[@]' 'skuExclude[@]'); do
-  #   opath="$PWD"; cd "$path"
-  #   [[ $quiet == true ]] || echo Entering "'$(path_make_relative '.' "$root")'"
-  #   repo_update_submodules --recursive
-  #   cd "$opath"
-  # done
+  include=( $(config_select_list_included "$branch" "$configFile") )
+  for path in $(array_remove_array 'include[@]' 'skuExclude[@]'); do
+    opath="$PWD"; cd "$path"
+    [[ $quiet == true ]] || echo Entering "'$(path_make_relative '.' "$root")'"
+    git select -0 ${cmdOpts[@]} "$branch" || ec=1
+    cd "$opath"
+    [[ $ec == 1 && $stopOnError == true ]] && break
+  done
+  exclude=( $(config_select_list_excluded "$branch" "$configFile") )
+  for path in $(array_remove_array 'exclude[@]' 'skuExclude[@]'); do
+    repo_update_submodule "$path"
+  done
   return $ec
 }
 select_core()
@@ -53,7 +43,7 @@ select_core()
   local branch=$1
   branch_select "$branch" >/dev/null || return 1
   select_submodules "$branch" || return 1
-  repo_commit_submodules
+  repo_commit_submodules || true
 }
 
 if [[ $level0 == true ]]; then
