@@ -63,8 +63,10 @@ vtag_describe()
   local b
   for b in $(vtag_scan_branch_path $branch); do
     git describe --first-parent --tags --match "${b}/v[0-9]*" --exclude 'other/*' "$branch" 2>/dev/null && return 0
+    git describe --tags --match "${b}/v[0-9]*" --exclude 'other/*' "$branch" 2>/dev/null && return 0
   done
-  git describe --first-parent --tags --match "v[0-9]*" --exclude 'other/*' "$branch" 2>/dev/null;
+  git describe --first-parent --tags --match "v[0-9]*" --exclude 'other/*' "$branch" 2>/dev/null && return 0
+  git describe --tags --match "v[0-9]*" --exclude 'other/*' "$branch" 2>/dev/null;
 }
 vtag_vtags_at()
 {
