@@ -69,8 +69,7 @@ branch_publish()
 
     # update technical version - modify resources files
     [[ -n $needCheckout ]] && git checkout $branch &>/dev/null
-    local vinfo=( $(version_update $vtag) )
-    version_commit_files "${vinfo[@]}" $(repo_list_unstaged_submodules)
+    version_commit_files $(version_update $vtag) $(repo_list_unstaged_submodules)
     # merge resource files 
     [ $? -eq 0 ] && branch_merge $branch $vbranch '-Xtheirs'
     [[ -n $needCheckout ]] && git checkout $obranch &>/dev/null
