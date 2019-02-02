@@ -340,7 +340,7 @@ vtag_increment()
 vtag_check()
 {
   local vtag=$1 ec=0
-  if [[ ! $vtag =~ ^v[0-9]+\.[0-9]+(-@|\.[0-9]+(-[[:alnum:]]+)?(\+.+)?)$ ]]; then
+  if [[ ! $vtag =~ ^(.*/)?v[0-9]+\.[0-9]+(-@|\.[0-9]+(-[[:alnum:]]+)?(\+.+)?)$ ]]; then
     io_warning "'$vtag' does not respect semantic versioning" 'vtag_check'
     ec=1
   fi
