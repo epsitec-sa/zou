@@ -1,12 +1,11 @@
 #!/bin/bash
 
-. zoul-core
+. zoul-git-tag
 
 args=()
 while [[ "$#" > 0 ]]; do case "$1" in
   -h|--help) zou-help $0; exit 0;;
   --debug) debug=true;;
-  --push) push=true;;
   -m|--message) message=$2; shift;;
   -*) io_error "unknown option: $1"; exit 1;;
   *) args+=("$1");;
@@ -14,11 +13,6 @@ esac; shift; done
 
 tag="${args[0]}"
 commit="${args[1]:-HEAD}"
-
-io_debug tag
-io_debug commit
-
 [[ -z $message ]] && message=$(git log -1 --pretty=%B "$commit")
 
-git tag -a -m "'$message'" "$tag" "$commit"
-[[ $push == true ]] && git push $(git remote) "$tag"
+tag_new "$tag" "$commit" "$message" 

@@ -13,7 +13,6 @@ while [[ "$#" > 0 ]]; do case "$1" in
   -q|--quiet)         cmdOpts+=($1); quiet=true;;
   -e|--stop-on-error) cmdOpts+=($1); stopOnError=true;;
   -r|--recursive)     cmdOpts+=($1); recursive=true;;
-  --push)             cmdOpts+=($1); push=true;;
   --alpha)            cmdOpts+=($1); prerelPrefix='alpha';;
   --beta)             cmdOpts+=($1); prerelPrefix='beta';;
   --rc)               cmdOpts+=($1); prerelPrefix='rc';;
@@ -45,7 +44,6 @@ publish_core()
   branch=$(branch_current) || return 1
   if config_publish_is_enabled; then
     vtag=$(branch_publish "$branch" "$prerelPrefix") || return 1
-    [[ -n $vtag && $push == true ]] && git push $(git remote) "$vtag" || true
   else
     ltag=$(vtag_describe "$branch") || return 1
     stag=${ltag%-*-g*}
