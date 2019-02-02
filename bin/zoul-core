@@ -218,6 +218,20 @@ path_make_relative()
   local relativeTo=$(realpath "${2:-.}")
   realpath --relative-to="$relativeTo" "$path"
 }
+get_file_encoding()
+{
+  local info=$(file -i $1)
+  info="${info##*=}"
+  echo "${info^^}"
+}
+_locale_encoding()
+{
+  local info=$(locale | grep -0 'LANG=')
+  info="${info##*.}"
+  echo "${info^^}"
+}
+
+zou_lencoding="$(_locale_encoding)"
 
 # trace constants (if debug == true)
 io_debug zou_startupPath
@@ -225,3 +239,4 @@ io_debug zou_startupDir
 io_debug zou_startupFileName
 io_debug zou_binDir
 io_debug zou_command
+io_debug zou_lencoding
