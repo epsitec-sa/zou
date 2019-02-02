@@ -11,9 +11,9 @@ action='add'
 while [[ "$#" > 0 ]]; do case "$1" in
   --) shift; args+=("$@"); break;;
   -h|--help) zou-help $0; exit 0;;
-  --vp=*|--version-props=*) shift; versionProps+=("${1#*=}");;
-  --ai=*|--assembly-info=*) shift; assemblyInfo+=("${1#*=}");;
-  --cs=*|--csproj=*)        shift; csProj+=("${1#*=}");;
+  --vp=*|--version-props=*) versionProps+=("${1#*=}");;
+  --ai=*|--assembly-info=*) assemblyInfo+=("${1#*=}");;
+  --cs=*|--csproj=*)        csProj+=("${1#*=}");;
   --vp|--version-props)   versionProps+=('./Version.props');;
   --ai|--assembly-info)   assemblyInfo+=('*/AssemblyInfo*.cs');;
   --cs|--csproj)          csProj+=('*/*.csproj');;
