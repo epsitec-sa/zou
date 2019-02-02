@@ -79,6 +79,7 @@ branch_sync_all()
   local moduleId=$(repo_module_id)
 
   git fetch --prune --all &>/dev/null
+  git fetch --tags --force &>/dev/null
   repo_require_clean_work_tree "[$moduleId]" || return 1
 
   branch_visit_sync_info branch_sync_visitor
