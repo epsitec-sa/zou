@@ -7,6 +7,7 @@ set -f
 versionProps=()
 assemblyInfo=()
 csProj=()
+rc=()
 action='add'
 while [[ "$#" > 0 ]]; do case "$1" in
   --) shift; args+=("$@"); break;;
@@ -14,9 +15,11 @@ while [[ "$#" > 0 ]]; do case "$1" in
   --vp=*|--version-props=*) versionProps+=("${1#*=}");;
   --ai=*|--assembly-info=*) assemblyInfo+=("${1#*=}");;
   --cs=*|--csproj=*)        csProj+=("${1#*=}");;
+  --rc=*)                   rc+=("${1#*=}");;
   --vp|--version-props)   versionProps+=('./Version.props');;
   --ai|--assembly-info)   assemblyInfo+=('*/AssemblyInfo*.cs');;
   --cs|--csproj)          csProj+=('*/*.csproj');;
+  --rc)                   rc+=('*/*.rc');;
   --custom)               customDir='.';;
   --no-edit)              noEdit=true;;
   --remove)               action='remove';;
@@ -31,6 +34,9 @@ if [ ${#assemblyInfo[@]} -ne 0 ]; then
 fi
 if [ ${#csProj[@]} -ne 0 ]; then
   version_${action}_csproj "${csProj[@]}"
+fi
+if [ ${#rc[@]} -ne 0 ]; then
+  version_${action}_rc "${rc[@]}"
 fi
 
 if [[ -n $customDir ]]; then

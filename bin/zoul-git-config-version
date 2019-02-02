@@ -27,6 +27,21 @@ version_commit_files()
     git commit -m"zou-flow: update technical version to $techver" -- "$@" &>/dev/null
   }
 }
+version_iconv_sed()
+{
+  local file=$1
+  local script=$2
+  local fEncoding=$(get_file_encoding $file)
+
+  if [[ $fEncoding == $zou_lencoding ]]; then
+    sed -i -E "$script" "$file"
+  else
+    local tmp="$file.zou"
+    iconv -t "$zou_lencoding" "$file" | sed -E "$script" >"$tmp"
+    iconv -t "$fEncoding" "$tmp" >"$file"
+    rm "$tmp"
+  fi
+}
 
 # Update Version tags in *.csproj file
 #
@@ -38,11 +53,14 @@ version_commit_files()
 version_update_csproj()
 {
   local file=$1; shift
+  local varray=$1; shift
   local techver=$1; shift
   local stechver=$1; shift
-  sed -i -E "\
-    0,/<ProductVersion>/{s,(<ProductVersion>).*(</ProductVersion>),\1$stechver\2,}; \
-    0,/<ApplicationVersion>/{s,(<ApplicationVersion>).*(</ApplicationVersion>),\1$stechver\2,}" "$file"
+  local script="\
+  0,/<ProductVersion>/{s,(<ProductVersion>).*(</ProductVersion>),\1$stechver\2,};\
+  0,/<ApplicationVersion>/{s,(<ApplicationVersion>).*(</ApplicationVersion>),\1$stechver\2,}"
+
+  version_iconv_sed "$file" "$script"
 }
 # Update Version tag in AssemblyInfo.cs file
 #
@@ -55,11 +73,14 @@ version_update_csproj()
 version_update_assembly_info()
 {
   local file=$1; shift
+  local varray=$1; shift
   local techver=$1; shift
   local stechver=$1; shift
-  sed -i -E "\
-    s,^(\[assembly:[[:space:]]*AssemblyVersion[[:space:]]*\(\").*(\"\)\]),\1$stechver\2,; \
-    s,^(\[assembly:[[:space:]]*AssemblyFileVersion[[:space:]]*\(\").*(\"\)\]),\1$stechver\2," "$file"
+  local script="\
+    s,^(\[assembly:[[:space:]]*AssemblyVersion[[:space:]]*\(\").*(\"\)\]),\1$stechver\2,;\
+    s,^(\[assembly:[[:space:]]*AssemblyFileVersion[[:space:]]*\(\").*(\"\)\]),\1$stechver\2,"
+
+  version_iconv_sed "$file" "$script"
 }
 # Update Version tag in Version.props XML file
 #
@@ -75,19 +96,46 @@ version_update_assembly_info()
 version_update_version_props()
 {
   local file=$1; shift
+  local varray=$1; shift
   local techver=$1; shift
   local stechver=$1; shift
-  sed -i -E "\
-    s,(<Version>).*(</Version>),\1$techver\2,; \
-    s,(<AssemblyVersion>).*(</AssemblyVersion>),\1$techver\2," "$file"
+  local script="\
+  s,(<Version>).*(</Version>),\1$techver\2,;\
+  s,(<AssemblyVersion>).*(</AssemblyVersion>),\1$techver\2,"
+
+  version_iconv_sed "$file" "$script"
+}
+version_update_rc()
+{
+  local file=$1; shift
+  local varray=( ${!1} ); shift
+  local techver=$1; shift
+  local stechver=$1; shift
+
+  # local version=${varray[0]}
+  local major=${varray[1]}
+  local minor=${varray[2]}
+  local patch=${varray[3]}
+  # local prerelease=${varray[4]}
+  # local meta=${varray[5]}
+
+  local yyww=$(date +%y%V)
+
+  local script="\
+  s/([[:blank:]]+FILEVERSION[[:blank:]]+).*$/\1$major,$minor,$patch,$yyww/;\
+  s/([[:blank:]]+PRODUCTVERSION[[:blank:]]+).*$/\1$major,$minor,$patch,$yyww/;\
+  s/([[:blank:]]+VALUE \"FileVersion\",[[:blank:]]+).*$/\1\"$major.$minor.$patch.$yyww\"/;\
+  s/([[:blank:]]+VALUE \"ProductVersion\",[[:blank:]]+).*$/\1\"$major.$minor.$patch.$yyww\"/"
+
+  version_iconv_sed "$file" "$script"
 }
 version_update_custom()
 {
-  local techver=$1
-  local varray=( ${!2} )
-  local updater="${3:-$PWD/update-version}"
+  local techver=$1; shift
+  local varray=( ${!1} ); shift
+  local updater="${1:-$PWD/update-version}"
   if [[ -f "$updater" ]]; then
-    "$updater" "${varray[@]}"
+    source "$updater" "${varray[@]}"
   else
     return 1
   fi
@@ -163,26 +211,30 @@ version_remove_file_spec()
 version_list_version_props() { version_list_file_spec 'version-props'; }
 version_list_assembly_info() { version_list_file_spec 'assembly-info'; }
 version_list_csproj()        { version_list_file_spec 'csproj'; }
+version_list_rc()            { version_list_file_spec 'rc'; }
 
 version_add_version_props() { version_add_file_spec 'version-props' "$@"; }
 version_add_assembly_info() { version_add_file_spec 'assembly-info' "$@"; }
 version_add_csproj()        { version_add_file_spec 'csproj' "$@"; }
+version_add_rc()            { version_add_file_spec 'rc' "$@"; }
 
 version_remove_version_props() { version_remove_file_spec 'version-props' "$@"; }
 version_remove_assembly_info() { version_remove_file_spec 'assembly-info' "$@"; }
 version_remove_csproj()        { version_remove_file_spec 'csproj' "$@"; }
+version_remove_rc()            { version_remove_file_spec 'rc' "$@"; }
 
 version_update_file_spec()
 {
   local specs=$($1); shift
   local func=$1; shift
+  local varray=$1; shift
   local techver=$1; shift
   local stechver=$1; shift
   local fileSpec file hasSpec
   for fileSpec in $specs; do
     hasSpec=1
     for file in $(find -type f -ipath "$fileSpec" "$@"); do
-      "version_update_$func" "$file" "$techver" "$stechver"
+      "version_update_$func" "$file" "$varray" "$techver" "$stechver"
       realpath "$file"
     done
   done
@@ -209,9 +261,9 @@ version_update()
       local stechver=$(version_technical_short "${varray[@]}")
       # exclude submodules from find file (-not -path './<sm-path>/*'] ...)
       local findNotPaths=$(git config --file .gitmodules --get-regexp path | cut -d' ' -f2 | sed "s,\(.*\),-not -path \./\1/\*,")
-      version_update_config 'version_props' $techver $stechver $findNotPaths
-      version_update_config 'assembly_info' $techver $stechver $findNotPaths
-      version_update_config 'csproj'        $techver $stechver $findNotPaths
+      version_update_config 'version_props' 'varray[@]' $techver $stechver $findNotPaths
+      version_update_config 'assembly_info' 'varray[@]' $techver $stechver $findNotPaths
+      version_update_config 'csproj'        'varray[@]' $techver $stechver $findNotPaths
     fi
     # execute custom updater (use git config-version --custom to create one)
     version_update_custom $techver 'varray[@]' './update-version'
