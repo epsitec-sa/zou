@@ -27,7 +27,7 @@ select_submodules()
   [[ $all == true ]] && skuExclude=() || skuExclude=( $(config_sku_list_excluded "$rootBranch" "$configFile") )
   # select active submodules which are included in select
   include=( $(config_select_list_included "$selectedBranch" "$configFile") )
-  for path in $(array_remove_array 'include[@]' 'skuExclude[@]'); do
+  for path in $(string_sort $(array_remove_array 'include[@]' 'skuExclude[@]')); do
     opath="$PWD"; cd "$path"
     [[ $quiet == true ]] || echo Entering "'$(path_make_relative '.' "$root")'"
     git select -0 ${cmdOpts[@]} "$rootBranch" || ec=1
@@ -36,12 +36,12 @@ select_submodules()
   done
   # update active submodules which are excluded from select
   exclude=( $(config_select_list_excluded "$selectedBranch" "$configFile") )
-  for path in $(array_remove_array 'exclude[@]' 'skuExclude[@]'); do
+  for path in $(string_sort $(array_remove_array 'exclude[@]' 'skuExclude[@]')); do
     repo_update_submodule "$path"
   done
   # discard inactive submodules
   local unstaged=( $(repo_list_unstaged_submodules) ) moduleId=$(repo_module_id)
-  for path in $(array_intersect_array 'unstaged[@]' 'skuExclude[@]'); do
+  for path in $(string_sort $(array_intersect_array 'unstaged[@]' 'skuExclude[@]')); do
     git submodule update --recursive "$path" &>/dev/null
     io_info "Discarded submodule '$path'" "[$moduleId]"
   done
