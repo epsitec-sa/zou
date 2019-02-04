@@ -4,6 +4,7 @@
 #   [[ -z $ZOUL_GIT_BRANCH_PUBLISH ]] && . zoul-git-branch-publish
 ZOUL_GIT_BRANCH_PUBLISH=true
 
+[[ -z $ZOUL_GIT_TAG ]]            && . zoul-git-tag
 [[ -z $ZOUL_GIT_REPO ]]           && . zoul-git-repo
 [[ -z $ZOUL_GIT_COMMIT ]]         && . zoul-git-commit
 [[ -z $ZOUL_GIT_VBRANCH ]]        && . zoul-git-vbranch
@@ -57,9 +58,16 @@ branch_publish()
       branch_merge_core $branch $vbranch || return 3
     fi
 
-    # compute next vtag
     local vtag ec=0
-    vtag=$(vbranch_next_vtag $vbranch $prerelPrefix) || ec=$?
+
+    # move previous vtag if asked
+    if [[ $prerelPrefix == 'reuse' ]]; then
+      vtag=$(vbranch_prev_vtag $vbranch) || ec=$?
+    else
+      vtag=$(vbranch_next_vtag $vbranch $prerelPrefix) || ec=$?
+    fi
+
+    # compute next vtag
     [ $ec -eq 3 ] && {
       # already published
       echo $vtag
@@ -67,20 +75,24 @@ branch_publish()
     }
     [ $ec -ne 0 ] && return 4
 
-    # update technical version - modify resources files
-    [[ -n $needCheckout ]] && git checkout $branch &>/dev/null
-    version_commit_files $(version_update $vtag) $(repo_list_unstaged_submodules)
-    # merge resource files 
-    [ $? -eq 0 ] && branch_merge $branch $vbranch '-Xtheirs'
-    [[ -n $needCheckout ]] && git checkout $obranch &>/dev/null
+    if [[ $prerelPrefix == 'reuse' ]]; then
+      tag_move "$vtag" "$branch"
+    else
+      # update technical version - modify resources files
+      [[ -n $needCheckout ]] && git checkout $branch &>/dev/null
+      version_commit_files $(version_update $vtag) $(repo_list_unstaged_submodules)
+      # merge resource files 
+      [ $? -eq 0 ] && branch_merge $branch $vbranch '-Xtheirs'
+      [[ -n $needCheckout ]] && git checkout $obranch &>/dev/null
 
-    # be sure dev == prod
-    branch_merge $vbranch $branch
+      # be sure dev == prod
+      branch_merge $vbranch $branch
 
-    # tag
-    local comment="publish branch '$branch' as '${vinfo[0]}'"
-    git tag -a -m "zou-flow: $comment" $vtag $vbranch
-    io_info "Published branch '$branch' at '$vtag'" "[$(repo_module_id)]"
+      # tag
+      local comment="publish branch '$branch' as '${vinfo[0]}'"
+      git tag -a -m "zou-flow: $comment" $vtag $vbranch
+      io_info "Published branch '$branch' at '$vtag'" "[$(repo_module_id)]"
+    fi
     echo $vtag
   fi
 }
