@@ -36,11 +36,9 @@ repo_list_submodules()
 repo_list_unstaged_submodules()
 {
   local x
-  OIFS=$IFS; IFS=$'\n'
   for x in $(git diff-files --name-only -r); do
     repo_is_submodule "$x" && echo $x
   done
-  IFS=$OIFS
 }
 repo_commit_submodules()
 {
@@ -53,20 +51,16 @@ repo_commit_submodules()
 repo_list_untracked()
 {
   local x
-  OIFS=$IFS; IFS=$'\n'
   for x in $(git ls-files --exclude-standard --others); do
     repo_is_submodule "$x" || echo $x
   done
-  IFS=$OIFS
 }
 repo_list_dangling_submodules()
 {
   local x
-  OIFS=$IFS; IFS=$'\n'
   for x in $(git ls-files --exclude-standard --others); do
     repo_is_submodule "$x" && echo $x
   done
-  IFS=$OIFS
 }
 repo_remove_dangling_submodule()
 {
