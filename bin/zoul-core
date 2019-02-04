@@ -107,6 +107,19 @@ io_pause()
 }
 string_join()   { local d=$1; shift; echo -n "$1"; shift; printf "%s" "${@/#/$d}"; }
 string_indent() { local n=$1; shift; printf "%${n}s%s" '' "$*"; }
+string_sort()
+{
+  IFS=$'\n'
+  sort <<<"$*"
+  unset IFS
+}
+array_sort()
+{
+  local array=( ${!1} )
+  IFS=$'\n'
+  sort <<<"${array[*]}"
+  unset IFS
+}
 
 assert_equals()
 {
