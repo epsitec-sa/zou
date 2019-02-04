@@ -96,7 +96,7 @@ config_sku_list_excluded()
   local branch configFile
   branch=${1:-$(branch_ensure_current)} || return 1
   configFile=${2:-$(repo_zouflow_path)} || return 1
-  git config --file "$configFile" --get-all "sku.$branch.exclude"
+  git config --file "$configFile" --get-all "sku.$branch.exclude" || true
 }
 config_sku_list_included()
 {

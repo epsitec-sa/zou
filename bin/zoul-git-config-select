@@ -154,7 +154,7 @@ config_select_list_included()
     local excluded=( $(git config --file "$configFile" --get-all "select.$branch.exclude") )
     array_remove_array submodules[@] excluded[@]
   else
-    git config --file "$configFile" --get-all "select.$branch.include"
+    git config --file "$configFile" --get-all "select.$branch.include" || true
   fi
 }
 config_select_list_excluded()
@@ -168,7 +168,7 @@ config_select_list_excluded()
     local included=( $(git config --file "$configFile" --get-all "select.$branch.include") )
     array_remove_array submodules[@] included[@]
   else
-    git config --file "$configFile" --get-all "select.$branch.exclude"
+    git config --file "$configFile" --get-all "select.$branch.exclude" || true
   fi
 }
 config_select_status()
