@@ -28,10 +28,10 @@ _config_select_anti_verb()    { [[ $1 == 'exclude' ]] && echo 'include' || echo 
 
 config_select_include()
 {
-  local path branch configFile
-  path=${1:-$(repo_path_relative_to_module)} || return 1
-  branch=${2:-$(branch_ensure_current)} || return 1
-  configFile=${3:-$(repo_zouflow_path)} || return 1
+  local path=$1 branch=$2 configFile=$3
+  [[ -z $path ]] && path=$(repo_path_relative_to_module)
+  [[ -z $branch ]] && branch=$(branch_ensure_current)
+  [[ -z $configFile ]] && configFile=$(repo_zouflow_path)
   local rePath=$(regex_escape "$path")
   local defaultVerb=$(_config_select_default_verb)
   if [[ $defaultVerb == 'include' ]]; then
@@ -47,9 +47,9 @@ config_select_include()
 }
 config_select_include_all()
 {
-  local branch configFile
-  branch=${1:-$(branch_ensure_current)} || return 1
-  configFile=${2:-$(repo_zouflow_path)} || return 1
+  local branch=$1 configFile=$2
+  [[ -z $branch ]] && branch=$(branch_ensure_current)
+  [[ -z $configFile ]] && configFile=$(repo_zouflow_path)
   local defaultVerb=$(_config_select_default_verb)
   if [[ $defaultVerb == 'include' ]]; then
     git config --file "$configFile" --remove-section "select.$branch" &>/dev/null
@@ -63,9 +63,9 @@ config_select_include_all()
 }
 config_select_include_many()
 {
-  local branch configFile path rePath
-  branch=${1:-$(branch_ensure_current)} || return 1; shift
-  configFile=${1:-$(repo_zouflow_path)} || return 1; shift
+  local branch=$1 configFile=$2 path rePath; shift 2
+  [[ -z $branch ]] && branch=$(branch_ensure_current)
+  [[ -z $configFile ]] && configFile=$(repo_zouflow_path)
 
   local defaultVerb=$(_config_select_default_verb)
   for path in $@; do
@@ -84,10 +84,10 @@ config_select_include_many()
 }
 config_select_exclude()
 {
-  local path branch configFile
-  path=${1:-$(repo_path_relative_to_module)} || return 1
-  branch=${2:-$(branch_ensure_current)} || return 1
-  configFile=${3:-$(repo_zouflow_path)} || return 1
+  local path=$1 branch=$2 configFile=$3
+  [[ -z $path ]] && path=$(repo_path_relative_to_module)
+  [[ -z $branch ]] && branch=$(branch_ensure_current)
+  [[ -z $configFile ]] && configFile=$(repo_zouflow_path)
   local rePath=$(regex_escape "$path")
   local defaultVerb=$(_config_select_default_verb)
   if [[ $defaultVerb == 'exclude' ]]; then
@@ -103,9 +103,9 @@ config_select_exclude()
 }
 config_select_exclude_all()
 {
-  local branch configFile
-  branch=${1:-$(branch_ensure_current)} || return 1
-  configFile=${2:-$(repo_zouflow_path)} || return 1
+  local branch=$1 configFile=$2
+  [[ -z $branch ]] && branch=$(branch_ensure_current)
+  [[ -z $configFile ]] && configFile=$(repo_zouflow_path)
   local defaultVerb=$(_config_select_default_verb)
   if [[ $defaultVerb == 'exclude' ]]; then
     git config --file "$configFile" --remove-section "select.$branch" &>/dev/null
@@ -119,9 +119,9 @@ config_select_exclude_all()
 }
 config_select_exclude_many()
 {
-  local branch configFile path rePath
-  branch=${1:-$(branch_ensure_current)} || return 1; shift
-  configFile=${1:-$(repo_zouflow_path)} || return 1; shift
+  local branch=$1 configFile=$2 path rePath; shift 2
+  [[ -z $branch ]] && branch=$(branch_ensure_current)
+  [[ -z $configFile ]] && configFile=$(repo_zouflow_path)
 
   local defaultVerb=$(_config_select_default_verb)
   for path in $@; do
@@ -141,10 +141,10 @@ config_select_exclude_many()
 config_select_is_excluded() { ! config_select_is_included "$@"; }
 config_select_is_included()
 {
-  local path branch configFile p
-  path=${1:-$(repo_path_relative_to_module)} || return 1
-  branch=${2:-$(branch_ensure_current)} || return 1
-  configFile=${3:-$(repo_zouflow_path)} || return 1
+  local path=$1 branch=$2 configFile=$3 p
+  [[ -z $path ]] && path=$(repo_path_relative_to_module)
+  [[ -z $branch ]] && branch=$(branch_ensure_current)
+  [[ -z $configFile ]] && configFile=$(repo_zouflow_path)
   for p in $(config_select_list_included "$path" "$configFile"); do
      [[ $p == $path ]] && return 0
   done
@@ -152,9 +152,9 @@ config_select_is_included()
 }
 config_select_list_included()
 {
-  local branch configFile
-  branch=${1:-$(branch_ensure_current)} || return 1
-  configFile=${2:-$(repo_zouflow_path)} || return 1
+  local branch=$1 configFile=$2
+  [[ -z $branch ]] && branch=$(branch_ensure_current)
+  [[ -z $configFile ]] && configFile=$(repo_zouflow_path)
   local defaultVerb=$(_config_select_default_verb)
   if [[ $defaultVerb == 'include' ]]; then
     local submodules=( $(repo_list_submodules) )
@@ -166,9 +166,9 @@ config_select_list_included()
 }
 config_select_list_excluded()
 {
-  local branch configFile
-  branch=${1:-$(branch_ensure_current)} || return 1
-  configFile=${2:-$(repo_zouflow_path)} || return 1
+  local branch=$1 configFile=$2
+  [[ -z $branch ]] && branch=$(branch_ensure_current)
+  [[ -z $configFile ]] && configFile=$(repo_zouflow_path)
   local defaultVerb=$(_config_select_default_verb)
   if [[ $defaultVerb == 'exclude' ]]; then
     local submodules=( $(repo_list_submodules) )
@@ -180,9 +180,9 @@ config_select_list_excluded()
 }
 config_select_status()
 {
-  local branch configFile
-  branch=${1:-$(branch_ensure_current)} || return 1
-  configFile=${2:-$(repo_zouflow_path)} || return 1
+  local branch=$1 configFile=$2
+  [[ -z $branch ]] && branch=$(branch_ensure_current)
+  [[ -z $configFile ]] && configFile=$(repo_zouflow_path)
   io_message "'$branch'" "select"
   for path in $(config_select_list_included "$@" | sort); do
     io_message "   $path" ''

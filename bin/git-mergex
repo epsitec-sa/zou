@@ -12,7 +12,8 @@ esac; shift; done
 
 # merge remote into local
 remote=${args[0]:-HEAD}
-local=${args[1]:-$(branch_current)}
+local=${args[1]}
+[[ -z $local ]] && local=$(branch_current)
 
 if [[ $dry_run == true ]]; then
   echo merge $remote into $local

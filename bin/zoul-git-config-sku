@@ -21,10 +21,10 @@ ZOUL_GIT_CONFIG_SKU=true
 
 config_sku_exclude()
 {
-  local path branch configFile
-  path=${1:-$(repo_path_relative_to_module)} || return 1
-  branch=${2:-$(branch_ensure_current)} || return 1
-  configFile=${3:-$(repo_zouflow_path)} || return 1
+  local path=$1 branch=$2 configFile=$3
+  [[ -z $path ]] && path=$(repo_path_relative_to_module)
+  [[ -z $branch ]] && branch=$(branch_ensure_current)
+  [[ -z $configFile ]] && configFile=$(repo_zouflow_path)
   local rePath=$(regex_escape "$path")
   git config --file "$configFile" --get-all "sku.$branch.exclude" "$rePath" >/dev/null \
   || git config --file "$configFile" --add "sku.$branch.exclude" "$path"
@@ -36,9 +36,9 @@ config_sku_exclude()
 config_sku_exclude_all() { config_sku_exclude_many "$@" $(repo_list_submodules); }
 config_sku_exclude_many()
 {
-  local branch configFile path rePath
-  branch=${1:-$(branch_ensure_current)} || return 1; shift
-  configFile=${1:-$(repo_zouflow_path)} || return 1; shift
+  local branch=$1 configFile=$2 path rePath; shift 2
+  [[ -z $branch ]] && branch=$(branch_ensure_current)
+  [[ -z $configFile ]] && configFile=$(repo_zouflow_path)
   for path in $@; do
     rePath=$(regex_escape "$path")
     git config --file "$configFile" --get-all "sku.$branch.exclude" "$rePath" >/dev/null \
@@ -51,10 +51,10 @@ config_sku_exclude_many()
 }
 config_sku_include()
 {
-  local path branch configFile
-  path=${1:-$(repo_path_relative_to_module)} || return 1
-  branch=${2:-$(branch_ensure_current)} || return 1
-  configFile=${3:-$(repo_zouflow_path)} || return 1
+  local path=$1 branch=$2 configFile=$3
+  [[ -z $path ]] && path=$(repo_path_relative_to_module)
+  [[ -z $branch ]] && branch=$(branch_ensure_current)
+  [[ -z $configFile ]] && configFile=$(repo_zouflow_path)
   local rePath=$(regex_escape "$path")
   git config --file "$configFile" --unset-all "sku.$branch.exclude" "$rePath"
 
@@ -64,9 +64,9 @@ config_sku_include()
 }
 config_sku_include_all()
 {
-  local branch configFile
-  branch=${1:-$(branch_ensure_current)} || return 1
-  configFile=${2:-$(repo_zouflow_path)} || return 1
+  local branch=$1 configFile=$2
+  [[ -z $branch ]] && branch=$(branch_ensure_current)
+  [[ -z $configFile ]] && configFile=$(repo_zouflow_path)
   git config --file "$configFile" --remove-section "sku.$branch" &>/dev/null
 
   git update-index --add -- "$configFile" &>/dev/null \
@@ -75,9 +75,9 @@ config_sku_include_all()
 }
 config_sku_include_many()
 {
-  local branch configFile path rePath
-  branch=${1:-$(branch_ensure_current)} || return 1; shift
-  configFile=${1:-$(repo_zouflow_path)} || return 1; shift
+  local branch=$1 configFile=$2 path rePath; shift 2
+  [[ -z $branch ]] && branch=$(branch_ensure_current)
+  [[ -z $configFile ]] && configFile=$(repo_zouflow_path)
   for path in $@; do
     rePath=$(regex_escape "$path")
     git config --file "$configFile" --unset-all "sku.$branch.exclude" "$rePath"
@@ -90,34 +90,34 @@ config_sku_include_many()
 config_sku_is_included() { ! config_sku_is_excluded "$@"; }
 config_sku_is_excluded()
 {
-  local path branch configFile
-  path=${1:-$(repo_path_relative_to_module)} || return 1
-  branch=${2:-$(branch_ensure_current)} || return 1
-  configFile=${3:-$(repo_zouflow_path)} || return 1
+  local path=$1 branch=$2 configFile=$3
+  [[ -z $path ]] && path=$(repo_path_relative_to_module)
+  [[ -z $branch ]] && branch=$(branch_ensure_current)
+  [[ -z $configFile ]] && configFile=$(repo_zouflow_path)
   local rePath=$(regex_escape "$path")
   git config --file "$configFile" --get-all "sku.$branch.exclude" "$rePath" >/dev/null
 }
 config_sku_list_excluded()
 {
-  local branch configFile
-  branch=${1:-$(branch_ensure_current)} || return 1
-  configFile=${2:-$(repo_zouflow_path)} || return 1
+  local branch=$1 configFile=$2
+  [[ -z $branch ]] && branch=$(branch_ensure_current)
+  [[ -z $configFile ]] && configFile=$(repo_zouflow_path)
   git config --file "$configFile" --get-all "sku.$branch.exclude" || true
 }
 config_sku_list_included()
 {
-  local branch configFile
-  branch=${1:-$(branch_ensure_current)} || return 1
-  configFile=${2:-$(repo_zouflow_path)} || return 1
+  local branch=$1 configFile=$2
+  [[ -z $branch ]] && branch=$(branch_ensure_current)
+  [[ -z $configFile ]] && configFile=$(repo_zouflow_path)
   local sku=( $(repo_list_submodules) )
   local excluded=( $(config_sku_list_excluded "$@") )
   array_remove_array sku[@] excluded[@]
 }
 config_sku_status()
 {
-  local branch configFile
-  branch=${1:-$(branch_ensure_current)} || return 1
-  configFile=${2:-$(repo_zouflow_path)} || return 1
+  local branch=$1 configFile=$2
+  [[ -z $branch ]] && branch=$(branch_ensure_current)
+  [[ -z $configFile ]] && configFile=$(repo_zouflow_path)
   io_message "'$branch'" "SKU"
   for path in $(config_sku_list_included "$@" | sort); do
     io_message "   $path" ''

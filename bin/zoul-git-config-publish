@@ -9,9 +9,9 @@ ZOUL_GIT_CONFIG_PUBLISH=true
 
 config_publish_disable()
 {
-  local branch configFile
-  branch=${1:-$(branch_ensure_current)} || return 1
-  configFile=${2:-$(repo_zouflow_path)} || return 1
+  local branch=$1 configFile=$2
+  [[ -z $branch ]] && branch=$(branch_ensure_current)
+  [[ -z $configFile ]] && configFile=$(repo_zouflow_path)
   git config --file "$configFile" "publish.$branch.disable" 'true'
 
   git update-index --add -- "$configFile" &>/dev/null \
@@ -20,9 +20,9 @@ config_publish_disable()
 }
 config_publish_enable()
 {
-  local branch configFile
-  branch=${1:-$(branch_ensure_current)} || return 1
-  configFile=${2:-$(repo_zouflow_path)} || return 1
+  local branch=$1 configFile=$2
+  [[ -z $branch ]] && branch=$(branch_ensure_current)
+  [[ -z $configFile ]] && configFile=$(repo_zouflow_path)
   git config --file "$configFile" --remove-section "publish.$branch" &>/dev/null
 
   git update-index --add -- "$configFile" &>/dev/null \
@@ -31,18 +31,18 @@ config_publish_enable()
 }
 config_publish_is_disabled()
 {
-  local branch configFile disabled
-  branch=${1:-$(branch_ensure_current)} || return 1
-  configFile=${2:-$(repo_zouflow_path)} || return 1
+  local branch=$1 configFile=$2 disabled
+  [[ -z $branch ]] && branch=$(branch_ensure_current)
+  [[ -z $configFile ]] && configFile=$(repo_zouflow_path)
   disabled=$(git config --file "$configFile" --get "publish.$branch.disable") || return 1
   [[ $disabled == true ]] && return 0 || return 1
 }
 config_publish_is_enabled() { ! config_publish_is_disabled "$@"; }
 config_publish_status()
 {
-  local branch configFile
-  branch=${1:-$(branch_ensure_current)} || return 1
-  configFile=${2:-$(repo_zouflow_path)} || return 1
+  local branch=$1 configFile=$2
+  [[ -z $branch ]] && branch=$(branch_ensure_current)
+  [[ -z $configFile ]] && configFile=$(repo_zouflow_path)
   config_publish_is_disabled "$@" \
   && io_message 'publish disabled' "[$branch]" \
   || io_message 'publish enabled' "[$branch]"
