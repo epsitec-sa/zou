@@ -33,11 +33,16 @@ repo_list_submodules()
   fi
   echo $value
 }
+repo_is_clean() { git diff-index --quiet HEAD --; }
 repo_list_unstaged_submodules()
 {
-  local x
-  for x in $(git diff-files --name-only -r); do
-    repo_is_submodule "$x" && echo $x
+  local sm
+  for sm in $(git diff-files --name-only -r); do
+    if repo_is_submodule "$sm"; then
+      cd $sm
+      repo_is_clean && echo $sm
+      cd - >/dev/null
+    fi
   done
 }
 repo_commit_submodules()
