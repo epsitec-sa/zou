@@ -4,6 +4,7 @@
 #   [[ -z $ZOUL_GIT_CONFIG_SKU ]] && . zoul-git-config-sku
 ZOUL_GIT_CONFIG_SKU=true
 
+[[ -z $ZOUL_GIT_REPO ]]          && . zoul-git-repo
 [[ -z $ZOUL_GIT_BRANCH_SELECT ]] && . zoul-git-branch-select
 
 # configure SKU submodules
@@ -29,7 +30,8 @@ config_sku_exclude()
   || git config --file "$configFile" --add "sku.$branch.exclude" "$path"
 
   git update-index --add -- "$configFile" &>/dev/null \
-  && git commit -m "zou-flow: exclude submodule '$path' from SKU '$branch'" -- "$configFile" &>/dev/null
+  && git commit -m "zou-flow: exclude submodule '$path' from SKU '$branch'" -- "$configFile" &>/dev/null \
+  && repo_commit_ancestor_submodules
 }
 config_sku_exclude_all() { config_sku_exclude_many "$@" $(repo_list_submodules); }
 config_sku_exclude_many()
@@ -44,7 +46,8 @@ config_sku_exclude_many()
   done
 
   git update-index --add -- "$configFile" &>/dev/null && \
-  git commit -m "zou-flow: exclude submodules '$(string_join ', ' $@)' from SKU '$branch'" -- "$configFile" &>/dev/null
+  git commit -m "zou-flow: exclude submodules '$(string_join ', ' $@)' from SKU '$branch'" -- "$configFile" &>/dev/null \
+  && repo_commit_ancestor_submodules
 }
 config_sku_include()
 {
@@ -56,7 +59,8 @@ config_sku_include()
   git config --file "$configFile" --unset-all "sku.$branch.exclude" "$rePath"
 
   git update-index --add -- "$configFile" &>/dev/null \
-  && git commit -m "zou-flow: include submodule '$path' in SKU '$branch'" -- "$configFile" &>/dev/null
+  && git commit -m "zou-flow: include submodule '$path' in SKU '$branch'" -- "$configFile" &>/dev/null \
+  && repo_commit_ancestor_submodules
 }
 config_sku_include_all()
 {
@@ -66,7 +70,8 @@ config_sku_include_all()
   git config --file "$configFile" --remove-section "sku.$branch" &>/dev/null
 
   git update-index --add -- "$configFile" &>/dev/null \
-  && git commit -m "zou-flow: include all submodules in SKU '$branch'" -- "$configFile" &>/dev/null
+  && git commit -m "zou-flow: include all submodules in SKU '$branch'" -- "$configFile" &>/dev/null \
+  && repo_commit_ancestor_submodules
 }
 config_sku_include_many()
 {
@@ -79,7 +84,8 @@ config_sku_include_many()
   done
 
   git update-index --add -- "$configFile" &>/dev/null && \
-  git commit -m "zou-flow: include submodules '$(string_join ', ' $@)' in SKU '$branch'" -- "$configFile" &>/dev/null
+  git commit -m "zou-flow: include submodules '$(string_join ', ' $@)' in SKU '$branch'" -- "$configFile" &>/dev/null \
+  && repo_commit_ancestor_submodules
 }
 config_sku_is_included() { ! config_sku_is_excluded "$@"; }
 config_sku_is_excluded()

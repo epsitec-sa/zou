@@ -48,6 +48,15 @@ repo_commit_submodules()
   git commit -m "zou-flow: update submodules '$cslist'" -- "${unstaged[@]}" >/dev/null
   io_warning "Commited submodules '$cslist'" "[$(repo_module_id)]"
 }
+repo_commit_ancestor_submodules()
+{
+  local dir pwd=$PWD
+  for dir in $(repo_module_and_ancestor_dirs "$@"); do
+    cd $dir
+    repo_commit_submodules
+  done
+  cd $pwd
+}
 repo_list_untracked()
 {
   local x
@@ -129,6 +138,21 @@ repo_module_and_bundle_dirs()
       fi
       bdir=$dir
       echo "$bdir"
+      return 0
+    fi
+    dir=${dir%/*}
+  done
+  return 1
+}
+repo_module_and_ancestor_dirs()
+{
+  local dir=$(realpath ${1:-.})
+  while [[ -n "$dir" ]]; do
+    if [[ -f "$dir/.git" ]]; then
+      echo "$dir"
+    fi
+    if [[ -d "$dir/.git" ]]; then
+      echo "$dir"
       return 0
     fi
     dir=${dir%/*}
