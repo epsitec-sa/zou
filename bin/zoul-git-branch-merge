@@ -87,6 +87,7 @@ branch_merge_core()
   # after : intoBranch = toMerge -- intoBranch moved towards toMerge
   local toMerge=$1; shift
   local intoBranch=$1; shift
+  local message="zou-flow: merge branch '$toMerge' into '$intoBranch'"
 
   local ec=0 targetBranchIsNotLocal
   # toMerge=$(git rev-parse $toMerge^{})
@@ -103,7 +104,7 @@ branch_merge_core()
     # on active branch...
     if [[ -z $targetBranchIsNotLocal ]] && branch_is_head $intoBranch; then
       # ... merge even if conflicts
-      if ! git merge "$@" $toMerge &>/dev/null; then
+      if ! git merge --log -m "$message" "$@" "$toMerge" &>/dev/null; then
         if repo_is_merging; then
           branch_merge_interactive || {
             local conflicts=$(git diff)
@@ -127,7 +128,7 @@ branch_merge_core()
         [[ $targetBranchIsNotLocal == true ]] && intoBranch=$(branch_without_remote_prefix $intoBranch)
         if git checkout $intoBranch &>/dev/null; then
           ec=0
-          git merge "$@" $toMerge &>/dev/null || branch_merge_interactive || {
+          git merge --log -m "$message" "$@" $toMerge &>/dev/null || branch_merge_interactive || {
             io_error "unable to merge $toMerge into $intoBranch branch"
             ec=1
           }
@@ -139,7 +140,7 @@ branch_merge_core()
         fi
       else
         if git checkout $intoBranch &>/dev/null; then
-          git merge "$@" $toMerge &>/dev/null || branch_merge_interactive ||
+          git merge --log -m "$message" "$@" "$toMerge" &>/dev/null || branch_merge_interactive ||
           {
             local conflicts=$(git diff)
             io_error "while auto-merging $toMerge into $intoBranch."
