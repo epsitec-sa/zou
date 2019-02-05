@@ -6,6 +6,7 @@ ZOUL_GIT_TAG=true
 
 [[ -z $ZOUL_CORE ]]     && . zoul-core
 [[ -z $ZOUL_GIT_CORE ]] && . zoul-git-core
+[[ -z $ZOUL_GIT_REPO ]] && . zoul-git-repo
 
 tagger_name()  { git show $1 -q | grep Tagger: | sed -E 's,Tagger:s+(.*)s+<(.*)>,1,'; }
 tagger_email() { git show $1 -q | grep Tagger: | sed -E 's,Tagger:s+(.*)s+<(.*)>,2,'; }
@@ -57,7 +58,7 @@ tag_move_to_commit()
     tag_delete $tag
     GIT_COMMITTER_NAME="$tagger" GIT_COMMITTER_EMAIL="$email" GIT_COMMITTER_DATE="$date" \
     git tag -a -m "'$message'" "$tag" "$commit"
-    io_info "Moved annotated tag '$tag' to '$commit'"
+    io_info "Moved annotated tag '$tag' to '$commit'" "[$(repo_module_id)]"
   fi
   tag_push_not_followed $tag $commit
 }
