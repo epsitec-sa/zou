@@ -24,7 +24,7 @@ select_submodules()
 {
   local rootBranch=$1 selectedBranch=$2 configFile skuExclude include exclude path opath ec=0
   configFile=$(repo_zouflow_path) || return 1
-  [[ $all == true ]] && skuExclude=() || skuExclude=( $(config_sku_list_excluded "$rootBranch" "$configFile") )
+  [[ $all == true ]] && skuExclude=() || skuExclude=( $(config_sku_list_excluded "$selectedBranch" "$configFile") )
   # select active submodules which are included in select
   include=( $(config_select_list_included "$selectedBranch" "$configFile") )
   for path in $(string_sort $(array_remove_array 'include[@]' 'skuExclude[@]')); do
