@@ -33,14 +33,12 @@ vtable_submodules()
 }
 
 if [[ $level0 == true ]]; then
-  vtable_prolog "$root" "$moduleId"
   vtable_submodules
+  vtable_update "$root" "$moduleId"
 else
   [[ -z $quiet && $smOnly != true ]] && echo Entering "'$(repo_module_relative_to_path)'"
   root=$(repo_module_dir)
-
+  vtable_init "$root" "$moduleId"
   # single quote root to avoid shell path expansion on Windows
   git vtable -0 --_root "'$root'" ${cmdOpts[@]}
-
-  vtable_epilog "$root" "$moduleId"
 fi

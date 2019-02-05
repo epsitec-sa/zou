@@ -23,9 +23,9 @@ print_head()
 }
 vtable_row()
 {
-  local moduleId=$1 vminor vmajor head tag
+  local moduleId=$1 setHash=${2:-true} vminor vmajor head hash tag
   head=$(branch_current)
-  hash=$(git rev-parse --short HEAD 2>/dev/null)
+  [[ $setHash == true ]] && hash=$(git rev-parse --short HEAD 2>/dev/null)
   tag=$(vtag_describe $head)
   tag=${tag%-g*}
 
@@ -48,7 +48,7 @@ vtable_row()
   local vnext=$(echo $tags | grep -m1 "^${reSku}v[0-9]")
   local md_moduleId=$moduleId
   local md_version=$version
-  [[ $version =~ ^.*-@$ || -n $delta ]] && md_moduleId="##$moduleId##"
+  [[ $version =~ ^.*-@$ || -z $version || -n $delta ]] && md_moduleId="##$moduleId##"
   [[ $version =~ ^.*-@$ ]] && md_version="##$version##"
   [[ $version == $vminor ]] && unset vminor || vminor="#$vminor#"
   [[ $version == $vmajor ]] && unset vmajor || vmajor="#$vmajor#"
@@ -57,15 +57,46 @@ vtable_row()
   echo "$module_content"
   IFS=$OIFS
 }
-vtable_prolog()
+vtable_init()
+{
+  local root=$1 moduleId=$2
+  local lookupPath="$root/_vtable.zou"
+
+  # create lookup
+  if [[ "$PWD" == "$root" && ! -f "$lookupPath" ]]; then
+    declare -A lookup
+    declare -p lookup >"$lookupPath"
+  fi
+}
+vtable_update()
 {
   local root=$1 moduleId=$2
   local lookupPath="$root/_vtable.zou"
 
   if [[ "$PWD" == "$root" ]]; then
-    # create lookup
-    declare -A lookup
-    declare -p lookup >"$lookupPath"
+    local OIFS=$IFS; IFS=$'\n'
+    # deserialize lookup
+    . "$lookupPath"
+
+    # serialize header and root
+    local file="$root/versions.md" verb
+    [[ -f "$file" ]] && verb='update' || verb='create'
+
+    print_head >"$file"
+    vtable_row $moduleId false >>"$file"
+    
+    # serialize lookup values
+    for moduleId in $(string_sort ${!lookup[@]}); do
+      echo ${lookup[$moduleId]} >>"$file"
+    done
+    
+    # replace '_' and '#' to '|' and '*'
+    sed -i -E 's,_,|,g; s,#,\*,g' "$file"
+    rm "$lookupPath"
+    IFS=$OIFS
+
+    git update-index --add -- "$file" &>/dev/null \
+    && git commit -m "zou-flow: $verb version table" -- "$file" &>/dev/null
   else
     local OIFS=$IFS; IFS=$'\n'
 
@@ -73,38 +104,11 @@ vtable_prolog()
     . "$lookupPath"
 
     # add vtable row
-    local value=$(vtable_row "$moduleId")
+    local value=$(vtable_row "$moduleId" true)
     lookup[$moduleId]="$value"
 
     # serialize lookup
     declare -p lookup >"$lookupPath"
     IFS=$OIFS
   fi
-}
-vtable_epilog()
-{
-  local root=$1 moduleId=$2 OIFS
-  local lookupPath="$root/_vtable.zou"
-
-  OIFS=$IFS; IFS=$'\n'
-  # deserialize lookup
-  . "$lookupPath"
-
-  # serialize header and root
-  local file="$root/versions.md"
-  print_head >"$file"
-  vtable_row $moduleId >>"$file"
-  
-  # serialize lookup values
-  for moduleId in $(string_sort ${!lookup[@]}); do
-    echo ${lookup[$moduleId]} >>"$file"
-  done
-  
-  # replace '_' and '#' to '|' and '*'
-  sed -i -E 's,_,|,g; s,#,\*,g' "$file"
-  rm "$lookupPath"
-  IFS=$OIFS
-
-  git update-index --add -- "$file" &>/dev/null && \
-  git commit -m "zou-flow: add version table" -- "$file" &>/dev/null
 }
