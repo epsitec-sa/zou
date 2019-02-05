@@ -66,18 +66,30 @@ branch_list_all_tracked()
     }
   done < <(branch_sync_info)
 }
-branch_list_local_redondant()
+branch_list_local_tracked_merged()
 {
   # list local branches that can be removed safely
   local l r i c
   while read l r i; do
-    # keep tracking branches that are merged into tracked branches
-    if [[ -n $l && -n $r && $i =~ (=|<) ]]; then
-      [[ -z $c ]] && c=$(branch_current)
-      # exclude branch 'master' and current branch
-      [[ $l =~ (master|$c) ]] || echo $l
+    # list tracking branches
+    if [[ -n $l && -n $r ]]; then
+      # that are merged into tracked branches...
+      # or that have the tracking info broken but are merged in another remote
+      if [[ $i =~ (=|<) ]] || [[ -z $i && -n $(git branch -r --contains $l) ]]; then
+        echo $l
+      fi
     fi
   done < <(branch_sync_info)
+}
+branch_list_local_can_delete()
+{
+  # list local branches that can be deleted safely
+  local l c
+  while read l; do
+    # exclude branch 'master' and current branch
+    [[ -z $c ]] && c=$(regex_escape $(branch_current))
+    [[ $l =~ (master|$c) ]] || echo $l
+  done < <(branch_list_local_tracked_merged)
 }
 branch_list_local_untracked()
 {
@@ -178,8 +190,4 @@ branch_try_attach()
       return 1
     fi
   fi
-}
-branch_delete_local_redondant()
-{
-  branch_list_local_redondant | xargs -n1 git branch -d
 }

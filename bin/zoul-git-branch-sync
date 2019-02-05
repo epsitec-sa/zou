@@ -65,12 +65,14 @@ branch_visit_sync_info()
     local linfo="  $l"
     [[ $l == $(branch_current) ]] && linfo="* $l"
     io_message "$linfo $i $r" "[$moduleId]" $color
-    [[ $i == '?' ]] && {
-      io_message >&2 "  remote branch $r was deleted or renamed" ''
-      io_message >&2 "  rename $l and update its tracking information:" ''
+    if [[ $i == '?' ]]; then
+      io_message >&2 "  Remote branch $r was deleted or renamed." ''
+      io_message >&2 "  Either rename $l and update its tracking information:" ''
       io_message >&2 "    git branch -m $l <newbranch>" '' Gray
       io_message >&2 "    git branch -u <upstream> <newbranch>" '' Gray
-    }
+      io_message >&2 "  Or clean local tracked branches with:" ''
+      io_message >&2 "    git sync --clean" '' Gray
+    fi
   done < <(branch_sync_info)
   return 0
 }

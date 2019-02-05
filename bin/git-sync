@@ -22,7 +22,7 @@ esac; shift; done
 clean_local_branches()
 {
   if [[ $cleanLocalBranches == true ]]; then
-    for b in $(branch_list_local_redondant); do
+    for b in $(branch_list_local_can_delete); do
       local info=$(git branch -d "$b" 2>/dev/null)
       [[ -n $info ]] && io_warning "$info" "[$(repo_module_id)]"
     done
