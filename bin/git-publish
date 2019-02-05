@@ -1,5 +1,6 @@
 #!/bin/bash
 
+[[ -z $ZOUL_GIT_VTABLE ]]         && . zoul-git-vtable
 [[ -z $ZOUL_GIT_CONFIG_SKU ]]     && . zoul-git-config-sku
 [[ -z $ZOUL_GIT_CONFIG_SELECT ]]  && . zoul-git-config-select
 [[ -z $ZOUL_GIT_CONFIG_PUBLISH ]] && . zoul-git-config-publish
@@ -7,6 +8,7 @@
 [[ -z $ZOUL_GIT_BRANCH_PUBLISH ]] && . zoul-git-branch-publish
 
 cmdOpts=()
+
 while [[ "$#" > 0 ]]; do case "$1" in
   -h|--help) zou-help $0; exit 0;;
   -0|--level0)        level0=true;;
@@ -19,50 +21,114 @@ while [[ "$#" > 0 ]]; do case "$1" in
   --rtm)              cmdOpts+=($1); prerelPrefix='rtm';;
   --reuse)            cmdOpts+=($1); prerelPrefix='reuse';;
   --debug)            cmdOpts+=($1); debug=true;;
+  --_stop-publish)    cmdOpts+=($1); stopPublish=true;;
   --_root)            cmdOpts+=($1 $2); root=$(echo $2 | xargs echo); shift;;  # remove single quotes
   -*) echo "unknown option: $1" >&2; exit 1;;
 esac; shift; done
 
+moduleId=$(repo_module_id)
+# io_warning ">>>> git-publish stopPublish=$stopPublish" "[$moduleId]"
+
+publish_update_vtable()
+{
+  [[ $recursive == true ]] || return 0
+  # io_message "vtable_update $root $moduleId" "[$moduleId]" Gray
+  vtable_update "$root" "$moduleId"
+  if [[ "$PWD" == "$root" ]]; then
+    local branch=$1  vtag=$2 vbranch=$3
+    # synchronize dev == prod
+    [[ -n $vbranch ]] && branch_merge $branch $vbranch
+    [[ -n $vtag ]] && {
+      io_info "Created vtable for '$branch' at '$vtag'" "[$moduleId]"
+      repo_commit_submodules
+      tag_move "$vtag" "$branch"
+    }
+  fi
+}
 publish_submodules()
 {
-  local branch configFile include exclude path opath ec=0
-  branch=$(branch_ensure_current) || return 1
+  local branch=$1 opts=( ${!2} ) configFile include exclude path opath ec=0
   configFile=$(repo_zouflow_path) || return 1
   include=( $(config_sku_list_included "$branch" "$configFile") )
   exclude=( $(config_select_list_excluded "$branch" "$configFile") )
   for path in $(string_sort $(array_remove_array 'include[@]' 'exclude[@]')); do
     opath="$PWD"; cd "$path"
     [[ $quiet == true ]] || echo Entering "'$(path_make_relative '.' "$root")'"
-    git publish -0 ${cmdOpts[@]} || ec=1
+    # local sopts="${opts[@]}"
+    # io_warning "git publish -0 '$sopts'" "[$moduleId]"
+    git publish -0 ${opts[@]} || ec=$?
     cd "$opath"
     [[ $ec != 0 && $stopOnError == true ]] && break
   done
   return $ec
 }
-publish_core()
+publish_prolog()
 {
-  local branch vtag ltag stag
-  branch=$(branch_current) || return 1
-  if config_publish_is_enabled; then
-    vtag=$(branch_publish "$branch" "$prerelPrefix") || return 1
+  # io_warning ">>>> publish_prolog stopPublish=$stopPublish" "[$moduleId]"
+  local branch ltag stag path ec=0
+  if [[ $stopPublish == true ]]; then
+    branch=$(branch_current)
+    # io_message "publish_prolog stop publish branch='$branch'" "[$moduleId]" Gray
+    publish_update_vtable "$branch"
+    ec=2
   else
-    ltag=$(vtag_describe "$branch") || return 1
-    stag=${ltag%-*-g*}
-    branch_checkout "$stag" &>/dev/null
-    io_info "Publish disabled for branch '$branch', checking out '$stag'" "[$(repo_module_id)]"
+    branch=$(branch_ensure_current 2>/dev/null) || return 1
+    if ! config_publish_is_enabled "$branch"; then
+      ec=2
+      # io_message "publish_prolog publish disabled branch='$branch'" "[$moduleId]" Gray
+      ltag=$(vtag_describe "$branch") || return 1
+      stag=${ltag%-*-g*}
+      io_info "Publish disabled for branch '$branch''" "[$moduleId]"
+      branch_checkout "$stag" &>/dev/null
+      io_info "Checked out '$stag'" "[$moduleId]"
+      repo_update_submodules
+    fi
   fi
+  echo $branch
+  # io_warning "<<<< publish_prolog branch=$branch ec=$ec" "[$moduleId]"
+  return $ec
+}
+publish_epilog()
+{
+  # io_warning ">>>> publish_epilog" "[$moduleId]"
+  local branch=$1 publishDisabled=$2 info ec=0
+  if [[ $stopPublish == true ]]; then
+    # io_message "publish_epilog stop publish branch='$branch'" "[$moduleId]" Gray
+    publish_update_vtable "$branch"
+  elif [[ $publishDisabled == true ]]; then
+    # io_message "publish_epilog published disabled branch='$branch'" "[$moduleId]" Gray
+    publish_update_vtable "$branch"
+  else
+    # io_message "publish_epilog published enabled branch='$branch'" "[$moduleId]" Gray
+    info=( $(branch_publish "$branch" "$prerelPrefix") ) || ec=$?
+    publish_update_vtable "$branch" "${info[@]}"
+  fi
+  # io_warning "<<<< publish_epilog" "[$moduleId]"
+  return $ec
 }
 publish()
 {
+  # io_warning ">>>> publish" "[$moduleId]"
+  local branch publishDisabled ec=0
+  branch=$(publish_prolog); ec=$?
+  [[ $ec == 1 ]] && return 1
+  [[ $ec == 2 ]] && publishDisabled=true
+
   if [[ $recursive == true ]]; then
-    publish_submodules || return 1
+    local opts=( ${cmdOpts[@]} )
+    [[ $ec == 2 ]] && opts+=( --_stop-publish )
+    publish_submodules "$branch" 'opts[@]'
   fi
-  publish_core
+  
+  publish_epilog "$branch" "$publishDisabled"
+  # io_warning "<<<< publish" "[$moduleId]"
 }
 
 if [[ $level0 == true ]]; then
   publish
 else
   [[ -z $quiet ]] && echo Entering "'$(repo_module_relative_to_path)'"
-  git publish -0 --_root "'$(repo_module_dir)'" ${cmdOpts[@]} # single quote root to avoid shell path expansion on Windows
+  root=$(repo_module_dir)
+  [[ $recursive == true ]] && vtable_init "$root" "$moduleId"
+  git publish -0 --_root "'$root'" ${cmdOpts[@]} # single quote root to avoid shell path expansion on Windows
 fi
