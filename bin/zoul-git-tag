@@ -18,7 +18,7 @@ tag_push_not_followed()
 {
   local tag=$1 commit=$2
   # 'git push --follow-tags' push only tags associated with commits that are not pushed
-  if commit_is_pushed $commit^{}; then
+  if commit_is_pushed "$commit"; then
     local remote=$(git remote)
     git push $remote "$tag" &>/dev/null
     io_info "Pushed tag '$tag' to '$remote'"
