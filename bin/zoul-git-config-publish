@@ -15,8 +15,7 @@ config_publish_disable()
   git config --file "$configFile" "publish.$branch.disable" 'true'
 
   git update-index --add -- "$configFile" &>/dev/null \
-  && git commit -m "zou-flow: disable publish for branch '$branch'" -- "$configFile" &>/dev/null \
-  && repo_commit_ancestor_submodules
+  && git commit -m "zou-flow: disable publish for branch '$branch'" -- "$configFile" &>/dev/null 
 }
 config_publish_enable()
 {
@@ -26,8 +25,7 @@ config_publish_enable()
   git config --file "$configFile" --remove-section "publish.$branch" &>/dev/null
 
   git update-index --add -- "$configFile" &>/dev/null \
-  && git commit -m "zou-flow: enable publish for branch '$branch'" -- "$configFile" &>/dev/null \
-  && repo_commit_ancestor_submodules
+  && git commit -m "zou-flow: enable publish for branch '$branch'" -- "$configFile" &>/dev/null
 }
 config_publish_is_disabled()
 {
