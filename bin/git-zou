@@ -12,6 +12,7 @@ esac; shift; done
 config_setup
 
 #synchronize global zou tools
-opwd=$PWD; cd $zou_binDir
-git sync -0
+opwd=$PWD; cd "$zou_binDir/.."
+[[ -d ../.git ]] && cd '..'
+git sync
 cd "$opwd"
