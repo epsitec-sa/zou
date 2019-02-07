@@ -36,14 +36,14 @@ repo_list_submodules()
 repo_is_clean() { git diff-index --quiet HEAD --; }
 repo_list_unstaged_submodules()
 {
-  local sm pwd=$PWD
+  local sm opwd
   for sm in $(git diff-files --name-only -r); do
     if repo_is_submodule "$sm"; then
-      cd $sm
+      opwd=$PWD; cd $sm
       repo_is_clean && echo $sm
+      cd "$opwd"
     fi
   done
-  cd $pwd
 }
 repo_commit_submodules()
 {
@@ -55,12 +55,12 @@ repo_commit_submodules()
 }
 repo_commit_ancestor_submodules()
 {
-  local dir pwd=$PWD
+  local dir opwd=$PWD
   for dir in $(repo_module_and_ancestor_dirs "$@"); do
-    cd $dir
+    cd "$dir"
     repo_commit_submodules
   done
-  cd $pwd
+  cd "$opwd"
 }
 repo_list_untracked()
 {
