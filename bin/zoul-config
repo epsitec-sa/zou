@@ -12,7 +12,7 @@ config_setup()
 {
   [[ $(git config --global 'zou.initialized') == true ]] || {
 
-    cp -f "$(realPath ~/.gitconfig)" "$(realpath ~/.gitconfig.backup)"
+    [ -f $(realPath ~/.gitconfig) ] && cp -f "$(realPath ~/.gitconfig)" "$(realpath ~/.gitconfig.backup)"
     
     # https://stackoverflow.com/questions/5195859/how-do-you-push-a-tag-to-a-remote-repository-using-git
     git config --global push.followTags true
