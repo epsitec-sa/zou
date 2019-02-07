@@ -8,10 +8,9 @@ while [[ "$#" > 0 ]]; do case "$1" in
   --enable)  enable=true;;
   --disable) disable=true;;
   -*) echo "unknown option: $1" >&2; exit 1;;
-  *) branch=$1
 esac; shift; done
 
-[[ -z $branch ]] && branch=$(branch_ensure_current)
+branch=$(branch_ensure_current)
 configFile=$(repo_zouflow_path)
 
 if [[ $disable == true ]]; then
