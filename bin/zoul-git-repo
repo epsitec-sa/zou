@@ -36,14 +36,14 @@ repo_list_submodules()
 repo_is_clean() { git diff-index --quiet HEAD --; }
 repo_list_unstaged_submodules()
 {
-  local sm
+  local sm pwd=$PWD
   for sm in $(git diff-files --name-only -r); do
     if repo_is_submodule "$sm"; then
       cd $sm
       repo_is_clean && echo $sm
-      cd - >/dev/null
     fi
   done
+  cd $pwd
 }
 repo_commit_submodules()
 {
@@ -193,9 +193,9 @@ repo_path_relative_to_module()
 }
 repo_url_from_dir()
 {
-  cd "${1:-.}"
+  local pwd=$PWD; cd "${1:-.}"
   local url=$(git config remote.origin.url)
-  cd - >/dev/null
+  cd $pwd
   echo $url
 }
 repo_module_id()
