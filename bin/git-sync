@@ -30,17 +30,17 @@ clean_local_branches()
 }
 sync_submodules()
 {
-  local branch configFile include path opwd ec=0
-  branch=$(branch_ensure_current) || return 1
-  configFile=$(repo_zouflow_path) || return 1
-  [[ $all == true ]] && include=( $(repo_list_submodules) ) || include=( $(config_sku_list_included "$branch" "$configFile") )
+  local branch configFile include path opwd=$PWD mroot=$(repo_module_root) ec=0
+  branch=$(branch_current) || return 1
+  configFile=$(repo_zouflow_path "$mroot") || return 1
+  [[ $all == true ]] && include=( $(repo_list_submodule_paths) ) || include=( $(config_sku_list_included "$branch" "$configFile") )
   for path in $(array_sort include[@]); do
-    opwd="$PWD"; cd "$path"
-    [[ $quiet == true ]] || echo Entering "'$(path_make_relative '.' "$root")'"
+    cd "$mroot/$path"
+    [[ $quiet == true ]] || echo Entering "'$(path_make_relative '.' "$opwd")'"
     git sync -0 ${cmdOpts[@]} || ec=1
-    cd "$opwd"
     [[ $ec != 0 && $stopOnError == true ]] && break
   done
+  cd "$opwd"
   return $ec
 }
 sync_tree()
@@ -57,6 +57,7 @@ sync_tree()
 if [[ $level0 == true ]]; then
   sync_tree
 else
-  [[ -z $quiet && $smOnly != true ]] && echo Entering "'$(repo_module_relative_to_path)'"
-  git sync -0 --_root "'$(repo_module_dir)'" ${cmdOpts[@]}   # single quote root to avoid shell path expansion on Windows
+  root=$(repo_module_root)
+  [[ -z $quiet && $smOnly != true ]] && echo Entering "'$(path_make_relative "$root" '.')'"
+  git sync -0 --_root "'$root'" ${cmdOpts[@]}   # single quote root to avoid shell path expansion on Windows
 fi

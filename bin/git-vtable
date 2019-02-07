@@ -22,7 +22,7 @@ vtable_submodules()
   local branch configFile include path opath
   branch=$(branch_ensure_current) || return 1
   configFile=$(repo_zouflow_path)
-  [[ $all == true ]] && include=( $(repo_list_submodules) ) || include=( $(config_sku_list_included "$branch" "$configFile") )
+  [[ $all == true ]] && include=( $(repo_list_submodule_paths) ) || include=( $(config_sku_list_included "$branch" "$configFile") )
   for path in $(array_sort include[@]); do
     opath="$PWD"; cd "$path"
     [[ $quiet == true ]] || echo Entering "'$(path_make_relative '.' "$root")'"
@@ -36,8 +36,8 @@ if [[ $level0 == true ]]; then
   vtable_submodules
   vtable_update "$root" "$moduleId"
 else
-  [[ -z $quiet && $smOnly != true ]] && echo Entering "'$(repo_module_relative_to_path)'"
-  root=$(repo_module_dir)
+  [[ -z $quiet && $smOnly != true ]] && echo Entering "'$(repo_module_root_relative_to_path)'"
+  root=$(repo_module_root)
   vtable_init "$root" "$moduleId"
   # single quote root to avoid shell path expansion on Windows
   git vtable -0 --_root "'$root'" ${cmdOpts[@]}

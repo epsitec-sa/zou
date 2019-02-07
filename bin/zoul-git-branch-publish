@@ -91,7 +91,7 @@ branch_publish()
       # update technical version - modify resources files
       [[ -n $needCheckout ]] && git checkout $branch &>/dev/null
 
-      version_commit_files $(version_update $vtag) $(repo_list_unstaged_submodules)
+      version_commit_files $(version_update $vtag) $(repo_list_unstaged_clean_submodules)
 
       # merge resource files 
       [ $? -eq 0 ] && branch_merge $branch $vbranch '-Xtheirs'

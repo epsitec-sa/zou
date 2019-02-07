@@ -54,7 +54,7 @@ pconfig_list_disabled() { _pconfig_list_verb 'disable' "$@"; }
 pconfig_is_defined()
 {
   local path branch configFile
-  path=${1:-$(repo_path_relative_to_module)} || return 1
+  path=${1:-$(repo_path_relative_to_module_root)} || return 1
   branch=${2:-$(branch_ensure_current)} || return 1
   configFile=${3:-$(repo_zouflow_path)} || return 1
   local rePath=$(regex_escape "$path")
@@ -63,7 +63,7 @@ pconfig_is_defined()
 pconfig_is_enabled()
 {
   local path branch configFile
-  path=${1:-$(repo_path_relative_to_module)} || return 1
+  path=${1:-$(repo_path_relative_to_module_root)} || return 1
   branch=${2:-$(branch_ensure_current)} || return 1
   configFile=${3:-$(repo_zouflow_path)} || return 1
 
@@ -81,7 +81,7 @@ _pconfig_init()
 {
   local branch=$1 configFile=$2 path
   git config --file "$configFile" --add "publish.$branch.enable" '.'
-  for path in $(repo_list_submodules); do
+  for path in $(repo_list_submodule_paths); do
     git config --file "$configFile" --add "publish.$branch.disable" "$path"
   done
   git update-index --add -- "$configFile" &>/dev/null && \
@@ -99,7 +99,7 @@ _pconfig_set_all()
   configFile=${3:-$(repo_zouflow_path)} || return 1
   git config --file "$configFile" --remove-section "publish.$branch" &>/dev/null
   git config --file "$configFile" --add "publish.$branch.$verb" '.'
-  for path in $(repo_list_submodules); do
+  for path in $(repo_list_submodule_paths); do
     git config --file "$configFile" --add "publish.$branch.$verb" "$path"
   done
   git update-index --add -- "$configFile" &>/dev/null && \
@@ -108,7 +108,7 @@ _pconfig_set_all()
 _pconfig_set()
 {
   local verb=$1 path branch configFile
-  path=${2:-$(repo_path_relative_to_module)} || return 1
+  path=${2:-$(repo_path_relative_to_module_root)} || return 1
   branch=${3:-$(branch_ensure_current)} || return 1
   configFile=${4:-$(repo_zouflow_path)} || return 1
   local rePath=$(regex_escape "$path")

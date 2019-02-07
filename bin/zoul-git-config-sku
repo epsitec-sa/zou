@@ -22,7 +22,7 @@ ZOUL_GIT_CONFIG_SKU=true
 config_sku_exclude()
 {
   local path=$1 branch=$2 configFile=$3
-  [[ -z $path ]] && path=$(repo_path_relative_to_module)
+  [[ -z $path ]] && path=$(repo_path_relative_to_module_root)
   [[ -z $branch ]] && branch=$(branch_ensure_current)
   [[ -z $configFile ]] && configFile=$(repo_zouflow_path)
   local rePath=$(regex_escape "$path")
@@ -33,7 +33,7 @@ config_sku_exclude()
   && git commit -m "zou-flow: exclude submodule '$path' from SKU '$branch'" -- "$configFile" &>/dev/null \
   && repo_commit_ancestor_submodules
 }
-config_sku_exclude_all() { config_sku_exclude_many "$@" $(repo_list_submodules); }
+config_sku_exclude_all() { config_sku_exclude_many "$@" $(repo_list_submodule_paths); }
 config_sku_exclude_many()
 {
   local branch=$1 configFile=$2 path rePath; shift 2
@@ -52,7 +52,7 @@ config_sku_exclude_many()
 config_sku_include()
 {
   local path=$1 branch=$2 configFile=$3
-  [[ -z $path ]] && path=$(repo_path_relative_to_module)
+  [[ -z $path ]] && path=$(repo_path_relative_to_module_root)
   [[ -z $branch ]] && branch=$(branch_ensure_current)
   [[ -z $configFile ]] && configFile=$(repo_zouflow_path)
   local rePath=$(regex_escape "$path")
@@ -91,7 +91,7 @@ config_sku_is_included() { ! config_sku_is_excluded "$@"; }
 config_sku_is_excluded()
 {
   local path=$1 branch=$2 configFile=$3
-  [[ -z $path ]] && path=$(repo_path_relative_to_module)
+  [[ -z $path ]] && path=$(repo_path_relative_to_module_root)
   [[ -z $branch ]] && branch=$(branch_ensure_current)
   [[ -z $configFile ]] && configFile=$(repo_zouflow_path)
   local rePath=$(regex_escape "$path")
@@ -109,7 +109,7 @@ config_sku_list_included()
   local branch=$1 configFile=$2
   [[ -z $branch ]] && branch=$(branch_ensure_current)
   [[ -z $configFile ]] && configFile=$(repo_zouflow_path)
-  local sku=( $(repo_list_submodules) )
+  local sku=( $(repo_list_submodule_paths) )
   local excluded=( $(config_sku_list_excluded "$@") )
   array_remove_array sku[@] excluded[@]
 }

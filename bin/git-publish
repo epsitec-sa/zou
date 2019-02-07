@@ -47,19 +47,19 @@ publish_update_vtable()
 }
 publish_submodules()
 {
-  local branch=$1 opts=( ${!2} ) configFile include exclude path opath ec=0
-  configFile=$(repo_zouflow_path) || return 1
+  local branch=$1 opts=( ${!2} ) configFile include exclude path opwd=$PWD mroot=$(repo_module_root) ec=0
+  configFile=$(repo_zouflow_path "$mroot") || return 1
   include=( $(config_sku_list_included "$branch" "$configFile") )
   exclude=( $(config_select_list_excluded "$branch" "$configFile") )
   for path in $(string_sort $(array_remove_array 'include[@]' 'exclude[@]')); do
-    opath="$PWD"; cd "$path"
-    [[ $quiet == true ]] || echo Entering "'$(path_make_relative '.' "$root")'"
+    cd "$mroot/$path"
+    [[ $quiet == true ]] || echo Entering "'$(path_make_relative '.' "$opwd")'"
     # local sopts="${opts[@]}"
     # io_warning "git publish -0 '$sopts'" "[$moduleId]"
     git publish -0 ${opts[@]} || ec=$?
-    cd "$opath"
     [[ $ec != 0 && $stopOnError == true ]] && break
   done
+  cd "$opwd"
   return $ec
 }
 publish_prolog()
@@ -127,8 +127,8 @@ publish()
 if [[ $level0 == true ]]; then
   publish
 else
-  [[ -z $quiet ]] && echo Entering "'$(repo_module_relative_to_path)'"
-  root=$(repo_module_dir)
+  root=$(repo_module_root)
+  [[ -z $quiet && $smOnly != true ]] && echo Entering "'$(path_make_relative "$root" '.')'"
   [[ $recursive == true ]] && vtable_init "$root" "$moduleId"
   git publish -0 --_root "'$root'" ${cmdOpts[@]} # single quote root to avoid shell path expansion on Windows
 fi

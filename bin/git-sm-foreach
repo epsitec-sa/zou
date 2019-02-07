@@ -23,7 +23,7 @@ sm_visit()
   local path="$1" smPath="$2" cmd="${*:3}" opwd="$PWD" ec=0 smDir
   cd "$smPath"
   eval "f() { local path="$path"; "$cmd"; }; f"
-  for smDir in $(repo_list_submodules); do
+  for smDir in $(repo_list_submodule_paths); do
     sm_visit "$path/$smDir" "$smDir" "$cmd" || ec=$?
   done
   cd "$opwd"
@@ -49,7 +49,7 @@ sm_visit . . 'echo $path'
 # {
 #   local FOR_INSIDE_ROOT=true
 #   local path=$(repo_module_id)
-#   [[ "${sm_opts[@]}" =~ "--quiet" ]] || echo Entering "'$(repo_module_relative_to_path "$PWD")'"
+#   [[ "${sm_opts[@]}" =~ "--quiet" ]] || echo Entering "'$(repo_module_root_relative_to_path "$PWD")'"
 #   eval "$zou_command"
 # }
 # run_inside_submodule()

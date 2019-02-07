@@ -7,6 +7,8 @@ ZOUL_GIT_CONFIG_SELECT=true
 [[ -z $ZOUL_GIT_REPO ]]          && . zoul-git-repo
 [[ -z $ZOUL_GIT_BRANCH_SELECT ]] && . zoul-git-branch-select
 
+# WARNING: we work with submodule paths relative to bundle, not with submodule IDs
+
 # configure select submodules
 # modify .zou-flow configuration file
 #
@@ -23,13 +25,13 @@ ZOUL_GIT_CONFIG_SELECT=true
 #   include = sm2
 #
 
-_config_select_default_verb() { repo_is_root && echo 'include' || echo 'exclude'; }
+_config_select_default_verb() { (( $(repo_module_level "$@") == 0 )) && echo 'include' || echo 'exclude'; }
 _config_select_anti_verb()    { [[ $1 == 'exclude' ]] && echo 'include' || echo 'exclude'; }
 
 config_select_include()
 {
   local path=$1 branch=$2 configFile=$3
-  [[ -z $path ]] && path=$(repo_path_relative_to_module)
+  [[ -z $path ]] && path=$(repo_path_relative_to_module_root)
   [[ -z $branch ]] && branch=$(branch_ensure_current)
   [[ -z $configFile ]] && configFile=$(repo_zouflow_path)
   local rePath=$(regex_escape "$path")
@@ -58,7 +60,7 @@ config_select_include_all()
     && git commit -m "zou-flow: enable select for all submodules on branch '$branch'" -- "$configFile" &>/dev/null \
     && repo_commit_ancestor_submodules
   else
-    config_select_include_many "$branch" "$configFile" $(repo_list_submodules)
+    config_select_include_many "$branch" "$configFile" $(repo_list_submodule_paths)
   fi
 }
 config_select_include_many()
@@ -85,7 +87,7 @@ config_select_include_many()
 config_select_exclude()
 {
   local path=$1 branch=$2 configFile=$3
-  [[ -z $path ]] && path=$(repo_path_relative_to_module)
+  [[ -z $path ]] && path=$(repo_path_relative_to_module_root)
   [[ -z $branch ]] && branch=$(branch_ensure_current)
   [[ -z $configFile ]] && configFile=$(repo_zouflow_path)
   local rePath=$(regex_escape "$path")
@@ -114,7 +116,7 @@ config_select_exclude_all()
     && git commit -m "zou-flow: disable select for all submodules on branch '$branch'" -- "$configFile" &>/dev/null \
     && repo_commit_ancestor_submodules
   else
-    config_select_exclude_many "$branch" "$configFile" $(repo_list_submodules)
+    config_select_exclude_many "$branch" "$configFile" $(repo_list_submodule_paths)
   fi
 }
 config_select_exclude_many()
@@ -142,7 +144,7 @@ config_select_is_excluded() { ! config_select_is_included "$@"; }
 config_select_is_included()
 {
   local path=$1 branch=$2 configFile=$3 p
-  [[ -z $path ]] && path=$(repo_path_relative_to_module)
+  [[ -z $path ]] && path=$(repo_path_relative_to_module_root)
   [[ -z $branch ]] && branch=$(branch_ensure_current)
   [[ -z $configFile ]] && configFile=$(repo_zouflow_path)
   for p in $(config_select_list_included "$path" "$configFile"); do
@@ -157,7 +159,7 @@ config_select_list_included()
   [[ -z $configFile ]] && configFile=$(repo_zouflow_path)
   local defaultVerb=$(_config_select_default_verb)
   if [[ $defaultVerb == 'include' ]]; then
-    local submodules=( $(repo_list_submodules) )
+    local submodules=( $(repo_list_submodule_paths) )
     local excluded=( $(git config --file "$configFile" --get-all "select.$branch.exclude") )
     array_remove_array submodules[@] excluded[@]
   else
@@ -171,7 +173,7 @@ config_select_list_excluded()
   [[ -z $configFile ]] && configFile=$(repo_zouflow_path)
   local defaultVerb=$(_config_select_default_verb)
   if [[ $defaultVerb == 'exclude' ]]; then
-    local submodules=( $(repo_list_submodules) )
+    local submodules=( $(repo_list_submodule_paths) )
     local included=( $(git config --file "$configFile" --get-all "select.$branch.include") )
     array_remove_array submodules[@] included[@]
   else

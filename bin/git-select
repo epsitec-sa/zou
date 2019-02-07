@@ -9,7 +9,7 @@ cmdOpts=()
 while [[ "$#" > 0 ]]; do case "$1" in
   --) shift; args+=("$@"); break;;
   -h|--help) zou-help $0; exit 0;;
-  -0|--level0) level0=true;;
+  -0|--level0)        level0=true;;
   -q|--quiet)         cmdOpts+=($1); quiet=true;;
   -e|--stop-on-error) cmdOpts+=($1); stopOnError=true;;
   -a|--all)           cmdOpts+=($1); all=true;;
@@ -22,29 +22,32 @@ esac; shift; done
 
 select_submodules()
 {
-  local rootBranch=$1 selectedBranch=$2 configFile skuExclude include exclude path opath ec=0
-  configFile=$(repo_zouflow_path) || return 1
+  local rootBranch=$1 selectedBranch=$2 configFile skuExclude include exclude path opwd=$PWD mroot=$(repo_module_root) ec=0
+  configFile=$(repo_zouflow_path "$mroot") || return 1
   [[ $all == true ]] && skuExclude=() || skuExclude=( $(config_sku_list_excluded "$selectedBranch" "$configFile") )
   # select active submodules which are included in select
   include=( $(config_select_list_included "$selectedBranch" "$configFile") )
   for path in $(string_sort $(array_remove_array 'include[@]' 'skuExclude[@]')); do
-    opath="$PWD"; cd "$path"
-    [[ $quiet == true ]] || echo Entering "'$(path_make_relative '.' "$root")'"
+    cd "$mroot/$path"
+    [[ $quiet == true ]] || echo Entering "'$(path_make_relative '.' "$opwd")'"
     git select -0 ${cmdOpts[@]} "$rootBranch" || ec=1
-    cd "$opath"
     [[ $ec != 0 && $stopOnError == true ]] && break
   done
+  
+  cd "$mroot"
   # update active submodules which are excluded from select
   exclude=( $(config_select_list_excluded "$selectedBranch" "$configFile") )
   for path in $(string_sort $(array_remove_array 'exclude[@]' 'skuExclude[@]')); do
     repo_update_submodule "$path"
   done
   # discard inactive submodules
-  local unstaged=( $(repo_list_unstaged_submodules) ) moduleId=$(repo_module_id)
+  local unstaged=( $(repo_list_unstaged_clean_submodules) ) moduleId=$(repo_module_id)
   for path in $(string_sort $(array_intersect_array 'unstaged[@]' 'skuExclude[@]')); do
     git submodule update --recursive "$path" &>/dev/null
     io_info "Discarded submodule '$path'" "[$moduleId]"
   done
+  
+  cd "$opwd"
   return $ec
 }
 select_tree()
@@ -58,6 +61,7 @@ select_tree()
 if [[ $level0 == true ]]; then
   select_tree $rootBranch
 else
-  [[ -z $quiet ]] && echo Entering "'$(repo_module_relative_to_path)'"
-  git select -0 --_root "'$(repo_module_dir)'" ${cmdOpts[@]} "$rootBranch"   # single quote root to avoid shell path expansion on Windows
+  root=$(repo_module_root)
+  [[ -z $quiet && $smOnly != true ]] && echo Entering "'$(path_make_relative "$root" '.')'"
+  git select -0 --_root "'$root'" ${cmdOpts[@]} "$rootBranch"   # single quote root to avoid shell path expansion on Windows
 fi
