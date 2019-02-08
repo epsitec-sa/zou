@@ -105,6 +105,27 @@ version_update_version_props()
 
   version_iconv_sed "$file" "$script"
 }
+# Update Version tag in package.json file
+#
+# Example:
+#   version_update_package_json v3.0.5-rc1
+#
+# package.json format:
+# {
+#   "name": "cresus-bankin-gui",
+#   "version": "2.2.2",
+#   ...
+version_update_package_json()
+{
+  local file=$1; shift
+  local varray=$1; shift
+  local techver=$1; shift
+  local stechver=$1; shift
+  local script="\
+  0,/^[[:blank:]]*\"version\"/{s/(^[[:blank:]]*\"version\":[[:blank:]]*\").*(\",)/\1$techver\2/}"
+
+  version_iconv_sed "$file" "$script"
+}
 version_update_rc()
 {
   local file=$1; shift
@@ -209,16 +230,19 @@ version_remove_file_spec()
 }
 
 version_list_version_props() { version_list_file_spec 'version-props'; }
+version_list_package_json()  { version_list_file_spec 'package-json'; }
 version_list_assembly_info() { version_list_file_spec 'assembly-info'; }
 version_list_csproj()        { version_list_file_spec 'csproj'; }
 version_list_rc()            { version_list_file_spec 'rc'; }
 
 version_add_version_props() { version_add_file_spec 'version-props' "$@"; }
+version_add_package_json()  { version_add_file_spec 'package-json' "$@"; }
 version_add_assembly_info() { version_add_file_spec 'assembly-info' "$@"; }
 version_add_csproj()        { version_add_file_spec 'csproj' "$@"; }
 version_add_rc()            { version_add_file_spec 'rc' "$@"; }
 
 version_remove_version_props() { version_remove_file_spec 'version-props' "$@"; }
+version_remove_package_json()  { version_remove_file_spec 'package-json' "$@"; }
 version_remove_assembly_info() { version_remove_file_spec 'assembly-info' "$@"; }
 version_remove_csproj()        { version_remove_file_spec 'csproj' "$@"; }
 version_remove_rc()            { version_remove_file_spec 'rc' "$@"; }
@@ -262,6 +286,7 @@ version_update()
       # exclude submodules from find file (-not -path './<sm-path>/*'] ...)
       local findNotPaths=$(git config --file .gitmodules --get-regexp path | cut -d' ' -f2 | sed "s,\(.*\),-not -path \./\1/\*,")
       version_update_config 'version_props' 'varray[@]' $techver $stechver $findNotPaths
+      version_update_config 'package_json'  'varray[@]' $techver $stechver $findNotPaths
       version_update_config 'assembly_info' 'varray[@]' $techver $stechver $findNotPaths
       version_update_config 'csproj'        'varray[@]' $techver $stechver $findNotPaths
     fi

@@ -4,6 +4,7 @@
 . zoul-git-repo
 
 set -f
+packageJson=()
 versionProps=()
 assemblyInfo=()
 csProj=()
@@ -16,6 +17,7 @@ while [[ "$#" > 0 ]]; do case "$1" in
   --ai=*|--assembly-info=*) assemblyInfo+=("${1#*=}");;
   --cs=*|--csproj=*)        csProj+=("${1#*=}");;
   --rc=*)                   rc+=("${1#*=}");;
+  --pj|--package-json)    packageJson+=('./package.json');;
   --vp|--version-props)   versionProps+=('./Version.props');;
   --ai|--assembly-info)   assemblyInfo+=('*/AssemblyInfo*.cs');;
   --cs|--csproj)          csProj+=('*/*.csproj');;
@@ -37,6 +39,9 @@ if [ ${#csProj[@]} -ne 0 ]; then
 fi
 if [ ${#rc[@]} -ne 0 ]; then
   version_${action}_rc "${rc[@]}"
+fi
+if [ ${#packageJson[@]} -ne 0 ]; then
+  version_${action}_package_json "${packageJson[@]}"
 fi
 
 if [[ -n $customDir ]]; then
