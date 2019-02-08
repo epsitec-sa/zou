@@ -1,26 +1,27 @@
 #!/bin/bash
 
+args=()
 while [[ "$#" > 0 ]]; do case "$1" in
   -h|--help) zou-help $0; exit 0;;
-  -r|--reset) resetConfig=true;;
-  -*) echo "unknown option: $1" >&2; exit 1;;
+  *) args+=($1);;
 esac; shift; done
 
-zou_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && realpath `pwd`/.. )"
-opwd=$PWD; cd "$zou_dir"
+zou_update()
+{
+  local zouDir=$(realpath "$(dirname "${BASH_SOURCE[0]}")/..") opwd=$PWD
+  
+  cd "$zouDir"
+  if test -n "$(git status --porcelain)"; then
+    printf '\033[0;31m%b\033[0m' "[zou]: Repo '$zouDir' is not clean, aborting...\n"
+  else
+    printf '\033[0;36m%b\033[0m' "[zou]: Fetching remotes and tags...\n"
+    git fetch --prune --all &>/dev/null
+    git fetch --tags --force &>/dev/null
 
-if test -n "$(git status --porcelain)"; then
-  printf '\033[0;31m%b\033[0m' "error: repo '$zou_dir' is not clean, aborting...\n"
-else
-  git fetch --prune --all &>/dev/null
-  git fetch --tags --force &>/dev/null
+    . zoul-update "$@"
+  fi
 
-  . zoul-config
-  [[ $resetConfig == true ]] && config_reset
-  config_setup
+  cd "$opwd"
+}
 
-  . zoul-update
-  zou_update
-fi
-
-cd "$opwd"
+zou_update "${args[@]}"
