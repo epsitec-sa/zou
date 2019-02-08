@@ -85,28 +85,28 @@ branch_publish()
     }
     [ $ec -ne 0 ] && return 4
 
+    # update technical version - modify resources files
+    [[ -n $needCheckout ]] && git checkout $branch &>/dev/null
+
+    version_commit_files $(version_update $vtag) $(repo_list_unstaged_clean_submodules)
+
+    # merge resource files 
+    [ $? -eq 0 ] && branch_merge $branch $vbranch '-Xtheirs'
+    
+    [[ -n $needCheckout ]] && git checkout $obranch &>/dev/null
+
+    # be sure dev == prod
+    branch_merge $vbranch $branch
+
     if [[ $prerelPrefix == 'reuse' ]]; then
       tag_move "$vtag" "$branch"
     else
-      # update technical version - modify resources files
-      [[ -n $needCheckout ]] && git checkout $branch &>/dev/null
-
-      version_commit_files $(version_update $vtag) $(repo_list_unstaged_clean_submodules)
-
-      # merge resource files 
-      [ $? -eq 0 ] && branch_merge $branch $vbranch '-Xtheirs'
-      
-      [[ -n $needCheckout ]] && git checkout $obranch &>/dev/null
-
-      # be sure dev == prod
-      branch_merge $vbranch $branch
-
       # create vtag
       local comment="publish branch '$branch' as '${vinfo[0]}'"
       git tag -a -m "zou-flow: $comment" $vtag $vbranch
-
-      io_info "Published branch '$branch' at '$vtag'" "[$(repo_module_id)]"
     fi
+
+    io_info "Published branch '$branch' at '$vtag'" "[$(repo_module_id)]"
 
     echo "$vtag" "$vbranch"
   fi
