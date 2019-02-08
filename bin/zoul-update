@@ -6,12 +6,15 @@ while [[ "$#" > 0 ]]; do case "$1" in
   -*) echo "unknown option: $1" >&2; exit 1;;
 esac; shift; done
 
-[[ -z $ZOUL_GIT_REPO ]] && . zoul-git-repo
-[[ -z $ZOUL_CONFIG ]]   && . zoul-config
+[[ -z $ZOUL_GIT_REPO ]]        && . zoul-git-repo
+[[ -z $ZOUL_CONFIG ]]          && . zoul-config
+[[ -z $ZOUL_GIT_BRANCH_CORE ]] && . zoul-git-branch-core
 
 zou_update()
 {
-  local sku=$1
+  local sku=$1 moduleId=$(repo_module_id)
+  
+  io_info "Updating, please wait..." "[$moduleId]"
 
   [[ $resetConfig == true ]] && config_reset
   config_setup
@@ -23,13 +26,16 @@ zou_update()
     git select -q "$sku"
   else
     # zou repo inside zou-dev bundle, synchronize and select all
-    local opwd=$PWD
+    local opwd=$PWD bundleId=$(repo_bundle_id)
     cd "$broot"
-    git checkout "$sku"
-    git pull
-    git select -q "$sku"
+    io_info "Checking out '$sku'..." "[$bundleId]"
+    branch_checkout "$sku" >/dev/null
+    git pull &>/dev/null
+    git select "$sku"
     cd "$opwd"
   fi
+
+  io_warning "Update finished, press the [Enter] key." "[$moduleId]"
 }
 
 zou_update 'wip/zou/git-commands'

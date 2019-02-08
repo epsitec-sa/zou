@@ -1,27 +1,31 @@
 #!/bin/bash
 
-args=()
-while [[ "$#" > 0 ]]; do case "$1" in
-  -h|--help) zou-help $0; exit 0;;
-  *) args+=($1);;
-esac; shift; done
-
-zou_update()
+main()
 {
   local zouDir=$(realpath "$(dirname "${BASH_SOURCE[0]}")/..") opwd=$PWD
-  
-  cd "$zouDir"
-  if test -n "$(git status --porcelain)"; then
-    printf '\033[0;31m%b\033[0m' "[zou]: Repo '$zouDir' is not clean, aborting...\n"
-  else
-    printf '\033[0;36m%b\033[0m' "[zou]: Fetching remotes and tags...\n"
-    git fetch --prune --all &>/dev/null
-    git fetch --tags --force &>/dev/null
+  local tempFile=$(mktemp)
 
-    . zoul-update "$@"
-  fi
+  cat >"$tempFile" <<\EOF
+#!/bin/bash
 
-  cd "$opwd"
+zouDir=$1
+opwd=$PWD
+cd "$zouDir"
+if test -n "$(git status --porcelain)"; then
+  printf '\033[0;31m%b\033[0m' "[zou]: Repo '$zouDir' is not clean, aborting...\n"
+else
+  printf '\033[0;36m%b\033[0m' "[zou]: Fetching remotes and tags...\n"
+  git fetch --prune --all &>/dev/null
+  git fetch --tags --force &>/dev/null
+
+  . zoul-update "${@:1}"
+fi
+cd "$opwd"
+rm "$0"
+EOF
+
+  "$tempFile" "$zouDir" "$@"
 }
 
-zou_update "${args[@]}"
+printf '\033[0;33m%b\033[0m' "[zou]: Starting asynchronous update, please wait...\n"
+main "$@" &
