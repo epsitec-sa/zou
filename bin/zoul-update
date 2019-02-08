@@ -11,6 +11,8 @@ esac; shift; done
 
 zou_update()
 {
+  local sku=$1
+
   [[ $resetConfig == true ]] && config_reset
   config_setup
 
@@ -18,15 +20,16 @@ zou_update()
 
   if [[ $fast == true || "$broot" == "$PWD" ]]; then
     # zou repo alone, fetch has already been done
-    git select -q wip/git-commands
+    git select -q "$sku"
   else
     # zou repo inside zou-dev bundle, synchronize and select all
     local opwd=$PWD
     cd "$broot"
-    git sync -q
-    git select -q wip/zou/git-commands
+    git checkout "$sku"
+    git pull
+    git select -q "$sku"
     cd "$opwd"
   fi
 }
 
-zou_update
+zou_update 'wip/zou/git-commands'
