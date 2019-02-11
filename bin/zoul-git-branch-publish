@@ -70,14 +70,13 @@ branch_publish()
 
     local vtag ec=0
 
-    # move previous vtag if asked
+    # compute next vtag
     if [[ $prerelPrefix == 'reuse' ]]; then
       vtag=$(vbranch_prev_vtag $vbranch) || ec=$?
     else
       vtag=$(vbranch_next_vtag $vbranch $prerelPrefix) || ec=$?
     fi
 
-    # compute next vtag
     [ $ec -eq 3 ] && {
       # already published
       echo $vtag
@@ -85,26 +84,27 @@ branch_publish()
     }
     [ $ec -ne 0 ] && return 4
 
-    # update technical version - modify resources files
-    [[ -n $needCheckout ]] && git checkout $branch &>/dev/null
-
-    version_commit_files $(version_update $vtag) $(repo_list_unstaged_clean_submodules)
-
-    # merge resource files 
-    [ $? -eq 0 ] && branch_merge $branch $vbranch '-Xtheirs'
-    
-    [[ -n $needCheckout ]] && git checkout $obranch &>/dev/null
-
-    # be sure dev == prod
-    branch_merge $vbranch $branch
-
     if [[ $prerelPrefix == 'reuse' ]]; then
+      # move previous vtag if asked
       tag_move "$vtag" "$branch"
     else
+      # update technical version - modify resources files
+      [[ -n $needCheckout ]] && git checkout $branch &>/dev/null
+
+      version_commit_files $(version_update $vtag) $(repo_list_unstaged_clean_submodules)
+
+      # merge resource files 
+      [ $? -eq 0 ] && branch_merge $branch $vbranch '-Xtheirs'
+      
+      [[ -n $needCheckout ]] && git checkout $obranch &>/dev/null
+      
       # create vtag
       local comment="publish branch '$branch' as '${vinfo[0]}'"
       git tag -a -m "zou-flow: $comment" $vtag $vbranch
     fi
+
+      # be sure dev == prod
+      branch_merge $vbranch $branch
 
     io_info "Published branch '$branch' at '$vtag'" "[$(repo_module_id)]"
 
