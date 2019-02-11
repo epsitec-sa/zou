@@ -61,11 +61,11 @@ publish_prolog()
     publish_update_vtable "$branch"
     ec=2
   else
-    branch=$(branch_ensure_current 2>/dev/null) || return 1
+    branch=$(branch_ensure_current 2>/dev/null) || return $?
     if ! config_publish_is_enabled "$branch"; then
       ec=2
       # io_message "publish_prolog publish disabled branch='$branch'" "[$moduleId]" Gray
-      ltag=$(vtag_describe "$branch") || return 1
+      ltag=$(vtag_describe "$branch") || return $?
       stag=${ltag%-*-g*}
       io_info "Publish disabled for branch '$branch''" "[$moduleId]"
       branch_checkout "$stag" &>/dev/null
@@ -95,15 +95,14 @@ publish_epilog()
 publish_submodules()
 {
   # io_warning ">>>> publish_submodules" "[$moduleId]"
-  local branch=$1 opts=( ${!2} ) configFile include exclude path mroot=$PWD
-  configFile=$(repo_zouflow_path "$mroot") || return 1
+  local branch=$1 opts=( ${!2} ) configFile include exclude path mroot=$PWD ec=0
+  configFile=$(repo_zouflow_path "$mroot") || return $?
   include=( $(config_sku_list_included "$branch" "$configFile") )
   exclude=( $(config_select_list_excluded "$branch" "$configFile") )
   for path in $(string_sort $(array_remove_array 'include[@]' 'exclude[@]')); do
     cd "$mroot/$path"
     git publish ${opts[@]} || return $?
   done
-  cd "$mroot"
   # io_warning "<<<< publish_submodules" "[$moduleId]"
 }
 publish_tree()
@@ -116,9 +115,11 @@ publish_tree()
   [[ $ec == 2 ]] && publishDisabled=true
 
   if [[ $recursive == true ]]; then
+  (
     local opts=( ${cmdOpts[@]} )
     [[ $ec == 2 ]] && opts+=( --_stop-publish )
     publish_submodules "$branch" 'opts[@]'
+  )
   fi
   
   publish_epilog "$branch" "$publishDisabled"

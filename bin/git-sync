@@ -36,8 +36,8 @@ clean_local_branches()
 sync_submodules()
 {
   local branch configFile include path mroot=$PWD
-  branch=$(branch_current) || return 1
-  configFile=$(repo_zouflow_path "$mroot") || return 1
+  branch=$(branch_current) || return $?
+  configFile=$(repo_zouflow_path "$mroot") || return $?
   [[ $all == true ]] && include=( $(repo_list_submodule_paths) ) || include=( $(config_sku_list_included "$branch" "$configFile") )
   for path in $(array_sort include[@]); do
     cd "$mroot/$path"
@@ -48,6 +48,11 @@ sync_node()
 {
   [[ $quiet == true ]] || echo Entering "'$(path_make_relative '.' "$startupDir")'"
   branch_sync_all && clean_local_branches || return $?
+}
+sync_tree()
+{
+  sync_node || process_error $?
+  sync_submodules || process_error $?
 }
 
 if [[ $level0 == true && $smOnly == true ]]; then
@@ -63,9 +68,9 @@ elif [[ -z $startupDir ]]; then
   elif [[ $smOnly == true ]]; then
     sync_submodules || process_error $?
   else
-    sync_node && sync_submodules || process_error $?
+    sync_tree
   fi
 )
 else
-  sync_node && sync_submodules || process_error $?
+  sync_tree
 fi

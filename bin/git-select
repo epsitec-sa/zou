@@ -25,7 +25,7 @@ process_error()
 select_submodules()
 {
   local sku=$1 branch=$2 configFile skuExclude include exclude path mroot=$PWD
-  configFile=$(repo_zouflow_path "$mroot") || return 1
+  configFile=$(repo_zouflow_path "$mroot") || return $?
   [[ $all == true ]] && skuExclude=() || skuExclude=( $(config_sku_list_excluded "$branch" "$configFile") )
   # select active submodules which are included in select
   include=( $(config_select_list_included "$branch" "$configFile") )
