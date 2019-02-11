@@ -1,0 +1,34 @@
+#!/bin/bash
+
+[[ -n $1 ]] && tag=$1 || tag=$(git vcommit2tag)
+if [[ $tag =~ ^v([0-9]+)\\.([0-9]+)(\\.|-)(.*)-([0-9]+)-g([[:alnum:]]*)$ ]]; then
+  major=${BASH_REMATCH[1]}
+  minor=${BASH_REMATCH[2]}
+  patch=${BASH_REMATCH[4]}
+  delta=${BASH_REMATCH[5]}
+  vmax=$(git vmax $major.$minor)
+  if [[ $vmax =~ ^v([0-9]+)\\.([0-9]+)(\\.|-)(.*) ]]; then
+    patch_max=${BASH_REMATCH[4]}
+    if [[ $patch_max != $patch ]]; then
+      patch=$patch_max
+      delta=1
+    fi
+  fi
+  if [[ $patch == '@' ]]; then
+    echo "v$major.$minor.0"
+  elif [[ -n $delta ]]; then
+    if [[ $patch =~ ([0-9]+)(-[[:alnum:]]+)?(\\+.+)?$ ]]; then
+      patch=${BASH_REMATCH[1]}
+      suffix=${BASH_REMATCH[2]}
+      if [[ $suffix =~ -(alpha|beta|rc)([0-9]*) ]]; then
+        prerel_label=${BASH_REMATCH[1]}
+        prerel_rev=${BASH_REMATCH[2]}
+        echo "v$major.$minor.$patch-$prerel_label$((prerel_rev+1))"
+      else
+        echo "v$major.$minor.$((patch+1))"
+      fi
+    fi
+  fi
+else
+  [[ $tag != ${tag/-@/.0} ]] && echo ${tag/-@/.0}
+fi

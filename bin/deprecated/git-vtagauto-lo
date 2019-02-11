@@ -1,0 +1,10 @@
+#!/bin/bash
+
+vtag=$(git vcommit2tag)
+vnext=$(git vtag2next $vtag)
+if [[ -z $vnext ]]; then
+    echo Current tag: $vtag
+else
+    git newtag $vnext
+    echo Tag created: $vnext
+fi

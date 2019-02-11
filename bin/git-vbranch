@@ -1,0 +1,35 @@
+#!/bin/bash
+
+. zoul-core
+
+newtag_opts=()
+args=()
+while [[ "$#" > 0 ]]; do case "$1" in
+  -h|--help) zou-help $0; exit 0;;
+  --debug) newtag_opts+=($1); debug=true;;
+  -c¦--checkout) checkout=true; shift;;
+  -m|--message) newtag_opts+=($1 "$2"); shift;;
+  -*) io_error "unknown option: $1"; exit 1;;
+  *) args+=("$1");;
+esac; shift; done
+
+branch="${args[0]}"
+commit="${args[1]:-HEAD}"
+
+io_debug branch
+io_debug commit
+
+if [[ $branch =~ ^(.*/)?([0-9]+\.[0-9]+)$ ]]; then
+  prefix=${BASH_REMATCH[1]}
+  version=${BASH_REMATCH[2]}
+  vnode="${prefix}v${version}-@"
+  io_debug prefix
+  io_debug version
+  io_debug vnode
+  git branch "${args[@]}"
+  # create vnode
+  git newtag "${newtag_opts[@]}" "$vnode" "$commit"
+  [[ $checkout == true ]] && git checkout "$branch" >/dev/null
+else
+  io_error "vbranch wrong format: '$branch'"
+fi

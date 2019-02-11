@@ -1,0 +1,12 @@
+#!/bin/bash
+
+commit=HEAD
+opts=()
+while [[ "$#" > 0 ]]; do case "$1" in
+  -h|--help) zou-help $0; exit 0;;
+  -s|--short) opts+=('--abbrev=0');;
+  -*) echo "unknown option: $1" >&2; exit 1;;
+  *) commit=$1;
+esac; shift; done
+
+git describe ${opts[@]} --first-parent --tags --match 'v[0-9]*' $commit 2>/dev/null || true

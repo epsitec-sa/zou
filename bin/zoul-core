@@ -1,0 +1,255 @@
+#!/bin/bash
+
+# Use the following statement to include current lib only once
+#   [[ -z $ZOUL_CORE ]] && . zoul-core
+ZOUL_CORE=true
+
+# declare startup constants
+zou_startupPath=$(realpath "${BASH_SOURCE[-1]}")
+zou_startupFileName="${zou_startupPath##*/}"
+if [[ "$zou_startupFileName" == bashdb ]]; then
+  zou_startupPath=$(realpath "${BASH_SOURCE[-2]}")
+  zou_startupFileName="${zou_startupPath##*/}"
+fi
+zou_startupDir="${zou_startupPath%/*}"
+zou_binDir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+zou_command="${zou_startupFileName##git-}"
+
+# colors
+declare -A io_color
+io_color[Default]='0'
+io_color[Black]='0;30'
+io_color[Blue]='0;34'
+io_color[Green]='0;32'
+io_color[Cyan]='0;36'
+io_color[Red]='0;31'
+io_color[Purple]='0;35'
+io_color[Brown]='0;33'
+io_color[LightGray]='0;37'
+io_color[DarkGray]='1;30'
+io_color[LightBlue]='1;34'
+io_color[LightGreen]='1;32'
+io_color[LightCyan]='1;36'
+io_color[LightRed]='1;31'
+io_color[LightPurple]='1;35'
+io_color[Yellow]='1;33'
+io_color[White]='1;37'
+
+# usage: io_color_escape_sequence <color>
+# example:
+#   $ io_color_escape_sequence Cyan
+#   \033[0;36m
+#   $ io_color_escape_sequence Default
+#   \033[0m
+io_color_escape_sequence()
+{
+  echo "\033[${io_color[$1]}m";
+}
+# usage: io_colorize <color> <message>
+# example:
+#   $ io_colorize Cyan 'my message'
+io_colorize()
+{
+  local color=$(io_color_escape_sequence $1); shift
+  printf "$color%b\033[0m" "$@"
+}
+# usage: io_message <message> [<prefix> [<color=LightCyan>]]
+#   <prefix>:: <prefix-name>[<indent>]
+#   <indent>:: %<number>s
+# example:
+#   $ io_message 'message' 'info' Cyan
+#   info: message
+#   $ io_message 'message' '' Gray
+#   message
+#   $ io_message 'message' 'info%2s'
+#   info:
+#     message
+io_message()
+{
+  local message=$1
+  local prefix indent
+  [[ $2 =~ ^([^\%]*)(%[0-9]+s)?$ ]] && {
+    prefix=${BASH_REMATCH[1]}
+    indent=${BASH_REMATCH[2]}
+    [[ -n $prefix ]] && prefix="$prefix: "
+    [[ -n $indent ]] && printf -v indent "$indent" ''
+  }
+  if [[ $message == *$'\n'* ]]; then
+    # more than one line
+    if [[ -n $indent ]]; then
+      message=$(echo "$message" | sed "s/^/$indent/")
+    fi
+    if [[ -n $prefix ]]; then
+      printf -v message '%s\n%s' "$prefix" "$message"
+    fi
+  elif [[ -n $indent ]]; then
+    message=$indent$message
+    if [[ -n $prefix ]]; then
+      printf -v message '%s\n%s' "$prefix" "$message"
+    fi
+  else
+    message=$prefix$message
+  fi
+  colored=$(io_colorize ${3:-LightCyan} "$message")
+  printf "$colored\n" 1>&2
+}
+io_info()     { io_message "$1" "${2:-info}"; }
+io_success()  { io_message "$1" "${2:-info}" LightGreen; }
+io_warning()  { io_message "$1" "${2:-warning}" Yellow; }
+io_error()    { io_message "$1" "${2:-error}" LightRed; }
+io_debug()    { [[ $debug == 'true' ]] && io_message "$1 = ${!1}" "${2:-debug}" ${3:-Purple}; }
+
+io_pause()
+{
+  local label=$(io_warning "Press any key to continue..." "$@" 2>&1)
+  read -n1 -s -r -p "${label:0:-1}"
+  echo $'\n'
+}
+string_join()   { local d=$1; shift; echo -n "$1"; shift; printf "%s" "${@/#/$d}"; }
+string_indent() { local n=$1; shift; printf "%${n}s%s" '' "$*"; }
+string_sort()
+{
+  IFS=$'\n'
+  sort <<<"$*"
+  unset IFS
+}
+array_sort()
+{
+  local array=( ${!1} )
+  IFS=$'\n'
+  sort <<<"${array[*]}"
+  unset IFS
+}
+
+assert_equals()
+{
+  local label=assert args=() no_exit
+  while [[ "$#" > 0 ]]; do case "$1" in
+    -l|--label) label="$2"; shift;;
+    -n|--no-exit) no_exit=true;;
+    -*) echo "unknown option: '$1'" >&2; exit 1;;
+    *) args+=("$1");;
+  esac; shift; done
+  local expected=${args[0]}
+  local value=${args[1]}
+  [[ -n ${args[2]} ]] && label=${args[2]}
+
+  if [[ "$expected" != "$value" ]]; then
+    io_error "expected '$expected' but was '$value'" "$label"
+    [[ -z $no_exit ]] && exit 1
+  else
+    io_success "expected '$value' OK" "$label"
+  fi
+}
+assert_exit_code()
+{
+  local status=$?
+  local label=assert args=() no_exit
+  while [[ "$#" > 0 ]]; do case "$1" in
+    -l|--label) label="$2"; shift;;
+    -n|--no-exit) no_exit=true;;
+    -*) echo "unknown option: '$1'" >&2; exit 1;;
+    *) args+=("$1");;
+  esac; shift; done
+  local expected=${args[0]}
+
+  if [[ $expected != $status ]]; then
+    io_error "expected exit code '$expected' but was '$status'" "$label"
+    [[ -z $no_exit ]] && exit $status
+  else
+    io_success "expected exit code '$status' OK" "$label"
+  fi
+}
+regex_whole()  { echo "^$1$"; }
+regex_escape() { echo "${1//./\\.}"; }
+
+array_remove_array()
+{
+  # usage:
+  #   if there is spaces in array elements:
+  #     mapfile -t result <<< "$(array_remove_array array[@] remove[@])"
+  #   else
+  #     result=( $(array_remove_array array[@] remove[@]) )
+  # note:
+  #   array are passed by names: ${!1} is an indirection
+  local array=( "${!1}" ) remove=( "${!2}" ) i r
+  for i in ${!array[@]}; do
+    for r in "${remove[@]}"; do
+      if [[ "${array[i]}" == "$r" ]]; then
+        unset 'array[i]'
+        break
+      fi
+    done
+  done
+  printf '%s\n' "${array[@]}"
+}
+array_intersect_array()
+{
+  # usage:
+  #   if there is spaces in array elements:
+  #     mapfile -t result <<< "$(array_intersect_array array[@] remove[@])"
+  #   else
+  #     result=( $(array_intersect_array array[@] remove[@]) )
+  # note:
+  #   array are passed by names: ${!1} is an indirection
+  local array1=( "${!1}" ) array2=( "${!2}" ) i r
+  for i in ${array1[@]}; do
+    for j in "${array2[@]}"; do
+      if [[ "$i" == "$j" ]]; then
+        echo $i
+      fi
+    done
+  done
+}
+array_remove_element()
+{
+  # usage:
+  #   if there is spaces in array elements:
+  #     mapfile -t result <<< "$(array_remove_element array[@] "$element")"
+  #   else
+  #     result=( $(array_remove_element array[@] "$element") )
+  # note:
+  #   array are passed by names: ${!1} is an indirection
+  local array=( "${!1}" ) i
+  for i in ${!array[@]}; do
+    if [[ "${array[i]}" == "$2" ]]; then
+      unset 'array[i]'
+      break
+    fi
+  done
+  printf '%s\n' "${array[@]}"
+}
+array_contains_element()
+{
+  local e match="$1"; shift
+  for e; do [[ "$e" == "$match" ]] && return 0; done
+  return 1
+}
+path_make_relative()
+{
+  local path=$(realpath "$1")
+  local relativeTo=$(realpath "${2:-.}")
+  realpath --relative-to="$relativeTo" "$path"
+}
+get_file_encoding()
+{
+  local info=$(file -i $1)
+  info="${info##*=}"
+  echo "${info^^}"
+}
+_locale_encoding()
+{
+  local info=$(locale | grep -0 'LANG=')
+  info="${info##*.}"
+  echo "${info^^}"
+}
+
+zou_lencoding="$(_locale_encoding)"
+
+# trace constants (if debug == true)
+io_debug zou_startupPath
+io_debug zou_startupDir
+io_debug zou_startupFileName
+io_debug zou_binDir
+io_debug zou_command
+io_debug zou_lencoding

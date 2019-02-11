@@ -1,0 +1,44 @@
+#!/bin/bash
+
+[[ -z $ZOUL_GIT_VTABLE ]]      && . zoul-git-vtable
+[[ -z $ZOUL_GIT_CONFIG_SKU ]]  && . zoul-git-config-sku
+
+forOpts=()
+cmdOpts=()
+while [[ "$#" > 0 ]]; do case "$1" in
+  -h|--help) zou-help $0; exit 0;;
+  -0|--level0) level0=true;;
+  -q|--quiet)  cmdOpts+=($1); quiet=true;;
+  -c|--clean)  cmdOpts+=($1); cleanLocalBranches=true;;
+  -a|--all)    cmdOpts+=($1); all=true;;
+  --_root)     cmdOpts+=($1 $2); root=$(echo $2 | xargs echo); shift;;  # remove single quotes
+  -*) echo "unknown option: $1" >&2; exit 1;;
+esac; shift; done
+
+moduleId=$(repo_module_id)
+
+vtable_submodules()
+{
+  local branch configFile include path opath
+  branch=$(branch_ensure_current) || return 1
+  configFile=$(repo_zouflow_path)
+  [[ $all == true ]] && include=( $(repo_list_submodule_paths) ) || include=( $(config_sku_list_included "$branch" "$configFile") )
+  for path in $(array_sort include[@]); do
+    opath="$PWD"; cd "$path"
+    [[ $quiet == true ]] || echo Entering "'$(path_make_relative '.' "$root")'"
+    git vtable -0 ${cmdOpts[@]}
+    cd "$opath"
+  done
+  return $ec
+}
+
+if [[ $level0 == true ]]; then
+  vtable_submodules
+  vtable_update "$root" "$moduleId"
+else
+  [[ -z $quiet && $smOnly != true ]] && echo Entering "'$(repo_module_root_relative_to_path)'"
+  root=$(repo_module_root)
+  vtable_init "$root" "$moduleId"
+  # single quote root to avoid shell path expansion on Windows
+  git vtable -0 --_root "'$root'" ${cmdOpts[@]}
+fi

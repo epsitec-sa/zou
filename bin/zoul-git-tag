@@ -1,0 +1,91 @@
+#!/bin/bash
+
+# Use the following statement to include current lib only once
+#   [[ -z $ZOUL_GIT_TAG ]] && . zoul-git-tag
+ZOUL_GIT_TAG=true
+
+[[ -z $ZOUL_CORE ]]     && . zoul-core
+[[ -z $ZOUL_GIT_CORE ]] && . zoul-git-core
+[[ -z $ZOUL_GIT_REPO ]] && . zoul-git-repo
+
+tagger_name()  { git show $1 -q | grep Tagger: | sed -E 's,Tagger:s+(.*)s+<(.*)>,1,'; }
+tagger_email() { git show $1 -q | grep Tagger: | sed -E 's,Tagger:s+(.*)s+<(.*)>,2,'; }
+tag_date()     { git show $1 -q | grep Date: | sed -E 's,Date:s+(.*),1,' | head -n 1; }
+tag_comment()  { git tag -l -n1 $1 | sed -E 's,w+s+(.*),1,'; }
+
+commit_is_pushed() { [[ -n $(git branch -r --contains $1) ]]; }
+tag_push_not_followed()
+{
+  local tag=$1 commit=$2
+  # 'git push --follow-tags' push only tags associated with commits that are not pushed
+  if commit_is_pushed "$commit"; then
+    local remote=$(git remote)
+    git push $remote "$tag" &>/dev/null
+    io_info "Pushed tag '$tag' to '$remote'"
+  fi
+}
+tag_rename()
+{
+  local tag1=$1 tag2=$2
+  local tagger=$(tagger_name $tag1)
+  if [[ -z "$tagger" ]]; then
+    git tag -f "$tag2" "$tag1^{}"
+    io_info "Renamed lightweight tag '$tag1' to '$tag2'"
+  else
+    local message=$(tag_comment "$tag1")
+    GIT_COMMITTER_NAME="$tagger" \
+    GIT_COMMITTER_EMAIL=$(tagger_email "$tag1") \
+    GIT_COMMITTER_DATE=$(tag_date "$tag1") \
+    git tag -f -m "$message" "$tag2" "$tag1^{}"
+    io_info "Renamed annotated tag '$tag1' to '$tag2'"
+  fi
+  tag_push_not_followed $tag2 $tag1
+  [[ "$tag1" != "$tag2" ]] && tag_delete "$tag1"
+}
+tag_move_to_commit()
+{
+  local tag=$1 commit=$2
+  local tagger=$(tagger_name $tag)
+  if [[ -z "$tagger" ]]; then
+    tag_delete $tag
+    git tag -f "$tag" "$commit^{}"
+    io_info "Moved lightweight tag '$tag' to '$commit'"
+  else
+    local message=$(tag_comment "$tag")
+    local email=$(tagger_email "$tag")
+    local date=$(tag_date "$tag")
+
+    tag_delete $tag
+    GIT_COMMITTER_NAME="$tagger" GIT_COMMITTER_EMAIL="$email" GIT_COMMITTER_DATE="$date" \
+    git tag -a -m "'$message'" "$tag" "$commit"
+    io_info "Moved annotated tag '$tag' to '$commit'" "[$(repo_module_id)]"
+  fi
+  tag_push_not_followed $tag $commit
+}
+tag_new()
+{
+  local tag=$1 commit=$2 message=$3
+  git tag -a -m "'$message'" "$tag" "$commit"
+  tag_push_not_followed $tag $commit
+}
+tag_delete()
+{
+  git tag --delete "$1" &>/dev/null
+  git push --delete $(git remote) $1 &>/dev/null
+}
+
+tag_move()
+{
+  local tag1=$1 tag2=$2
+  if ! git_object_exists "$tag1"; then
+    io_error "Object '$tag1' does not exist."
+    return 1
+  fi
+  if git_object_exists "$tag2"; then
+    # tag2 exists, assume it's a commit'ish
+    tag_move_to_commit "$@"
+  else
+    # tag2 does not exist, assume it's a tag
+    tag_rename "$@"
+  fi
+}

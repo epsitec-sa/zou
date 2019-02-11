@@ -1,0 +1,189 @@
+#!/bin/bash
+
+# Use the following statement to include current lib only once
+#   [[ -z $ZOUL_GIT_CONFIG_SELECT ]] && . zoul-git-config-select
+ZOUL_GIT_CONFIG_SELECT=true
+
+[[ -z $ZOUL_GIT_REPO ]]          && . zoul-git-repo
+[[ -z $ZOUL_GIT_BRANCH_SELECT ]] && . zoul-git-branch-select
+
+# WARNING: we work with submodule paths relative to bundle, not with submodule IDs
+
+# configure select submodules
+# modify .zou-flow configuration file
+#
+# submodule level 0: all included by default
+#
+# [select "master"]
+#   exclude = fact
+#   exclude = compta
+#
+# submodule level > 0: all excluded by default
+#
+# [select "master"]
+#   include = sm1
+#   include = sm2
+#
+
+_config_select_default_verb() { (( $(repo_module_level "$@") == 0 )) && echo 'include' || echo 'exclude'; }
+_config_select_anti_verb()    { [[ $1 == 'exclude' ]] && echo 'include' || echo 'exclude'; }
+
+config_select_include()
+{
+  local path=$1 branch=$2 configFile=$3
+  [[ -z $path ]] && path=$(repo_path_relative_to_module_root)
+  [[ -z $branch ]] && branch=$(branch_ensure_current)
+  [[ -z $configFile ]] && configFile=$(repo_zouflow_path)
+  local rePath=$(regex_escape "$path")
+  local defaultVerb=$(_config_select_default_verb)
+  if [[ $defaultVerb == 'include' ]]; then
+    git config --file "$configFile" --unset-all "select.$branch.exclude" "$rePath"
+  else
+    git config --file "$configFile" --get-all "select.$branch.include" "$rePath" >/dev/null \
+    || git config --file "$configFile" --add "select.$branch.include" "$path"
+  fi
+
+  git update-index --add -- "$configFile" &>/dev/null \
+  && git commit -m "zou-flow: enable select for submodule '$path' on branch '$branch'" -- "$configFile" &>/dev/null
+}
+config_select_include_all()
+{
+  local branch=$1 configFile=$2
+  [[ -z $branch ]] && branch=$(branch_ensure_current)
+  [[ -z $configFile ]] && configFile=$(repo_zouflow_path)
+  local defaultVerb=$(_config_select_default_verb)
+  if [[ $defaultVerb == 'include' ]]; then
+    git config --file "$configFile" --remove-section "select.$branch" &>/dev/null
+
+    git update-index --add -- "$configFile" &>/dev/null \
+    && git commit -m "zou-flow: enable select for all submodules on branch '$branch'" -- "$configFile" &>/dev/null
+  else
+    config_select_include_many "$branch" "$configFile" $(repo_list_submodule_paths)
+  fi
+}
+config_select_include_many()
+{
+  local branch=$1 configFile=$2 path rePath; shift 2
+  [[ -z $branch ]] && branch=$(branch_ensure_current)
+  [[ -z $configFile ]] && configFile=$(repo_zouflow_path)
+
+  local defaultVerb=$(_config_select_default_verb)
+  for path in $@; do
+    rePath=$(regex_escape "$path")
+    if [[ $defaultVerb == 'include' ]]; then
+      git config --file "$configFile" --unset-all "select.$branch.exclude" "$rePath"
+    else
+      git config --file "$configFile" --get-all "select.$branch.include" "$rePath" >/dev/null \
+      || git config --file "$configFile" --add "select.$branch.include" "$path"
+    fi
+  done
+
+  git update-index --add -- "$configFile" &>/dev/null && \
+  git commit -m "zou-flow: enable select for submodules '$(string_join ', ' $@)' on branch '$branch'" -- "$configFile" &>/dev/null
+}
+config_select_exclude()
+{
+  local path=$1 branch=$2 configFile=$3
+  [[ -z $path ]] && path=$(repo_path_relative_to_module_root)
+  [[ -z $branch ]] && branch=$(branch_ensure_current)
+  [[ -z $configFile ]] && configFile=$(repo_zouflow_path)
+  local rePath=$(regex_escape "$path")
+  local defaultVerb=$(_config_select_default_verb)
+  if [[ $defaultVerb == 'exclude' ]]; then
+    git config --file "$configFile" --unset-all "select.$branch.include" "$rePath"
+  else
+    git config --file "$configFile" --get-all "select.$branch.exclude" "$rePath" >/dev/null \
+    || git config --file "$configFile" --add "select.$branch.exclude" "$path"
+  fi
+
+  git update-index --add -- "$configFile" &>/dev/null \
+  && git commit -m "zou-flow: disable select for submodule '$path' on branch '$branch'" -- "$configFile" &>/dev/null
+}
+config_select_exclude_all()
+{
+  local branch=$1 configFile=$2
+  [[ -z $branch ]] && branch=$(branch_ensure_current)
+  [[ -z $configFile ]] && configFile=$(repo_zouflow_path)
+  local defaultVerb=$(_config_select_default_verb)
+  if [[ $defaultVerb == 'exclude' ]]; then
+    git config --file "$configFile" --remove-section "select.$branch" &>/dev/null
+
+    git update-index --add -- "$configFile" &>/dev/null \
+    && git commit -m "zou-flow: disable select for all submodules on branch '$branch'" -- "$configFile" &>/dev/null
+  else
+    config_select_exclude_many "$branch" "$configFile" $(repo_list_submodule_paths)
+  fi
+}
+config_select_exclude_many()
+{
+  local branch=$1 configFile=$2 path rePath; shift 2
+  [[ -z $branch ]] && branch=$(branch_ensure_current)
+  [[ -z $configFile ]] && configFile=$(repo_zouflow_path)
+
+  local defaultVerb=$(_config_select_default_verb)
+  for path in $@; do
+    rePath=$(regex_escape "$path")
+    if [[ $defaultVerb == 'exclude' ]]; then
+      git config --file "$configFile" --unset-all "select.$branch.include" "$rePath"
+    else
+      git config --file "$configFile" --get-all "select.$branch.exclude" "$rePath" >/dev/null \
+      || git config --file "$configFile" --add "select.$branch.exclude" "$path"
+    fi
+  done
+
+  git update-index --add -- "$configFile" &>/dev/null \
+  && git commit -m "zou-flow: disable select for submodules '$(string_join ', ' $@)' on branch '$branch'" -- "$configFile" &>/dev/null
+}
+config_select_is_excluded() { ! config_select_is_included "$@"; }
+config_select_is_included()
+{
+  local path=$1 branch=$2 configFile=$3 p
+  [[ -z $path ]] && path=$(repo_path_relative_to_module_root)
+  [[ -z $branch ]] && branch=$(branch_ensure_current)
+  [[ -z $configFile ]] && configFile=$(repo_zouflow_path)
+  for p in $(config_select_list_included "$path" "$configFile"); do
+     [[ $p == $path ]] && return 0
+  done
+  return 1
+}
+config_select_list_included()
+{
+  local branch=$1 configFile=$2
+  [[ -z $branch ]] && branch=$(branch_ensure_current)
+  [[ -z $configFile ]] && configFile=$(repo_zouflow_path)
+  local defaultVerb=$(_config_select_default_verb)
+  if [[ $defaultVerb == 'include' ]]; then
+    local submodules=( $(repo_list_submodule_paths) )
+    local excluded=( $(git config --file "$configFile" --get-all "select.$branch.exclude") )
+    array_remove_array submodules[@] excluded[@]
+  else
+    git config --file "$configFile" --get-all "select.$branch.include" || true
+  fi
+}
+config_select_list_excluded()
+{
+  local branch=$1 configFile=$2
+  [[ -z $branch ]] && branch=$(branch_ensure_current)
+  [[ -z $configFile ]] && configFile=$(repo_zouflow_path)
+  local defaultVerb=$(_config_select_default_verb)
+  if [[ $defaultVerb == 'exclude' ]]; then
+    local submodules=( $(repo_list_submodule_paths) )
+    local included=( $(git config --file "$configFile" --get-all "select.$branch.include") )
+    array_remove_array submodules[@] included[@]
+  else
+    git config --file "$configFile" --get-all "select.$branch.exclude" || true
+  fi
+}
+config_select_status()
+{
+  local branch=$1 configFile=$2
+  [[ -z $branch ]] && branch=$(branch_ensure_current)
+  [[ -z $configFile ]] && configFile=$(repo_zouflow_path)
+  io_message "'$branch'" "select"
+  for path in $(config_select_list_included "$@" | sort); do
+    io_message "   $path" ''
+  done
+  for path in $(config_select_list_excluded "$@" | sort); do
+    io_message " x $path" ''
+  done
+}

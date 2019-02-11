@@ -1,0 +1,16 @@
+#!/bin/bash
+
+bdir=.
+
+while [[ "$#" > 0 ]]; do case "$1" in
+  -h|--help) zou-help $0; exit 0;;
+  -*) echo "unknown option: $1" >&2; exit 1;;
+  *) bdir=$1;;
+esac; shift; done
+
+bdir=$(realpath "$bdir")
+while [[ -n "$bdir" && ! -d "$bdir/.git" ]]; do
+  bdir=${bdir%/*}
+done
+
+echo $bdir

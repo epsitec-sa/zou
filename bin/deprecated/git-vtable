@@ -1,0 +1,62 @@
+#!/bin/bash
+
+pad() { eval "printf '%.s-' {1..$1}"; }
+print_row()
+{
+  # TODO: improve by computing the best width according to the longest string.
+  # It needs to have two passes; the first one for computing, and the second
+  # one for printing.
+  printf "_ %-40s _ %-20s _ %-20s _ %-20s _ %-20s _ %-20s _ %-20s _ %-20s _\n" "$@"
+}
+print_head()
+{
+  print_row Module Head Hash Delta Version vminor vmajor vnext
+  print_row :$(pad 39) :$(pad 19) :$(pad 19) :$(pad 19) :$(pad 19) :$(pad 19) :$(pad 19) :$(pad 19)
+}
+row()
+{
+  local vminor vmajor module=$1
+  local head=$(git curbranch)
+  local hash=$(git rev-parse --short HEAD 2>/dev/null)
+  local tag=$(git vcommit2tag | sed -E 's,(.*)-g[[:alnum:]]*$,\1,')
+  if [[ $tag =~ (.*)-([0-9]+)$ ]]; then
+    local version=${BASH_REMATCH[1]}
+    local delta=${BASH_REMATCH[2]}
+  else
+    local version=$tag
+  fi
+  local OIFS=$IFS; IFS=' '
+  local tags=$(git tag -l --sort=-v:refname)
+  if [[ $version =~ ^v([0-9]+)\.([0-9]+) ]]; then
+    local major=${BASH_REMATCH[1]}
+    local minor=${BASH_REMATCH[2]}
+    vminor=$(echo $tags | grep -m1 ^v$major\.$minor)
+    vmajor=$(echo $tags | grep -m1 ^v$major\.)
+  fi
+  local vnext=$(echo $tags | grep -m1 ^v[0-9])
+  local md_module=$module
+  local md_version=$version
+  [[ $version =~ ^.*-@$ || -n $delta ]] && md_module="##$module##"
+  [[ $version =~ ^.*-@$ ]] && md_version="##$version##"
+  [[ $version == $vminor ]] && unset vminor || vminor="#$vminor#"
+  [[ $version == $vmajor ]] && unset vmajor || vmajor="#$vmajor#"
+  [[ $version == $vnext ]] && unset vnext || vnext="#$vnext#"
+  local module_content=$(print_row "$md_module" "$head" "$hash" "$delta" "$md_version" "$vminor" "$vmajor" "$vnext")
+  echo "$module:$module_content"
+  IFS=$OIFS
+}
+v1=`pwd`/_v1
+[[ -f $v1 ]] && rm $v1
+print_head >>$v1
+row $(basename `pwd`) | cut -d':' -f2 >>$v1
+
+export -f row print_row
+export v2=`pwd`/_v2
+[[ -f $v2 ]] && rm $v2
+git submodule foreach --recursive 'row $(git module-id) >>$v2'
+
+suffix=$()
+v="versions-$(git curbranch | tr / _).md"
+[[ -f $v2 ]] && sort -t: -k1 $v2 | cut -d: -f2 >>$v1 && rm $v2
+sed -E 's,_,|,g' $v1 | sed -E 's,#,\*,g' >$v
+rm $v1

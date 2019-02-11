@@ -1,0 +1,159 @@
+#!/bin/bash
+# https://longair.net/blog/2009/04/16/git-fetch-and-merge/
+# https://stackoverflow.com/questions/501407/is-there-a-git-merge-dry-run-option
+
+# Use the following statement to include current lib only once
+#   [[ -z $ZOUL_GIT_BRANCH_SELECT ]] && . zoul-git-branch-select
+ZOUL_GIT_BRANCH_SELECT=true
+
+[[ -z $ZOUL_GIT_REPO ]]        && . zoul-git-repo
+[[ -z $ZOUL_GIT_VTAG ]]        && . zoul-git-vtag
+[[ -z $ZOUL_GIT_BRANCH_CORE ]] && . zoul-git-branch-core
+
+branch_ensure_current()
+{
+  local branch=$(git rev-parse --abbrev-ref HEAD)
+  if ! branch_is_local "$branch"; then
+    branch=$(branch_select $(branch_current_root_branch))
+  fi
+  echo $branch
+}
+branch_scan_sku()
+{
+  echo $1
+  local name00=$1 name10=$1
+  local name01=${1#*/} name11=${1%/*}
+  while [[ $name00 != $name01 ]]; do
+    echo $name01
+    name00=$name01
+    name01=${name01#*/}
+    echo $name11
+    name10=$name11
+    name11=${name11%/*}
+  done
+}
+# Convert any branch (dev or prod) to a fallback list of development branches.
+#   branch:: kind[/name][/mode]
+#   kind:: word
+#   name:: word[/word]...
+#   mode:: 'dev' | n.n
+# example:
+#   master                kind = master
+#   sku/sal/dev           kind = sku, name = sal,              mode = dev
+#   sku/sal/13.1          kind = sku, name = sal,              mode = 13.1  (prod)
+#   sku/compta/mch/dev    kind = sku, name = compta/mch,       mode = dev
+#   wip/zou/git-commands  kind = wip, name = zou/git-commands, mode = 
+branch_dev_fallback()
+{
+  local branch=$1 kind name mode
+
+  kind=${branch%%/*}
+  mode=${branch##*/}
+  # io_debug branch
+  # io_debug kind
+  # io_debug mode
+
+  if [[ $kind == $branch ]]; then
+    # [[ $debug == true ]] && io_message 'kind == branch' '1'
+    [[ $branch != master ]] && echo "$kind/dev"
+    echo $branch
+  elif [[ $mode =~ ^(dev|[0-9]+\.[0-9]+)$ ]]; then
+    # mode is dev or prod
+    # [[ $debug == true ]] && io_message 'mode == dev|prod' '2.0'
+
+    name=${branch#*/}
+    name=${name%/*}
+    # io_debug mode
+    # io_debug name
+
+    if [[ $name == $mode ]]; then
+      # [[ $debug == true ]] && io_message 'name == mode' '2.1'
+      echo "$kind/dev"
+    else
+      for name in $(branch_scan_sku $name); do
+        # [[ $debug == true ]] && io_message 'name != mode' '2.2'
+        echo "$kind/$name/dev"
+        echo "$kind/$name"
+      done
+      # [[ $debug == true ]] && io_message 'without name' '2.3'
+      [[ "$kind/dev" != "$branch" ]] && echo "$kind/dev"
+    fi
+  else
+    # [[ $debug == true ]] && io_message 'without mode' '3.0'
+    # mode not defined
+    name=${branch#*/}
+    # io_debug name
+    for name in $(branch_scan_sku $name); do
+      echo "$kind/$name/dev"
+      echo "$kind/$name"
+    done
+    # [[ $debug == true ]] && io_message '' '3.3'
+    echo "$kind/dev"
+  fi
+  # [[ $debug == true ]] && io_message 'branch != master' '4'
+  [[ $branch != master ]] && echo master
+}
+# Convert any branch to a fallback list of regex patterns.
+branch_dev_patterns()
+{
+  local branch
+  for branch in $(branch_dev_fallback $1); do
+    regex_whole $(regex_escape $branch)
+  done
+}
+# Use this method to find the development branch which best matches
+# any superproject branch (dev|prod)
+branch_best_match_dev()
+{
+  local patterns=$(branch_dev_patterns $1)
+  local branches=( $(branch_list_local_tracked) )
+  local remoteIndex=${#branches[@]}
+  branches+=( $(branch_list_remote_untracked) )
+  local pattern i branch lbranch
+  # try to find a branch matching bundle branch name
+  for pattern in $patterns; do
+    for i in ${!branches[@]}; do
+      branch=${branches[i]}
+      (( $i < $remoteIndex )) && lbranch=$branch || lbranch=${branch#*/}
+      [[ $lbranch =~ $pattern ]] && {
+        echo $branch
+        return 0
+      }
+    done
+  done
+  return 1
+}
+branch_best_match_prod()
+{
+  local branch
+  branch=$(branch_realize $1 2>/dev/null)
+  if [ $? -eq 0 ]; then
+    echo $branch
+  else
+    local dev=$(branch_best_match_dev $1)
+    local ltag=$(vtag_describe $dev)
+    vtag_get_vbranch_name $ltag
+  fi
+}
+branch_is_prod() { [[ $1 =~ ^(.*/)?([0-9]+\.[0-9]+)$ ]] && return 0 || return 1; }
+branch_best_match()
+{
+  local target=$1
+  if branch_is_prod $target; then
+    branch_best_match_prod $target
+  else
+    branch_best_match_dev $target
+  fi
+}
+branch_select()
+{
+  local rootBranch=$1 bestMatch branch
+  [[ -z $rootBranch ]] && io_error 'branch_select: specify a branch to match' && return 1
+  bestMatch=$(branch_best_match $rootBranch)
+  branch=$(branch_checkout "$bestMatch")
+  if [ $? -ne 0 ]; then
+    repo_require_clean_work_tree 'cannot select'
+    return 1
+  fi
+  echo $branch
+}

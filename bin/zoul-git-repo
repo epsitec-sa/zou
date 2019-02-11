@@ -1,0 +1,381 @@
+#!/bin/bash
+
+# Manage repository
+# 
+# bundle ID
+# bundle root path
+#   
+# module ID
+#   = module relative path
+# module relative path
+#   the module root path relative to the bundle root path
+# module root path
+#  
+# submodule ID
+#   the name of the section in the .gitmodules file
+# submodule relative path
+#   the path value in the .gitmodules config file
+#   = relative path to the parent module / bundle
+#
+# Exemples:
+# repo_bundle_id        # zou-dev
+# repo_bundle_root      # /c/devel/zou-dev
+# repo_module_id        # zou, Bcx
+# repo_module_root      # /c/devel/zou-dev/zou, /c/devel/zou-dev/Bcx, ...
+
+
+
+# http://schacon.github.io/git/git.html
+# https://stackoverflow.com/questions/2657935/checking-for-a-dirty-index-or-untracked-files-with-git/2658301
+
+# Use the following statement to include current lib only once
+#   [[ -z $ZOUL_GIT_REPO ]] && . zoul-git-repo
+ZOUL_GIT_REPO=true
+
+[[ -z $ZOUL_CORE ]] && . zoul-core
+
+declare -A smPathLookup
+export smPathLookup
+
+######################
+# Bundle
+repo_bundle_id()
+{
+  local dir
+  dir=$(repo_bundle_root)
+  [ $? -ne 0 ] && return 1
+  echo ${dir##*/}
+}
+repo_bundle_root()
+{
+  local dir
+  dir=$(realpath "${1:-.}") || return $?
+  while [[ -n "$dir" && ! -d "$dir/.git" ]]; do
+    dir="${dir%/*}"
+  done
+  [[ -z $dir ]] && return 1
+  echo "$dir"
+}
+# return the path relative to the bundle root of any bundle folder
+# input:
+#  $1 : the path to compute the relative path
+#  $2 : any folder path inside the reference bundle
+repo_path_relative_to_bundle_root()
+{
+  local path bdir
+  path=$(realpath "${1:-.}") || return $?
+  bdir=$(repo_bundle_root "${2:-.}") || return $?
+  realpath --relative-to="$bdir" "$path"
+}
+
+######################
+# Module
+repo_module_id()
+{
+  local dirs
+  dirs=( $(repo_module_and_bundle_roots "$@") )
+  [ $? -ne 0 ] && return 1
+  local mdir=${dirs[0]} bdir=${dirs[1]}
+  if [[ $mdir == $bdir ]]; then
+    echo ${bdir##*/}
+  else
+    echo ${mdir#$bdir/}
+  fi
+}
+repo_module_root()
+{
+  local dir
+  dir=$(realpath "${1:-.}") || return $?
+  while [[ -n "$dir" ]]; do
+    if [[ -f "$dir/.git" || -d "$dir/.git" ]]; then
+      echo "$dir"
+      return 0
+    fi
+    dir="${dir%/*}"
+  done
+  return 1
+}
+repo_module_level()
+{
+  local dir level=0
+  dir=$(realpath "${1:-.}") || return $?
+  while [[ -n "$dir" ]]; do
+    if [[ -f "$dir/.git" ]]; then
+      level=$(( $level + 1 ))
+    elif [[ -d "$dir/.git" ]]; then
+      echo "$level"
+      return 0
+    fi
+    dir="${dir%/*}"
+  done
+  return 1
+}
+
+# return the path relative to the module root of any module folder
+# input:
+#  $1 : the path to compute the relative path
+#  $2 : any folder path inside the reference module
+repo_module_root_relative_to_path()
+{
+  local dir=$(realpath "${1:-.}") mdir
+  mdir=$(repo_module_root "${2:-.}") || return $?
+  realpath --relative-to="$dir" "$mdir"
+}
+# return the path relative to the module root of any module folder
+# input:
+#  $1 : the path to compute the relative path
+#  $2 : any folder path inside the reference module
+repo_path_relative_to_module_root()
+{
+  local dir=$(realpath "${1:-.}") mdir
+  mdir=$(repo_module_root "${2:-.}") || return $?
+  realpath --relative-to="$mdir" "$dir"
+}
+repo_module_and_bundle_roots()
+{
+  local dir=$(realpath ${1:-.}) mdir bdir
+  while [[ -n "$dir" ]]; do
+    if [[ -z "$mdir" && -f "$dir/.git" ]]; then
+      mdir=$dir
+      echo "$mdir"
+    fi
+    if [[ -d "$dir/.git" ]]; then
+      if [[ -z "$mdir" ]]; then
+        mdir=$dir
+        echo "$mdir"
+      fi
+      bdir=$dir
+      echo "$bdir"
+      return 0
+    fi
+    dir=${dir%/*}
+  done
+  return 1
+}
+repo_module_and_ancestor_roots()
+{
+  local dir=$(realpath ${1:-.})
+  while [[ -n "$dir" ]]; do
+    if [[ -f "$dir/.git" ]]; then
+      echo "$dir"
+    fi
+    if [[ -d "$dir/.git" ]]; then
+      echo "$dir"
+      return 0
+    fi
+    dir=${dir%/*}
+  done
+  return 1
+}
+
+######################
+# Submodule
+
+repo_submodule_root()
+{
+  local dir
+  dir=$(realpath "${1:-.}") || return $?
+  while [[ -n "$dir" ]]; do
+    if [[ -f "$dir/.git" ]]; then
+      echo "$dir"
+      return 0
+    fi
+    dir="${dir%/*}"
+  done
+  return 1
+}
+repo_submodule_path()
+{
+  local smId=$1 root=$2
+  [[ -z $root ]] && { root=$(repo_module_root) || return 1; }
+  git config --file "$root/.gitmodules" "submodule.$smId.path"
+}
+
+######################
+
+repo_url_from_path()
+{
+  local pwd=$PWD; cd "${1:-.}"
+  local url=$(git config remote.origin.url)
+  cd $pwd
+  echo $url
+}
+
+repo_gitmodules_path()
+{
+  local mroot=$1 smid smpath
+  [[ -z $mroot ]] && { mroot=$(repo_module_root) || return 1; }
+  echo "$mroot/.gitmodules"
+}
+repo_zouflow_path()
+{
+  local mroot=$1 smid smpath
+  [[ -z $mroot ]] && { mroot=$(repo_module_root) || return 1; }
+  echo "$mroot/$ZOU_FLOW_CONFIG"
+}
+
+repo_list_deleted()    { git ls-files --deleted; }
+repo_list_unstaged()   { git diff-files --name-only -r --ignore-submodules --; }
+repo_list_uncommited() { git diff-index --cached --name-only -r --ignore-submodules HEAD --; }
+repo_list_unmerged()   { git diff --name-only --diff-filter=U --ignore-submodules | cut -f1; }
+repo_is_merging()      { git merge HEAD &>/dev/null && return 1 || return 0; }
+repo_is_clean()        { git diff-index --quiet HEAD --; }
+
+repo_is_module_root()  { [[ -f "${1:-.}/.git" ]]; }
+
+repo_list_submodule_paths()
+{
+  local key value
+  key=$(repo_module_root) || return 1
+  value=${smPathLookup[$key]}
+  if [[ -z $value ]]; then
+    value=$(git config --file "$key/.gitmodules" --get-regexp '^submodule\..*\.path$' | cut -d' ' -f2)
+    smPathLookup[$key]=$value
+  fi
+  echo $value
+}
+repo_list_unstaged_submodules()
+{
+  local mroot=$1 smid smpath opwd=$PWD
+  [[ -z $mroot ]] && { mroot=$(repo_module_root) || return 1; }
+  for smid in $(git diff-files --name-only -r); do
+    smpath=$(repo_submodule_path "$smid" "$mroot")
+    if repo_is_module_root "$mroot/$smpath"; then
+      echo $smid
+    fi
+  done
+  cd "$opwd"
+}
+repo_list_unstaged_clean_submodules()
+{
+  local mroot=$1 smid smpath smroot opwd=$PWD
+  [[ -z $mroot ]] && { mroot=$(repo_module_root) || return 1; }
+  for smid in $(git diff-files --name-only -r); do
+    smpath=$(repo_submodule_path "$smid" "$mroot")
+    smroot="$mroot/$smpath"
+    if repo_is_module_root "$smroot"; then
+      cd "$smroot"
+      repo_is_clean && echo $smid
+    fi
+  done
+  cd "$opwd"
+}
+repo_list_untracked()
+{
+  local mroot=$1 smid smpath
+  [[ -z $mroot ]] && { mroot=$(repo_module_root) || return 1; }
+  for smid in $(git ls-files --exclude-standard --others); do
+    smpath=$(repo_submodule_path "$smid" "$mroot")
+    repo_is_module_root "$mroot/$smpath" || echo $smid
+  done
+}
+repo_list_dangling_submodules()
+{
+  local mroot=$1 smid opwd=$PWD
+  [[ -z $mroot ]] && { mroot=$(repo_module_root) || return 1; }
+  cd "$mroot"
+  for smid in $(git ls-files --exclude-standard --others); do
+    repo_is_module_root "$mid" && echo $smid
+  done
+  cd "$opwd"
+}
+repo_commit_submodules()
+{
+  local mroot=$1 unstaged opwd=$PWD
+  [[ -z $mroot ]] && { mroot=$(repo_module_root) || return 1; }
+
+  unstaged=( $(repo_list_unstaged_clean_submodules "$mroot") )
+  [ ${#unstaged[@]} -eq 0 ] && return 1
+  local cslist=$(string_join ', ' "${unstaged[@]}")
+
+  cd "$mroot"
+  git commit -m "zou-flow: update submodules '$cslist'" -- "${unstaged[@]}" >/dev/null
+  io_warning "Commited submodules '$cslist'" "[$(repo_module_id)]"
+  cd "$opwd"
+}
+repo_commit_ancestor_submodules()
+{
+  local mroot opwd=$PWD
+  for mroot in $(repo_module_and_ancestor_roots "$@"); do
+    cd "$mroot"
+    repo_commit_submodules "$mroot"
+  done
+  cd "$opwd"
+}
+repo_remove_dangling_submodule()
+{
+  local path=$1 smid=${1%/}
+  git submodule deinit $smid 2>/dev/null && git rm --cached $smid 2>/dev/null
+  rm -rf $path
+}
+repo_remove_dangling_submodules()
+{
+  local mroot=$1 smid opwd=$PWD
+  [[ -z $mroot ]] && { mroot=$(repo_module_root) || return 1; }
+  cd "$mroot"
+  for smid in $(repo_list_dangling_submodules); do
+    repo_remove_dangling_submodule $smid
+  done
+  cd "$opwd"
+}
+
+repo_update_submodules()
+{
+  local moduleId recursive
+  while [[ "$#" > 0 ]]; do case "$1" in
+    --recursive) recursive=$1;;
+    *) moduleId=$1;;
+  esac; shift; done
+  local submodules=( $(repo_list_submodule_paths) )
+  if [ ${#submodules[@]} -ne 0 ]; then
+    [[ -z $moduleId ]] && moduleId=$(repo_module_id)
+    io_info 'Updating submodules...' "[$moduleId]"
+    git submodule update --init $recursive
+  fi
+}
+repo_update_submodule()
+{
+  local path=$1
+  io_info 'Updating submodule '$path'...' "[$(repo_module_id)]"
+  git submodule update --init --recursive "$path"
+}
+repo_require_clean_work_tree()
+{
+    local prefix="$*"
+    [[ $prefix =~ ^\[ ]] || prefix="[$(repo_module_id)] $prefix"
+    local err=0
+
+    # Update the index
+    if ! git update-index -q --ignore-submodules --refresh &>/dev/null; then
+        io_error 'You have unmerged paths.' "$prefix"
+        io_error "$(repo_list_unmerged)" '%2s'
+        io_info  "Resolve conflicts and run 'git commit'." '%2s'
+        return 1
+    fi
+
+    # Disallow untracked changes in the working tree
+    if ! test -z "$(repo_list_untracked)"; then
+        io_error 'Your work tree contains untracked changes.' "$prefix"
+        io_error "$(repo_list_untracked)" '%2s'
+        io_info  "Run 'git add'" '%2s'
+        err=1
+    fi
+
+    # Disallow unstaged changes in the working tree
+    if ! git diff-files --quiet --ignore-submodules --; then
+        io_error 'You have unstaged changes.' "$prefix"
+        io_error "$(repo_list_unstaged)" '%2s'
+        io_info  "Run 'git stash' or 'git add' and 'git commit'." '%2s'
+        err=1
+    fi
+
+    # Disallow uncommitted changes in the index
+    if ! git diff-index --cached --quiet HEAD --ignore-submodules --; then
+        io_error 'Your index contains uncommitted changes.' "$prefix"
+        io_error "$(repo_list_uncommited)" '%2s'
+        io_info  "Run 'git commit'." '%2s'
+        err=1
+    fi
+
+    return $err
+}

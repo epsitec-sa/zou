@@ -1,0 +1,48 @@
+#!/bin/bash
+# MS rethink: https://git.epsitec.ch/snippets/46
+
+. zoul-core
+
+set -f  # disable filename expansion
+
+commit=HEAD
+patterns=()
+opt_patterns=()
+
+while [[ "$#" > 0 ]]; do case "$1" in
+  --) shift; patterns+=("$@"); break;;
+  -h|--help) zou-help $0; exit 0;;
+  -d|--dev)  opt_patterns+=('\bdev\b' '^master$');;
+  -p|--prod) opt_patterns+=('[0-9]+\.[0-9]+' '\bprod\b' '^master$');;
+  -c|--commit) commit="$2"; shift;;
+  -c=*|--commit=*) commit="${1#*=}";;
+  -*) echo "unknown option: $1" >&2; exit 1;;
+  *) patterns+=("$1");;
+esac; shift; done
+
+patterns+=(${opt_patterns[@]})
+[[ ${#patterns[@]} == 0 ]] && patterns+=('.*')
+hash=$(git rev-parse $commit)
+
+branches=()
+for b in $(git branch -a --merged $commit | grep -v HEAD); do
+  [[ $(git rev-parse $b) == $hash ]] && branches+=(${b#remotes/origin/})
+done
+
+branches=(`echo ${branches[@]} | xargs -n1 echo | sort -u | xargs echo`)
+for b in $(git branch -a --no-merged $commit | grep -v HEAD); do
+  for i in ${!branches[@]}; do
+    [[ ${branches[i]} == $b ]] && unset branches[i]
+  done
+done
+
+if (( ${#branches[@]} >= 1 )); then
+  for p in ${patterns[@]}; do
+    for b in ${branches[@]}; do
+      branch=$(echo $b | grep -E $p)
+      [[ -n $branch ]] && break 2
+    done
+  done
+fi
+
+[[ -n "$branch" ]] && git checkout $branch || true

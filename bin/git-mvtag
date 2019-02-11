@@ -1,0 +1,16 @@
+#!/bin/bash
+
+. zoul-git-tag
+
+args=()
+while [[ "$#" > 0 ]]; do case "$1" in
+  -h|--help) zou-help $0; exit 0;;
+  --debug) debug=true;;
+  -*) io_error "unknown option: $1"; exit 1;;
+  *) args+=("$1");;
+esac; shift; done
+
+tag1="${args[0]}"
+tag2="${args[1]}"
+
+tag_move "$tag1" "$tag2"

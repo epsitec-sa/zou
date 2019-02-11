@@ -1,0 +1,26 @@
+#!/bin/bash
+
+. zoul-git-repo
+
+while [[ "$#" > 0 ]]; do case "$1" in
+  -h|--help) zou-help $0; exit 0;;
+  --sm) cleanSubmodules=true;;
+  -*) echo "unknown option: $1" >&2; exit 1;;
+esac; shift; done
+
+repo_require_clean_work_tree 'cannot clean' || exit 1
+[[ $cleanSubmodules == true ]] && {
+  moduleId=$(repo_module_id)
+  for sm in $(repo_list_dangling_submodules); do
+    io_info "Removing '${sm%/}' dangling submodule..." "[$moduleId]"
+    repo_remove_dangling_submodule $sm
+  done
+  exit $?
+}
+
+[ -d node_modules ] && {
+  io_info 'Removing node modules...' "[$(repo_module_id)]"
+  rm -rf node_modules
+}
+git clean -xdf -e packages
+git checkout .

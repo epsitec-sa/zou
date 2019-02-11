@@ -1,0 +1,10 @@
+#!/bin/bash
+
+opts=()
+
+while [[ "$#" > 0 ]]; do case "$1" in
+  -h|--help) zou-help $0; exit 0;;
+  -*) opts+=( $1 );;
+esac; shift; done
+
+git for -r -- git cleanex "${opts[@]}"

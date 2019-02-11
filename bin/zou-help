@@ -1,0 +1,26 @@
+#!/bin/bash
+
+[[ -z $ZOUL_CORE ]] && . zoul-core
+
+hdir=$(realpath "$(dirname $0)/../help")
+hname=$(basename "$1")
+hpath=$hdir/$hname
+if [[ -f "$hpath" ]]; then
+  help=$(cat "$hpath")
+  io_info "$help" usage
+else
+  htpl=$hdir/template/$hname
+  if [[ -f "$htpl" ]]; then
+    io_warning "help file not found at $hpath\n"
+    io_info "use the following commands to create and edit the following template
+
+    mv \"$htpl\" \"$hpath\"
+    vim \"$hpath\"
+
+"
+    help=$(cat "$htpl")
+    io_message "$help" usage Gray
+  else
+    io_error "help file not found - $hpath"
+  fi
+fi 

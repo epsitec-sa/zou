@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# Use the following statement to include current lib only once
+#   [[ -z $ZOUL_TEST ]] && . zoul-test
+ZOUL_TEST=true
+
+[[ -z $ZOUL_CORE ]] && . zoul-core
+
+# create test-results folder
+zou_testDir=$(realpath "$zou_binDir/../../test-results")
+[[ -d $zou_testDir ]] || mkdir -p "$zou_testDir"
+
+io_debug zou_testDir

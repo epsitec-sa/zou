@@ -1,0 +1,114 @@
+#!/bin/bash
+
+# Use the following statement to include current lib only once
+#   [[ -z $ZOUL_GIT_VTABLE ]] && . zoul-git-vtable
+ZOUL_GIT_VTABLE=true
+
+[[ -z $ZOUL_GIT_VTAG ]] && . zoul-git-vtag
+[[ -z $ZOUL_GIT_BRANCH_CORE ]] && . zoul-git-branch-core
+
+pad() { eval "printf '%.s-' {1..$1}"; }
+
+print_row()
+{
+  # TODO: improve by computing the best width according to the longest string.
+  # It needs to have two passes; the first one for computing, and the second
+  # one for printing.
+  printf "_ %-40s _ %-20s _ %-20s _ %-20s _ %-20s _ %-20s _ %-20s _ %-20s _\n" "$@"
+}
+print_head()
+{
+  print_row Module Head Hash Delta Version vminor vmajor vnext
+  print_row :$(pad 39) :$(pad 19) :$(pad 19) :$(pad 19) :$(pad 19) :$(pad 19) :$(pad 19) :$(pad 19)
+}
+vtable_row()
+{
+  local moduleId=$1 setHash=${2:-true} vminor vmajor head hash tag
+  head=$(branch_current)
+  [[ $setHash == true ]] && hash=$(git rev-parse --short HEAD 2>/dev/null)
+  tag=$(vtag_describe $head)
+  tag=${tag%-g*}
+
+  if [[ $tag =~ (.*)-([0-9]+)$ ]]; then
+    local version=${BASH_REMATCH[1]}
+    local delta=${BASH_REMATCH[2]}
+  else
+    local version=$tag
+  fi
+  local OIFS=$IFS; IFS=' '
+  local tags=$(git tag -l --sort=-v:refname)
+  if [[ $version =~ ^(.*/)?v([0-9]+)\.([0-9]+) ]]; then
+    local sku=${BASH_REMATCH[1]}
+    local major=${BASH_REMATCH[2]}
+    local minor=${BASH_REMATCH[3]}
+    local reSku=$(regex_escape $sku)
+    vminor=$(echo $tags | grep -m1 "^${reSku}v$major\.$minor")
+    vmajor=$(echo $tags | grep -m1 "^${reSku}v$major\.")
+  fi
+  local vnext=$(echo $tags | grep -m1 "^${reSku}v[0-9]")
+  local md_moduleId=$moduleId
+  local md_version=$version
+  [[ $version =~ ^.*-@$ || -z $version || -n $delta ]] && md_moduleId="##$moduleId##"
+  [[ $version =~ ^.*-@$ ]] && md_version="##$version##"
+  [[ $version == $vminor ]] && unset vminor || vminor="#$vminor#"
+  [[ $version == $vmajor ]] && unset vmajor || vmajor="#$vmajor#"
+  [[ $version == $vnext ]] && unset vnext || vnext="#$vnext#"
+  local module_content=$(print_row "$md_moduleId" "$head" "$hash" "$delta" "$md_version" "$vminor" "$vmajor" "$vnext")
+  echo "$module_content"
+  IFS=$OIFS
+}
+vtable_init()
+{
+  local root=$1 moduleId=$2
+  local lookupPath="$root/_vtable.zou"
+
+  # create lookup
+  if [[ "$PWD" == "$root" && ! -f "$lookupPath" ]]; then
+    declare -A lookup
+    declare -p lookup >"$lookupPath"
+  fi
+}
+vtable_update()
+{
+  local root=$1 moduleId=$2
+  local lookupPath="$root/_vtable.zou"
+
+  if [[ "$PWD" == "$root" ]]; then
+    local OIFS=$IFS; IFS=$'\n'
+    # deserialize lookup
+    . "$lookupPath"
+
+    # serialize header and root
+    local file="$root/versions.md" verb
+    [[ -f "$file" ]] && verb='update' || verb='create'
+
+    print_head >"$file"
+    vtable_row $moduleId false >>"$file"
+    
+    # serialize lookup values
+    for moduleId in $(string_sort ${!lookup[@]}); do
+      echo ${lookup[$moduleId]} >>"$file"
+    done
+    
+    # replace '_' and '#' to '|' and '*'
+    sed -i -E 's,_,|,g; s,#,\*,g' "$file"
+    rm "$lookupPath"
+    IFS=$OIFS
+
+    git update-index --add -- "$file" &>/dev/null \
+    && git commit -m "zou-flow: $verb version table" -- "$file" &>/dev/null
+  else
+    local OIFS=$IFS; IFS=$'\n'
+
+    # deserialize lookup
+    . "$lookupPath"
+
+    # add vtable row
+    local value=$(vtable_row "$moduleId" true)
+    lookup[$moduleId]="$value"
+
+    # serialize lookup
+    declare -p lookup >"$lookupPath"
+    IFS=$OIFS
+  fi
+}

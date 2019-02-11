@@ -1,0 +1,10 @@
+#!/bin/bash
+
+version=$1
+if [[ -z "$version" ]]; then
+    regex=[0-9]
+else
+    regex=$(echo $version | sed s,[.],\.,g)
+fi
+
+git tag -l --sort=v:refname | grep -m1 ^v$regex || true

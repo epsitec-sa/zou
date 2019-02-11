@@ -1,0 +1,42 @@
+#!/bin/bash
+
+# Use the following statement to include current lib only once
+#   [[ -z $ZOUL_GIT_COMMIT ]] && . zoul-git-commit
+ZOUL_GIT_COMMIT=true
+
+[[ -z $ZOUL_GIT_REPO ]] && . zoul-git-repo
+
+commit_list_submodules()
+{
+  local rev=${1:-HEAD}
+  git ls-tree -d --full-tree "$rev" | grep -E '^[0-9]+[[:space:]]+commit' | cut -d ' ' -f 3-
+}
+commit_sync_submodules()
+{
+  # use same submodules in branch $2 as in $1
+  declare -A a b
+  local sha name k
+  while read sha name; do
+    a[$name]=$sha
+  done < <(commit_list_submodules "$1")
+  while read sha name; do
+    b[$name]=$sha
+  done < <(commit_list_submodules "$2")
+  [[ $debug == true ]] && {
+    for k in ${!a[@]}; do
+      echo $1: [$k] ${a[$k]}
+    done
+    for k in ${!b[@]}; do
+      echo $2: [$k] ${b[$k]}
+    done
+  }
+  for k in ${!a[@]}; do
+    if [[ ${a[$k]} != ${b[$k]} ]]; then
+      io_info "Synchronized '$1' with '$2'" "[$(repo_module_id)]"
+      git checkout "$2" &>/dev/null
+      repo_commit_submodules
+      git checkout - &>/dev/null
+      return 0
+    fi
+  done
+}

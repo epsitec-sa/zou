@@ -1,0 +1,60 @@
+#!/bin/bash
+
+. zoul-git-config-version
+. zoul-git-repo
+
+set -f
+packageJson=()
+versionProps=()
+assemblyInfo=()
+csProj=()
+rc=()
+action='add'
+while [[ "$#" > 0 ]]; do case "$1" in
+  --) shift; args+=("$@"); break;;
+  -h|--help) zou-help $0; exit 0;;
+  --vp=*|--version-props=*) versionProps+=("${1#*=}");;
+  --ai=*|--assembly-info=*) assemblyInfo+=("${1#*=}");;
+  --cs=*|--csproj=*)        csProj+=("${1#*=}");;
+  --rc=*)                   rc+=("${1#*=}");;
+  --pj|--package-json)    packageJson+=('./package.json');;
+  --vp|--version-props)   versionProps+=('./Version.props');;
+  --ai|--assembly-info)   assemblyInfo+=('*/AssemblyInfo*.cs');;
+  --cs|--csproj)          csProj+=('*/*.csproj');;
+  --rc)                   rc+=('*/*.rc');;
+  --custom)               customDir='.';;
+  --no-edit)              noEdit=true;;
+  --remove)               action='remove';;
+  -*) echo "unknown option: $1" >&2; exit 1;;
+esac; shift; done
+
+if [ ${#versionProps[@]} -ne 0 ]; then
+  version_${action}_version_props "${versionProps[@]}"
+fi
+if [ ${#assemblyInfo[@]} -ne 0 ]; then
+  version_${action}_assembly_info "${assemblyInfo[@]}"
+fi
+if [ ${#csProj[@]} -ne 0 ]; then
+  version_${action}_csproj "${csProj[@]}"
+fi
+if [ ${#rc[@]} -ne 0 ]; then
+  version_${action}_rc "${rc[@]}"
+fi
+if [ ${#packageJson[@]} -ne 0 ]; then
+  version_${action}_package_json "${packageJson[@]}"
+fi
+
+if [[ -n $customDir ]]; then
+  customFile=$(version_create_custom "$customDir")
+  if [[ -n $customFile ]]; then
+    command=$(git config core.editor)
+    if [[ $noEdit == true ]]; then
+      io_message '' "[$(repo_module_id)] modify the version updater script with the following command"
+      io_message
+      io_message "    $command '$customFile'" '' Gray
+    else
+      eval "$command '$customFile'"
+    fi
+  fi
+fi
+set +f

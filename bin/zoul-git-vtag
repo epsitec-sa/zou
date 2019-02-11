@@ -1,0 +1,368 @@
+#!/bin/bash
+
+# Use the following statement to include current lib only once
+#   [[ -z $ZOUL_GIT_VTAG ]] && . zoul-git-vtag
+ZOUL_GIT_VTAG=true
+
+[[ -z $ZOUL_CORE ]]     && . zoul-core
+[[ -z $ZOUL_GIT_CORE ]] && . zoul-git-core
+
+vtag_is_vnode() { [[ $1 =~ ^(.*/)?v[0-9]+\.[0-9]+-@ ]]; }
+vtag_is_vtag() { [[ $1 =~ ^(.*/)?v[0-9]+\.[0-9]+\.[0-9] ]]; }
+vtag_at_vtag()
+{
+  local tag
+  tag=$(git describe --exact-match "$1" 2>/dev/null) || return 1
+  vtag_is_vtag "$tag" && echo $tag
+}
+vtag_list()
+{
+  # input             output
+  # 1.0               v1.0-@ v1.0.0
+  # sku/sal/1.0       sku/sal/v1.0-@
+  local vbranch=$1
+  local regex
+  if [[ -z $vbranch ]]; then
+    regex='v[0-9]+\.[0-9]+(\.|-)'
+  elif [[ $vbranch =~ ^(.*/)?([0-9]+\.[0-9]+) ]]; then
+    # vbranch
+    local prefix=${BASH_REMATCH[1]}
+    local version=${BASH_REMATCH[2]}
+    regex="^$(regex_escape $prefix)v$(regex_escape $version)"
+    io_debug prefix vtag_list
+    io_debug version vtag_list
+  else
+    io_error "vtag invalid format : '$1'"
+    return 1
+  fi
+  io_debug regex vtag_list
+  git tag -l --sort=-v:refname | grep -E $regex | grep -v '^other/' || true
+}
+vtag_scan_branch_path()
+{
+  local b0=$1
+  local b1=${1%/*}
+  if [[ $b0 == $b1 ]]; then
+    echo $b1
+  else
+    while [[ $b0 != $b1 ]]; do
+      echo $b1
+      b0=$b1
+      b1=${b1%/*}
+    done
+  fi
+}
+vtag_describe()
+{
+  # find first vtag ancestor starting from given commit
+  # input:
+  # - $1: commit hash (ex: e5d2fe9)
+  # output:
+  # - vtag description (ex: v1.0.0-rc1-5-ge5d2fe9)
+  local branch=$(git_symbolic_ref ${1:-HEAD})
+  local b
+  for b in $(vtag_scan_branch_path $branch); do
+    git describe --first-parent --tags --match "${b}/v[0-9]*" --exclude 'other/*' "$branch" 2>/dev/null && return 0
+    git describe --tags --match "${b}/v[0-9]*" --exclude 'other/*' "$branch" 2>/dev/null && return 0
+  done
+  git describe --first-parent --tags --match "v[0-9]*" --exclude 'other/*' "$branch" 2>/dev/null && return 0
+  git describe --tags --match "v[0-9]*" --exclude 'other/*' "$branch" 2>/dev/null;
+}
+vtag_vtags_at()
+{
+  # list all vtags pointing at given commit
+  # input:
+  # - $1: rev to list
+  # output:
+  # - list of vtags pointing at given commit (ex: v1.0-@ v1.0.0-rc1 v1.0.0)
+  git tag --sort=-v:refname --points-at "${1:-HEAD}^{}" | grep -E '^(.*/)?v[0-9]+\.[0-9]+(\.|-)' | grep -v '^other/'
+}
+vtag_best_match_vtag_at()
+{
+  # get best match vtag at given commit
+  # input:
+  # - $1: branch (ex: sku/dev, master)
+  # output:
+  # - best match vtag  (ex: sku/dev -> sku/v1.0.0, master -> v2.0.0)
+  local branch=$1 hint reHint
+  local vtags=( $(vtag_vtags_at $branch) )
+  if [ ${#vtags[@]} -ne 0 ]; then
+    for hint in $(vtag_scan_branch_path $branch); do
+      reHint=$(regex_escape $hint)
+      for tag in $(echo "${vtags[@]}" | xargs -n 1 | grep "^$reHint"); do
+        echo $tag
+        return 0
+      done
+    done
+    echo ${vtags[0]}
+  else
+    return 1
+  fi
+}
+vtag_get_vbranch_name ()
+{
+  # extract vbranch name from vtag
+  # input:
+  # - $1: vtag (ex: v1.0.0-rc1)
+  # output:
+  # - vbranch name (ex: 1.0)
+  # - nothing if $1 is not a vtag
+  if [[ $1 =~ ^(.*/)?v([0-9]+)\.([0-9]+)(\.|-) ]]; then
+    local prefix=${BASH_REMATCH[1]}
+    local major=${BASH_REMATCH[2]}
+    local minor=${BASH_REMATCH[3]}
+    echo ${prefix}$major.$minor;
+  fi
+}
+vtag_get_vbranch()
+{
+    # find  local or remote vbranch - priority to local vbranch
+    # input:
+    # - $1: vtag (ex: v1.0.0-rc1)
+    # output:
+    # - local vbranch (ex: 1.0) if it exists
+    # - remote vbranch (ex: origin/1.0) if local vbranch does not exist
+    local vtag=$1
+    local vbranch=$(vtag_get_vbranch_name $vtag)
+    if [[ -n $(git show-ref refs/heads/$vbranch) ]]; then
+        # local vbranch
+        echo $vbranch
+    else
+        # local vbranch not found try remote vbranch
+        vbranch=$(git remote)/$vbranch
+        if [[ -n $(git show-ref refs/remotes/$vbranch) ]]; then
+          echo $vbranch
+        else
+          io_warning "vtag_get_vbranch: vtag '$vtag' has no associated vbranch"
+        fi
+    fi
+}
+vtag_get_vbranch_tail()
+{
+  # get the vbranch tail starting from commit1 and containing commit2
+  # input:
+  # - $1: rev that points to the start of the tail (can be tagged with multiple vtags)
+  # - $2: vbranch marker (descendant of $1 that belongs to searched vbranch) 
+  # output
+  # - [0]: the vtag that starts the vbranch tail
+  # - [1]: the vbranch that contains the given vbranch marker
+  # - [2]: a status (empty|full) indicating if the vbranch tail does not contain any vtag
+  for vtag in $(vtag_best_match_vtag_at $1); do
+    io_debug vtag vtag_get_vbranch_tail
+    local vbranch=$(vtag_get_vbranch $vtag)
+    if [[ -n $vbranch ]]; then
+      io_debug vbranch vtag_get_vbranch_tail
+      git merge-base --is-ancestor $2 $vbranch >&2
+      if [ $? -eq 0 ]; then
+        local status='empty'
+        if ! vtag_is_vnode $vtag; then
+          local hash1=$(git rev-parse "$vtag^{}")
+          local hash2=$(git rev-parse "$vbranch^{}")
+          [[ $hash1 == $hash2 ]] && status='full'
+        fi
+        echo $vtag $vbranch $status
+        return 0;
+      fi
+    fi
+  done
+  io_warning "vtag_get_vbranch_tail: branch '$(git rev-parse --abbrev-ref $2)' is outside vbranch '$vbranch'"
+  return 1
+}
+vtag_get_next_vtag()
+{
+  # get 
+  local vtag=$1
+  local vbranch=$2
+  local previous
+  for current in $(vtag_list "$vbranch"); do
+    if [[ $current == $vtag ]]; then
+      if [[ -n $previous ]]; then
+        # previous should be a descendant of vtag
+        git merge-base --is-ancestor $vtag $previous >&2
+        if (( $? == 0 )); then
+          # previous should be an ancestor of vbranch
+          git merge-base --is-ancestor $previous $vbranch >&2
+          (( $? == 0 )) && echo $previous || io_error "vtag_get_next_vtag: $previous is not an ancestor of vbranch $vbranch"
+        else
+          io_error "vtag_get_next_vtag: $vtag is not an ancestor of $previous"
+        fi
+      fi
+    else
+      previous=$current
+    fi
+  done
+}
+vtag_compare_prerel()
+{
+  local p1=$1
+  local p2=$2
+  
+  io_debug p1 vtag_compare_prerel
+  io_debug p2 vtag_compare_prerel
+
+  [[ $p1 == $p2 ]] && return 0
+  [[ -n $p1 && -z $p2 ]] && return -1
+  [[ -z $p1 && -n $p2 ]] && return 1
+
+  local r1; local r2
+
+  if [[ $p1 =~ ^-([[:alpha:]]+)([0-9]+) ]]; then
+    p1=${BASH_REMATCH[1]}
+    r1=${BASH_REMATCH[2]}
+    io_debug p1 vtag_compare_prerel
+    io_debug r1 vtag_compare_prerel
+  fi
+  if [[ $p2 =~ ^-([[:alpha:]]+)([0-9]+) ]]; then
+    p2=${BASH_REMATCH[1]}
+    r2=${BASH_REMATCH[2]}
+    io_debug p2 vtag_compare_prerel
+    io_debug r2 vtag_compare_prerel
+  fi
+  [[ $p1 < $p2 ]] && return -1
+  [[ $p1 > $p2 ]] && return 1
+  (( r1 < r2 )) && return -1
+  (( r1 > r2 )) && return 1
+
+  return 0
+}
+vtag_compare()
+{
+  # output:
+  # - -1: $1 <  $2 (255)
+  # -  0: $1 == $2
+  # -  1: $1 >  $2
+
+  if [[ $1 =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)(-[[:alnum:]]+)?(\+.+)?$ ]]; then
+    local major1=${BASH_REMATCH[1]}
+    local minor1=${BASH_REMATCH[2]}
+    local patch1=${BASH_REMATCH[3]}
+    local prerel1=${BASH_REMATCH[4]}
+    local meta1=${BASH_REMATCH[5]}
+    if [[ $2 =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)(-[[:alnum:]]+)?(\+.+)?$ ]]; then
+      local major2=${BASH_REMATCH[1]}
+      local minor2=${BASH_REMATCH[2]}
+      local patch2=${BASH_REMATCH[3]}
+      local prerel2=${BASH_REMATCH[4]}
+      local meta2=${BASH_REMATCH[5]}
+
+      (( $major1 < $major2 )) && return -1
+      (( $major1 > $major2 )) && return  1
+      (( $minor1 < $minor2 )) && return -1
+      (( $minor1 > $minor2 )) && return  1
+      (( $patch1 < $patch2 )) && return -1
+      (( $patch1 > $patch2 )) && return  1
+
+      io_debug prerel1 vtag_compare
+      io_debug prerel2 vtag_compare
+      io_debug meta1 vtag_compare
+      io_debug meta2 vtag_compare
+
+      vtag_compare_prerel "$prerel1" "$prerel2"; local result=$?
+      (( $result == 255 )) && return -1
+      (( $result ==   1 )) && return  1
+
+      [[ $meta1 == $meta2 ]] && return 0
+      [[ -n $meta1 && -z $meta2 ]] && return 1
+      [[ -z $meta1 && -n $meta2 ]] && return -1
+      [[ $meta1 < $meta2 ]] && return -1
+      [[ $meta1 > $meta2 ]] && return 1
+      
+      return 0
+    else
+      io_error "vtag_compare: invalid vtag format: $2"
+    fi
+  else
+    io_error "vtag_compare: invalid vtag format: $1"
+  fi
+}
+vtag_increment()
+{
+  local vtag=$1
+  local prerel_prefix=$2
+  local prerel_default rtm result
+  [[ $prerel_prefix == 'rtm' ]] && { unset prerel_prefix; rtm=true; }
+  [[ -n $prerel_prefix ]] && prerel_default=-${prerel_prefix}1
+
+  io_debug vtag vtag_increment
+  io_debug prerel_prefix vtag_increment
+  io_debug prerel_default vtag_increment
+  io_debug rtm vtag_increment
+
+  #  <major>.<minor>-@
+  #  <major>.<minor>.<patch>[-<pre-release>][+<meta>]-<delta>-g<sha1>
+  if [[ $vtag =~ ^(.*/)?v([0-9]+)\.([0-9]+)(\.|-)(.*)$ ]]; then
+    local prefix=${BASH_REMATCH[1]}
+    local major=${BASH_REMATCH[2]}
+    local minor=${BASH_REMATCH[3]}
+    local patch=${BASH_REMATCH[5]}
+    io_debug prefix vtag_increment
+    io_debug major vtag_increment
+    io_debug minor vtag_increment
+
+    if [[ $patch == '@' ]]; then
+      io_debug patch vtag_increment
+      result="${prefix}v$major.$minor.0$prerel_default"
+    elif [[ $patch =~ ^([0-9]+)(\.[0-9]+)?(-[[:alnum:]]+)?(\+.+)?$ ]]; then
+      patch=${BASH_REMATCH[1]}
+      local build=${BASH_REMATCH[2]}
+      local prerel=${BASH_REMATCH[3]}
+      local meta=${BASH_REMATCH[4]}
+      io_debug patch vtag_increment
+      io_debug build vtag_increment
+      io_debug prerel vtag_increment
+      io_debug meta vtag_increment
+      if [[ $prerel =~ -(alpha|beta|rc)([0-9]*) ]]; then
+        if [[ -n $rtm ]]; then
+          result="${prefix}v$major.$minor.$patch"
+        else
+          local actual_prerel_prefix=${BASH_REMATCH[1]}
+          local prerel_rev=${BASH_REMATCH[2]}
+          io_debug actual_prerel_prefix vtag_increment
+          io_debug prerel_rev vtag_increment
+          [[ $prerel_prefix > $actual_prerel_prefix ]] && prerel_rev=1 || { prerel_prefix=$actual_prerel_prefix; prerel_rev=$((prerel_rev + 1)); }
+          
+          prerel=-$prerel_prefix$prerel_rev
+          io_debug prerel vtag_increment
+          result="${prefix}v$major.$minor.$patch$prerel"
+        fi
+      else
+        result="${prefix}v$major.$minor.$((patch+1))$prerel_default"
+      fi
+    fi
+  fi
+  if [[ -z $result ]]; then
+    io_error "vtag_increment: wrong vtag format: $vtag"
+  else
+    echo $result
+  fi
+}
+
+vtag_check()
+{
+  local vtag=$1 ec=0
+  if [[ ! $vtag =~ ^(.*/)?v[0-9]+\.[0-9]+(-@|\.[0-9]+(-[[:alnum:]]+)?(\+.+)?)$ ]]; then
+    io_warning "'$vtag' does not respect semantic versioning" 'vtag_check'
+    ec=1
+  fi
+  local vbranch=$(vtag_get_vbranch $vtag 2>/dev/null)
+  if [[ -z $vbranch ]]; then
+    io_error "$vtag has no associated vbranch" 'vtag_check';
+    ec=1
+  fi
+  if (( $ec == 0 ))  && ! git merge-base --is-ancestor $vtag $vbranch >&2; then
+    io_error "$vtag is not an ancestor of $vbranch" 'vtag_check';
+    ec=2
+  fi
+  if (( $ec == 0 )); then
+    io_success "$vtag OK" 'vtag_check'
+  fi
+  return $ec
+}
+vtag_check_all()
+{
+  local ec=0
+  for v in $(vtag_list); do
+    vtag_check $v || ec=1
+  done
+  return $ec
+}

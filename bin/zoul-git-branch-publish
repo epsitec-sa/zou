@@ -1,0 +1,113 @@
+#!/bin/bash
+
+# Use the following statement to include current lib only once
+#   [[ -z $ZOUL_GIT_BRANCH_PUBLISH ]] && . zoul-git-branch-publish
+ZOUL_GIT_BRANCH_PUBLISH=true
+
+[[ -z $ZOUL_GIT_TAG ]]            && . zoul-git-tag
+[[ -z $ZOUL_GIT_REPO ]]           && . zoul-git-repo
+[[ -z $ZOUL_GIT_COMMIT ]]         && . zoul-git-commit
+[[ -z $ZOUL_GIT_VBRANCH ]]        && . zoul-git-vbranch
+[[ -z $ZOUL_GIT_VTABLE ]]         && . zoul-git-vtable
+[[ -z $ZOUL_GIT_BRANCH_MERGE ]]   && . zoul-git-branch-merge
+[[ -z $ZOUL_GIT_CONFIG_VERSION ]] && . zoul-git-config-version
+
+
+branch_get_vbranch_name()
+{
+  local ltag=$(vtag_describe $1)
+  vtag_get_vbranch_name $ltag
+}
+# Publish a development branch
+# inputs:
+#  $1 : branch to publish
+#  $2 : prerelease prefix (alpha, beta, rc, rtm, reuse)
+#       if prerelease prefix == 'reuse' then move previous vtag
+#  $3 : vtable root folder
+#       if vtable root folder is specified, create a vtable
+# return the vtag at which the dev branch has been published
+branch_publish()
+{
+  local branch=$1 prerelPrefix=$2 needCheckout obranch
+  local moduleId=$(repo_module_id)
+
+  if [[ -z $branch ]]; then
+    branch=$(branch_current)
+  elif [[ $(git rev-parse $branch) != $(git rev-parse HEAD) ]]; then
+    needCheckout=true
+    obranch=$(branch_current)
+  fi
+
+  if ! branch_is_local "$branch"; then
+    # detached head
+    local vtags=( $(vtag_vtags_at $branch | grep -v '-@$') )
+    if [ ${#vtags[@]} -ne 0 ]; then
+      io_info "Published detached head '$branch' at '${vtags[0]}'" "[$moduleId]"
+    else
+      io_warning "Detached head '$branch' cannot be published" "[$moduleId]"
+    fi
+  else
+    local vbranch=$(branch_get_vbranch_name $branch)
+    if [[ -z $vbranch ]]; then
+      io_warning "Branch '$branch' is not associated with a vbranch" "[$moduleId]"
+      return 2
+    fi
+
+    if ! branch_ensure_local $vbranch; then
+      io_warning "The vbranch '$vbranch' does not exist" "[$moduleId]"
+      return 2
+    fi
+
+    # synchonize submodules to avoid merge conflicts
+    commit_sync_submodules $branch $vbranch
+
+    # synchronize branches
+    if branch_is_merged $branch $vbranch; then
+      branch_merge_ff $vbranch $branch &>/dev/null || return 3
+    else
+      branch_merge_core $branch $vbranch || return 3
+    fi
+
+    local vtag ec=0
+
+    # move previous vtag if asked
+    if [[ $prerelPrefix == 'reuse' ]]; then
+      vtag=$(vbranch_prev_vtag $vbranch) || ec=$?
+    else
+      vtag=$(vbranch_next_vtag $vbranch $prerelPrefix) || ec=$?
+    fi
+
+    # compute next vtag
+    [ $ec -eq 3 ] && {
+      # already published
+      echo $vtag
+      return 0
+    }
+    [ $ec -ne 0 ] && return 4
+
+    # update technical version - modify resources files
+    [[ -n $needCheckout ]] && git checkout $branch &>/dev/null
+
+    version_commit_files $(version_update $vtag) $(repo_list_unstaged_clean_submodules)
+
+    # merge resource files 
+    [ $? -eq 0 ] && branch_merge $branch $vbranch '-Xtheirs'
+    
+    [[ -n $needCheckout ]] && git checkout $obranch &>/dev/null
+
+    # be sure dev == prod
+    branch_merge $vbranch $branch
+
+    if [[ $prerelPrefix == 'reuse' ]]; then
+      tag_move "$vtag" "$branch"
+    else
+      # create vtag
+      local comment="publish branch '$branch' as '${vinfo[0]}'"
+      git tag -a -m "zou-flow: $comment" $vtag $vbranch
+    fi
+
+    io_info "Published branch '$branch' at '$vtag'" "[$(repo_module_id)]"
+
+    echo "$vtag" "$vbranch"
+  fi
+}

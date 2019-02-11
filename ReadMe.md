@@ -12,8 +12,10 @@
 
 ## [Surcharge *partielle* d'une feuille de propriétés](.Documentation/6_PropertySheetPartialOverride.md)
 
-# [Zou flow](.Documentation/ZouFlow.md)
+## [Zou flow](.Documentation/ZouFlow.md)
 
-# [Git Aliases](.Documentation/GitAliases.md)
+## [Git Aliases](.Documentation/GitAliases.md)
 
-# [.NET SDK Project Customization](.Documentation/Directory.Build.md)
+## [.NET SDK Project Customization](.Documentation/Directory.Build.md)
+
+## [Configuration de NuGet](.Documentation/Cs_ConfigureNuget.md)
