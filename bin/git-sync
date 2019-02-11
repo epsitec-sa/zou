@@ -10,15 +10,20 @@ cmdOpts=()
 while [[ "$#" > 0 ]]; do case "$1" in
   -h|--help) zou-help $0; exit 0;;
   -0|--level0)        level0=true;;
+  -s|--sm-only)       smOnly=true;;
   -q|--quiet)         cmdOpts+=($1); quiet=true;;
-  -s|--sm-only)       cmdOpts+=($1); smOnly=true;;
   -e|--stop-on-error) cmdOpts+=($1); stopOnError=true;;
   -c|--clean)         cmdOpts+=($1); cleanLocalBranches=true;;
   -a|--all)           cmdOpts+=($1); all=true;;
-  --_root)            cmdOpts+=($1 $2); root=$(echo $2 | xargs echo); shift;;  # remove single quotes
+  --_startup-dir)     cmdOpts+=($1 $2); startupDir=$(echo $2 | xargs echo); shift;;  # remove single quotes
   -*) echo "unknown option: $1" >&2; exit 1;;
 esac; shift; done
 
+process_error()
+{
+  local ec=$1
+  [[ $ec -ne 0 && $stopOnError == true ]] && exit $ec || return 0
+}
 clean_local_branches()
 {
   if [[ $cleanLocalBranches == true ]]; then
@@ -30,34 +35,37 @@ clean_local_branches()
 }
 sync_submodules()
 {
-  local branch configFile include path opwd=$PWD mroot=$(repo_module_root) ec=0
+  local branch configFile include path mroot=$PWD
   branch=$(branch_current) || return 1
   configFile=$(repo_zouflow_path "$mroot") || return 1
   [[ $all == true ]] && include=( $(repo_list_submodule_paths) ) || include=( $(config_sku_list_included "$branch" "$configFile") )
   for path in $(array_sort include[@]); do
     cd "$mroot/$path"
-    [[ $quiet == true ]] || echo Entering "'$(path_make_relative '.' "$opwd")'"
-    git sync -0 ${cmdOpts[@]} || ec=1
-    [[ $ec != 0 && $stopOnError == true ]] && break
+    git sync ${cmdOpts[@]} || return $?
   done
-  cd "$opwd"
-  return $ec
 }
-sync_tree()
+sync_node()
 {
-  local ec=0
-  if [[ $smOnly != true || "$PWD" != "$root" ]]; then
-    branch_sync_all && clean_local_branches || ec=$?
-    [[ $ec != 0 && $stopOnError == true ]] && return $ec
-  fi
-  sync_submodules || ec=$?
-  return $ec
+  [[ $quiet == true ]] || echo Entering "'$(path_make_relative '.' "$startupDir")'"
+  branch_sync_all && clean_local_branches || return $?
 }
 
-if [[ $level0 == true ]]; then
-  sync_tree
+if [[ $level0 == true && $smOnly == true ]]; then
+  io_error "options '--level0' and '--sm-only' are incompatible."
+  exit 1
+elif [[ -z $startupDir ]]; then
+(
+  startupDir=$PWD
+  cmdOpts+=(--_startup-dir "'$startupDir'") # single quote startup dir option value to avoid shell path expansion on Windows
+  cd "$(repo_module_root)"
+  if [[ $level0 == true ]]; then
+    sync_node || process_error $?
+  elif [[ $smOnly == true ]]; then
+    sync_submodules || process_error $?
+  else
+    sync_node && sync_submodules || process_error $?
+  fi
+)
 else
-  root=$(repo_module_root)
-  [[ -z $quiet && $smOnly != true ]] && echo Entering "'$(path_make_relative "$root" '.')'"
-  git sync -0 --_root "'$root'" ${cmdOpts[@]}   # single quote root to avoid shell path expansion on Windows
+  sync_node && sync_submodules || process_error $?
 fi
