@@ -151,13 +151,14 @@ config_select_list_included()
   local branch=$1 configFile=$2
   [[ -z $branch ]] && branch=$(branch_ensure_current)
   [[ -z $configFile ]] && configFile=$(repo_zouflow_path)
+  local devBranch=$(branch_to_dev $branch)
   local defaultVerb=$(_config_select_default_verb)
   if [[ $defaultVerb == 'include' ]]; then
     local submodules=( $(repo_list_submodule_paths) )
-    local excluded=( $(git config --file "$configFile" --get-all "select.$branch.exclude") )
+    local excluded=( $(git config --file "$configFile" --get-all "select.$devBranch.exclude") )
     array_remove_array submodules[@] excluded[@]
   else
-    git config --file "$configFile" --get-all "select.$branch.include" || true
+    git config --file "$configFile" --get-all "select.$devBranch.include" || true
   fi
 }
 config_select_list_excluded()
@@ -165,13 +166,14 @@ config_select_list_excluded()
   local branch=$1 configFile=$2
   [[ -z $branch ]] && branch=$(branch_ensure_current)
   [[ -z $configFile ]] && configFile=$(repo_zouflow_path)
+  local devBranch=$(branch_to_dev $branch)
   local defaultVerb=$(_config_select_default_verb)
   if [[ $defaultVerb == 'exclude' ]]; then
     local submodules=( $(repo_list_submodule_paths) )
-    local included=( $(git config --file "$configFile" --get-all "select.$branch.include") )
+    local included=( $(git config --file "$configFile" --get-all "select.$devBranch.include") )
     array_remove_array submodules[@] included[@]
   else
-    git config --file "$configFile" --get-all "select.$branch.exclude" || true
+    git config --file "$configFile" --get-all "select.$devBranch.exclude" || true
   fi
 }
 config_select_status()

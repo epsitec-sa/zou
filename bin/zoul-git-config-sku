@@ -90,14 +90,16 @@ config_sku_is_excluded()
   [[ -z $branch ]] && branch=$(branch_ensure_current)
   [[ -z $configFile ]] && configFile=$(repo_zouflow_path)
   local rePath=$(regex_escape "$path")
-  git config --file "$configFile" --get-all "sku.$branch.exclude" "$rePath" >/dev/null
+  local devBranch=$(branch_to_dev $branch)
+  git config --file "$configFile" --get-all "sku.$devBranch.exclude" "$rePath" >/dev/null
 }
 config_sku_list_excluded()
 {
   local branch=$1 configFile=$2
   [[ -z $branch ]] && branch=$(branch_ensure_current)
   [[ -z $configFile ]] && configFile=$(repo_zouflow_path)
-  git config --file "$configFile" --get-all "sku.$branch.exclude" || true
+  local devBranch=$(branch_to_dev $branch)
+  git config --file "$configFile" --get-all "sku.$devBranch.exclude" || true
 }
 config_sku_list_included()
 {

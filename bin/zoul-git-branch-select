@@ -144,6 +144,15 @@ branch_best_match()
     branch_best_match_dev $target
   fi
 }
+branch_to_dev()
+{
+  local branch=$1
+  if branch_is_prod $1; then
+    branch_best_match_dev $branch
+  else
+    echo $branch
+  fi
+}
 branch_select()
 {
   local rootBranch=$1 bestMatch branch

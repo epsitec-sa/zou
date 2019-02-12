@@ -32,7 +32,8 @@ config_publish_is_disabled()
   local branch=$1 configFile=$2 disabled
   [[ -z $branch ]] && branch=$(branch_ensure_current)
   [[ -z $configFile ]] && configFile=$(repo_zouflow_path)
-  disabled=$(git config --file "$configFile" --get "publish.$branch.disable") || return 1
+  local devBranch=$(branch_to_dev $branch)
+  disabled=$(git config --file "$configFile" --get "publish.$devBranch.disable") || return 1
   [[ $disabled == true ]] && return 0 || return 1
 }
 config_publish_is_enabled() { ! config_publish_is_disabled "$@"; }
