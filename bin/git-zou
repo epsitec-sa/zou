@@ -2,25 +2,27 @@
 
 main()
 {
-  local zouDir=$(realpath "$(dirname "${BASH_SOURCE[0]}")/..") opwd=$PWD
+  local zouDir=$(realpath "$(dirname "${BASH_SOURCE[0]}")/..")
   local tempFile=$(mktemp)
 
   cat >"$tempFile" <<\EOF
 #!/bin/bash
 
-zouDir=$1
-opwd=$PWD
-cd "$zouDir"
-if test -n "$(git status --porcelain)"; then
-  printf '\033[0;31m%b\033[0m' "[zou]: Repo '$zouDir' is not clean, aborting...\n"
-else
-  printf '\033[0;36m%b\033[0m' "[zou]: Fetching remotes and tags...\n"
-  git fetch --prune --all &>/dev/null
-  git fetch --tags --force &>/dev/null
+(
+  zouDir=$1
+  cd "$zouDir"
+  if test -n "$(git status --porcelain)"; then
+    printf '\033[0;31m%b\033[0m' "[zou]: Repo '$zouDir' is not clean, aborting...\n"
+  else
+    printf '\033[0;36m%b\033[0m' "[zou]: Fetching remotes and tags...\n"
+    git fetch --prune --all &>/dev/null
+    git fetch --tags --force &>/dev/null
+    printf '\033[0;36m%b\033[0m' "[zou]: Merging...\n"
+    git merge FETCH_HEAD &>/dev/null
 
-  . zoul-update "${@:1}"
-fi
-cd "$opwd"
+    . zoul-update "${@:1}"
+  fi
+)
 rm "$0"
 EOF
 
