@@ -28,13 +28,16 @@ branch_get_vbranch_name()
 # return the vtag at which the dev branch has been published
 branch_publish()
 {
-  local branch=$1 prerelPrefix=$2 needCheckout obranch
+  local branch=$1 prerelPrefix=$2 obranch
   local moduleId=$(repo_module_id)
+  
+  if ! repo_require_clean_work_tree 'cannot publish'; then
+    return $?
+  fi
 
   if [[ -z $branch ]]; then
     branch=$(branch_current)
   elif [[ $(git rev-parse $branch) != $(git rev-parse HEAD) ]]; then
-    needCheckout=true
     obranch=$(branch_current)
   fi
 
@@ -63,51 +66,60 @@ branch_publish()
 
     # synchronize branches
     if branch_is_merged $branch $vbranch; then
-      branch_merge_ff $vbranch $branch &>/dev/null || return 3
+      branch_merge_ff $vbranch $branch &>/dev/null
     else
-      branch_merge_core $branch $vbranch || return 3
+      branch_merge_core $branch $vbranch '-Xtheirs'
     fi
 
     local vtag ec=0
 
-    # compute next vtag
     if [[ $prerelPrefix == 'reuse' ]]; then
+      # reuse previous vtag if it's not a vnode
       vtag=$(vbranch_prev_vtag $vbranch) || ec=$?
+      if [[ -z $vtag ]] || vtag_is_vnode $vtag; then
+        vtag=$(vbranch_next_vtag $vbranch) || ec=$?
+        unset prerelPrefix
+      fi
     else
+      # compute next vtag
       vtag=$(vbranch_next_vtag $vbranch $prerelPrefix) || ec=$?
     fi
 
-    [ $ec -eq 3 ] && {
-      # already published
-      echo $vtag
-      return 0
-    }
-    [ $ec -ne 0 ] && return 4
+    [[ $ec -ne 0 && $ec -ne 3 ]] && return 4
 
-    if [[ $prerelPrefix == 'reuse' ]]; then
+    if [[ $prerelPrefix == 'reuse' || $ec -eq 3 ]]; then
+      _branch_publish_commit_and_merge "$obranch" "$branch" "$vbranch" "$vtag"
       # move previous vtag if asked
       tag_move "$vtag" "$branch"
     else
-      # update technical version - modify resources files
-      [[ -n $needCheckout ]] && git checkout $branch &>/dev/null
-
-      version_commit_files $(version_update $vtag) $(repo_list_unstaged_clean_submodules)
-
-      # merge resource files 
-      [ $? -eq 0 ] && branch_merge $branch $vbranch '-Xtheirs'
-      
-      [[ -n $needCheckout ]] && git checkout $obranch &>/dev/null
-      
+      # update technical version
+      _branch_publish_commit_and_merge "$obranch" "$branch" "$vbranch" "$vtag" 'version_update'
       # create vtag
-      local comment="publish branch '$branch' as '${vinfo[0]}'"
+      local comment="publish branch '$branch' as '$vtag'"
       git tag -a -m "zou-flow: $comment" $vtag $vbranch
     fi
 
-      # be sure dev == prod
-      branch_merge $vbranch $branch
-
-    io_info "Published branch '$branch' at '$vtag'" "[$(repo_module_id)]"
-
-    echo "$vtag" "$vbranch"
+    if [ $ec -eq 3 ]; then
+      echo "$vtag"
+    else
+      io_info "Published branch '$branch' at '$vtag'" "[$(repo_module_id)]"
+      echo "$vtag" "$vbranch"
+    fi
   fi
+}
+
+_branch_publish_commit_and_merge()
+{
+  # io_message "_branch_publish_commit_and_merge ${*@Q}" "[$(repo_module_id)]"
+  local obranch=$1 branch=$2 vbranch=$3 vtag=$4 updater=$5 vcommit
+  # update technical version - modify resources files
+  [[ -n $obranch ]] && git checkout $branch &>/dev/null
+  # update resource files
+  [[ -n $updater ]] && vcommit=( $($updater $vtag) ) || vcommit=($vtag)
+  # commit dev and merge into prod
+  version_commit_files "${vcommit[@]}" $(repo_list_unstaged_clean_submodules) \
+  && branch_merge $branch $vbranch '-Xtheirs'
+  [[ -n $obranch ]] && git checkout $obranch &>/dev/null
+  # be sure dev == prod
+  branch_merge $vbranch $branch
 }

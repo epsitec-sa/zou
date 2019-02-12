@@ -19,11 +19,11 @@ while [[ "$#" > 0 ]]; do case "$1" in
   -q|--quiet)         cmdOpts+=($1); quiet=true;;
   -e|--stop-on-error) cmdOpts+=($1); stopOnError=true;;
   -r|--recursive)     cmdOpts+=($1); recursive=true;;
+  -u|--reuse)         cmdOpts+=($1); prerelPrefix='reuse';;
   --alpha)            cmdOpts+=($1); prerelPrefix='alpha';;
   --beta)             cmdOpts+=($1); prerelPrefix='beta';;
   --rc)               cmdOpts+=($1); prerelPrefix='rc';;
   --rtm)              cmdOpts+=($1); prerelPrefix='rtm';;
-  --reuse)            cmdOpts+=($1); prerelPrefix='reuse';;
   --debug)            cmdOpts+=($1); debug=true;;
   --_stop-publish)    cmdOpts+=($1); stopPublish=true;;
   --_startup-root)    cmdOpts+=($1 $2); startupRoot=$(echo $2 | xargs echo); shift;;  # remove single quotes
@@ -39,10 +39,10 @@ process_error()
 publish_update_vtable()
 {
   [[ $recursive == true ]] || return 0
-  # io_message "vtable_update $startupRoot $moduleId" "[$moduleId]" Gray
+  # io_message "publish_update_vtable ${*@Q}" "[$moduleId]" Gray
   vtable_update "$startupRoot" "$moduleId"
   if [[ "$PWD" == "$startupRoot" ]]; then
-    local branch=$1  vtag=$2 vbranch=$3
+    local branch=$1 vtag=$2 vbranch=$3
     # synchronize dev == prod
     [[ -n $vbranch ]] && branch_merge $branch $vbranch
     [[ -n $vtag ]] && {
