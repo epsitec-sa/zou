@@ -9,8 +9,6 @@ ZOUL_GIT_BRANCH_SYNC=true
 [[ -z $ZOUL_GIT_REPO ]]         && . zoul-git-repo
 [[ -z $ZOUL_GIT_BRANCH_MERGE ]] && . zoul-git-branch-merge
 
-branch_is_vbranch() { [[ $1 =~ ^(.*/)?[0-9]+\.[0-9]+$ ]] || return 1; }
-
 branch_push()
 {
   # l > r -- move r
@@ -49,7 +47,7 @@ branch_visit_sync_info()
           color=Red
         else
           # nothing tracked
-          if branch_is_vbranch "$l"; then
+          if branch_is_prod "$l"; then
             # automatically track vbranches
             local remote=$(git remote)
             git push -u $remote "$l" &>/dev/null && {
