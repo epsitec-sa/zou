@@ -60,18 +60,17 @@ vtable_row()
 vtable_init()
 {
   local root=$1 moduleId=$2
-  local lookupPath="$root/_vtable.zou"
 
   # create lookup
-  if [[ "$PWD" == "$root" && ! -f "$lookupPath" ]]; then
+  if [[ "$PWD" == "$root" ]]; then
     declare -A lookup
-    declare -p lookup >"$lookupPath"
+    declare -p lookup >"$root/.git/_vtable.zou"
   fi
 }
 vtable_update()
 {
   local root=$1 moduleId=$2
-  local lookupPath="$root/_vtable.zou"
+  local lookupPath="$root/.git/_vtable.zou"
 
   if [[ "$PWD" == "$root" ]]; then
     local OIFS=$IFS; IFS=$'\n'
