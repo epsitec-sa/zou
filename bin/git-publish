@@ -54,7 +54,10 @@ publish_update_vtable()
 publish_prolog()
 {
   # io_warning ">>>> publish_prolog stopPublish=$stopPublish" "[$moduleId]"
+  repo_require_clean_work_tree 'cannot publish' || return 1
+
   local branch ltag stag path ec=0
+
   if [[ $stopPublish == true ]]; then
     branch=$(branch_current)
     # io_message "publish_prolog stop publish branch='$branch'" "[$moduleId]" Gray
@@ -119,7 +122,7 @@ publish_tree()
     local opts=( ${cmdOpts[@]} )
     [[ $ec == 2 ]] && opts+=( --_stop-publish )
     publish_submodules "$branch" 'opts[@]'
-  )
+  ) || process_error $?
   fi
   
   publish_epilog "$branch" "$publishDisabled"

@@ -31,10 +31,6 @@ branch_publish()
   local branch=$1 prerelPrefix=$2 obranch
   local moduleId=$(repo_module_id)
   
-  if ! repo_require_clean_work_tree 'cannot publish'; then
-    return $?
-  fi
-
   if [[ -z $branch ]]; then
     branch=$(branch_current)
   elif [[ $(git rev-parse $branch) != $(git rev-parse HEAD) ]]; then
