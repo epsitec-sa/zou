@@ -3,15 +3,13 @@
 [[ -z $ZOUL_GIT_VTABLE ]]      && . zoul-git-vtable
 [[ -z $ZOUL_GIT_CONFIG_SKU ]]  && . zoul-git-config-sku
 
-forOpts=()
 cmdOpts=()
 while [[ "$#" > 0 ]]; do case "$1" in
   -h|--help) zou-help $0; exit 0;;
-  -0|--level0) level0=true;;
-  -q|--quiet)  cmdOpts+=($1); quiet=true;;
-  -c|--clean)  cmdOpts+=($1); cleanLocalBranches=true;;
-  -a|--all)    cmdOpts+=($1); all=true;;
-  --_root)     cmdOpts+=($1 $2); root=$(echo $2 | xargs echo); shift;;  # remove single quotes
+  -q|--quiet)      cmdOpts+=($1); quiet=true;;
+  -a|--all)        cmdOpts+=($1); all=true;;
+  --_startup-root) cmdOpts+=($1 $2); startupRoot=$(echo $2 | xargs echo); shift;;  # remove single quotes
+  --_startup-dir)  cmdOpts+=($1 $2); startupDir=$(echo $2 | xargs echo); shift;;  # remove single quotes
   -*) echo "unknown option: $1" >&2; exit 1;;
 esac; shift; done
 
@@ -19,26 +17,31 @@ moduleId=$(repo_module_id)
 
 vtable_submodules()
 {
-  local branch configFile include path opath
-  branch=$(branch_ensure_current) || return 1
-  configFile=$(repo_zouflow_path)
+  local branch=$(branch_current) configFile include exclude path mroot=$PWD ec=0
+  configFile=$(repo_zouflow_path "$mroot") || return $?
   [[ $all == true ]] && include=( $(repo_list_submodule_paths) ) || include=( $(config_sku_list_included "$branch" "$configFile") )
   for path in $(array_sort include[@]); do
-    opath="$PWD"; cd "$path"
-    [[ $quiet == true ]] || echo Entering "'$(path_make_relative '.' "$root")'"
-    git vtable -0 ${cmdOpts[@]}
-    cd "$opath"
+    cd "$mroot/$path"
+    git vtable ${cmdOpts[@]} || return $?
   done
-  return $ec
+}
+vtable_tree()
+{
+  [[ $quiet == true ]] || echo Entering "'$(path_make_relative '.' "$startupDir")'"
+  ( vtable_submodules )
+  vtable_update "$startupRoot" "$moduleId"
 }
 
-if [[ $level0 == true ]]; then
-  vtable_submodules
-  vtable_update "$root" "$moduleId"
+if [[ -z $startupDir ]]; then
+(
+  startupDir=$PWD
+  cmdOpts+=(--_startup-dir "'$startupDir'") # single quote startup dir option value to avoid shell path expansion on Windows
+  startupRoot=$(repo_module_root)
+  cmdOpts+=(--_startup-root "'$startupRoot'") # single quote startup dir option value to avoid shell path expansion on Windows
+  cd "$startupRoot"
+  vtable_init "$startupRoot" "$moduleId"
+  vtable_tree
+)
 else
-  [[ -z $quiet && $smOnly != true ]] && echo Entering "'$(repo_module_root_relative_to_path)'"
-  root=$(repo_module_root)
-  vtable_init "$root" "$moduleId"
-  # single quote root to avoid shell path expansion on Windows
-  git vtable -0 --_root "'$root'" ${cmdOpts[@]}
+  vtable_tree
 fi
