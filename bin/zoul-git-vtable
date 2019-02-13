@@ -28,6 +28,9 @@ vtable_row()
 {
   local moduleId=$1 setHash=${2:-true} vminor vmajor head hash tag
   head=$(branch_current)
+  if ! branch_is_local $head; then
+    head=$(branch_list_local_at $head | cut -f 1 -d ' ')
+  fi
   [[ $setHash == true ]] && hash=$(git rev-parse --short HEAD 2>/dev/null)
   tag=$(vtag_describe $head)
   tag=${tag%-g*}
