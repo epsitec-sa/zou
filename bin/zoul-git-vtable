@@ -4,8 +4,11 @@
 #   [[ -z $ZOUL_GIT_VTABLE ]] && . zoul-git-vtable
 ZOUL_GIT_VTABLE=true
 
-[[ -z $ZOUL_GIT_VTAG ]] && . zoul-git-vtag
+[[ -z $ZOUL_GIT_VTAG ]]        && . zoul-git-vtag
 [[ -z $ZOUL_GIT_BRANCH_CORE ]] && . zoul-git-branch-core
+[[ -z $ZOUL_GIT_REPO ]]        && . zoul-git-repo
+
+vtable_lookupPath="$(repo_bundle_root)/.git/_vtable.zou"
 
 pad() { eval "printf '%.s-' {1..$1}"; }
 
@@ -64,13 +67,13 @@ vtable_init()
   # create lookup
   if [[ "$PWD" == "$root" ]]; then
     declare -A lookup
-    declare -p lookup >"$root/.git/_vtable.zou"
+    declare -p lookup >"$vtable_lookupPath"
   fi
 }
 vtable_update()
 {
   local root=$1 moduleId=$2
-  local lookupPath="$root/.git/_vtable.zou"
+  local lookupPath="$vtable_lookupPath"
 
   if [[ "$PWD" == "$root" ]]; then
     local OIFS=$IFS; IFS=$'\n'
