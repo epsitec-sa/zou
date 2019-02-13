@@ -4,7 +4,8 @@ git publish [<options>] - Publish current branch of working directory and (optio
     -q|--quiet              don't print submodule name when synchronizing
     -r|--recursive          publish recursively (submodules and current branch)
     -e|--stop-on-error      stop looping as soon as command fails (exit code != 0)
-    --u|reuse               reuse most recent vtag (move it to current branch tip)
+    -v|--vo                 publish existing version
+    -u|--reuse              reuse most recent vtag (move it to current branch tip)
     --alpha                 publish branch as alpha version
     --beta                  publish branch as beta version
     --rc                    publish branch as RC version
@@ -12,6 +13,7 @@ git publish [<options>] - Publish current branch of working directory and (optio
     
 example:
     git publish             # publish current branch of working directory
-    git publish -r          # publish current branch of working directory and submodules (recursively)
     git publish --alpha     # publish current branch of working directory as alpha version
-    git publish --reuse     # reuse most recent vtag
+    git publish --reuse     # reuse most recent vtag (move vtag to the tip of the branch)
+    git publish -r          # publish submodules (recursively) then current branch of working directory
+    git publish -r -v       # publish exiting version of submodules (recursively) then current branch of working directory

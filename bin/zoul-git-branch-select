@@ -153,6 +153,33 @@ branch_to_dev()
     echo $branch
   fi
 }
+branch_select_nearest_vtag()
+{
+  local branch=$1 ltag stag lsuf
+  if ! branch_is_local $branch; then
+    branch=$(branch_list_local_at $branch | cut -f 1 -d ' ')
+  fi
+  ltag=$(vtag_describe "$branch") || {
+    echo $branch
+    return 1  # no vtag
+  }
+  stag=${ltag%-*-g*}
+  if vtag_is_vnode $stag; then
+    echo $stag
+    return 1  # vnode
+  else
+    lsuf=${ltag#$stag}
+    if [[ -z $lsuf ]]; then
+      echo $stag
+      return 0  # branch == vtag
+    else
+      branch_checkout "$stag" &>/dev/null
+      repo_update_submodules
+      echo $stag
+      return 2  # switch to vtag
+    fi
+  fi
+}
 branch_select()
 {
   local rootBranch=$1 bestMatch branch

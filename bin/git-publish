@@ -19,6 +19,7 @@ while [[ "$#" > 0 ]]; do case "$1" in
   -q|--quiet)         cmdOpts+=($1); quiet=true;;
   -e|--stop-on-error) cmdOpts+=($1); stopOnError=true;;
   -r|--recursive)     cmdOpts+=($1); recursive=true;;
+  -v|--vo)            cmdOpts+=($1); vo=true;; # original version (use nearest vtag)
   -u|--reuse)         cmdOpts+=($1); prerelPrefix='reuse';;
   --alpha)            cmdOpts+=($1); prerelPrefix='alpha';;
   --beta)             cmdOpts+=($1); prerelPrefix='beta';;
@@ -33,100 +34,150 @@ esac; shift; done
 
 process_error()
 {
-  local ec=$1
-  [[ $ec -ne 0 && $stopOnError == true ]] && exit $ec || return 0
+  [[ $1 -ne 0 && $stopOnError == true ]] && exit $1 || return 0
 }
 publish_update_vtable()
 {
-  [[ $recursive == true ]] || return 0
+  [[ $recursive == true ]] || return 1
   # io_message "publish_update_vtable ${*@Q}" "[$moduleId]" Gray
   vtable_update "$startupRoot" "$moduleId"
-  if [[ "$PWD" == "$startupRoot" ]]; then
-    local branch=$1 vtag=$2 vbranch=$3
-    # synchronize dev == prod
-    [[ -n $vbranch ]] && branch_merge $branch $vbranch
-    [[ -n $vtag ]] && {
-      io_info "Created vtable for '$branch' at '$vtag'" "[$moduleId]"
-      tag_move "$vtag" "$branch"
-    }
-  fi
 }
-publish_prolog()
+publish_commit_vtable()
 {
-  # io_warning ">>>> publish_prolog stopPublish=$stopPublish" "[$moduleId]"
-  repo_require_clean_work_tree 'cannot publish' || return 1
+  [[ $recursive == true ]] || return 1
+  # io_message "publish_commit_vtable ${*@Q}" "[$moduleId]" Gray
+  local branch=$1 vtag=$2 vbranch=$3 ec=0
+  vtable_update "$startupRoot" "$moduleId" || ec=$?
 
-  local branch ltag stag path ec=0
-
-  if [[ $stopPublish == true ]]; then
-    branch=$(branch_current)
-    # io_message "publish_prolog stop publish branch='$branch'" "[$moduleId]" Gray
-    publish_update_vtable "$branch"
-    ec=2
-  else
-    branch=$(branch_ensure_current 2>/dev/null) || return $?
-    if ! config_publish_is_enabled "$branch"; then
-      ec=2
-      # io_message "publish_prolog publish disabled branch='$branch'" "[$moduleId]" Gray
-      ltag=$(vtag_describe "$branch") || return $?
-      stag=${ltag%-*-g*}
-      io_info "Publish disabled for branch '$branch''" "[$moduleId]"
-      branch_checkout "$stag" &>/dev/null
-      io_info "Checked out '$stag'" "[$moduleId]"
-      repo_update_submodules
-    fi
-  fi
-  echo $branch
-  # io_warning "<<<< publish_prolog branch=$branch ec=$ec" "[$moduleId]"
-  return $ec
-}
-publish_epilog()
-{
-  # io_warning ">>>> publish_epilog $*" "[$moduleId]"
-  local branch=$1 publishDisabled=$2 info ec=0
-  if [[ $stopPublish == true || $publishDisabled == true ]]; then
-    # io_message "publish_epilog published disabled branch='$branch'" "[$moduleId]" Gray
-    publish_update_vtable "$branch"
-  else
-    # io_message "publish_epilog published enabled branch='$branch'" "[$moduleId]" Gray
-    info=( $(branch_publish "$branch" "$prerelPrefix") ) || ec=$?
-    publish_update_vtable "$branch" "${info[@]}"
-  fi
-  # io_warning "<<<< publish_epilog" "[$moduleId]"
-  return $ec
+  # synchronize dev == prod
+  [[ -n $vbranch ]] && branch_merge $branch $vbranch
+  [[ -n $vtag ]] && {
+    [ $ec -eq 0 ] && io_info "Created vtable for '$branch' at '$vtag'" "[$moduleId]"
+    tag_move "$vtag" "$branch"
+  }
 }
 publish_submodules()
 {
   # io_warning ">>>> publish_submodules" "[$moduleId]"
-  local branch=$1 opts=( ${!2} ) configFile include exclude path mroot=$PWD ec=0
+  local branchOrTag=$1 opts=( ${!2} ) configFile include exclude path mroot=$PWD ec=0
   configFile=$(repo_zouflow_path "$mroot") || return $?
-  include=( $(config_sku_list_included "$branch" "$configFile") )
-  exclude=( $(config_select_list_excluded "$branch" "$configFile") )
+  include=( $(config_sku_list_included "$branchOrTag" "$configFile") )
+  exclude=( $(config_select_list_excluded "$branchOrTag" "$configFile") )
   for path in $(string_sort $(array_remove_array 'include[@]' 'exclude[@]')); do
     cd "$mroot/$path"
     git publish ${opts[@]} || return $?
   done
   # io_warning "<<<< publish_submodules" "[$moduleId]"
 }
+publish_select_nearest_tag()
+{
+  local branch=$1 moduleId=$2 branchOrTag ec
+  branchOrTag=$(branch_select_nearest_vtag "$branch"); ec=$?
+  [ $ec -eq 0 ] && io_info "Already published at '$branchOrTag'" "[$moduleId]"
+  [ $ec -eq 1 ] && io_error "Branch '$branchOrTag' was never published" "[$moduleId]"
+  [ $ec -eq 2 ] && io_info "Published existing version '$branchOrTag'" "[$moduleId]"
+  echo $branchOrTag
+  return $ec
+}
+publish_prolog()
+{
+  local vo=$1 branch=$(branch_current)
+
+  local label=()
+  [[ $stopPublish == true ]] && label+=( 'STOPPED' )
+  [[ $vo == true ]] && label+=( 'VO' )
+  # io_warning ">>>> publish_prolog ($branch) ${label[*]}" "[$moduleId]"
+
+  repo_require_clean_work_tree 'cannot publish' || return 1
+
+  if [[ $stopPublish == true ]]; then
+    # io_message "publish_prolog ($branch) STOPPED" "[$moduleId]" Gray
+    echo $branch
+    # io_warning "<<<< publish_prolog ($branch) STOPPED DISABLED" "[$moduleId]"
+    return 2  # publish disabled
+  else
+    if [[ $vo == true ]]; then
+      if repo_is_bundle_root "$PWD"; then
+        # io_message "publish_prolog ($branch) VO+BUNDLE" "[$moduleId]" Gray
+        echo $branch
+        # io_warning "<<<< publish_prolog ($branch) VO+BUNDLE" "[$moduleId]"
+      else
+        # io_message "publish_prolog ($branch) VO" "[$moduleId]" Gray
+        publish_select_nearest_tag "$branch" "$moduleId"
+        # io_warning "<<<< publish_prolog ($branch) VO" "[$moduleId]"
+      fi
+    elif config_publish_is_enabled "$branch"; then
+      # io_message "publish_prolog ($branch) ENABLED" "[$moduleId]" Gray
+      branch=$(branch_ensure_current 2>/dev/null) || return 1
+      echo $branch
+      # io_warning "<<<< publish_prolog ($branch) ENABLED" "[$moduleId]"
+    else
+      # io_message "publish_prolog ($branch) DISABLED" "[$moduleId]" Gray
+      publish_select_nearest_tag "$branch" "$moduleId"
+      # io_warning "<<<< publish_prolog ($branch) DISABLED" "[$moduleId]"
+      return 2  # publish disabled
+    fi
+  fi
+}
+publish_epilog()
+{
+  local branchOrTag=$1 vo=$2 publishDisabled=$3 info ec=0
+
+  local label=()
+  [[ $stopPublish == true ]] && label+=( 'STOPPED' )
+  [[ $publishDisabled == true ]] && label+=( 'DISABLED' )
+  [[ $vo == true ]] && label+=( 'VO' )
+  # io_warning ">>>> publish_epilog ($branchOrTag) ${label[*]}" "[$moduleId]"
+  
+  if [[ $stopPublish == true || $publishDisabled == true ]]; then
+    # io_message "publish_epilog ($branchOrTag) ${label[*]}" "[$moduleId]" Gray
+    publish_update_vtable
+  elif [[ "$PWD" == "$startupRoot" ]]; then
+    if [[ $vo == true ]]; then
+      if repo_is_bundle_root "$PWD"; then
+        # io_message "publish_epilog ($branchOrTag) VO+BUNDLE" "[$moduleId]" Gray
+        info=( $(branch_publish "$branch" "$prerelPrefix") ) || ec=$?
+        publish_commit_vtable "$branchOrTag" "${info[@]}"
+      # else
+      #   io_message "publish_epilog ($branchOrTag) VO" "[$moduleId]" Gray
+      fi
+    else
+      # io_message "publish_epilog ($branchOrTag) ENABLED" "[$moduleId]" Gray
+      info=( $(branch_publish "$branch" "$prerelPrefix") ) || ec=$?
+      publish_commit_vtable "$branchOrTag" "${info[@]}"
+    fi
+  else
+    if [[ $vo == true ]]; then
+      # io_message "publish_epilog ($branchOrTag) VO" "[$moduleId]" Gray
+      publish_update_vtable
+    else
+      # io_message "publish_epilog ($branchOrTag) ENABLED" "[$moduleId]" Gray
+      branch_publish "$branch" "$prerelPrefix" >/dev/null || ec=$?
+      publish_update_vtable
+    fi
+  fi
+  # io_warning "<<<< publish_epilog ($branchOrTag)" "[$moduleId]"
+  return $ec
+}
 publish_tree()
 {
-  # io_warning ">>>> publish" "[$moduleId]"
+  # io_warning ">>>> publish_tree ${*@Q}" "[$moduleId]"
   [[ $quiet == true ]] || echo Entering "'$(path_make_relative '.' "$startupDir")'"
-  local branch publishDisabled ec=0
-  branch=$(publish_prolog); ec=$?
-  [[ $ec == 1 ]] && return 1
+  local vo=$1 publishDisabled branchOrTag ec=0
+  branchOrTag=$(publish_prolog "$vo"); ec=$?
+  [[ $ec == 1 ]] && return 1  # error
   [[ $ec == 2 ]] && publishDisabled=true
 
   if [[ $recursive == true ]]; then
   (
     local opts=( ${cmdOpts[@]} )
-    [[ $ec == 2 ]] && opts+=( --_stop-publish )
-    publish_submodules "$branch" 'opts[@]'
+    [[ $publishDisabled == true ]] && opts+=( --_stop-publish )
+    publish_submodules "$branchOrTag" 'opts[@]'
   ) || process_error $?
   fi
   
-  publish_epilog "$branch" "$publishDisabled"
-  # io_warning "<<<< publish" "[$moduleId]"
+  publish_epilog "$branchOrTag" "$vo" "$publishDisabled"
+  # io_warning "<<<< publish_tree ${*@Q}" "[$moduleId]"
 }
 
 if [[ -z $startupDir ]]; then
@@ -137,8 +188,8 @@ if [[ -z $startupDir ]]; then
   cmdOpts+=(--_startup-root "'$startupRoot'") # single quote startup dir option value to avoid shell path expansion on Windows
   [[ $recursive == true ]] && vtable_init "$startupRoot" "$moduleId"
   cd "$startupRoot"
-  publish_tree || process_error $?
+  publish_tree "$vo" || process_error $?
 )
 else
-  publish_tree || process_error $?
+  publish_tree "$vo" || process_error $?
 fi

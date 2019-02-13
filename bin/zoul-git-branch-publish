@@ -81,6 +81,7 @@ branch_publish()
       vtag=$(vbranch_next_vtag $vbranch $prerelPrefix) || ec=$?
     fi
 
+    # ec = 3 means already published
     [[ $ec -ne 0 && $ec -ne 3 ]] && return 4
 
     if [[ $prerelPrefix == 'reuse' || $ec -eq 3 ]]; then
@@ -95,12 +96,8 @@ branch_publish()
       git tag -a -m "zou-flow: $comment" $vtag $vbranch
     fi
 
-    if [ $ec -eq 3 ]; then
-      echo "$vtag"
-    else
-      io_info "Published branch '$branch' at '$vtag'" "[$(repo_module_id)]"
-      echo "$vtag" "$vbranch"
-    fi
+    [ $ec -eq 3 ] || io_info "Published branch '$branch' at '$vtag'" "[$(repo_module_id)]"
+    echo "$vtag" "$vbranch"
   fi
 }
 
