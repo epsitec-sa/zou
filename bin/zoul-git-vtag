@@ -29,13 +29,13 @@ vtag_list()
     local prefix=${BASH_REMATCH[1]}
     local version=${BASH_REMATCH[2]}
     regex="^$(regex_escape $prefix)v$(regex_escape $version)"
-    io_debug prefix vtag_list
-    io_debug version vtag_list
+    # io_debug prefix vtag_list
+    # io_debug version vtag_list
   else
     io_error "vtag invalid format : '$1'"
     return 1
   fi
-  io_debug regex vtag_list
+  # io_debug regex vtag_list
   git tag -l --sort=-v:refname | grep -E $regex | grep -v '^other/' || true
 }
 vtag_scan_branch_path()
@@ -61,10 +61,8 @@ vtag_describe()
   # - vtag description (ex: v1.0.0-rc1-5-ge5d2fe9)
   local branch=$(git_symbolic_ref ${1:-HEAD}) b
   for b in $(vtag_scan_branch_path $branch); do
-    git describe --first-parent --tags --match "${b}/v[0-9]*" --exclude 'other/*' "$branch" 2>/dev/null && return 0
     git describe --tags --match "${b}/v[0-9]*" --exclude 'other/*' "$branch" 2>/dev/null && return 0
   done
-  git describe --first-parent --tags --match "v[0-9]*" --exclude 'other/*' "$branch" 2>/dev/null && return 0
   git describe --tags --match "v[0-9]*" --exclude 'other/*' "$branch" 2>/dev/null;
 }
 vtag_vtags_at()
