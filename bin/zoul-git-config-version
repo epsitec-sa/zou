@@ -27,21 +27,6 @@ version_commit_files()
     git commit -m"zou-flow: update technical version to $techver" -- "$@" &>/dev/null
   }
 }
-version_iconv_sed()
-{
-  local file=$1
-  local script=$2
-  local fEncoding=$(get_file_encoding $file)
-
-  if [[ $fEncoding == $zou_lencoding ]]; then
-    sed -i -E "$script" "$file"
-  else
-    local tmp="$file.zou"
-    iconv -t "$zou_lencoding" "$file" | sed -E "$script" >"$tmp"
-    iconv -t "$fEncoding" "$tmp" >"$file"
-    rm "$tmp"
-  fi
-}
 
 # Update Version tags in *.csproj file
 #
@@ -60,7 +45,7 @@ version_update_csproj()
   0,/<ProductVersion>/{s,(<ProductVersion>).*(</ProductVersion>),\1$stechver\2,};\
   0,/<ApplicationVersion>/{s,(<ApplicationVersion>).*(</ApplicationVersion>),\1$stechver\2,}"
 
-  version_iconv_sed "$file" "$script"
+  ised "$file" "$script"
 }
 # Update Version tag in AssemblyInfo.cs file
 #
@@ -80,7 +65,7 @@ version_update_assembly_info()
     s,^(\[assembly:[[:space:]]*AssemblyVersion[[:space:]]*\(\").*(\"\)\]),\1$stechver\2,;\
     s,^(\[assembly:[[:space:]]*AssemblyFileVersion[[:space:]]*\(\").*(\"\)\]),\1$stechver\2,"
 
-  version_iconv_sed "$file" "$script"
+  ised "$file" "$script"
 }
 # Update Version tag in Version.props XML file
 #
@@ -103,7 +88,7 @@ version_update_version_props()
   s,(<Version>).*(</Version>),\1$techver\2,;\
   s,(<AssemblyVersion>).*(</AssemblyVersion>),\1$techver\2,"
 
-  version_iconv_sed "$file" "$script"
+  ised "$file" "$script"
 }
 # Update Version tag in package.json file
 #
@@ -124,7 +109,7 @@ version_update_package_json()
   local script="\
   0,/^[[:blank:]]*\"version\"/{s/(^[[:blank:]]*\"version\":[[:blank:]]*\").*(\",)/\1$techver\2/}"
 
-  version_iconv_sed "$file" "$script"
+  ised "$file" "$script"
 }
 version_update_rc()
 {
@@ -148,7 +133,7 @@ version_update_rc()
   s/([[:blank:]]+VALUE \"FileVersion\",[[:blank:]]+).*$/\1\"$major.$minor.$patch.$yyww\"/;\
   s/([[:blank:]]+VALUE \"ProductVersion\",[[:blank:]]+).*$/\1\"$major.$minor.$patch.$yyww\"/"
 
-  version_iconv_sed "$file" "$script"
+  ised "$file" "$script"
 }
 version_update_custom()
 {
@@ -173,6 +158,8 @@ version_create_custom()
 # Update technical version
 # Triggered by git publish
 
+[[ -z $ZOUL_CORE ]] && . zoul-core
+
 update_version()
 {
   local version=$1 major=$2 minor=$3 patch=$4 prerelease=$5 meta=$6
@@ -183,23 +170,23 @@ update_version()
   #
   # local file='libcompta/version.h'
   # 
-  # sed -i -E "\
+  # local script="\
   # s,(MAJREV_SHOW[[:blank:]]+)[0-9]+,\1$major,; \
   # s,(MINREV_SHOW[[:blank:]]+)[0-9]+,\1$minor,; \
-  # s,(PROVREV_SHOW[[:blank:]]+)[0-9]+,\1$patch," "$file"
+  # s,(PROVREV_SHOW[[:blank:]]+)[0-9]+,\1$patch,"
   # 
-  # realpath "$file"
+  # ised "$file" "$script"
 
   # example 2 : salaires
   #
   # local yyww=$(date +%y%V)
   # local file='sal.version.ini'
   # 
-  # sed -i -E "\
+  # local script="\
   #   s/(INTERNAL[[:blank:]]+)[0-9\.]+/\1$major.$minor.$patch.$yyww/; \
-  #   s/(INTERNALRC[[:blank:]]+)[0-9\,]+/\1$major,$minor,$patch,$yyww/" "$file"
+  #   s/(INTERNALRC[[:blank:]]+)[0-9\,]+/\1$major,$minor,$patch,$yyww/"
   # 
-  # realpath "$file"
+  # ised "$file" "$script"
 }
 
 update_version "$@"
@@ -259,7 +246,6 @@ version_update_file_spec()
     hasSpec=1
     for file in $(find -type f -ipath "$fileSpec" "$@"); do
       "version_update_$func" "$file" "$varray" "$techver" "$stechver"
-      realpath "$file"
     done
   done
   return $hasSpec

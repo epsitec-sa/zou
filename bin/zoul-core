@@ -246,6 +246,24 @@ _locale_encoding()
 
 zou_lencoding="$(_locale_encoding)"
 
+ised()
+{
+  local file=$1
+  local script=$2
+  local fEncoding=$(get_file_encoding $file)
+
+  if [[ $fEncoding == $zou_lencoding ]]; then
+    sed -i -E "$script" "$file"
+  else
+    local tmp="$file.zou"
+    iconv -t "$zou_lencoding" "$file" | sed -E "$script" >"$tmp"
+    iconv -t "$fEncoding" "$tmp" >"$file"
+    rm "$tmp"
+  fi
+  
+  realpath "$file"
+}
+
 # trace constants (if debug == true)
 io_debug zou_startupPath
 io_debug zou_startupDir
