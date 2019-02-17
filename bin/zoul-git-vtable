@@ -41,7 +41,7 @@ vtable_row()
   else
     local version=$tag
   fi
-  local OIFS=$IFS; IFS=' '
+  local IFS=' '
   local tags=$(git tag -l --sort=-v:refname)
   if [[ $version =~ ^(.*/)?v([0-9]+)\.([0-9]+) ]]; then
     local sku=${BASH_REMATCH[1]}
@@ -61,7 +61,6 @@ vtable_row()
   [[ $version == $vnext ]] && unset vnext || vnext="#$vnext#"
   local module_content=$(print_row "$md_moduleId" "$head" "$hash" "$delta" "$md_version" "$vminor" "$vmajor" "$vnext")
   echo "$module_content"
-  IFS=$OIFS
 }
 vtable_init()
 {
@@ -79,7 +78,7 @@ vtable_update()
   local lookupPath="$vtable_lookupPath"
 
   if [[ "$PWD" == "$root" ]]; then
-    local OIFS=$IFS; IFS=$'\n'
+    local IFS=$'\n'
     # deserialize lookup
     . "$lookupPath"
 
@@ -98,12 +97,11 @@ vtable_update()
     # replace '_' and '#' to '|' and '*'
     sed -i -E 's,_,|,g; s,#,\*,g' "$file"
     rm "$lookupPath"
-    IFS=$OIFS
 
     git update-index --add -- "$file" &>/dev/null \
     && git commit -m "zou-flow: $verb version table" -- "$file" &>/dev/null
   else
-    local OIFS=$IFS; IFS=$'\n'
+    local IFS=$'\n'
 
     # deserialize lookup
     . "$lookupPath"
@@ -114,6 +112,5 @@ vtable_update()
 
     # serialize lookup
     declare -p lookup >"$lookupPath"
-    IFS=$OIFS
   fi
 }

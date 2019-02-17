@@ -5,6 +5,7 @@
 ZOUL_GIT_VTAG=true
 
 [[ -z $ZOUL_CORE ]]     && . zoul-core
+[[ -z $ZOUL_GIT_REF ]]  && . zoul-git-ref
 [[ -z $ZOUL_GIT_CORE ]] && . zoul-git-core
 
 vtag_is_vnode() { [[ $1 =~ ^(.*/)?v[0-9]+\.[0-9]+-@ ]]; }
@@ -38,32 +39,17 @@ vtag_list()
   # io_debug regex vtag_list
   git tag -l --sort=-v:refname | grep -E $regex | grep -v '^other/' || true
 }
-vtag_scan_branch_path()
-{
-  local b0=$1
-  local b1=${1%/*}
-  if [[ $b0 == $b1 ]]; then
-    echo $b1
-  else
-    while [[ $b0 != $b1 ]]; do
-      echo $b1
-      b0=$b1
-      b1=${b1%/*}
-    done
-  fi
-}
 vtag_describe()
 {
   # find first vtag ancestor starting from given commit
   # input:
-  # - $1: commit hash (ex: e5d2fe9)
+  # - $1: branch symbol
   # output:
   # - vtag description (ex: v1.0.0-rc1-5-ge5d2fe9)
-  local branch=$(git_symbolic_ref ${1:-HEAD}) b
-  for b in $(vtag_scan_branch_path $branch); do
-    git describe --tags --match "${b}/v[0-9]*" --exclude 'other/*' "$branch" 2>/dev/null && return 0
+  local branch=$(git_symbolic_ref ${1:-HEAD}) match
+  for match in $(ref_tag_fallback $branch 'v[0-9]*'); do
+    git describe --tags --match "$match" --exclude 'other/*' "$branch" 2>/dev/null && return 0
   done
-  git describe --tags --match "v[0-9]*" --exclude 'other/*' "$branch" 2>/dev/null;
 }
 vtag_vtags_at()
 {
@@ -81,20 +67,24 @@ vtag_best_match_vtag_at()
   # - $1: branch (ex: sku/dev, master)
   # output:
   # - best match vtag  (ex: sku/dev -> sku/v1.0.0, master -> v2.0.0)
-  local branch=$1 hint reHint
-  local vtags=( $(vtag_vtags_at $branch) )
-  if [ ${#vtags[@]} -ne 0 ]; then
-    for hint in $(vtag_scan_branch_path $branch); do
-      reHint=$(regex_escape $hint)
-      for tag in $(echo "${vtags[@]}" | xargs -n 1 | grep "^$reHint"); do
-        echo $tag
-        return 0
-      done
+  # io_info "vtag_best_match_vtag_at ${*@Q}" "[$(repo_module_id)]"
+  local ref=$1 vtags hint reHint vHint tag
+  vtags=( $(vtag_vtags_at $ref) )
+  [ ${#vtags[@]} -eq 0 ] && return 1
+  for hint in $(ref_tag_fallback $ref 'v'); do
+    reHint=$(regex_escape "$hint")
+    vHint="^${reHint}[0-9]+\.[0-9]+\.[0-9]+"
+    # echo vtagHint=$vHint >&2
+    for tag in ${vtags[@]}; do
+      [[ $tag =~ $vHint ]] && { echo $tag; return 0; }
     done
-    echo ${vtags[0]}
-  else
-    return 1
-  fi
+    vHint="^${reHint}[0-9]+\.[0-9]+-@$"
+    # echo vnodeHint=$vHint >&2
+    for tag in ${vtags[@]}; do
+      [[ $tag =~ $vHint ]] && { echo $tag; return 0; }
+    done
+  done
+  echo "${vtags[0]}"
 }
 vtag_get_vbranch_name ()
 {
@@ -144,11 +134,13 @@ vtag_get_vbranch_tail()
   # - [0]: the vtag that starts the vbranch tail
   # - [1]: the vbranch that contains the given vbranch marker
   # - [2]: a status (empty|full) indicating if the vbranch tail does not contain any vtag
-  for vtag in $(vtag_best_match_vtag_at $1); do
-    io_debug vtag vtag_get_vbranch_tail
+  # io_info "vtag_get_vbranch_tail ${*@Q}" "[$(repo_module_id)]"
+  local vtag=$(vtag_best_match_vtag_at $1)
+  if [[ -n $vtag ]]; then
+    # io_debug vtag vtag_get_vbranch_tail
     local vbranch=$(vtag_get_vbranch $vtag)
     if [[ -n $vbranch ]]; then
-      io_debug vbranch vtag_get_vbranch_tail
+      # io_debug vbranch vtag_get_vbranch_tail
       git merge-base --is-ancestor $2 $vbranch >&2
       if [ $? -eq 0 ]; then
         local status='empty'
@@ -161,7 +153,7 @@ vtag_get_vbranch_tail()
         return 0;
       fi
     fi
-  done
+  fi
   io_warning "vtag_get_vbranch_tail: branch '$(git rev-parse --abbrev-ref $2)' is outside vbranch '$vbranch'"
   return 1
 }

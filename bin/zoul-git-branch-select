@@ -6,6 +6,7 @@
 #   [[ -z $ZOUL_GIT_BRANCH_SELECT ]] && . zoul-git-branch-select
 ZOUL_GIT_BRANCH_SELECT=true
 
+[[ -z $ZOUL_GIT_REF ]]         && . zoul-git-ref
 [[ -z $ZOUL_GIT_REPO ]]        && . zoul-git-repo
 [[ -z $ZOUL_GIT_VTAG ]]        && . zoul-git-vtag
 [[ -z $ZOUL_GIT_BRANCH_CORE ]] && . zoul-git-branch-core
@@ -18,94 +19,11 @@ branch_ensure_current()
   fi
   echo $branch
 }
-branch_scan_sku()
-{
-  echo $1
-  local name00=$1 name10=$1
-  local name01=${1#*/} name11=${1%/*}
-  while [[ $name00 != $name01 ]]; do
-    echo $name01
-    name00=$name01
-    name01=${name01#*/}
-    echo $name11
-    name10=$name11
-    name11=${name11%/*}
-  done
-}
-# Convert any branch (dev or prod) to a fallback list of development branches.
-#   branch:: kind[/name][/mode]
-#   kind:: word
-#   name:: word[/word]...
-#   mode:: 'dev' | n.n
-# example:
-#   master                kind = master
-#   sku/sal/dev           kind = sku, name = sal,              mode = dev
-#   sku/sal/13.1          kind = sku, name = sal,              mode = 13.1  (prod)
-#   sku/compta/mch/dev    kind = sku, name = compta/mch,       mode = dev
-#   wip/zou/git-commands  kind = wip, name = zou/git-commands, mode = 
-branch_dev_fallback()
-{
-  local branch=$1 kind name mode
-
-  kind=${branch%%/*}
-  mode=${branch##*/}
-  # io_debug branch
-  # io_debug kind
-  # io_debug mode
-
-  if [[ $kind == $branch ]]; then
-    # [[ $debug == true ]] && io_message 'kind == branch' '1'
-    [[ $branch != master ]] && echo "$kind/dev"
-    echo $branch
-  elif [[ $mode =~ ^(dev|[0-9]+\.[0-9]+)$ ]]; then
-    # mode is dev or prod
-    # [[ $debug == true ]] && io_message 'mode == dev|prod' '2.0'
-
-    name=${branch#*/}
-    name=${name%/*}
-    # io_debug mode
-    # io_debug name
-
-    if [[ $name == $mode ]]; then
-      # [[ $debug == true ]] && io_message 'name == mode' '2.1'
-      echo "$kind/dev"
-    else
-      for name in $(branch_scan_sku $name); do
-        # [[ $debug == true ]] && io_message 'name != mode' '2.2'
-        echo "$kind/$name/dev"
-        echo "$kind/$name"
-      done
-      # [[ $debug == true ]] && io_message 'without name' '2.3'
-      [[ "$kind/dev" != "$branch" ]] && echo "$kind/dev"
-    fi
-  else
-    # [[ $debug == true ]] && io_message 'without mode' '3.0'
-    # mode not defined
-    name=${branch#*/}
-    # io_debug name
-    for name in $(branch_scan_sku $name); do
-      echo "$kind/$name/dev"
-      echo "$kind/$name"
-    done
-    # [[ $debug == true ]] && io_message '' '3.3'
-    echo "$kind/dev"
-  fi
-  # [[ $debug == true ]] && io_message 'branch != master' '4'
-  [[ $branch != master ]] && echo master
-}
-# Convert any branch to a fallback list of regex patterns.
-branch_dev_patterns()
-{
-  local branch
-  for branch in $(branch_dev_fallback $1); do
-    regex_whole $(regex_escape $branch)
-  done
-}
 # Use this method to find the development branch which best matches
 # any superproject branch (dev|prod)
 branch_best_match_dev()
 {
-  local patterns=$(branch_dev_patterns $1)
+  local patterns=$(ref_dev_fallback $1)
   local branches=( $(branch_list_local_tracked) )
   local remoteIndex=${#branches[@]}
   branches+=( $(branch_list_remote_untracked) )
@@ -115,7 +33,7 @@ branch_best_match_dev()
     for i in ${!branches[@]}; do
       branch=${branches[i]}
       (( $i < $remoteIndex )) && lbranch=$branch || lbranch=${branch#*/}
-      [[ $lbranch =~ $pattern ]] && {
+      [[ $lbranch == $pattern ]] && {
         echo $branch
         return 0
       }

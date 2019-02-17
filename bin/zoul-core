@@ -109,16 +109,13 @@ string_join()   { local d=$1; shift; echo -n "$1"; shift; printf "%s" "${@/#/$d}
 string_indent() { local n=$1; shift; printf "%${n}s%s" '' "$*"; }
 string_sort()
 {
-  IFS=$'\n'
+  local IFS=$'\n'
   sort <<<"$*"
-  unset IFS
 }
 array_sort()
 {
-  local array=( ${!1} )
-  IFS=$'\n'
+  local array=( ${!1} ) IFS=$'\n'
   sort <<<"${array[*]}"
-  unset IFS
 }
 
 assert_equals()
@@ -192,7 +189,7 @@ array_intersect_array()
   #     result=( $(array_intersect_array array[@] remove[@]) )
   # note:
   #   array are passed by names: ${!1} is an indirection
-  local array1=( "${!1}" ) array2=( "${!2}" ) i r
+  local array1=( "${!1}" ) array2=( "${!2}" ) i j
   for i in ${array1[@]}; do
     for j in "${array2[@]}"; do
       if [[ "$i" == "$j" ]]; then
