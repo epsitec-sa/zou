@@ -47,36 +47,43 @@ branch_dev_fallback()
 {
   local branch=$1 kind name mode
 
+  if [[ $branch == master ]]; then
+    echo 'master'
+    return 0
+  fi
+
   kind=${branch%%/*}
   mode=${branch##*/}
-  # io_debug branch
-  # io_debug kind
-  # io_debug mode
+  io_debug branch
+  io_debug kind
+  io_debug mode
 
-  if [[ $kind == $branch ]]; then
-    # [[ $debug == true ]] && io_message 'kind == branch' '1'
-    [[ $branch != master ]] && echo "$kind/dev"
-    echo $branch
-  elif [[ $mode =~ ^(dev|[0-9]+\.[0-9]+)$ ]]; then
+  # if [[ $kind == $branch ]]; then
+  #   # [[ $debug == true ]] && io_message 'kind == branch' '1'
+  #   [[ $branch != master ]] && echo "$kind/dev"
+  #   echo $branch
+  if [[ $mode =~ ^(dev|[0-9]+\.[0-9]+)$ ]]; then
     # mode is dev or prod
     # [[ $debug == true ]] && io_message 'mode == dev|prod' '2.0'
 
-    name=${branch#*/}
-    name=${name%/*}
-    # io_debug mode
-    # io_debug name
+    name=${branch#*/} # remove prefix
+    name=${name%/*}   # remove suffix
+    io_debug name
 
     if [[ $name == $mode ]]; then
       # [[ $debug == true ]] && io_message 'name == mode' '2.1'
-      echo "$kind/dev"
+      if [[ ! $kind =~ ^[0-9]+\.[0-9]+$ ]]; then
+        echo "$kind/dev"
+        [[ $kind == 'sku' ]] || echo $kind
+      fi
     else
       for name in $(branch_scan_sku $name); do
         # [[ $debug == true ]] && io_message 'name != mode' '2.2'
-        echo "$kind/$name/dev"
+        [[ $kind == 'sku' ]] && echo "$kind/$name/dev"
         echo "$kind/$name"
       done
       # [[ $debug == true ]] && io_message 'without name' '2.3'
-      [[ "$kind/dev" != "$branch" ]] && echo "$kind/dev"
+      [[ "$kind/dev" != "$branch" && $kind == 'sku' ]] && echo "$kind/dev"
     fi
   else
     # [[ $debug == true ]] && io_message 'without mode' '3.0'
@@ -84,14 +91,14 @@ branch_dev_fallback()
     name=${branch#*/}
     # io_debug name
     for name in $(branch_scan_sku $name); do
-      echo "$kind/$name/dev"
+      [[ $kind == 'sku' ]] && echo "$kind/$name/dev"
       echo "$kind/$name"
     done
     # [[ $debug == true ]] && io_message '' '3.3'
-    echo "$kind/dev"
+    [[ $kind == 'sku' ]] && echo "$kind/dev"
   fi
   # [[ $debug == true ]] && io_message 'branch != master' '4'
-  [[ $branch != master ]] && echo master
+  echo 'master'
 }
 # Convert any branch to a fallback list of regex patterns.
 branch_dev_patterns()
