@@ -1,0 +1,176 @@
+#!/bin/bash
+
+# Use the following statement to include current lib only once
+#   [[ -z $ZOUL_GIT_REF ]] && . zoul-git-ref
+ZOUL_GIT_REF=true
+
+# Use the following functions to generate fallbacks for zou-flow refs (branches and vtags).
+# Fallbacks can be generated to:
+# - find submodule dev branch that match bundle branch
+# - generate vtag matching pattern for git describe
+#
+# Exemple:
+#   A fallback to find a matching dev branch for `sku/compta/mch/(dev|13.2)`
+#   has the following form:
+#
+#   sku/compta/mch/(dev|13.2) ->
+#     sku/compta/mch/dev
+#     compta/mch/dev
+#     sku/mch/dev
+#     mch/dev
+#     sku/dev
+#     master
+#
+# Algorithm:
+#   We first split a branch ref into an array of ref atoms:
+#     sku/compta/mch/dev -> (sku compta mch dev)
+#   Then we shift left array and subarray of atoms until only one element remains.
+#   Finally, we combine both outputs, sort by atom count and join back them with '/' separator.
+
+# join ref atoms with '/'
+# sku sal dev -> sku/sal/dev
+ref_join() { local IFS='/'; echo "$*"; }
+
+# scan ref atoms:
+#   shift left until only the last element remains
+#   return each shift
+# sku sal dev ->
+#   sku sal dev
+#   sal dev
+#   dev
+ref_scan_shift_0()
+{
+  local IFS=' ' i
+  # echo ref_scan_shift_0 "[$#] ${*@Q}" >&2
+  for (( i=1; i<=$#; i++ )); do
+    echo "${@:$i}"
+  done
+}
+# scan ref atoms:
+#   keep first atom (sku, wip...) and shift remaining part.
+# sku compta mch dev ->
+#   sku compta mch dev
+#   sku mch dev
+#   sku dev
+ref_scan_shift_1()
+{
+  local first=$1 IFS=$'\n' i
+  for i in $(ref_scan_shift_0 "${@:2}"); do
+    echo $first $i
+  done
+}
+# combine scans of ref atoms
+# sku compta mch dev ->
+#   scan1
+#     compta mch dev
+#     mch dev
+#     dev
+#   scan 2
+#     sku compta mch dev
+#     sku mch dev
+#     sku dev
+ref_scan_algo()
+{
+  # first scan: remove first atom (sku, wip, ...)
+  ref_scan_shift_0 "${@:2}"
+  # second scan: keep first atom and shift remaining part
+  ref_scan_shift_1 "$@"
+}
+# scan ref atoms and insert count in front to be able to sort by count
+# sku compta mch dev ->
+#   3 compta mch dev
+#   2 mch dev
+#   1 dev
+#   4 sku compta mch dev
+#   3 sku mch dev
+#   2 sku dev
+ref_scan_insert_count()
+{
+  local IFS=$'\n' i a
+  for i in $(ref_scan_algo "$@"); do
+    # convert to array to compute word count (faster than using wc -w)
+    IFS=' '; a=( $i )
+    # insert count in front 
+    echo ${#a[@]} $i
+  done
+}
+# scan ref atoms sort by count and join:
+# sku compta mch dev ->
+#   sku/compta/mch/dev
+#   compta/mch/dev
+#   sku/mch/dev
+#   mch/dev
+#   sku/dev
+#   dev
+ref_scan_sort_join()
+{
+  # echo ref_scan_sort_join "[$#] ${*@Q}" >&2
+  local IFS=$'\n' a
+  if (( $# <= 1 )); then
+    ref_join $@
+  else
+    for a in $(ref_scan_insert_count "$@" | sort -n -s -r | cut -d' ' -f2-); do
+      IFS=' '; ref_join $a
+    done
+  fi
+}
+# scan ref and sort by atoms count:
+# sku/compta/mch/dev ->
+#   sku/compta/mch/dev
+#   compta/mch/dev
+#   sku/mch/dev
+#   mch/dev
+#   sku/dev
+#   dev
+ref_split_scan_join()
+{
+  # echo ref_scan "[$#] ${*@Q}" >&2
+  local atoms=( ${1//\// } )
+  ref_scan_sort_join ${atoms[@]}
+}
+# split ref, convert prod branch to dev and adjust master:
+# ref_dev_fallback sku/compta/mch/13.2 ->
+#   sku/compta/mch/dev
+#   compta/mch/dev
+#   sku/mch/dev
+#   mch/dev
+#   sku/dev
+#   master
+ref_dev_fallback()
+{
+  local atoms=( ${1//\// } ) a b
+  [[ ${atoms[-1]} =~ ^[0-9]+\.[0-9]+$ ]] && atoms[-1]='dev'
+
+  a=( $(ref_scan_sort_join "${atoms[@]}") )
+  if [[ ${a[-1]} == 'dev' ]]; then
+    a[-1]='master'
+  elif [[ ${a[-1]} != 'master' ]]; then
+    a+=( 'master' )
+  fi
+  for b in ${a[@]}; do
+    echo $b
+  done
+}
+# scan ref and return tag fallback patterns
+# Exemple for git describe:
+# ref_tag_fallback sku/compta/mch/dev 'v[0-9]*' ->
+#   sku/compta/mch/v[0-9]*
+#   compta/mch/v[0-9]*
+#   sku/mch/v[0-9]*
+#   mch/v[0-9]*
+#   sku/v[0-9]*
+#   v[0-9]*
+ref_tag_fallback()
+{
+  local atoms=( ${1//\// } ) tag=$2
+  if [[ ${atoms[-1]} == 'dev' || ${atoms[-1]} =~ ^[0-9]+\.[0-9]+$ ]]; then
+    atoms[-1]="$tag"
+    ref_scan_sort_join "${atoms[@]}"
+  else
+    echo "$tag"
+  fi
+}
+ref_vtag_describe_fallback()
+{
+  ref_tag_fallback $1 'v[0-9]*'
+}
