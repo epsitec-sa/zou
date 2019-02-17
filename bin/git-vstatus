@@ -1,0 +1,46 @@
+#!/bin/bash
+
+[[ -z $ZOUL_GIT_REPO ]]        && . zoul-git-repo
+[[ -z $ZOUL_GIT_VTAG ]]        && . zoul-git-vtag
+[[ -z $ZOUL_GIT_VBRANCH ]]     && . zoul-git-vbranch
+[[ -z $ZOUL_GIT_BRANCH_CORE ]] && . zoul-git-branch-core
+
+while [[ "$#" > 0 ]]; do case "$1" in
+  -h|--help) zou-help $0; exit 0;;
+  --alpha) prerelPrefix='alpha';;
+  --beta)  prerelPrefix='beta';;
+  --rc)    prerelPrefix='rc';;
+  --rtm)   prerelPrefix='rtm';;
+  --debug) debug=true;;
+  -*) echo "unknown option: $1" >&2; exit 1;;
+  *) ref=$1;;
+esac; shift; done
+
+ref=$(git_symbolic_ref ${ref:-HEAD})
+
+vtag_status()
+{
+  local ltag stag ntag lsuf delta label
+  label="[$(repo_module_id)] ($ref)"
+  ltag=$(vtag_describe $ref)
+  stag=${ltag%-*-g*}
+  lsuf=${ltag#$stag}
+  if [[ -z $lsuf ]]; then
+    ntag=$(vtag_increment $stag $prerelPrefix)
+    io_info "Already published at $stag" "$label"
+    io_info "Next version      at $ntag" "$label"
+  else
+    ntag=$(vbranch_next_vtag "$ref" "$prerelPrefix")
+    io_info "Actual version at $stag" "$label"
+    io_info "Next   version at $ntag" "$label"
+    delta=${lsuf%-g*}
+    delta=${delta#-}
+    io_warning "'$ref' is $delta commits ahead of $stag" "$label"
+  fi
+}
+
+if branch_exists "$ref"; then
+  vtag_status
+else
+  io_error "Branch '$ref' does not exist" "[$(repo_module_id)]"
+fi
