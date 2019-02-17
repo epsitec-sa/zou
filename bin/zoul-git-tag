@@ -16,12 +16,13 @@ tag_comment()  { git tag -l -n1 $1 | sed -E 's,w+s+(.*),1,'; }
 commit_is_pushed() { [[ -n $(git branch -r --contains $1) ]]; }
 tag_push_not_followed()
 {
-  local tag=$1 commit=$2
+  local tag=$1 commit=$2; shift 2
   # 'git push --follow-tags' push only tags associated with commits that are not pushed
   if commit_is_pushed "$commit"; then
-    local remote=$(git remote)
-    git push $remote "$tag" &>/dev/null
-    io_info "Pushed tag '$tag' to '$remote'"
+    local remote=$(git remote) oinfo=' '
+    git push "$@" $remote "$tag" &>/dev/null
+    [[ -n $@ ]] && oinfo="($@) "
+    io_info "Pushed tag$oinfo'$tag' to '$remote'" [$(repo_module_id)]
   fi
 }
 tag_rename()
@@ -37,7 +38,7 @@ tag_rename()
     GIT_COMMITTER_EMAIL=$(tagger_email "$tag1") \
     GIT_COMMITTER_DATE=$(tag_date "$tag1") \
     git tag -f -m "$message" "$tag2" "$tag1^{}"
-    io_info "Renamed annotated tag '$tag1' to '$tag2'"
+    io_info "Renamed annotated tag '$tag1' to '$tag2'" "[$(repo_module_id)]"
   fi
   tag_push_not_followed $tag2 $tag1
   [[ "$tag1" != "$tag2" ]] && tag_delete "$tag1"
@@ -71,8 +72,8 @@ tag_new()
 }
 tag_delete()
 {
+  tag_push_not_followed $tag $1^{} '--delete'
   git tag --delete "$1" &>/dev/null
-  git push --delete $(git remote) $1 &>/dev/null
 }
 
 tag_move()
