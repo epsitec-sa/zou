@@ -163,7 +163,8 @@ ref_dev_fallback()
 ref_tag_fallback()
 {
   local atoms=( ${1//\// } ) tag=$2
-  if [[ ${atoms[-1]} == 'dev' || ${atoms[-1]} =~ ^[0-9]+\.[0-9]+$ ]]; then
+  # accept vtags, dev and prod branches
+  if [[ ${atoms[-1]} == 'dev' || ${atoms[-1]} =~ ^v?[0-9]+\.[0-9]+ ]]; then
     atoms[-1]="$tag"
     ref_scan_sort_join "${atoms[@]}"
   else
