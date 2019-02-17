@@ -4,14 +4,14 @@
 
 while [[ "$#" > 0 ]]; do case "$1" in
   -h|--help) zou-help $0; exit 0;;
-  --reuse) prerel_prefix='reuse';;
   --alpha) prerel_prefix='alpha';;
   --beta)  prerel_prefix='beta';;
   --rc)    prerel_prefix='rc';;
   --rtm)   prerel_prefix='rtm';;
   --debug) debug=true;;
   -*) echo "unknown option: $1" >&2; exit 1;;
-  *) rev=$1;;
+  *) ref=$1;;
 esac; shift; done
 
-vbranch_next_vtag ${rev:-HEAD} $prerel_prefix
+ref=$(git_symbolic_ref $ref)
+vbranch_next_vtag $ref $prerel_prefix
