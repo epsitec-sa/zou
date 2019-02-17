@@ -1,0 +1,57 @@
+#!/bin/bash
+
+# clean tags (apply zou-flow):
+# 1. move non SemVer tags (otags) to other folder
+# 2. group tags pointing to the same commit hash
+#    create a lookup table with the commit hash as key and the commit tags (space separated) as value.
+# 3. remove other folder's redondant tags
+
+[[ -z $ZOUL_CORE ]]     && . zoul-core
+[[ -z $ZOUL_GIT_TAG ]]  && . zoul-git-tag
+[[ -z $ZOUL_GIT_REPO ]] && . zoul-git-repo
+
+while [[ "$#" > 0 ]]; do case "$1" in
+  -h|--help) zou-help $0; exit 0;;
+  -*) echo "unknown option: $1" >&2; exit 1;;
+esac; shift; done
+
+moduleId=$(repo_module_id)
+
+for tag in $(git otags); do
+  tag_move $tag "other/$tag"
+done
+
+io_info "Create tags lookup table" "[$moduleId]"
+declare -A lookup
+for tag in $(git tag); do
+  h=$(git rev-parse $tag^{})
+  if [ -z "${lookup[$h]}" ]; then
+    lookup[$h]=$tag
+    io_info "  [${h::7}] ${lookup[$h]}" "[$moduleId]"
+  else
+    lookup[$h]="${lookup[$h]} $tag"
+    io_info "  [${h::7}] ${lookup[$h]}" "[$moduleId]"
+  fi
+done
+
+io_info "Get other redondant tags" "[$moduleId]"
+remove=()
+for k in ${!lookup[@]}; do
+  read -a r <<< "${lookup[$k]}"
+  if [[ ${#r[@]} > 1 ]]; then
+    io_info "  [${k::7}] { ${r[*]} }" "[$moduleId]"
+    for tag in "${r[@]}"; do
+      [[ $tag =~ ^other/.* ]] && remove+=( $tag )
+    done
+  fi
+done
+
+if [ ${#remove[@]} -eq 0 ]; then
+  io_success "No redondant tags" "[$moduleId]"
+else
+  io_warning "Delete other redondant tags" "[$moduleId]"
+  for tag in ${remove[@]}; do
+    tag_delete $tag
+    # io_warning "  Deleted tag '$tag'" "[$moduleId]"
+  done
+fi
