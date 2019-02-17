@@ -25,7 +25,7 @@ row()
   else
     local version=$tag
   fi
-  local OIFS=$IFS; IFS=' '
+  local IFS=' '
   local tags=$(git tag -l --sort=-v:refname)
   if [[ $version =~ ^v([0-9]+)\.([0-9]+) ]]; then
     local major=${BASH_REMATCH[1]}
@@ -43,7 +43,6 @@ row()
   [[ $version == $vnext ]] && unset vnext || vnext="#$vnext#"
   local module_content=$(print_row "$md_module" "$head" "$hash" "$delta" "$md_version" "$vminor" "$vmajor" "$vnext")
   echo "$module:$module_content"
-  IFS=$OIFS
 }
 v1=`pwd`/_v1
 [[ -f $v1 ]] && rm $v1
