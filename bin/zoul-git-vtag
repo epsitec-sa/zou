@@ -67,28 +67,24 @@ vtag_best_match_vtag_at()
   # - $1: branch (ex: sku/dev, master)
   # output:
   # - best match vtag  (ex: sku/dev -> sku/v1.0.0, master -> v2.0.0)
-  local branch=$1 vtags hint reHint vHint tag
-  vtags=( $(vtag_vtags_at $branch) )
-  if [ ${#vtags[@]} -ne 0 ]; then
-    for hint in $(ref_tag_fallback $branch 'v'); do
-      reHint=$(regex_escape "$hint")
-      vHint="^${reHint}[0-9]+\.[0-9]+\.[0-9]+"
-      # echo vtagHint=$vHint >&2
-      for tag in $(echo "${vtags[@]}" | xargs -n 1 | grep -E "$vHint"); do
-        echo $tag
-        return 0
-      done
-      vHint="^${reHint}[0-9]+\.[0-9]+-@$"
-      # echo vnodeHint=$vHint >&2
-      for tag in $(echo "${vtags[@]}" | xargs -n 1 | grep -E "^$vHint"); do
-        echo $tag
-        return 0
-      done
+  # io_info "vtag_best_match_vtag_at ${*@Q}" "[$(repo_module_id)]"
+  local ref=$1 vtags hint reHint vHint tag
+  vtags=( $(vtag_vtags_at $ref) )
+  [ ${#vtags[@]} -eq 0 ] && return 1
+  for hint in $(ref_tag_fallback $ref 'v'); do
+    reHint=$(regex_escape "$hint")
+    vHint="^${reHint}[0-9]+\.[0-9]+\.[0-9]+"
+    # echo vtagHint=$vHint >&2
+    for tag in ${vtags[@]}; do
+      [[ $tag =~ $vHint ]] && { echo $tag; return 0; }
     done
-    echo ${vtags[0]}
-  else
-    return 1
-  fi
+    vHint="^${reHint}[0-9]+\.[0-9]+-@$"
+    # echo vnodeHint=$vHint >&2
+    for tag in ${vtags[@]}; do
+      [[ $tag =~ $vHint ]] && { echo $tag; return 0; }
+    done
+  done
+  echo "${vtags[0]}"
 }
 vtag_get_vbranch_name ()
 {
@@ -138,11 +134,13 @@ vtag_get_vbranch_tail()
   # - [0]: the vtag that starts the vbranch tail
   # - [1]: the vbranch that contains the given vbranch marker
   # - [2]: a status (empty|full) indicating if the vbranch tail does not contain any vtag
-  for vtag in $(vtag_best_match_vtag_at $1); do
-    io_debug vtag vtag_get_vbranch_tail
+  # io_info "vtag_get_vbranch_tail ${*@Q}" "[$(repo_module_id)]"
+  local vtag=$(vtag_best_match_vtag_at $1)
+  if [[ -n $vtag ]]; then
+    # io_debug vtag vtag_get_vbranch_tail
     local vbranch=$(vtag_get_vbranch $vtag)
     if [[ -n $vbranch ]]; then
-      io_debug vbranch vtag_get_vbranch_tail
+      # io_debug vbranch vtag_get_vbranch_tail
       git merge-base --is-ancestor $2 $vbranch >&2
       if [ $? -eq 0 ]; then
         local status='empty'
@@ -155,7 +153,7 @@ vtag_get_vbranch_tail()
         return 0;
       fi
     fi
-  done
+  fi
   io_warning "vtag_get_vbranch_tail: branch '$(git rev-parse --abbrev-ref $2)' is outside vbranch '$vbranch'"
   return 1
 }
