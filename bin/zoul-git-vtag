@@ -5,6 +5,7 @@
 ZOUL_GIT_VTAG=true
 
 [[ -z $ZOUL_CORE ]]     && . zoul-core
+[[ -z $ZOUL_GIT_REF ]]  && . zoul-git-ref
 [[ -z $ZOUL_GIT_CORE ]] && . zoul-git-core
 
 vtag_is_vnode() { [[ $1 =~ ^(.*/)?v[0-9]+\.[0-9]+-@ ]]; }
@@ -38,32 +39,17 @@ vtag_list()
   # io_debug regex vtag_list
   git tag -l --sort=-v:refname | grep -E $regex | grep -v '^other/' || true
 }
-vtag_scan_branch_path()
-{
-  local b0=$1
-  local b1=${1%/*}
-  if [[ $b0 == $b1 ]]; then
-    echo $b1
-  else
-    while [[ $b0 != $b1 ]]; do
-      echo $b1
-      b0=$b1
-      b1=${b1%/*}
-    done
-  fi
-}
 vtag_describe()
 {
   # find first vtag ancestor starting from given commit
   # input:
-  # - $1: commit hash (ex: e5d2fe9)
+  # - $1: branch symbol
   # output:
   # - vtag description (ex: v1.0.0-rc1-5-ge5d2fe9)
-  local branch=$(git_symbolic_ref ${1:-HEAD}) b
-  for b in $(vtag_scan_branch_path $branch); do
-    git describe --tags --match "${b}/v[0-9]*" --exclude 'other/*' "$branch" 2>/dev/null && return 0
+  local branch=$(git_symbolic_ref ${1:-HEAD}) match
+  for match in $(ref_tag_fallback $branch 'v[0-9]*'); do
+    git describe --tags --match "$match" --exclude 'other/*' "$branch" 2>/dev/null && return 0
   done
-  git describe --tags --match "v[0-9]*" --exclude 'other/*' "$branch" 2>/dev/null;
 }
 vtag_vtags_at()
 {
@@ -81,12 +67,20 @@ vtag_best_match_vtag_at()
   # - $1: branch (ex: sku/dev, master)
   # output:
   # - best match vtag  (ex: sku/dev -> sku/v1.0.0, master -> v2.0.0)
-  local branch=$1 hint reHint
-  local vtags=( $(vtag_vtags_at $branch) )
+  local branch=$1 vtags hint reHint vHint tag
+  vtags=( $(vtag_vtags_at $branch) )
   if [ ${#vtags[@]} -ne 0 ]; then
-    for hint in $(vtag_scan_branch_path $branch); do
-      reHint=$(regex_escape $hint)
-      for tag in $(echo "${vtags[@]}" | xargs -n 1 | grep "^$reHint"); do
+    for hint in $(ref_tag_fallback $branch 'v'); do
+      reHint=$(regex_escape "$hint")
+      vHint="^${reHint}[0-9]+\.[0-9]+\.[0-9]+"
+      # echo vtagHint=$vHint >&2
+      for tag in $(echo "${vtags[@]}" | xargs -n 1 | grep -E "$vHint"); do
+        echo $tag
+        return 0
+      done
+      vHint="^${reHint}[0-9]+\.[0-9]+-@$"
+      # echo vnodeHint=$vHint >&2
+      for tag in $(echo "${vtags[@]}" | xargs -n 1 | grep -E "^$vHint"); do
         echo $tag
         return 0
       done
