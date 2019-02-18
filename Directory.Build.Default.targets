@@ -2,7 +2,10 @@
 <Project>
   <PropertyGroup>
     <!-- Package default properties -->
-    <CopyrightYears Condition="'$(CopyrightYears)' == ''">2018</CopyrightYears>
+    <FirstCopyrightYear Condition="'$(FirstCopyrightYear)' == ''"></FirstCopyrightYear>
+    <LastCopyrightYear Condition="'$(LastCopyrightYear)' == ''">$([System.DateTime]::Now.ToString(yyyy))</LastCopyrightYear>
+    <CopyrightYears Condition="'$(CopyrightYears)' == '' And ('$(FirstCopyrightYear)' == '' Or '$(FirstCopyrightYear)' == '$(LastCopyrightYear)')">$(LastCopyrightYear)</CopyrightYears>
+    <CopyrightYears Condition="'$(CopyrightYears)' == ''">$(FirstCopyrightYear)-$(LastCopyrightYear)</CopyrightYears>
     <Copyright Condition="'$(Copyright)' == ''">Copyright © $(CopyrightYears), EPSITEC SA, CH-1400 Yverdon-les-Bains, Switzerland</Copyright>
     <Authors Condition="'$(Authors)' == ''">$(Company)</Authors>
     <Product Condition="'$(Product)' == ''">$(AssemblyName)</Product>
