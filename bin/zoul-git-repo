@@ -237,7 +237,7 @@ repo_list_submodule_paths()
 }
 repo_list_unstaged_submodules()
 {
-  local mroot=$1 smid smpath opwd=$PWD
+  local mroot=$1 smid smpath
   [[ -z $mroot ]] && { mroot=$(repo_module_root) || return 1; }
   for smid in $(git diff-files --name-only -r); do
     smpath=$(repo_submodule_path "$smid" "$mroot")
@@ -245,7 +245,6 @@ repo_list_unstaged_submodules()
       echo $smid
     fi
   done
-  cd "$opwd"
 }
 repo_list_unstaged_clean_submodules()
 {
@@ -257,9 +256,9 @@ repo_list_unstaged_clean_submodules()
     if repo_is_module_root "$smroot"; then
       cd "$smroot"
       repo_is_clean && echo $smid
+      cd "$opwd"
     fi
   done
-  cd "$opwd"
 }
 repo_list_untracked()
 {

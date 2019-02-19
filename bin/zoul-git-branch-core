@@ -33,15 +33,18 @@ branch_is_head()
 }
 branch_current()
 {
-  local c=$(git rev-parse --abbrev-ref HEAD)
-  [ $c == 'HEAD' ] && git rev-parse --short HEAD || echo $c
+  local ref=$(git rev-parse --abbrev-ref HEAD)
+  echo "$ref"
+  branch_is_local "$ref"
 }
 branch_current_root_branch()
 {
-  local opwd=$PWD; cd "$(repo_bundle_root)"
-  local branch=$(branch_current)
+  local opwd=$PWD branch ec=0
+  cd "$(repo_bundle_root)"
+  branch=$(branch_current) || ec=$?
   cd "$opwd"
   echo $branch
+  return $ec
 }
 branch_list_local_tracked()
 {
@@ -174,20 +177,49 @@ branch_checkout()
 }
 branch_list_attach_candidates()
 {
-  if ! branch_is_attached; then
-    local branches=( $(branch_list_all_at $1) )
-    branch_remove_remote_tracked branches[@]
-  fi
+  branch_list_local_at $1
+  local remoteBranches=$(branch_list_remote_at $1)
+  remoteBranches=( $(branch_remove_remote_tracked remoteBranches[@]) )
+  printf '%s\n' ${remoteBranches[@]#origin/}
 }
 branch_try_attach()
 {
-  # attach a detached head to the unique local branch that's pointing at
-  if ! branch_is_attached; then
-    local branches=($(branch_list_attach_candidates $1))
-    if (( ${#branches[@]} == 1 )); then
-      branch_checkout "${branches[0]}"
-    else
-      return 1
+  branch_is_attached && return 0
+  # echo branch_try_attach ${*@Q} >&2
+  # try to attach a detached head to a branch that's pointing at it.
+  local branches=($(branch_list_attach_candidates $1))
+  if (( ${#branches[@]} == 1 )); then
+    branch_checkout "${branches[0]}"
+  else
+    local hint=$2 ec=0 hints reHint pHint branch
+    # try to discriminate using hint
+    if [[ -z $hint ]]; then
+      hint=$(branch_current_root_branch) || ec=$?
+      # no hint, checkout first branch
+      if [ $ec -ne 0 ]; then
+        branch_checkout "${branches[0]}"
+        return 1
+      fi
     fi
+    hints=$(ref_prod_fallback "$hint") || ec=$?
+    if [ $ec -eq 0 ]; then
+      # prod
+      for hint in $hints; do
+        # replace prod suffix with vbranch regex
+        reHint=$(regex_escape "${hint%prod}")
+        pHint="^${reHint}[0-9]+\.[0-9]+"
+        for branch in ${branches[@]}; do
+          [[ $branch =~ $pHint ]] && { branch_checkout "$branch"; return 0; }
+        done
+      done
+    fi
+    # dev
+    hints=$(ref_dev_fallback "$hint")
+    for hint in $hints; do
+      for branch in ${branches[@]}; do
+        [[ $branch == $hint ]] && { branch_checkout "$branch"; return 0; }
+      done
+    done
   fi
+  return 1
 }

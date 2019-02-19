@@ -175,3 +175,22 @@ ref_vtag_describe_fallback()
 {
   ref_tag_fallback $1 'v[0-9]*'
 }
+# scan ref and return prod fallback
+# ref_prod_fallback sku/sal/(prod|13.2)
+#   sku/sal/prod
+#   sal/prod
+#   sku/prod
+#   prod
+ref_prod_fallback()
+{
+  local atoms=( ${1//\// } )
+  # accept vtags and prod branches
+  if [[ ${atoms[-1]} == 'prod' ]]; then
+    ref_scan_sort_join "${atoms[@]}"
+  elif [[ ${atoms[-1]} =~ ^v?[0-9]+\.[0-9]+ ]]; then
+    atoms[-1]="prod"
+    ref_scan_sort_join "${atoms[@]}"
+  else
+    return 1
+  fi
+}
