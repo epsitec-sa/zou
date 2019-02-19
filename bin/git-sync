@@ -15,6 +15,8 @@ while [[ "$#" > 0 ]]; do case "$1" in
   -e|--stop-on-error) cmdOpts+=($1); stopOnError=true;;
   -c|--clean)         cmdOpts+=($1); cleanLocalBranches=true;;
   -a|--all)           cmdOpts+=($1); all=true;;
+  --dev)              cmdOpts+=($1); hint='dev';;
+  --prod)             cmdOpts+=($1); hint='0.0';;
   --_startup-dir)     cmdOpts+=($1 $2); startupDir=$(echo $2 | xargs echo); shift;;  # remove single quotes
   -*) echo "unknown option: $1" >&2; exit 1;;
 esac; shift; done
@@ -36,7 +38,7 @@ clean_local_branches()
 sync_submodules()
 {
   local branch configFile include path mroot=$PWD
-  branch=$(branch_current) || return $?
+  branch=$(branch_current)
   configFile=$(repo_zouflow_path "$mroot") || return $?
   [[ $all == true ]] && include=( $(repo_list_submodule_paths) ) || include=( $(config_sku_list_included "$branch" "$configFile") )
   for path in $(array_sort include[@]); do
@@ -47,7 +49,7 @@ sync_submodules()
 sync_node()
 {
   [[ $quiet == true ]] || echo Entering "'$(path_make_relative '.' "$startupDir")'"
-  branch_sync_all && clean_local_branches || return $?
+  branch_sync_all "$hint" && clean_local_branches || return $?
 }
 sync_tree()
 {
