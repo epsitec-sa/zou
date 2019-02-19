@@ -62,14 +62,17 @@ branch_best_match()
     branch_best_match_dev $target
   fi
 }
-branch_to_dev()
+branch_select()
 {
-  local branch=$1
-  if branch_is_prod $1; then
-    branch_best_match_dev $branch
-  else
-    echo $branch
+  local rootBranch=$1 bestMatch branch
+  [[ -z $rootBranch ]] && io_error 'branch_select: specify a branch to match' && return 1
+  bestMatch=$(branch_best_match $rootBranch)
+  branch=$(branch_checkout "$bestMatch")
+  if [ $? -ne 0 ]; then
+    repo_require_clean_work_tree 'cannot select'
+    return 1
   fi
+  echo $branch
 }
 branch_select_nearest_vtag()
 {
@@ -97,16 +100,4 @@ branch_select_nearest_vtag()
       return 2  # switch to vtag
     fi
   fi
-}
-branch_select()
-{
-  local rootBranch=$1 bestMatch branch
-  [[ -z $rootBranch ]] && io_error 'branch_select: specify a branch to match' && return 1
-  bestMatch=$(branch_best_match $rootBranch)
-  branch=$(branch_checkout "$bestMatch")
-  if [ $? -ne 0 ]; then
-    repo_require_clean_work_tree 'cannot select'
-    return 1
-  fi
-  echo $branch
 }
