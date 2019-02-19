@@ -33,15 +33,18 @@ branch_is_head()
 }
 branch_current()
 {
-  local c=$(git rev-parse --abbrev-ref HEAD)
-  [ $c == 'HEAD' ] && git rev-parse --short HEAD || echo $c
+  local ref=$(git rev-parse --abbrev-ref HEAD)
+  echo "$ref"
+  branch_is_local "$ref"
 }
 branch_current_root_branch()
 {
-  local opwd=$PWD; cd "$(repo_bundle_root)"
-  local branch=$(branch_current)
+  local opwd=$PWD branch ec=0
+  cd "$(repo_bundle_root)"
+  branch=$(branch_current) || ec=$?
   cd "$opwd"
   echo $branch
+  return $ec
 }
 branch_list_local_tracked()
 {
