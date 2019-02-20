@@ -262,20 +262,26 @@ repo_list_unstaged_clean_submodules()
 }
 repo_list_untracked()
 {
-  local mroot=$1 smid smpath
+  local mroot=$1 path smpath opwd=$PWD
   [[ -z $mroot ]] && { mroot=$(repo_module_root) || return 1; }
-  for smid in $(git ls-files --exclude-standard --others); do
-    smpath=$(repo_submodule_path "$smid" "$mroot")
-    repo_is_module_root "$mroot/$smpath" || echo $smid
+  cd "$mroot"
+  for path in $(git ls-files --exclude-standard --others); do
+    if [[ -f $path ]]; then
+      echo $path
+    else
+      # skip dangling submodules
+      repo_is_module_root "$path" || echo $path
+    fi
   done
+  cd "$opwd"
 }
 repo_list_dangling_submodules()
 {
-  local mroot=$1 smid opwd=$PWD
+  local mroot=$1 path opwd=$PWD
   [[ -z $mroot ]] && { mroot=$(repo_module_root) || return 1; }
   cd "$mroot"
-  for smid in $(git ls-files --exclude-standard --others); do
-    repo_is_module_root "$mid" && echo $smid
+  for path in $(git ls-files --exclude-standard --others); do
+    [[ -d $path ]] && repo_is_module_root "$path" && echo $path
   done
   cd "$opwd"
 }

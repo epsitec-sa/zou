@@ -8,6 +8,7 @@
 [[ -z $ZOUL_GIT_BRANCH_SELECT ]]  && . zoul-git-branch-select
 [[ -z $ZOUL_GIT_BRANCH_PUBLISH ]] && . zoul-git-branch-publish
 
+jobsCount=16
 while [[ "$#" > 0 ]]; do case "$1" in
   -h|--help) zou-help $0; exit 0;;
   -0|--level0)        level0=true;;
@@ -20,6 +21,7 @@ while [[ "$#" > 0 ]]; do case "$1" in
   --beta)             prerelPrefix='beta';;
   --rc)               prerelPrefix='rc';;
   --rtm)              prerelPrefix='rtm';;
+  -j*)                jobsCount=${1#-j};;
   -*) echo "unknown option: $1" >&2; exit 1;;
 esac; shift; done
 
@@ -57,11 +59,14 @@ publish_submodules()
   include=( $(config_sku_list_included "$branchOrTag" "$configFile") )
   exclude=( $(config_select_list_excluded "$branchOrTag" "$configFile") )
   for path in $(string_sort $(array_remove_array 'include[@]' 'exclude[@]')); do
-  (
-    cd "$mroot/$path"
-    moduleId=$(repo_module_id)
-    publish_tree || return $?
-  ) &
+    (
+      cd "$mroot/$path" || {
+        io_error "cd $mroot+$path" "[$moduleId]"
+        return 1
+      }
+      publish_tree || return $?
+    ) &
+    if (( $(wc -w <<<$(jobs -p)) % $jobsCount == 0 )); then wait; fi
   done
   wait
   # io_warning "<<<< publish_submodules" "[$moduleId]"
@@ -157,7 +162,8 @@ publish_tree()
   # trace_method publish_tree "$global_variable_names"
   # io_warning ">>>> publish_tree ${*@Q}" "[$moduleId]"
   [[ $quiet == true ]] || echo Entering "'$(path_make_relative '.' "$startupDir")'"
-  local branchOrTag stopPublish publishDisabled ec=0
+  local branchOrTag stopPublish publishDisabled ec=0 moduleId=$(repo_module_id)
+
   branchOrTag=$(publish_prolog)
   [ $? -eq 1 ] && return 1
 
@@ -168,8 +174,6 @@ publish_tree()
   publish_epilog "$branchOrTag"
   # io_warning "<<<< publish_tree ${*@Q}" "[$moduleId]"
 }
-
-moduleId=$(repo_module_id)
 
 startupDir=$PWD
 startupRoot=$(repo_module_root)

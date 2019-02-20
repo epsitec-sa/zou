@@ -5,17 +5,23 @@
 [[ -z $ZOUL_GIT_BRANCH_CORE ]]   && . zoul-git-branch-core
 [[ -z $ZOUL_GIT_BRANCH_SELECT ]] && . zoul-git-branch-select
 
+# cd '/mnt/c/devel/cresus-tmp'
+
+jobsCount=16
 while [[ "$#" > 0 ]]; do case "$1" in
   --) shift; args+=("$@"); break;;
   -h|--help) zou-help $0; exit 0;;
   -q|--quiet)         quiet=true;;
   -e|--stop-on-error) stopOnError=true;;
   -a|--all)           all=true;;
+  -j*)                jobsCount=${1#-j};;
   -*) echo "unknown option: $1" >&2; exit 1;;
   *) sku=$1;;
 esac; shift; done
 
-# global_variable_names='sku quiet stopOnError all startupDir'
+trap "kill 0" SIGINT
+
+global_variable_names='sku quiet stopOnError all startupDir'
 
 process_error()
 {
@@ -30,10 +36,14 @@ select_submodules()
   # select active submodules which are included in select
   include=( $(config_select_list_included "$branch" "$configFile") )
   for path in $(string_sort $(array_remove_array 'include[@]' 'skuExclude[@]')); do
-  (
-    cd "$mroot/$path"
-    select_tree "$sku" || return $?
-  ) &
+    (
+      cd "$mroot/$path" &>/dev/null || {
+        io_error "cd $mroot+$path" "[$moduleId]"
+        return 1
+      }
+      select_tree "$sku" || return $?
+    ) &
+    if (( $(wc -w <<<$(jobs -p)) % $jobsCount == 0 )); then wait; fi
   done
   wait
   
@@ -42,16 +52,18 @@ select_submodules()
   exclude=( $(config_select_list_excluded "$branch" "$configFile") )
   for path in $(string_sort $(array_remove_array 'exclude[@]' 'skuExclude[@]')); do
     ( repo_update_submodule "$path" ) &
+    if (( $(wc -w <<<$(jobs -p)) % $jobsCount == 0 )); then wait; fi
   done
   wait
 
   # discard inactive submodules
   local unstaged=( $(repo_list_unstaged_clean_submodules) )
   for path in $(string_sort $(array_intersect_array 'unstaged[@]' 'skuExclude[@]')); do
-  (
-    git submodule update --recursive "$path" &>/dev/null
-    io_info "Discarded submodule '$path'" "[$moduleId]"
-  ) &
+    (
+      git submodule update --recursive "$path" &>/dev/null
+      io_info "Discarded submodule '$path'" "[$moduleId]"
+    ) &
+    if (( $(wc -w <<<$(jobs -p)) % $jobsCount == 0 )); then wait; fi
   done
   wait
 

@@ -5,6 +5,7 @@
 [[ -z $ZOUL_GIT_BRANCH_CORE ]] && . zoul-git-branch-core
 [[ -z $ZOUL_GIT_BRANCH_SYNC ]] && . zoul-git-branch-sync
 
+jobsCount=16
 while [[ "$#" > 0 ]]; do case "$1" in
   -h|--help) zou-help $0; exit 0;;
   -0|--level0)        level0=true;;
@@ -13,6 +14,7 @@ while [[ "$#" > 0 ]]; do case "$1" in
   -e|--stop-on-error) stopOnError=true;;
   -c|--clean)         cleanLocalBranches=true;;
   -a|--all)           all=true;;
+  -j*)                jobsCount=${1#-j};;
   --dev)              hint='dev';;
   --prod)             hint='0.0';;
   -*) echo "unknown option: $1" >&2; exit 1;;
@@ -41,28 +43,33 @@ sync_submodules()
   configFile=$(repo_zouflow_path "$mroot") || return $?
   [[ $all == true ]] && include=( $(repo_list_submodule_paths) ) || include=( $(config_sku_list_included "$branch" "$configFile") )
   for path in $(array_sort include[@]); do
-  (
-    cd "$mroot/$path"
-    sync_tree || return $?
-  ) &
+    (
+      cd "$mroot/$path" || {
+        io_error "cd $mroot+$path" "[$moduleId]"
+        return 1
+      }
+      sync_tree || return $?
+    ) &
+    if (( $(wc -w <<<$(jobs -p)) % $jobsCount == 0 )); then wait; fi
   done
   wait
 }
 sync_node()
 {
-  # trace_method 'sync_node' "$global_variable_names"
   [[ $quiet == true ]] || echo Entering "'$(path_make_relative '.' "$startupDir")'"
   local path moduleId=$(repo_module_id)
+  # trace_method 'sync_node' moduleId "$global_variable_names"
 
   # synchronize all branches
   branch_sync_all "$hint" && clean_local_branches || return $?
   
   # discard clean submodules
   for path in $(string_sort $(repo_list_unstaged_clean_submodules)); do
-  (
-    git submodule update --recursive "$path" &>/dev/null
-    io_warning "Discarded submodule '$path'" "[$moduleId]"
-  ) &
+    (
+      git submodule update --recursive "$path" &>/dev/null
+      io_warning "Discarded submodule '$path'" "[$moduleId]"
+    ) &
+    if (( $(wc -w <<<$(jobs -p)) % $jobsCount == 0 )); then wait; fi
   done
   wait
 }
