@@ -61,7 +61,7 @@ sync_node()
   for path in $(string_sort $(repo_list_unstaged_clean_submodules)); do
   (
     git submodule update --recursive "$path" &>/dev/null
-    io_info "Discarded submodule '$path'" "[$moduleId]"
+    io_warning "Discarded submodule '$path'" "[$moduleId]"
   ) &
   done
   wait
