@@ -1,0 +1,31 @@
+#!/bin/bash
+
+# Use the following statement to include current lib only once
+#   [[ -z $ZOUL_LOCK ]] && . zoul-lock
+ZOUL_LOCK=true
+
+# flock is not distributed with git-bash
+# MSYS2 has a version of flock but it creates a conflict with cygwin.dll
+# use atomic mkdir
+
+lock()
+(
+  local lockDir=$1 delay=$2; shift 2
+  _lock "$lockDir" "$delay"
+  $*
+  _unlock "$lockDir"
+)
+_lock()
+{
+  local lockdir=$1 delay=$2
+  while ! mkdir "$lockdir" &>/dev/null; do
+    sleep "$delay"
+  done
+  # Remove lockdir when the script finishes, or when it receives a signal
+  trap 'rm -rf "$lockdir"' 0    # remove directory when script finishes
+}
+_unlock()
+{
+  local lockdir=$1
+  rm -rf "$lockdir"
+}

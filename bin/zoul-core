@@ -105,6 +105,16 @@ io_pause()
   read -n1 -s -r -p "${label:0:-1}"
   echo $'\n'
 }
+
+trace_method()
+{
+  local method=$1 param; shift
+  for param in $@; do
+    method="$method $param='${!param}'"
+  done
+  echo "$method" >&2
+}
+
 string_join()   { local d=$1; shift; echo -n "$1"; shift; printf "%s" "${@/#/$d}"; }
 string_indent() { local n=$1; shift; printf "%${n}s%s" '' "$*"; }
 string_sort()
@@ -114,7 +124,8 @@ string_sort()
 }
 array_sort()
 {
-  local array=( ${!1} ) IFS=$'\n'
+  local array=( ${!1} )
+  local IFS=$'\n'
   sort <<<"${array[*]}"
 }
 

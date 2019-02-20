@@ -5,17 +5,17 @@
 [[ -z $ZOUL_GIT_BRANCH_CORE ]]   && . zoul-git-branch-core
 [[ -z $ZOUL_GIT_BRANCH_SELECT ]] && . zoul-git-branch-select
 
-cmdOpts=()
 while [[ "$#" > 0 ]]; do case "$1" in
   --) shift; args+=("$@"); break;;
   -h|--help) zou-help $0; exit 0;;
-  -q|--quiet)         cmdOpts+=($1); quiet=true;;
-  -e|--stop-on-error) cmdOpts+=($1); stopOnError=true;;
-  -a|--all)           cmdOpts+=($1); all=true;;
-  --_startup-dir)     cmdOpts+=($1 $2); startupDir=$(echo $2 | xargs echo); shift;;  # remove single quotes
+  -q|--quiet)         quiet=true;;
+  -e|--stop-on-error) stopOnError=true;;
+  -a|--all)           all=true;;
   -*) echo "unknown option: $1" >&2; exit 1;;
   *) sku=$1;;
 esac; shift; done
+
+# global_variable_names='sku quiet stopOnError all startupDir'
 
 process_error()
 {
@@ -24,47 +24,50 @@ process_error()
 }
 select_submodules()
 {
-  local sku=$1 branch=$2 configFile skuExclude include exclude path mroot=$PWD
+  local branch=$1 configFile skuExclude include exclude path mroot=$PWD
   configFile=$(repo_zouflow_path "$mroot") || return $?
   [[ $all == true ]] && skuExclude=() || skuExclude=( $(config_sku_list_excluded "$branch" "$configFile") )
   # select active submodules which are included in select
   include=( $(config_select_list_included "$branch" "$configFile") )
   for path in $(string_sort $(array_remove_array 'include[@]' 'skuExclude[@]')); do
+  (
     cd "$mroot/$path"
-    git select ${cmdOpts[@]} "$sku" || return $?
+    select_tree "$sku" || return $?
+  ) &
   done
+  wait
   
   cd "$mroot"
   # update active submodules which are excluded from select
   exclude=( $(config_select_list_excluded "$branch" "$configFile") )
   for path in $(string_sort $(array_remove_array 'exclude[@]' 'skuExclude[@]')); do
-    repo_update_submodule "$path"
+    ( repo_update_submodule "$path" ) &
   done
+  wait
+
   # discard inactive submodules
-  local unstaged=( $(repo_list_unstaged_clean_submodules) ) moduleId=$(repo_module_id)
+  local unstaged=( $(repo_list_unstaged_clean_submodules) )
   for path in $(string_sort $(array_intersect_array 'unstaged[@]' 'skuExclude[@]')); do
+  (
     git submodule update --recursive "$path" &>/dev/null
     io_info "Discarded submodule '$path'" "[$moduleId]"
+  ) &
   done
+  wait
 
   repo_commit_submodules || true
 }
 select_tree()
 {
+  # trace_method 'select_tree' "$global_variable_names"
   [[ $quiet == true ]] || echo Entering "'$(path_make_relative '.' "$startupDir")'"
-  local sku=$1 branch
+  local branch moduleId=$(repo_module_id)
   branch=$(branch_select "$sku") || return $?
-  select_submodules "$sku" "$branch" || return $?
+  select_submodules "$branch" || return $?
 }
 
-if [[ -z $startupDir ]]; then
-(
-  startupDir=$PWD
-  cmdOpts+=(--_startup-dir "'$startupDir'") # single quote startup dir option value to avoid shell path expansion on Windows
-  [[ -z $sku ]] && sku=$(branch_current_root_branch)
-  cd "$(repo_module_root)"
-  select_tree $sku || process_error $?
-)
-else
-  select_tree $sku || process_error $?
-fi
+startupDir=$PWD
+[[ -z $sku ]] && sku=$(branch_current_root_branch)
+cd "$(repo_module_root)"
+
+select_tree || process_error $?

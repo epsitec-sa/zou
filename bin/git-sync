@@ -5,21 +5,20 @@
 [[ -z $ZOUL_GIT_BRANCH_CORE ]] && . zoul-git-branch-core
 [[ -z $ZOUL_GIT_BRANCH_SYNC ]] && . zoul-git-branch-sync
 
-forOpts=()
-cmdOpts=()
 while [[ "$#" > 0 ]]; do case "$1" in
   -h|--help) zou-help $0; exit 0;;
   -0|--level0)        level0=true;;
   -s|--sm-only)       smOnly=true;;
-  -q|--quiet)         cmdOpts+=($1); quiet=true;;
-  -e|--stop-on-error) cmdOpts+=($1); stopOnError=true;;
-  -c|--clean)         cmdOpts+=($1); cleanLocalBranches=true;;
-  -a|--all)           cmdOpts+=($1); all=true;;
-  --dev)              cmdOpts+=($1); hint='dev';;
-  --prod)             cmdOpts+=($1); hint='0.0';;
-  --_startup-dir)     cmdOpts+=($1 $2); startupDir=$(echo $2 | xargs echo); shift;;  # remove single quotes
+  -q|--quiet)         quiet=true;;
+  -e|--stop-on-error) stopOnError=true;;
+  -c|--clean)         cleanLocalBranches=true;;
+  -a|--all)           all=true;;
+  --dev)              hint='dev';;
+  --prod)             hint='0.0';;
   -*) echo "unknown option: $1" >&2; exit 1;;
 esac; shift; done
+
+# global_variable_names='level0 smOnly quiet stopOnError cleanLocalBranches all hint startupDir'
 
 process_error()
 {
@@ -42,14 +41,30 @@ sync_submodules()
   configFile=$(repo_zouflow_path "$mroot") || return $?
   [[ $all == true ]] && include=( $(repo_list_submodule_paths) ) || include=( $(config_sku_list_included "$branch" "$configFile") )
   for path in $(array_sort include[@]); do
+  (
     cd "$mroot/$path"
-    git sync ${cmdOpts[@]} || return $?
+    sync_tree || return $?
+  ) &
   done
+  wait
 }
 sync_node()
 {
+  # trace_method 'sync_node' "$global_variable_names"
   [[ $quiet == true ]] || echo Entering "'$(path_make_relative '.' "$startupDir")'"
+  local path moduleId=$(repo_module_id)
+
+  # synchronize all branches
   branch_sync_all "$hint" && clean_local_branches || return $?
+  
+  # discard clean submodules
+  for path in $(string_sort $(repo_list_unstaged_clean_submodules)); do
+  (
+    git submodule update --recursive "$path" &>/dev/null
+    io_info "Discarded submodule '$path'" "[$moduleId]"
+  ) &
+  done
+  wait
 }
 sync_tree()
 {
@@ -60,10 +75,8 @@ sync_tree()
 if [[ $level0 == true && $smOnly == true ]]; then
   io_error "options '--level0' and '--sm-only' are incompatible."
   exit 1
-elif [[ -z $startupDir ]]; then
-(
+else
   startupDir=$PWD
-  cmdOpts+=(--_startup-dir "'$startupDir'") # single quote startup dir option value to avoid shell path expansion on Windows
   cd "$(repo_module_root)"
   if [[ $level0 == true ]]; then
     sync_node || process_error $?
@@ -72,7 +85,4 @@ elif [[ -z $startupDir ]]; then
   else
     sync_tree
   fi
-)
-else
-  sync_tree
 fi
