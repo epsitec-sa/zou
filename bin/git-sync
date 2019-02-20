@@ -56,6 +56,15 @@ sync_node()
 
   # synchronize all branches
   branch_sync_all "$hint" && clean_local_branches || return $?
+  
+  # discard clean submodules
+  for path in $(string_sort $(repo_list_unstaged_clean_submodules)); do
+  (
+    git submodule update --recursive "$path" &>/dev/null
+    io_info "Discarded submodule '$path'" "[$moduleId]"
+  ) &
+  done
+  wait
 }
 sync_tree()
 {
