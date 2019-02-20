@@ -114,6 +114,7 @@ vtag_get_vbranch()
     if [[ -n $(git show-ref refs/heads/$vbranch) ]]; then
         # local vbranch
         echo $vbranch
+        return 0
     else
         # local vbranch not found try remote vbranch
         vbranch=$(git remote)/$vbranch
@@ -122,6 +123,7 @@ vtag_get_vbranch()
         else
           io_warning "vtag_get_vbranch: vtag '$vtag' has no associated vbranch"
         fi
+        return 1
     fi
 }
 vtag_get_vbranch_tail()
@@ -160,10 +162,12 @@ vtag_get_vbranch_tail()
 vtag_get_next_vtag()
 {
   # get 
-  local vtag=$1
-  local vbranch=$2
-  local previous
-  for current in $(vtag_list "$vbranch"); do
+  local vtag=$1 vbranch=$2 previous lbranch
+  [[ -z $vbranch ]] && vbranch=$(vtag_get_vbranch $vtag) 
+  # return 1 if vbranch is a remote branch
+  [ $? -eq 0 ] && lbranch=$vbranch || lbranch=${vbranch#*/} # remove remote prefix
+  # io_debug 'vbranch' 'vtag_get_next_vtag'
+  for current in $(vtag_list "$lbranch"); do
     if [[ $current == $vtag ]]; then
       if [[ -n $previous ]]; then
         # previous should be a descendant of vtag
