@@ -2,7 +2,6 @@
 
 [[ -z $ZOUL_GIT_REPO ]]        && . zoul-git-repo
 [[ -z $ZOUL_GIT_VTAG ]]        && . zoul-git-vtag
-[[ -z $ZOUL_GIT_VBRANCH ]]     && . zoul-git-vbranch
 [[ -z $ZOUL_GIT_BRANCH_CORE ]] && . zoul-git-branch-core
 
 while [[ "$#" > 0 ]]; do case "$1" in
@@ -25,12 +24,11 @@ vtag_status()
   ltag=$(vtag_describe $ref)
   stag=${ltag%-*-g*}
   lsuf=${ltag#$stag}
+  ntag=$(vtag_increment $stag $prerelPrefix)
   if [[ -z $lsuf ]]; then
-    ntag=$(vtag_increment $stag $prerelPrefix)
     io_info "Already published at $stag" "$label"
     io_info "Next version      at $ntag" "$label"
   else
-    ntag=$(vbranch_next_vtag "$ref" "$prerelPrefix")
     io_info "Actual version at $stag" "$label"
     io_info "Next   version at $ntag" "$label"
     delta=${lsuf%-g*}
