@@ -1,19 +1,17 @@
 #!/bin/bash
 
+[[ -z $ZOUL_LOCK ]]            && . zoul-lock
 [[ -z $ZOUL_GIT_VTABLE ]]      && . zoul-git-vtable
 [[ -z $ZOUL_GIT_CONFIG_SKU ]]  && . zoul-git-config-sku
 
-cmdOpts=()
+jobsCount=16
 while [[ "$#" > 0 ]]; do case "$1" in
   -h|--help) zou-help $0; exit 0;;
-  -q|--quiet)      cmdOpts+=($1); quiet=true;;
-  -a|--all)        cmdOpts+=($1); all=true;;
-  --_startup-root) cmdOpts+=($1 $2); startupRoot=$(echo $2 | xargs echo); shift;;  # remove single quotes
-  --_startup-dir)  cmdOpts+=($1 $2); startupDir=$(echo $2 | xargs echo); shift;;  # remove single quotes
+  -q|--quiet) quiet=true;;
+  -a|--all)   all=true;;
+  -j*)        jobsCount=${1#-j};;
   -*) echo "unknown option: $1" >&2; exit 1;;
 esac; shift; done
-
-moduleId=$(repo_module_id)
 
 vtable_submodules()
 {
@@ -21,27 +19,33 @@ vtable_submodules()
   configFile=$(repo_zouflow_path "$mroot") || return $?
   [[ $all == true ]] && include=( $(repo_list_submodule_paths) ) || include=( $(config_sku_list_included "$branch" "$configFile") )
   for path in $(array_sort include[@]); do
-    cd "$mroot/$path"
-    git vtable ${cmdOpts[@]} || return $?
+    (
+      cd "$mroot/$path" || {
+        io_error "cd $mroot+$path" "[$moduleId]"
+        return 1
+      }
+      vtable_tree || return $?
+    ) &
+    if (( $(wc -w <<<$(jobs -p)) % $jobsCount == 0 )); then wait; fi
   done
+  wait
 }
 vtable_tree()
 {
   [[ $quiet == true ]] || echo Entering "'$(path_make_relative '.' "$startupDir")'"
-  ( vtable_submodules )
-  vtable_update "$startupRoot" "$moduleId"
+  local moduleId=$(repo_module_id)
+  vtable_submodules
+  if [[ "$PWD" == "$startupRoot" ]]; then
+    vtable_update "$startupRoot" "$moduleId" "$lookupPath"
+  else
+    lock "$lockDir" 0.1 vtable_update "$startupRoot" "$moduleId" "$lookupPath"
+  fi
 }
 
-if [[ -z $startupDir ]]; then
-(
-  startupDir=$PWD
-  cmdOpts+=(--_startup-dir "'$startupDir'") # single quote startup dir option value to avoid shell path expansion on Windows
-  startupRoot=$(repo_module_root)
-  cmdOpts+=(--_startup-root "'$startupRoot'") # single quote startup dir option value to avoid shell path expansion on Windows
-  cd "$startupRoot"
-  vtable_init "$startupRoot" "$moduleId"
-  vtable_tree
-)
-else
-  vtable_tree
-fi
+startupDir=$PWD
+startupRoot=$(repo_module_root)
+cd "$startupRoot"
+lockDir=$(mktemp -u)
+lookupPath="$(mktemp)"
+vtable_init "$startupRoot" "$lookupPath"
+vtable_tree
