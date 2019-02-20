@@ -1,5 +1,6 @@
 #!/bin/bash
 
+[[ -z $ZOUL_LOCK ]]               && . zoul-lock
 [[ -z $ZOUL_GIT_VTABLE ]]         && . zoul-git-vtable
 [[ -z $ZOUL_GIT_CONFIG_SKU ]]     && . zoul-git-config-sku
 [[ -z $ZOUL_GIT_CONFIG_SELECT ]]  && . zoul-git-config-select
@@ -32,14 +33,14 @@ publish_update_vtable()
 {
   [[ $recursive == true ]] || return 1
   # io_message "publish_update_vtable ${*@Q}" "[$moduleId]" Gray
-  vtable_update "$startupRoot" "$moduleId"
+  lock "$lockDir" 0.1 vtable_update "$startupRoot" "$moduleId" "$lookupPath"
 }
 publish_commit_vtable()
 {
   [[ $recursive == true ]] || return 1
   # io_message "publish_commit_vtable ${*@Q}" "[$moduleId]" Gray
   local branch=$1 vtag=$2 vbranch=$3 ec=0
-  vtable_update "$startupRoot" "$moduleId" || ec=$?
+  vtable_update "$startupRoot" "$moduleId" "$lookupPath" || ec=$?
 
   # synchronize dev == prod
   [[ -n $vbranch ]] && branch_merge $branch $vbranch
@@ -56,10 +57,13 @@ publish_submodules()
   include=( $(config_sku_list_included "$branchOrTag" "$configFile") )
   exclude=( $(config_select_list_excluded "$branchOrTag" "$configFile") )
   for path in $(string_sort $(array_remove_array 'include[@]' 'exclude[@]')); do
+  (
     cd "$mroot/$path"
     moduleId=$(repo_module_id)
     publish_tree || return $?
+  ) &
   done
+  wait
   # io_warning "<<<< publish_submodules" "[$moduleId]"
 }
 publish_select_nearest_tag()

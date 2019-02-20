@@ -41,9 +41,12 @@ sync_submodules()
   configFile=$(repo_zouflow_path "$mroot") || return $?
   [[ $all == true ]] && include=( $(repo_list_submodule_paths) ) || include=( $(config_sku_list_included "$branch" "$configFile") )
   for path in $(array_sort include[@]); do
+  (
     cd "$mroot/$path"
     sync_tree || return $?
+  ) &
   done
+  wait
 }
 sync_node()
 {

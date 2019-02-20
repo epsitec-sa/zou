@@ -30,22 +30,30 @@ select_submodules()
   # select active submodules which are included in select
   include=( $(config_select_list_included "$branch" "$configFile") )
   for path in $(string_sort $(array_remove_array 'include[@]' 'skuExclude[@]')); do
+  (
     cd "$mroot/$path"
     select_tree "$sku" || return $?
+  ) &
   done
+  wait
   
   cd "$mroot"
   # update active submodules which are excluded from select
   exclude=( $(config_select_list_excluded "$branch" "$configFile") )
   for path in $(string_sort $(array_remove_array 'exclude[@]' 'skuExclude[@]')); do
-    repo_update_submodule "$path"
+    ( repo_update_submodule "$path" ) &
   done
+  wait
+
   # discard inactive submodules
   local unstaged=( $(repo_list_unstaged_clean_submodules) )
   for path in $(string_sort $(array_intersect_array 'unstaged[@]' 'skuExclude[@]')); do
+  (
     git submodule update --recursive "$path" &>/dev/null
     io_info "Discarded submodule '$path'" "[$moduleId]"
+  ) &
   done
+  wait
 
   repo_commit_submodules || true
 }
