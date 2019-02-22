@@ -82,14 +82,14 @@ sync_tree()
 if [[ $level0 == true && $smOnly == true ]]; then
   io_error "options '--level0' and '--sm-only' are incompatible."
   exit 1
+fi
+
+startupDir=$PWD
+cd "$(repo_module_root)"
+if [[ $level0 == true ]]; then
+  sync_node || process_error $?
+elif [[ $smOnly == true ]]; then
+  sync_submodules || process_error $?
 else
-  startupDir=$PWD
-  cd "$(repo_module_root)"
-  if [[ $level0 == true ]]; then
-    sync_node || process_error $?
-  elif [[ $smOnly == true ]]; then
-    sync_submodules || process_error $?
-  else
-    sync_tree
-  fi
+  sync_tree
 fi

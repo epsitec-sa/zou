@@ -6,11 +6,12 @@
 
 while [[ "$#" > 0 ]]; do case "$1" in
   -h|--help) zou-help $0; exit 0;;
-  --alpha) prerelPrefix='alpha';;
-  --beta)  prerelPrefix='beta';;
-  --rc)    prerelPrefix='rc';;
-  --rtm)   prerelPrefix='rtm';;
-  --debug) debug=true;;
+  -q|--quiet) quiet=true;;
+  --alpha)    prerelPrefix='alpha';;
+  --beta)     prerelPrefix='beta';;
+  --rc)       prerelPrefix='rc';;
+  --rtm)      prerelPrefix='rtm';;
+  --debug)    debug=true;;
   -*) echo "unknown option: $1" >&2; exit 1;;
   *) ref=$1;;
 esac; shift; done
@@ -22,23 +23,31 @@ vtag_status()
   local ltag stag ntag lsuf delta label
   label="[$(repo_module_id)] ($ref)"
   ltag=$(vtag_describe $ref)
+  if [[ -z $ltag ]]; then
+    io_error "Version tag not found" "$label"
+    return 1
+  fi
   stag=${ltag%-*-g*}
   lsuf=${ltag#$stag}
-  ntag=$(vtag_increment $stag $prerelPrefix)
+  ntag=$(vtag_increment "$stag" "$prerelPrefix" "$label")
   if [[ -z $lsuf ]]; then
     io_info "Already published at $stag" "$label"
-    io_info "Next version      at $ntag" "$label"
+    [[ -z $quiet ]] && io_info "Next version      at $ntag" "$label"
   else
-    io_info "Actual version at $stag" "$label"
-    io_info "Next   version at $ntag" "$label"
+    [[ -z $quiet ]] && {
+      io_info "Actual version at $stag" "$label"
+      io_info "Next   version at $ntag" "$label"
+    }
     delta=${lsuf%-g*}
     delta=${delta#-}
     io_warning "'$ref' is $delta commits ahead of $stag" "$label"
   fi
+  return 0
 }
 
 if branch_exists "$ref"; then
   vtag_status
 else
   io_error "Branch '$ref' does not exist" "[$(repo_module_id)]"
+  exit 1
 fi

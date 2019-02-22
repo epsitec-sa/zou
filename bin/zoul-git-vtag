@@ -272,6 +272,7 @@ vtag_increment()
 {
   local vtag=$1
   local prerel_prefix=$2
+  local label=$3
   local prerel_default rtm result
   [[ $prerel_prefix == 'rtm' ]] && { unset prerel_prefix; rtm=true; }
   [[ -n $prerel_prefix ]] && prerel_default=-${prerel_prefix}1
@@ -324,7 +325,7 @@ vtag_increment()
     fi
   fi
   if [[ -z $result ]]; then
-    io_error "vtag_increment: wrong vtag format: $vtag"
+    io_error "vtag_increment: wrong vtag format: $vtag" "${label:-error}"
   else
     echo $result
   fi
