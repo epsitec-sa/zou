@@ -1,0 +1,100 @@
+#!/bin/bash
+
+# Use the following statement to include current lib only once
+#   [[ -z $ZOUL_PROCESS ]] && . zoul-process
+ZOUL_PROCESS=true
+
+# References:
+# https://stackoverflow.com/questions/356100/how-to-wait-in-bash-for-several-subprocesses-to-finish-and-return-exit-code-0
+# https://superuser.com/questions/763755/how-to-get-list-of-process-ids-that-are-in-a-given-group-id
+# https://coderwall.com/p/q-ovnw/killing-all-child-processes-in-a-shell-script
+# https://stackoverflow.com/questions/5789642/how-to-send-controlc-from-a-bash-script
+
+[[ -z $ZOUL_CORE ]] && . zoul-core
+
+lps()
+{
+  if [[ $(uname) == Linux ]]; then
+    ps -xo pid,ppid,pgid,comm >&2
+  else
+    ps -a >&2
+  fi
+}
+process_get_group_id()
+{
+  local pid=$1
+  [[ -z $pid ]] && pid=$BASHPID
+  if [[ $(uname) == Linux ]]; then
+    ps -o pgid= "$pid" | grep -o '[0-9]*'
+  else
+    ps -a | grep -E "^[[:space:]]*$pid" | sed s/^[[:space:]]*// | tr -s ' ' | cut -d ' ' -f3
+  fi
+}
+process_get_parent_id()
+{
+  # echo "[$BASHPID] process_get_parent_id of ${*@Q}" >&2
+  local pid=$1 ppid
+  [[ -z $pid ]] && pid=$BASHPID
+  if [[ $(uname) == Linux ]]; then
+    ppid=$(ps -o ppid= "$pid" | grep -o '[0-9]*')
+  else
+    ppid=$(ps -a | grep -E "^[[:space:]]*$pid" | sed s/^[[:space:]]*// | tr -s ' ' | cut -d ' ' -f2)
+  fi
+  # echo "PPID of '$pid' = '$ppid'" >&2
+  # echo $ppid
+}
+process_list_group()
+{
+  if [[ $(uname) == Linux ]]; then
+    pgrep -g "$1" 2>/dev/null
+  else
+    ps -a 2>/dev/null | sed s/^[[:space:]]*// | tr -s ' ' | cut -d ' ' -f1,3 | grep "$1" | cut -d ' ' -f1
+  fi
+}
+process_list_group_for_kill ()
+{
+  # echo "[$bashPid] process_list_tree of ${*@Q}" >&2
+  local rootPid=$1 pids exclude bashPid=$BASHPID
+  # emit given and current pids last
+  # lps
+  pids=( $(process_list_group "$rootPid") )
+  exclude=( "${@:2}" "$bashPid" )
+  array_remove_array 'pids[@]' 'exclude[@]'
+  printf '%s\n' "${exclude[@]}"
+}
+process_kill_group_descendants()
+{
+  local rootPid=$1 pid pids bashPid=$BASHPID
+  echo "[$bashPid] process_kill_group_descendants of ${*@Q}" >&2
+  
+  pids=( $(process_list_group_for_kill "$rootPid" "$bashPid") )
+  
+  # echo "[$bashPid] killing ${pids[@]}" >&2
+  kill -- "${pids[@]}" &>/dev/null
+}
+process_kill_group()
+{
+  local rootPid=$1 pid pids bashPid=$BASHPID
+  # echo "[$bashPid] process_kill_group of ${*@Q}" >&2
+
+  pids=( $(process_list_group_for_kill "$rootPid" "$bashPid" | grep -v '^1$') )
+
+  # echo "[$bashPid] killing ${pids[@]}" >&2
+  kill -- "${pids[@]}" &>/dev/null
+}
+process_wait()
+{
+  local pid=$1 ec=0
+  wait $pid &>/dev/null || ec=$?
+  # echo "[$BASHPID] process_wait $pid: ec=$ec" >&2
+  # skip already terminated process
+  [ $ec -eq 127 ] && return 0
+  return $ec
+}
+process_wait_many()
+{
+  # echo "[$BASHPID] process_wait_many ${*@Q}" >&2
+  local ec=0
+  wait "$@" &>/dev/null || ec=$?
+  echo "[$BASHPID] process_wait_many ec=$ec" >&2
+}
