@@ -35,7 +35,9 @@ select_submodules()
   [[ $all == true ]] && skuExclude=() || skuExclude=( $(config_sku_list_excluded "$branch" "$configFile") )
   # select active submodules which are included in select
   include=( $(config_select_list_included "$branch" "$configFile") )
-  for path in $(string_sort $(array_remove_array 'include[@]' 'skuExclude[@]')); do
+  include=$(array_remove_array 'include[@]' 'skuExclude[@]')
+  [[ -z $include ]] && return 0
+  for path in $(string_sort $include); do
     (
       cd "$mroot/$path" &>/dev/null || {
         io_error "cd $mroot+$path" "[$moduleId]"
@@ -48,24 +50,31 @@ select_submodules()
   wait
   
   cd "$mroot"
+  
   # update active submodules which are excluded from select
   exclude=( $(config_select_list_excluded "$branch" "$configFile") )
-  for path in $(string_sort $(array_remove_array 'exclude[@]' 'skuExclude[@]')); do
-    ( repo_update_submodule "$path" ) &
-    if (( $(wc -w <<<$(jobs -p)) % $jobsCount == 0 )); then wait; fi
-  done
-  wait
+  exclude=$(array_remove_array 'exclude[@]' 'skuExclude[@]')
+  if [[ -n $exclude ]]; then
+    for path in $(string_sort $exclude); do
+      ( repo_update_submodule "$path" ) &
+      if (( $(wc -w <<<$(jobs -p)) % $jobsCount == 0 )); then wait; fi
+    done
+    wait
+  fi
 
   # discard inactive submodules
   local unstaged=( $(repo_list_unstaged_clean_submodules) )
-  for path in $(string_sort $(array_intersect_array 'unstaged[@]' 'skuExclude[@]')); do
-    (
-      git submodule update --recursive "$path" &>/dev/null
-      io_info "Discarded submodule '$path'" "[$moduleId]"
-    ) &
-    if (( $(wc -w <<<$(jobs -p)) % $jobsCount == 0 )); then wait; fi
-  done
-  wait
+  unstaged=$(array_intersect_array 'unstaged[@]' 'skuExclude[@]')
+  if [[ -n $unstaged ]]; then
+    for path in $(string_sort $unstaged); do
+      (
+        git submodule update --recursive "$path" &>/dev/null
+        io_info "Discarded submodule '$path'" "[$moduleId]"
+      ) &
+      if (( $(wc -w <<<$(jobs -p)) % $jobsCount == 0 )); then wait; fi
+    done
+    wait
+  fi
 
   repo_commit_submodules || true
 }

@@ -41,8 +41,9 @@ sync_submodules()
   local branch configFile include path mroot=$PWD
   branch=$(branch_current)
   configFile=$(repo_zouflow_path "$mroot") || return $?
-  [[ $all == true ]] && include=( $(repo_list_submodule_paths) ) || include=( $(config_sku_list_included "$branch" "$configFile") )
-  for path in $(array_sort include[@]); do
+  [[ $all == true ]] && include=$(repo_list_submodule_paths) || include=$(config_sku_list_included "$branch" "$configFile")
+  [[ -z $include ]] && return 0
+  for path in $(string_sort $include); do
     (
       cd "$mroot/$path" || {
         io_error "cd $mroot+$path" "[$moduleId]"

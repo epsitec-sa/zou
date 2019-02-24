@@ -58,7 +58,9 @@ publish_submodules()
   configFile=$(repo_zouflow_path "$mroot") || return $?
   include=( $(config_sku_list_included "$branchOrTag" "$configFile") )
   exclude=( $(config_select_list_excluded "$branchOrTag" "$configFile") )
-  for path in $(string_sort $(array_remove_array 'include[@]' 'exclude[@]')); do
+  include=$(array_remove_array 'include[@]' 'exclude[@]')
+  [[ -z $include ]] && return 0
+  for path in $(string_sort $include); do
     (
       cd "$mroot/$path" || {
         io_error "cd $mroot+$path" "[$moduleId]"
