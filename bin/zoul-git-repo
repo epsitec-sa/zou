@@ -286,7 +286,7 @@ repo_list_dangling_submodules()
   [[ -z $mroot ]] && { mroot=$(repo_module_root) || return 1; }
   cd "$mroot"
   for path in $(git ls-files --exclude-standard --others); do
-    [[ -d $path ]] && repo_is_module_root "$path" && echo $path
+    [[ -d $path ]] && repo_is_module_root "$path" && echo "$path"
   done
   cd "$opwd"
 }
@@ -315,21 +315,41 @@ repo_commit_ancestor_submodules()
 }
 repo_remove_dangling_submodule()
 {
-  local path=$1 smid=${1%/}
+  local mroot=$1 smpath=$2 smid=${2%/}
+  # echo "git submodule deinit $smid + git rm --cached $smid"
   git submodule deinit $smid 2>/dev/null && git rm --cached $smid 2>/dev/null
-  rm -rf $path
+  rm -rf "$mroot/$smpath"
 }
-repo_remove_dangling_submodules()
+repo_remove_dangling_submodules_async()
 {
-  local mroot=$1 smid opwd=$PWD
+  local mroot=$1 smpath smpaths moduleId opwd=$PWD
   [[ -z $mroot ]] && { mroot=$(repo_module_root) || return 1; }
-  cd "$mroot"
-  for smid in $(repo_list_dangling_submodules); do
-    repo_remove_dangling_submodule $smid
-  done
-  cd "$opwd"
+  [[ -z $moduleId ]] && { moduleId=$(repo_module_id) || return 1; }
+  smpaths=$(string_sort $(repo_list_dangling_submodules "$mroot")) || return $?
+  if [[ -n "$smpaths" ]]; then
+    for smpath in $smpaths; do
+      (
+        repo_remove_dangling_submodule "$mroot" "$smpath"
+        io_warning "Removed dangling submodule '${smpath%/}'" "[$moduleId]"
+      ) &
+    done
+    wait
+  fi
 }
-
+repo_discard_clean_submodules_async()
+{
+  local smpath smpaths
+  smpaths=$(string_sort $(repo_list_unstaged_clean_submodules)) || return 1
+  if [[ -n $smpaths ]]; then
+    for smpath in $smpaths; do
+      (
+        git submodule update --recursive "$smpath" &>/dev/null
+        io_warning "Discarded submodule '$smpath'" "[$moduleId]"
+      ) &
+    done
+    wait
+  fi
+}
 repo_update_submodules()
 {
   local moduleId recursive

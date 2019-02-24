@@ -11,10 +11,7 @@ esac; shift; done
 repo_require_clean_work_tree 'cannot clean' || exit 1
 [[ $cleanSubmodules == true ]] && {
   moduleId=$(repo_module_id)
-  for sm in $(repo_list_dangling_submodules); do
-    io_info "Removing '${sm%/}' dangling submodule..." "[$moduleId]"
-    repo_remove_dangling_submodule $sm
-  done
+  repo_remove_dangling_submodules_async
   exit $?
 }
 
