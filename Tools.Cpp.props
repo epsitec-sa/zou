@@ -1,10 +1,20 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003"
          InitialTargets="ToolsCppTrace">
-
-  <PropertyGroup Label="VisualStudio">
+  <PropertyGroup>
+    <EnableVS2019Preview Condition="'$(EnableVS2019Preview)' == ''">false</EnableVS2019Preview>
+  </PropertyGroup>
+  
+  <PropertyGroup Label="VisualStudio" Condition="'$(EnableVS2019Preview)' == 'true'">
     <VS2019PreviewDir1>C:\Program Files (x86)\Microsoft Visual Studio\2019\Preview</VS2019PreviewDir1>
     <VS2019PreviewDir2>D:\Program Files (x86)\Microsoft Visual Studio\2019\Preview</VS2019PreviewDir2>
+    <VS160RootDir Condition="'$(VS160RootDir)' == '' And Exists('$(VS2019PreviewDir1)')">$(VS2019PreviewDir1)</VS160RootDir>
+    <VS160RootDir Condition="'$(VS160RootDir)' == '' And Exists('$(VS2019PreviewDir2)')">$(VS2019PreviewDir2)</VS160RootDir>
+    <VS160ToolsDir Condition="'$(VS160COMNTOOLS)' != ''">$(VS160COMNTOOLS)</VS160ToolsDir>
+    <VS160ToolsDir Condition="'$(VS160ToolsDir)' == '' And '$(VS160RootDir)' != ''">$(VS160RootDir)Common7\Tools\</VS160ToolsDir>
+  </PropertyGroup>
+  
+  <PropertyGroup Label="VisualStudio">
     <!-- VS Root Dir -->
     <VS120RootDir Condition="'$(VS120RootDir)' == ''">$([MSBuild]::GetRegistryValue('HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Microsoft\VisualStudio\12.0', 'ShellFolder'))</VS120RootDir>
     <VS120RootDir Condition="'$(VS120RootDir)' == ''">$([MSBuild]::GetRegistryValue('HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\VisualStudio\12.0', 'ShellFolder'))</VS120RootDir>
@@ -12,8 +22,6 @@
     <VS140RootDir Condition="'$(VS140RootDir)' == ''">$([MSBuild]::GetRegistryValue('HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\VisualStudio\14.0', 'ShellFolder'))</VS140RootDir>
     <VS150RootDir Condition="'$(VS150RootDir)' == ''">$([MSBuild]::GetRegistryValue('HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\VisualStudio\SxS\VS7', '15.0'))</VS150RootDir>
     <VS150RootDir Condition="'$(VS150RootDir)' == ''">$([MSBuild]::GetRegistryValue('HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\VisualStudio\SxS\VS7', '15.0'))</VS150RootDir>
-    <VS160RootDir Condition="'$(VS160RootDir)' == '' And Exists('$(VS2019PreviewDir1)')">$(VS2019PreviewDir1)</VS160RootDir>
-    <VS160RootDir Condition="'$(VS160RootDir)' == '' And Exists('$(VS2019PreviewDir2)')">$(VS2019PreviewDir2)</VS160RootDir>
     <VSRootDir Condition="'$(VSRootDir)' == ''">$(VS160RootDir)</VSRootDir>
     <VSRootDir Condition="'$(VSRootDir)' == ''">$(VS150RootDir)</VSRootDir>
     <VSRootDir Condition="'$(VSRootDir)' == ''">$(VS140RootDir)</VSRootDir>
@@ -34,8 +42,6 @@
     <VS140ToolsDir Condition="'$(VS140ToolsDir)' == ''">$([MSBuild]::GetRegistryValue('HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\VisualStudio\14.0', 'InstallDir'))</VS140ToolsDir>
     <VS150ToolsDir Condition="'$(VS150COMNTOOLS)' != ''">$(VS150COMNTOOLS)</VS150ToolsDir>
     <VS150ToolsDir Condition="'$(VS150ToolsDir)' == ''">$(VS150RootDir)Common7\Tools\</VS150ToolsDir>
-    <VS160ToolsDir Condition="'$(VS160COMNTOOLS)' != ''">$(VS160COMNTOOLS)</VS160ToolsDir>
-    <VS160ToolsDir Condition="'$(VS160ToolsDir)' == '' And '$(VS160RootDir)' != ''">$(VS160RootDir)Common7\Tools\</VS160ToolsDir>
     <VSToolsDir Condition="'$(VSToolsDir)' == ''">$(VS160ToolsDir)</VSToolsDir>
     <VSToolsDir Condition="'$(VSToolsDir)' == ''">$(VS150ToolsDir)</VSToolsDir>
     <VSToolsDir Condition="'$(VSToolsDir)' == ''">$(VS140ToolsDir)</VSToolsDir>
