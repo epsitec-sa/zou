@@ -2,6 +2,7 @@
 
 [[ -z $ZOUL_LOCK ]]               && . zoul-lock
 [[ -z $ZOUL_PROCESS ]]            && . zoul-process
+[[ -z $ZOUL_GIT_REPO ]]           && . zoul-git-repo
 [[ -z $ZOUL_GIT_CONFIG_SKU ]]     && . zoul-git-config-sku
 [[ -z $ZOUL_GIT_CONFIG_SELECT ]]  && . zoul-git-config-select
 [[ -z $ZOUL_GIT_CONFIG_PUBLISH ]] && . zoul-git-config-publish
@@ -16,13 +17,13 @@ while [[ "$#" > 0 ]]; do case "$1" in
   -s|--sm-only)       smOnly=true;;
   -a|--all)           noSkuFilter=true;;
   -p|--deep)          noSelectFilter=true;;
-  -l|--root-last)     rootLast=true;;
+  -b|--bottom-up)     bottomUp=true;;
   -j*) jobsCount=${1#-j};;
   -*) echo "unknown option: $1" >&2; exit 1;;
   *) args+=("$1");;
 esac; shift; done
 
-# global_variable_names='quiet stopOnError smOnly noSkuFilter noSelectFilter rootLast startupRoot startupDir moduleId'
+# global_variable_names='quiet stopOnError smOnly noSkuFilter noSelectFilter bottomUp startupRoot startupDir moduleId'
 process_error()
 {
   [[ $stopOnError == true ]] && process_kill_group $$ || exit $1
@@ -71,7 +72,7 @@ for_tree()
   local branch=$1 moduleId=$(repo_module_id) path ec=0
   path=$moduleId
 
-  if [[ $rootLast != true ]]; then
+  if [[ $bottomUp != true ]]; then
     eval "$zou_command" || ec=$?
     [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
   fi
@@ -79,7 +80,7 @@ for_tree()
   for_submodules "$branch" || ec=$?
   [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
 
-  if [[ $rootLast == true ]]; then
+  if [[ $bottomUp == true ]]; then
     eval "$zou_command" || ec=$?
     [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
   fi
