@@ -9,29 +9,32 @@ ZOUL_GIT_BRANCH_SYNC=true
 [[ -z $ZOUL_GIT_REPO ]]         && . zoul-git-repo
 [[ -z $ZOUL_GIT_BRANCH_MERGE ]] && . zoul-git-branch-merge
 
-branch_push()
+_branch_sync_push()
 {
   # l > r -- move r
   local r=$1 l=$2
   git push --follow-tags ${r%%/*} $l &>/dev/null
 }
-branch_sync()
+_branch_sync_merge()
 {
-  branch_merge "$@" && branch_push "$@"
+  branch_merge "$@"
 }
-branch_sync_visitor()
+_branch_sync_sync()
+{
+  _branch_sync_merge "$@" && _branch_sync_push "$@"
+}
+_branch_sync_visitor()
 {
   local r=$1 l=$2 i=$3 hint=$4
   case $i in
-    '>')  branch_push  $r $l || return 1;; # l > r ahead   -- move r
-    '<')  branch_merge $r $l || return 1;; # l < r behind  -- move l
-    '<>') branch_sync  $r $l || return 1;; # ahead and behind
+    '>')  _branch_sync_push  $r $l || return 1;; # l > r ahead   -- move r
+    '<')  _branch_sync_merge $r $l || return 1;; # l < r behind  -- move l
+    '<>') _branch_sync_sync  $r $l || return 1;; # ahead and behind
   esac
-  branch_try_attach 'HEAD' "$hint" >/dev/null || true
 }
-branch_visit_sync_info() 
+_branch_sync_visit() 
 {
-  local hint=$1 visitor=$2 moduleId=$(repo_module_id)
+  local visitor=$1 hint=$2; shift 2
   while read l r i; do
     $visitor $r $l $i $hint || return 1
     case $i in
@@ -70,18 +73,19 @@ branch_visit_sync_info()
       io_message >&2 "  Or clean local tracked branches with:" ''
       io_message >&2 "    git sync --clean" '' Gray
     fi
-  done < <(branch_sync_info)
+  done < <(branch_sync_info "$@")
   return 0
 }
 branch_sync_all()
 {
-  local hint=$1 moduleId=$(repo_module_id)
+  local hint=$1; shift 1
+  local moduleId=$(repo_module_id)
 
   git fetch --prune --all &>/dev/null
   git fetch --tags --force &>/dev/null
   repo_require_clean_work_tree "[$moduleId]" || return 1
 
-  # repo_commit_submodules
-  # repo_update_submodules $moduleId
-  branch_visit_sync_info "$hint" branch_sync_visitor
+  _branch_sync_visit _branch_sync_visitor "$hint" "$@"
+  repo_discard_clean_submodules_async
+  branch_try_attach 'HEAD' "$hint" >/dev/null || true
 }

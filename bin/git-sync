@@ -62,17 +62,8 @@ sync_node()
   # trace_method 'sync_node' moduleId "$global_variable_names"
 
   # synchronize all branches
+  io_info "Synchronizing..." "[$moduleId]"
   branch_sync_all "$hint" && clean_local_branches || return $?
-  
-  # discard clean submodules
-  for path in $(string_sort $(repo_list_unstaged_clean_submodules)); do
-    (
-      git submodule update --recursive "$path" &>/dev/null
-      io_warning "Discarded submodule '$path'" "[$moduleId]"
-    ) &
-    if (( $(wc -w <<<$(jobs -p)) % $jobsCount == 0 )); then wait; fi
-  done
-  wait
 }
 sync_tree()
 {
