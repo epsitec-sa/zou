@@ -1,18 +1,30 @@
 #!/bin/bash
 
+enumerator='repo_list_unstaged_clean_submodules'
 forOpts=()
 while [[ "$#" > 0 ]]; do case "$1" in
   --) shift; args+=("$@"); break;;
   -h|--help) zou-help $0; exit 0;;
-  -q|--quiet)         forOpts+=($1);;
-  -e|--stop-on-error) forOpts+=($1);;
-  -a|--all)           forOpts+=($1);;
-  -p|--deep)          forOpts+=($1);;
-  -j*)                forOpts+=($1);;
-  -*) echo "unknown option: $1" >&2; exit 1;;
+  -f|--force) enumerator='repo_list_unstaged_submodules';;
+  -*) forOpts+=($1);;
 esac; shift; done
 
-. git-for --bottom-up "${forOpts[@]}" 'repo_commit_submodules || true'
+cosm_node()
+{
+  repo_commit_submodule_enumerator "$enumerator"
 
-repo_commit_ancestor_submodules
+  if [[ $enumerator =~ '_clean' ]]; then
+    local unstaged=( $(repo_list_unstaged_submodules) )
+    if [ ${#unstaged[@]} -ne 0 ]; then
+      if [ ${#unstaged[@]} -eq 1 ]; then
+        io_message "Submodule '${unstaged[0]}' is dirty and has not been commited." "[$moduleId]" Purple
+      else
+        io_message "Submodules '$(string_join ', ' ${unstaged[@]})' are dirty and have not been commited." "[$moduleId]" Purple
+      fi
+      io_message "  use 'git cosm -f' to force a commit." "[$moduleId]" Purple
+    fi
+  fi
+}
+
+. git-for --bottom-up --ancestors "${forOpts[@]}" -- 'cosm_node'
   
