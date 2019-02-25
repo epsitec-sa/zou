@@ -18,6 +18,7 @@ while [[ "$#" > 0 ]]; do case "$1" in
   -a|--all)           noSkuFilter=true;;
   -p|--deep)          noSelectFilter=true;;
   -b|--bottom-up)     bottomUp=true;;
+  -t|--ancestors)     ancestors=true;;
   -j*) jobsCount=${1#-j};;
   -*) echo "unknown option: $1" >&2; exit 1;;
   *) args+=("$1");;
@@ -96,4 +97,14 @@ if [[ $smOnly == true ]]; then
   for_submodules $(branch_current)
 else
   for_tree $(branch_current)
+fi
+
+if [[ $ancestors == true ]]; then
+  for path in $(repo_ancestor_roots "$startupRoot"); do
+    (
+      cd "$path"
+      [[ $quiet == true ]] || echo Entering "'$(path_make_relative '.' "$startupDir")'"
+      eval "$zou_command" || ec=$?
+    )
+  done
 fi
