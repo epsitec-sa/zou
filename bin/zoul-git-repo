@@ -94,6 +94,14 @@ repo_module_root()
   done
   return 1
 }
+repo_module_parent()
+{
+  local mroot
+  mroot=$(repo_module_root) || return $?
+  if ! repo_is_bundle_root "$mroot"; then
+    repo_module_root "$mroot/.."
+  fi
+}
 repo_module_level()
 {
   local dir level=0
@@ -151,14 +159,19 @@ repo_module_and_bundle_roots()
   done
   return 1
 }
+repo_ancestor_roots()
+{
+  local mparent
+  mparent=$(repo_module_parent "$1") || return $?
+  repo_module_and_ancestor_roots "$mparent"
+}
 repo_module_and_ancestor_roots()
 {
   local dir=$(realpath ${1:-.})
   while [[ -n "$dir" ]]; do
     if [[ -f "$dir/.git" ]]; then
       echo "$dir"
-    fi
-    if [[ -d "$dir/.git" ]]; then
+    elif [[ -d "$dir/.git" ]]; then
       echo "$dir"
       return 0
     fi
