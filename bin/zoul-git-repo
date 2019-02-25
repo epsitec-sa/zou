@@ -259,6 +259,7 @@ repo_list_unstaged_submodules()
   [[ -z $mroot ]] && { mroot=$(repo_module_root) || return 1; }
   for smid in $(git diff-files --name-only -r); do
     smpath=$(repo_submodule_path "$smid" "$mroot")
+    [[ -z $smpath ]] && continue
     if repo_is_module_root "$mroot/$smpath"; then
       echo $smid
     fi
@@ -270,6 +271,7 @@ repo_list_unstaged_clean_submodules()
   [[ -z $mroot ]] && { mroot=$(repo_module_root) || return 1; }
   for smid in $(git diff-files --name-only -r); do
     smpath=$(repo_submodule_path "$smid" "$mroot")
+    [[ -z $smpath ]] && continue
     smroot="$mroot/$smpath"
     if repo_is_module_root "$smroot"; then
       cd "$smroot"
@@ -303,19 +305,24 @@ repo_list_dangling_submodules()
   done
   cd "$opwd"
 }
-repo_commit_clean_submodules()    { _repo_commit_submodules_core "$1" 'repo_list_unstaged_clean_submodules'; }
-repo_commit_unstaged_submodules() { _repo_commit_submodules_core "$1" 'repo_list_unstaged_submodules'; }
-_repo_commit_submodules_core()
+repo_commit_clean_submodules() { repo_commit_submodule_enumerator 'repo_list_unstaged_clean_submodules' "$1"; }
+repo_commit_all_submodules()   { repo_commit_submodule_enumerator 'repo_list_unstaged_submodules' "$1"; }
+repo_commit_submodule_enumerator()
 {
-  local mroot=$1 enumerator=$2 submodules opwd=$PWD
+  local enumerator=$1 mroot=$2 submodules
+  submodules=$($enumerator "$mroot") || return 1
+  repo_commit_submodules "$mroot" $submodules
+}
+repo_commit_submodules()
+{
+  # echo repo_commit_submodules "${*@Q}" >&2
+  local mroot=$1; shift
+  [ $# -eq 0 ] && return 1
   [[ -z $mroot ]] && { mroot=$(repo_module_root) || return 1; }
 
-  submodules=$($enumerator "$mroot")
-  [[ -z $submodules ]] && return 1
-  local cslist=$(string_join ', ' $submodules)
-
+  local opwd=$PWD cslist=$(string_join ', ' "$@")
   cd "$mroot"
-  git commit -m "zou-flow: update submodules '$cslist'" -- $submodules >/dev/null
+  git commit -m "zou-flow: update submodules '$cslist'" -- "$@" >/dev/null
   io_warning "Commited submodules '$cslist'" "[$(repo_module_id)]"
   cd "$opwd"
 }
