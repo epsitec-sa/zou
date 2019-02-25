@@ -290,7 +290,7 @@ repo_list_dangling_submodules()
   done
   cd "$opwd"
 }
-repo_commit_submodules()
+repo_commit_clean_submodules()
 {
   local mroot=$1 unstaged opwd=$PWD
   [[ -z $mroot ]] && { mroot=$(repo_module_root) || return 1; }
@@ -304,12 +304,12 @@ repo_commit_submodules()
   io_warning "Commited submodules '$cslist'" "[$(repo_module_id)]"
   cd "$opwd"
 }
-repo_commit_ancestor_submodules()
+repo_commit_clean_ancestor_submodules()
 {
   local mroot opwd=$PWD
   for mroot in $(repo_module_and_ancestor_roots "$@"); do
     cd "$mroot"
-    repo_commit_submodules "$mroot"
+    repo_commit_clean_submodules "$mroot"
   done
   cd "$opwd"
 }

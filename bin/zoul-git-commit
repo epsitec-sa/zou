@@ -34,7 +34,7 @@ commit_sync_submodules()
     if [[ ${a[$k]} != ${b[$k]} ]]; then
       io_info "Synchronized '$1' with '$2'" "[$(repo_module_id)]"
       git checkout "$2" &>/dev/null
-      repo_commit_submodules
+      repo_commit_clean_submodules
       git checkout - &>/dev/null
       return 0
     fi
