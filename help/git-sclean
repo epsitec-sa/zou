@@ -1,8 +1,11 @@
-git sclean [<options>] - Clean current repo and submodules
+git sclean [<options>] - Clean untracked and ignored files recursively
 
     -h|--help               display help
-    -sm                     clean dangling submodules
+    -f|--force              clean even if work dir is dirty
+    -d|--dsm-only           delete dangling submodules only
+    <git-for options>       options for 'git for' when --recursive is specified
     
 example:
-    git sclean              # delete ignored files
-    git sclean --sm         # clean dangling submodules
+    git sclean             # delete ignored files (stop if repo dirty)
+    git sclean -f          # delete ignored files and dangling submodules
+    git sclean -d          # clean dangling submodules only
