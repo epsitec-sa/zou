@@ -247,6 +247,12 @@ repo_list_submodule_paths_unsafe()
   fi
   echo $paths
 }
+repo_has_submodules()
+{
+  local mroot=$1
+  [[ -z $mroot ]] && { mroot=$(repo_module_root) || return 1; }
+  git config --file "$mroot/.gitmodules" --get-regexp '^submodule\..*\.path$' &>/dev/null
+}
 repo_list_submodule_paths()
 {
   local mroot
