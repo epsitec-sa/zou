@@ -5,6 +5,19 @@
 
 # Use '. zoul' to (re)load zoul-* libraries
 
+while [[ "$#" > 0 ]]; do case "$1" in
+  -h|--help)
+    echo "zoul [<options>] - Load zou libraries.
+
+      -h|--help            display help
+      -z|--zou-vars        display zou variables
+      --debug              display debug info"
+    exit 0;;
+  -z|--zou-vars) showZouVars=true;;
+  --debug)       debug=true;;
+  -*) echo "unknown option: $1" >&2; exit 1;;
+esac; shift; done
+
 unset ZOUL_CORE
 unset ZOUL_LOCK
 unset ZOUL_CONFIG
@@ -46,3 +59,9 @@ unset ZOUL_GIT_BRANCH_PUBLISH
 . zoul-git-branch-sync
 . zoul-git-branch-select
 . zoul-git-branch-publish
+
+if [[ $showZouVars == true ]]; then
+  for zouVar in $(compgen -v | grep -Ei '^(zou|io)_'); do
+    declare -p $zouVar
+  done
+fi
