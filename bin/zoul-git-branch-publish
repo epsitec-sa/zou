@@ -33,7 +33,7 @@ branch_publish()
   
   if [[ -z $branch ]]; then
     branch=$(branch_current)
-  elif [[ $(git rev-parse $branch) != $(git rev-parse HEAD) ]]; then
+  elif [[ $(git_get_commit $branch) != $(git rev-parse HEAD) ]]; then
     obranch=$(branch_current)
   fi
 

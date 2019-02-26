@@ -6,6 +6,11 @@ ZOUL_GIT_CORE=true
 
 ZOU_FLOW_CONFIG='.zou-flow'
 
+git_get_commit()
+{
+  local rev=${1:-HEAD}
+  git rev-parse "${rev}^{commit}"
+}
 git_symbolic_ref()
 {
   if [[ -z $1 || $1 == 'HEAD' ]]; then

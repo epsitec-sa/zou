@@ -8,6 +8,7 @@
 
 [[ -z $ZOUL_CORE ]]     && . zoul-core
 [[ -z $ZOUL_GIT_TAG ]]  && . zoul-git-tag
+[[ -z $ZOUL_GIT_CORE ]] && . zoul-git-core
 [[ -z $ZOUL_GIT_REPO ]] && . zoul-git-repo
 
 while [[ "$#" > 0 ]]; do case "$1" in
@@ -24,7 +25,7 @@ done
 io_info "Create tags lookup table" "[$moduleId]"
 declare -A lookup
 for tag in $(git tag); do
-  h=$(git rev-parse $tag^{})
+  h=$(git_get_commit $tag)
   if [ -z "${lookup[$h]}" ]; then
     lookup[$h]=$tag
     io_info "  [${h::7}] ${lookup[$h]}" "[$moduleId]"

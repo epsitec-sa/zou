@@ -2,6 +2,7 @@
 # MS rethink: https://git.epsitec.ch/snippets/46
 
 . zoul-core
+. zoul-git-core
 
 set -f  # disable filename expansion
 
@@ -22,11 +23,11 @@ esac; shift; done
 
 patterns+=(${opt_patterns[@]})
 [[ ${#patterns[@]} == 0 ]] && patterns+=('.*')
-hash=$(git rev-parse $commit)
+hash=$(git_get_commit $commit)
 
 branches=()
 for b in $(git branch -a --merged $commit | grep -v HEAD); do
-  [[ $(git rev-parse $b) == $hash ]] && branches+=(${b#remotes/origin/})
+  [[ $(git_get_commit $b) == $hash ]] && branches+=(${b#remotes/origin/})
 done
 
 branches=(`echo ${branches[@]} | xargs -n1 echo | sort -u | xargs echo`)

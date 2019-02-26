@@ -45,7 +45,7 @@ tag_rename()
 }
 tag_move_to_commit()
 {
-  [[ $(git rev-parse $1^{}) == $(git rev-parse $2) ]] && return 0
+  [[ $(git_get_commit $1) == $(git_get_commit $2) ]] && return 0
   local tag=$1 commit=$2
   local tagger=$(tagger_name $tag)
   if [[ -z "$tagger" ]]; then

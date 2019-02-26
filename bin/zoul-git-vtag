@@ -147,8 +147,8 @@ vtag_get_vbranch_tail()
       if [ $? -eq 0 ]; then
         local status='empty'
         if ! vtag_is_vnode $vtag; then
-          local hash1=$(git rev-parse "$vtag^{}")
-          local hash2=$(git rev-parse "$vbranch^{}")
+          local hash1=$(git_get_commit "$vtag")
+          local hash2=$(git_get_commit "$vbranch")
           [[ $hash1 == $hash2 ]] && status='full'
         fi
         echo $vtag $vbranch $status
