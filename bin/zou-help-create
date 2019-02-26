@@ -5,7 +5,7 @@ hdir=$(realpath "$dir/../help")
 htpldir=$hdir/template
 htpl=$htpldir/.cmd-template
 
-for cmd in $(find "$dir" -name 'git-*'); do
+for cmd in $(find "$dir" -maxdepth 1 -name 'git-*'); do
   name=${cmd##*/}
   cname=${name#git-}
   hsrc=$hdir/$name
