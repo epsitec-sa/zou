@@ -12,7 +12,7 @@ ZOUL_PROCESS=true
 
 [[ -z $ZOUL_CORE ]] && . zoul-core
 
-lps()
+process_list()
 {
   if [[ $(uname) == Linux ]]; then
     ps -xo pid,ppid,pgid,comm >&2
@@ -56,7 +56,7 @@ process_list_group_for_kill ()
   # echo "[$bashPid] process_list_tree of ${*@Q}" >&2
   local rootPid=$1 pids exclude bashPid=$BASHPID
   # emit given and current pids last
-  # lps
+  # process_list
   pids=( $(process_list_group "$rootPid") )
   exclude=( "${@:2}" "$bashPid" )
   array_remove_array 'pids[@]' 'exclude[@]'
