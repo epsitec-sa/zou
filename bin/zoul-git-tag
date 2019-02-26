@@ -26,7 +26,9 @@ tag_push_not_followed()
     git push "$@" $remote "$tag" &>/dev/null
     [[ -n $@ ]] && oinfo="($@) "
     io_info "Pushed tag$oinfo'$tag' to '$remote'" [$(repo_module_id)]
+    return 0
   fi
+  return 1
 }
 tag_rename()
 {
