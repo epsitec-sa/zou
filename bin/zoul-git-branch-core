@@ -193,23 +193,30 @@ branch_list_attach_candidates()
   remoteBranches=( $(branch_remove_remote_tracked remoteBranches[@]) )
   printf '%s\n' ${remoteBranches[@]#origin/}
 }
+# try to attach a detached head to a branch that's pointing at it.
 branch_try_attach()
 {
-  branch_is_attached && return 0
+  local hash1=$(git_get_commit $1) hash2=$(git rev-parse HEAD)
+  [[ $hash1 == $hash2 ]] && return 0
+
   # echo branch_try_attach ${*@Q} >&2
-  # try to attach a detached head to a branch that's pointing at it.
   local branches=($(branch_list_attach_candidates $1))
-  if (( ${#branches[@]} == 1 )); then
-    branch_checkout "${branches[0]}"
+  [ ${#branches[@]} -eq 0 ] && return 1
+  
+  if [ ${#branches[@]} -eq 1 ]; then
+    branch_checkout "${branches[0]}"; return 0
   else
     local hint=$2 ec=0 hints reHint pHint branch
     # try to discriminate using hint
     if [[ -z $hint ]]; then
       hint=$(branch_current_root_branch) || ec=$?
-      # no hint, checkout first branch
       if [ $ec -ne 0 ]; then
-        branch_checkout "${branches[0]}"
-        return 1
+        hint=$1
+        if [[ -z $hint ]]; then
+          # no hint, checkout first branch
+          branch_checkout "${branches[0]}"
+          return 1
+        fi
       fi
     fi
     hints=$(ref_prod_fallback "$hint") || ec=$?

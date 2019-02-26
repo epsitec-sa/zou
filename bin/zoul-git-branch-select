@@ -94,10 +94,10 @@ branch_select_nearest_vtag()
       echo $stag
       return 0  # branch == vtag
     else
-      branch_checkout "$stag" &>/dev/null
+      branch_try_attach "$stag" "$stag" >/dev/null || branch_checkout "$stag" &>/dev/null
       repo_update_submodules
       echo $stag
-      return 2  # switch to vtag
+      return 2  # switch to vtag ( or vbranch )
     fi
   fi
 }
