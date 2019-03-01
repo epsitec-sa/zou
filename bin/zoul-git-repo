@@ -100,7 +100,9 @@ repo_module_parent()
   mroot=$(repo_module_root) || return $?
   if ! repo_is_bundle_root "$mroot"; then
     repo_module_root "$mroot/.."
+    return 0
   fi
+  return 1
 }
 repo_module_level()
 {
@@ -110,11 +112,12 @@ repo_module_level()
     if [[ -f "$dir/.git" ]]; then
       level=$(( $level + 1 ))
     elif [[ -d "$dir/.git" ]]; then
-      echo "$level"
+      echo $level
       return 0
     fi
     dir="${dir%/*}"
   done
+  echo -1
   return 1
 }
 
