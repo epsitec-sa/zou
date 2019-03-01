@@ -331,8 +331,9 @@ repo_commit_submodules()
 
   local opwd=$PWD cslist=$(string_join ', ' "$@")
   cd "$mroot"
-  git commit -m "zou-flow: update submodules '$cslist'" -- "$@" >/dev/null
-  io_warning "Commited submodules '$cslist'" "[$(repo_module_id)]"
+  local branch=$(branch_current)
+  git commit -m "zou-flow: update submodules '$cslist' on branch '$branch'" -- "$@" >/dev/null
+  io_warning "Commited submodules '$cslist' on branch '$branch'" "[$(repo_module_id)]"
   cd "$opwd"
 }
 repo_remove_dangling_submodule()
@@ -366,7 +367,7 @@ repo_discard_clean_submodules_async()
     for smpath in $smpaths; do
       (
         git submodule update --recursive "$smpath" &>/dev/null
-        io_warning "Discarded submodule '$smpath'" "[$moduleId]"
+        io_warning "Discarded submodule '$smpath' from branch '$(branch_current)'" "[$moduleId]"
       ) &
     done
     wait
