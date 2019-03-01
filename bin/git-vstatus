@@ -4,22 +4,27 @@
 [[ -z $ZOUL_GIT_VTAG ]]        && . zoul-git-vtag
 [[ -z $ZOUL_GIT_BRANCH_CORE ]] && . zoul-git-branch-core
 
+forOpts=()
 while [[ "$#" > 0 ]]; do case "$1" in
   -h|--help) zou-help $0; exit 0;;
-  -q|--quiet) quiet=true;;
-  --alpha)    prerelPrefix='alpha';;
-  --beta)     prerelPrefix='beta';;
-  --rc)       prerelPrefix='rc';;
-  --rtm)      prerelPrefix='rtm';;
-  --debug)    debug=true;;
-  -*) echo "unknown option: $1" >&2; exit 1;;
+  -q|--quiet)     forOpts+=($1); quiet=true;;
+  -r|--recursive) recursive=true;;
+  --alpha)        prerelPrefix='alpha';;
+  --beta)         prerelPrefix='beta';;
+  --rc)           prerelPrefix='rc';;
+  --rtm)          prerelPrefix='rtm';;
+  --debug)        debug=true;;
+  -*)             forOpts+=($1);;
   *) ref=$1;;
 esac; shift; done
 
-ref=$(git_symbolic_ref ${ref:-HEAD})
-
 vtag_status()
 {
+  local ref=$(git_symbolic_ref ${1:-HEAD})
+  if ! branch_exists "$ref"; then
+    io_error "Branch '$ref' does not exist" "[$(repo_module_id)]"
+    return 1
+  fi
   local ltag stag ntag lsuf delta label
   label="[$(repo_module_id)] ($ref)"
   ltag=$(vtag_describe $ref)
@@ -45,9 +50,8 @@ vtag_status()
   return 0
 }
 
-if branch_exists "$ref"; then
-  vtag_status
+if [[ $recursive == true ]]; then
+  . git-for "${forOpts[@]}" -- "vtag_status >/dev/null"
 else
-  io_error "Branch '$ref' does not exist" "[$(repo_module_id)]"
-  exit 1
+  vtag_status "$ref"
 fi
