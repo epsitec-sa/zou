@@ -34,10 +34,10 @@ vbranch_prev_vtag()
     local vrange=$(vtag_get_vbranch_tail $stag $rev)
     if [[ -z $vrange ]]; then
       local revs=$(echo $rev $(vtag_vtags_at $rev) | xargs -n 1 git rev-parse --abbrev-ref)
-      io_error "vbranch_next_vtag: unable to associate $(string_join ' or ' $revs) with a vbranch" "$label $zou_command"
+      io_error "vbranch_prev_vtag: unable to associate $(string_join ' or ' $revs) with a vbranch" "$label $zou_command"
       return 2
     else
-      io_debug vrange vbranch_next_vtag
+      io_debug vrange vbranch_prev_vtag
 
       vrange=($vrange)
       stag=${vrange[0]}
@@ -45,10 +45,10 @@ vbranch_prev_vtag()
       status=${vrange[2]}
       ltag=$stag$lsuf
 
-      io_debug ltag vbranch_next_vtag
-      io_debug stag vbranch_next_vtag
-      io_debug vbranch vbranch_next_vtag
-      io_debug status vbranch_next_vtag
+      io_debug ltag vbranch_prev_vtag
+      io_debug stag vbranch_prev_vtag
+      io_debug vbranch vbranch_prev_vtag
+      io_debug status vbranch_prev_vtag
 
       if [[ $status == 'full' ]]; then
         io_info "Already published at '$stag'" "$label"
@@ -62,6 +62,7 @@ vbranch_prev_vtag()
 }
 vbranch_next_vtag()
 {
+  # echo vbranch_next_vtag ${*@Q} >&2
   local rev=${1:-HEAD}
   local prerel_prefix=$2
   local label="[$(repo_module_id)]"
@@ -120,6 +121,9 @@ vbranch_next_vtag()
         vtag_compare $vnext $utag
         if (( $? == 255 )); then
           echo $vnext
+        elif git merge-base --is-ancestor $rev $utag; then
+          echo $utag
+          return 5 # rev is an ancestor of utag
         else
           io_warning "Unable to publish '$rev' between '$stag' and '$utag'" "$label"
           return 4
