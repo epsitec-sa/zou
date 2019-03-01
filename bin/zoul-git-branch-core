@@ -23,6 +23,7 @@ branch_is_attached()    { git symbolic-ref --short -q HEAD &>/dev/null; }
 branch_is_local()       { git show-ref -s --verify "refs/heads/$1" &>/dev/null; }
 branch_is_remote()      { git show-ref -s --verify "refs/remotes/$1" &>/dev/null; }
 branch_is_prod()        { [[ $1 =~ ^(.*/)?([0-9]+\.[0-9]+)$ ]] && return 0 || return 1; }
+branch_is_current()     { [[ $1 == $(git rev-parse --abbrev-ref HEAD) ]]; }
 branch_is_head()
 {
   local hash1 hash2
@@ -178,14 +179,16 @@ branch_checkout()
 {
   local info
   local branch=$(branch_without_remote_prefix $1)
-  info=$(git checkout "$branch" 2>&1 >/dev/null)
-  [ $? -ne 0 ] && return $?
-  [[ -n $info ]] && {
-    local line moduleId=$(repo_module_id)
-    while read -r line; do
-      io_info "$line" "[$moduleId]"
-    done <<< "$info"
-  }
+  if ! branch_is_current "$branch"; then
+    info=$(git checkout "$branch" 2>&1 >/dev/null)
+    [ $? -ne 0 ] && return $?
+    [[ -n $info ]] && {
+      local line moduleId=$(repo_module_id)
+      while read -r line; do
+        io_info "$line" "[$moduleId]"
+      done <<< "$info"
+    }
+  fi
   echo $branch
 }
 branch_list_attach_candidates()
