@@ -46,9 +46,17 @@ vtag_describe()
   # - $1: branch symbol
   # output:
   # - vtag description (ex: v1.0.0-rc1-5-ge5d2fe9)
-  local branch=$(git_symbolic_ref ${1:-HEAD}) match
+  local branch=$(git_symbolic_ref ${1:-HEAD}) match ltag stag
   for match in $(ref_tag_fallback $branch 'v[0-9]*'); do
-    git describe --tags --match "$match" --exclude 'other/*' "$branch" 2>/dev/null && return 0
+    ltag=$(git describe --tags --match "$match" --exclude 'other/*' "$branch" 2>/dev/null)
+    if [[ -n $ltag ]]; then
+      stag=${ltag%-*-g*}
+      # echo vtag_describe: git merge-base --is-ancestor $stag $branch >&2
+      if git merge-base --is-ancestor $stag $branch; then
+        echo $ltag
+        return 0
+      fi
+    fi
   done
 }
 vtag_vtags_at()
