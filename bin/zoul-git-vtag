@@ -39,6 +39,16 @@ vtag_list()
   # io_debug regex vtag_list
   git tag -l --sort=-v:refname | grep -E $regex | grep -v '^other/' || true
 }
+vtag_most_recent()
+{
+  local vbranch=$(vtag_get_vbranch_name $1) vtag
+  for vtag in $(vtag_list $vbranch); do
+    echo $vtag
+    return 0;
+  done
+  echo $1
+  return 1
+}
 vtag_describe()
 {
   # find first vtag ancestor starting from given commit
