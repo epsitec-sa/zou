@@ -39,7 +39,7 @@ branch_publish()
 
   if ! branch_is_local "$branch"; then
     # detached head
-    local vtags=( $(vtag_vtags_at $branch | grep -v '-@$') )
+    local vtags=( $(vtag_vtags_at $branch | grep -v '\-@$') )
     if [ ${#vtags[@]} -ne 0 ]; then
       io_info "Published detached head '$branch' at '${vtags[0]}'" "[$moduleId]"
     else
@@ -71,14 +71,14 @@ branch_publish()
 
     if [[ $prerelPrefix == 'reuse' ]]; then
       # reuse previous vtag if it's not a vnode
-      vtag=$(vbranch_prev_vtag $vbranch) || ec=$?
+      vtag=$(vbranch_prev_vtag $branch) || ec=$?
       if [[ -z $vtag ]] || vtag_is_vnode $vtag; then
-        vtag=$(vbranch_next_vtag $vbranch) || ec=$?
+        vtag=$(vbranch_next_vtag $branch) || ec=$?
         unset prerelPrefix
       fi
     else
       # compute next vtag
-      vtag=$(vbranch_next_vtag $vbranch $prerelPrefix) || ec=$?
+      vtag=$(vbranch_next_vtag $branch $prerelPrefix) || ec=$?
     fi
 
     # ec = 3 means already published
@@ -96,7 +96,7 @@ branch_publish()
       git tag -a -m "zou-flow: $comment" $vtag $vbranch
     fi
 
-    [ $ec -eq 3 ] || io_info "Published branch '$branch' at '$vtag'" "[$(repo_module_id)]"
+    [ $ec -eq 3 ] || io_success "Published branch '$branch' at '$vtag'" "[$(repo_module_id)]"
     echo "$vtag" "$vbranch"
   fi
 }

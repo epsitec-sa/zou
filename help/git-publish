@@ -1,20 +1,24 @@
-git publish [<options>] - Publish current branch of working directory and (optionally) submodules.
+git publish [<options>] - Publish last versions of submodules and dev branch of startup module.
 
     -h|--help               display help
-    -q|--quiet              don't print submodule name when synchronizing
-    -r|--recursive          publish recursively (submodules and current branch)
-    -e|--stop-on-error      stop looping as soon as command fails (exit code != 0)
-    -v|--vo                 publish existing version
-    -u|--reuse              reuse most recent vtag (move it to current branch tip)
+    -q|--quiet              don't print 'Entering ..."
+    -t|--vtable             force vtable creation when startup module is a composite submodule
+                            (default is to create a vtable when startup module is a bundle)
+    -s|--sm-dev             publish dev branches of submodules (default to last version)
+    -v|--vtag-only          publish last version of startup module (default to dev branch)
+    -u|--reuse              reuse most recent vtag of startup module (move it to current branch tip)
     -j<n>                   number of submodules published in parallel (default to 16)
-    --alpha                 publish branch as alpha version
-    --beta                  publish branch as beta version
-    --rc                    publish branch as RC version
-    --rtm                   publish branch as RTM version
-    
+    --alpha                 publish branch of startup module as alpha version
+    --beta                  publish branch of startup module as beta version
+    --rc                    publish branch of startup module as RC version
+    --rtm                   publish branch of startup module as RTM version (remove pre-release version)
+    --dev                   try to attach to dev branches after publish (default to prod branches)
+
 example:
-    git publish             # publish current branch of working directory
-    git publish --alpha     # publish current branch of working directory as alpha version
-    git publish --reuse     # reuse most recent vtag (move vtag to the tip of the branch)
-    git publish -r          # publish submodules (recursively) then current branch of working directory
-    git publish -r -v       # publish exiting version of submodules (recursively) then current branch of working directory
+    git publish             # publish last version of submodules and dev branch of startup module
+                            # create a vtable if the startup module is a bundle
+    git publish --alpha     # publish last version of submodules and dev branch of startup module as alpha version
+    git publish --reuse     # publish last version of submodules and reuse most recent vtag of startup module (move vtag to the tip of the branch)
+    git publish -s          # publish dev branch of all modules
+    git publish -v          # publish last version of all modules (do not create a vtable)
+    git publish -t          # create a vtable when publishing a composite submodule

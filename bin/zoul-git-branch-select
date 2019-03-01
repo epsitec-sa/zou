@@ -79,30 +79,40 @@ branch_select()
   fi
   echo $branch
 }
-branch_select_nearest_vtag()
+branch_select_vtag()
 {
-  local branch=$1 ltag stag lsuf
+  # echo branch_select_vtag ${*@Q} >&2
+  local branch=$1 ltag stag lsuf vtag
   if ! branch_is_local $branch; then
     branch=$(branch_list_local_at $branch | cut -f 1 -d ' ')
   fi
   ltag=$(vtag_describe "$branch") || {
     echo $branch
-    return 1  # no vtag
+    return 2  # no vtag
   }
   stag=${ltag%-*-g*}
-  if vtag_is_vnode $stag; then
-    echo $stag
-    return 1  # vnode
-  else
+  vtag=$(vtag_most_recent $stag)
+  # trace_method branch_select_vtag stag vtag
+  if vtag_is_vnode $vtag; then
+    echo $vtag
+    return 2  # vnode
+  fi
+
+  if [[ $vtag == $stag ]]; then
     lsuf=${ltag#$stag}
     if [[ -z $lsuf ]]; then
       echo $stag
-      return 0  # branch == vtag
-    else
-      branch_try_attach "$stag" "$stag" >/dev/null || branch_checkout "$stag" &>/dev/null
-      repo_update_submodules
-      echo $stag
-      return 2  # switch to vtag ( or vbranch )
+      return 1  # branch == vtag
     fi
   fi
+
+  if git merge-base --is-ancestor $branch $vtag >&2; then
+    echo $vtag
+    return 3  # vtag is more recent
+  fi
+
+  branch_try_attach "$vtag" 'prod' >/dev/null || branch_checkout "$vtag" &>/dev/null
+  repo_update_submodules
+  echo $vtag
+  return 0  # switch to vtag ( or vbranch )
 }
