@@ -2,12 +2,25 @@ git for [<options>] [--] <command> - Evaluate a shell command in [current repo a
 
     -h|--help               show this help
     -q|--quiet              don't print submodule name before evaluating command
-    -r|--recursive          traverse submodules recursively
-    -s|--sm-only            traverse submodules only (skip working directory)
     -e|--stop-on-error      stop looping as soon as command fails (exit code != 0)
-    -b|--bottom-up          traverse submodule tree bottom up (default to top down)
+    -s|--sm-only            visit submodules only (skip working directory)
+    -a|--all                visit submodules excluded from SKU (skip SKU filter)
+    -p|--deep               visit submodules excluded from select (skip select filter)
+    -b|--bottom-up          visit submodules bottom up (default to top down)
+    -t|--ancestors)         visit ancestor submodules
     <command>               command to be evaluated
-                            the command has access to $name, $sm_path, $displaypath, $sha1 and $toplevel
+    
+The command has access to the following variables:
+    startupDir              startup directory
+    startupRoot             startup module root directory
+    bundleRoot              bundle root directory
+    bundleId                bundle bundleId
+    bundleBranch            bundle active branch
+    moduleRoot              module root directory ($PWD)
+    moduleId                module ID
+    moduleBranch            module active branch
+    tracePrefix
+                                
 example:
     git for -q 'echo $path `git rev-parse HEAD`'
     git for -q 'git vstatus -q'
