@@ -7,7 +7,9 @@
 ZOUL_GIT_BRANCH_CORE=true
 
 [[ -z $ZOUL_CORE ]]     && . zoul-core
+[[ -z $ZOUL_GIT_REF ]]  && . zoul-git-ref
 [[ -z $ZOUL_GIT_CORE ]] && . zoul-git-core
+[[ -z $ZOUL_GIT_REPO ]] && . zoul-git-repo
 
 branch_exists()         { git rev-parse --quiet --verify $1 >/dev/null; }
 branch_upstream()       { git rev-parse --abbrev-ref $1@{upstream} 2>/dev/null; }
