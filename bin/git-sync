@@ -35,15 +35,10 @@ sync_run()
   # local options='quiet stopOnError noSkuFilter moduleRootOnly smOnly cleanLocalBranches hint'
   # trace_method sync_run $options
 
-  # setup startup context
-  local startupDir startupRoot bundleRoot bundleId bundleBranch
-  module_set_startup_context
-  module_enter "$startupRoot" || return $?
-
-  # setup module context
-  local moduleRoot moduleId moduleBranch moduleTracePrefix
-  module_set_module_context
-
+  module_run sync_main
+}
+sync_main()
+{
   local ec=0
   if [[ $moduleRootOnly == true ]]; then
     sync_node || ec=$?

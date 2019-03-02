@@ -34,16 +34,10 @@ for_run()
   # local options='quiet stopOnError noSkuFilter noSelectFilter smOnly bottomUp visitAncestors'
   # trace_method for_run $options
   
-  # setup startup context
-  local startupDir startupRoot bundleRoot bundleId bundleBranch
-  module_set_startup_context
-  module_enter "$startupRoot" || return $?
-
-  # setup module context
-  local moduleRoot moduleId moduleBranch moduleTracePrefix
-  module_set_module_context
-
-  # run
+  module_run for_main
+}
+for_main()
+{
   local ec=0
   if [[ $smOnly == true ]]; then
     for_submodules || ec=$?

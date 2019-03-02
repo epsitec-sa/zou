@@ -11,6 +11,21 @@ ZOUL_GIT_MODULE=true
 readonly moduleVarNames='moduleRoot moduleId moduleBranch moduleTracePrefix'
 readonly moduleStartupVarNames='startupDir startupRoot bundleRoot bundleId bundleBranch'
 
+module_run()
+{
+  local moduleMain=$1
+
+  # setup startup context
+  local startupDir startupRoot bundleRoot bundleId bundleBranch
+  module_set_startup_context
+  module_enter "$startupRoot" || return $?
+
+  # setup module context
+  local moduleRoot moduleId moduleBranch moduleTracePrefix
+  module_set_module_context
+
+  $moduleMain
+}
 # usage:
 #   module_enter "$moduleDir" || return $?
 module_enter()

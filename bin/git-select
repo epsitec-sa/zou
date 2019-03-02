@@ -23,8 +23,6 @@ select_parse()
     *) sku=$1;;
   esac; shift; done
 }
-# global_variable_names='sku quiet stopOnError noSkuFilter startupDir'
-
 select_run()
 {
   # parse command line
@@ -33,16 +31,10 @@ select_run()
   # local options='quiet stopOnError noSkuFilter hint'
   # trace_method select_run $options
   
-  # setup startup context
-  local startupDir startupRoot bundleRoot bundleId bundleBranch
-  module_set_startup_context
-  module_enter "$startupRoot" || return $?
-
-  # setup module context
-  local moduleRoot moduleId moduleBranch moduleTracePrefix
-  module_set_module_context
-
-  # run
+  module_run select_main
+}
+select_main()
+{
   local ec=0
   [[ -z $sku ]] && sku=$bundleBranch
   select_tree
