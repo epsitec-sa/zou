@@ -23,9 +23,10 @@ branch_ensure_current()
 # any superproject branch (dev|prod)
 branch_best_match_dev()
 {
-  local patterns=$(ref_dev_fallback $1)
-  local branches=( $(branch_list_local_tracked) )
-  local remoteIndex=${#branches[@]}
+  local patterns=$(ref_dev_fallback $1) \
+        branches=( $(branch_list_local_tracked) ) \
+        remoteIndex=${#branches[@]}
+        
   branches+=( $(branch_list_remote_untracked) )
   local pattern i branch lbranch
   # try to find a branch matching bundle branch name
@@ -43,19 +44,19 @@ branch_best_match_dev()
 }
 branch_best_match_prod()
 {
-  local branch
-  branch=$(branch_realize $1 2>/dev/null)
+  local target=$1 branch
+  branch=$(branch_realize $target 2>/dev/null)
   if [ $? -eq 0 ]; then
     echo $branch
   else
-    vtag_get_vbranch_name $(vtag_describe $(branch_best_match_dev $1))
+    vtag_get_vbranch_name $(vtag_describe $(branch_best_match_dev $target))
   fi
 }
 branch_best_match()
 {
   local target=$1 hint=$2
   if [[ $hint == 'prod' ]]; then
-    vtag_get_vbranch_name $(vtag_describe $(branch_best_match_dev $1))
+    vtag_get_vbranch_name $(vtag_describe $(branch_best_match_dev $target))
   elif [[ $hint == 'dev' ]]; then
     branch_best_match_dev $target
   else
@@ -65,7 +66,6 @@ branch_best_match()
       branch_best_match_dev $target
     fi
   fi
-
 }
 branch_select()
 {
