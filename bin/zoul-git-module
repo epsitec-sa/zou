@@ -7,6 +7,10 @@ ZOUL_GIT_MODULE=true
 [[ -z $ZOUL_PROCESS ]]  && . zoul-process
 [[ -z $ZOUL_GIT_REPO ]] && . zoul-git-repo
 
+# module state variables
+readonly moduleVarNames='moduleRoot moduleId moduleBranch moduleTracePrefix'
+readonly moduleStartupVarNames='startupDir startupRoot bundleRoot bundleId bundleBranch'
+
 # usage:
 #   module_enter "$moduleDir" || return $?
 module_enter()
@@ -40,6 +44,26 @@ module_set_startup_context()
   bundleId=$(repo_bundle_id)
   bundleRoot=$(repo_bundle_root)
   bundleBranch=$(branch_current_root_branch)
+}
+module_visit_async()
+{
+  local enumerator=$1 visitor=$2 include
+  include=$($enumerator) || return $?
+  [[ -z $include ]] && return 0
+
+  local ec=0 pids=() path
+  for path in $(string_sort $include); do
+    ( $visitor $path || exit $? ) &
+    pids+=($!)
+    if (( $(process_job_count) % $jobsCount == 0 )); then
+      wait "${pids[@]}" &>/dev/null || ec=$?
+      pids=()
+      [[ $ec -ne 0 && $stopOnError == true ]] && break
+    fi
+  done
+  wait "${pids[@]}" &>/dev/null || ec=$?
+  wait
+  return $ec
 }
 module_visit_submodules_async()
 {
