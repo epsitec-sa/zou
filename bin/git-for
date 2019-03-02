@@ -1,11 +1,8 @@
 #!/bin/bash
 
-[[ -z $ZOUL_LOCK ]]               && . zoul-lock
-[[ -z $ZOUL_PROCESS ]]            && . zoul-process
-[[ -z $ZOUL_GIT_REPO ]]           && . zoul-git-repo
+[[ -z $ZOUL_GIT_MODULE ]]         && . zoul-git-module
 [[ -z $ZOUL_GIT_CONFIG_SKU ]]     && . zoul-git-config-sku
 [[ -z $ZOUL_GIT_CONFIG_SELECT ]]  && . zoul-git-config-select
-[[ -z $ZOUL_GIT_CONFIG_PUBLISH ]] && . zoul-git-config-publish
 
 for_parse()
 {
@@ -17,135 +14,89 @@ for_parse()
     -h|--help) zou-help $0; exit 0;;
     -q|--quiet)         quiet=true;;
     -e|--stop-on-error) stopOnError=true;;
-    -s|--sm-only)       smOnly=true;;
     -a|--all)           noSkuFilter=true;;
     -p|--deep)          noSelectFilter=true;;
+    -s|--sm-only)       smOnly=true;;
     -b|--bottom-up)     bottomUp=true;;
-    -t|--ancestors)     ancestors=true;;
+    -t|--ancestors)     visitAncestors=true;;
     -j*)                jobsCount=${1#-j};;
-    -*) echo "unknown option: $1" >&2; exit 1;;
+    -*) io_error "unknown option '$1'"; return 1;;
     *) args+=("$1");;
   esac; shift; done
 
   zou_command="${args[@]}"
 }
-for_submodules()
-{
-  # io_warning ">>>> for_submodules" "[$moduleId]"
-  local ec=0 configFile include exclude smpath root="$PWD"
-
-  configFile=$(repo_zouflow_path "$moduleRoot") || return $?
-  [[ $noSkuFilter    == true ]] && include=( $(repo_list_submodule_paths) ) || include=( $(config_sku_list_included "$moduleBranch" "$configFile") )
-  [[ $noSelectFilter == true ]] && exclude=() || exclude=( $(config_select_list_excluded "$moduleBranch" "$configFile") )
-  include=$(array_remove_array 'include[@]' 'exclude[@]')
-  [[ -z $include ]] && return 0
-
-  local pids=()
-  for smpath in $(string_sort $include); do
-    (
-      cd_module_root "$root/$smpath"
-      local moduleRoot moduleId moduleBranch tracePrefix
-      set_module_context
-      for_tree || exit $?
-    ) &
-    pids+=($!)
-    if (( $(process_job_count) % $jobsCount == 0 )); then
-      wait "${pids[@]}" &>/dev/null || ec=$?
-      pids=()
-      [[ $stopOnError == true && $ec -ne 0 ]] && break
-    fi
-  done
-  wait "${pids[@]}" &>/dev/null || ec=$?
-  wait
-  # io_warning "<<<< for_submodules" "[$moduleId]"
-  return $ec
-}
-for_tree()
-{
-  # trace_method for_tree "$global_variable_names"
-  [[ $quiet == true ]] || echo Entering "'$(path_make_relative '.' "$startupDir")'"
-  local ec=0
-
-  if [[ $bottomUp != true ]]; then
-    eval "$zou_command" || ec=$?
-    [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
-  fi
-
-  for_submodules "$moduleBranch" || ec=$?
-  [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
-
-  if [[ $bottomUp == true ]]; then
-    eval "$zou_command" || ec=$?
-    [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
-  fi
-  # io_warning "<<<< for_tree ${*@Q}" "[$moduleId]"
-  return $ec
-}
-for_ancestors()
-{
-  local ec=0 ancestorPath moduleRoot moduleId moduleBranch tracePrefix
-  for ancestorPath in $(repo_ancestor_roots "$startupRoot"); do
-    cd_module_root "$ancestorPath"
-    [[ $quiet == true ]] || echo Entering "'$(path_make_relative '.' "$startupDir")'"
-    set_module_context
-    eval "$zou_command" || ec=$?
-    [[ $stopOnError == true && $ec -ne 0 ]] && break
-  done
-  return $ec
-}
 for_run()
 {
   # parse command line
-  local jobsCount quiet stopOnError smOnly noSkuFilter noSelectFilter bottomUp ancestors zou_command
-  for_parse "$@"
+  local jobsCount quiet stopOnError noSkuFilter noSelectFilter smOnly bottomUp visitAncestors zou_command
+  for_parse "$@" || return $?
+  # local options='quiet stopOnError noSkuFilter noSelectFilter smOnly bottomUp visitAncestors'
+  # trace_method for_run $options
   
   # setup startup context
-  local ec=0 startupDir startupRoot bundleRoot bundleId bundleBranch
-  set_startup_context
-  cd_module_root "$startupRoot"
+  local startupDir startupRoot bundleRoot bundleId bundleBranch
+  module_set_startup_context
+  module_enter "$startupRoot" || return $?
 
   # setup module context
-  local moduleRoot moduleId moduleBranch tracePrefix
-  set_module_context
+  local moduleRoot moduleId moduleBranch moduleTracePrefix
+  module_set_module_context
 
-  # local global_variable_names='quiet stopOnError smOnly noSkuFilter noSelectFilter bottomUp ancestors startupRoot startupDir moduleId'
-  # trace_method for_run $global_variable_names
-
+  # run
+  local ec=0
   if [[ $smOnly == true ]]; then
     for_submodules || ec=$?
     [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
   else
     for_tree || ec=$?
     [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
-
-    if [[ $ancestors == true ]]; then
-      for_ancestors || ec=$?
+    if [[ $visitAncestors == true ]]; then
+      module_visit_ancestors for_command || ec=$?
       [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
     fi
   fi
+  return $ec
 }
-cd_module_root()
+for_tree()
 {
-  cd "$1" &>/dev/null || {
-    io_error "cd $1" "$tracePrefix"
-    process_kill_group $$
-    exit 1
-  }
+  # trace_method for_tree "$global_variable_names"
+  local ec=0
+
+  if [[ $bottomUp != true ]]; then
+    for_command || ec=$?
+    [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
+  fi
+
+  for_submodules || ec=$?
+  [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
+
+  if [[ $bottomUp == true ]]; then
+    for_command || ec=$?
+    [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
+  fi
+  # io_warning "<<<< for_tree ${*@Q}" "[$moduleId]"
+  return $ec
 }
-set_startup_context()
+for_submodules() { module_visit_submodules_async for_submodules_enumerator for_tree; }
+for_ancestors()  { module_visit_ancestors for_command; }
+for_command()    { eval "$zou_command"; }
+
+for_submodules_enumerator()
 {
-  startupDir=$PWD
-  startupRoot=$(repo_module_root)
-  bundleId=$(repo_bundle_id)
-  bundleRoot=$(repo_bundle_root)
-  bundleBranch=$(branch_current_root_branch)
-}
-set_module_context()
-{
-  moduleRoot="$PWD"
-  moduleId=$(repo_module_id)
-  moduleBranch=$(branch_current)
-  printf -v tracePrefix '%-15s %15s' "[$moduleId]" "($moduleBranch)"
+  local configFile include exclude
+  configFile=$(repo_zouflow_path "$moduleRoot") || return $?
+  if [[ $noSkuFilter == true ]]; then
+    include=( $(repo_list_submodule_paths) )
+  else
+    include=( $(config_sku_list_included "$moduleBranch" "$configFile") )
+  fi
+  if [[ $noSelectFilter == true ]]; then
+    exclude=()
+  else
+    exclude=( $(config_select_list_excluded "$moduleBranch" "$configFile") )
+  fi
+  array_remove_array 'include[@]' 'exclude[@]'
 }
 
 for_run "$@"
