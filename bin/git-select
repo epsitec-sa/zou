@@ -1,99 +1,93 @@
 #!/bin/bash
 
+[[ -z $ZOUL_GIT_MODULE ]]        && . zoul-git-module
 [[ -z $ZOUL_PROCESS ]]           && . zoul-process
 [[ -z $ZOUL_GIT_CONFIG_SKU ]]    && . zoul-git-config-sku
 [[ -z $ZOUL_GIT_CONFIG_SELECT ]] && . zoul-git-config-select
 [[ -z $ZOUL_GIT_BRANCH_CORE ]]   && . zoul-git-branch-core
 [[ -z $ZOUL_GIT_BRANCH_SELECT ]] && . zoul-git-branch-select
 
-# cd '/mnt/c/devel/cresus-tmp'
-
-jobsCount=16
-while [[ "$#" > 0 ]]; do case "$1" in
-  --) shift; args+=("$@"); break;;
-  -h|--help) zou-help $0; exit 0;;
-  -q|--quiet)         quiet=true;;
-  -e|--stop-on-error) stopOnError=true;;
-  -a|--all)           all=true;;
-  --dev)              hint='dev';;
-  --prod)             hint='prod';;
-  -j*)                jobsCount=${1#-j};;
-  -*) echo "unknown option: $1" >&2; exit 1;;
-  *) sku=$1;;
-esac; shift; done
-
-# global_variable_names='sku quiet stopOnError all startupDir'
-
-select_submodules()
+select_parse()
 {
-  local ec=0 branch=$1 configFile skuExclude include exclude path mroot=$PWD
-  configFile=$(repo_zouflow_path "$mroot") || return $?
-  [[ $all == true ]] && skuExclude=() || skuExclude=( $(config_sku_list_excluded "$branch" "$configFile") )
-  # select active submodules which are included in select
-  include=( $(config_select_list_included "$branch" "$configFile") )
-  include=$(array_remove_array 'include[@]' 'skuExclude[@]')
-  [[ -z $include ]] && return 0
+  jobsCount=16
+  while [[ "$#" > 0 ]]; do case "$1" in
+    --) shift; args+=("$@"); break;;
+    -h|--help) zou-help $0; exit 0;;
+    -q|--quiet)         quiet=true;;
+    -e|--stop-on-error) stopOnError=true;;
+    -a|--all)           noSkuFilter=true;;
+    --dev)              hint='dev';;
+    --prod)             hint='prod';;
+    -j*)                jobsCount=${1#-j};;
+    -*) io_error "unknown option '$1'"; return 1;;
+    *) sku=$1;;
+  esac; shift; done
+}
+select_run()
+{
+  # parse command line
+  local jobsCount quiet stopOnError noSkuFilter hint sku
+  select_parse "$@" || return $?
+  # local options='quiet stopOnError noSkuFilter hint'
+  # trace_method select_run $options
   
-  local pids=()
-  for path in $(string_sort $include); do
-    (
-      cd "$mroot/$path" &>/dev/null || {
-        io_error "cd $mroot+$path" "[$moduleId]"
-        process_kill_group $$
-        exit 1
-      }
-      select_tree "$sku" || exit $?
-    ) &
-    pids+=($!)
-    if (( $(process_job_count) % $jobsCount == 0 )); then
-      wait "${pids[@]}" &>/dev/null || ec=$?
-      pids=()
-      [[ $ec -ne 0 ]] && break
-    fi
-  done
-  wait "${pids[@]}" &>/dev/null || ec=$?
-  wait
-  
-  cd "$mroot"
-  
-  # update active submodules which are excluded from select
-  exclude=( $(config_select_list_excluded "$branch" "$configFile") )
-  exclude=$(array_remove_array 'exclude[@]' 'skuExclude[@]')
-  if [[ -n $exclude ]]; then
-    for path in $(string_sort $exclude); do
-      ( repo_update_submodule "$path" ) &
-      if (( $(process_job_count) % $jobsCount == 0 )); then wait; fi
-    done
-    wait
-  fi
-
-  # discard inactive submodules
-  local unstaged=( $(repo_list_unstaged_clean_submodules) )
-  unstaged=$(array_intersect_array 'unstaged[@]' 'skuExclude[@]')
-  if [[ -n $unstaged ]]; then
-    for path in $(string_sort $unstaged); do
-      (
-        git submodule update --recursive "$path" &>/dev/null
-        io_info "Discarded submodule '$path'" "[$moduleId]"
-      ) &
-      if (( $(process_job_count) % $jobsCount == 0 )); then wait; fi
-    done
-    wait
-  fi
-
-  repo_commit_clean_submodules || true
+  module_run select_main
+}
+select_main()
+{
+  local ec=0
+  [[ -z $sku ]] && sku=$bundleBranch
+  select_tree
 }
 select_tree()
 {
   # trace_method 'select_tree' "$global_variable_names"
-  [[ $quiet == true ]] || echo Entering "'$(path_make_relative '.' "$startupDir")'"
-  local branch moduleId=$(repo_module_id)
-  branch=$(branch_select "$sku" "$hint") || return $?
-  select_submodules "$branch" || return $?
+  local ec=0 branch
+  branch=$(branch_select "$sku" "$hint") || ec=$?
+  [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
+  select_submodules "$branch" || ec=$?
+  [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
+  return $ec
+}
+select_submodules_enumerator()
+{
+  local include=( $(config_select_list_included "$moduleBranch" "$configFile") )
+  array_remove_array 'include[@]' 'exclude[@]'
+}
+select_need_update_enumerator()
+{
+  local include=( $(config_select_list_excluded "$branch" "$configFile") )
+  array_remove_array 'include[@]' 'exclude[@]'
+}
+select_discard_enumerator()
+{
+  local include=( $(repo_list_unstaged_clean_submodules) )
+  array_intersect_array 'include[@]' 'exclude[@]'
+}
+select_discard_submodule()
+{
+  local path=$1
+  git submodule update --recursive "$path" &>/dev/null
+  io_info "Discarded submodule '$path'" "[$moduleId]"
+}
+select_submodules()
+{
+  local configFile exclude=()
+  configFile=$(repo_zouflow_path "$moduleRoot") || return $?
+  if [[ $noSkuFilter != true ]]; then
+    exclude=( $(config_sku_list_excluded "$moduleBranch" "$configFile") )
+  fi
+
+  local ec=0
+  module_visit_submodules_async select_submodules_enumerator select_tree || ec=$?
+  
+  # update active submodules which are excluded from select
+  module_visit_async select_need_update_enumerator repo_update_submodule || ec=$?
+
+  # discard inactive submodules
+  module_visit_async select_discard_enumerator select_discard_submodule || ec=$?
+
+  repo_commit_clean_submodules || true
 }
 
-startupDir=$PWD
-[[ -z $sku ]] && sku=$(branch_current_root_branch)
-cd "$(repo_module_root)"
-
-select_tree
+select_run  "$@"

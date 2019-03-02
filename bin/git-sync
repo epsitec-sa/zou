@@ -1,87 +1,91 @@
 #!/bin/bash
 
-
+[[ -z $ZOUL_GIT_MODULE ]]      && . zoul-git-module
 [[ -z $ZOUL_GIT_CONFIG_SKU ]]  && . zoul-git-config-sku
 [[ -z $ZOUL_GIT_BRANCH_CORE ]] && . zoul-git-branch-core
 [[ -z $ZOUL_GIT_BRANCH_SYNC ]] && . zoul-git-branch-sync
 
-jobsCount=16
-while [[ "$#" > 0 ]]; do case "$1" in
-  -h|--help) zou-help $0; exit 0;;
-  -0|--level0)        level0=true;;
-  -s|--sm-only)       smOnly=true;;
-  -q|--quiet)         quiet=true;;
-  -e|--stop-on-error) stopOnError=true;;
-  -c|--clean)         cleanLocalBranches=true;;
-  -a|--all)           all=true;;
-  -j*)                jobsCount=${1#-j};;
-  --dev)              hint='dev';;
-  --prod)             hint='0.0';;
-  -*) echo "unknown option: $1" >&2; exit 1;;
-esac; shift; done
-
-# global_variable_names='level0 smOnly quiet stopOnError cleanLocalBranches all hint startupDir'
-
-process_error()
+sync_parse()
 {
-  local ec=$1
-  [[ $ec -ne 0 && $stopOnError == true ]] && exit $ec || return 0
-}
-clean_local_branches()
-{
-  if [[ $cleanLocalBranches == true ]]; then
-    for b in $(branch_list_local_can_delete); do
-      local info=$(git branch -d "$b" 2>/dev/null)
-      [[ -n $info ]] && io_warning "$info" "[$(repo_module_id)]"
-    done
+  jobsCount=16
+  while [[ "$#" > 0 ]]; do case "$1" in
+    -h|--help) zou-help $0; exit 0;;
+    -q|--quiet)         quiet=true;;
+    -e|--stop-on-error) stopOnError=true;;
+    -a|--all)           noSkuFilter=true;;
+    -0|--root-only)     moduleRootOnly=true;;
+    -s|--sm-only)       smOnly=true;;
+    -c|--clean)         cleanLocalBranches=true;;
+    -j*)                jobsCount=${1#-j};;
+    --dev)              hint='dev';;
+    --prod)             hint='prod';;
+    -*) io_error "unknown option '$1'"; return 1;;
+  esac; shift; done
+
+  if [[ $moduleRootOnly == true && $smOnly == true ]]; then
+    io_error "options '--root-only' and '--sm-only' are incompatible."
+    return 1
   fi
 }
-sync_submodules()
+sync_run()
 {
-  local branch configFile include path mroot=$PWD
-  branch=$(branch_current)
-  configFile=$(repo_zouflow_path "$mroot") || return $?
-  [[ $all == true ]] && include=$(repo_list_submodule_paths) || include=$(config_sku_list_included "$branch" "$configFile")
-  [[ -z $include ]] && return 0
-  for path in $(string_sort $include); do
-    (
-      cd "$mroot/$path" || {
-        io_error "cd $mroot+$path" "[$moduleId]"
-        return 1
-      }
-      sync_tree || return $?
-    ) &
-    if (( $(wc -w <<<$(jobs -p)) % $jobsCount == 0 )); then wait; fi
-  done
-  wait
-}
-sync_node()
-{
-  [[ $quiet == true ]] || echo Entering "'$(path_make_relative '.' "$startupDir")'"
-  local path moduleId=$(repo_module_id)
-  # trace_method 'sync_node' moduleId "$global_variable_names"
+  # parse command line
+  local jobsCount quiet stopOnError noSkuFilter moduleRootOnly smOnly cleanLocalBranches hint
+  sync_parse "$@" || return $?
+  # local options='quiet stopOnError noSkuFilter moduleRootOnly smOnly cleanLocalBranches hint'
+  # trace_method sync_run $options
 
-  # synchronize all branches
-  io_info "Synchronizing..." "[$moduleId]"
-  branch_sync_all "$hint" && clean_local_branches || return $?
+  module_run sync_main
+}
+sync_main()
+{
+  local ec=0
+  if [[ $moduleRootOnly == true ]]; then
+    sync_node || ec=$?
+    [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
+  elif [[ $smOnly == true ]]; then
+    sync_submodules || ec=$?
+    [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
+  else
+    sync_tree || ec=$?
+    [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
+  fi
+  return $ec
 }
 sync_tree()
 {
-  sync_node || process_error $?
-  sync_submodules || process_error $?
+  sync_node || ec=$?
+  [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
+  sync_submodules || ec=$?
+  [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
+}
+sync_node()
+{
+  # synchronize all branches
+  [[ -z $quiet ]] && io_info "Synchronizing..." "[$moduleId]"
+  branch_sync_all "$hint" && sync_clean_local_branches || return $?
+}
+sync_clean_local_branches()
+{
+  if [[ $cleanLocalBranches == true ]]; then
+    local branch
+    for branch in $(branch_list_local_can_delete); do
+      local info=$(git branch -d "$branch" 2>/dev/null)
+      [[ -n $info ]] && io_warning "$info" "[$moduleId]"
+    done
+  fi
+}
+sync_submodules() { module_visit_submodules_async sync_submodules_enumerator sync_tree; }
+
+sync_submodules_enumerator()
+{
+  local configFile
+  configFile=$(repo_zouflow_path "$moduleRoot") || return $?
+  if [[ $noSkuFilter == true ]]; then
+    repo_list_submodule_paths
+  else
+    config_sku_list_included "$moduleBranch" "$configFile"
+  fi
 }
 
-if [[ $level0 == true && $smOnly == true ]]; then
-  io_error "options '--level0' and '--sm-only' are incompatible."
-  exit 1
-fi
-
-startupDir=$PWD
-cd "$(repo_module_root)"
-if [[ $level0 == true ]]; then
-  sync_node || process_error $?
-elif [[ $smOnly == true ]]; then
-  sync_submodules || process_error $?
-else
-  sync_tree
-fi
+sync_run "$@"

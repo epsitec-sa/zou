@@ -1,0 +1,121 @@
+#!/bin/bash
+
+# Use the following statement to include current lib only once
+#   [[ -z $ZOUL_GIT_MODULE ]] && . zoul-git-module
+ZOUL_GIT_MODULE=true
+
+[[ -z $ZOUL_PROCESS ]]  && . zoul-process
+[[ -z $ZOUL_GIT_REPO ]] && . zoul-git-repo
+
+# module state variables
+readonly moduleVarNames='moduleRoot moduleId moduleBranch moduleTracePrefix'
+readonly moduleStartupVarNames='startupDir startupRoot bundleRoot bundleId bundleBranch'
+
+module_run()
+{
+  local moduleMain=$1
+
+  # setup startup context
+  local startupDir startupRoot bundleRoot bundleId bundleBranch
+  module_set_startup_context
+  module_enter "$startupRoot" || return $?
+
+  # setup module context
+  local moduleRoot moduleId moduleBranch moduleTracePrefix
+  module_set_module_context
+
+  $moduleMain
+}
+# usage:
+#   module_enter "$moduleDir" || return $?
+module_enter()
+{
+  cd "$1" &>/dev/null || {
+    io_error "No such [sub]module directory '$1'" "$moduleTracePrefix"
+    return 1
+  }
+  [[ $quiet == true ]] || echo Entering "'$(path_make_relative '.' "$startupDir")'"
+}
+# usage:
+#   module_enter "$moduleDir" || return $?
+#   local moduleRoot moduleId moduleBranch moduleTracePrefix
+#   module_set_module_context
+#   ...
+module_set_module_context()
+{
+  moduleRoot="$PWD"
+  moduleId=$(repo_module_id)
+  moduleBranch=$(branch_current)
+  printf -v moduleTracePrefix '%-15s %15s' "[$moduleId]" "($moduleBranch)"
+}
+# usage:
+#   local startupDir startupRoot bundleRoot bundleId bundleBranch
+#   module_set_startup_context
+#   module_enter "$startupRoot" || return $?
+module_set_startup_context()
+{
+  startupDir=$PWD
+  startupRoot=$(repo_module_root)
+  bundleId=$(repo_bundle_id)
+  bundleRoot=$(repo_bundle_root)
+  bundleBranch=$(branch_current_root_branch)
+}
+module_visit_async()
+{
+  local enumerator=$1 visitor=$2 include
+  include=$($enumerator) || return $?
+  [[ -z $include ]] && return 0
+
+  local ec=0 pids=() path
+  for path in $(string_sort $include); do
+    ( $visitor $path || exit $? ) &
+    pids+=($!)
+    if (( $(process_job_count) % $jobsCount == 0 )); then
+      wait "${pids[@]}" &>/dev/null || ec=$?
+      pids=()
+      [[ $ec -ne 0 && $stopOnError == true ]] && break
+    fi
+  done
+  wait "${pids[@]}" &>/dev/null || ec=$?
+  wait
+  return $ec
+}
+module_visit_submodules_async()
+{
+  local enumerator=$1 visitor=$2 include
+  include=$($enumerator) || return $?
+  [[ -z $include ]] && return 0
+
+  local ec=0 pids=() smpath parent="$PWD"
+  for smpath in $(string_sort $include); do
+    (
+      module_enter "$parent/$smpath" || exit $?
+      local moduleRoot moduleId moduleBranch moduleTracePrefix
+      module_set_module_context
+      $visitor || exit $?
+    ) &
+    pids+=($!)
+    if (( $(process_job_count) % $jobsCount == 0 )); then
+      wait "${pids[@]}" &>/dev/null || ec=$?
+      pids=()
+      [[ $ec -ne 0 && $stopOnError == true ]] && break
+    fi
+  done
+  wait "${pids[@]}" &>/dev/null || ec=$?
+  wait
+  return $ec
+}
+module_visit_ancestors()
+{
+  local visitor=$1 ancestorPath
+  for ancestorPath in $(repo_ancestor_roots); do
+    (
+      module_enter "$ancestorPath" || exit $?
+      local moduleRoot moduleId moduleBranch moduleTracePrefix
+      module_set_module_context
+      $visitor || exit $?
+    ) || ec=$?
+    [[ $ec -ne 0 && $stopOnError == true ]] && break
+  done
+  return $ec
+}
