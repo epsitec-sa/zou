@@ -20,7 +20,7 @@
 # cd "$sat1Dir"
 
 [[ -z $ZOUL_LOCK ]]               && . zoul-lock
-[[ -z $ZOUL_PROCESS ]]            && . zoul-process
+[[ -z $ZOUL_GIT_MODULE ]]         && . zoul-git-module
 [[ -z $ZOUL_GIT_VTABLE ]]         && . zoul-git-vtable
 [[ -z $ZOUL_GIT_BRANCH_CORE ]]    && . zoul-git-branch-core
 [[ -z $ZOUL_GIT_CONFIG_SKU ]]     && . zoul-git-config-sku
@@ -29,113 +29,76 @@
 [[ -z $ZOUL_GIT_BRANCH_SELECT ]]  && . zoul-git-branch-select
 [[ -z $ZOUL_GIT_BRANCH_PUBLISH ]] && . zoul-git-branch-publish
 
-jobsCount=16
-attachHint='prod'
-while [[ "$#" > 0 ]]; do case "$1" in
-  -h|--help) zou-help $0; exit 0;;
-  -q|--quiet)           quiet=true;;
-  -t|--vtable)          vtable=true;;
-  -s|--sm-dev)          smDev=true;;
-  -v|--vtag-only)       vtagOnly=true;;
-  -u|--reuse)           prerelPrefix='reuse';;
-  --alpha)              prerelPrefix='alpha';;
-  --beta)               prerelPrefix='beta';;
-  --rc)                 prerelPrefix='rc';;
-  --rtm)                prerelPrefix='rtm';;
-  --dev)                attachHint='dev';;
-  -j*)                  jobsCount=${1#-j};;
-  -*) echo "unknown option: $1" >&2; exit 1;;
-esac; shift; done
-
-publish_try_attach()
+publish_parse()
 {
-  branch_try_attach 'HEAD' "$attachHint" >/dev/null
+  jobsCount=16
+  attachHint='prod'
+  while [[ "$#" > 0 ]]; do case "$1" in
+    -h|--help) zou-help $0; exit 0;;
+    -q|--quiet)           quiet=true;;
+    -e|--stop-on-error)   stopOnError=true;;
+    -t|--vtable)          vtable=true;;
+    -s|--sm-dev)          smDev=true;;
+    -v|--vtag-only)       vtagOnly=true;;
+    -u|--reuse)           prerelPrefix='reuse';;
+    --alpha)              prerelPrefix='alpha';;
+    --beta)               prerelPrefix='beta';;
+    --rc)                 prerelPrefix='rc';;
+    --rtm)                prerelPrefix='rtm';;
+    --dev)                attachHint='dev';;
+    -j*)                  jobsCount=${1#-j};;
+    -*) io_error "unknown option '$1'"; return 1;;
+  esac; shift; done
 }
-publish_update_vtable()
+publish_run()
 {
-  [[ $createVTable == true ]] || return 1
-  # io_message "publish_update_vtable ${*@Q}" "[$moduleId]" Gray
-  lock "$lockDir" 0.1 vtable_update "$startupRoot" "$moduleId" "$lookupPath"
+  # parse command line
+  local jobsCount quiet stopOnError vtable smDev vtagOnly prerelPrefix attachHint
+  publish_parse "$@" || return $?
+  # local options='quiet stopOnError vtable smDev vtagOnly prerelPrefix attachHint'
+  # trace_method publish_run $options
+
+  module_run publish_main
 }
-publish_commit_vtable()
+publish_main()
 {
-  [[ $createVTable == true ]] || return 1
-  # io_message "publish_commit_vtable ${*@Q}" "[$moduleId]" Gray
-  local branch=$1 vtag=$2 vbranch=$3 ec=0 source target
-  vtable_update "$startupRoot" "$moduleId" "$lookupPath" || ec=$?
+  local isBundle hasSubmodules vtagSelect createVTable
+  repo_is_bundle_root "$startupRoot" && isBundle=true
+  repo_has_submodules "$startupRoot" && hasSubmodules=true
+  [[ $hasSubmodules == true && $smDev != true || $vtagOnly == true ]] && vtagSelect=true
+  [[ $hasSubmodules == true && $vtagOnly != true && ( $isBundle == true || $vtable == true ) ]] && createVTable=true
+  # trace_method publish_main isBundle hasSubmodules vtagSelect createVTable
 
-  # synchronize dev with prod
-  if [[ $attachHint == 'dev' ]]; then
-    source=$branch
-    target=$vbranch
-  else
-    source=$vbranch
-    target=$branch
-  fi
-
-  if [[ -n $vbranch ]]; then
-    branch_merge $source $target
-    branch_merge $target $source
-  fi
-  if [[ -n $vtag ]]; then
-    [ $ec -eq 0 ] && io_info "Created vtable for '$source' at '$vtag'" "[$moduleId]"
-    tag_move "$vtag" "$source"
-  fi
+  local lockDir lookupPath
+  [[ $createVTable == true ]] && {
+    lockDir=$(mktemp -u)
+    lookupPath="$(mktemp)"
+    vtable_init "$startupRoot" "$lookupPath"
+  }
+  publish_tree
 }
-publish_submodules()
+publish_tree()
 {
-  # io_warning ">>>> publish_submodules" "[$moduleId]"
-  local configFile include exclude path mroot=$PWD ec=0
-  configFile=$(repo_zouflow_path "$mroot") || return $?
-  include=( $(config_sku_list_included "$branchOrTag" "$configFile") )
-  exclude=( $(config_select_list_excluded "$branchOrTag" "$configFile") )
-  include=$(array_remove_array 'include[@]' 'exclude[@]')
-  [[ -z $include ]] && return 0
-
-  local pids=()
-  for path in $(string_sort $include); do
-    (
-      cd "$mroot/$path" || {
-        io_error "cd $mroot+$path" "[$moduleId]"
-        process_kill_group $$
-      }
-      publish_tree || exit $?
-    ) &
-    pids+=($!)
-    if (( $(wc -w <<<$(jobs -p)) % $jobsCount == 0 )); then
-      wait "${pids[@]}" &>/dev/null || ec=$?
-      pids=()
-    fi
-  done
-  wait "${pids[@]}" &>/dev/null || ec=$?
-  wait
-  # io_warning "<<<< publish_submodules($ec)" "[$moduleId]"
+  local ec=0 branchOrTag=$moduleBranch stopPublish neverPublished ffPublish
+  publish_prolog || ec=$?
+  [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
+  publish_submodules || ec=$?
+  [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
+  publish_epilog || ec=$?
   return $ec
 }
-publish_select_vtag()
+publish_submodules() { module_visit_submodules_async publish_submodules_enumerator publish_tree; }
+publish_submodules_enumerator()
 {
-  local ec branch=$branchOrTag
-  # trace_method publish_select_vtag branch "$global_variable_names"
-  branchOrTag=$(branch_select_vtag "$branchOrTag")
-
-  case $? in
-  0)
-    io_success "Published existing version '$branchOrTag'" "[$moduleId]"
-    publish_try_attach;;
-  1)
-    io_info "Already published at '$branchOrTag'" "[$moduleId]"
-    publish_try_attach;;
-  2)
-    io_warning "Branch '$branch' was never published" "[$moduleId]"
-    neverPublished=true;;
-  3)
-    ffPublish=true;;
-  esac
-  return 0
+  # io_warning ">>>> publish_submodules" "[$moduleId]"
+  local configFile include exclude
+  configFile=$(repo_zouflow_path "$moduleRoot") || return $?
+  include=( $(config_sku_list_included "$moduleBranch" "$configFile") )
+  exclude=( $(config_select_list_excluded "$moduleBranch" "$configFile") )
+  array_remove_array 'include[@]' 'exclude[@]'
 }
 publish_prolog()
 {
-  # trace_method publish_prolog "$global_variable_names"
   repo_require_clean_work_tree 'cannot publish' || return 1
 
   if [[ $stopPublish == true ]]; then
@@ -149,7 +112,6 @@ publish_prolog()
   else
     publish_select_vtag
     stopPublish=true
-    # export stopPublish
   fi
 }
 publish_epilog()
@@ -186,38 +148,57 @@ publish_epilog()
   # io_warning "<<<< publish_epilog ($branchOrTag)" "[$moduleId]"
   return $ec
 }
-publish_tree()
+publish_select_vtag()
 {
-  [[ $quiet == true ]] || echo Entering "'$(path_make_relative '.' "$startupDir")'"
-  local branchOrTag=${1:-$(branch_current)} neverPublished ffPublish ec=0 moduleId=$(repo_module_id)
-  
-  # trace_method publish_tree "$global_variable_names"
-  # io_warning ">>>> publish_tree ${*@Q}" "[$moduleId]"
-  publish_prolog || ec=$?
-  publish_submodules || ec=$?
-  publish_epilog || ec=$?
-  # io_warning "<<<< publish_tree ($ec)" "[$moduleId]"
+  local branch=$branchOrTag
+  branchOrTag=$(branch_select_vtag "$branchOrTag")
 
-  return $ec
+  case $? in
+  0)
+    io_success "Published existing version '$branchOrTag'" "[$moduleId]"
+    publish_try_attach;;
+  1)
+    io_info "Already published at '$branchOrTag'" "[$moduleId]"
+    publish_try_attach;;
+  2)
+    io_warning "Branch '$branch' was never published" "[$moduleId]"
+    neverPublished=true;;
+  3)
+    ffPublish=true;;
+  esac
+  return 0
+}
+publish_try_attach() { branch_try_attach 'HEAD' "$attachHint" >/dev/null; }
+publish_update_vtable()
+{
+  [[ $createVTable == true ]] || return 1
+  # io_message "publish_update_vtable ${*@Q}" "[$moduleId]" Gray
+  lock "$lockDir" 0.1 vtable_update "$startupRoot" "$moduleId" "$lookupPath"
+}
+publish_commit_vtable()
+{
+  [[ $createVTable == true ]] || return 1
+  # io_message "publish_commit_vtable ${*@Q}" "[$moduleId]" Gray
+  local ec=0 branch=$1 vtag=$2 vbranch=$3 source target
+  vtable_update "$startupRoot" "$moduleId" "$lookupPath" || ec=$?
+
+  # synchronize dev with prod
+  if [[ $attachHint == 'dev' ]]; then
+    source=$branch
+    target=$vbranch
+  else
+    source=$vbranch
+    target=$branch
+  fi
+
+  if [[ -n $vbranch ]]; then
+    branch_merge $source $target
+    branch_merge $target $source
+  fi
+  if [[ -n $vtag ]]; then
+    [ $ec -eq 0 ] && io_info "Created vtable for '$source' at '$vtag'" "[$moduleId]"
+    tag_move "$vtag" "$source"
+  fi
 }
 
-startupDir=$PWD
-startupRoot=$(repo_module_root)
-cd "$startupRoot"
-
-# default options
-repo_is_bundle_root "$startupRoot" && isBundle=true
-repo_has_submodules "$startupRoot" && hasSubmodules=true
-[[ $hasSubmodules == true && $smDev != true || $vtagOnly == true ]] && vtagSelect=true
-[[ $hasSubmodules == true && $vtagOnly != true && ( $isBundle == true || $vtable == true ) ]] && createVTable=true
-
-# global_variable_names='isBundle hasSubmodules vtagSelect createVTable quiet vtable smDev prerelPrefix startupRoot startupDir moduleId'
-global_variable_names='moduleId stopPublish isBundle hasSubmodules vtagSelect createVTable quiet vtable smDev'
-# trace_method main "$global_variable_names"
-
-[[ $createVTable == true ]] && {
-  lockDir=$(mktemp -u)
-  lookupPath="$(mktemp)"
-  vtable_init "$startupRoot" "$lookupPath"
-}
-publish_tree
+publish_run "$@"
