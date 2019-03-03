@@ -41,6 +41,8 @@ select_main()
 }
 select_tree()
 {
+  repo_require_clean_work_tree 'cannot select' || return 1
+
   # trace_method 'select_tree' "$global_variable_names"
   local ec=0 branch
   branch=$(branch_select "$sku" "$hint") || ec=$?
