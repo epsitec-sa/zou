@@ -46,7 +46,7 @@ for_main()
     for_tree || ec=$?
     [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
     if [[ $visitAncestors == true ]]; then
-      module_visit_ancestors for_command || ec=$?
+      for_ancestors || ec=$?
       [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
     fi
   fi
@@ -73,7 +73,7 @@ for_tree()
   return $ec
 }
 for_submodules() { module_visit_submodules_async for_submodules_enumerator for_tree; }
-for_ancestors()  { module_visit_ancestors for_command; }
+for_ancestors()  { module_visit_submodules repo_ancestor_roots for_command; }
 for_command()    { eval "$zou_command"; }
 
 for_submodules_enumerator()

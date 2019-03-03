@@ -1,19 +1,19 @@
 #!/bin/bash
 
-enumerator='repo_list_unstaged_clean_submodules'
+cosmEnumerator='repo_list_unstaged_clean_submodules'
 forOpts=()
 while [[ "$#" > 0 ]]; do case "$1" in
   --) shift; args+=("$@"); break;;
   -h|--help) zou-help $0; exit 0;;
-  -f|--force) enumerator='repo_list_unstaged_submodules';;
+  -f|--force) cosmEnumerator='repo_list_unstaged_submodules';;
   -*) forOpts+=($1);;
 esac; shift; done
 
 cosm_node()
 {
-  repo_commit_submodule_enumerator "$enumerator"
+  repo_commit_submodule_enumerator "$cosmEnumerator"
 
-  if [[ $enumerator =~ '_clean' ]]; then
+  if [[ $cosmEnumerator =~ '_clean' ]]; then
     local unstaged=( $(repo_list_unstaged_submodules) )
     if [ ${#unstaged[@]} -ne 0 ]; then
       if [ ${#unstaged[@]} -eq 1 ]; then
