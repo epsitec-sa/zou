@@ -273,13 +273,13 @@ ised()
     sed -i -E "$script" "$file"
   else
     local tmp="$file.zou"
-    if iconv -t "$zou_lencoding" "$file" >"$tmp"; then
+    if iconv -t "$zou_lencoding" "$file" 2>/dev/null >"$tmp"; then
       sed -i -E "$script" "$tmp"
       iconv -t "$fEncoding" "$tmp" >"$file"
-      rm "$tmp"
     else
       sed -i -E "$script" "$file"
     fi
+    rm --force "$tmp"
   fi
   
   realpath "$file"
