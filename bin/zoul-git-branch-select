@@ -74,7 +74,7 @@ branch_select()
   bestMatch=$(branch_best_match $rootBranch $hint)
   branch=$(branch_checkout "$bestMatch")
   if ! branch_upstream $bestMatch; then
-    git push origin $bestMatch >/dev/null
+    git push -u origin $bestMatch &>/dev/null
   fi
   if [ $? -ne 0 ]; then
     repo_require_clean_work_tree 'cannot select'
