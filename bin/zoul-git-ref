@@ -38,53 +38,80 @@ ref_join() { local IFS='/'; echo "$*"; }
 #   sku sal dev
 #   sal dev
 #   dev
-ref_scan_shift_0()
+ref_scan_shift_left_0()
 {
   local IFS=' ' i
-  # echo ref_scan_shift_0 "[$#] ${*@Q}" >&2
+  # echo ref_scan_shift_left_0 "[$#] ${*@Q}" >&2
   for (( i=1; i<=$#; i++ )); do
     echo "${@:$i}"
   done
 }
 # scan ref atoms:
-#   keep first atom (sku, wip...) and shift remaining part.
+#   shift right until only the first element remains
+#   return each shift
+# sku sal dev ->
+#   sku sal dev
+#   sku sal
+#   sku
+ref_scan_shift_right_0()
+{
+  local IFS=' ' i
+  # echo ref_scan_shift_right_0 "[$#] ${*@Q}" >&2
+  for (( i=$#; i>0; i-- )); do
+    echo "${@:1:$i}"
+  done
+}
+# scan ref atoms:
+#   keep first atom (sku, wip...) and shift left tail.
 # sku compta mch dev ->
 #   sku compta mch dev
 #   sku mch dev
 #   sku dev
-ref_scan_shift_1()
+ref_scan_shift_left_1()
 {
   local IFS=$'\n' 
   local first=$1 i
-  for i in $(ref_scan_shift_0 "${@:2}"); do
+  for i in $(ref_scan_shift_left_0 "${@:2}"); do
     echo $first $i
+  done
+}
+# scan ref atoms:
+#   keep last atom (dev, 1.0, v1.0.0) and shift right head.
+# sku compta mch dev ->
+#   sku compta mch dev
+#   sku compta dev
+#   sku dev
+ref_scan_shift_right_1()
+{
+  local IFS=$'\n' 
+  local last=${@:(-1)} i
+  # negative offset won't work
+  local count; (( count = $# - 1 ))
+  for i in $(ref_scan_shift_right_0 "${@:1:$count}"); do
+    echo $i $last
   done
 }
 # combine scans of ref atoms
 # sku compta mch dev ->
-#   scan1
-#     compta mch dev
-#     mch dev
-#     dev
-#   scan 2
+#   scan 1
 #     sku compta mch dev
-#     sku mch dev
+#     sku compta dev
 #     sku dev
+#   scan 2
+#     sku mch dev
 ref_scan_algo()
 {
-  # first scan: remove first atom (sku, wip, ...)
-  ref_scan_shift_0 "${@:2}"
-  # second scan: keep first atom and shift remaining part
-  ref_scan_shift_1 "$@"
+  # scan 1: keep first atom and shift tail left
+  ref_scan_shift_right_1 "${@}"
+  # scan 2: keep last atom and shift head right
+  ref_scan_shift_left_1 "${@}" | tail -n +2 | head -n -1
 }
 # scan ref atoms and insert count in front to be able to sort by count
 # sku compta mch dev ->
-#   3 compta mch dev
-#   2 mch dev
-#   1 dev
 #   4 sku compta mch dev
-#   3 sku mch dev
+#   3 sku compta dev
 #   2 sku dev
+#   3 sku mch dev
 ref_scan_insert_count()
 {
   local IFS=$'\n' i a
@@ -98,11 +125,9 @@ ref_scan_insert_count()
 # scan ref atoms sort by count and join:
 # sku compta mch dev ->
 #   sku/compta/mch/dev
-#   compta/mch/dev
+#   sku/compta/dev
 #   sku/mch/dev
-#   mch/dev
 #   sku/dev
-#   dev
 ref_scan_sort_join()
 {
   # echo ref_scan_sort_join "[$#] ${*@Q}" >&2
@@ -118,11 +143,9 @@ ref_scan_sort_join()
 # scan ref and sort by atoms count:
 # sku/compta/mch/dev ->
 #   sku/compta/mch/dev
-#   compta/mch/dev
+#   sku/compta/dev
 #   sku/mch/dev
-#   mch/dev
 #   sku/dev
-#   dev
 ref_split_scan_join()
 {
   # echo ref_scan "[$#] ${*@Q}" >&2
@@ -133,9 +156,8 @@ ref_split_scan_join()
 # split ref, convert prod branch to dev and adjust master:
 # ref_dev_fallback sku/compta/mch/13.2 ->
 #   sku/compta/mch/dev
-#   compta/mch/dev
+#   sku/compta/dev
 #   sku/mch/dev
-#   mch/dev
 #   sku/dev
 #   master
 ref_dev_fallback()
@@ -158,9 +180,8 @@ ref_dev_fallback()
 # Exemple for git describe:
 # ref_tag_fallback sku/compta/mch/dev 'v[0-9]*' ->
 #   sku/compta/mch/v[0-9]*
-#   compta/mch/v[0-9]*
+#   sku/compta/v[0-9]*
 #   sku/mch/v[0-9]*
-#   mch/v[0-9]*
 #   sku/v[0-9]*
 #   v[0-9]*
 ref_tag_fallback()
@@ -172,16 +193,15 @@ ref_tag_fallback()
   if [[ ${atoms[-1]} == 'dev' || ${atoms[-1]} =~ ^v?[0-9]+\.[0-9]+ ]]; then
     atoms[-1]="$tag"
     ref_scan_sort_join "${atoms[@]}"
-  else
-    echo "$tag"
   fi
+  echo "$tag"
 }
 ref_vtag_describe_fallback()
 {
   ref_tag_fallback $1 'v[0-9]*'
 }
 # scan ref and return prod fallback
-# ref_prod_fallback sku/sal/(prod|13.2)
+# ref_prod_fallback sku/compta/mch/(prod|13.2)
 #   sku/sal/prod
 #   sal/prod
 #   sku/prod
@@ -199,4 +219,5 @@ ref_prod_fallback()
   else
     return 1
   fi
+  echo 'prod'
 }
