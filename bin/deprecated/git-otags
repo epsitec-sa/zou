@@ -1,0 +1,11 @@
+#!/bin/bash
+
+[[ -z $ZOUL_CORE ]]     && . zoul-core
+[[ -z $ZOUL_GIT_VTAG ]] && . zoul-git-vtag
+
+
+for tag in $(git tag); do
+  vtag_is_semver && continue;
+  string_is_folded && continue;
+  echo $tag
+done
