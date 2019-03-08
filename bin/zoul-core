@@ -123,10 +123,11 @@ trace_vars()
   echo "${params[@]}" >&2
 }
 
-string_pad()    { printf "%-$1s" $2; }
-string_join()   { local d=$1; shift; echo -n "$1"; shift; printf "%s" "${@/#/$d}"; }
-string_indent() { local n=$1; shift; printf "%${n}s%s" '' "$*"; }
-string_sort()
+string_is_folded() { [[ $1 =~ ^[^/]+/.+$ ]]; }
+string_pad()       { printf "%-$1s" $2; }
+string_join()      { local d=$1; shift; echo -n "$1"; shift; printf "%s" "${@/#/$d}"; }
+string_indent()    { local n=$1; shift; printf "%${n}s%s" '' "$*"; }
+string_sort()   
 {
   local IFS=$'\n'
   sort <<<"$*"
