@@ -59,7 +59,7 @@ vcheck_main()
       fi
       if [[ -n $pvtag ]]; then
         if ! git merge-base --is-ancestor $vtag $pvtag; then
-          io_warning "vtag '$vtag' should precede '$pvtag'" "$moduleTracePrefix"
+          io_warning "vtag '$vtag' is not an ancestor of '$pvtag'" "$moduleTracePrefix"
           (( ec = $ec + 1 ))
         fi
       fi
@@ -69,7 +69,7 @@ vcheck_main()
     if [ $ec -eq 0 ]; then
       io_success "Checked tag appartenance and history on vbranch '$vbranch' - OK" "$moduleTracePrefix"
     else
-      io_error "Checked tag appartenance and history on vbranch '$vbranch' - $ec failure[s]" "$moduleTracePrefix"
+      io_warning "Checked tag appartenance and history on vbranch '$vbranch' - $ec warning[s]" "$moduleTracePrefix"
     fi
   done
 
