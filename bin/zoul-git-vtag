@@ -449,8 +449,12 @@ vtag_increment()
           local prerel_rev=${BASH_REMATCH[2]}
           io_debug actual_prerel_prefix vtag_increment
           io_debug prerel_rev vtag_increment
-          [[ $prerel_prefix > $actual_prerel_prefix ]] && prerel_rev=1 || { prerel_prefix=$actual_prerel_prefix; prerel_rev=$((prerel_rev + 1)); }
-          
+          if [[ $prerel_prefix > $actual_prerel_prefix ]]; then
+            prerel_rev=1
+          else
+            prerel_prefix=$actual_prerel_prefix
+            (( prerel_rev = prerel_rev + 1 ))
+          fi
           prerel=-$prerel_prefix$prerel_rev
           io_debug prerel vtag_increment
           result="${prefix}v$major.$minor.$patch$prerel"
