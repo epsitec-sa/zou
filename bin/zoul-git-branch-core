@@ -191,6 +191,21 @@ branch_checkout()
   fi
   echo $branch
 }
+branch_move()
+{
+  local branch1=$1 branch2=$2
+  if git checkout $branch1 &>/dev/null; then
+    git checkout - &>/dev/null
+    git ls-remote --heads --exit-code origin "$branch1" &>/dev/null || git push origin "$branch1"
+    git branch "$branch2" "origin/$branch1" >/dev/null 2>&1
+    git push origin --set-upstream "$branch2" >/dev/null 2>&1
+    git push --delete --force origin "$branch1" >/dev/null 2>&1
+    git branch -D "$branch1" >/dev/null 2>&1
+    io_warning "Moved branch '$branch1' to '$branch2'" "$moduleTracePrefix"
+    return 0;
+  fi
+  return 1
+}
 branch_list_attach_candidates()
 {
   branch_list_local_at $1
