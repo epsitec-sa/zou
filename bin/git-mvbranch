@@ -1,12 +1,25 @@
 #!/bin/bash
 
-old=$1
-new=$2
-if git checkout $old &>/dev/null; then
-  git checkout - &>/dev/null
-  git ls-remote --heads --exit-code origin $old >/dev/null || git push origin $old
-  git branch $new origin/$old >/dev/null 2>&1
-  git push origin --set-upstream $new >/dev/null 2>&1
-  git push --delete --force origin $old >/dev/null 2>&1
-  git branch -D $old >/dev/null 2>&1
-fi
+[[ -z $ZOUL_GIT_BRANCH_CORE ]] && . zoul-git-branch-core
+[[ -z $ZOUL_GIT_REPO ]]        && . zoul-git-repo
+[[ -z $ZOUL_GIT_MODULE ]]      && . zoul-git-module
+
+mvbranch_run()
+{
+  module_run mvbranch_main "$@"
+}
+mvbranch_main()
+{
+  repo_require_clean_work_tree 'cannot move branch[es]'
+
+  local branch1=$1 branch2=$2 branch
+  if ! branch_move $branch1 $branch2; then
+    # assume branch1 and branch2 are folders
+    for branch in $(branch_list_all_flatten); do
+      if [[ $branch =~ ^${branch1%/}(/[^/]+$) ]]; then
+        branch_move $branch ${branch2%/}${BASH_REMATCH[1]}
+      fi
+    done
+  fi
+}
+mvbranch_run "$@"
