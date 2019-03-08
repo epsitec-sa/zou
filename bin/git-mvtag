@@ -1,26 +1,43 @@
 #!/bin/bash
 
-. zoul-git-tag
+[[ -z $ZOUL_CORE ]]       && . zoul-core
+[[ -z $ZOUL_GIT_TAG ]]    && . zoul-git-tag
+[[ -z $ZOUL_GIT_MODULE ]] && . zoul-git-module
 
-args=()
-while [[ "$#" > 0 ]]; do case "$1" in
-  -h|--help) zou-help $0; exit 0;;
-  --) args+=( "$@" ); break;;
-  --debug) debug=true;;
-  -*) io_error "unknown option: $1"; exit 1;;
-  *) args+=("$1");;
-esac; shift; done
+mvtag_parse()
+{
+  while [[ "$#" > 0 ]]; do case "$1" in
+    -h|--help) zou-help $0; exit 0;;
+    --) args+=( "$@" ); break;;
+    -q|--quiet) quiet=true;;
+    --debug) debug=true;;
+    -*) io_error "unknown option: $1"; exit 1;;
+    *) args+=("$1");;
+  esac; shift; done
 
-tag1="${args[0]}"
-tag2="${args[1]}"
+  (( ${#args[@]} < 2 )) && io_error "missing arguments"
+}
+mvtag_run()
+{
+  local quiet args=()
+  mvtag_parse "$@" || return $?
+  
+  module_run mvtag_main "${args[@]}"
+}
+mvtag_main()
+{
+  local tag1=$1 tag2=$2 tag
 
-if tag_exists $tag1; then
-  tag_move "$tag1" "$tag2"
-else
-  # assume tag1 and tag2 are tag prefix (folders)
-  for tag in $(git tag -l); do
-    if [[ $tag =~ ^${tag1%/}(/[^/]+$) ]]; then
-      tag_move $tag ${tag2%/}${BASH_REMATCH[1]}
-    fi
-  done
-fi
+  if tag_exists $tag1; then
+    tag_move "$tag1" "$tag2"
+  else
+    # assume tag1 and tag2 are tag folders
+    for tag in $(git tag -l); do
+      if [[ $tag =~ ^${tag1%/}(/[^/]+$) ]]; then
+        tag_move $tag ${tag2%/}${BASH_REMATCH[1]}
+      fi
+    done
+  fi
+}
+
+mvtag_run "$@"
