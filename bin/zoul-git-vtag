@@ -156,7 +156,12 @@ vtag_most_recent()
 {
   local vbranch=$(vtag_get_vbranch_name $1) vtag
   for vtag in $(vtag_list $vbranch); do
-    echo $vtag
+    # check if vtag is really more recent than given tag
+    if git merge-base --is-ancestor $1 $vtag; then
+      echo $vtag
+    else
+      echo $1
+    fi
     return 0;
   done
   echo $1
