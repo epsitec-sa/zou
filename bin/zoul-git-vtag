@@ -471,32 +471,3 @@ vtag_increment()
   fi
 }
 
-vtag_check()
-{
-  local vtag=$1 ec=0
-  if [[ ! $vtag =~ ^(.*/)?v[0-9]+\.[0-9]+(-@|\.[0-9]+(-[[:alnum:]]+)?(\+.+)?)$ ]]; then
-    io_warning "'$vtag' does not respect semantic versioning" 'vtag_check'
-    ec=1
-  fi
-  local vbranch=$(vtag_get_vbranch $vtag 2>/dev/null)
-  if [[ -z $vbranch ]]; then
-    io_error "$vtag has no associated vbranch" 'vtag_check';
-    ec=1
-  fi
-  if (( $ec == 0 ))  && ! git merge-base --is-ancestor $vtag $vbranch >&2; then
-    io_error "$vtag is not an ancestor of $vbranch" 'vtag_check';
-    ec=2
-  fi
-  if (( $ec == 0 )); then
-    io_success "$vtag OK" 'vtag_check'
-  fi
-  return $ec
-}
-vtag_check_all()
-{
-  local ec=0
-  for v in $(vtag_list); do
-    vtag_check $v || ec=1
-  done
-  return $ec
-}
