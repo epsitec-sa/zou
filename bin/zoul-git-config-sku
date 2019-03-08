@@ -25,21 +25,28 @@ config_sku_exclude()
   [[ -z $path ]] && path=$(repo_path_relative_to_module_root)
   [[ -z $branch ]] && branch=$(branch_current)
   [[ -z $configFile ]] && configFile=$(repo_zouflow_path)
-  local rePath=$(regex_escape "$path")
+  local rePath=$(regex_whole "$path")
   git config --file "$configFile" --get-all "sku.exclude" "$rePath" >/dev/null \
   || git config --file "$configFile" --add "sku.exclude" "$path"
 
   git update-index --add -- "$configFile" &>/dev/null \
   && git commit -m "zou-flow: exclude submodule '$path' from SKU '$branch'" -- "$configFile" &>/dev/null
 }
-config_sku_exclude_all() { config_sku_exclude_many "$@" $(repo_list_submodule_paths); }
+config_sku_exclude_all()
+{
+  local branch=$1 configFile=$2
+  [[ -z $branch ]] && branch=$(branch_current)
+  [[ -z $configFile ]] && configFile=$(repo_zouflow_path)
+  config_sku_exclude_many "$branch" "$configFile" $(repo_list_submodule_paths)
+}
 config_sku_exclude_many()
 {
+  echo config_sku_exclude_many ${*@Q}
   local branch=$1 configFile=$2 path rePath; shift 2
   [[ -z $branch ]] && branch=$(branch_current)
   [[ -z $configFile ]] && configFile=$(repo_zouflow_path)
-  for path in $@; do
-    rePath=$(regex_escape "$path")
+  for path in "$@"; do
+    rePath=$(regex_whole "$path")
     git config --file "$configFile" --get-all "sku.exclude" "$rePath" >/dev/null \
     || git config --file "$configFile" --add "sku.exclude" "$path"
   done
@@ -75,7 +82,7 @@ config_sku_include_many()
   [[ -z $branch ]] && branch=$(branch_current)
   [[ -z $configFile ]] && configFile=$(repo_zouflow_path)
   for path in $@; do
-    rePath=$(regex_escape "$path")
+    rePath=$(regex_whole "$path")
     git config --file "$configFile" --unset-all "sku.exclude" "$rePath"
   done
 
@@ -89,7 +96,7 @@ config_sku_is_excluded()
   [[ -z $path ]] && path=$(repo_path_relative_to_module_root)
   [[ -z $branch ]] && branch=$(branch_current)
   [[ -z $configFile ]] && configFile=$(repo_zouflow_path)
-  local rePath=$(regex_escape "$path")
+  local rePath=$(regex_whole "$path")
   git config --file "$configFile" --get-all "sku.exclude" "$rePath" >/dev/null
 }
 config_sku_list_excluded()
