@@ -1,13 +1,16 @@
 #!/bin/bash
 
 # clean tags (apply zou-flow):
-# 1. move non SemVer tags (otags) to other folder
-# 2. group tags pointing to the same commit hash
-#    create a lookup table with the commit hash as key and the commit tags (space separated) as value.
-# 3. remove other folder's redondant tags
+# 1. delete root tags that are already in other folder
+# 2. move non semver root tags to other folder
+# 3. move big patch root tags to other folder (v12.5.16460)
+# 4. remove other folder's redondant tags
+#    group tags pointing to the same commit hash
+#      create a lookup table with the commit hash as key and the commit tags (space separated) as value.
 
 [[ -z $ZOUL_CORE ]]     && . zoul-core
 [[ -z $ZOUL_GIT_TAG ]]  && . zoul-git-tag
+[[ -z $ZOUL_GIT_VTAG ]] && . zoul-git-vtag
 [[ -z $ZOUL_GIT_CORE ]] && . zoul-git-core
 [[ -z $ZOUL_GIT_REPO ]] && . zoul-git-repo
 
@@ -18,41 +21,59 @@ esac; shift; done
 
 moduleId=$(repo_module_id)
 
-for tag in $(git otags); do
-  tag_move $tag "other/$tag"
-done
+tag_delete_root_in_other()
+{
+  local tag rtag
+  for tag in $(git tag); do
+    if [[ $tag =~ ^other/(.*)$ ]]; then
+      rtag=${BASH_REMATCH[1]}
+      tag_exists $rtag && tag_delete $rtag
+    fi
+  done
+}
+tag_move_non_semver_and_big_patch_to_other()
+{
+  local tag patch
+  for tag in $(git tag); do
+    vtag_is_other $tag && continue;
+    if vtag_is_semver $tag; then
+      patch=${BASH_REMATCH[5]}
+      [[ -z $patch ]] && continue
+      (( $patch < 1000 )) && continue
+    fi
+    tag_move $tag "other/$tag"
+  done
+}
+tag_remove_other_redondant()
+{
+  declare -A lookup
+  local tag h
+  for tag in $(git tag); do
+    h=$(git_get_commit $tag)
+    if [ -z "${lookup[$h]}" ]; then
+      lookup[$h]=$tag
+    else
+      lookup[$h]="${lookup[$h]} $tag"
+    fi
+  done
 
-io_info "Create tags lookup table" "[$moduleId]"
-declare -A lookup
-for tag in $(git tag); do
-  h=$(git_get_commit $tag)
-  if [ -z "${lookup[$h]}" ]; then
-    lookup[$h]=$tag
-    io_info "  [${h::7}] ${lookup[$h]}" "[$moduleId]"
-  else
-    lookup[$h]="${lookup[$h]} $tag"
-    io_info "  [${h::7}] ${lookup[$h]}" "[$moduleId]"
-  fi
-done
+  local remove=() k r
+  for k in ${!lookup[@]}; do
+    r=( ${lookup[$k]} )
+    if [[ ${#r[@]} > 1 ]]; then
+      for tag in "${r[@]}"; do
+        [[ $tag =~ ^other/.* ]] && remove+=( $tag )
+      done
+    fi
+  done
 
-io_info "Get other redondant tags" "[$moduleId]"
-remove=()
-for k in ${!lookup[@]}; do
-  read -a r <<< "${lookup[$k]}"
-  if [[ ${#r[@]} > 1 ]]; then
-    io_info "  [${k::7}] { ${r[*]} }" "[$moduleId]"
-    for tag in "${r[@]}"; do
-      [[ $tag =~ ^other/.* ]] && remove+=( $tag )
+  if [ ${#remove[@]} -ne 0 ]; then
+    for tag in ${remove[@]}; do
+      tag_delete $tag
     done
   fi
-done
+}
 
-if [ ${#remove[@]} -eq 0 ]; then
-  io_success "No redondant tags" "[$moduleId]"
-else
-  io_warning "Delete other redondant tags" "[$moduleId]"
-  for tag in ${remove[@]}; do
-    tag_delete $tag
-    # io_warning "  Deleted tag '$tag'" "[$moduleId]"
-  done
-fi
+tag_delete_root_in_other
+tag_move_non_semver_and_big_patch_to_other
+tag_remove_other_redondant
