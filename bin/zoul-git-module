@@ -4,8 +4,9 @@
 #   [[ -z $ZOUL_GIT_MODULE ]] && . zoul-git-module
 ZOUL_GIT_MODULE=true
 
-[[ -z $ZOUL_PROCESS ]]  && . zoul-process
-[[ -z $ZOUL_GIT_REPO ]] && . zoul-git-repo
+[[ -z $ZOUL_PROCESS ]]         && . zoul-process
+[[ -z $ZOUL_GIT_REPO ]]        && . zoul-git-repo
+[[ -z $ZOUL_GIT_BRANCH_CORE ]] && . zoul-git-branch-core
 
 # module state variables
 readonly moduleScope='moduleRoot moduleId moduleBranch moduleTracePrefix'
@@ -41,9 +42,10 @@ module_scope()
     moduleRoot="$PWD" \
     moduleId=$(repo_module_id) \
     moduleBranch=$(branch_current) \
-    moduleTracePrefix
+    moduleTracePrefix moduleBranchTracePrefix
 
-  printf -v moduleTracePrefix '%-15s %15s' "[$moduleId]" "($moduleBranch)"
+  printf -v moduleTracePrefix '%-15s' "[$moduleId]"
+  printf -v moduleBranchTracePrefix '%-15s %15s' "[$moduleId]" "($moduleBranch)"
 
   # execute next russian doll
   $*
