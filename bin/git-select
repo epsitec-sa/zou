@@ -84,10 +84,10 @@ select_submodules()
   module_visit_submodules_async select_submodules_enumerator select_tree || ec=$?
   
   # update active submodules which are excluded from select
-  module_visit_async select_need_update_enumerator repo_update_submodule || ec=$?
+  visit_async select_need_update_enumerator repo_update_submodule || ec=$?
 
   # discard inactive submodules
-  module_visit_async select_discard_enumerator select_discard_submodule || ec=$?
+  visit_async select_discard_enumerator select_discard_submodule || ec=$?
 
   repo_commit_clean_submodules || true
 }

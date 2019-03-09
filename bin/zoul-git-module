@@ -4,6 +4,7 @@
 #   [[ -z $ZOUL_GIT_MODULE ]] && . zoul-git-module
 ZOUL_GIT_MODULE=true
 
+[[ -z $ZOUL_CORE ]]            && . zoul-core
 [[ -z $ZOUL_PROCESS ]]         && . zoul-process
 [[ -z $ZOUL_GIT_REPO ]]        && . zoul-git-repo
 [[ -z $ZOUL_GIT_BRANCH_CORE ]] && . zoul-git-branch-core
@@ -62,53 +63,13 @@ module_enter()
 }
 
 # usage:
-#   module_visit enumerator p-visitor ...
-# in:
-#   $1     -- enumerator
-#   $2     -- p-visitor path ...
-#   ${@:3} -- next
-module_visit()
-{
-  local ec=0 path
-  for path in $($1); do
-    (
-      $2 "$path" "${@:3}" || exit $?
-    ) || ec=$?
-    [[ $ec -ne 0 && $stopOnError == true ]] && break
-  done
-  return $ec
-}
-# usage:
-#   module_visit enumerator p-visitor next ...
-# in:
-#   $1     -- enumerator
-#   $2     -- p-visitor   # signature: p-visitor path next ...
-#   ${@:3} -- next ...
-module_visit_async()
-{
-  local ec=0 path pids=()
-  for path in $(string_sort $($1)); do
-    (
-      $2 "$path" "${@:3}" || exit $?
-    ) &
-    pids+=($!)
-    if (( $(process_job_count) % $jobsCount == 0 )); then
-      wait "${pids[@]}" &>/dev/null || ec=$?
-      pids=()
-      [[ $ec -ne 0 && $stopOnError == true ]] && break
-    fi
-  done
-  [ ${#pids[@]} -ne 0 ] && wait "${pids[@]}" &>/dev/null || ec=$?
-  return $ec
-}
-# usage:
 #   module_visit_submodules enumerator next ...
 # in:
 #   $1     -- enumerator
 #   ${@:2} -- next ...
 module_visit_submodules()
 {
-  module_visit $1 module_submodule_visitor "${@:2}"
+  visit $1 module_submodule_visitor "${@:2}"
 }
 # usage:
 #   module_visit_submodules_async enumerator next ...
@@ -117,7 +78,7 @@ module_visit_submodules()
 #   ${@:2} -- next ...
 module_visit_submodules_async()
 {
-  module_visit_async $1 module_submodule_visitor "${@:2}"
+  visit_async $1 module_submodule_visitor "${@:2}"
 }
 # usage:
 #   module_submodule_visitor path next ...
