@@ -132,11 +132,22 @@ string_sort()
   local IFS=$'\n'
   sort <<<"$*"
 }
+string_sort_descending()   
+{
+  local IFS=$'\n'
+  sort -r <<<"$*"
+}
 array_sort()
 {
   local array=( ${!1} )
   local IFS=$'\n'
   sort <<<"${array[*]}"
+}
+array_sort_descending()
+{
+  local array=( ${!1} )
+  local IFS=$'\n'
+  sort -r <<<"${array[*]}"
 }
 
 assert_equals()
