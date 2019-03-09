@@ -35,8 +35,8 @@ vcheck_main()
       # local vbranch not found try remote vbranch
       rvbranch=$remote/$vbranch
       if [[ -z $(git show-ref refs/remotes/$rvbranch) ]]; then
-        git branch $vbranch ${vtags[0]}
-        git push -u origin $vbranch
+        git branch $vbranch ${vtags[0]} &>/dev/null
+        git push -u origin $vbranch &>/dev/null
         io_warning "Created branch '$vbranch'" "$moduleTracePrefix"
         continue
       fi
