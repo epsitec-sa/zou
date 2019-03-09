@@ -1,72 +1,116 @@
 #!/bin/bash
 
-. zoul-core
-. zoul-git-tag
+[[ -z $ZOUL_CORE ]]    && . zoul-core
+[[ -z $ZOUL_GIT_TAG ]] && . zoul-git-tag
+[[ -z $ZOUL_GIT_MODULE ]] && . zoul-git-module
 
-while [[ "$#" > 0 ]]; do case "$1" in
-  -h|--help) zou-help $0; exit 0;;
-  --sync)   syncTags=true;;
-  --prune)  pruneTags=true;;
-  --mirror) mirrorTags=true;;
-  -*) echo "unknown option: $1" >&2; exit 1;;
-esac; shift; done
-
-fill_map()
+tags_parse()
 {
-  # echo fill_map "${*@Q}"
+  while [[ "$#" > 0 ]]; do case "$1" in
+    -h|--help) zou-help $0; exit 0;;
+    --sync)   syncTags=true;;
+    --prune)  pruneTags=true;;
+    --mirror) mirrorTags=true;;
+    -*) io_error "unknown option: $1"; return 1;;
+  esac; shift; done
+}
+tags_run()
+{
+  # local quiet dryRun='echo' args=('*' 'server')
+  local quiet syncTags pruneTags mirrorTags
+  tags_parse "$@" || return $?
+  
+  module_run tags_main
+}
+tags_main()
+{
+  declare -A ltags
+  IFS=$'\n' rows=( $(git show-ref --tags) )
+  tags_fill_map 'ltags' "${rows[@]}"
+
+  declare -A rtags
+  IFS=$'\n' rows=( $(git ls-remote --tags --refs 2>/dev/null | tr -s [:blank:] ' ') )
+  tags_fill_map 'rtags' "${rows[@]}"
+
+  local ltag rtag tag lrTags lotags rotags prtags mitags sytags
+
+  lrTags=()
+  for key in ${!ltags[@]}; do
+    ltag=${ltags[$key]}
+    rtag=${rtags[$key]}
+    if [[ $ltag == $rtag ]]; then
+      lrTags+=( "${ltag#refs/tags/}" )
+      unset ltags[$key]
+      unset rtags[$key]
+    fi
+  done
+  for tag in $(array_sort_descending 'lrTags[@]'); do
+    io_message "$tag" "$moduleTracePrefix" Green
+  done
+
+  # process local only tags
+  syTags=()
+  prTags=()
+  loTags=()
+  for key in ${!ltags[@]}; do
+    ltag=${ltags[$key]}
+    tag=${ltag#refs/tags/}
+    if [[ $pruneTags == true ]]; then
+      prTags+=( $tag )
+    elif [[ $syncTags == true ]]; then
+      syTags+=( $tag )
+    else
+      loTags+=( $tag )
+    fi
+  done
+
+  for tag in $(array_sort_descending 'syTags[@]'); do
+    tag_push_not_followed $tag $tag^{} || localOnlyTags+=( $tag )
+    # io_info "Skipped local only tag '$tag' (underlying commit has not yet been pushed)." "$moduleTracePrefix"
+  done
+  for tag in $(array_sort_descending 'prTags[@]'); do
+    git tag --delete $tag &>/dev/null
+    io_warning "Deleted local tag '$tag'." "$moduleTracePrefix"
+  done
+  for tag in $(array_sort_descending 'loTags[@]'); do
+    io_message "$tag" "$moduleTracePrefix" Blue
+  done
+
+  # process remote only tags
+  miTags=()
+  syTags=()
+  roTags=()
+  for key in ${!rtags[@]}; do
+    rtag=${rtags[$key]}
+    tag=${rtag#refs/tags/}
+    if [[ $mirrorTags == true ]]; then
+      miTags+=( $tag )
+    elif [[ $syncTags == true ]]; then
+      syTags+=( $rtag )
+    else
+      roTags+=( $tag )
+    fi
+  done
+
+  for tag in $(array_sort_descending 'miTags[@]'); do
+    git push --delete origin $tag &>/dev/null
+    io_info "Deleted remote tag '$tag'." "$moduleTracePrefix"
+  done
+  for rtag in $(array_sort_descending 'syTags[@]'); do
+    git fetch origin +$rtag:$rtag &>/dev/null
+    io_info "Fetched remote tag '${rtag#refs/tags/}'." "$moduleTracePrefix"
+  done
+  for tag in $(array_sort_descending 'roTags[@]'); do
+    io_message "$tag" "$moduleTracePrefix" Purple
+  done
+}
+tags_fill_map()
+{
+  # echo tags_fill_map "${*@Q}"
   local map=$1 row; shift
   for row in "$@"; do
     eval "$map[${row% *}]=${row#* }"
   done
 }
 
-moduleId=$(repo_module_id)
-
-declare -A ltags
-IFS=$'\n' rows=( $(git show-ref --tags) )
-fill_map 'ltags' "${rows[@]}"
-
-declare -A rtags
-IFS=$'\n' rows=( $(git ls-remote --tags --refs 2>/dev/null | tr -s [:blank:] ' ') )
-fill_map 'rtags' "${rows[@]}"
-
-for key in ${!ltags[@]}; do
-  # synchronized
-  ltag=${ltags[$key]}
-  rtag=${rtags[$key]}
-  if [[ $ltag == $rtag ]]; then
-    io_message "${ltag#refs/tags/}" "[$moduleId]" Green
-    unset ltags[$key]
-    unset rtags[$key]
-  fi
-done
-
-for key in ${!ltags[@]}; do
-  # local only
-  ltag=${ltags[$key]}
-  tag=${ltag#refs/tags/}
-  if [[ $pruneTags == true ]]; then
-    git tag --delete $tag &>/dev/null
-    io_info "Deleted local tag '$tag'." "[$moduleId]"
-  elif [[ $syncTags == true ]]; then
-    tag_push_not_followed $ltag $ltag^{} ||\
-    io_info "Skipped local only tag '$tag' (underlying commit has not yet been pushed)." "[$moduleId]"
-  else
-    io_message "$tag" "[$moduleId]" Blue
-  fi
-done
-
-for key in ${!rtags[@]}; do
-  # remote only
-  rtag=${rtags[$key]}
-  tag=${rtag#refs/tags/}
-  if [[ $mirrorTags == true ]]; then
-    git push --delete origin $tag &>/dev/null
-    io_info "Deleted remote tag '$tag'." "[$moduleId]"
-  elif [[ $syncTags == true ]]; then
-    git fetch origin +$rtag:$rtag &>/dev/null
-    io_info "Fetched remote tag '$tag'." "[$moduleId]"
-  else
-    io_message "$tag" "[$moduleId]" Purple
-  fi
-done
+tags_run "$@"

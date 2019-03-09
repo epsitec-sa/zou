@@ -26,7 +26,7 @@ tag_push_not_followed()
     local remote=$(git remote) oinfo=' '
     git push "$@" $remote "$tag" &>/dev/null
     [[ -n $@ ]] && oinfo="($@) "
-    io_info "Pushed tag$oinfo'$tag' to '$remote'" [$(repo_module_id)]
+    io_info "Pushed tag$oinfo'$tag' to '$remote'" "$moduleTracePrefix"
     return 0
   fi
   return 1
@@ -44,7 +44,7 @@ tag_rename()
     GIT_COMMITTER_EMAIL=$(tagger_email "$tag1") \
     GIT_COMMITTER_DATE=$(tag_date "$tag1") \
     git tag -f -m "$message" "$tag2" "$tag1^{}"
-    io_info "Renamed annotated tag '$tag1' to '$tag2'" "[$(repo_module_id)]"
+    io_info "Renamed annotated tag '$tag1' to '$tag2'" "$moduleTracePrefix"
   fi
   tag_push_not_followed $tag2 $tag1
   [[ "$tag1" != "$tag2" ]] && tag_delete "$tag1"
@@ -66,7 +66,7 @@ tag_move_to_commit()
     tag_delete $tag
     GIT_COMMITTER_NAME="$tagger" GIT_COMMITTER_EMAIL="$email" GIT_COMMITTER_DATE="$date" \
     git tag -a -m "'$message'" "$tag" "$commit"
-    io_info "Moved annotated tag '$tag' to '$commit'" "[$(repo_module_id)]"
+    io_info "Moved annotated tag '$tag' to '$commit'" "$moduleTracePrefix"
   fi
   tag_push_not_followed $tag $commit
 }

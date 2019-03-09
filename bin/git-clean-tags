@@ -8,18 +8,32 @@
 #    group tags pointing to the same commit hash
 #      create a lookup table with the commit hash as key and the commit tags (space separated) as value.
 
-[[ -z $ZOUL_CORE ]]     && . zoul-core
-[[ -z $ZOUL_GIT_TAG ]]  && . zoul-git-tag
-[[ -z $ZOUL_GIT_VTAG ]] && . zoul-git-vtag
-[[ -z $ZOUL_GIT_CORE ]] && . zoul-git-core
-[[ -z $ZOUL_GIT_REPO ]] && . zoul-git-repo
+[[ -z $ZOUL_CORE ]]       && . zoul-core
+[[ -z $ZOUL_GIT_TAG ]]    && . zoul-git-tag
+[[ -z $ZOUL_GIT_VTAG ]]   && . zoul-git-vtag
+[[ -z $ZOUL_GIT_CORE ]]   && . zoul-git-core
+[[ -z $ZOUL_GIT_REPO ]]   && . zoul-git-repo
+[[ -z $ZOUL_GIT_MODULE ]] && . zoul-git-module
 
-while [[ "$#" > 0 ]]; do case "$1" in
-  -h|--help) zou-help $0; exit 0;;
-  -*) echo "unknown option: $1" >&2; exit 1;;
-esac; shift; done
-
-moduleId=$(repo_module_id)
+clean_parse()
+{
+  while [[ "$#" > 0 ]]; do case "$1" in
+    -h|--help) zou-help $0; exit 0;;
+    -*) io_error "unknown option: $1"; return 1;;
+  esac; shift; done
+}
+clean_run()
+{
+  clean_parse "$@" || return $?
+  
+  module_run clean_main
+}
+clean_main()
+{
+  tag_delete_root_in_other
+  tag_move_non_semver_and_big_patch_to_other
+  tag_remove_other_redondant
+}
 
 tag_delete_root_in_other()
 {
@@ -73,7 +87,3 @@ tag_remove_other_redondant()
     done
   fi
 }
-
-tag_delete_root_in_other
-tag_move_non_semver_and_big_patch_to_other
-tag_remove_other_redondant
