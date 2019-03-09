@@ -43,10 +43,17 @@ module_scope()
     moduleRoot="$PWD" \
     moduleId=$(repo_module_id) \
     moduleBranch=$(branch_current) \
-    moduleTracePrefix moduleBranchTracePrefix
+    moduleTracePrefix
 
-  printf -v moduleTracePrefix '%-15s' "[$moduleId]"
-  printf -v moduleBranchTracePrefix '%-15s %15s' "[$moduleId]" "($moduleBranch)"
+  if [[ $useLongModuleTracePrefix == true ]]; then
+    local spaces sep
+    (( spaces = 30 - ${#moduleId} - ${#moduleBranch} ))
+    (( spaces < 1 )) && spaces=1
+    printf -v sep '%0.s ' $(seq 1 $spaces)
+    printf -v moduleTracePrefix '%s' "[$moduleId]" "$sep" "($moduleBranch)"
+  else
+    printf -v moduleTracePrefix '%-25s' "[$moduleId]"
+  fi
 
   # execute next russian doll
   $*
