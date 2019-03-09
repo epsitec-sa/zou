@@ -3,55 +3,65 @@
 [[ -z $ZOUL_GIT_REPO ]]        && . zoul-git-repo
 [[ -z $ZOUL_GIT_VTAG ]]        && . zoul-git-vtag
 [[ -z $ZOUL_GIT_BRANCH_CORE ]] && . zoul-git-branch-core
+[[ -z $ZOUL_GIT_MODULE ]]      && . zoul-git-module
 
-forOpts=()
-while [[ "$#" > 0 ]]; do case "$1" in
-  -h|--help) zou-help $0; exit 0;;
-  -q|--quiet)     forOpts+=($1); quiet=true;;
-  -r|--recursive) recursive=true;;
-  --alpha)        prerelPrefix='alpha';;
-  --beta)         prerelPrefix='beta';;
-  --rc)           prerelPrefix='rc';;
-  --rtm)          prerelPrefix='rtm';;
-  --debug)        debug=true;;
-  -*)             forOpts+=($1);;
-  *) ref=$1;;
-esac; shift; done
+vstatus_parse()
+{
+  while [[ "$#" > 0 ]]; do case "$1" in
+    -h|--help) zou-help $0; exit 0;;
+    -q|--quiet)     forOpts+=($1); quiet=true;;
+    -r|--recursive) recursive=true;;
+    --alpha)        prerelPrefix='alpha';;
+    --beta)         prerelPrefix='beta';;
+    --rc)           prerelPrefix='rc';;
+    --rtm)          prerelPrefix='rtm';;
+    --debug)        debug=true;;
+    -*)             forOpts+=($1);;
+    *) ref=$1;;
+  esac; shift; done
+}
+vstatus_run()
+{
+  local quiet recursive prerelPrefix forOpts=() ref
+  vstatus_parse "$@" || return $?
 
-vtag_status()
+  local useLongModuleTracePrefix=true
+  
+  if [[ $recursive == true ]]; then
+    . git-for -q "${forOpts[@]}" -- "vstatus_main >/dev/null"
+  else
+    module_run vstatus_main "$ref"
+  fi
+}
+vstatus_main()
 {
   local ref=$(git_symbolic_ref ${1:-HEAD})
   if ! branch_exists "$ref"; then
-    io_error "Branch '$ref' does not exist" "[$(repo_module_id)]"
+    io_error "Branch '$ref' does not exist" "$moduleTracePrefix"
     return 1
   fi
-  local ltag stag ntag lsuf delta label
-  label="[$(repo_module_id)] ($ref)"
+  local ltag stag ntag lsuf delta
   ltag=$(vtag_describe $ref)
   if [[ -z $ltag ]]; then
-    io_error "Version tag not found" "$label"
+    io_error "Version tag not found" "$moduleTracePrefix"
     return 1
   fi
   stag=${ltag%-*-g*}
   lsuf=${ltag#$stag}
-  ntag=$(vtag_increment "$stag" "$prerelPrefix" "$label")
+  ntag=$(vtag_increment "$stag" "$prerelPrefix" "$moduleTracePrefix")
   if [[ -z $lsuf ]]; then
-    io_info "Already published at $stag" "$label"
-    [[ -z $quiet ]] && io_info "Next version      at $ntag" "$label"
+    io_info "Already published at $stag" "$moduleTracePrefix"
+    [[ -z $quiet ]] && io_info "Next version      at $ntag" "$moduleTracePrefix"
   else
     [[ -z $quiet ]] && {
-      io_info "Actual version at $stag" "$label"
-      io_info "Next   version at $ntag" "$label"
+      io_info "Actual version at $stag" "$moduleTracePrefix"
+      io_info "Next   version at $ntag" "$moduleTracePrefix"
     }
     delta=${lsuf%-g*}
     delta=${delta#-}
-    io_warning "'$ref' is $delta commits ahead of $stag" "$label"
+    io_warning "Branch '$ref' is $delta commits ahead of tag '$stag'" "$moduleTracePrefix"
   fi
   return 0
 }
 
-if [[ $recursive == true ]]; then
-  . git-for "${forOpts[@]}" -- "vtag_status >/dev/null"
-else
-  vtag_status "$ref"
-fi
+vstatus_run "$@"
