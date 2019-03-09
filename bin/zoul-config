@@ -10,6 +10,8 @@ config_reset() { git config --global --unset 'zou.initialized'; }
 
 config_setup()
 {
+  git config --global --unset push.followTags
+
   [[ $(git config --global 'zou.initialized') == true ]] || {
 
     [ -f $(realPath ~/.gitconfig) ] && cp -f "$(realPath ~/.gitconfig)" "$(realpath ~/.gitconfig.backup)"
@@ -17,9 +19,6 @@ config_setup()
     # setup default credential helper (save credentials in ~/.git-credentials)
     ! git config credential.helper &>/dev/null && git config --global credential.helper store
     
-    # https://stackoverflow.com/questions/5195859/how-do-you-push-a-tag-to-a-remote-repository-using-git
-    git config --global push.followTags true
-
     git config --global --remove-section status &>/dev/null
     git config --global --remove-section diff &>/dev/null
     git config --global --remove-section alias &>/dev/null
