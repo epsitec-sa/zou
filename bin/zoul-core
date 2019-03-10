@@ -289,6 +289,8 @@ visit()
 visit_async()
 {
   local ec=0 path pids=()
+  [[ -z $jobsCount ]] && jobsCount=32
+
   for path in $(string_sort $($1)); do
     (
       $2 "$path" "${@:3}" || exit $?
@@ -301,7 +303,16 @@ visit_async()
     fi
   done
   [ ${#pids[@]} -ne 0 ] && wait "${pids[@]}" &>/dev/null || ec=$?
+  wait
   return $ec
+}
+visit_async_fast()
+{
+  local path
+  for path in $(string_sort $($1)); do
+    ( $2 "$path" "${@:3}" || exit $? ) &
+  done
+  wait
 }
 
 # trace constants (if debug == true)
