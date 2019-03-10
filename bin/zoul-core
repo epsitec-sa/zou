@@ -15,88 +15,53 @@ zou_startupDir="${zou_startupPath%/*}"
 zou_binDir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 zou_command="${zou_startupFileName##git-}"
 
-# colors
-declare -A io_color
-io_color[Default]='0'
-io_color[Black]='0;30'
-io_color[Blue]='0;34'
-io_color[Green]='0;32'
-io_color[Cyan]='0;36'
-io_color[Red]='0;31'
-io_color[Purple]='0;35'
-io_color[Brown]='0;33'
-io_color[LightGray]='0;37'
-io_color[DarkGray]='1;30'
-io_color[LightBlue]='1;34'
-io_color[LightGreen]='1;32'
-io_color[LightCyan]='1;36'
-io_color[LightRed]='1;31'
-io_color[LightPurple]='1;35'
-io_color[Yellow]='1;33'
-io_color[White]='1;37'
+io_print_colors()
+{
+  local color colors=()
+  for color in Black DarkGray Red LightRed Green LightGreen Brown Yellow Blue LightBlue Purple LightPurple Cyan LightCyan LightGray White; do
+    colors+=( ${!color}$color )
+  done
+  printf '%20b%20b\n' "${colors[@]}"
+}
+# colors usage
+#   colors="${Red}Red ${Green}Green${NC}"
+#   printf '%b\n' "$message"
+NC='\e[0m'  # No Color
+Black='\e[0;30m'     DarkGray='\e[1;30m'
+Red='\e[0;31m'       LightRed='\e[1;31m'
+Green='\e[0;32m'     LightGreen='\e[1;32m'
+Brown='\e[0;33m'     Yellow='\e[1;33m'
+Blue='\e[0;34m'      LightBlue='\e[1;34m'
+Purple='\e[0;35m'    LightPurple='\e[1;35m'
+Cyan='\e[0;36m'      LightCyan='\e[1;36m'
+LightGray='\e[0;37m' White='\e[1;37m'
 
-# usage: io_color_escape_sequence <color>
-# example:
-#   $ io_color_escape_sequence Cyan
-#   \033[0;36m
-#   $ io_color_escape_sequence Default
-#   \033[0m
-io_color_escape_sequence()
-{
-  echo "\033[${io_color[$1]}m";
-}
-# usage: io_colorize <color> <message>
-# example:
-#   $ io_colorize Cyan 'my message'
-io_colorize()
-{
-  local color=$(io_color_escape_sequence $1); shift
-  printf "$color%b\033[0m" "$@"
-}
-# usage: io_message <message> [<prefix> [<color=LightCyan>]]
-#   <prefix>:: <prefix-name>[<indent>]
-#   <indent>:: %<number>s
+# usage: io_message <message> [<label> [<color=LightCyan>]]
 # example:
 #   $ io_message 'message' 'info' Cyan
-#   info: message
+#   -> info: message
 #   $ io_message 'message' '' Gray
-#   message
-#   $ io_message 'message' 'info%2s'
-#   info:
-#     message
+#   -> message
 io_message()
 {
-  local message=$1
-  local prefix indent
-  [[ $2 =~ ^([^\%]*)(%[0-9]+s)?$ ]] && {
-    prefix=${BASH_REMATCH[1]}
-    indent=${BASH_REMATCH[2]}
-    [[ -n $prefix ]] && prefix="$prefix: "
-    [[ -n $indent ]] && printf -v indent "$indent" ''
-  }
-  if [[ $message == *$'\n'* ]]; then
-    # more than one line
-    if [[ -n $indent ]]; then
-      message=$(echo "$message" | sed "s/^/$indent/")
-    fi
-    if [[ -n $prefix ]]; then
-      printf -v message '%s\n%s' "$prefix" "$message"
-    fi
-  elif [[ -n $indent ]]; then
-    message=$indent$message
-    if [[ -n $prefix ]]; then
-      printf -v message '%s\n%s' "$prefix" "$message"
+  local message=$1 label=$2 color=${3:-Cyan}
+  if [[ -n $label ]]; then
+    if [[ $label =~ ^\\e\[[0-9] ]]; then
+      # colored label 
+      message="$label : ${!color}$message${NC}"
+    else
+      # no label color
+      message="${!color}$label${NC} : ${!color}$message${NC}"
     fi
   else
-    message=$prefix$message
+    message="${!color}$message${NC}"
   fi
-  colored=$(io_colorize ${3:-LightCyan} "$message")
-  printf "$colored\n" 1>&2
+  printf "%b\n" "$message" 1>&2
 }
 io_info()     { io_message "$1" "${2:-info}"; }
-io_success()  { io_message "$1" "${2:-info}" LightGreen; }
+io_success()  { io_message "$1" "${2:-info}" Green; }
 io_warning()  { io_message "$1" "${2:-warning}" Brown; }
-io_error()    { io_message "$1" "${2:-error}" LightRed; }
+io_error()    { io_message "$1" "${2:-error}" Red; }
 io_debug()    { [[ $debug == 'true' ]] && io_message "$1 = ${!1}" "${2:-debug}" ${3:-Purple}; }
 
 io_pause()
