@@ -179,17 +179,30 @@ branch_checkout()
 {
   local info
   local branch=$(branch_without_remote_prefix $1)
-  if ! branch_is_current "$branch"; then
+  if ! branch_is_current "$branch" || [[ $2 == true ]]; then
+    # io_info "Switching to branch '$branch'..." "$moduleTracePrefix"
     info=$(git checkout "$branch" 2>&1 >/dev/null)
     [ $? -ne 0 ] && return $?
+    [[ -n $moduleBranchChanged ]] && $moduleBranchChanged $branch
     [[ -n $info ]] && {
-      local line moduleId=$(repo_module_id)
+      local line color
       while read -r line; do
-        io_info "$line" "[$moduleId]"
+        [[ -z $line ]] && continue
+        if [[ $line =~ ^Switched ]]; then
+          color=Cyan
+        elif [[ -z $color ]]; then
+          if [[ $line =~ ^Already ]]; then
+            color=LightBlue
+          elif [[ $line =~ ^Warning ]]; then
+            color=Brown
+          else
+            color=DarkGray
+          fi
+        fi
+        io_message "$line" "$moduleTracePrefix" $color
       done <<< "$info"
     }
   fi
-  echo $branch
 }
 branch_move()
 {
