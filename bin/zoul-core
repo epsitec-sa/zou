@@ -89,7 +89,8 @@ trace_vars()
 }
 
 string_is_folded() { [[ $1 =~ ^[^/]+/.+$ ]]; }
-string_pad()       { printf "%-$1s" $2; }
+string_pad_left()  { printf "%*s" $1 $2; }
+string_pad_right() { printf "%-*s" $1 $2; }
 string_join()      { local d=$1; shift; echo -n "$1"; shift; printf "%s" "${@/#/$d}"; }
 string_indent()    { local n=$1; shift; printf "%${n}s%s" '' "$*"; }
 string_sort()   
