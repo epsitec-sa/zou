@@ -29,8 +29,8 @@ for_run()
   # parse command line
   local jobsCount quiet stopOnError noSkuFilter noSelectFilter smOnly bottomUp visitAncestors zou_command
   for_parse "$@" || return $?
-  # local options='quiet stopOnError noSkuFilter noSelectFilter smOnly bottomUp visitAncestors'
-  # trace_method for_run $options
+
+  local useLongModuleTracePrefix=true
   
   module_run for_main
 }
@@ -67,7 +67,7 @@ for_tree()
     for_command || ec=$?
     [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
   fi
-  # io_warning "<<<< for_tree ${*@Q}" "[$moduleId]"
+  # io_warning "<<<< for_tree ${*@Q}" "$moduleTracePrefix"
   return $ec
 }
 for_submodules() { module_visit_submodules_async for_submodules_enumerator for_tree; }

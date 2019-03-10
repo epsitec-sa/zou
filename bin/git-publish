@@ -54,8 +54,8 @@ publish_run()
   # parse command line
   local jobsCount quiet stopOnError vtable smDev vtagOnly prerelPrefix attachHint
   publish_parse "$@" || return $?
-  # local options='quiet stopOnError vtable smDev vtagOnly prerelPrefix attachHint'
-  # trace_method publish_run $options
+
+  local useLongModuleTracePrefix=true
 
   module_run publish_main
 }
@@ -94,7 +94,7 @@ publish_tree()
 publish_submodules() { module_visit_submodules_async publish_submodules_enumerator publish_tree; }
 publish_submodules_enumerator()
 {
-  # io_warning ">>>> publish_submodules" "[$moduleId]"
+  # io_warning ">>>> publish_submodules" "$moduleTracePrefix"
   local configFile include exclude
   configFile=$(repo_zouflow_path "$moduleRoot") || return $?
   include=( $(config_sku_list_included "$moduleBranch" "$configFile") )
@@ -103,7 +103,7 @@ publish_submodules_enumerator()
 }
 publish_prolog()
 {
-  repo_require_clean_work_tree 'cannot publish' || return 1
+  repo_require_clean_work_tree 'Cannot publish' || return 1
 
   if [[ $stopPublish == true ]]; then
     publish_try_attach
@@ -140,7 +140,7 @@ publish_epilog()
         local branch=$(branch_current) vbranch=$(vtag_get_vbranch_name $branchOrTag)
         branch_merge $vbranch $branch
         publish_try_attach
-        io_success "Published branch '$branch' on vbranch '$vbranch' at '$branchOrTag' (fast-forward)" "[$moduleId]"
+        io_success "Published branch '$branch' on vbranch '$vbranch' at '$branchOrTag' (fast-forward)" "$moduleTracePrefix"
       fi
       publish_update_vtable
     else
@@ -149,7 +149,7 @@ publish_epilog()
       publish_update_vtable
     fi
   fi
-  # io_warning "<<<< publish_epilog ($branchOrTag)" "[$moduleId]"
+  # io_warning "<<<< publish_epilog ($branchOrTag)" "$moduleTracePrefix"
   return $ec
 }
 publish_select_vtag()
@@ -159,13 +159,13 @@ publish_select_vtag()
 
   case $? in
   0)
-    io_success "Published existing version '$branchOrTag'" "[$moduleId]"
+    io_success "Published existing version '$branchOrTag'" "$moduleTracePrefix"
     publish_try_attach;;
   1)
-    io_info "Already published at '$branchOrTag'" "[$moduleId]"
+    io_info "Already published at '$branchOrTag'" "$moduleTracePrefix"
     publish_try_attach;;
   2)
-    io_warning "Branch '$branch' was never published" "[$moduleId]"
+    io_warning "Branch '$branch' was never published" "$moduleTracePrefix"
     neverPublished=true;;
   3)
     ffPublish=true;;
@@ -176,13 +176,13 @@ publish_try_attach() { branch_try_attach 'HEAD' "$attachHint" >/dev/null; }
 publish_update_vtable()
 {
   [[ $createVTable == true ]] || return 1
-  # io_message "publish_update_vtable ${*@Q}" "[$moduleId]" Gray
+  # io_message "publish_update_vtable ${*@Q}" "$moduleTracePrefix" Gray
   lock "$lockDir" 0.1 vtable_update "$startupRoot" "$moduleId" "$lookupPath"
 }
 publish_commit_vtable()
 {
   [[ $createVTable == true ]] || return 1
-  # io_message "publish_commit_vtable ${*@Q}" "[$moduleId]" Gray
+  # io_message "publish_commit_vtable ${*@Q}" "$moduleTracePrefix" Gray
   local ec=0 branch=$1 vtag=$2 vbranch=$3 source target
   vtable_update "$startupRoot" "$moduleId" "$lookupPath" || ec=$?
 
@@ -200,7 +200,7 @@ publish_commit_vtable()
     branch_merge $target $source
   fi
   if [[ -n $vtag ]]; then
-    [ $ec -eq 0 ] && io_info "Created vtable for '$source' at '$vtag'" "[$moduleId]"
+    [ $ec -eq 0 ] && io_info "Created vtable for '$source' at '$vtag'" "$moduleTracePrefix"
     tag_move "$vtag" "$source"
   fi
 }

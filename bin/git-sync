@@ -31,8 +31,8 @@ sync_run()
   # parse command line
   local jobsCount quiet stopOnError noSkuFilter moduleRootOnly smOnly cleanLocalBranches hint
   sync_parse "$@" || return $?
-  # local options='quiet stopOnError noSkuFilter moduleRootOnly smOnly cleanLocalBranches hint'
-  # trace_method sync_run $options
+  
+  local useLongModuleTracePrefix=true
 
   module_run sync_main
 }
@@ -61,7 +61,7 @@ sync_tree()
 sync_node()
 {
   # synchronize all branches
-  [[ -z $quiet ]] && io_info "Synchronizing..." "[$moduleId]"
+  # [[ -z $quiet ]] && io_info "Synchronizing..." "$moduleTracePrefix"
   branch_sync_all "$hint" && sync_clean_local_branches || return $?
 }
 sync_clean_local_branches()
@@ -70,7 +70,7 @@ sync_clean_local_branches()
     local branch
     for branch in $(branch_list_local_can_delete); do
       local info=$(git branch -D "$branch" 2>/dev/null)
-      [[ -n $info ]] && io_warning "$info" "[$moduleId]"
+      [[ -n $info ]] && io_warning "$info" "$moduleTracePrefix"
     done
   fi
 }
@@ -81,7 +81,7 @@ sync_submodules_enumerator()
   local configFile
   configFile=$(repo_zouflow_path "$moduleRoot") || return $?
   if [[ $noSkuFilter == true ]]; then
-    repo_list_submodule_paths
+    echo "${moduleSubmodulePaths[@]}"
   else
     config_sku_list_included "$moduleBranch" "$configFile"
   fi

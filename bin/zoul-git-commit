@@ -32,7 +32,7 @@ commit_sync_submodules()
   }
   for k in ${!a[@]}; do
     if [[ ${a[$k]} != ${b[$k]} ]]; then
-      io_info "Synchronized '$1' with '$2'" "[$(repo_module_id)]"
+      io_info "Synchronized '$1' with '$2'" "$moduleTracePrefix"
       git checkout "$2" &>/dev/null
       repo_commit_clean_submodules
       git checkout - &>/dev/null

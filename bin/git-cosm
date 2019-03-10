@@ -17,11 +17,11 @@ cosm_node()
     local unstaged=( $(repo_list_unstaged_submodules) )
     if [ ${#unstaged[@]} -ne 0 ]; then
       if [ ${#unstaged[@]} -eq 1 ]; then
-        io_message "Submodule '${unstaged[0]}' is dirty and has not been commited." "[$moduleId]" Purple
+        io_message "Submodule '${unstaged[0]}' is dirty and has not been commited." "$moduleTracePrefix" Purple
       else
-        io_message "Submodules '$(string_join ', ' ${unstaged[@]})' are dirty and have not been commited." "[$moduleId]" Purple
+        io_message "Submodules '$(string_join ', ' ${unstaged[@]})' are dirty and have not been commited." "$moduleTracePrefix" Purple
       fi
-      io_message "  use 'git cosm -f' to force a commit." "[$moduleId]" Purple
+      io_message "  use 'git cosm -f' to force a commit." "$moduleTracePrefix" Purple
     fi
   fi
 }

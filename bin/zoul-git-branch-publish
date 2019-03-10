@@ -29,7 +29,6 @@ branch_get_vbranch_name()
 branch_publish()
 {
   local branch=$1 prerelPrefix=$2 obranch
-  local moduleId=$(repo_module_id)
   
   if [[ -z $branch ]]; then
     branch=$(branch_current)
@@ -41,19 +40,19 @@ branch_publish()
     # detached head
     local vtags=( $(vtag_vtags_at $branch | grep -v '\-@$') )
     if [ ${#vtags[@]} -ne 0 ]; then
-      io_info "Published detached head '$branch' at '${vtags[0]}'" "[$moduleId]"
+      io_info "Published detached head '$branch' at '${vtags[0]}'" "$moduleTracePrefix"
     else
-      io_warning "Detached head '$branch' cannot be published" "[$moduleId]"
+      io_warning "Detached head '$branch' cannot be published" "$moduleTracePrefix"
     fi
   else
     local vbranch=$(branch_get_vbranch_name $branch)
     if [[ -z $vbranch ]]; then
-      io_warning "Branch '$branch' is not associated with a vbranch" "[$moduleId]"
+      io_warning "Branch '$branch' is not associated with a vbranch" "$moduleTracePrefix"
       return 2
     fi
 
     if ! branch_ensure_local $vbranch; then
-      io_warning "The vbranch '$vbranch' does not exist" "[$moduleId]"
+      io_warning "The vbranch '$vbranch' does not exist" "$moduleTracePrefix"
       return 2
     fi
 
@@ -96,14 +95,14 @@ branch_publish()
       git tag -a -m "zou-flow: $comment" $vtag $vbranch
     fi
 
-    [ $ec -eq 3 ] || io_success "Published branch '$branch' at '$vtag'" "[$(repo_module_id)]"
+    [ $ec -eq 3 ] || io_success "Published branch '$branch' at '$vtag'" "$moduleTracePrefix"
     echo "$vtag" "$vbranch"
   fi
 }
 
 _branch_publish_commit_and_merge()
 {
-  # io_message "_branch_publish_commit_and_merge ${*@Q}" "[$(repo_module_id)]"
+  # io_message "_branch_publish_commit_and_merge ${*@Q}" "$moduleTracePrefix"
   local obranch=$1 branch=$2 vbranch=$3 vtag=$4 updater=$5 vcommit
   # update technical version - modify resources files
   [[ -n $obranch ]] && git checkout $branch &>/dev/null

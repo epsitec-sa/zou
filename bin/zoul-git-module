@@ -25,7 +25,8 @@ module_scope_startup()
     startupRoot=$(repo_module_root) \
     bundleId=$(repo_bundle_id) \
     bundleRoot=$(repo_bundle_root) \
-    bundleBranch=$(branch_current_root_branch)
+    bundleBranch=$(branch_current_root_branch) \
+    submodulePathMaxLength
 
   # enter startup module
   module_enter "$startupRoot" || return $?
@@ -43,17 +44,16 @@ module_scope()
     moduleRoot="$PWD" \
     moduleId=$(repo_module_id) \
     moduleBranch=$(branch_current) \
+    moduleSubmodulePaths=( $(repo_list_submodule_paths $PWD) ) \
+    moduleBranchChanged='_module_branch_changed' \
     moduleTracePrefix
-
-  if [[ $useLongModuleTracePrefix == true ]]; then
-    local spaces sep
-    (( spaces = 30 - ${#moduleId} - ${#moduleBranch} ))
-    (( spaces < 1 )) && spaces=1
-    printf -v sep '%0.s ' $(seq 1 $spaces)
-    printf -v moduleTracePrefix '%s' "[$moduleId]" "$sep" "($moduleBranch)"
-  else
-    printf -v moduleTracePrefix '%-25s' "[$moduleId]"
+  
+  if [[ $moduleRoot == $startupRoot ]]; then
+    # initialize startup module context
+    _module_set_submodule_path_max_length
   fi
+
+  _module_set_trace_prefix
 
   # execute next russian doll
   $*
@@ -66,7 +66,7 @@ module_enter()
     io_error "No such [sub]module directory '$1'" "$moduleTracePrefix"
     return 1
   }
-  [[ $quiet == true ]] || echo Entering "'$(path_make_relative '.' "$startupDir")'"
+  # [[ $quiet == true ]] || echo Entering "'$(path_make_relative '.' "$startupDir")'"
 }
 
 # usage:
@@ -87,6 +87,19 @@ module_visit_submodules_async()
 {
   visit_async $1 module_submodule_visitor "${@:2}"
 }
+module_visit_submodules_async_fast()
+{
+  visit_async_fast $1 module_submodule_visitor "${@:2}"
+}
+# Default submodules enumerator
+# exemple:
+#   module_visit_submodules \
+#     module_submodules_enumerator \
+#     module_submodule_visitor ...
+module_submodules_enumerator()
+{
+  echo "${moduleSubmodulePaths[@]}"
+}
 # usage:
 #   module_submodule_visitor path next ...
 # in:
@@ -97,3 +110,49 @@ module_submodule_visitor()
   module_enter "$1" || return $?
   module_scope "${@:2}" || return $?
 }
+_module_branch_changed()
+{
+  moduleBranch=$1
+  _module_set_trace_prefix
+}
+_module_branch_prefix()
+{
+  local ref=$(git rev-parse --abbrev-ref HEAD)
+  if [[ $ref == HEAD ]]; then
+    ref=$(git tag --points-at HEAD | head -n1)
+    if [[ -z $ref ]]; then
+      ref="$(git rev-parse --short HEAD)..."
+    fi
+    echo "($ref)"
+    return 1
+  else
+    echo "$ref"
+    return 0
+  fi
+}
+_module_set_submodule_path_max_length()
+{
+  local path
+  submodulePathMaxLength=${#moduleId}
+  for path in ${moduleSubmodulePaths[@]}; do
+    (( ${#path} > $submodulePathMaxLength )) && submodulePathMaxLength=${#path}
+  done
+}
+_module_set_trace_prefix()
+{
+  local mcolor=$LightCyan
+  if [[ $useLongModuleTracePrefix == true ]]; then
+    local spaces sep bcolor branchPrefix
+    branchPrefix=$(_module_branch_prefix)
+    [ $? -eq 0 ] && bcolor=$Cyan || bcolor=$Purple
+    (( spaces = 30 - ${#moduleId} - ${#branchPrefix} ))
+    (( spaces < 1 )) && spaces=1
+    printf -v sep '%0.s-' $(seq 1 $spaces)
+    moduleTracePrefix="${mcolor}[$moduleId]${DarkGray}${sep}${bcolor}($branchPrefix)${NC}"
+  else
+    local len; (( len = ${submodulePathMaxLength} + 2 ))
+    printf -v moduleTracePrefix "%-${len}s" "[$moduleId]"
+    moduleTracePrefix="${mcolor}$moduleTracePrefix${NC}"
+  fi
+}
+

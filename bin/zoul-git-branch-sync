@@ -79,11 +79,10 @@ _branch_sync_visit()
 branch_sync_all()
 {
   local hint=$1; shift 1
-  local moduleId=$(repo_module_id)
 
   git fetch --prune --all &>/dev/null
   git fetch --tags --force &>/dev/null
-  repo_require_clean_work_tree "[$moduleId]" || return 1
+  repo_require_clean_work_tree 'Cannot synchronize' || return 1
 
   _branch_sync_visit _branch_sync_visitor "$hint" "$@"
   repo_discard_clean_submodules_async

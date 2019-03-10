@@ -203,7 +203,7 @@ vtag_best_match_vtag_at()
   # - $1: branch (ex: sku/dev, master)
   # output:
   # - best match vtag  (ex: sku/dev -> sku/v1.0.0, master -> v2.0.0)
-  # io_info "vtag_best_match_vtag_at ${*@Q}" "[$(repo_module_id)]"
+  # io_info "vtag_best_match_vtag_at ${*@Q}" "$moduleTracePrefix"
   local ref=$1 vtags hint reHint vHint tag
   vtags=( $(vtag_vtags_at $ref) )
   [ ${#vtags[@]} -eq 0 ] && return 1
@@ -272,7 +272,7 @@ vtag_get_vbranch_tail()
   # - [0]: the vtag that starts the vbranch tail
   # - [1]: the vbranch that contains the given vbranch marker
   # - [2]: a status (empty|full) indicating if the vbranch tail does not contain any vtag
-  # io_info "vtag_get_vbranch_tail ${*@Q}" "[$(repo_module_id)]"
+  # io_info "vtag_get_vbranch_tail ${*@Q}" "$moduleTracePrefix"
   local vtag=$(vtag_best_match_vtag_at $1)
   if [[ -n $vtag ]]; then
     # io_debug vtag vtag_get_vbranch_tail

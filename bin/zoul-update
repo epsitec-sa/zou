@@ -12,9 +12,9 @@ esac; shift; done
 
 zou_update()
 {
-  local sku=$1 moduleId=$(repo_module_id)
+  local sku=$1
   
-  io_info "Updating, please wait..." "[$moduleId]"
+  io_info "Updating, please wait..." "$moduleTracePrefix"
 
   [[ $resetConfig == true ]] && config_reset
   config_setup
@@ -35,7 +35,7 @@ zou_update()
     cd "$opwd"
   fi
 
-  io_warning "Update finished, press the [Enter] key." "[$moduleId]"
+  io_warning "Update finished, press the [Enter] key." "$moduleTracePrefix"
 }
 
 zou_update 'master'
