@@ -1,40 +1,39 @@
 #!/bin/bash
 
-[[ -z $ZOUL_LOCK ]]            && . zoul-lock
-[[ -z $ZOUL_GIT_VTABLE ]]      && . zoul-git-vtable
-[[ -z $ZOUL_GIT_CONFIG_SKU ]]  && . zoul-git-config-sku
+[[ -z $ZOUL_LOCK ]]               && . zoul-lock
+[[ -z $ZOUL_GIT_VTABLE ]]         && . zoul-git-vtable
+[[ -z $ZOUL_GIT_MODULE ]]         && . zoul-git-module
+[[ -z $ZOUL_GIT_CONFIG_SKU ]]     && . zoul-git-config-sku
+[[ -z $ZOUL_GIT_CONFIG_SELECT ]]  && . zoul-git-config-select
 
-jobsCount=16
-while [[ "$#" > 0 ]]; do case "$1" in
-  -h|--help) zou-help $0; exit 0;;
-  -q|--quiet) quiet=true;;
-  -a|--all)   all=true;;
-  -j*)        jobsCount=${1#-j};;
-  -*) echo "unknown option: $1" >&2; exit 1;;
-esac; shift; done
-
-vtable_submodules()
+vtable_parse()
 {
-  local branch=$(branch_current) configFile include exclude path mroot=$PWD ec=0
-  configFile=$(repo_zouflow_path "$mroot") || return $?
-  [[ $all == true ]] && include=$(repo_list_submodule_paths) || include=$(config_sku_list_included "$branch" "$configFile")
-  [[ -z $include ]] && return 0
-  for path in $(string_sort $include); do
-    (
-      cd "$mroot/$path" || {
-        io_error "cd $mroot+$path" "[$moduleId]"
-        return 1
-      }
-      vtable_tree || return $?
-    ) &
-    if (( $(wc -w <<<$(jobs -p)) % $jobsCount == 0 )); then wait; fi
-  done
-  wait
+  while [[ "$#" > 0 ]]; do case "$1" in
+    -h|--help) zou-help $0; exit 0;;
+    -q|--quiet)           quiet=true;;
+    -a|--all)             all=true;;
+    -e|--stop-on-error)   stopOnError=true;;
+    -j*)                  jobsCount=${1#-j};;
+    -*) io_error "unknown option '$1'"; return 1;;
+  esac; shift; done
+}
+vtable_run()
+{
+  local jobsCount quiet stopOnError all
+  vtable_parse "$@" || return $?
+  
+  module_run vtable_main
+}
+vtable_main()
+{
+  local lockDir lookupPath
+  lockDir=$(mktemp -u)
+  lookupPath="$(mktemp)"
+  vtable_init "$startupRoot" "$lookupPath"
+  vtable_tree
 }
 vtable_tree()
 {
-  [[ $quiet == true ]] || echo Entering "'$(path_make_relative '.' "$startupDir")'"
-  local moduleId=$(repo_module_id)
   vtable_submodules
   if [[ "$PWD" == "$startupRoot" ]]; then
     vtable_update "$startupRoot" "$moduleId" "$lookupPath"
@@ -42,11 +41,15 @@ vtable_tree()
     lock "$lockDir" 0.1 vtable_update "$startupRoot" "$moduleId" "$lookupPath"
   fi
 }
+vtable_submodules() { module_visit_submodules_async vtable_submodules_enumerator vtable_tree; }
+vtable_submodules_enumerator()
+{
+  # io_warning ">>>> publish_submodules" "$moduleTracePrefix"
+  local configFile include exclude
+  configFile=$(repo_zouflow_path "$moduleRoot") || return $?
+  [[ $all == true ]] && include="${moduleSubmodulePaths[@]}" || include=$(config_sku_list_included "$branch" "$configFile")
+  exclude=( $(config_select_list_excluded "$moduleBranch" "$configFile") )
+  array_remove_array 'include[@]' 'exclude[@]'
+}
 
-startupDir=$PWD
-startupRoot=$(repo_module_root)
-cd "$startupRoot"
-lockDir=$(mktemp -u)
-lookupPath="$(mktemp)"
-vtable_init "$startupRoot" "$lookupPath"
-vtable_tree
+vtable_run "$@"
