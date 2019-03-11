@@ -258,8 +258,8 @@ repo_has_submodules()
 }
 repo_list_submodule_paths()
 {
-  local mroot
-  mroot=$(repo_module_root) || return 1
+  local mroot=$1
+  [[ -z $mroot ]] && { mroot=$(repo_module_root) || return 1; }
   git config --file "$mroot/.gitmodules" --get-regexp '^submodule\..*\.path$' | cut -d' ' -f2
 }
 repo_list_unstaged_submodules()
@@ -306,13 +306,10 @@ repo_list_untracked()
 }
 repo_list_dangling_submodules()
 {
-  local mroot=$1 path opwd=$PWD
-  [[ -z $mroot ]] && { mroot=$(repo_module_root) || return 1; }
-  cd "$mroot"
+  local path
   for path in $(git ls-files --exclude-standard --others); do
     [[ -d $path ]] && repo_is_module_root "$path" && echo "$path"
   done
-  cd "$opwd"
 }
 repo_commit_clean_submodules() { repo_commit_submodule_enumerator 'repo_list_unstaged_clean_submodules' "$1"; }
 repo_commit_all_submodules()   { repo_commit_submodule_enumerator 'repo_list_unstaged_submodules' "$1"; }
@@ -333,101 +330,92 @@ repo_commit_submodules()
   cd "$mroot"
   local branch=$(branch_current)
   git commit -m "zou-flow: update submodules '$cslist' on branch '$branch'" -- "$@" >/dev/null
-  io_warning "Commited submodules '$cslist' on branch '$branch'" "[$(repo_module_id)]"
+  io_warning "Commited submodules '$cslist' on branch '$branch'" "$moduleTracePrefix"
   cd "$opwd"
 }
 repo_remove_dangling_submodule()
 {
-  local mroot=$1 smpath=$2 smid=${2%/}
+  local smpath=$1 smid=${1%/}
   # echo "git submodule deinit $smid + git rm --cached $smid"
   git submodule deinit $smid 2>/dev/null && git rm --cached $smid 2>/dev/null
-  rm -rf "$mroot/$smpath"
+  rm -rf "$smpath"
+  io_warning "Removed dangling submodule '${smpath%/}'" "$moduleTracePrefix"
+}
+repo_discard_submodule()
+{
+  local smpath=$1
+  git submodule update --recursive "$smpath" &>/dev/null
+  io_warning "Discarded submodule '$smpath' from branch '$moduleBranch'" "$moduleTracePrefix"
 }
 repo_remove_dangling_submodules_async()
 {
-  local mroot=$1 smpath smpaths moduleId opwd=$PWD
-  [[ -z $mroot ]] && { mroot=$(repo_module_root) || return 1; }
-  [[ -z $moduleId ]] && { moduleId=$(repo_module_id) || return 1; }
-  smpaths=$(string_sort $(repo_list_dangling_submodules "$mroot")) || return $?
-  if [[ -n "$smpaths" ]]; then
-    for smpath in $smpaths; do
-      (
-        repo_remove_dangling_submodule "$mroot" "$smpath"
-        io_warning "Removed dangling submodule '${smpath%/}'" "[$moduleId]"
-      ) &
-    done
-    wait
-  fi
+  visit_async repo_list_dangling_submodules repo_remove_dangling_submodule
 }
 repo_discard_clean_submodules_async()
 {
-  local smpath smpaths
-  smpaths=$(string_sort $(repo_list_unstaged_clean_submodules)) || return 1
-  if [[ -n $smpaths ]]; then
-    for smpath in $smpaths; do
-      (
-        git submodule update --recursive "$smpath" &>/dev/null
-        io_warning "Discarded submodule '$smpath' from branch '$(branch_current)'" "[$moduleId]"
-      ) &
-    done
-    wait
-  fi
+  visit_async repo_list_unstaged_clean_submodules repo_discard_submodule
 }
 repo_update_submodules()
 {
-  local moduleId recursive
-  while [[ "$#" > 0 ]]; do case "$1" in
-    --recursive) recursive=$1;;
-    *) moduleId=$1;;
-  esac; shift; done
-  local submodules=( $(repo_list_submodule_paths) )
-  if [ ${#submodules[@]} -ne 0 ]; then
-    [[ -z $moduleId ]] && moduleId=$(repo_module_id)
-    io_info 'Updating submodules...' "[$moduleId]"
-    git submodule update --init $recursive >&2
+  if [ ${#moduleSubmodulePaths[@]} -ne 0 ]; then
+    io_info 'Updating submodules...' "$moduleTracePrefix"
+    git submodule update --init --recursive >&2
   fi
 }
 repo_update_submodule()
 {
-  local path=$1
-  io_info 'Updating submodule '$path'...' "[$(repo_module_id)]"
-  git submodule update --init --recursive "$path"
+  local path=$1 info
+  info=$(git submodule update --init --recursive "$path")
+  [[ -n $info ]] && {
+    local line
+    while read -r line; do
+      [[ -n $line ]] && io_info "$line" "$moduleTracePrefix"
+    done <<< "$info"
+  }
 }
 repo_require_clean_work_tree()
 {
     local prefix="$*"
-    [[ $prefix =~ ^\[ ]] || prefix="[$(repo_module_id)] $prefix"
-    local err=0
+    [[ -n $prefix ]] && prefix="$prefix - "
+    local err=0 b
 
     # Update the index
     if ! git update-index -q --ignore-submodules --refresh &>/dev/null; then
-        io_error 'You have unmerged paths.' "$prefix"
-        io_error "$(repo_list_unmerged)" '%2s'
-        io_info  "Resolve conflicts and run 'git commit'." '%2s'
+        io_error "${prefix}You have unmerged paths." "$moduleTracePrefix"
+        for b in $(repo_list_unmerged); do
+          io_error "  $b" "$moduleTracePrefix"
+        done
+        io_info  "  Resolve conflicts and run 'git commit'." "$moduleTracePrefix"
         return 1
     fi
 
     # Disallow untracked changes in the working tree
     if ! test -z "$(repo_list_untracked)"; then
-        io_error 'Your work tree contains untracked changes.' "$prefix"
-        io_error "$(repo_list_untracked)" '%2s'
-        io_info  "Run 'git add'" '%2s'
+        io_error "${prefix}Your work tree contains untracked changes." "$moduleTracePrefix"
+        for b in $(repo_list_untracked); do
+          io_error "  $b" "$moduleTracePrefix"
+        done
+        io_info  "  Run 'git add'" "$moduleTracePrefix"
         err=1
     fi
 
     # Disallow unstaged changes in the working tree
     if ! git diff-files --quiet --ignore-submodules --; then
-        io_error 'You have unstaged changes.' "$prefix"
-        io_error "$(repo_list_unstaged)" '%2s'
-        io_info  "Run 'git stash' or 'git add' and 'git commit'." '%2s'
+        io_error "${prefix}You have unstaged changes." "$moduleTracePrefix"
+        for b in $(repo_list_unstaged); do
+          io_error "  $b" "$moduleTracePrefix"
+        done
+        io_info  "  Run 'git stash' or 'git add' and 'git commit'." "$moduleTracePrefix"
         err=1
     fi
 
     # Disallow uncommitted changes in the index
     if ! git diff-index --cached --quiet HEAD --ignore-submodules --; then
-        io_error 'Your index contains uncommitted changes.' "$prefix"
-        io_error "$(repo_list_uncommited)" '%2s'
-        io_info  "Run 'git commit'." '%2s'
+        io_error "${prefix}Your index contains uncommitted changes." "$moduleTracePrefix"
+        for b in $(repo_list_uncommited); do
+          io_error "  $b" "$moduleTracePrefix"
+        done
+        io_info  "  Run 'git commit'." "$moduleTracePrefix"
         err=1
     fi
 
