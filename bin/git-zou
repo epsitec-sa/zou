@@ -1,33 +1,53 @@
 #!/bin/bash
 
+ATEXIT=()
+atexit() { ATEXIT+=( "$@" ); }
+atexit_handler()
+{
+  local handler
+  for handler in "${ATEXIT[@]}"; do
+    eval "$handler" || :
+  done
+}
+trap atexit_handler EXIT
+
 main()
 {
   local zouDir=$(realpath "$(dirname "${BASH_SOURCE[0]}")/..")
-  local tempFile=$(mktemp)
+  local setup=$(mktemp)
 
-  cat >"$tempFile" <<\EOF
+  cat >"$setup" <<\EOF
 #!/bin/bash
 
-(
-  zouDir=$1
+readonly NC='\e[0m' Red='\e[0;31m' Brown='\e[0;33m' Cyan='\e[0;36m'
+
+zou_setup()
+{
+  local zouDir=$1
+  local message="${Cyan}[zou]${NC} : ${Brown}Starting update...${NC}"
+  printf '%b\n' "$message"
+
   cd "$zouDir"
   if test -n "$(git status --porcelain)"; then
-    printf '\033[0;31m%b\033[0m' "[zou]: Repo '$zouDir' is not clean, aborting...\n"
+    message="${Cyan}[zou]${NC} : ${Red}Repo '$zouDir' is not clean, aborting...${NC}"
+    printf '%b\n' "$message"
   else
-    printf '\033[0;36m%b\033[0m' "[zou]: Fetching remotes and tags...\n"
+    message="${Cyan}[zou]${NC} : ${Cyan}Downloading, please wait...${NC}"
+    printf '%b\n' "$message"
     git fetch --prune --all &>/dev/null
     git fetch --tags --force &>/dev/null
-    printf '\033[0;36m%b\033[0m' "[zou]: Merging...\n"
     git merge FETCH_HEAD &>/dev/null
 
-    . zoul-update "${@:1}"
+    zoul-update
   fi
-)
-rm "$0"
-EOF
-  chmod u+x "$tempFile"
-  "$tempFile" "$zouDir" "$@"
 }
 
-printf '\033[0;33m%b\033[0m' "[zou]: Starting asynchronous update, please wait...\n"
-main "$@" &
+zou_setup "$@"
+rm "$0"
+EOF
+
+  chmod u+x "$setup"
+  atexit "'$setup' '$zouDir'"
+}
+
+main "$@"

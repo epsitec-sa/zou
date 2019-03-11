@@ -9,33 +9,27 @@ esac; shift; done
 [[ -z $ZOUL_GIT_REPO ]]        && . zoul-git-repo
 [[ -z $ZOUL_CONFIG ]]          && . zoul-config
 [[ -z $ZOUL_GIT_BRANCH_CORE ]] && . zoul-git-branch-core
+[[ -z $ZOUL_GIT_MODULE ]]      && . zoul-git-module
 
 zou_update()
 {
   local sku=$1
   
-  io_info "Updating, please wait..." "$moduleTracePrefix"
-
   [[ $resetConfig == true ]] && config_reset
   config_setup
 
-  local broot=$(repo_bundle_root)
-
-  if [[ $fast == true || "$broot" == "$PWD" ]]; then
+  if [[ $fast == true || "$bundleRoot" == "$PWD" ]]; then
     # zou repo alone, fetch has already been done
-    git select -q "$sku"
+    . git-select "$sku"
   else
     # zou repo inside zou-dev bundle, synchronize and select all
-    local opwd=$PWD bundleId=$(repo_bundle_id)
-    cd "$broot"
-    io_info "Checking out '$sku'..." "[$bundleId]"
-    branch_checkout "$sku" >/dev/null
+    cd "$bundleRoot"
+    branch_checkout "$sku"
     git pull &>/dev/null
-    git select "$sku"
-    cd "$opwd"
+    . git-select "$sku"
   fi
 
-  io_warning "Update finished, press the [Enter] key." "$moduleTracePrefix"
+  io_warning "Update finished." "$moduleTracePrefix"
 }
 
-zou_update 'master'
+module_run zou_update 'master'

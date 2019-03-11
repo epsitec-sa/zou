@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# Use the following statement to include current lib only once
+#   [[ -z $ZOUL_ATEXIT ]] && . zoul-atexit
+ZOUL_ATEXIT=true
+
+unset ATEXIT
+ATEXIT=()
+atexit() { ATEXIT+=( "$@" ); }
+atexit_handler()
+{
+  local handler
+  for handler in "${ATEXIT[@]}"; do
+    eval "$handler" || :
+  done
+}
+trap atexit_handler EXIT
