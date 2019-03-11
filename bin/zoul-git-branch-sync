@@ -34,14 +34,16 @@ _branch_sync_visitor()
 }
 _branch_sync_visit() 
 {
-  local visitor=$1 hint=$2; shift 2
+  local visitor=$1 hint=$2 isCurrent current=$moduleBranch; shift 2
+  [[ -z $current ]] && current=$(branch_current)
+
   while read l r i; do
+    [[ $l == $current ]] && linfo="* $l"
+
     $visitor $r $l $i $hint || return 1
     case $i in
-      '>')  color=Brown;;  # ahead
-      '<')  color=Yellow;; # behind
-      '<>') color=Yellow;; # ahead and behind
-      '=')  color=Green;;
+      '>'|'<'|'<>') [[ $l == $current ]] && color=Yellow     || color=Brown;;  # ahead, behind, ahead and behind
+      '=')          [[ $l == $current ]] && color=LightGreen || color=Green;;
       *)
         if [[ -n $r ]]; then
           # tracking branch was deleted or renamed
@@ -55,7 +57,7 @@ _branch_sync_visit()
             git push -u $remote "$l" &>/dev/null && {
               r="$remote/$l"
               i='>'
-              color=Brown
+              [[ $l == $current ]] && color=Yellow || color=Brown
             }
           else
             color=LightBlue
@@ -64,14 +66,14 @@ _branch_sync_visit()
     esac
     local linfo="  $l"
     [[ $l == $(branch_current) ]] && linfo="* $l"
-    io_message "$linfo $i $r" "[$moduleId]" $color
+    io_message "$linfo $i $r" "$moduleTracePrefix" $color
     if [[ $i == '?' && $cleanLocalBranches != true ]]; then
-      io_message >&2 "  Remote branch $r was deleted or renamed." ''
-      io_message >&2 "  Either rename $l and update its tracking information:" ''
-      io_message >&2 "    git branch -m $l <newbranch>" '' Gray
-      io_message >&2 "    git branch -u <upstream> <newbranch>" '' Gray
-      io_message >&2 "  Or clean local tracked branches with:" ''
-      io_message >&2 "    git sync --clean" '' Gray
+      io_message "  Remote branch $r was deleted or renamed." "$moduleTracePrefix"
+      io_message "  Either rename $l and update its tracking information:" "$moduleTracePrefix"
+      io_message "    git branch -m $l <newbranch>" "$moduleTracePrefix" Gray
+      io_message "    git branch -u <upstream> <newbranch>" "$moduleTracePrefix" Gray
+      io_message "  Or clean local tracked branches with:" "$moduleTracePrefix"
+      io_message "    git sync --clean" "$moduleTracePrefix" Gray
     fi
   done < <(branch_sync_info "$@")
   return 0
