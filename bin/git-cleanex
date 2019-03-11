@@ -1,16 +1,33 @@
 #!/bin/bash
 
-. zoul-git-repo
+[[ -z $ZOUL_GIT_REPO ]]   && . zoul-git-repo
+[[ -z $ZOUL_GIT_MODULE ]] && . zoul-git-module
 
-forOpts=()
-while [[ "$#" > 0 ]]; do case "$1" in
-  -h|--help) zou-help $0; exit 0;;
-  -d|--dsm-only)  dsmOnly=true;;
-  -f|--force)     force=true;;
-  -r|--recursive) recursive=true;;
-  -*) forOpts+=($1);;
-esac; shift; done
+cleanex_parse()
+{
+  forOpts=()
+  while [[ "$#" > 0 ]]; do case "$1" in
+    -h|--help) zou-help $0; exit 0;;
+    -q|--quiet)     forOpts+=($1); quiet=true;;
+    -r|--recursive) recursive=true;;
+    -d|--dsm-only)  dsmOnly=true;;
+    -f|--force)     force=true;;
+    -*) forOpts+=($1);;
+  esac; shift; done
+}
+cleanex_run()
+{
+  local quiet recursive dsmOnly force forOpts=() ref
+  cleanex_parse "$@" || return $?
 
+  local useLongModuleTracePrefix=true
+
+  if [[ $recursive = true ]]; then
+    . git-for "${forOpts[@]}" -- 'clean_node'
+  else
+    module_run clean_node
+  fi
+}
 clean_node()
 {
   if [[ $dsmOnly == true ]]; then
@@ -21,23 +38,24 @@ clean_node()
   if [[ $force == true ]]; then
     repo_remove_dangling_submodules_async
   else
-    repo_require_clean_work_tree 'cannot clean' || return $?
+    repo_require_clean_work_tree 'Cannot clean' || return $?
   fi
 
   if [ -d node_modules ]; then
-    io_info 'Removing node modules...' "[$moduleId]"
+    io_info 'Removing node modules...' "$moduleTracePrefix"
     rm -rf node_modules
   fi
 
-  git clean -xdf -e 'packages'
-  git checkout .
+  local line
+  io_info 'Removing ignored files...' "$moduleTracePrefix"
+  ( git clean -xdf -e 'packages' ) | \
+  while read -r line; do
+    io_message "  $line" "$moduleTracePrefix" DarkGray
+  done
 
-  io_info "Cleaned" "[$moduleId]"
+  git checkout . &>/dev/null
+
+  io_info "Cleaned" "$moduleTracePrefix"
 }
 
-moduleId=$(repo_module_id)
-if [[ $recursive = true ]]; then
-  . git-for "${forOpts[@]}" -- 'clean_node'
-else
-  clean_node
-fi
+cleanex_run "$@"
