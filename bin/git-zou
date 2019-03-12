@@ -1,16 +1,5 @@
 #!/bin/bash
 
-ATEXIT=()
-atexit() { ATEXIT+=( "$@" ); }
-atexit_handler()
-{
-  local handler
-  for handler in "${ATEXIT[@]}"; do
-    eval "$handler" || :
-  done
-}
-trap atexit_handler EXIT
-
 main()
 {
   local zouDir=$(realpath "$(dirname "${BASH_SOURCE[0]}")/..")
@@ -23,9 +12,10 @@ readonly NC='\e[0m' Red='\e[0;31m' Brown='\e[0;33m' Cyan='\e[0;36m'
 
 zou_setup()
 {
+  sleep .2
   local zouDir=$1; shift
-  local message="${Cyan}[zou]${NC} : ${Brown}Starting update...${NC}"
-  printf '%b\n' "$message"
+  local message="${Cyan}[zou]${NC} : ${Brown}Starting asynchronous update...${NC}"
+  printf '\n%b\n' "$message"
 
   cd "$zouDir"
   if test -n "$(git status --porcelain)"; then
@@ -47,7 +37,7 @@ rm "$0"
 EOF
 
   chmod u+x "$setup"
-  atexit "'$setup' '$zouDir' ${*@Q}"
+  ("$setup" "$zouDir" "$@") &
 }
 
 main "$@"
