@@ -23,7 +23,7 @@ readonly NC='\e[0m' Red='\e[0;31m' Brown='\e[0;33m' Cyan='\e[0;36m'
 
 zou_setup()
 {
-  local zouDir=$1
+  local zouDir=$1; shift
   local message="${Cyan}[zou]${NC} : ${Brown}Starting update...${NC}"
   printf '%b\n' "$message"
 
@@ -38,7 +38,7 @@ zou_setup()
     git fetch --tags --force &>/dev/null
     git merge FETCH_HEAD &>/dev/null
 
-    zoul-update
+    zoul-update "$@"
   fi
 }
 
@@ -47,7 +47,7 @@ rm "$0"
 EOF
 
   chmod u+x "$setup"
-  atexit "'$setup' '$zouDir'"
+  atexit "'$setup' '$zouDir' ${*@Q}"
 }
 
 main "$@"
