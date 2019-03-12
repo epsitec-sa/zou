@@ -1,18 +1,32 @@
 #!/bin/bash
 
-. zoul-git-tag
+[[ -z $ZOUL_GIT_TAG ]]    && . zoul-git-tag
+[[ -z $ZOUL_GIT_MODULE ]] && . zoul-git-module
 
-args=()
-while [[ "$#" > 0 ]]; do case "$1" in
-  -h|--help) zou-help $0; exit 0;;
-  --debug) debug=true;;
-  -m|--message) message=$2; shift;;
-  -*) io_error "unknown option: $1"; exit 1;;
-  *) args+=("$1");;
-esac; shift; done
+newtag_parse()
+{
+  while [[ "$#" > 0 ]]; do case "$1" in
+    -h|--help) zou-help $0; exit 0;;
+    --debug) debug=true;;
+    -m|--message) message=$2; shift;;
+    -*) io_error "unknown option: $1"; exit 1;;
+    *) args+=("$1");;
+  esac; shift; done
+}
 
-tag="${args[0]}"
-commit="${args[1]:-HEAD}"
-[[ -z $message ]] && message=$(git log -1 --pretty=%B "$commit")
+newtag_run()
+{
+  local message args=()
+  newtag_parse "$@" || return $?
 
-tag_new "$tag" "$commit" "$message" 
+  module_run newtag_main "${args[@]}"
+}
+newtag_main()
+{
+  local tag=$1 commit=${2:-$moduleBranch}
+  [[ -z $message ]] && message=$(git log -1 --pretty=%B "$commit")
+
+  tag_new "$tag" "$commit" "$message"
+}
+
+newtag_run "$@"

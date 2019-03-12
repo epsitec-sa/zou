@@ -24,9 +24,12 @@ tag_push_not_followed()
   # 'git push --follow-tags' push only tags associated with commits that are not pushed
   if commit_is_pushed "$commit"; then
     local remote=$(git remote) oinfo=' '
-    git push "$@" $remote "$tag" &>/dev/null
-    [[ -n $@ ]] && oinfo="($@) "
-    io_info "Pushed tag$oinfo'$tag' to '$remote'" "$moduleTracePrefix"
+    git push "$@" "$remote" "$tag" &>/dev/null
+    if [[ $1 == '--delete' ]]; then
+      io_warning "Deleted tag '$tag' from '$remote'" "$moduleTracePrefix"
+    else
+      io_info "Pushed tag '$tag' to '$remote'" "$moduleTracePrefix"
+    fi
     return 0
   fi
   return 1
@@ -37,7 +40,7 @@ tag_rename()
   local tagger=$(tagger_name $tag1)
   if [[ -z "$tagger" ]]; then
     git tag -f "$tag2" "$tag1^{}"
-    io_info "Renamed lightweight tag '$tag1' to '$tag2'"
+    io_info "Renamed lightweight tag '$tag1' to '$tag2'" "$moduleTracePrefix"
   else
     local message=$(tag_comment "$tag1")
     GIT_COMMITTER_NAME="$tagger" \
@@ -57,7 +60,7 @@ tag_move_to_commit()
   if [[ -z "$tagger" ]]; then
     tag_delete $tag
     git tag -f "$tag" "$commit^{}"
-    io_info "Moved lightweight tag '$tag' to '$commit'"
+    io_info "Moved lightweight tag '$tag' to '$commit'" "$moduleTracePrefix"
   else
     local message=$(tag_comment "$tag")
     local email=$(tagger_email "$tag")
@@ -73,13 +76,29 @@ tag_move_to_commit()
 tag_new()
 {
   local tag=$1 commit=$2 message=$3
-  git tag -a -m "'$message'" "$tag" "$commit"
+  if tag_exists "$tag"; then
+    io_error "Tag '$tag' already exists" "$moduleTracePrefix"
+  elif git tag -a -m "'$message'" "$tag" "$commit"; then
+    io_info "Created tag '$tag' on '$commit'" "$moduleTracePrefix"
+  fi
   tag_push_not_followed $tag $commit
 }
 tag_delete()
 {
-  tag_push_not_followed $1 $1^{} '--delete'
-  git tag --delete "$1" &>/dev/null
+  if tag_exists "$1"; then
+    tag_push_not_followed $1 $1^{} '--delete'
+    local line
+    (git tag --delete "$1") | \
+    while read -r line; do
+      [[ -z $line ]] && continue
+      io_info "$line" "$moduleTracePrefix"
+    done
+  else
+    io_error "Tag '$tag' does not exist" "$moduleTracePrefix"
+    if git push --delete origin "$tag" &>/dev/null; then
+      io_warning "Deleted tag '$tag' from 'origin'" "$moduleTracePrefix"
+    fi
+  fi
 }
 
 tag_move()
