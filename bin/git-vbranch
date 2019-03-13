@@ -33,11 +33,7 @@ vbranch_main()
     else
       git branch "$branch" "$commit"
       io_info "Branch created '$branch'" "$moduleTracePrefix"
-      (git push origin --set-upstream "$branch" 2>/dev/null) | \
-      while read -r line; do
-        [[ -z $line ]] && continue
-        io_info "$line" "$moduleTracePrefix"
-      done
+      # branch_push $branch # git sync will automatically push vbranches
     fi
     [[ $checkout == true ]] && branch_checkout "$branch" >/dev/null
     # create vnode
