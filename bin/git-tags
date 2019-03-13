@@ -1,28 +1,36 @@
 #!/bin/bash
 
-[[ -z $ZOUL_CORE ]]    && . zoul-core
-[[ -z $ZOUL_GIT_TAG ]] && . zoul-git-tag
+[[ -z $ZOUL_CORE ]]       && . zoul-core
+[[ -z $ZOUL_GIT_TAG ]]    && . zoul-git-tag
+[[ -z $ZOUL_GIT_VTAG ]]   && . zoul-git-vtag
 [[ -z $ZOUL_GIT_MODULE ]] && . zoul-git-module
 
 tags_parse()
 {
   while [[ "$#" > 0 ]]; do case "$1" in
     -h|--help) zou-help $0; exit 0;;
-    --sync)   syncTags=true;;
-    --prune)  pruneTags=true;;
-    --mirror) mirrorTags=true;;
-    -*) io_error "unknown option: $1"; return 1;;
+    -q|--quiet)     forOpts+=($1); quiet=true;;
+    -r|--recursive) recursive=true;;
+    -v|--vtags)     vtagsOnly=true;;
+    --sync)         syncTags=true;;
+    --prune)        pruneTags=true;;
+    --mirror)       mirrorTags=true;;
+    -*) forOpts+=($1);;
   esac; shift; done
 }
 tags_run()
 {
   # local quiet dryRun='echo' args=('*' 'server')
-  local quiet syncTags pruneTags mirrorTags
+  local quiet recursive vtagsOnly syncTags pruneTags mirrorTags forOpts=()
   tags_parse "$@" || return $?
   
-  module_run tags_main
+  if [[ $recursive = true ]]; then
+    . git-for --stp "${forOpts[@]}" -- 'tags_node'
+  else
+    module_run tags_node
+  fi
 }
-tags_main()
+tags_node()
 {
   declare -A ltags
   IFS=$'\n' rows=( $(git show-ref --tags) )
@@ -32,13 +40,15 @@ tags_main()
   IFS=$'\n' rows=( $(git ls-remote --tags --refs 2>/dev/null | tr -s [:blank:] ' ') )
   tags_fill_map 'rtags' "${rows[@]}"
 
-  local ltag rtag tag lrTags lotags rotags prtags mitags sytags
+  local ltag rtag tag lrTags lrKeys lotags rotags prtags mitags sytags
 
   lrTags=()
+  lrKeys=()
   for key in ${!ltags[@]}; do
     ltag=${ltags[$key]}
     rtag=${rtags[$key]}
     if [[ $ltag == $rtag ]]; then
+      lrKeys+=( "$key" )
       lrTags+=( "${ltag#refs/tags/}" )
       unset ltags[$key]
       unset rtags[$key]
@@ -107,9 +117,16 @@ tags_main()
 tags_fill_map()
 {
   # echo tags_fill_map "${*@Q}"
-  local map=$1 row; shift
+  local map=$1 row sha ref tag; shift
   for row in "$@"; do
-    eval "$map[${row% *}]=${row#* }"
+    ref=${row#* }
+    tag=${ref#refs/tags/}
+    if [[ $vtagsOnly == true ]]; then
+      vtag_is_other $tag && continue
+      ! vtag_is_semver $tag && continue
+    fi
+    sha=${row% *}
+    eval "$map[$sha]=$ref"
   done
 }
 
