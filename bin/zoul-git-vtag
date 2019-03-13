@@ -356,14 +356,17 @@ vtag_compare_prerel()
 }
 vtag_highest()
 {
-  [ $# -eq 1 ] && echo $1
-  local highest=$1 cc=0; shift
-  while [[ -n $1 ]]; do
-    vtag_compare $1 $highest
-    [ $? -eq 1 ] && highest=$1
-    shift
-  done
-  echo $highest
+  if [ $# -eq 1 ]; then
+    echo $1
+  else
+    local highest=$1 cc=0; shift
+    while [[ -n $1 ]]; do
+      vtag_compare $1 $highest
+      [ $? -eq 1 ] && highest=$1
+      shift
+    done
+    echo $highest
+  fi
 }
 vtag_compare()
 {
