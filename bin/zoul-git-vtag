@@ -372,18 +372,18 @@ vtag_compare()
   # -  0: $1 == $2
   # -  1: $1 >  $2
 
-  if [[ $1 =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)(-[[:alnum:]]+)?(\+.+)?$ ]]; then
-    local major1=${BASH_REMATCH[1]}
-    local minor1=${BASH_REMATCH[2]}
-    local patch1=${BASH_REMATCH[3]}
-    local prerel1=${BASH_REMATCH[4]}
-    local meta1=${BASH_REMATCH[5]}
-    if [[ $2 =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)(-[[:alnum:]]+)?(\+.+)?$ ]]; then
-      local major2=${BASH_REMATCH[1]}
-      local minor2=${BASH_REMATCH[2]}
-      local patch2=${BASH_REMATCH[3]}
-      local prerel2=${BASH_REMATCH[4]}
-      local meta2=${BASH_REMATCH[5]}
+  if [[ $1 =~ ^(.*/)?v([0-9]+)\.([0-9]+)\.([0-9]+)(-[[:alnum:]]+)?(\+.+)?$ ]]; then
+    local major1=${BASH_REMATCH[2]}
+    local minor1=${BASH_REMATCH[3]}
+    local patch1=${BASH_REMATCH[4]}
+    local prerel1=${BASH_REMATCH[5]}
+    local meta1=${BASH_REMATCH[6]}
+    if [[ $2 =~ ^(.*/)?v([0-9]+)\.([0-9]+)\.([0-9]+)(-[[:alnum:]]+)?(\+.+)?$ ]]; then
+      local major2=${BASH_REMATCH[2]}
+      local minor2=${BASH_REMATCH[3]}
+      local patch2=${BASH_REMATCH[4]}
+      local prerel2=${BASH_REMATCH[5]}
+      local meta2=${BASH_REMATCH[6]}
 
       (( $major1 < $major2 )) && return -1
       (( $major1 > $major2 )) && return  1
