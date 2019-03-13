@@ -203,6 +203,16 @@ branch_checkout()
     [[ -n $moduleBranchChanged ]] && $moduleBranchChanged $branch || return 0
   fi
 }
+branch_push()
+{
+  local branch=$1 remote=${2:-origin} line
+  (git push $remote --set-upstream "$branch" 2>/dev/null) | \
+  while read -r line; do
+    [[ -z $line ]] && continue
+    io_info "  $line" "$moduleTracePrefix"
+  done
+  return ${PIPESTATUS[0]}
+}
 branch_move()
 {
   local branch1=$1 branch2=$2
