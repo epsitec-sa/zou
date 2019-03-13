@@ -40,7 +40,7 @@ vstatus_main()
     io_error "Branch '$ref' does not exist" "$moduleTracePrefix"
     return 1
   fi
-  local ltag stag ntag lsuf delta
+  local ltag stag ntag lsuf delta tags
   ltag=$(vtag_describe $ref)
   if [[ -z $ltag ]]; then
     io_error "Version tag not found" "$moduleTracePrefix"
@@ -48,6 +48,8 @@ vstatus_main()
   fi
   stag=${ltag%-*-g*}
   lsuf=${ltag#$stag}
+
+  stag=$(vtag_highest $(vtag_vtags_at $stag) )
   ntag=$(vtag_increment "$stag" "$prerelPrefix" "$moduleTracePrefix")
   if [[ -z $lsuf ]]; then
     io_info "Already published at $stag" "$moduleTracePrefix"
