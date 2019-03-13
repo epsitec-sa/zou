@@ -16,18 +16,18 @@ cleanex_parse()
 }
 cleanex_run()
 {
-  local quiet recursive dsmOnly force forOpts=() ref
+  local quiet recursive dsmOnly force forOpts=()
   cleanex_parse "$@" || return $?
 
   local useLongModuleTracePrefix=true
 
   if [[ $recursive = true ]]; then
-    . git-for "${forOpts[@]}" -- 'clean_node'
+    . git-for "${forOpts[@]}" -- 'cleanex_node'
   else
-    module_run clean_node
+    module_run cleanex_node
   fi
 }
-clean_node()
+cleanex_node()
 {
   if [[ $dsmOnly == true ]]; then
     repo_remove_dangling_submodules_async
