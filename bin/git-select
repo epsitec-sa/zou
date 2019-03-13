@@ -66,9 +66,14 @@ select_tree()
   visit_async select_discard_enumerator select_discard_submodule || ec=$?
   [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
 
-  repo_commit_clean_submodules || true
+  repo_commit_submodules "$moduleRoot" $(select_commit_enumerator)
 
   return $ec
+}
+select_commit_enumerator()
+{
+  local include=( $(repo_list_unstaged_clean_submodules) )
+  array_remove_array 'include[@]' 'exclude[@]'
 }
 select_submodules_enumerator()
 {
