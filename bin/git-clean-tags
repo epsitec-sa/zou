@@ -4,7 +4,8 @@
 # 1. delete root tags that are already in other folder
 # 2. move non semver root tags to other folder
 # 3. move big patch root tags to other folder (v12.5.16460)
-# 4. remove other folder's redondant tags
+# 4. remove leading zeros to prerelease version (v1.2.3-rc01 -> v1.2.3-rc1 )
+# 5. remove other folder's redondant tags
 #    group tags pointing to the same commit hash
 #      create a lookup table with the commit hash as key and the commit tags (space separated) as value.
 
@@ -32,6 +33,7 @@ clean_main()
 {
   tag_delete_root_in_other
   tag_move_non_semver_and_big_patch_to_other
+  tag_remove_prerelease_leading_zero
   tag_remove_other_redondant
 }
 
@@ -86,6 +88,26 @@ tag_remove_other_redondant()
       tag_delete $tag
     done
   fi
+}
+tag_remove_prerelease_leading_zero()
+{
+  local tag0 tag1 pv0 pv1
+  for tag0 in $(git tag -l --sort=v:refname); do
+    vtag_is_other $tag0 && continue;
+    if vtag_is_semver $tag0; then
+      pv0=${BASH_REMATCH[8]}
+      [[ -z $pv0 ]] && continue
+      pv1=$((10#$pv0))  # remove leading zeros
+      [[ $pv0 == $pv1 ]] && continue
+      tag1="${BASH_REMATCH[1]}v${BASH_REMATCH[2]}.${BASH_REMATCH[3]}.${BASH_REMATCH[5]}${BASH_REMATCH[7]}$pv1${BASH_REMATCH[9]}"
+      # echo "$tag0 -> $tag1"
+      if tag_exists "$tag1"; then
+        tag_delete "$tag0"
+      else
+        tag_move "$tag0" "$tag1"
+      fi
+    fi
+  done
 }
 
 clean_run "$@"
