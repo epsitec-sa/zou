@@ -1,45 +1,54 @@
 #!/bin/bash
 
-. zoul-git-config-sku
+[[ -z $ZOUL_GIT_MODULE ]]     && . zoul-git-module
+[[ -z $ZOUL_GIT_CONFIG_SKU ]] && . zoul-git-config-sku
 
-mode='status'
-include=()
-exclude=()
-while [[ "$#" > 0 ]]; do case "$1" in
-  --) shift; args+=("$@"); break;;
-  -h|--help) zou-help $0; exit 0;;
-  -i|--include) [[ $mode == 'exclude' ]] && { io_error 'options conflict'; exit 1; } || mode='include';;
-  -x|--exclude) [[ $mode == 'include' ]] && { io_error 'options conflict'; exit 1; } || mode='exclude';;
-  -q|--quiet) quiet=true;;
-  -*) echo "unknown option: $1" >&2; exit 1;;
-  *)
-    case "$mode" in
-      include) include+=($1);;
-      exclude) exclude+=($1);;
-    esac
-esac; shift; done
+csku_parse()
+{
+  while [[ "$#" > 0 ]]; do case "$1" in
+    --) shift; args+=("$@"); break;;
+    -h|--help) zou-help $0; exit 0;;
+    -q|--quiet) quiet=true;;
+    -i|--include) [[ $mode == 'exclude' ]] && { io_error 'options conflict'; exit 1; } || mode='include';;
+    -x|--exclude) [[ $mode == 'include' ]] && { io_error 'options conflict'; exit 1; } || mode='exclude';;
+    -*) io_error "unknown option: $1"; exit 1;;
+    *)
+      case "$mode" in
+        include) include+=($1);;
+        exclude) exclude+=($1);;
+      esac
+  esac; shift; done
+}
+csku_run()
+{
+  local quiet mode='status' include=() exclude=()
+  csku_parse "$@" || return $?
 
-branch=$(branch_current)
-configFile=$(repo_zouflow_path)
-
-if [ ${#include[@]} -ne 0 ]; then
-  if [ ${#include[@]} -eq 1 ]; then
-    config_sku_include "${include[0]}" "$branch" "$configFile"
-  else
-    config_sku_include_many "$branch" "$configFile" "${include[@]}"
+  module_run csku_main "${args[@]}"
+}
+csku_main()
+{
+  if [ ${#include[@]} -ne 0 ]; then
+    if [ ${#include[@]} -eq 1 ]; then
+      config_sku_include "${include[0]}"
+    else
+      config_sku_include_many "${include[@]}"
+    fi
   fi
-fi
-if [ ${#exclude[@]} -ne 0 ]; then
-  if [ ${#exclude[@]} -eq 1 ]; then
-    config_sku_exclude "${exclude[0]}" "$branch" "$configFile"
-  else
-    config_sku_exclude_many "$branch" "$configFile" "${exclude[@]}"
+  if [ ${#exclude[@]} -ne 0 ]; then
+    if [ ${#exclude[@]} -eq 1 ]; then
+      config_sku_exclude "${exclude[0]}"
+    else
+      config_sku_exclude_many "${exclude[@]}"
+    fi
   fi
-fi
 
-case "$mode" in
-  include) [ ${#include[@]} -eq 0 ] && config_sku_include_all "$branch" "$configFile";;
-  exclude) [ ${#exclude[@]} -eq 0 ] && config_sku_exclude_all "$branch" "$configFile";;
-esac
+  case "$mode" in
+    include) [ ${#include[@]} -eq 0 ] && config_sku_include_all;;
+    exclude) [ ${#exclude[@]} -eq 0 ] && config_sku_exclude_all;;
+  esac
 
-[[ $quiet == true ]] || config_sku_status "$branch" "$configFile"
+  [[ $quiet == true ]] || config_sku_status
+}
+
+csku_run "$@"

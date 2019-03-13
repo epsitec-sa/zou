@@ -9,39 +9,28 @@ ZOUL_GIT_CONFIG_PUBLISH=true
 
 config_publish_disable()
 {
-  local branch=$1 configFile=$2
-  [[ -z $branch ]] && branch=$(branch_current)
-  [[ -z $configFile ]] && configFile=$(repo_zouflow_path)
-  git config --file "$configFile" "publish.disable" 'true'
+  git config --file "$moduleConfigFile" "publish.disable" 'true'
 
-  git update-index --add -- "$configFile" &>/dev/null \
-  && git commit -m "zou-flow: disable publish for branch '$branch'" -- "$configFile" &>/dev/null 
+  git update-index --add -- "$moduleConfigFile" &>/dev/null \
+  && git commit -m "zou-flow: disable publish for moduleBranch '$moduleBranch'" -- "$moduleConfigFile" &>/dev/null 
 }
 config_publish_enable()
 {
-  local branch=$1 configFile=$2
-  [[ -z $branch ]] && branch=$(branch_current)
-  [[ -z $configFile ]] && configFile=$(repo_zouflow_path)
-  git config --file "$configFile" --remove-section "publish" &>/dev/null
+  git config --file "$moduleConfigFile" --remove-section "publish" &>/dev/null
 
-  git update-index --add -- "$configFile" &>/dev/null \
-  && git commit -m "zou-flow: enable publish for branch '$branch'" -- "$configFile" &>/dev/null
+  git update-index --add -- "$moduleConfigFile" &>/dev/null \
+  && git commit -m "zou-flow: enable publish for moduleBranch '$moduleBranch'" -- "$moduleConfigFile" &>/dev/null
 }
 config_publish_is_disabled()
 {
-  local branch=$1 configFile=$2 disabled
-  [[ -z $branch ]] && branch=$(branch_current)
-  [[ -z $configFile ]] && configFile=$(repo_zouflow_path)
-  disabled=$(git config --file "$configFile" --get "publish.disable") || return 1
+  local disabled
+  disabled=$(git config --file "$moduleConfigFile" --get "publish.disable") || return 1
   [[ $disabled == true ]] && return 0 || return 1
 }
-config_publish_is_enabled() { ! config_publish_is_disabled "$@"; }
+config_publish_is_enabled() { ! config_publish_is_disabled; }
 config_publish_status()
 {
-  local branch=$1 configFile=$2
-  [[ -z $branch ]] && branch=$(branch_current)
-  [[ -z $configFile ]] && configFile=$(repo_zouflow_path)
-  config_publish_is_disabled "$@" \
-  && io_message 'publish disabled' "[$branch]" \
-  || io_message 'publish enabled' "[$branch]"
+  config_publish_is_disabled \
+  && io_message 'publish disabled' "[$moduleBranch]" \
+  || io_message 'publish enabled' "[$moduleBranch]"
 }

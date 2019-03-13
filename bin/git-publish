@@ -95,10 +95,9 @@ publish_submodules() { module_visit_submodules_async publish_submodules_enumerat
 publish_submodules_enumerator()
 {
   # io_warning ">>>> publish_submodules" "$moduleTracePrefix"
-  local configFile include exclude
-  configFile=$(repo_zouflow_path "$moduleRoot") || return $?
-  include=( $(config_sku_list_included "$moduleBranch" "$configFile") )
-  exclude=( $(config_select_list_excluded "$moduleBranch" "$configFile") )
+  local include exclude
+  include=( $(config_sku_list_included) )
+  exclude=( $(config_select_list_excluded) )
   array_remove_array 'include[@]' 'exclude[@]'
 }
 publish_prolog()
@@ -107,7 +106,7 @@ publish_prolog()
 
   if [[ $stopPublish == true ]]; then
     publish_try_attach
-  elif config_publish_is_enabled "$branchOrTag"; then
+  elif config_publish_is_enabled; then
     if [[ $vtagSelect == true && ( "$PWD" != "$startupRoot" || $vtagOnly == true ) ]]; then
       publish_select_vtag
     else

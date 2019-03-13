@@ -195,25 +195,29 @@ EOF
   }
 }
 
+version_list_file_spec_all()
+{
+  git config --file "$moduleConfigFile" --get-regexp update-version
+}
 version_list_file_spec()
 {
-  git config --file "$ZOU_FLOW_CONFIG" --get-all update-version.$1
+  git config --file "$moduleConfigFile" --get-all update-version.$1
 }
 version_add_file_spec()
 {
   local file key=$1 specs=$(version_list_file_spec $1); shift
   for file in "$@"; do
     if ! array_contains_element "$file" $specs; then
-      git config --file "$ZOU_FLOW_CONFIG" --add update-version.$key $file
+      git config --file "$moduleConfigFile" --add update-version.$key $file
     fi
   done
-  git update-index --add -- "$ZOU_FLOW_CONFIG" &>/dev/null && \
-  git commit -m "zou-flow: register '$@' for technical version update" -- "$ZOU_FLOW_CONFIG" &>/dev/null
+  git update-index --add -- "$moduleConfigFile" &>/dev/null && \
+  git commit -m "zou-flow: register '$@' for technical version update" -- "$moduleConfigFile" &>/dev/null
 }
 version_remove_file_spec()
 {
-  git config --file "$ZOU_FLOW_CONFIG" --unset update-version.$1 && \
-  git commit -m "zou-flow: unregister '$@' from technical version update" -- "$ZOU_FLOW_CONFIG" &>/dev/null
+  git config --file "$moduleConfigFile" --unset update-version.$1 && \
+  git commit -m "zou-flow: unregister '$@' from technical version update" -- "$moduleConfigFile" &>/dev/null
 }
 
 version_list_version_props() { version_list_file_spec 'version-props'; }
@@ -267,7 +271,7 @@ version_update()
     echo "$techver"
 
     # execute .net zou-flow updaters
-    if [[ -f "$ZOU_FLOW_CONFIG" ]]; then
+    if [[ -f "$moduleConfigFile" ]]; then
       local stechver=$(version_technical_short "${varray[@]}")
       # exclude submodules from find file (-not -path './<sm-path>/*'] ...)
       local findNotPaths=$(git config --file .gitmodules --get-regexp path | cut -d' ' -f2 | sed "s,\(.*\),-not -path \./\1/\*,")

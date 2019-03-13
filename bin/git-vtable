@@ -45,10 +45,9 @@ vtable_submodules() { module_visit_submodules_async vtable_submodules_enumerator
 vtable_submodules_enumerator()
 {
   # io_warning ">>>> publish_submodules" "$moduleTracePrefix"
-  local configFile include exclude
-  configFile=$(repo_zouflow_path "$moduleRoot") || return $?
-  [[ $all == true ]] && include="${moduleSubmodulePaths[@]}" || include=$(config_sku_list_included "$branch" "$configFile")
-  exclude=( $(config_select_list_excluded "$moduleBranch" "$configFile") )
+  local include exclude
+  [[ $all == true ]] && include="${moduleSubmodulePaths[@]}" || include=$(config_sku_list_included)
+  exclude=( $(config_select_list_excluded) )
   array_remove_array 'include[@]' 'exclude[@]'
 }
 

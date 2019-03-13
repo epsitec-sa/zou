@@ -78,12 +78,10 @@ sync_submodules() { module_visit_submodules_async sync_submodules_enumerator syn
 
 sync_submodules_enumerator()
 {
-  local configFile
-  configFile=$(repo_zouflow_path "$moduleRoot") || return $?
   if [[ $noSkuFilter == true ]]; then
     echo "${moduleSubmodulePaths[@]}"
   else
-    config_sku_list_included "$moduleBranch" "$configFile"
+    config_sku_list_included
   fi
 }
 

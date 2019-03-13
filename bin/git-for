@@ -79,17 +79,16 @@ for_command()    { eval "$zou_command"; }
 
 for_submodules_enumerator()
 {
-  local configFile include exclude
-  configFile=$(repo_zouflow_path "$moduleRoot") || return $?
+  local include exclude
   if [[ $noSkuFilter == true ]]; then
     include=( $(repo_list_submodule_paths) )
   else
-    include=( $(config_sku_list_included "$moduleBranch" "$configFile") )
+    include=( $(config_sku_list_included) )
   fi
   if [[ $noSelectFilter == true ]]; then
     exclude=()
   else
-    exclude=( $(config_select_list_excluded "$moduleBranch" "$configFile") )
+    exclude=( $(config_select_list_excluded) )
   fi
   array_remove_array 'include[@]' 'exclude[@]'
 }

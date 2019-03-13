@@ -222,12 +222,6 @@ repo_gitmodules_path()
   [[ -z $mroot ]] && { mroot=$(repo_module_root) || return 1; }
   echo "$mroot/.gitmodules"
 }
-repo_zouflow_path()
-{
-  local mroot=$1 smid smpath
-  [[ -z $mroot ]] && { mroot=$(repo_module_root) || return 1; }
-  echo "$mroot/$ZOU_FLOW_CONFIG"
-}
 
 repo_list_deleted()    { git ls-files --deleted; }
 repo_list_unstaged()   { git diff-files --name-only -r --ignore-submodules --; }

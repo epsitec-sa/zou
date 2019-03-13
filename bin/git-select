@@ -48,10 +48,9 @@ select_tree()
   [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
 
   # prepare common data
-  local configFile exclude=()
-  configFile=$(repo_zouflow_path "$moduleRoot") || return $?
+  local exclude=()
   if [[ $noSkuFilter != true ]]; then
-    exclude=( $(config_sku_list_excluded "$moduleBranch" "$configFile") )
+    exclude=( $(config_sku_list_excluded) )
   fi
 
   # traverse submodules
@@ -77,12 +76,12 @@ select_commit_enumerator()
 }
 select_submodules_enumerator()
 {
-  local include=( $(config_select_list_included "$moduleBranch" "$configFile") )
+  local include=( $(config_select_list_included) )
   array_remove_array 'include[@]' 'exclude[@]'
 }
 select_need_update_enumerator()
 {
-  local include=( $(config_select_list_excluded "$branch" "$configFile") )
+  local include=( $(config_select_list_excluded) )
   array_remove_array 'include[@]' 'exclude[@]'
 }
 select_discard_enumerator()

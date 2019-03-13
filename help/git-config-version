@@ -1,9 +1,10 @@
-usage: git config-version [<options>]
+usage: git config-version --recursive
    or: git config-version [<options>] --remove
 
  Add or remove version configuration options.
 
     -h|--help                       display help
+    -r|--recursive                  traverse submodules recursively
     --vp|--version-props[=FILE]     Use Version.props style files (default to './Version.props').
     --pj|--package-json[=FILE]      Use package.json style files (default to './package.json').
     --ai|--assembly-info[=FILE]     Use AssemblyInfo.cs style files (default to '*/AssemblyInfo*.cs').
@@ -14,6 +15,8 @@ usage: git config-version [<options>]
     --remove                        Remove specified option
     
 example:
+    git config-version                          # display file specs
+    git config-version -r                       # display file specs recursively
     git config-version --vp                     # add 'update_version.version-props = ./Version.props'
     git config-version --vp --remove            # remove 'update_version.version-props' key
     git config-version --ai='./AssemblyInfo.cs' # add 'update_version.assembly-info = ./AssemblyInfo.cs'
