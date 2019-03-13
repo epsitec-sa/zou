@@ -18,6 +18,7 @@ for_parse()
     -b|--bottom-up)     bottomUp=true;;
     -t|--ancestors)     visitAncestors=true;;
     -j*)                jobsCount=${1#-j};;
+    --stp)              unset useLongModuleTracePrefix;;
     -*) io_error "unknown option '$1'"; return 1;;
     *) args+=("$1");;
   esac; shift; done
@@ -27,11 +28,13 @@ for_parse()
 for_run()
 {
   # parse command line
-  local jobsCount quiet stopOnError noSkuFilter noSelectFilter smOnly bottomUp visitAncestors zou_command
-  for_parse "$@" || return $?
+  local jobsCount quiet stopOnError \
+        noSkuFilter noSelectFilter \
+        smOnly bottomUp visitAncestors \
+        useLongModuleTracePrefix= true \
+        zou_command
 
-  local useLongModuleTracePrefix=true
-  
+  for_parse "$@" || return $?
   module_run for_main
 }
 for_main()
