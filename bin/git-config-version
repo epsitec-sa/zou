@@ -24,21 +24,21 @@ cver_parse()
     --custom)                 customDir='.';;
     --no-edit)                noEdit=true;;
     --remove)                 action='remove';;
-    -*) io_error "unknown option: $1"; exit 1;;
+    -*)                       forOpts+=($1);;
   esac; shift; done
 }
 cver_run()
 {
-  local recursive packageJson=() versionProps=() assemblyInfo=() csProj=() rc=() \
+  local recursive forOpts=() \
+        versionProps=() assemblyInfo=() csProj=() rc=() packageJson=() \
         customDir noEdit action='add'
   cver_parse "$@" || return $?
 
   if [[ $recursive = true ]]; then
-    . git-for -- 'cver_list'
+    . git-for "${forOpts[@]}" -- 'cver_list'
   else
     module_run cver_main
   fi
-
 }
 cver_list()
 {
@@ -49,8 +49,12 @@ cver_list()
     value=${spec#* }
     key=$(string_pad_left 13 $key)
     message="${LightCyan}${key}${NC} = ${Green}$value${NC}"
-    io_message "$message" "$moduleTracePrefix" Green
+    io_message "$message" "$moduleTracePrefix"
   done
+  if [ -f update-version ]; then
+    message="${LightCyan}$(string_pad_left 13 custom)${NC} = ${Brown}./update-version${NC}"
+    io_message "$message" "$moduleTracePrefix"
+  fi
 }
 cver_main()
 {
