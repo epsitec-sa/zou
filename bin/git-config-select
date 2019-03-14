@@ -6,12 +6,11 @@
 csel_parse()
 {
   while [[ "$#" > 0 ]]; do case "$1" in
-    --) shift; args+=("$@"); break;;
     -h|--help) zou-help $0; exit 0;;
-    -q|--quiet) quiet=true;;
-    -i|--include) [[ $mode == 'exclude' ]] && { io_error 'options conflict'; exit 1; } || mode='include';;
-    -x|--exclude) [[ $mode == 'include' ]] && { io_error 'options conflict'; exit 1; } || mode='exclude';;
-    -*) io_error "unknown option: $1"; exit 1;;
+    -r|--recursive) recursive=true;;
+    -i|--include)   [[ $mode == 'exclude' ]] && { io_error 'options conflict'; exit 1; } || mode='include';;
+    -x|--exclude)   [[ $mode == 'include' ]] && { io_error 'options conflict'; exit 1; } || mode='exclude';;
+    -*)             forOpts+=($1);;
     *)
       case "$mode" in
         include) include+=($1);;
@@ -21,10 +20,15 @@ csel_parse()
 }
 csel_run()
 {
-  local quiet mode='status' include=() exclude=()
+  local recursive forOpts=() \
+        mode='status' include=() exclude=()
   csel_parse "$@" || return $?
 
-  module_run csel_main "${args[@]}"
+  if [[ $recursive = true ]]; then
+    . git-for "${forOpts[@]}" -- 'config_select_status'
+  else
+    module_run csel_main
+  fi
 }
 csel_main()
 {
@@ -48,7 +52,8 @@ csel_main()
     exclude) [ ${#exclude[@]} -eq 0 ] && config_select_exclude_all;;
   esac
 
-  [[ $quiet == true ]] || config_select_status
+  config_select_status
 }
+
 csel_run "$@"
 

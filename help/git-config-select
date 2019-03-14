@@ -1,16 +1,18 @@
-usage: git-config-select [<options>] [--] [<branch>...]
+usage: git-config-select --recursive
+   or: git-config-select [<options>] [--] [<branch>...]
 
-Configure child selection mode
+Configure submodule selection.
 
     -h|--help               display help
+    -r|--recursive          traverse submodules recursively
     -i|--include [SM1,...]  enable  select for specific submodules (default to all) on current branch
     -x|--exclude [SM1,...]  disable select for specific submodules (default to all) on current branch
-    -q|--quiet              dot not display status
 
 remarks:    
     By default, level 0 submodules are enabled, others are disabled.
 
 example:
     git-config-select               # display status
+    git-config-select -r            # display status recursively
     git-config-select -i            # enable select for all submodules on current branch
     git-config-select -i sm1 sm2    # enable select for submodules sm1 and sm2 on current branch
