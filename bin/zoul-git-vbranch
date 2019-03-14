@@ -12,16 +12,13 @@ vbranch_without_prefix() { [[ $1 =~ ^(.*/)?([0-9]+\.[0-9]+)$ ]] && echo "${BASH_
 vbranch_prev_vtag()
 {
   local rev=${1:-HEAD}
-  local label="$moduleTracePrefix"
-
-  io_debug rev vbranch_prev_vtag
-  
   local ltag=$(vtag_describe "$rev")
 
+  io_debug rev vbranch_prev_vtag
   io_debug ltag vbranch_prev_vtag
 
   if [[ -z $ltag ]]; then
-    io_error "vbranch_prev_vtag: $rev has no vtag ancestor" "$label $zou_command"
+    io_error "vbranch_prev_vtag: $rev has no vtag ancestor" "$moduleTracePrefix"
     return 1
   else
     local stag=${ltag%-*-g*}
@@ -34,7 +31,7 @@ vbranch_prev_vtag()
     local vrange=$(vtag_get_vbranch_tail $stag $rev)
     if [[ -z $vrange ]]; then
       local revs=$(echo $rev $(vtag_vtags_at $rev) | xargs -n 1 git rev-parse --abbrev-ref)
-      io_error "vbranch_prev_vtag: unable to associate $(string_join ' or ' $revs) with a vbranch" "$label $zou_command"
+      io_error "vbranch_prev_vtag: unable to associate $(string_join ' or ' $revs) with a vbranch" "$moduleTracePrefix"
       return 2
     else
       io_debug vrange vbranch_prev_vtag
@@ -51,7 +48,7 @@ vbranch_prev_vtag()
       io_debug status vbranch_prev_vtag
 
       if [[ $status == 'full' ]]; then
-        io_info "Already published at '$stag'" "$label"
+        io_info "Already published at '$stag'" "$moduleTracePrefix"
         echo $stag
         return 3
       fi
@@ -65,7 +62,6 @@ vbranch_next_vtag()
   # echo vbranch_next_vtag ${*@Q} >&2
   local rev=${1:-HEAD}
   local prerel_prefix=$2
-  local label="$moduleTracePrefix"
 
   io_debug rev vbranch_next_vtag
   io_debug prerel_prefix vbranch_next_vtag
@@ -75,7 +71,7 @@ vbranch_next_vtag()
   io_debug ltag vbranch_next_vtag
 
   if [[ -z $ltag ]]; then
-    io_error "vbranch_next_vtag: $rev has no vtag ancestor" "$label $zou_command"
+    io_error "vbranch_next_vtag: $rev has no vtag ancestor" "$moduleTracePrefix"
     return 1
   else
     local stag=${ltag%-*-g*}
@@ -88,7 +84,7 @@ vbranch_next_vtag()
     local vrange=$(vtag_get_vbranch_tail $stag $rev)
     if [[ -z $vrange ]]; then
       local revs=$(echo $rev $(vtag_vtags_at $rev) | xargs -n 1 git rev-parse --abbrev-ref)
-      io_error "vbranch_next_vtag: unable to associate $(string_join ' or ' $revs) with a vbranch" "$label $zou_command"
+      io_error "vbranch_next_vtag: unable to associate $(string_join ' or ' $revs) with a vbranch" "$moduleTracePrefix"
       return 2
     else
       io_debug vrange vbranch_next_vtag
@@ -106,7 +102,7 @@ vbranch_next_vtag()
       io_debug status vbranch_next_vtag
 
       if [[ $status == 'full' ]]; then
-        io_info "Already published at '$stag'" "$label"
+        io_info "Already published at '$stag'" "$moduleTracePrefix"
         echo $stag
         return 3
       fi
@@ -116,7 +112,7 @@ vbranch_next_vtag()
       if [[ -n $utag ]]; then
         # upper limit exist
         io_debug utag vbranch_next_vtag
-        vnext=$(vtag_increment "$stag" "$prerel_prefix" "$label")
+        vnext=$(vtag_increment "$stag" "$prerel_prefix")
         io_debug vnext vbranch_next_vtag
         vtag_compare $vnext $utag
         if (( $? == 255 )); then
@@ -125,12 +121,12 @@ vbranch_next_vtag()
           echo $utag
           return 5 # rev is an ancestor of utag
         else
-          io_warning "Unable to publish '$rev' between '$stag' and '$utag'" "$label"
+          io_warning "Unable to publish '$rev' between '$stag' and '$utag'" "$moduleTracePrefix"
           return 4
         fi
       else
         # no upper limit: compute vnext
-        vnext=$(vtag_increment "$stag" "$prerel_prefix" "$label")
+        vnext=$(vtag_increment "$stag" "$prerel_prefix")
         io_debug vnext vbranch_next_vtag
         echo $vnext
       fi

@@ -54,7 +54,7 @@ vstatus_main()
   htag=$(vtag_highest $(vtag_vtags_at $stag | grep -E "^${stag%.*}" ) )
   [[ -n $htag ]] && stag=$htag
 
-  ntag=$(vtag_increment "$stag" "$prerelPrefix" "$moduleTracePrefix")
+  ntag=$(vtag_increment "$stag" "$prerelPrefix")
   if [[ -z $lsuf ]]; then
     io_info "Already published at $stag" "$moduleTracePrefix"
     [[ -z $quiet ]] && io_info "Next version      at $ntag" "$moduleTracePrefix"
