@@ -36,7 +36,7 @@ publish_parse()
     -q|--quiet)           quiet=true;;
     -e|--stop-on-error)   stopOnError=true;;
     -t|--vtable)          vtable=true;;
-    -s|--sm-dev)          smDev=true;;
+    -s|--sm-dev)          publishSubmodules=true;;
     -v|--vtag-only)       vtagOnly=true;;
     -u|--reuse)           prerelPrefix='reuse';;
     --alpha)              prerelPrefix='alpha';;
@@ -52,7 +52,7 @@ publish_parse()
 publish_run()
 {
   # parse command line
-  local jobsCount quiet stopOnError vtable smDev vtagOnly prerelPrefix attachHint
+  local jobsCount quiet stopOnError vtable publishSubmodules vtagOnly prerelPrefix attachHint
   publish_parse "$@" || return $?
 
   local useLongModuleTracePrefix=true
@@ -61,17 +61,21 @@ publish_run()
 }
 publish_main()
 {
-  local isBundle hasSubmodules vtagSelect createVTable
-  repo_is_bundle_root "$startupRoot" && isBundle=true
-  repo_has_submodules "$startupRoot" && hasSubmodules=true
-  [[ $hasSubmodules == true && $smDev != true || $vtagOnly == true ]] && vtagSelect=true
-  [[ $hasSubmodules == true && $vtagOnly != true && ( $isBundle == true || $vtable == true ) ]] && createVTable=true
+  local vtagSelect createVTable
+
+  if repo_has_submodules "$startupRoot"; then
+    local isBundle
+    repo_is_bundle_root "$startupRoot" && isBundle=true
+    [[ $vtagOnly == true || $publishSubmodules != true ]] && vtagSelect=true
+    [[ $vtagOnly != true && ( $isBundle == true || $vtable == true ) ]] && createVTable=true
+  fi
+
   if [[ -z $attachHint ]]; then
     local hintType
     branch_set_hint_type $bundleBranch
     attachHint=$hintType
   fi
-  # trace_method publish_main isBundle hasSubmodules vtagSelect createVTable attachHint
+  # trace_method publish_main vtagSelect createVTable attachHint
 
   local lockDir lookupPath
   [[ $createVTable == true ]] && {
@@ -143,7 +147,7 @@ publish_epilog()
       fi
       publish_update_vtable
     else
-      branch_publish "$branchOrTag" >/dev/null || ec=$?
+      branch_publish "$branchOrTag" "$prerelPrefix" >/dev/null || ec=$?
       publish_try_attach
       publish_update_vtable
     fi
@@ -200,7 +204,7 @@ publish_commit_vtable()
   fi
   if [[ -n $vtag ]]; then
     [ $ec -eq 0 ] && io_info "Created vtable for '$source' at '$vtag'" "$moduleTracePrefix"
-    tag_move "$vtag" "$source"
+    tag_move "$vtag" "$source" &>/dev/null
   fi
 }
 
