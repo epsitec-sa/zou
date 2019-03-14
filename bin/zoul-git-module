@@ -56,6 +56,11 @@ module_scope()
 
   _module_set_trace_prefix
 
+  if [[ $showVisitModuleMessage == true ]]; then
+    local startupRelativeDir=$(path_make_relative '.' "$startupDir")
+    io_message "Entering '$startupRelativeDir'" "$moduleTracePrefix" Gray
+  fi
+
   # execute next russian doll
   $*
 }
@@ -67,7 +72,6 @@ module_enter()
     io_error "No such [sub]module directory '$1'" "$moduleTracePrefix"
     return 1
   }
-  # [[ $quiet == true ]] || echo Entering "'$(path_make_relative '.' "$startupDir")'"
 }
 
 # usage:
