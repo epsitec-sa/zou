@@ -15,7 +15,7 @@ branch_ensure_current()
 {
   local branch=$(git rev-parse --abbrev-ref HEAD)
   if ! branch_is_local "$branch"; then
-    branch=$(branch_select $(branch_current_root_branch))
+    branch=$(branch_select "$bundleBranch" 'dev')
   fi
   echo $branch
 }
@@ -69,9 +69,11 @@ branch_best_match()
 }
 branch_select()
 {
+  # io_message "branch_select ${*@Q}" "$moduleTracePrefix" Gray
   local rootBranch=$1 hint=$2 bestMatch
   [[ -z $rootBranch ]] && io_error 'branch_select: specify a branch to match' && return 1
   bestMatch=$(branch_best_match $rootBranch $hint)
+  # io_message "branch_select ${*@Q} -> $bestMatch" "$moduleTracePrefix" Gray
   branch_checkout "$bestMatch" true >/dev/null
   if ! branch_upstream $bestMatch; then
     git push -u origin $bestMatch &>/dev/null
@@ -83,7 +85,7 @@ branch_select()
 }
 branch_select_vtag()
 {
-  # echo branch_select_vtag ${*@Q} >&2
+  # io_message "branch_select_vtag ${*@Q}" "$moduleTracePrefix" Gray
   local branch=$1 ltag stag lsuf vtag
   if ! branch_is_local $branch; then
     branch=$(branch_list_local_at $branch | cut -f 1 -d ' ')

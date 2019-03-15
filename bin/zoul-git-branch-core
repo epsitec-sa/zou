@@ -14,7 +14,11 @@ ZOUL_GIT_BRANCH_CORE=true
 branch_exists()         { git rev-parse --quiet --verify $1 >/dev/null; }
 branch_upstream()       { git rev-parse --abbrev-ref $1@{upstream} 2>/dev/null; }
 branch_list_local()     { git for-each-ref --format='%(refname:short)' refs/heads; }
-branch_list_local_at()  { git show-ref --heads | grep $(git_get_commit $1) | cut -d ' ' -f2 | sed 's,^refs/[^/]*/,,'; }
+branch_list_local_at()
+{
+  # io_message "branch_list_local_at ${*@Q}" "$moduleTracePrefix" Gray
+  git show-ref --heads | grep $(git_get_commit $1) | cut -d ' ' -f2 | sed 's,^refs/[^/]*/,,';
+}
 branch_list_remote()    { git for-each-ref --format='%(refname:short)' refs/remotes | grep -v '/HEAD$'; }
 branch_list_remote_at() { git show-ref | grep $(git_get_commit $1) | cut -d ' ' -f2 | grep 'refs/remotes' | grep -v '/HEAD$' | sed 's,^refs/[^/]*/,,'; }
 branch_list_all()       { git for-each-ref --format='%(refname:short)' refs/heads refs/remotes | grep -v '/HEAD$'; }
@@ -283,7 +287,7 @@ branch_set_hint_info()
 # try to attach a detached head to a branch that's pointing at it.
 branch_try_attach()
 {
-  # echo branch_try_attach ${*@Q} >&2
+  # io_message "branch_try_attach ${*@Q}" "$moduleTracePrefix" Gray
   local branches=( $(branch_list_attach_candidates $1) )
   [ ${#branches[@]} -eq 0 ] && return 1
   [ ${#branches[@]} -eq 1 ] && { branch_checkout "${branches[0]}"; return 0; }
