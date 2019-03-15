@@ -115,9 +115,10 @@ vbranch_next_vtag()
         vnext=$(vtag_increment "$stag" "$prerel_prefix")
         io_debug vnext vbranch_next_vtag
         vtag_compare $vnext $utag
+
         if (( $? == 255 )); then
           echo $vnext
-        elif git merge-base --is-ancestor $rev $utag; then
+        elif git merge-base --is-ancestor "$rev" "$utag"; then
           echo $utag
           return 5 # rev is an ancestor of utag
         else

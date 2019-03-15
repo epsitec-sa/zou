@@ -53,12 +53,12 @@ vcheck_main()
     ec=0
     rvbranch=$(branch_realize $vbranch)
     for vtag in ${byVersion[$vbranch]}; do
-      if ! git merge-base --is-ancestor $vtag $rvbranch; then
+      if ! git merge-base --is-ancestor "$vtag" "$rvbranch"; then
         io_warning "vtag '$vtag' is not inside vbranch '$rvbranch'" "$moduleTracePrefix"
         (( ec = $ec + 1 ))
       fi
       if [[ -n $pvtag ]]; then
-        if ! git merge-base --is-ancestor $vtag $pvtag; then
+        if ! git merge-base --is-ancestor "$vtag" "$pvtag"; then
           io_warning "vtag '$vtag' is not an ancestor of '$pvtag'" "$moduleTracePrefix"
           (( ec = $ec + 1 ))
         fi
