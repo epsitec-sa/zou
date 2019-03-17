@@ -11,6 +11,16 @@ ZOUL_GIT_BRANCH_CORE=true
 [[ -z $ZOUL_GIT_CORE ]] && . zoul-git-core
 [[ -z $ZOUL_GIT_REPO ]] && . zoul-git-repo
 
+branchChangedEvent=()
+
+branch_raise_branch_changed_event()
+{
+  local handler
+  for handler in "${branchChangedEvent[@]}"; do
+    $handler "$@"
+  done
+}
+
 branch_exists()         { git rev-parse --quiet --verify $1 >/dev/null; }
 branch_upstream()       { git rev-parse --abbrev-ref $1@{upstream} 2>/dev/null; }
 branch_list_local()     { git for-each-ref --format='%(refname:short)' refs/heads; }
@@ -225,10 +235,11 @@ branch_checkout()
     local line color info ec=0
     ref=$(branch_without_remote_prefix $ref)
     info=$(git checkout "$ref" 2>&1 >/dev/null); ec=$?
+
     if [[ $ec -eq 0 && $isCurrent -ne 0 ]]; then
-      # notify module manager of ref changed
-      [[ -n $moduleBranchChanged ]] && $moduleBranchChanged $ref || return 0
+      branch_raise_branch_changed_event $ref
     fi
+    
     while read -r line; do
       [[ -z $line ]] && continue
       if [[ $line =~ ^Switched ]]; then
