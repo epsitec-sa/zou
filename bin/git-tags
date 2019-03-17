@@ -25,7 +25,7 @@ tags_run()
   tags_parse "$@" || return $?
   
   if [[ $recursive = true ]]; then
-    . git-for --stp "${forOpts[@]}" -- 'tags_node'
+    . git-for -v:0 "${forOpts[@]}" -- 'tags_node'
   else
     module_run tags_node
   fi
