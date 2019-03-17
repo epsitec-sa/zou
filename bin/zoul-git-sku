@@ -158,14 +158,14 @@ _sku_realize_branch()
   if git show-ref -s --verify "refs/heads/$1" &>/dev/null; then
     # local branch
     lbranch=$1
-    rbranch=$(git rev-parse --abbrev-ref --symbolic-full-name $1@{u})
+    rbranch=$(git rev-parse --abbrev-ref --symbolic-full-name $1@{u} 2>/dev/null)
   elif git show-ref -s --verify "refs/remotes/$1" &>/dev/null; then
     # remote branch
     rbranch=$1
     lbranch=${rbranch#*/}
   else
     # assume its a deleted local branch with an existing remote branch
-    rbranch=$(git for-each-ref --format='%(refname:short)' refs/remotes | grep -E "^[^/]+/$1$")
+    rbranch=$(git for-each-ref --format='%(refname:short)' refs/remotes 2>/dev/null | grep -E "^[^/]+/$1$")
     if [[ $? -eq 0 ]]; then
       lbranch=${rbranch#*/}
     else
@@ -182,16 +182,20 @@ _sku_realize_branch()
 _sku_set_best_match_dev_branch()
 {
   local patterns=$(ref_dev_fallback $1) vtag=$2 \
-        branches=( $(branch_list_local | grep -Ev '^(.*/)?[0-9]+\.[0-9]+$') ) \
+        branches=( $(branch_list_local | grep -Ev '^(other/.*|(.*/)?[0-9]+\.[0-9]+)$') ) \
         remoteIndex=${#branches[@]}
         
-  branches+=( $(branch_list_remote_untracked) )
+  branches+=( $(branch_list_remote_untracked | grep -Ev '^([^/]+/other/.*|(.*/)?[0-9]+\.[0-9]+)$') )
   local pattern i lbranch ltag stag lsuf delta
   # try to find a branch matching bundle branch name
   for pattern in $patterns; do
     for i in ${!branches[@]}; do
       branch=${branches[i]}
-      (( $i < $remoteIndex )) && lbranch=$branch || lbranch=${branch#*/}
+      if (( $i < $remoteIndex )); then
+        lbranch=$branch
+      else
+        lbranch=${branch#*/}
+      fi
       io_trace "_sku_set_best_match_dev_branch ${*@Q} -> $(print_vars pattern i branch lbranch)"
       if [[ $lbranch == $pattern ]]; then
         _sku_describe_vtag_fallback $branch
