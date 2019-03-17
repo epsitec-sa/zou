@@ -8,10 +8,13 @@ Select SKU (checkout branch that matches bundle branch)
     -a|--all                select all submodules (ignore SKU filter)
     -j<n>                   number of submodules selected in parallel (default to 16)
     --dev                   force selection of development branches
-    --prod                  force selection of production branches
+    --prod                  force selection of last published version
+                            if a dev branch points at the vtag, activate it
+    .                       do not traverse submodules
     <sku>                   SKU to be selected (default to bundle active branch)
     
 example:
     git select              # select current SKU 
     git select sku/sal/dev  # select dev branch of sal SKU
-    git select --prod       # select production branches of current SKU
+    git select --prod       # select last published version on current SKU
+    git select --prod .     # switch to prod branch of current SKU in current module only

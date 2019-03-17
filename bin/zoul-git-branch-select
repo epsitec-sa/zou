@@ -69,15 +69,17 @@ branch_best_match()
 }
 branch_select()
 {
-  # io_message "branch_select ${*@Q}" "$moduleTracePrefix" Gray
-  local rootBranch=$1 hint=$2 bestMatch
+  local rootBranch=$1 hint=$2 showCheckout=${3:-true} bestMatch
   [[ -z $rootBranch ]] && io_error 'branch_select: specify a branch to match' && return 1
   bestMatch=$(branch_best_match $rootBranch $hint)
+
   # io_message "branch_select ${*@Q} -> $bestMatch" "$moduleTracePrefix" Gray
-  branch_checkout "$bestMatch" true >/dev/null
-  if ! branch_upstream $bestMatch; then
+  
+  branch_checkout "$bestMatch" $showCheckout >/dev/null
+  if ! branch_upstream $bestMatch >/dev/null; then
     git push -u origin $bestMatch &>/dev/null
   fi
+  echo $bestMatch
   if [ $? -ne 0 ]; then
     repo_require_clean_work_tree 'cannot select'
     return 1
@@ -86,14 +88,22 @@ branch_select()
 branch_select_vtag()
 {
   # io_message "branch_select_vtag ${*@Q}" "$moduleTracePrefix" Gray
+
   local branch=$1 ltag stag lsuf vtag
+  branch=$(branch_realize $1)
   if ! branch_is_local $branch; then
-    branch=$(branch_list_local_at $branch | cut -f 1 -d ' ')
+    branch=$(branch_list_local_at $branch | head -n1)
   fi
   ltag=$(vtag_describe "$branch") || {
     echo $branch
     return 2  # no vtag
   }
+
+  [[ -z $ltag ]] && {
+    io_error "No vtag found for branch '$branch'" "$moduleTracePrefix"
+    return 2  # no vtag
+  }
+
   stag=${ltag%-*-g*}
   vtag=$(vtag_most_recent $stag)
   # trace_method branch_select_vtag stag vtag
@@ -105,6 +115,7 @@ branch_select_vtag()
   if [[ $vtag == $stag ]]; then
     lsuf=${ltag#$stag}
     if [[ -z $lsuf ]]; then
+      branch_try_attach "$vtag" 'dev'
       echo $stag
       return 1  # branch == vtag
     fi
@@ -115,7 +126,7 @@ branch_select_vtag()
     return 3  # vtag is more recent
   fi
 
-  branch_try_attach "$vtag" 'prod' >/dev/null || branch_checkout "$vtag" &>/dev/null
+  branch_try_attach "$vtag" 'dev' || branch_checkout "$vtag"
   repo_update_submodules
   echo $vtag
   return 0  # switch to vtag ( or vbranch )
