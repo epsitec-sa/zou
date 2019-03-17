@@ -351,21 +351,20 @@ repo_discard_clean_submodules_async()
 }
 repo_update_submodules()
 {
-  if [ ${#moduleSubmodulePaths[@]} -ne 0 ]; then
-    io_info 'Updating submodules...' "$moduleTracePrefix"
-    git submodule update --init --recursive >&2
-  fi
+  [ ${#moduleSubmodulePaths[@]} -eq 0 ] && return 0
+  io_info 'Updating submodules...' "$moduleTracePrefix"
+  (git submodule update --init --recursive >&2) | \
+  while read -r line; do
+    [[ -n $line ]] && io_info "$line" "$moduleTracePrefix"
+  done
 }
 repo_update_submodule()
 {
-  local path=$1 info
-  info=$(git submodule update --init --recursive "$path")
-  [[ -n $info ]] && {
-    local line
-    while read -r line; do
-      [[ -n $line ]] && io_info "$line" "$moduleTracePrefix"
-    done <<< "$info"
-  }
+  local path=$1 line
+  (git submodule update --init --recursive "$path") | \
+  while read -r line; do
+    [[ -n $line ]] && io_info "$line" "$moduleTracePrefix"
+  done
 }
 repo_require_clean_work_tree()
 {
