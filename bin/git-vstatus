@@ -51,21 +51,21 @@ vstatus_main()
   branch=$(vtag_get_vbranch_name $stag)
 
   # if there is multiple tags on the same commit, get the highest one on same branch
-  htag=$(vtag_highest $(vtag_vtags_at $stag | grep -E "^${stag%.*}" ) )
+  htag=$(vtag_highest $(vtag_list $branch | grep -vE "\-@$" ) )
   [[ -n $htag ]] && stag=$htag
 
   ntag=$(vtag_increment "$stag" "$prerelPrefix")
   if [[ -z $lsuf ]]; then
-    io_info "Already published at $stag" "$moduleTracePrefix"
-    [[ -z $quiet ]] && io_info "Next version      at $ntag" "$moduleTracePrefix"
+    io_info "Already published at ${Brown}$stag" "$moduleTracePrefix"
+    [[ -z $quiet ]] && io_info "Next version      at ${Brown}$ntag" "$moduleTracePrefix"
   else
     [[ -z $quiet ]] && {
-      io_info "Actual version at $stag" "$moduleTracePrefix"
-      io_info "Next   version at $ntag" "$moduleTracePrefix"
+      io_info "Actual version at ${Brown}$stag" "$moduleTracePrefix"
+      io_info "Next   version at ${Brown}$ntag" "$moduleTracePrefix"
     }
     delta=${lsuf%-g*}
     delta=${delta#-}
-    io_warning "Active branch is $(string_pad_left 3 $delta) commits ahead of tag '$stag'" "$moduleTracePrefix"
+    io_info "Active branch is $(string_pad_left 3 ${Brown}$delta${Cyan}) commit[s] ahead of tag ${Brown}$stag" "$moduleTracePrefix"
   fi
   return 0
 }
