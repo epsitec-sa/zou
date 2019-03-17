@@ -1,19 +1,34 @@
 #!/bin/bash
 
-. zoul-git-branch-core
+[[ -z $ZOUL_GIT_MODULE ]]      && . zoul-git-module
+[[ -z $ZOUL_GIT_BRABCH_CORE ]] && . zoul-git-branch-core
 
-forOpts=()
-while [[ "$#" > 0 ]]; do case "$1" in
-  --) shift; patterns+=("$@"); break;;
-  -h|--help) zou-help $0; exit 0;;
-  -r|--recursive) recursive=true;;
-  -d|--dev)       hint='dev';;
-  -p|--prod)      hint='prod';;
-  -*)             forOpts+=($1);;
-esac; shift; done
+attach_parse()
+{
+  while [[ "$#" > 0 ]]; do case "$1" in
+    -h|--help) zou-help $0; exit 0;;
+    -r|--recursive) recursive=true;;
+    -d|--dev)       hint='dev';;
+    -p|--prod)      hint='prod';;
+    -*)             forOpts+=($1);;
+  esac; shift; done
+}
 
-if [[ $recursive == true ]]; then
-  . git-for "${forOpts[@]}" -- "branch_try_attach 'HEAD' $hint >/dev/null"
-else
-  branch_try_attach 'HEAD' "$hint" >/dev/null
-fi
+attach_run()
+{
+  local recursive forOpts=() hint
+  attach_parse "$@" || return $?
+
+  if [[ $recursive = true ]]; then
+    . git-for "${forOpts[@]}" -- 'attach_node'
+  else
+    local useLongModuleTracePrefix=true
+    module_run attach_node
+  fi
+}
+attach_node()
+{
+  branch_try_attach 'HEAD' "$hint"
+}
+
+attach_run "$@"
