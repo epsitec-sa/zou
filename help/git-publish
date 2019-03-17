@@ -4,23 +4,25 @@ Publish last versions of submodules and dev branch of startup module.
 
     -h|--help               display help
     -t|--vtable             force vtable creation when startup module is a composite submodule
-                            (default is to create a vtable when startup module is a bundle)
-    -s|--sm-dev             publish dev branches of submodules (default to last version)
-    -v|--vtag-only          publish last version of startup module (default to dev branch)
+                            (default is to create a vtable only when the startup module is a bundle)
     -u|--reuse              reuse most recent vtag of startup module (move it to current branch tip)
     -j<n>                   number of submodules published in parallel (default to 16)
     --alpha                 publish branch of startup module as alpha version
     --beta                  publish branch of startup module as beta version
     --rc                    publish branch of startup module as RC version
     --rtm                   publish branch of startup module as RTM version (remove pre-release version)
-    --dev                   attach to dev branches after publish (default if bundle branch is a dev branch)
-    --prod                  attach to prod branches after publish (default if bundle branch is a prod branch)
+    --dev                   publish dev branches of submodules (default to last version)
+    --prod                  try attach to prod branch (default to dev branch) after publish
+    .                       do not publish submodules
 
 example:
     git publish             # publish last version of submodules and dev branch of startup module
+                            # try to attach to dev branches of submodules
                             # create a vtable if the startup module is a bundle
+    git publish --dev       # publish dev branch of all modules
+    git publish --prod      # publish last version of submodules and prod branch of startup module
+                            # try to attach to prod branches of all modules
     git publish --alpha     # publish last version of submodules and dev branch of startup module as alpha version
-    git publish --reuse     # publish last version of submodules and reuse most recent vtag of startup module (move vtag to the tip of the branch)
-    git publish -s          # publish dev branch of all modules
-    git publish -v          # publish last version of all modules (do not create a vtable)
-    git publish -t          # create a vtable when publishing a composite submodule
+    git publish --reuse     # publish last version of submodules and reuse most recent vtag of startup module
+    git publish --vtable    # create a vtable when publishing a composite submodule even if it's not a bundle
+    git publish .           # publish current module only
