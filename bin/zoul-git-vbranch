@@ -28,7 +28,7 @@ vbranch_prev_vtag()
     io_debug lsuf vbranch_prev_vtag
 
     # fix stag and ltag when multiple tags point at same commit
-    local vrange=$(vtag_get_vbranch_tail $stag $rev)
+    local vrange=$(vtag_get_vbranch_tail $stag)
     if [[ -z $vrange ]]; then
       local revs=$(echo $rev $(vtag_vtags_at $rev) | xargs -n 1 git rev-parse --abbrev-ref)
       io_error "vbranch_prev_vtag: unable to associate $(string_join ' or ' $revs) with a vbranch" "$moduleTracePrefix"
@@ -59,78 +59,31 @@ vbranch_prev_vtag()
 }
 vbranch_next_vtag()
 {
-  # echo vbranch_next_vtag ${*@Q} >&2
-  local rev=${1:-HEAD}
-  local prerel_prefix=$2
+  # io_message "vbranch_next_vtag ${*@Q}" "$moduleTracePrefix" Gray
+  local rev=${1:-HEAD} prerelPrefix=$2 ltag stag lsuf vbranch htag
 
-  io_debug rev vbranch_next_vtag
-  io_debug prerel_prefix vbranch_next_vtag
-  
-  local ltag=$(vtag_describe "$rev")
-
+  ltag=$(vtag_describe "$rev")
   io_debug ltag vbranch_next_vtag
 
-  if [[ -z $ltag ]]; then
+  [[ -z $ltag ]] && {
     io_error "vbranch_next_vtag: $rev has no vtag ancestor" "$moduleTracePrefix"
     return 1
-  else
-    local stag=${ltag%-*-g*}
-    local lsuf=${ltag#$stag}
+  }
+  stag=${ltag%-*-g*}
+  lsuf=${ltag#$stag}
+  io_debug stag vbranch_next_vtag
 
-    io_debug stag vbranch_next_vtag
-    io_debug lsuf vbranch_next_vtag
+  [[ -z $lsuf ]] && ! vtag_is_vnode $stag && {
+    io_info "Already published at '$stag'" "$moduleTracePrefix"
+    echo $stag
+    return 3
+  }
+  vbranch=$(vtag_get_vbranch_name $stag)
+  io_debug lsuf vbranch_next_vtag
 
-    # fix stag and ltag when multiple tags point at same commit
-    local vrange=$(vtag_get_vbranch_tail $stag $rev)
-    if [[ -z $vrange ]]; then
-      local revs=$(echo $rev $(vtag_vtags_at $rev) | xargs -n 1 git rev-parse --abbrev-ref)
-      io_error "vbranch_next_vtag: unable to associate $(string_join ' or ' $revs) with a vbranch" "$moduleTracePrefix"
-      return 2
-    else
-      io_debug vrange vbranch_next_vtag
-
-      vrange=($vrange)
-      stag=${vrange[0]}
-      vbranch=${vrange[1]}
-      status=${vrange[2]}
-      ltag=$stag$lsuf
-      # vbranch=$(vbranch_without_prefix "${vrange[1]}")
-
-      io_debug ltag vbranch_next_vtag
-      io_debug stag vbranch_next_vtag
-      io_debug vbranch vbranch_next_vtag
-      io_debug status vbranch_next_vtag
-
-      if [[ $status == 'full' ]]; then
-        io_info "Already published at '$stag'" "$moduleTracePrefix"
-        echo $stag
-        return 3
-      fi
-
-      # get range upper limit
-      local vnext utag=$(vtag_get_next_vtag "$stag" "$vbranch")
-      if [[ -n $utag ]]; then
-        # upper limit exist
-        io_debug utag vbranch_next_vtag
-        vnext=$(vtag_increment "$stag" "$prerel_prefix")
-        io_debug vnext vbranch_next_vtag
-        vtag_compare $vnext $utag
-
-        if (( $? == 255 )); then
-          echo $vnext
-        elif git merge-base --is-ancestor "$rev" "$utag"; then
-          echo $utag
-          return 5 # rev is an ancestor of utag
-        else
-          io_warning "Unable to publish '$rev' between '$stag' and '$utag'" "$moduleTracePrefix"
-          return 4
-        fi
-      else
-        # no upper limit: compute vnext
-        vnext=$(vtag_increment "$stag" "$prerel_prefix")
-        io_debug vnext vbranch_next_vtag
-        echo $vnext
-      fi
-    fi
-  fi
+  htag=$(vtag_highest $(vtag_list $vbranch | grep -vE "\-@$" ) )
+  [[ -n $htag ]] && stag=$htag
+  vnext=$(vtag_increment "$stag" "$prerelPrefix")
+  io_debug vnext vbranch_next_vtag
+  echo $vnext
 }
