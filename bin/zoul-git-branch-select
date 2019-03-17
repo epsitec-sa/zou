@@ -73,7 +73,7 @@ branch_select()
   [[ -z $rootBranch ]] && io_error 'branch_select: specify a branch to match' && return 1
   bestMatch=$(branch_best_match $rootBranch $hint)
 
-  # io_message "branch_select ${*@Q} -> $bestMatch" "$moduleTracePrefix" Gray
+  # io_trace "branch_select ${*@Q} -> $bestMatch"
   
   branch_checkout "$bestMatch" $showCheckout >/dev/null
   if ! branch_upstream $bestMatch >/dev/null; then
@@ -87,7 +87,7 @@ branch_select()
 }
 branch_select_vtag()
 {
-  # io_message "branch_select_vtag ${*@Q}" "$moduleTracePrefix" Gray
+  # io_trace "branch_select_vtag ${*@Q}"
 
   local branch=$1 ltag stag lsuf vtag
   branch=$(branch_realize $1)

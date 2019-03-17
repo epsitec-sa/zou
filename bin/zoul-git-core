@@ -8,13 +8,13 @@ ZOUL_GIT_CORE=true
 
 git_get_commit()
 {
-  # io_message "git_get_commit ${*@Q}" "$moduleTracePrefix" Gray
+  # io_trace "git_get_commit ${*@Q}"
   local rev=${1:-HEAD}
   git rev-parse "${rev}^{commit}"
 }
 git_symbolic_ref()
 {
-  # io_message "git_symbolic_ref ${*@Q}" "$moduleTracePrefix" Gray
+  # io_trace "git_symbolic_ref ${*@Q}"
   if [[ -z $1 || $1 == 'HEAD' ]]; then
     git symbolic-ref --short HEAD 2>/dev/null || echo 'HEAD'
   else

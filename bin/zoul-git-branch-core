@@ -26,7 +26,7 @@ branch_upstream()       { git rev-parse --abbrev-ref $1@{upstream} 2>/dev/null; 
 branch_list_local()     { git for-each-ref --format='%(refname:short)' refs/heads; }
 branch_list_local_at()
 {
-  # io_message "branch_list_local_at ${*@Q}" "$moduleTracePrefix" Gray
+  # io_trace "branch_list_local_at ${*@Q}"
   git show-ref --heads | grep $(git_get_commit $1) | cut -d ' ' -f2 | sed 's,^refs/[^/]*/,,';
 }
 branch_list_remote()    { git for-each-ref --format='%(refname:short)' refs/remotes | grep -v '/HEAD$'; }
@@ -212,7 +212,8 @@ branch_ref_type()
 }
 branch_checkout()
 {
-  # io_message "branch_checkout ${*@Q}" "$moduleTracePrefix" Gray
+  # io_trace "branch_checkout ${*@Q}"
+  
   local ref=$1 always=$2 alias=$3 refType isCurrent
   [[ $alias == 'HEAD' ]] && unset alias
   branch_ref_type $ref; refType=$?
@@ -347,7 +348,7 @@ branch_set_hint_info()
 # try to attach a detached head to a branch that's pointing at it.
 branch_try_attach()
 {
-  # io_message "branch_try_attach ${*@Q}" "$moduleTracePrefix" Gray
+  # io_trace "branch_try_attach ${*@Q}"
 
   local ref=$1 hint=$2 showCheckout=${3:-true}
   local branches=( $(branch_list_attach_candidates $1) )

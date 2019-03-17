@@ -36,6 +36,12 @@ Purple='\e[0;35m'    LightPurple='\e[1;35m'
 Cyan='\e[0;36m'      LightCyan='\e[1;36m'
 LightGray='\e[0;37m' White='\e[1;37m'
 
+io_trace()
+{
+  [[ -z $ZOU_TRACE ]] && return 0
+  io_message "  $1" "$moduleTracePrefix" ${2:-Gray}
+}
+
 # usage: io_message <message> [<label> [<color=LightCyan>]]
 # example:
 #   $ io_message 'message' 'info' Cyan

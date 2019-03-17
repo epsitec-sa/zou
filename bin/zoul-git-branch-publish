@@ -28,7 +28,7 @@ branch_get_vbranch_name()
 # return the vtag at which the dev branch has been published
 branch_publish()
 {
-  # io_message "branch_publish ${*@Q}" "$moduleTracePrefix" Gray
+  # io_trace "branch_publish ${*@Q}"
 
   local branch=$1 prerelPrefix=$2 obranch
   
@@ -104,7 +104,7 @@ branch_publish()
 
 _branch_publish_commit_and_merge()
 {
-  # io_message "_branch_publish_commit_and_merge ${*@Q}" "$moduleTracePrefix"
+  # io_trace "_branch_publish_commit_and_merge ${*@Q}"
   local obranch=$1 branch=$2 vbranch=$3 vtag=$4 updater=$5 vcommit
   # update technical version - modify resources files
   [[ -n $obranch ]] && git checkout $branch &>/dev/null

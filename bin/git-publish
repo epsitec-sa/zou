@@ -176,13 +176,13 @@ publish_try_attach() { branch_try_attach 'HEAD' ${1:-dev} >/dev/null; }
 publish_update_vtable()
 {
   [[ $createVTable == true ]] || return 1
-  # io_message "publish_update_vtable ${*@Q}" "$moduleTracePrefix" Gray
+  # io_trace "publish_update_vtable ${*@Q}"
   lock "$lockDir" 0.1 vtable_update "$startupRoot" "$moduleId" "$lookupPath"
 }
 publish_commit_vtable()
 {
   [[ $createVTable == true ]] || return 1
-  # io_message "publish_commit_vtable ${*@Q}" "$moduleTracePrefix" Gray
+  # io_trace "publish_commit_vtable ${*@Q}"
   local ec=0 branch=$1 vtag=$2 vbranch=$3
   vtable_update "$startupRoot" "$moduleId" "$lookupPath" || ec=$?
 
