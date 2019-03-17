@@ -1,0 +1,35 @@
+#!/bin/bash
+
+[[ -z $ZOUL_CORE ]]       && . zoul-core
+[[ -z $ZOUL_GIT_BRANCH ]] && . zoul-git-vbranch
+[[ -z $ZOUL_GIT_MODULE ]] && . zoul-git-module
+
+vtag_parse()
+{
+  while [[ "$#" > 0 ]]; do case "$1" in
+    -h|--help) zou-help $0; exit 0;;
+    --alpha) prerelPrefix='alpha';;
+    --beta)  prerelPrefix='beta';;
+    --rc)    prerelPrefix='rc';;
+    --rtm)   prerelPrefix='rtm';;
+    --debug) debug=true;;
+    -*) io_error "unknown option: $1"; exit 1;;
+    *) ref=$1;;
+  esac; shift; done
+}
+
+vtag_run()
+{
+  local prerelPrefix ref
+  vtag_parse "$@"
+  module_run vtag_main
+}
+vtag_main()
+{
+  local ntag
+  ref=$(git_symbolic_ref $ref)
+  ntag=$(vbranch_next_vtag $ref $prerelPrefix)
+  io_info "Next version for ${Brown}$ref${Cyan} at ${Brown}$ntag${NC}" "$moduleTracePrefix"
+}
+
+vtag_run "$@"
