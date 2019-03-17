@@ -87,6 +87,14 @@ trace_vars()
   done
   echo "${params[@]}" >&2
 }
+print_vars()
+{
+  local params=() param
+  for param in "$@"; do
+    params+=( "$param='${!param}'" )
+  done
+  printf '%s ' "${params[@]}"
+}
 
 string_is_folded() { [[ $1 =~ ^[^/]+/.+$ ]]; }
 string_pad_left()  { printf "%*s" $1 $2; }
