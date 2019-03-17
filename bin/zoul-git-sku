@@ -20,9 +20,11 @@
 #   [[ -z $ZOUL_GIT_SKU ]] && . zoul-git-sku
 ZOUL_GIT_SKU=true
 
-[[ -z $ZOUL_CORE ]]            && . zoul-cor
-[[ -z $ZOUL_GIT_REF ]]         && . zoul-git-ref
-[[ -z $ZOUL_GIT_BRANCH_CORE ]] && . zoul-git-branch-core
+[[ -z $ZOUL_CORE ]]       && . zoul-core
+[[ -z $ZOUL_GIT_REF ]]    && . zoul-git-ref
+[[ -z $ZOUL_GIT_MODULE ]] && . zoul-git-module
+
+branchChangedEvent+=( _sku_reset_scope )
 
 # define SKU scope context
 # usage: module_run sku_scope ...
@@ -34,6 +36,18 @@ sku_scope()
         prod_vtag prod_vtagDelta \
         vtagMax
 
+  _sku_init_scope
+
+  # execute next russian doll
+  $*
+}
+_sku_reset_scope()
+{
+  unset skuMode dev_branch prod_branch dev_vtag dev_vtagDelta prod_vtag prod_vtagDelta vtagMax
+  _sku_init_scope
+}
+_sku_init_scope()
+{
   _sku_set_sku_mode "$moduleBranch"
 
   case $skuMode in

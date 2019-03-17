@@ -10,8 +10,10 @@ ZOUL_GIT_MODULE=true
 [[ -z $ZOUL_GIT_BRANCH_CORE ]] && . zoul-git-branch-core
 
 # module state variables
-readonly moduleScope='moduleRoot moduleId moduleBranch moduleTracePrefix'
-readonly moduleStartupScope='startupDir startupRoot bundleRoot bundleId bundleBranch'
+# readonly moduleScope='moduleRoot moduleId moduleBranch moduleTracePrefix'
+# readonly moduleStartupScope='startupDir startupRoot bundleRoot bundleId bundleBranch'
+
+branchChangedEvent+=( _module_reset_scope )
 
 module_run()
 {
@@ -46,7 +48,6 @@ module_scope()
     moduleBranch=$(branch_current) \
     moduleConfigFile="$PWD/.zou-flow" \
     moduleSubmodulePaths=( $(repo_list_submodule_paths $PWD) ) \
-    moduleBranchChanged='_module_branch_changed' \
     moduleTracePrefix
   
   if [[ $moduleRoot == $startupRoot ]]; then
@@ -115,11 +116,12 @@ module_submodule_visitor()
   module_enter "$1" || return $?
   module_scope "${@:2}" || return $?
 }
-_module_branch_changed()
+_module_reset_scope()
 {
   [[ "$PWD" == "$bundleRoot" ]] && bundleBranch=$1
   moduleBranch=$1
   _module_set_trace_prefix
+  io_trace "_module_reset_scope ${*@Q} -> $(print_vars bundleBranch moduleBranch moduleTracePrefix)"
 }
 _module_branch_prefix()
 {
