@@ -179,16 +179,60 @@ branch_ensure_local()
     git branch $1 "$(git remote)/$1" >/dev/null
   fi
 }
+# out:
+#   return code
+#   0 local branch
+#   1 remote branch
+#   2 remote branch without prefix
+#   3 tag
+#   4 other
+branch_ref_type()
+{
+  if git show-ref -s --verify "refs/heads/$1" &>/dev/null; then
+    return 0
+  elif git show-ref -s --verify "refs/remotes/$1" &>/dev/null; then
+    return 1
+  elif git show-ref -s --verify "refs/remotes/origin/$1" &>/dev/null; then
+    return 2
+  elif git show-ref -s --verify "refs/tags/$1" &>/dev/null; then
+    return 3
+  else
+    return 4
+  fi
+}
 branch_checkout()
 {
-  local branch=$(branch_without_remote_prefix $1)
-  if ! branch_is_current "$branch" || [[ $2 == true ]]; then
-    local line color
-    (git checkout "$branch" 2>&1 >/dev/null) | \
+  # io_message "branch_checkout ${*@Q}" "$moduleTracePrefix" Gray
+  local ref=$1 always=$2 alias=$3 refType isCurrent
+  [[ $alias == 'HEAD' ]] && unset alias
+  branch_ref_type $ref; refType=$?
+  branch_is_current $ref; isCurrent=$?
+  if [[ $isCurrent -ne 0 || $always == true ]]; then
+    # compute symbols
+    local symType symRef
+    case $refType in
+      0) symType='branch'; symRef="$ref";;
+      1) symType='new branch'; symRef="$(branch_without_remote_prefix $ref)";;
+      2) symType='new branch'; symRef="$ref";;
+      3) symType='tag'; symRef="($ref)";;
+      4) symType='commit'; symRef="($ref...)";;
+    esac
+
+    # switching message
+    [[ $isCurrent -ne 0 ]] && io_message "Switching to $symType '$symRef'" "$moduleTracePrefix" Brown
+
+    # checkout
+    local line color info ec=0
+    ref=$(branch_without_remote_prefix $ref)
+    info=$(git checkout "$ref" 2>&1 >/dev/null); ec=$?
+    if [[ $ec -eq 0 && $isCurrent -ne 0 ]]; then
+      # notify module manager of ref changed
+      [[ -n $moduleBranchChanged ]] && $moduleBranchChanged $ref || return 0
+    fi
     while read -r line; do
       [[ -z $line ]] && continue
       if [[ $line =~ ^Switched ]]; then
-        color=Cyan
+        color=Green
       elif [[ -z $color ]]; then
         if [[ $line =~ ^Already ]]; then
           color=LightBlue
@@ -196,15 +240,20 @@ branch_checkout()
           color=Brown
         elif [[ $line =~ ^error ]]; then
           color=Red
+        elif [[ $line =~ ^Note:\ checking\ out ]]; then
+          io_message "Switched to $symType '$symRef'" "$moduleTracePrefix" Green
+          break
+        elif [[ $line =~ ^Previous\ HEAD ]]; then
+          continue
         else
-          color=DarkGray
+          color=Gray
         fi
       fi
+      [[ -n $alias ]] && line="$line (${Brown}$alias${!color})"
       io_message "$line" "$moduleTracePrefix" $color
-    done
-    [ ${PIPESTATUS[0]} -eq 0 ] || return ${PIPESTATUS[0]}
-    # notify module manager of branch changed
-    [[ -n $moduleBranchChanged ]] && $moduleBranchChanged $branch || return 0
+      unset alias
+    done <<< "$info"
+    return $ec
   fi
 }
 branch_push()
@@ -288,23 +337,25 @@ branch_set_hint_info()
 branch_try_attach()
 {
   # io_message "branch_try_attach ${*@Q}" "$moduleTracePrefix" Gray
+
+  local ref=$1 hint=$2 showCheckout=${3:-true}
   local branches=( $(branch_list_attach_candidates $1) )
   [ ${#branches[@]} -eq 0 ] && return 1
-  [ ${#branches[@]} -eq 1 ] && { branch_checkout "${branches[0]}"; return 0; }
+  [ ${#branches[@]} -eq 1 ] && { branch_checkout "${branches[0]}" $showCheckout $ref; return 0; }
 
   # try to discriminate using given hint
   local hint=$2 hintType refHint hintBranches
   if [[ -n $hint ]]; then
     branch_set_hint_type $hint
     hintBranches=( $(branch_filter_hint "$hintType" "${branches[@]}") )
-    [ ${#hintBranches[@]} -eq 1 ] && { branch_checkout "${hintBranches[0]}"; return 0; }
+    [ ${#hintBranches[@]} -eq 1 ] && { branch_checkout "${hintBranches[0]}" $showCheckout $ref; return 0; }
   fi
   # try to discriminate using root branch or ref and hint
   branch_set_hint_info "$@"
   # no hint, checkout first branch
-  [ $? -ne 0 ] && { branch_checkout "${branches[0]}"; return 1; }
+  [ $? -ne 0 ] && { branch_checkout "${branches[0]}" $showCheckout $ref; return 1; }
   hintBranches=( $(branch_filter_hint "$hintType" "${branches[@]}") )
-  [ ${#hintBranches[@]} -eq 1 ] && { branch_checkout "${hintBranches[0]}"; return 0; }
+  [ ${#hintBranches[@]} -eq 1 ] && { branch_checkout "${hintBranches[0]}" $showCheckout $ref; return 0; }
 
   # trace_method branch_try_attach hintType refHint
   # try to discriminate using fallbacks
@@ -316,14 +367,14 @@ branch_try_attach()
       reHint=$(regex_escape "${hint%prod}")
       pHint="^${reHint}[0-9]+\.[0-9]+"
       for branch in ${hintBranches[@]}; do
-        [[ $branch =~ $pHint ]] && { branch_checkout "$branch"; return 0; }
+        [[ $branch =~ $pHint ]] && { branch_checkout "$branch" $showCheckout $ref; return 0; }
       done
     done
   fi
   # dev
   for hint in $(ref_dev_fallback "$refHint"); do
     for branch in ${branches[@]}; do
-      [[ $branch == $hint ]] && { branch_checkout "$branch"; return 0; }
+      [[ $branch == $hint ]] && { branch_checkout "$branch" $showCheckout $ref; return 0; }
     done
   done
   return 1
