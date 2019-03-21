@@ -8,15 +8,15 @@ attach_parse()
   while [[ "$#" > 0 ]]; do case "$1" in
     -h|--help) zou-help $0; exit 0;;
     -r|--recursive) recursive=true;;
-    -d|--dev)       hint='dev';;
-    -p|--prod)      hint='prod';;
+    -d|--dev)       attachHint='dev';;
+    -p|--prod)      attachHint='prod';;
     -*)             forOpts+=($1);;
   esac; shift; done
 }
 
 attach_run()
 {
-  local recursive forOpts=() hint
+  local recursive forOpts=() attachHint
   attach_parse "$@" || return $?
 
   if [[ $recursive = true ]]; then
@@ -28,7 +28,7 @@ attach_run()
 }
 attach_node()
 {
-  branch_try_attach 'HEAD' "$hint"
+  branch_try_attach 'HEAD' "$attachHint"
 }
 
 attach_run "$@"

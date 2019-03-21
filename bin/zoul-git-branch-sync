@@ -26,7 +26,7 @@ _branch_sync_sync()
 }
 _branch_sync_visitor()
 {
-  local r=$1 l=$2 i=$3 hint=$4
+  local r=$1 l=$2 i=$3 attachHint=$4
   case $i in
     '>')  _branch_sync_push  $r $l || return 1;; # l > r ahead   -- move r
     '<')  _branch_sync_merge $r $l || return 1;; # l < r behind  -- move l
@@ -35,13 +35,13 @@ _branch_sync_visitor()
 }
 _branch_sync_visit() 
 {
-  local visitor=$1 hint=$2 isCurrent current=$moduleBranch; shift 2
+  local visitor=$1 attachHint=$2 isCurrent current=$moduleBranch; shift 2
   [[ -z $current ]] && current=$(branch_current)
 
   while read l r i; do
     [[ $l == $current ]] && linfo="* $l"
 
-    $visitor $r $l $i $hint || return 1
+    $visitor $r $l $i $attachHint || return 1
     case $i in
       '>'|'<'|'<>') [[ $l == $current ]] && color=Yellow     || color=Brown;;  # ahead, behind, ahead and behind
       '=')          [[ $l == $current ]] && color=LightGreen || color=Green;;
@@ -88,13 +88,13 @@ _branch_sync_visit()
 }
 branch_sync_all()
 {
-  local hint=$1; shift 1
+  local attachHint=$1; shift 1
 
   git fetch --prune --all &>/dev/null
   git fetch --tags --force &>/dev/null
   repo_require_clean_work_tree 'Cannot synchronize' || return 1
 
-  _branch_sync_visit _branch_sync_visitor "$hint" "$@"
+  _branch_sync_visit _branch_sync_visitor "$attachHint" "$@"
   repo_discard_clean_submodules_async
-  branch_try_attach 'HEAD' "$hint" >/dev/null || true
+  branch_try_attach 'HEAD' "$attachHint" >/dev/null || true
 }

@@ -101,9 +101,11 @@ tag_delete()
 
 tag_move()
 {
+  # io_trace "tag_move ${*@Q}"
+
   local tag1=$1 tag2=$2
   if ! git_object_exists "$tag1"; then
-    io_error "Object '$tag1' does not exist."
+    io_error "Object '$tag1' does not exist." "$moduleTracePrefix"
     return 1
   fi
   if git_object_exists "$tag2"; then

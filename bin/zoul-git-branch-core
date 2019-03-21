@@ -360,6 +360,7 @@ branch_try_attach()
   if [[ -n $hint ]]; then
     branch_set_hint_type $hint
     hintBranches=( $(branch_filter_hint "$hintType" "${branches[@]}") )
+    # io_trace "branch_filter_hint $hintType ${branches[*]@Q} : ${hintBranches[*]@Q}"
     [ ${#hintBranches[@]} -eq 1 ] && { branch_checkout "${hintBranches[0]}" $showCheckout $ref; return 0; }
   fi
   # try to discriminate using root branch or ref and hint
@@ -367,9 +368,10 @@ branch_try_attach()
   # no hint, checkout first branch
   [ $? -ne 0 ] && { branch_checkout "${branches[0]}" $showCheckout $ref; return 1; }
   hintBranches=( $(branch_filter_hint "$hintType" "${branches[@]}") )
+  # io_trace "branch_filter_hint $hintType ${branches[*]@Q} : ${hintBranches[*]@Q}"
   [ ${#hintBranches[@]} -eq 1 ] && { branch_checkout "${hintBranches[0]}" $showCheckout $ref; return 0; }
 
-  # trace_method branch_try_attach hintType refHint
+  # io_trace "$(print_vars hintType refHint)"
   # try to discriminate using fallbacks
   local branch
   if [[ $hintType == 'prod' ]]; then

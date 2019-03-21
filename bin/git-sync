@@ -16,8 +16,8 @@ sync_parse()
     -s|--sm-only)       smOnly=true;;
     -c|--clean)         cleanLocalBranches=true;;
     -j*)                jobsCount=${1#-j};;
-    --dev)              hint='dev';;
-    --prod)             hint='prod';;
+    --dev)              attachHint='dev';;
+    --prod)             attachHint='prod';;
     -*) io_error "unknown option '$1'"; return 1;;
   esac; shift; done
 
@@ -29,7 +29,7 @@ sync_parse()
 sync_run()
 {
   # parse command line
-  local jobsCount quiet stopOnError noSkuFilter moduleRootOnly smOnly cleanLocalBranches hint
+  local jobsCount quiet stopOnError noSkuFilter moduleRootOnly smOnly cleanLocalBranches attachHint
   sync_parse "$@" || return $?
   
   local useLongModuleTracePrefix=true
@@ -62,7 +62,7 @@ sync_node()
 {
   # synchronize all branches
   # [[ -z $quiet ]] && io_info "Synchronizing..." "$moduleTracePrefix"
-  branch_sync_all "$hint" && sync_clean_local_branches || return $?
+  branch_sync_all "$attachHint" && sync_clean_local_branches || return $?
 }
 sync_clean_local_branches()
 {
