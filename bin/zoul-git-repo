@@ -353,7 +353,7 @@ repo_update_submodules()
 {
   [ ${#moduleSubmodulePaths[@]} -eq 0 ] && return 0
   io_info 'Updating submodules...' "$moduleTracePrefix"
-  (git submodule update --init --recursive >&2) | \
+  (git submodule update --init --recursive 2>&1) | \
   while read -r line; do
     [[ -n $line ]] && io_info "$line" "$moduleTracePrefix"
   done
@@ -361,10 +361,20 @@ repo_update_submodules()
 repo_update_submodule()
 {
   local path=$1 line
-  (git submodule update --init --recursive "$path") | \
+  (git submodule update --init --recursive "$path" 2>&1) | \
   while read -r line; do
     [[ -n $line ]] && io_info "$line" "$moduleTracePrefix"
   done
+}
+repo_check_submodule()
+{
+  [[ -f .git || -d .git ]] && return 0
+  cd "$startupRoot"
+  repo_update_submodule "$1"
+  cd "$1"
+  [[ -f .git || -d .git ]] && return 0
+  io_error "Not a git submodule '$1'" "$moduleTracePrefix"
+  return 1
 }
 repo_require_clean_work_tree()
 {
