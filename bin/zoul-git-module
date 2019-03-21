@@ -22,13 +22,15 @@ module_run()
 module_scope_startup()
 {
   # setup startup context
-  local \
-    startupDir=$PWD \
-    startupRoot=$(repo_module_root) \
-    bundleId=$(repo_bundle_id) \
-    bundleRoot=$(repo_bundle_root) \
-    bundleBranch=$(branch_current_root_branch) \
-    submodulePathMaxLength
+  local startupDir=$PWD startupRoot bundleId bundleRoot bundleBranch submodulePathMaxLength
+  startupRoot=$(repo_module_root)
+  [[ -z $startupRoot ]] && {
+    io_error "Not a git repository '$PWD' (or any of the parent directories)"
+    return 1
+  }
+  bundleId=$(repo_bundle_id)
+  bundleRoot=$(repo_bundle_root)
+  bundleBranch=$(branch_current_root_branch)
 
   # enter startup module
   module_enter "$startupRoot" || return $?
@@ -114,6 +116,7 @@ module_submodules_enumerator()
 module_submodule_visitor()
 {
   module_enter "$1" || return $?
+  repo_check_submodule "$1" || return $?
   module_scope "${@:2}" || return $?
 }
 _module_reset_scope()
