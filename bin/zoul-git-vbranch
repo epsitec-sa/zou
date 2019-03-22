@@ -11,67 +11,19 @@ vbranch_without_prefix() { [[ $1 =~ ^(.*/)?([0-9]+\.[0-9]+)$ ]] && echo "${BASH_
 
 vbranch_prev_vtag()
 {
-  local rev=${1:-HEAD}
-  local ltag=$(vtag_describe "$rev")
-
-  io_debug rev vbranch_prev_vtag
-  io_debug ltag vbranch_prev_vtag
-
-  if [[ -z $ltag ]]; then
-    io_error "vbranch_prev_vtag: $rev has no vtag ancestor" "$moduleTracePrefix"
-    return 1
-  else
-    local stag=${ltag%-*-g*}
-    local lsuf=${ltag#$stag}
-
-    io_debug stag vbranch_prev_vtag
-    io_debug lsuf vbranch_prev_vtag
-
-    # fix stag and ltag when multiple tags point at same commit
-    local vrange=$(vtag_get_vbranch_tail $stag)
-    if [[ -z $vrange ]]; then
-      local revs=$(echo $rev $(vtag_vtags_at $rev) | xargs -n 1 git rev-parse --abbrev-ref)
-      io_error "vbranch_prev_vtag: unable to associate $(string_join ' or ' $revs) with a vbranch" "$moduleTracePrefix"
-      return 2
-    else
-      io_debug vrange vbranch_prev_vtag
-
-      vrange=($vrange)
-      stag=${vrange[0]}
-      vbranch=${vrange[1]}
-      status=${vrange[2]}
-      ltag=$stag$lsuf
-
-      io_debug ltag vbranch_prev_vtag
-      io_debug stag vbranch_prev_vtag
-      io_debug vbranch vbranch_prev_vtag
-      io_debug status vbranch_prev_vtag
-
-      if [[ $status == 'full' ]]; then
-        io_info "Already published at '$stag'" "$moduleTracePrefix"
-        echo $stag
-        return 3
-      fi
-
-      echo $stag
-    fi
-  fi
-}
-vbranch_next_vtag()
-{
-  # io_trace "vbranch_next_vtag ${*@Q}"
+  # io_trace "vbranch_prev_vtag ${*@Q}"
   local rev=${1:-HEAD} prerelPrefix=$2 ltag stag lsuf vbranch htag
 
   ltag=$(vtag_describe "$rev")
-  io_debug ltag vbranch_next_vtag
+  io_debug ltag vbranch_prev_vtag
 
   [[ -z $ltag ]] && {
-    io_error "vbranch_next_vtag: $rev has no vtag ancestor" "$moduleTracePrefix"
+    io_error "vbranch_prev_vtag: $rev has no vtag ancestor" "$moduleTracePrefix"
     return 1
   }
   stag=${ltag%-*-g*}
   lsuf=${ltag#$stag}
-  io_debug stag vbranch_next_vtag
+  io_debug stag vbranch_prev_vtag
 
   [[ -z $lsuf ]] && ! vtag_is_vnode $stag && {
     io_info "Already published at '$stag'" "$moduleTracePrefix"
@@ -79,11 +31,18 @@ vbranch_next_vtag()
     return 3
   }
   vbranch=$(vtag_get_vbranch_name $stag)
-  io_debug lsuf vbranch_next_vtag
+  io_debug lsuf vbranch_prev_vtag
 
   htag=$(vtag_highest $(vtag_list $vbranch | grep -vE "\-@$" ) )
   [[ -n $htag ]] && stag=$htag
-  vnext=$(vtag_increment "$stag" "$prerelPrefix")
-  io_debug vnext vbranch_next_vtag
-  echo $vnext
+  io_debug stag vbranch_prev_vtag
+  echo $stag
+}
+vbranch_next_vtag()
+{
+  local rev=${1:-HEAD} prerelPrefix=$2 vtag ec=0
+  vtag=$(vbranch_prev_vtag "$rev" "$prerelPrefix") || ec=$?
+  [ $ec -eq 0 ] && vtag=$(vtag_increment "$vtag" "$prerelPrefix")
+  echo $vtag
+  return $ec
 }
