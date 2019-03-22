@@ -351,7 +351,7 @@ branch_try_attach()
   # io_trace "branch_try_attach ${*@Q}"
 
   local ref=$1 hint=$2 showCheckout=${3:-true}
-  local branches=( $(branch_list_attach_candidates $1) )
+  local branches=( $(branch_list_attach_candidates $ref | grep -v '^other/') )
   [ ${#branches[@]} -eq 0 ] && return 1
   [ ${#branches[@]} -eq 1 ] && { branch_checkout "${branches[0]}" $showCheckout $ref; return 0; }
 
