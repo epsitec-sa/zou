@@ -11,6 +11,9 @@ ZOUL_GIT_BRANCH_CORE=true
 [[ -z $ZOUL_GIT_CORE ]] && . zoul-git-core
 [[ -z $ZOUL_GIT_REPO ]] && . zoul-git-repo
 
+# global options
+#   showSwitchingMessage
+
 branchChangedEvent=()
 
 branch_raise_branch_changed_event()
@@ -230,7 +233,7 @@ branch_checkout()
     esac
 
     # switching message
-    [[ $isCurrent -ne 0 ]] && io_message "Switching to $symType '$symRef'" "$moduleTracePrefix" Brown
+    [[ $isCurrent -ne 0 && $showSwitchingMessage == true ]] && io_message "Switching to $symType '$symRef'" "$moduleTracePrefix" Brown
 
     # checkout
     local line color info ec=0
@@ -352,6 +355,7 @@ branch_try_attach()
 
   local ref=$1 hint=$2 showCheckout=${3:-true}
   local branches=( $(branch_list_attach_candidates $ref | grep -v '^other/') )
+  # io_trace "branch_try_attach -- $(print_vars ref hint branches[@])"
   [ ${#branches[@]} -eq 0 ] && return 1
   [ ${#branches[@]} -eq 1 ] && { branch_checkout "${branches[0]}" $showCheckout $ref; return 0; }
 
@@ -371,7 +375,7 @@ branch_try_attach()
   # io_trace "branch_filter_hint $hintType ${branches[*]@Q} : ${hintBranches[*]@Q}"
   [ ${#hintBranches[@]} -eq 1 ] && { branch_checkout "${hintBranches[0]}" $showCheckout $ref; return 0; }
 
-  # io_trace "$(print_vars hintType refHint)"
+  # io_trace "branch_try_attach -- $(print_vars hintType refHint)"
   # try to discriminate using fallbacks
   local branch reHint pHint
   if [[ $hintType == 'prod' ]]; then
@@ -396,7 +400,7 @@ branch_try_attach()
       # replace prod suffix with vbranch regex
       reHint=$(regex_escape "${hint%prod}")
       pHint="^${reHint}[0-9]+\.[0-9]+"
-      # io_trace "$(print_vars hintType hint reHint pHint)"
+      # io_trace "branch_try_attach -- $(print_vars hintType hint reHint pHint)"
       for branch in ${branches[@]}; do
         [[ $branch =~ $pHint ]] && { branch_checkout "$branch" $showCheckout $ref; return 0; }
       done
