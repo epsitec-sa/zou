@@ -34,7 +34,6 @@ ZOUL_GIT_REPO=true
 
 [[ -z $ZOUL_CORE ]] && . zoul-core
 
-declare -A smPathLookup
 
 ######################
 # Bundle
@@ -233,17 +232,6 @@ repo_is_clean()        { git diff-index --ignore-submodules --quiet HEAD --; }
 repo_is_bundle_root()  { [[ -d "${1:-.}/.git" ]]; }
 repo_is_module_root()  { [[ -f "${1:-.}/.git" ]]; }
 
-repo_list_submodule_paths_unsafe()
-{
-  local mroot paths
-  mroot=$(repo_module_root) || return 1
-  paths=${smPathLookup[$mroot]}
-  if [[ -z $paths ]]; then
-    paths=$(git config --file "$mroot/.gitmodules" --get-regexp '^submodule\..*\.path$' | cut -d' ' -f2)
-    smPathLookup[$mroot]=$paths
-  fi
-  echo $paths
-}
 repo_has_submodules()
 {
   local mroot=$1
