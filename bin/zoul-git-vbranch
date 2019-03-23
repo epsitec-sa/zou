@@ -12,6 +12,7 @@ vbranch_without_prefix() { [[ $1 =~ ^(.*/)?([0-9]+\.[0-9]+)$ ]] && echo "${BASH_
 vbranch_prev_vtag()
 {
   # io_trace "vbranch_prev_vtag ${*@Q}"
+
   local rev=${1:-HEAD} prerelPrefix=$2 ltag stag lsuf vbranch htag
 
   ltag=$(vtag_describe "$rev")
@@ -23,13 +24,15 @@ vbranch_prev_vtag()
   }
   stag=${ltag%-*-g*}
   lsuf=${ltag#$stag}
-  io_debug stag vbranch_prev_vtag
+
+  # io_trace "vbranch_prev_vtag -- $(print_vars rev prerelPrefix ltag stag lsuf)"
 
   [[ -z $lsuf ]] && ! vtag_is_vnode $stag && {
-    io_info "Already published at '$stag'" "$moduleTracePrefix"
+    io_info "Already published at ${Brown}$stag" "$moduleTracePrefix"
     echo $stag
     return 3
   }
+
   vbranch=$(vtag_get_vbranch_name $stag)
   io_debug lsuf vbranch_prev_vtag
 

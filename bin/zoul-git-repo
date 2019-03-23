@@ -34,6 +34,8 @@ ZOUL_GIT_REPO=true
 
 [[ -z $ZOUL_CORE ]] && . zoul-core
 
+# global options
+#   showSubmoduleMessage
 
 ######################
 # Bundle
@@ -331,9 +333,19 @@ repo_commit_submodules()
   local opwd=$PWD cslist=$(string_join ', ' "$@")
   cd "$mroot"
   local branch=$(branch_current)
-  git commit -m "zou-flow: update submodules '$cslist' on branch '$branch'" -- "$@" >/dev/null
-  io_warning "Commited submodules '$cslist' on branch '$branch'" "$moduleTracePrefix"
+  git commit -m "zou-flow: update submodules '$cslist' on branch '$branch'" -- "$@" >/dev/null \
+  && [[ $showSubmoduleMessage == true ]] && io_success "Commited submodules '$cslist' on branch '$branch'" "$moduleTracePrefix"
   cd "$opwd"
+}
+repo_discard_submodule()
+{
+  local smpath=$1
+  git submodule update --recursive "$smpath" &>/dev/null
+  [[ $showSubmoduleMessage == true ]] && io_success "Discarded submodule '$smpath' from branch '$moduleBranch'" "$moduleTracePrefix"
+}
+repo_discard_clean_submodules_async()
+{
+  visit_async repo_list_unstaged_clean_submodules repo_discard_submodule
 }
 repo_remove_dangling_submodule()
 {
@@ -343,19 +355,9 @@ repo_remove_dangling_submodule()
   rm -rf "$smpath"
   io_warning "Removed dangling submodule '${smpath%/}'" "$moduleTracePrefix"
 }
-repo_discard_submodule()
-{
-  local smpath=$1
-  git submodule update --recursive "$smpath" &>/dev/null
-  io_warning "Discarded submodule '$smpath' from branch '$moduleBranch'" "$moduleTracePrefix"
-}
 repo_remove_dangling_submodules_async()
 {
   visit_async repo_list_dangling_submodules repo_remove_dangling_submodule
-}
-repo_discard_clean_submodules_async()
-{
-  visit_async repo_list_unstaged_clean_submodules repo_discard_submodule
 }
 repo_update_submodules()
 {

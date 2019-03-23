@@ -179,9 +179,9 @@ vtag_describe()
     ltag=$(git describe --tags --match "$match" --exclude 'other/*' "$branch" 2>/dev/null)
     if [[ -n $ltag ]]; then
       stag=${ltag%-*-g*}
-      # echo vtag_describe: git merge-base --is-ancestor $stag $branch >&2
-      if git merge-base --is-ancestor $stag $branch; then
+      if git merge-base --is-ancestor $stag^{} $branch; then
         echo $ltag
+        # io_trace "vtag_describe -> $(print_vars branch match ltag stag)"
         return 0
       fi
     fi
