@@ -1,30 +1,21 @@
 #!/bin/bash
 
-cosmEnumerator='repo_list_unstaged_clean_submodules'
-forOpts=()
-while [[ "$#" > 0 ]]; do case "$1" in
-  --) shift; args+=("$@"); break;;
-  -h|--help) zou-help $0; exit 0;;
-  -f|--force) cosmEnumerator='repo_list_unstaged_submodules';;
-  -*) forOpts+=($1);;
-esac; shift; done
-
-cosm_node()
+cosm_parse()
 {
-  repo_commit_submodule_enumerator "$cosmEnumerator"
-
-  if [[ $cosmEnumerator =~ '_clean' ]]; then
-    local unstaged=( $(repo_list_unstaged_submodules) )
-    if [ ${#unstaged[@]} -ne 0 ]; then
-      if [ ${#unstaged[@]} -eq 1 ]; then
-        io_message "Submodule '${unstaged[0]}' is dirty and has not been commited." "$moduleTracePrefix" Purple
-      else
-        io_message "Submodules '$(string_join ', ' ${unstaged[@]})' are dirty and have not been commited." "$moduleTracePrefix" Purple
-      fi
-      io_message "  use 'git cosm -f' to force a commit." "$moduleTracePrefix" Purple
-    fi
-  fi
+  while [[ "$#" > 0 ]]; do case "$1" in
+    --) shift; args+=("$@"); break;;
+    -h|--help) zou-help $0; exit 0;;
+    -f|--force) commitDirtySubmodules=true;;
+    -*) forOpts+=($1);;
+  esac; shift; done
 }
 
-. git-for --bottom-up --ancestors "${forOpts[@]}" -- 'cosm_node'
-  
+cosm_run()
+{
+  local forOpts=() commitDirtySubmodules
+  cosm_parse "$@" || return $?
+
+  . git-for --bottom-up --ancestors --scope cosm_scope "${forOpts[@]}" -- 'cosm_process_unstaged_submodules'
+}
+
+cosm_run "$@"
