@@ -21,6 +21,8 @@
 
 [[ -z $ZOUL_LOCK ]]               && . zoul-lock
 [[ -z $ZOUL_GIT_MODULE ]]         && . zoul-git-module
+[[ -z $ZOUL_GIT_CONFIG ]]         && . zoul-git-config
+[[ -z $ZOUL_GIT_COSM ]]           && . zoul-git-cosm
 [[ -z $ZOUL_GIT_VTABLE ]]         && . zoul-git-vtable
 [[ -z $ZOUL_GIT_BRANCH_CORE ]]    && . zoul-git-branch-core
 [[ -z $ZOUL_GIT_CONFIG_SKU ]]     && . zoul-git-config-sku
@@ -35,6 +37,7 @@ publish_parse()
     -h|--help) zou-help $0; exit 0;;
     -q|--quiet)           quiet=true;;
     -e|--stop-on-error)   stopOnError=true;;
+    -j*)                  jobsCount=${1#-j};;
     .)                    unset recursive;;
     -t|--vtable)          vtable=true;;
     -u|--reuse)           prerelPrefix='reuse';;
@@ -43,8 +46,6 @@ publish_parse()
     --rc)                 prerelPrefix='rc';;
     --rtm)                prerelPrefix='rtm';;
     --dev)                publishHint='dev';;
-    --prod)               publishHint='prod';;
-    -j*)                  jobsCount=${1#-j};;
     -*) io_error "unknown option '$1'"; return 1;;
   esac; shift; done
 }
@@ -54,9 +55,9 @@ publish_run()
   local jobsCount quiet stopOnError vtable prerelPrefix publishHint recursive=true
   publish_parse "$@" || return $?
 
-  local useLongModuleTracePrefix=true
+  local useLongModuleTracePrefix=true publishScopes=( config_scope cosm_scope )
 
-  module_run publish_main
+  module_run "${publishScopes[@]}" publish_main
 }
 publish_main()
 {
@@ -75,28 +76,30 @@ publish_main()
     lookupPath="$(mktemp)"
     vtable_init "$startupRoot" "$lookupPath"
   }
-  publish_tree
+  publish_tree 'configSelectExclude[@]'
 }
 publish_tree()
 {
-  local ec=0 branchOrTag=$moduleBranch stopPublish neverPublished ffPublish
-  publish_prolog || ec=$?
-  [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
-  [[ $recursive == true ]] && {
-    publish_submodules || ec=$?
+  # io_trace "publish_tree -- $(print_vars modulePath $1)"
+  if array_contains_element "$modulePath" "${!1}"; then
+    publish_update_vtable
+  else
+    local ec=0 branchOrTag=$moduleBranch stopPublish neverPublished ffPublish
+    publish_prolog || ec=$?
     [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
-  }
-  publish_epilog || ec=$?
-  return $ec
+    [[ $recursive == true ]] && {
+      publish_submodules || ec=$?
+      [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
+    }
+    publish_epilog || ec=$?
+    return $ec
+  fi
 }
-publish_submodules() { module_visit_submodules_async publish_submodules_enumerator publish_tree; }
-publish_submodules_enumerator()
+publish_submodules()
 {
-  # io_warning ">>>> publish_submodules" "$moduleTracePrefix"
-  local include exclude
-  include=( $(config_sku_list_included) )
-  exclude=( $(config_select_list_excluded) )
-  array_remove_array 'include[@]' 'exclude[@]'
+  local publishSubmodules=( $(array_sort configSkuInclude[@]) )
+  local parentConfigSelectExclude=( "${configSelectExclude[@]}" )
+  module_visit_submodules_async 'publishSubmodules[@]' "${publishScopes[@]}" 'publish_tree parentConfigSelectExclude[@]'
 }
 publish_prolog()
 {
@@ -105,9 +108,9 @@ publish_prolog()
   if [[ $stopPublish == true ]]; then
     publish_try_attach
   elif config_publish_is_enabled; then
-    if [[ -n $publishHint || "$PWD" == "$startupRoot" ]]; then
+    if [[ $publishHint == 'dev' || "$PWD" == "$startupRoot" ]]; then
       # branchOrTag=$(branch_ensure_current 2>/dev/null) || return 1
-      branchOrTag=$(branch_select "$bundleBranch" "$publishHint" 'false') || return 1
+      branchOrTag=$(branch_select "$bundleBranch" 'dev' 'false') || return 1
     else
       publish_select_vtag
     fi
@@ -118,10 +121,9 @@ publish_prolog()
 }
 publish_epilog()
 {
-  # trace_method publish_epilog "$global_variable_names"
   local info ec=0
   
-  repo_commit_clean_submodules
+  cosm_process_unstaged_submodules
 
   if [[ $stopPublish == true ]]; then
     publish_update_vtable
@@ -144,7 +146,7 @@ publish_epilog()
         local branch=$moduleBranch vbranch=$(vtag_get_vbranch_name $branchOrTag)
         branch_merge $vbranch $branch
         publish_try_attach
-        io_success "Published branch '$branch' on vbranch '$vbranch' at '$branchOrTag' (fast-forward)" "$moduleTracePrefix"
+        io_success "Published branch '$branch' on vbranch '$vbranch' at ${Brown}$branchOrTag${Green} (fast-forward)" "$moduleTracePrefix"
       fi
       publish_update_vtable
     fi
@@ -155,14 +157,14 @@ publish_epilog()
 publish_select_vtag()
 {
   local branch=$branchOrTag
-  branchOrTag=$(branch_select_vtag "$branchOrTag")
+  branchOrTag=$(branch_select_vtag "$branchOrTag" 'dev' false)
 
   case $? in
   0)
-    io_success "Published existing version '$branchOrTag'" "$moduleTracePrefix"
+    io_success "Published existing version ${Brown}$branchOrTag" "$moduleTracePrefix"
     publish_try_attach;;
   1)
-    io_info "Already published at '$branchOrTag'" "$moduleTracePrefix"
+    io_info "Already published at ${Brown}$branchOrTag" "$moduleTracePrefix"
     publish_try_attach;;
   2)
     io_warning "Branch '$branch' was never published" "$moduleTracePrefix"
@@ -172,7 +174,7 @@ publish_select_vtag()
   esac
   return 0
 }
-publish_try_attach() { branch_try_attach 'HEAD' ${1:-dev} >/dev/null; }
+publish_try_attach() { branch_try_attach 'HEAD' ${1:-dev} false >/dev/null; }
 publish_update_vtable()
 {
   [[ $createVTable == true ]] || return 1
@@ -192,7 +194,7 @@ publish_commit_vtable()
     branch_merge $vbranch $branch
   fi
   if [[ -n $vtag ]]; then
-    [ $ec -eq 0 ] && io_info "Created vtable for '$branch' at '$vtag'" "$moduleTracePrefix"
+    [ $ec -eq 0 ] && io_info "Created vtable for '$branch' at ${Brown}$vtag" "$moduleTracePrefix"
     tag_move "$vtag" "$branch" &>/dev/null
   fi
 }
