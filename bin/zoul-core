@@ -282,13 +282,14 @@ ised()
 # usage:
 #   visit enumerator p-visitor ...
 # in:
-#   $1     -- enumerator
+#   $1     -- enumerator or array name
 #   $2     -- p-visitor path ...
 #   ${@:3} -- next
 visit()
 {
-  local ec=0 path
-  for path in $($1); do
+  local ec=0 paths path
+  [[ $1 =~ \[@\]$ ]] && paths="${!1}" || paths=$($1)
+  for path in $paths; do
     (
       $2 "$path" "${@:3}" || exit $?
     ) || ec=$?
@@ -299,15 +300,16 @@ visit()
 # usage:
 #   visit enumerator p-visitor next ...
 # in:
-#   $1     -- enumerator
+#   $1     -- enumerator or array name
 #   $2     -- p-visitor   # signature: p-visitor path next ...
 #   ${@:3} -- next ...
 visit_async()
 {
-  local ec=0 path pids=()
+  local ec=0 paths path pids=()
+  [[ $1 =~ \[@\]$ ]] && paths="${!1}" || paths=$($1)
   [[ -z $jobsCount ]] && jobsCount=32
 
-  for path in $(string_sort $($1)); do
+  for path in $(string_sort $paths); do
     (
       $2 "$path" "${@:3}" || exit $?
     ) &
@@ -324,8 +326,9 @@ visit_async()
 }
 visit_async_fast()
 {
-  local path
-  for path in $(string_sort $($1)); do
+  local paths path
+  [[ $1 =~ \[@\]$ ]] && paths="${!1}" || paths=$($1)
+  for path in $(string_sort $paths); do
     ( $2 "$path" "${@:3}" || exit $? ) &
   done
   wait
