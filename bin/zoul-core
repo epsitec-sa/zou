@@ -87,17 +87,19 @@ trace_method()
 }
 trace_vars()
 {
-  local params=() param
-  for param in "$@"; do
-    params+=( "$param='${!param}'" )
-  done
-  echo "${params[@]}" >&2
+  local vars=$(print_vars "$@")
+  echo "$vars" >&2
 }
 print_vars()
 {
-  local params=() param
+  local params=() param array
   for param in "$@"; do
-    params+=( "$param='${!param}'" )
+    if [[ $param =~ \[@\]$ ]]; then
+      array=( "${!param}" )
+      params+=( "${param%\[@\]}=(${array[@]})" )
+    else
+      params+=( "$param='${!param}'" )
+    fi
   done
   printf '%s ' "${params[@]}"
 }
