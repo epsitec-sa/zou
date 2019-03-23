@@ -35,7 +35,7 @@ vbranch_main()
       io_info "Branch created '$branch'" "$moduleTracePrefix"
       # branch_push $branch # git sync will automatically push vbranches
     fi
-    [[ $checkout == true ]] && branch_checkout "$branch" >/dev/null
+    [[ $checkout == true ]] && branch_checkout "$branch" true >/dev/null
     # create vnode
     . git-newtag "${newtagOpts[@]}" "$vnode" "$branch"
   else

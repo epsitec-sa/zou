@@ -95,7 +95,7 @@ branch_select()
   local vtag delta alias ec=0
   vtag_set_info $(vtag_describe $bestMatch)
   
-  io_trace "branch_select ${*@Q} -- $(print_vars bestMatch alias)"
+  # io_trace "branch_select ${*@Q} -- $(print_vars bestMatch alias)"
   
   branch_checkout "$bestMatch" "$showCheckout" "$alias" se1 >/dev/null || ec=$?
   if ! branch_upstream "$bestMatch" >/dev/null; then
@@ -109,7 +109,7 @@ branch_select()
 }
 branch_select_vtag()
 {
-  io_trace "branch_select_vtag ${*@Q}"
+  # io_trace "branch_select_vtag ${*@Q}"
 
   local branch=$1 hint=${2:-dev} showCheckout=${3:-true} ltag
   branch=$(branch_realize $1)
@@ -117,7 +117,7 @@ branch_select_vtag()
     branch=$(branch_list_local_at $branch | head -n1)
   fi
   ltag=$(vtag_describe "$branch") || {
-    branch_checkout "$branch" "$showCheckout" '' sv1
+    branch_checkout "$branch" "$showCheckout"
     echo $branch
     return 2  # no vtag
   }
@@ -129,9 +129,9 @@ branch_select_vtag()
 
   local vtag delta alias
   vtag_set_info $ltag
-  io_trace "branch_select_vtag -- $(print_vars branch hint vtag delta alias)"
+  # io_trace "branch_select_vtag -- $(print_vars branch hint vtag delta alias)"
   if vtag_is_vnode $vtag; then
-    branch_checkout "$branch" "$showCheckout" "$alias" sv2
+    branch_checkout "$branch" "$showCheckout" "$alias"
     echo $vtag
     return 2  # vnode
   fi
@@ -147,7 +147,7 @@ branch_select_vtag()
     return 3  # vtag is more recent
   fi
 
-  branch_try_attach "$vtag" "$hint" "$showCheckout" || branch_checkout "$vtag" "$showCheckout" '' sv3
+  branch_try_attach "$vtag" "$hint" "$showCheckout" || branch_checkout "$vtag" "$showCheckout"
   repo_update_submodules
   echo $vtag
   return 0  # switch to vtag ( or vbranch )
