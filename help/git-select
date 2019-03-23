@@ -1,20 +1,21 @@
 usage: git select [<options>] [<sku>]
 
-Select SKU (checkout branch that matches bundle branch)
+Switch to a commit reference that best match the specified SKU (default to bundle branch).
+Always try to attach to a dev branch first (dev affinity), then to a prod branch.
 
     -h|--help               display help
-    -q|--quiet              don't print submodule name when selecting
-    -e|--stop-on-error      stop looping as soon as command fails (exit code != 0)
-    -a|--all                select all submodules (ignore SKU filter)
-    -j<n>                   number of submodules selected in parallel (default to 16)
-    --dev                   force selection of development branches
-    --prod                  force selection of last published version
-                            if a dev branch points at the vtag, activate it
-    .                       do not traverse submodules
+    -e|--stop-on-error      stop visit as soon as command fails (exit code != 0)
+    -j<n>                   number of submodules selected in parallel (default to 32)
+    -a|--all                visit all submodules (ignore SKU filter)
+    .                       visit startup module only (do not visit submodules)
+
+    --dev                   switch to dev branches of startup module and submodules
+                              (default to dev branch of bundle and last version of submodules)
     <sku>                   SKU to be selected (default to bundle active branch)
     
 example:
-    git select              # select current SKU 
-    git select sku/sal/dev  # select dev branch of sal SKU
-    git select --prod       # select last published version on current SKU
-    git select --prod .     # switch to prod branch of current SKU in current module only
+    git select              # switch to last published version of active SKU
+    git select sku/sal/dev  # switch to last published version of specified SKU
+    git select .            # switch to last published version of startup module only
+    git select --dev        # switch to dev branches of active SKU
+    git select --dev .      # switch to dev branch of current module only

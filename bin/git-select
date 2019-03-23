@@ -1,10 +1,8 @@
 #!/bin/bash
 
 [[ -z $ZOUL_GIT_MODULE ]]        && . zoul-git-module
-[[ -z $ZOUL_PROCESS ]]           && . zoul-process
-[[ -z $ZOUL_GIT_CONFIG_SKU ]]    && . zoul-git-config-sku
-[[ -z $ZOUL_GIT_CONFIG_SELECT ]] && . zoul-git-config-select
-[[ -z $ZOUL_GIT_BRANCH_CORE ]]   && . zoul-git-branch-core
+[[ -z $ZOUL_GIT_CONFIG ]]        && . zoul-git-config
+[[ -z $ZOUL_GIT_COSM ]]          && . zoul-git-cosm
 [[ -z $ZOUL_GIT_BRANCH_SELECT ]] && . zoul-git-branch-select
 
 select_parse()
@@ -12,13 +10,12 @@ select_parse()
   while [[ "$#" > 0 ]]; do case "$1" in
     --) shift; args+=("$@"); break;;
     -h|--help) zou-help $0; exit 0;;
-    -q|--quiet)         quiet=true;;
     -e|--stop-on-error) stopOnError=true;;
+    -j*)                jobsCount=${1#-j};;
     .)                  unset recursive;;
     -a|--all)           noSkuFilter=true;;
     --dev)              selectHint='dev';;
-    --prod)             selectHint='prod';;
-    -j*)                jobsCount=${1#-j};;
+    --cosm)             commitSubmodules=true;;
     -*) io_error "unknown option '$1'"; return 1;;
     *) sku=$1;;
   esac; shift; done
@@ -26,12 +23,16 @@ select_parse()
 select_run()
 {
   # parse command line
-  local jobsCount quiet stopOnError noSkuFilter selectHint sku recursive=true
+  local jobsCount stopOnError noSkuFilter selectHint='pub' commitSubmodules sku recursive=true
   select_parse "$@" || return $?
 
-  local useLongModuleTracePrefix=true
+  local useLongModuleTracePrefix=true \
+        showSwitchingMessage=true \
+        selectScopes=( config_scope )
   
-  module_run select_main
+  [[ $commitSubmodules == true ]] && selectScopes+=( cosm_scope )
+  
+  module_run "${selectScopes[@]}" select_main
 }
 select_main()
 {
@@ -43,70 +44,28 @@ select_tree()
 {
   repo_require_clean_work_tree 'Cannot select' || return 1
 
-  # trace_method 'select_tree' "$global_variable_names"
+  # io_trace "select_tree $(print_vars recursive noSkuFilter selectHint commitSubmodules sku)"
   local ec=0
-  if [[ "$PWD" == "$bundleRoot" ]]; then
-    branch_select "$sku" "$selectHint" >/dev/null || ec=$?
-  elif [[ $selectHint == 'prod' ]]; then
-    branch_select_vtag $(branch_best_match "$sku") >/dev/null || ec=$?
+  if [[ "$PWD" == "$bundleRoot" || $selectHint == 'dev' ]]; then
+    branch_select "$sku" "dev" true >/dev/null || ec=$?
   else
-    branch_select "$sku" 'dev' >/dev/null || ec=$?
+    branch_select_vtag $(branch_best_match "$sku") 'dev' true >/dev/null || ec=$?
   fi
   [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
-
-  # prepare common data
-  local exclude=()
-  if [[ $noSkuFilter != true ]]; then
-    exclude=( $(config_sku_list_excluded) )
-  fi
 
   # traverse submodules
   [[ $recursive == true ]] && {
     select_submodules || ec=$?
     [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
   }
-    
-  # update active submodules which are excluded from select
-  visit_async select_need_update_enumerator repo_update_submodule || ec=$?
-  [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
-
-  # discard inactive submodules
-  visit_async select_discard_enumerator select_discard_submodule || ec=$?
-  [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
-
-  repo_commit_submodules "$moduleRoot" $(select_submodules_to_commit)
+  
+  [[ $commitSubmodules == true ]] && cosm_process_unstaged_submodules
 
   return $ec
 }
-select_submodules_to_commit()
-{
-  local include=( $(repo_list_unstaged_clean_submodules) )
-  array_remove_array 'include[@]' 'exclude[@]'
-}
-select_submodules_enumerator()
-{
-  local include=( $(config_select_list_included) )
-  array_remove_array 'include[@]' 'exclude[@]'
-}
-select_need_update_enumerator()
-{
-  local include=( $(config_select_list_excluded) )
-  array_remove_array 'include[@]' 'exclude[@]'
-}
-select_discard_enumerator()
-{
-  local include=( $(repo_list_unstaged_clean_submodules) )
-  array_intersect_array 'include[@]' 'exclude[@]'
-}
-select_discard_submodule()
-{
-  local path=$1
-  git submodule update --recursive "$path" &>/dev/null
-  io_info "Discarded submodule '$path'" "$moduleTracePrefix"
-}
 select_submodules()
 {
-  module_visit_submodules_async select_submodules_enumerator select_tree
+  module_visit_submodules_async 'configSelectInclude[@]' "${selectScopes[@]}" 'select_tree'
 }
 
 select_run  "$@"
