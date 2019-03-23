@@ -1,9 +1,10 @@
 #!/bin/bash
 
 [[ -z $ZOUL_GIT_MODULE ]]      && . zoul-git-module
-[[ -z $ZOUL_GIT_CONFIG_SKU ]]  && . zoul-git-config-sku
-[[ -z $ZOUL_GIT_BRANCH_CORE ]] && . zoul-git-branch-core
+[[ -z $ZOUL_GIT_CONFIG ]]      && . zoul-git-config
 [[ -z $ZOUL_GIT_BRANCH_SYNC ]] && . zoul-git-branch-sync
+
+branchMergedEvent+=( sync_on_merged )
 
 sync_parse()
 {
@@ -15,6 +16,7 @@ sync_parse()
     -0|--root-only)     moduleRootOnly=true;;
     -s|--sm-only)       smOnly=true;;
     -c|--clean)         cleanLocalBranches=true;;
+    -n|--no-push)       syncNoPush=true;;
     -j*)                jobsCount=${1#-j};;
     --dev)              attachHint='dev';;
     --prod)             attachHint='prod';;
@@ -29,12 +31,14 @@ sync_parse()
 sync_run()
 {
   # parse command line
-  local jobsCount quiet stopOnError noSkuFilter moduleRootOnly smOnly cleanLocalBranches attachHint
+  local jobsCount quiet stopOnError noSkuFilter moduleRootOnly smOnly cleanLocalBranches attachHint syncNoPush
   sync_parse "$@" || return $?
   
-  local useLongModuleTracePrefix=true
+  local useLongModuleTracePrefix=true \
+        showSubmoduleMessage=true \
+        syncScopes=( config_scope )
 
-  module_run sync_main
+  module_run "${syncScopes[@]}" sync_main
 }
 sync_main()
 {
@@ -60,9 +64,18 @@ sync_tree()
 }
 sync_node()
 {
-  # synchronize all branches
-  # [[ -z $quiet ]] && io_info "Synchronizing..." "$moduleTracePrefix"
-  branch_sync_all "$attachHint" && sync_clean_local_branches || return $?
+  local syncMergedCount=0
+  branch_sync_all && sync_select && sync_clean_local_branches
+}
+sync_on_merged() (( syncMergedCount += 1 ))
+sync_select()
+{
+  [ $syncMergedCount -eq 0 ] && return 0
+  if [[ "$moduleRoot" == "$bundleRoot" || $attachHint == 'dev' ]]; then
+    branch_select "$bundleRoot" "dev" true >/dev/null
+  else
+    branch_select_vtag $(branch_best_match "$bundleRoot") 'dev' true >/dev/null
+  fi
 }
 sync_clean_local_branches()
 {
@@ -74,15 +87,9 @@ sync_clean_local_branches()
     done
   fi
 }
-sync_submodules() { module_visit_submodules_async sync_submodules_enumerator sync_tree; }
-
-sync_submodules_enumerator()
+sync_submodules()
 {
-  if [[ $noSkuFilter == true ]]; then
-    echo "${moduleSubmodulePaths[@]}"
-  else
-    config_sku_list_included
-  fi
+  module_visit_submodules_async 'configSkuInclude[@]' "${syncScopes[@]}" 'sync_tree'
 }
 
 sync_run "$@"
