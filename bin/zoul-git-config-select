@@ -128,9 +128,10 @@ config_select_is_included()
 }
 config_select_list_included()
 {
-  local defaultVerb=$(_config_select_default_verb)
+  local defaultVerb=$(_config_select_default_verb) 
   if [[ $defaultVerb == 'include' ]]; then
-    local submodules=( $(repo_list_submodule_paths) )
+    local submodules
+    [[ -n $1 ]] && submodules=( "${!1}" ) || submodules=( $(repo_list_submodule_paths) )
     local excluded=( $(git config --file "$moduleConfigFile" --get-all "select.exclude") )
     array_remove_array submodules[@] excluded[@]
   else
@@ -141,7 +142,8 @@ config_select_list_excluded()
 {
   local defaultVerb=$(_config_select_default_verb)
   if [[ $defaultVerb == 'exclude' ]]; then
-    local submodules=( $(repo_list_submodule_paths) )
+    local submodules
+    [[ -n $1 ]] && submodules=( "${!1}" ) || submodules=( $(repo_list_submodule_paths) )
     local included=( $(git config --file "$moduleConfigFile" --get-all "select.include") )
     array_remove_array submodules[@] included[@]
   else

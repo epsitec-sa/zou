@@ -88,9 +88,11 @@ config_sku_list_excluded()
 }
 config_sku_list_included()
 {
-  local sku=( $(repo_list_submodule_paths) )
-  local excluded=( $(config_sku_list_excluded) )
-  array_remove_array sku[@] excluded[@]
+  local submodules
+  [[ -n $1 ]] && submodules=( "${!1}" ) || submodules=( $(repo_list_submodule_paths) )
+  local skuExclude
+  [[ -n $2 ]] && skuExclude=( "${!2}" ) || skuExclude=( $(config_sku_list_excluded) )
+  array_remove_array submodules[@] skuExclude[@]
 }
 config_sku_status()
 {
