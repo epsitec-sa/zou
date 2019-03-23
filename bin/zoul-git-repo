@@ -271,6 +271,26 @@ repo_list_unstaged_clean_submodules()
     fi
   done
 }
+# usage:
+#   local unstagedCleanSubmodules=() unstagedDirtySubmodules=()
+#   repo_split_unstaged_submodules "$moduleRoot"
+repo_split_unstaged_submodules()
+{
+  local mroot=$1 smid smpath smroot opwd=$PWD
+  [[ -z $mroot ]] && { mroot=$(repo_module_root) || return 1; }
+  for smid in $(git diff-files --name-only -r); do
+    smpath=$(repo_submodule_path "$smid" "$mroot")
+    [[ -z $smpath ]] && continue
+    smroot="$mroot/$smpath"
+    if repo_is_module_root "$smroot"; then
+      cd "$smroot"
+      repo_is_clean \
+      && unstagedCleanSubmodules+=( $smid ) \
+      || unstagedDirtySubmodules+=( $smid ) 
+      cd "$opwd"
+    fi
+  done
+}
 repo_list_untracked()
 {
   local mroot=$1 path smpath opwd=$PWD
