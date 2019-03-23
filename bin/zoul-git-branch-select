@@ -67,34 +67,57 @@ branch_best_match()
     fi
   fi
 }
+# Compute tag properties
+# in:
+#   $1 -- ltag
+# out:
+#   vtag
+#   delta
+#   alias
+vtag_set_info()
+{
+  local ltag=$1 lsuf
+    # compute checkout alias
+  if [[ -n $ltag ]]; then
+    vtag=${ltag%-*-g*}
+    lsuf=${ltag#$vtag}
+    delta=${lsuf%-g*}
+    delta=${delta#-}
+    [[ -z $delta ]] && alias="$vtag" || alias="> $vtag"
+  fi
+}
 branch_select()
 {
   local rootBranch=$1 hint=$2 showCheckout=${3:-true} bestMatch
   [[ -z $rootBranch ]] && io_error 'branch_select: specify a branch to match' && return 1
   bestMatch=$(branch_best_match $rootBranch $hint)
 
-  # io_trace "branch_select ${*@Q} -> $bestMatch"
+  local vtag delta alias ec=0
+  vtag_set_info $(vtag_describe $bestMatch)
   
-  branch_checkout "$bestMatch" $showCheckout >/dev/null
-  if ! branch_upstream $bestMatch >/dev/null; then
-    git push -u origin $bestMatch &>/dev/null
+  io_trace "branch_select ${*@Q} -- $(print_vars bestMatch alias)"
+  
+  branch_checkout "$bestMatch" "$showCheckout" "$alias" se1 >/dev/null || ec=$?
+  if ! branch_upstream "$bestMatch" >/dev/null; then
+    git push -u origin "$bestMatch" &>/dev/null
   fi
   echo $bestMatch
-  if [ $? -ne 0 ]; then
-    repo_require_clean_work_tree 'cannot select'
-    return 1
+  if [ $ec -ne 0 ]; then
+    repo_require_clean_work_tree 'Cannot select'
+    return $ec
   fi
 }
 branch_select_vtag()
 {
-  # io_trace "branch_select_vtag ${*@Q}"
+  io_trace "branch_select_vtag ${*@Q}"
 
-  local branch=$1 ltag stag lsuf vtag
+  local branch=$1 hint=${2:-dev} showCheckout=${3:-true} ltag
   branch=$(branch_realize $1)
   if ! branch_is_local $branch; then
     branch=$(branch_list_local_at $branch | head -n1)
   fi
   ltag=$(vtag_describe "$branch") || {
+    branch_checkout "$branch" "$showCheckout" '' sv1
     echo $branch
     return 2  # no vtag
   }
@@ -104,23 +127,19 @@ branch_select_vtag()
     return 2  # no vtag
   }
 
-  stag=${ltag%-*-g*}
-  vtag=$(vtag_most_recent $stag)
-  # trace_method branch_select_vtag stag vtag
+  local vtag delta alias
+  vtag_set_info $ltag
+  io_trace "branch_select_vtag -- $(print_vars branch hint vtag delta alias)"
   if vtag_is_vnode $vtag; then
+    branch_checkout "$branch" "$showCheckout" "$alias" sv2
     echo $vtag
     return 2  # vnode
   fi
 
-  # io_trace "$(print_vars branch ltag stag vtag)"
-
-  if [[ $vtag == $stag ]]; then
-    lsuf=${ltag#$stag}
-    if [[ -z $lsuf ]]; then
-      branch_try_attach "$vtag" 'dev'
-      echo $stag
-      return 1  # branch == vtag
-    fi
+  if [[ $delta -eq 0 ]]; then
+    branch_try_attach "$vtag" "$hint" "$showCheckout"
+    echo $vtag
+    return 1  # branch == vtag
   fi
 
   if git merge-base --is-ancestor "$branch" "$vtag" >&2; then
@@ -128,7 +147,7 @@ branch_select_vtag()
     return 3  # vtag is more recent
   fi
 
-  branch_try_attach "$vtag" 'dev' || branch_checkout "$vtag"
+  branch_try_attach "$vtag" "$hint" "$showCheckout" || branch_checkout "$vtag" "$showCheckout" '' sv3
   repo_update_submodules
   echo $vtag
   return 0  # switch to vtag ( or vbranch )
