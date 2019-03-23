@@ -13,6 +13,11 @@ ZOUL_GIT_MODULE=true
 # readonly moduleScope='moduleRoot moduleId moduleBranch moduleTracePrefix'
 # readonly moduleStartupScope='startupDir startupRoot bundleRoot bundleId bundleBranch'
 
+# global options
+#   useLongModuleTracePrefix
+#   showVisitModuleMessage
+
+# io_trace "branchChangedEvent+=( _module_reset_scope )"
 branchChangedEvent+=( _module_reset_scope )
 
 module_run()
@@ -46,12 +51,15 @@ module_scope()
   # setup module context
   local \
     moduleRoot="$PWD" \
+    moduleParent=$(repo_module_parent) \
     moduleId=$(repo_module_id) \
     moduleBranch=$(branch_current) \
     moduleConfigFile="$PWD/.zou-flow" \
     moduleSubmodulePaths=( $(repo_list_submodule_paths $PWD) ) \
-    moduleTracePrefix
+    modulePath moduleTracePrefix
   
+  modulePath=${moduleRoot#$moduleParent/}
+
   if [[ $moduleRoot == $startupRoot ]]; then
     # initialize startup module context
     _module_set_submodule_path_max_length
@@ -124,7 +132,7 @@ _module_reset_scope()
   [[ "$PWD" == "$bundleRoot" ]] && bundleBranch=$1
   moduleBranch=$1
   _module_set_trace_prefix
-  io_trace "_module_reset_scope ${*@Q} -> $(print_vars bundleBranch moduleBranch moduleTracePrefix)"
+  # io_trace "_module_reset_scope ${*@Q} -> $(print_vars bundleBranch moduleBranch)"
 }
 _module_branch_prefix()
 {
@@ -132,7 +140,7 @@ _module_branch_prefix()
   if [[ $ref == HEAD ]]; then
     ref=$(git tag --points-at HEAD | head -n1)
     if [[ -z $ref ]]; then
-      ref="$(git rev-parse --short HEAD)..."
+      ref="$(git rev-parse --short HEAD)"
     fi
     echo "($ref)"
     return 1
@@ -153,17 +161,23 @@ _module_set_trace_prefix()
 {
   local mcolor=$LightCyan
   if [[ $useLongModuleTracePrefix == true ]]; then
-    local spaces sep bcolor branchPrefix
+    local spaces sep bcolor branchPrefix mid=$moduleId
     branchPrefix=$(_module_branch_prefix)
     [ $? -eq 0 ] && bcolor=$Cyan || bcolor=$Brown
-    (( spaces = 30 - ${#moduleId} - ${#branchPrefix} ))
-    (( spaces < 1 )) && spaces=1
+    (( spaces = 30 - ${#mid} - ${#branchPrefix} ))
+    (( spaces < 1 )) && {
+      local length count1 count2
+      (( length = ${#mid} + spaces - 3 ))
+      (( count1 = $length / 2 ))
+      (( count2 = $length - $count1 ))
+      mid="${mid:0:$count1}${DarkGray}..${mcolor}${mid: -$count2}"
+      spaces=1
+    }
     printf -v sep '%0.s-' $(seq 1 $spaces)
-    moduleTracePrefix="${mcolor}[$moduleId]${DarkGray}${sep}${bcolor}($branchPrefix)${NC}"
+    moduleTracePrefix="${mcolor}[$mid]${DarkGray}${sep}${bcolor}($branchPrefix)${NC}"
   else
     local len; (( len = ${submodulePathMaxLength} + 2 ))
     printf -v moduleTracePrefix "%-${len}s" "[$moduleId]"
     moduleTracePrefix="${mcolor}$moduleTracePrefix${NC}"
   fi
 }
-
