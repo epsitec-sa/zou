@@ -1,0 +1,83 @@
+#!/bin/bash
+
+# Use the following statement to include current lib only once
+#   [[ -z $ZOUL_GIT_COSM ]] && . zoul-git-cosm
+ZOUL_GIT_COSM=true
+
+[[ -z $ZOUL_GIT_MODULE ]]        && . zoul-git-module
+
+# global options
+#   noSkuFilter
+#   noSelectFilter
+#   commitDirtySubmodules
+
+io_trace "branchChangedEvent+=( _cosm_reset_scope )"
+branchChangedEvent+=( _cosm_reset_scope )
+
+# usage:
+#   module_run config_scope cosm_scope $*
+cosm_scope()
+{
+  # setup cosm context
+  local unstagedCleanSubmodules unstagedDirtySubmodules
+  
+  _cosm_reset_scope
+
+  # execute next russian doll
+  $*
+}
+_cosm_reset_scope()
+{
+  unstagedCleanSubmodules=()
+  unstagedDirtySubmodules=()
+  if [ ${#moduleSubmodulePaths[@]} -ne 0 ]; then
+    repo_split_unstaged_submodules "$moduleRoot"
+    io_trace "$(print_vars unstagedCleanSubmodules[@])"
+    io_trace "$(print_vars unstagedDirtySubmodules[@])"
+  fi
+}
+# Process unstaged submodules
+#   - update unselected submodules
+#   - discard excluded submodules
+#   - commit clean submodules
+#   - optionnally commit dirty submodules
+# exemple:
+#   commitDirtySubmodules=true
+#   cosm_scope cosm_node
+cosm_process_unstaged_submodules()
+{
+  [ ${#moduleSubmodulePaths[@]} -eq 0 ] && return 0
+  # update active submodules which are excluded from select
+  local needUpdate=( $(array_remove_array 'configSelectExclude[@]' 'configSkuExclude[@]') )
+  if [ ${#needUpdate[@]} -ne 0 ]; then
+    visit_async 'needUpdate[@]' 'repo_update_submodule' || ec=$?
+    [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
+  fi
+
+  # discard unstaged clean submodules which are excluded from SKU
+  local discard=( $(array_intersect_array 'unstagedCleanSubmodules[@]' 'configSkuExclude[@]') )
+  if [ ${#discard[@]} -ne 0 ]; then
+    visit_async 'discard[@]' 'repo_discard_submodule' || ec=$?
+    unstagedCleanSubmodules=( $(array_remove_array 'unstagedCleanSubmodules[@]' 'discard[@]') )
+    [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
+  fi
+
+  if [[ $commitDirtySubmodules == true ]]; then
+    local unstaged=( "${unstagedCleanSubmodules[@]}" "${unstagedDirtySubmodules[@]}" )
+    repo_commit_submodules "$moduleRoot" $(array_remove_array 'unstaged[@]' 'configSkuExclude[@]')
+  else
+    repo_commit_submodules "$moduleRoot" $(array_remove_array 'unstagedCleanSubmodules[@]' 'configSkuExclude[@]')
+    _cosm_dirty_warning
+  fi
+}
+_cosm_dirty_warning()
+{
+  if [ ${#unstagedDirtySubmodules[@]} -ne 0 ]; then
+    if [ ${#unstagedDirtySubmodules[@]} -eq 1 ]; then
+      io_message "Submodule '${unstagedDirtySubmodules[0]}' is dirty and has not been commited." "$moduleTracePrefix" Purple
+    else
+      io_message "Submodules '$(string_join ', ' ${unstagedDirtySubmodules[@]})' are dirty and have not been commited." "$moduleTracePrefix" Purple
+    fi
+    io_message "  use 'git cosm -f' to force a commit." "$moduleTracePrefix" Purple
+  fi
+}

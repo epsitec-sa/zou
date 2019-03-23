@@ -1,0 +1,62 @@
+#!/bin/bash
+
+# Use the following statement to include current lib only once
+#   [[ -z $ZOUL_GIT_CONFIG ]] && . zoul-git-config
+ZOUL_GIT_CONFIG=true
+
+[[ -z $ZOUL_GIT_MODULE ]]        && . zoul-git-module
+[[ -z $ZOUL_GIT_CONFIG_SKU ]]    && . zoul-git-config-sku
+[[ -z $ZOUL_GIT_CONFIG_SELECT ]] && . zoul-git-config-select
+
+# global options
+#   noSkuFilter
+#   noSelectFilter
+
+io_trace "branchChangedEvent+=( _config_reset_scope )"
+branchChangedEvent+=( _config_reset_scope )
+
+# usage:
+#   module_run config_scope $*
+config_scope()
+{
+  # setup config context
+  local configSkuInclude configSkuExclude \
+        configSelectInclude configSelectExclude
+  
+  _config_reset_scope
+
+  # execute next russian doll
+  $*
+}
+_config_reset_scope()
+{
+  if [ ${#moduleSubmodulePaths[@]} -eq 0 ]; then
+    configSkuExclude=()
+    configSkuInclude=()
+    configSelectExclude=()
+    configSelectInclude=()
+  else
+    if [[ $noSkuFilter == true ]]; then
+      configSkuExclude=()
+      configSkuInclude=( ${moduleSubmodulePaths[@]} )
+    else
+      configSkuExclude=( $(config_sku_list_excluded) )
+      configSkuInclude=( $(config_sku_list_included moduleSubmodulePaths[@] configSkuExclude[@]) )
+    fi
+    if [[ $noSelectFilter == true ]]; then
+      configSelectExclude=()
+      configSelectInclude=( ${configSkuInclude[@]} )
+    else
+      local exclude=( $(config_select_list_excluded moduleSubmodulePaths[@]) )
+      local include=( $(config_select_list_included moduleSubmodulePaths[@]) )
+
+      configSelectExclude=( $(array_remove_array exclude[@] configSkuExclude[@]) )
+      configSelectInclude=( $(array_remove_array include[@] configSkuExclude[@]) )
+    fi
+
+    io_trace "$(print_vars configSkuInclude[@])"
+    io_trace "$(print_vars configSkuExclude[@])"
+    io_trace "$(print_vars configSelectInclude[@])"
+    io_trace "$(print_vars configSelectExclude[@])"
+  fi
+}
