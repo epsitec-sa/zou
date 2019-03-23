@@ -10,15 +10,29 @@ ZOUL_GIT_BRANCH_SYNC=true
 [[ -z $ZOUL_GIT_BRANCH_CORE ]]  && . zoul-git-branch-core
 [[ -z $ZOUL_GIT_BRANCH_MERGE ]] && . zoul-git-branch-merge
 
+# global options
+#   syncNoPush
+
+branchMergedEvent=()
+
+_branch_raise_branch_merged_event()
+{
+  local handler
+  for handler in "${branchMergedEvent[@]}"; do
+    $handler "$@"
+  done
+}
+
 _branch_sync_push()
 {
+  [[ $syncNoPush == true ]] && return 0
   # l > r -- move r
   local r=$1 l=$2
   git push --follow-tags ${r%%/*} $l &>/dev/null
 }
 _branch_sync_merge()
 {
-  branch_merge "$@"
+  branch_merge "$@" && _branch_raise_branch_merged_event "$@"
 }
 _branch_sync_sync()
 {
@@ -26,7 +40,7 @@ _branch_sync_sync()
 }
 _branch_sync_visitor()
 {
-  local r=$1 l=$2 i=$3 attachHint=$4
+  local r=$1 l=$2 i=$3
   case $i in
     '>')  _branch_sync_push  $r $l || return 1;; # l > r ahead   -- move r
     '<')  _branch_sync_merge $r $l || return 1;; # l < r behind  -- move l
@@ -35,13 +49,13 @@ _branch_sync_visitor()
 }
 _branch_sync_visit() 
 {
-  local visitor=$1 attachHint=$2 isCurrent current=$moduleBranch; shift 2
+  local visitor=$1 current=$moduleBranch color l r i; shift 1
   [[ -z $current ]] && current=$(branch_current)
 
   while read l r i; do
     [[ $l == $current ]] && linfo="* $l"
 
-    $visitor $r $l $i $attachHint || return 1
+    $visitor $r $l $i || return 1
     case $i in
       '>'|'<'|'<>') [[ $l == $current ]] && color=Yellow     || color=Brown;;  # ahead, behind, ahead and behind
       '=')          [[ $l == $current ]] && color=LightGreen || color=Green;;
@@ -65,8 +79,8 @@ _branch_sync_visit()
           fi
         fi;;
     esac
-    local linfo="  $l"
-    [[ $l == $(branch_current) ]] && linfo="* $l"
+    local linfo=$(string_pad_right 18 $l)
+    [[ $l == $current ]] && linfo="* $linfo" || linfo="  $linfo"
     if [[ $i == '?' ]]; then
       if [[ $cleanLocalBranches == true ]]; then
         io_message "$linfo $i $r (delete pending)" "$moduleTracePrefix" $color
@@ -81,20 +95,16 @@ _branch_sync_visit()
         io_message "    git sync --clean" "$moduleTracePrefix" Gray
       fi
     else
-      io_message "$linfo $i $r" "$moduleTracePrefix" $color
+      [[ $syncNoPush == true && $i =~ '>' ]] || io_message "$linfo $i $r" "$moduleTracePrefix" $color
     fi
   done < <(branch_sync_info "$@")
   return 0
 }
 branch_sync_all()
 {
-  local attachHint=$1; shift 1
-
   git fetch --prune --all &>/dev/null
   git fetch --tags --force &>/dev/null
   repo_require_clean_work_tree 'Cannot synchronize' || return 1
 
-  _branch_sync_visit _branch_sync_visitor "$attachHint" "$@"
-  repo_discard_clean_submodules_async
-  branch_try_attach 'HEAD' "$attachHint" >/dev/null || true
+  _branch_sync_visit _branch_sync_visitor "$@"
 }
