@@ -142,7 +142,7 @@ _module_branch_prefix()
     if [[ -z $ref ]]; then
       ref="$(git rev-parse --short HEAD)"
     fi
-    echo "($ref)"
+    echo "$ref"
     return 1
   else
     echo "$ref"
@@ -157,27 +157,88 @@ _module_set_submodule_path_max_length()
     (( ${#path} > $submodulePathMaxLength )) && submodulePathMaxLength=${#path}
   done
 }
+# in:
+#   $1 -- id
+#   $2 -- len
+#   $3 -- color
+# out:
+#   sid -- smart colored id
+#   rlen -- remaining length
+_module_set_smart_id()
+{
+  ZOU_TRACE='' io_trace "_module_set_smart_id0 <- ${*@Q}"
+  local len=$1 id=$2 color=$3
+  rlen=$len
+  if (( ${#id} <= $len )); then
+    sid="${!color}$id"
+  else
+    local atoms=( ${id//\// } ) ratoms
+    if (( ${#atoms[@]} > 1 )); then
+      local i j
+      (( rlen -= 1 ))
+      for i in $(seq 1 ${#atoms[@]}); do
+        # start from the end
+        j=$(( ${#atoms[@]} - $i ))
+        (( rlen -= ${#atoms[$j]} ))
+        ZOU_TRACE='' io_trace "_module_set_smart_id0 -> $(print_vars i j rlen)"
+        (( rlen <= 0 )) && break
+        (( rlen -= 1 ))
+      done
+      (( j += 1 ))
+      ratoms=( "${atoms[@]:$j}" )
+      (( ${#ratoms[@]} == 0 )) && ratoms=( ${atoms[-1]} )
+      id=${ratoms[*]}
+      id=${id// /\/}
+      sid="${Purple}\u2026/${!color}${id}"
+      id="./${id}"
+    else
+      id=${atoms[0]}
+      sid="${!color}${id}"
+    fi
+  fi
+  (( rlen = len - ${#id} ))
+  ZOU_TRACE='' io_trace "_module_set_smart_id0 -> $(print_vars rlen sid)"
+}
+_module_set_smart_id2()
+{
+  local len=$1 mid=$2 mcolor=$3 bid=$4 bcolor=$5 spaces sep
+  (( spaces = $len - ${#mid} - ${#bid} - 4 ))
+  if (( spaces <= 0 )); then
+    # no enough space
+    # |-----------------------------------|
+    # |----------mid---------|-|----------bid----------|
+    local grlen mrlen brlen rlen
+    (( grlen = -spaces + 1 ))
+    (( brlen = ( grlen * ${#bid} ) / ( ${#bid} + ${#mid} ) + 4 ))
+    (( mrlen = grlen - brlen ))
+    ZOU_TRACE='' io_trace "_module_set_smart_id2 -- $(print_vars spaces grlen mrlen brlen)"
+    _module_set_smart_id $(( ${#bid} - brlen )) $bid ${bcolor}
+    bid=$sid
+    (( mrlen -= rlen ))
+    ZOU_TRACE='' io_trace "_module_set_smart_id2 -- $(print_vars spaces grlen mrlen brlen)"
+    _module_set_smart_id $(( ${#mid} - mrlen )) $mid ${mcolor}
+    mid=$sid
+    ZOU_TRACE='' io_trace "_module_set_smart_id2 -- $(print_vars spaces grlen mrlen brlen rlen sid)"
+    printf -v sep '%0.s-' $(seq 1 $spaces)
+    sid="${!mcolor}[$mid]${DarkGray}${sep}${!bcolor}($bid)${NC}"
+    (( spaces = rlen + 1 ))
+  fi
+  printf -v sep '%0.s-' $(seq 1 $spaces)
+  sid="${!mcolor}[$mid]${DarkGray}${sep}${!bcolor}($bid)${NC}"
+  ZOU_TRACE='' io_trace "_module_set_smart_id2 -- $(print_vars spaces sid)"
+}
 _module_set_trace_prefix()
 {
-  local mcolor=$LightCyan
+  local mcolor=LightCyan
   if [[ $useLongModuleTracePrefix == true ]]; then
-    local spaces sep bcolor branchPrefix mid=$moduleId
-    branchPrefix=$(_module_branch_prefix)
-    [ $? -eq 0 ] && bcolor=$Cyan || bcolor=$Brown
-    (( spaces = 30 - ${#mid} - ${#branchPrefix} ))
-    (( spaces < 1 )) && {
-      local length count1 count2
-      (( length = ${#mid} + spaces - 3 ))
-      (( count1 = $length / 2 ))
-      (( count2 = $length - $count1 ))
-      mid="${mid:0:$count1}${DarkGray}..${mcolor}${mid: -$count2}"
-      spaces=1
-    }
-    printf -v sep '%0.s-' $(seq 1 $spaces)
-    moduleTracePrefix="${mcolor}[$mid]${DarkGray}${sep}${bcolor}($branchPrefix)${NC}"
+    local sid bcolor bid mid=$moduleId
+    bid=$(_module_branch_prefix)
+    [ $? -eq 0 ] && bcolor=Cyan || bcolor=Brown
+    _module_set_smart_id2 42 "$mid" "$mcolor" "$bid" "$bcolor"
+    moduleTracePrefix=$sid
   else
     local len; (( len = ${submodulePathMaxLength} + 2 ))
     printf -v moduleTracePrefix "%-${len}s" "[$moduleId]"
-    moduleTracePrefix="${mcolor}$moduleTracePrefix${NC}"
+    moduleTracePrefix="${!mcolor}$moduleTracePrefix${NC}"
   fi
 }
