@@ -56,7 +56,8 @@ module_scope()
     moduleBranch=$(branch_current) \
     moduleConfigFile="$PWD/.zou-flow" \
     moduleSubmodulePaths=( $(repo_list_submodule_paths $PWD) ) \
-    modulePath moduleTracePrefix
+    modulePath moduleTracePrefix \
+    moduleScopeEnabled=true
   
   modulePath=${moduleRoot#$moduleParent/}
 
@@ -129,6 +130,7 @@ module_submodule_visitor()
 }
 _module_reset_scope()
 {
+  [[ $moduleScopeEnabled == true ]] || return 0
   [[ "$PWD" == "$bundleRoot" ]] && bundleBranch=$1
   moduleBranch=$1
   _module_set_trace_prefix

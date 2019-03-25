@@ -20,8 +20,8 @@ branchChangedEvent+=( _cosm_reset_scope )
 cosm_scope()
 {
   # setup cosm context
-  local unstagedCleanSubmodules unstagedDirtySubmodules
-        showSubmoduleMessage=true
+  local unstagedCleanSubmodules unstagedDirtySubmodules \
+        showSubmoduleMessage=true cosmScopeEnabled=true
   
   _cosm_reset_scope
 
@@ -30,6 +30,7 @@ cosm_scope()
 }
 _cosm_reset_scope()
 {
+  [[ $cosmScopeEnabled == true ]] || return 0
   unstagedCleanSubmodules=()
   unstagedDirtySubmodules=()
   if [ ${#moduleSubmodulePaths[@]} -ne 0 ]; then

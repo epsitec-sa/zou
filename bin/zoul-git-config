@@ -21,7 +21,8 @@ config_scope()
 {
   # setup config context
   local configSkuInclude configSkuExclude \
-        configSelectInclude configSelectExclude
+        configSelectInclude configSelectExclude \
+        configScopeEnabled=true
   
   _config_reset_scope
 
@@ -30,6 +31,8 @@ config_scope()
 }
 _config_reset_scope()
 {
+  [[ $configScopeEnabled == true ]] || return 0
+  
   if [ ${#moduleSubmodulePaths[@]} -eq 0 ]; then
     configSkuExclude=()
     configSkuInclude=()
