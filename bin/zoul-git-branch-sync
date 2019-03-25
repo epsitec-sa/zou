@@ -14,14 +14,10 @@ ZOUL_GIT_BRANCH_SYNC=true
 #   syncNoPush
 
 branchMergedEvent=()
+branchSynchronizedEvent=()
 
-_branch_raise_branch_merged_event()
-{
-  local handler
-  for handler in "${branchMergedEvent[@]}"; do
-    $handler "$@"
-  done
-}
+_branch_raise_branch_merged_event()       { local handler; for handler in "${branchMergedEvent[@]}";       do $handler "$@"; done; }
+_branch_raise_branch_synchronized_event() { local handler; for handler in "${branchSynchronizedEvent[@]}"; do $handler "$@"; done; }
 
 _branch_sync_push()
 {
@@ -36,7 +32,7 @@ _branch_sync_merge()
 }
 _branch_sync_sync()
 {
-  branch_merge "$@" && _branch_sync_push "$@"
+  branch_merge "$@" && _branch_sync_push "$@" && _branch_raise_branch_synchronized_event "$@"
 }
 _branch_sync_visitor()
 {
