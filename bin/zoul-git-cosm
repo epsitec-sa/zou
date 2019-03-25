@@ -9,11 +9,14 @@ ZOUL_GIT_COSM=true
 # global options
 #   noSkuFilter
 #   noSelectFilter
-#   commitDirtySubmodules
 #   showSubmoduleMessage
+#   commitSubmodules
+#   commitDirtySubmodules
 
 io_trace "branchChangedEvent+=( _cosm_reset_scope )"
 branchChangedEvent+=( _cosm_reset_scope )
+branchMergedEvent+=( _cosm_reset_scope )
+branchSynchronizedEvent+=( _cosm_reset_scope )
 
 # usage:
 #   module_run config_scope cosm_scope $*
@@ -50,8 +53,9 @@ _cosm_reset_scope()
 cosm_process_unstaged_submodules()
 {
   [ ${#moduleSubmodulePaths[@]} -eq 0 ] && return 0
+
   # update active submodules which are excluded from select
-  local needUpdate=( $(array_remove_array 'configSelectExclude[@]' 'configSkuExclude[@]') )
+  local needUpdate=( $(array_remove_array 'configSelectExclude[@]' 'configSkuExclude[@]') ) ec=0
   if [ ${#needUpdate[@]} -ne 0 ]; then
     visit_async 'needUpdate[@]' 'repo_update_submodule' || ec=$?
     [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
@@ -64,6 +68,8 @@ cosm_process_unstaged_submodules()
     unstagedCleanSubmodules=( $(array_remove_array 'unstagedCleanSubmodules[@]' 'discard[@]') )
     [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
   fi
+
+  [[ $commitSubmodules == true ]] || return 0
 
   if [[ $commitDirtySubmodules == true ]]; then
     local unstaged=( "${unstagedCleanSubmodules[@]}" "${unstagedDirtySubmodules[@]}" )

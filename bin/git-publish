@@ -55,7 +55,9 @@ publish_run()
   local jobsCount quiet stopOnError vtable prerelPrefix publishHint recursive=true
   publish_parse "$@" || return $?
 
-  local useLongModuleTracePrefix=true publishScopes=( config_scope cosm_scope )
+  local useLongModuleTracePrefix=true \
+        commitSubmodules=true \
+        publishScopes=( config_scope cosm_scope )
 
   module_run "${publishScopes[@]}" publish_main
 }

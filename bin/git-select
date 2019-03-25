@@ -28,9 +28,7 @@ select_run()
 
   local useLongModuleTracePrefix=true \
         showSwitchingMessage=true \
-        selectScopes=( config_scope )
-  
-  [[ $commitSubmodules == true ]] && selectScopes+=( cosm_scope )
+        selectScopes=( config_scope cosm_scope )
   
   module_run "${selectScopes[@]}" select_main
 }
@@ -59,7 +57,7 @@ select_tree()
     [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
   }
   
-  [[ $commitSubmodules == true ]] && cosm_process_unstaged_submodules
+  cosm_process_unstaged_submodules
 
   return $ec
 }
