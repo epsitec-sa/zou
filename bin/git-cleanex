@@ -8,7 +8,7 @@ cleanex_parse()
   while [[ "$#" > 0 ]]; do case "$1" in
     -h|--help) zou-help $0; exit 0;;
     -q|--quiet)     forOpts+=($1); quiet=true;;
-    -r|--recursive) recursive=true;;
+    .)              unset recursive;;
     -d|--dsm-only)  dsmOnly=true;;
     -f|--force)     force=true;;
     -*) forOpts+=($1);;
@@ -16,7 +16,7 @@ cleanex_parse()
 }
 cleanex_run()
 {
-  local quiet recursive dsmOnly force forOpts=()
+  local quiet recursive dsmOnly force forOpts=() recursive=true
   cleanex_parse "$@" || return $?
 
   local useLongModuleTracePrefix=true
