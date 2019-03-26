@@ -1,8 +1,10 @@
 #!/bin/bash
 
+selectOpts=()
 while [[ "$#" > 0 ]]; do case "$1" in
   -r|--reset) resetConfig=true;;
   -f|--fast)  fast=true;;
+  --dev)      selectOpts+=($1);;
   -*) echo "unknown option: $1" >&2; exit 1;;
 esac; shift; done
 
@@ -20,12 +22,12 @@ zou_update()
 
   if [[ $fast == true || "$bundleRoot" == "$PWD" ]]; then
     # zou repo alone, fetch has already been done
-    . git-select "$sku"
+    . git-select "${selectOpts[@]}" "$sku"
   else
     # zou repo inside zou-dev bundle, synchronize and select all
     cd "$bundleRoot"
     . git-sync
-    . git-select "$sku"
+    . git-select "${selectOpts[@]}" "$sku"
   fi
 
   io_warning "Update finished, press the [Enter] key." "$moduleTracePrefix"
