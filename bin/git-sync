@@ -34,6 +34,9 @@ sync_run()
         showSubmoduleMessage=true \
         syncScopes=( config_scope cosm_scope )
 
+  # maintain a global list of submodules that are excluded from select
+  local syncSelectExcludeIds=()
+
   module_run "${syncScopes[@]}" sync_tree
 }
 sync_tree()
@@ -51,6 +54,9 @@ sync_tree()
 }
 sync_prolog()
 {
+  syncSelectExclude+=( "${configSelectExclude[@]/#/$moduleId\/}" )
+  # io_trace "sync_prolog $(print_vars syncSelectExclude[@])"
+
   branch_sync_all || ec=$?
   [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
 
@@ -66,6 +72,8 @@ sync_epilog()
 }
 sync_select_auto()
 {
+  array_contains_element "$moduleId" "${syncSelectExclude[@]}" && return 0
+
   branch_is_attached || branch_select_auto "$bundleBranch" '' "$moduleRoot" "$bundleRoot" true
 }
 sync_clean_local_branches()
