@@ -2,9 +2,8 @@
 
 [[ -z $ZOUL_GIT_MODULE ]]      && . zoul-git-module
 [[ -z $ZOUL_GIT_CONFIG ]]      && . zoul-git-config
+[[ -z $ZOUL_GIT_COSM ]]        && . zoul-git-cosm
 [[ -z $ZOUL_GIT_BRANCH_SYNC ]] && . zoul-git-branch-sync
-
-branchMergedEvent+=( sync_on_merged )
 
 sync_parse()
 {
@@ -13,13 +12,10 @@ sync_parse()
     -q|--quiet)         quiet=true;;
     -e|--stop-on-error) stopOnError=true;;
     -a|--all)           noSkuFilter=true;;
-    -0|--root-only)     moduleRootOnly=true;;
-    -s|--sm-only)       smOnly=true;;
+    .)                  unset recursive;;
     -c|--clean)         cleanLocalBranches=true;;
     -n|--no-push)       syncNoPush=true;;
     -j*)                jobsCount=${1#-j};;
-    --dev)              attachHint='dev';;
-    --prod)             attachHint='prod';;
     -*) io_error "unknown option '$1'"; return 1;;
   esac; shift; done
 
@@ -31,51 +27,46 @@ sync_parse()
 sync_run()
 {
   # parse command line
-  local jobsCount quiet stopOnError noSkuFilter moduleRootOnly smOnly cleanLocalBranches attachHint syncNoPush
+  local jobsCount quiet stopOnError noSkuFilter moduleRootOnly smOnly cleanLocalBranches syncNoPush recursive=true
   sync_parse "$@" || return $?
   
   local useLongModuleTracePrefix=true \
         showSubmoduleMessage=true \
-        syncScopes=( config_scope )
+        syncScopes=( config_scope cosm_scope )
 
-  module_run "${syncScopes[@]}" sync_main
-}
-sync_main()
-{
-  local ec=0
-  if [[ $moduleRootOnly == true ]]; then
-    sync_node || ec=$?
-    [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
-  elif [[ $smOnly == true ]]; then
-    sync_submodules || ec=$?
-    [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
-  else
-    sync_tree || ec=$?
-    [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
-  fi
-  return $ec
+  module_run "${syncScopes[@]}" sync_tree
 }
 sync_tree()
 {
-  sync_node || ec=$?
+  sync_prolog || ec=$?
   [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
-  sync_submodules || ec=$?
-  [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
-}
-sync_node()
-{
-  local syncMergedCount=0
-  branch_sync_all && sync_select && sync_clean_local_branches
-}
-sync_on_merged() (( syncMergedCount += 1 ))
-sync_select()
-{
-  [ $syncMergedCount -eq 0 ] && return 0
-  if [[ "$moduleRoot" == "$bundleRoot" || $attachHint == 'dev' ]]; then
-    branch_select "$bundleRoot" "dev" true >/dev/null
-  else
-    branch_select_vtag $(branch_best_match "$bundleRoot") 'dev' true >/dev/null
+
+  if [[ $recursive == true ]]; then
+    sync_submodules || ec=$?
+    [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
   fi
+
+  sync_epilog || ec=$?
+  return $ec
+}
+sync_prolog()
+{
+  branch_sync_all || ec=$?
+  [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
+
+  sync_select_auto || ec=$?
+  [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
+
+  sync_clean_local_branches || ec=$?
+  return $ec
+}
+sync_epilog()
+{
+  cosm_process_unstaged_submodules
+}
+sync_select_auto()
+{
+  branch_is_attached || branch_select_auto "$bundleBranch" '' "$moduleRoot" "$bundleRoot" true
 }
 sync_clean_local_branches()
 {

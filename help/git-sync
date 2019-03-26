@@ -3,16 +3,15 @@ usage: git sync [<options>]
 Synchronize changes and update submodules
 
     -h|--help               display help
-    -q|--quiet              don't print submodule name when synchronizing
     -e|--stop-on-error      stop looping as soon as command fails (exit code != 0)
-    -a|--all                synchronize all submodules (ignore SKU filter)
-    -s|--sm-only            synchronize submodules only (skip working directory)
-    -0|--root-only          do not synchronize submodules (only working directory)
+    -j<n>                   number of submodules synchronized in parallel (default to 32)
+    -a|--all                visit all submodules (ignore SKU filter)
+    .                       visit startup module only (do not visit submodules)
+
     -c|--clean              clean local branches (delete redondant ones)
     -n|--no-push            do not push local modifications
-    -j<n>                   number of submodules synchronized in parallel (default to 32)
     
 example:
     git sync                # synchronize working dir and submodules recursively
-    git sync -0             # synchronize working dir only
-    git sync -s             # synchronize submodules recursively (skip working directory)
+    git sync .              # synchronize working dir only
+    git sync -n             # do not push
