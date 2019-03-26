@@ -13,11 +13,8 @@ ZOUL_GIT_BRANCH_SYNC=true
 # global options
 #   syncNoPush
 
-branchMergedEvent=()
-branchSynchronizedEvent=()
-
-_branch_raise_branch_merged_event()       { local handler; for handler in "${branchMergedEvent[@]}";       do $handler "$@"; done; }
-_branch_raise_branch_synchronized_event() { local handler; for handler in "${branchSynchronizedEvent[@]}"; do $handler "$@"; done; }
+branchSyncEvent=()
+_branch_raise_branch_sync_event() { local handler; for handler in "${branchSyncEvent[@]}"; do $handler "$@"; done; }
 
 _branch_sync_push()
 {
@@ -28,20 +25,24 @@ _branch_sync_push()
 }
 _branch_sync_merge()
 {
-  branch_merge "$@" && _branch_raise_branch_merged_event "$@"
+  local r=$1 l=$2
+  branch_merge "$r" "$l"
 }
 _branch_sync_sync()
 {
-  branch_merge "$@" && _branch_sync_push "$@" && _branch_raise_branch_synchronized_event "$@"
+  local r=$1 l=$2
+  branch_merge "$r" "$l" && \
+  _branch_sync_push "$r" "$l"
 }
 _branch_sync_visitor()
 {
   local r=$1 l=$2 i=$3
   case $i in
-    '>')  _branch_sync_push  $r $l || return 1;; # l > r ahead   -- move r
-    '<')  _branch_sync_merge $r $l || return 1;; # l < r behind  -- move l
-    '<>') _branch_sync_sync  $r $l || return 1;; # ahead and behind
+    '>')  _branch_sync_push  "$r" "$l" || return 1;; # l > r ahead   -- move r
+    '<')  _branch_sync_merge "$r" "$l" || return 1;; # l < r behind  -- move l
+    '<>') _branch_sync_sync  "$r" "$l" || return 1;; # ahead and behind
   esac
+  _branch_raise_branch_sync_event "$r" "$l" "$i"
 }
 _branch_sync_visit() 
 {
