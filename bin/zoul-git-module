@@ -59,7 +59,7 @@ module_scope()
     modulePath moduleTracePrefix \
     moduleScopeEnabled=true
   
-  modulePath=${moduleRoot#$moduleParent/}
+  [[ -z $moduleParent ]] || modulePath=${moduleRoot#$moduleParent/}
 
   if [[ $moduleRoot == $startupRoot ]]; then
     # initialize startup module context
