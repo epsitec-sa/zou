@@ -6,10 +6,11 @@
 #   [[ -z $ZOUL_GIT_BRANCH_CORE ]] && . zoul-git-branch-core
 ZOUL_GIT_BRANCH_CORE=true
 
-[[ -z $ZOUL_CORE ]]     && . zoul-core
-[[ -z $ZOUL_GIT_REF ]]  && . zoul-git-ref
-[[ -z $ZOUL_GIT_CORE ]] && . zoul-git-core
-[[ -z $ZOUL_GIT_REPO ]] && . zoul-git-repo
+[[ -z $ZOUL_CORE ]]       && . zoul-core
+[[ -z $ZOUL_GIT_REF ]]    && . zoul-git-ref
+[[ -z $ZOUL_GIT_CORE ]]   && . zoul-git-core
+[[ -z $ZOUL_GIT_REPO ]]   && . zoul-git-repo
+[[ -z $ZOUL_GIT_COMMIT ]] && . zoul-git-commit
 
 # global options
 #   showSwitchingMessage
@@ -213,24 +214,29 @@ branch_checkout()
   local ref=$1 always=$2 alias=$3 refType isCurrent
   [[ $alias == 'HEAD' ]] && unset alias
   branch_ref_type $ref; refType=$?
-  branch_is_current $ref; isCurrent=$?
+  case $refType in
+    0) branch_is_current $ref; isCurrent=$?;; # local branch
+    1) isCurrent=1;; # remote branch
+    2) isCurrent=1; ref=$(branch_without_remote_prefix $ref);;
+    3|4) commit_is_head $ref; isCurrent=$?;; # tag | commit
+  esac
   if [[ $isCurrent -ne 0 || $always == true ]]; then
     # compute symbols
     local symType symRef
     case $refType in
-      0) symType='branch'; symRef="$ref";;
-      1) symType='new branch'; symRef="$(branch_without_remote_prefix $ref)";;
-      2) symType='new branch'; symRef="$ref";;
+      0) symType='branch'; symRef="'$ref'";;
+      1|2) symType='new branch'; symRef="'$ref'";;
       3) symType='tag'; symRef="($ref)";;
-      4) symType='commit'; symRef="($ref...)";;
+      4) symType='commit'; symRef="($(git rev-parse --short $ref^{})";;
     esac
 
     # switching message
-    [[ $isCurrent -ne 0 && $showSwitchingMessage == true ]] && io_message "Switching to $symType '$symRef'" "$moduleTracePrefix" Brown
+    [[ $isCurrent -ne 0 && $showSwitchingMessage == true ]] && io_info "Switching to $symType $symRef" "$moduleTracePrefix"
+
+    # io_trace "branch_checkout -- $(print_vars ref always alias refType isCurrent symType symRef)"
 
     # checkout
     local line color info ec=0
-    ref=$(branch_without_remote_prefix $ref)
     info=$(git checkout "$ref" 2>&1 >/dev/null); ec=$?
 
     if [[ $ec -eq 0 && $isCurrent -ne 0 ]]; then
@@ -244,12 +250,17 @@ branch_checkout()
       elif [[ -z $color ]]; then
         if [[ $line =~ ^Already ]]; then
           color=LightBlue
+        elif [[ $line =~ ^HEAD\ is\ now\ at\ ([0-9a-f]+) ]]; then
+          commit="(${BASH_REMATCH[1]})"
+          [[ -z $alias ]] && alias=$ref
+          color=LightBlue
+          line="Already at $commit"
         elif [[ $line =~ ^Warning ]]; then
           color=Brown
         elif [[ $line =~ ^error ]]; then
           color=Red
         elif [[ $line =~ ^Note:\ checking\ out ]]; then
-          io_message "Switched to $symType '$symRef'" "$moduleTracePrefix" Green
+          io_message "Switched to $symType $symRef" "$moduleTracePrefix" Green
           break
         elif [[ $line =~ ^Previous\ HEAD ]]; then
           continue
