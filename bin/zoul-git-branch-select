@@ -113,9 +113,6 @@ branch_select_vtag()
 
   local branch=$1 hint=${2:-dev} showCheckout=${3:-true} ltag
   branch=$(branch_realize $1)
-  if ! branch_is_local $branch; then
-    branch=$(branch_list_local_at $branch | head -n1)
-  fi
   ltag=$(vtag_describe "$branch") || {
     branch_checkout "$branch" "$showCheckout"
     echo $branch
