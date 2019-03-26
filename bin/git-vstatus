@@ -50,7 +50,7 @@ vstatus_main()
   lsuf=${ltag#$stag}
   branch=$(vtag_get_vbranch_name $stag)
 
-  # if there is multiple tags on the same commit, get the highest one on same branch
+  # get the highest vtag on vbranch
   htag=$(vtag_highest $(vtag_list $branch | grep -vE "\-@$" ) )
   [[ -n $htag ]] && stag=$htag
 

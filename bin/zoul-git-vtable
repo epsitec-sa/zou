@@ -74,7 +74,7 @@ vtable_update()
 {
   # echo vtable_update "${*@Q}"
 
-  local root=$1 moduleId=$2 lookupPath=$3
+  local root=$1 moduleId=$2 lookupPath=$3 commitVTable=$4
 
   if [[ "$PWD" == "$root" ]]; then
     local IFS=$'\n'
@@ -82,9 +82,7 @@ vtable_update()
     . "$lookupPath"
 
     # serialize header and root
-    local file="$root/versions.md" verb
-    [[ -f "$file" ]] && verb='update' || verb='create'
-
+    local file="$root/versions.md"
     print_head >"$file"
     vtable_row $moduleId false >>"$file"
     
@@ -97,8 +95,10 @@ vtable_update()
     sed -i -E 's,_,|,g; s,#,\*,g' "$file"
     rm "$lookupPath"
 
-    git update-index --add -- "$file" &>/dev/null \
-    && git commit -m "zou-flow: $verb version table" -- "$file" &>/dev/null
+    [[ $commitVTable == true ]] && {
+      git update-index --add -- "$file" &>/dev/null \
+      && git commit -m "zou-flow: update version table" -- "$file" &>/dev/null
+    }
   else
     local IFS=$'\n'
 

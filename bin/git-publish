@@ -188,7 +188,7 @@ publish_commit_vtable()
   [[ $createVTable == true ]] || return 1
   # io_trace "publish_commit_vtable ${*@Q}"
   local ec=0 branch=$1 vtag=$2 vbranch=$3
-  vtable_update "$startupRoot" "$moduleId" "$lookupPath" || ec=$?
+  vtable_update "$startupRoot" "$moduleId" "$lookupPath" true || ec=$?
 
   # synchronize dev with prod
   if [[ -n $vbranch ]]; then
@@ -196,7 +196,7 @@ publish_commit_vtable()
     branch_merge $vbranch $branch
   fi
   if [[ -n $vtag ]]; then
-    [ $ec -eq 0 ] && io_info "Created vtable for '$branch' at ${Brown}$vtag" "$moduleTracePrefix"
+    [ $ec -eq 0 ] && io_info "Created version table for '$branch' at ${Brown}$vtag" "$moduleTracePrefix"
     tag_move "$vtag" "$branch" &>/dev/null
   fi
 }

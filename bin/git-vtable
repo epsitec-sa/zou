@@ -14,14 +14,17 @@ vtable_parse()
     -a|--all)             all=true;;
     -e|--stop-on-error)   stopOnError=true;;
     -j*)                  jobsCount=${1#-j};;
+    -c|--commit)          commitVTable=true;;
     -*) io_error "unknown option '$1'"; return 1;;
   esac; shift; done
 }
 vtable_run()
 {
-  local jobsCount quiet stopOnError all
+  local jobsCount quiet stopOnError all commitVTable
   vtable_parse "$@" || return $?
   
+  local useLongModuleTracePrefix=true
+
   module_run vtable_main
 }
 vtable_main()
@@ -36,19 +39,26 @@ vtable_tree()
 {
   vtable_submodules
   if [[ "$PWD" == "$startupRoot" ]]; then
-    vtable_update "$startupRoot" "$moduleId" "$lookupPath"
+    vtable_commit_vtable
   else
-    lock "$lockDir" 0.1 vtable_update "$startupRoot" "$moduleId" "$lookupPath"
+    lock "$lockDir" 0.1 vtable_update_vtable
   fi
 }
-vtable_submodules() { module_visit_submodules_async vtable_submodules_enumerator vtable_tree; }
-vtable_submodules_enumerator()
+vtable_commit_vtable()
 {
-  # io_warning ">>>> publish_submodules" "$moduleTracePrefix"
-  local include exclude
-  [[ $all == true ]] && include="${moduleSubmodulePaths[@]}" || include=$(config_sku_list_included)
-  exclude=( $(config_select_list_excluded) )
-  array_remove_array 'include[@]' 'exclude[@]'
+  vtable_update "$startupRoot" "$moduleId" "$lookupPath" "$commitVTable"
+  io_success "Created version table" "$moduleTracePrefix"
+}
+vtable_update_vtable()
+{
+  vtable_update "$startupRoot" "$moduleId" "$lookupPath"
+  io_info "Updated version table" "$moduleTracePrefix"
+}
+vtable_submodules()
+{
+  local vtableSkuInclude
+  [[ $all == true ]] && vtableSkuInclude="${moduleSubmodulePaths[@]}" || vtableSkuInclude=$(config_sku_list_included)
+  module_visit_submodules_async 'vtableSkuInclude[@]' vtable_tree
 }
 
 vtable_run "$@"

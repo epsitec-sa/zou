@@ -37,6 +37,8 @@ ZOUL_GIT_REPO=true
 # global options
 #   showSubmoduleMessage
 
+internalIgnoreList=( 'versions.md' )
+
 submoduleChangedEvent=()
 repo_raise_submodule_changed_event() { local handler; for handler in "${submoduleChangedEvent[@]}"; do $handler "$@"; done; }
 
@@ -282,6 +284,7 @@ repo_list_unstaged_clean_submodules()
 repo_split_unstaged_submodules()
 {
   local mroot=$1 smid smpath smroot opwd=$PWD
+  [[ -z $mroot ]] && mroot=$moduleRoot
   [[ -z $mroot ]] && { mroot=$(repo_module_root) || return 1; }
   for smid in $(git diff-files --name-only -r); do
     smpath=$(repo_submodule_path "$smid" "$mroot")
@@ -298,18 +301,16 @@ repo_split_unstaged_submodules()
 }
 repo_list_untracked()
 {
-  local mroot=$1 path smpath opwd=$PWD
-  [[ -z $mroot ]] && { mroot=$(repo_module_root) || return 1; }
-  cd "$mroot"
+  local path smpath
   for path in $(git ls-files --exclude-standard --others); do
     if [[ -f $path ]]; then
-      echo $path
+      # skip internal ignore list
+      array_contains_element "$path" "${internalIgnoreList}" || echo $path
     else
       # skip dangling submodules
       repo_is_module_root "$path" || echo $path
     fi
   done
-  cd "$opwd"
 }
 repo_list_dangling_submodules()
 {
