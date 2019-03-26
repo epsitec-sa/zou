@@ -36,8 +36,8 @@ _cosm_reset_scope()
   unstagedDirtySubmodules=()
   if [ ${#moduleSubmodulePaths[@]} -ne 0 ]; then
     repo_split_unstaged_submodules "$moduleRoot"
-    io_trace "$(print_vars unstagedCleanSubmodules[@])"
-    io_trace "$(print_vars unstagedDirtySubmodules[@])"
+    # io_trace "_cosm_reset_scope -- $(print_vars unstagedCleanSubmodules[@])"
+    # io_trace "_cosm_reset_scope -- $(print_vars unstagedDirtySubmodules[@])"
   fi
 }
 # Process unstaged submodules
@@ -61,6 +61,7 @@ cosm_process_unstaged_submodules()
 
   # discard unstaged clean submodules which are excluded from SKU
   local discard=( $(array_intersect_array 'unstagedCleanSubmodules[@]' 'configSkuExclude[@]') )
+  # io_trace "cosm_process_unstaged_submodules -- $(print_vars unstagedCleanSubmodules[@] discard[@])"
   if [ ${#discard[@]} -ne 0 ]; then
     visit_async 'discard[@]' 'repo_discard_submodule' || ec=$?
     unstagedCleanSubmodules=( $(array_remove_array 'unstagedCleanSubmodules[@]' 'discard[@]') )
