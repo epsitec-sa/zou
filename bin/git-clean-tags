@@ -31,19 +31,22 @@ clean_run()
 }
 clean_main()
 {
-  tag_delete_root_in_other
+  # delete tags that have been moved to the other folder
+  # this can happen if a git prunetags has not been executed
+  # on another copy of the repo and a push all tags has been executed
+  tag_delete_othered
   tag_move_non_semver_and_big_patch_to_other
   tag_remove_prerelease_leading_zero
   tag_remove_other_redondant
 }
 
-tag_delete_root_in_other()
+tag_delete_othered()
 {
   local tag rtag
   for tag in $(git tag); do
-    if [[ $tag =~ ^other/(.*)$ ]]; then
-      rtag=${BASH_REMATCH[1]}
-      tag_exists $rtag && tag_delete $rtag
+    if [[ $tag =~ ^other(/archive)?/(.*)$ ]]; then
+      rtag=${BASH_REMATCH[2]}
+      tag_exists $rtag && tag_equals $rtag $tag && tag_delete $rtag
     fi
   done
 }
