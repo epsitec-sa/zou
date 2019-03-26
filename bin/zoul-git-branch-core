@@ -15,14 +15,7 @@ ZOUL_GIT_BRANCH_CORE=true
 #   showSwitchingMessage
 
 branchChangedEvent=()
-
-branch_raise_branch_changed_event()
-{
-  local handler
-  for handler in "${branchChangedEvent[@]}"; do
-    $handler "$@"
-  done
-}
+branch_raise_branch_changed_event() { local handler; for handler in "${branchChangedEvent[@]}"; do $handler "$@"; done; }
 
 branch_exists()         { git rev-parse --quiet --verify $1 >/dev/null; }
 branch_upstream()       { git rev-parse --abbrev-ref $1@{upstream} 2>/dev/null; }
