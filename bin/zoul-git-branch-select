@@ -15,7 +15,7 @@ branch_ensure_current()
 {
   local branch=$(git rev-parse --abbrev-ref HEAD)
   if ! branch_is_local "$branch"; then
-    branch=$(branch_select "$bundleBranch" 'dev')
+    branch=$(branch_select_sku "$bundleBranch" 'dev')
   fi
   echo $branch
 }
@@ -86,16 +86,29 @@ vtag_set_info()
     [[ -z $delta ]] && alias="$vtag" || alias="> $vtag"
   fi
 }
-branch_select()
+branch_select_auto()
 {
-  local rootBranch=$1 hint=$2 showCheckout=${3:-true} bestMatch
-  [[ -z $rootBranch ]] && io_error 'branch_select: specify a branch to match' && return 1
-  bestMatch=$(branch_best_match $rootBranch $hint)
+  local sku=$1 hint=${2:-dev} mroot=$3 broot=$4 showCheckout=${5:-true}
+  [[ -z $sku ]]   && sku=$(branch_current_root_branch)
+  [[ -z $mroot ]] && mroot=$(repo_module_root)
+  [[ -z $broot ]] && broot=$(repo_bundle_root)
+  
+  if [[ "$mroot" == "$broot" || $hint == 'dev' ]]; then
+    branch_select_sku "$sku" "dev" $showCheckout >/dev/null
+  else
+    branch_select_vtag $(branch_best_match "$sku") 'dev' $showCheckout >/dev/null
+  fi
+}
+branch_select_sku()
+{
+  local sku=$1 hint=$2 showCheckout=${3:-true} bestMatch
+  [[ -z $sku ]] && io_error 'branch_select_sku: specify a branch to match' && return 1
+  bestMatch=$(branch_best_match $sku $hint)
 
   local vtag delta alias ec=0
   vtag_set_info $(vtag_describe $bestMatch)
   
-  # io_trace "branch_select ${*@Q} -- $(print_vars bestMatch alias)"
+  # io_trace "branch_select_sku ${*@Q} -- $(print_vars bestMatch alias)"
   
   branch_checkout "$bestMatch" "$showCheckout" "$alias" se1 >/dev/null || ec=$?
   if ! branch_upstream "$bestMatch" >/dev/null; then

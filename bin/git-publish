@@ -112,7 +112,7 @@ publish_prolog()
   elif config_publish_is_enabled; then
     if [[ $publishHint == 'dev' || "$PWD" == "$startupRoot" ]]; then
       # branchOrTag=$(branch_ensure_current 2>/dev/null) || return 1
-      branchOrTag=$(branch_select "$bundleBranch" 'dev' 'false') || return 1
+      branchOrTag=$(branch_select_sku "$bundleBranch" 'dev' 'false') || return 1
     else
       publish_select_vtag
     fi

@@ -40,26 +40,26 @@ select_main()
 }
 select_tree()
 {
-  repo_require_clean_work_tree 'Cannot select' || return 1
-
-  # io_trace "select_tree $(print_vars recursive noSkuFilter selectHint commitSubmodules sku)"
-  local ec=0
-  if [[ "$PWD" == "$bundleRoot" || $selectHint == 'dev' ]]; then
-    branch_select "$sku" "dev" true >/dev/null || ec=$?
-  else
-    branch_select_vtag $(branch_best_match "$sku") 'dev' true >/dev/null || ec=$?
-  fi
+  select_prolog || ec=$?
   [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
 
-  # traverse submodules
   [[ $recursive == true ]] && {
     select_submodules || ec=$?
     [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
   }
   
-  cosm_process_unstaged_submodules
-
+  select_epilog || ec=$
   return $ec
+}
+select_prolog()
+{
+  repo_require_clean_work_tree 'Cannot select' || return 1
+  # io_trace "select_prolog $(print_vars recursive noSkuFilter selectHint commitSubmodules sku)"
+  branch_select_auto "$sku" "$selectHint" "$moduleRoot" "$bundleRoot" true
+}
+select_epilog()
+{
+  cosm_process_unstaged_submodules
 }
 select_submodules()
 {
