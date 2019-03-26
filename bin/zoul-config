@@ -10,8 +10,6 @@ config_reset() { git config --global --unset 'zou.initialized'; }
 
 config_setup()
 {
-  git config --global push.followTags true
-
   [[ $(git config --global 'zou.initialized') == true ]] || {
 
     [ -f $(realPath ~/.gitconfig) ] && cp -f "$(realPath ~/.gitconfig)" "$(realpath ~/.gitconfig.backup)"
@@ -23,12 +21,6 @@ config_setup()
     git config --global --remove-section diff &>/dev/null
     git config --global --remove-section alias &>/dev/null
 
-    # add some alias
-    git config --global --add alias.csku 'config-sku'
-    git config --global --add alias.csel 'config-select'
-    git config --global --add alias.cver 'config-version'
-    git config --global --add alias.cpub 'config-publish'
-
     # Semantic versioning
     git config --global --remove-section versionsort &>/dev/null
     git config --global --add versionsort.suffix -@
@@ -38,4 +30,23 @@ config_setup()
 
     git config --global zou.initialized true
   }
+
+  git config --global push.followTags true
+
+  # update zou aliases
+  git config --global --unset alias.csku
+  git config --global --unset alias.csel
+  git config --global --unset alias.cver
+  git config --global --unset alias.cpub
+  git config --global --unset alias.smaster
+  git config --global --unset alias.spull
+  git config --global --unset alias.sclean
+
+  git config --global --add alias.csku 'config-sku'
+  git config --global --add alias.csel 'config-select'
+  git config --global --add alias.cver 'config-version'
+  git config --global --add alias.cpub 'config-publish'
+  git config --global --add alias.smaster 'git-select --dev master'
+  git config --global --add alias.spull 'git-sync --nopush'
+  git config --global --add alias.sclean 'git-cleanex'
 }
