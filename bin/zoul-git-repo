@@ -37,6 +37,9 @@ ZOUL_GIT_REPO=true
 # global options
 #   showSubmoduleMessage
 
+submoduleChangedEvent=()
+repo_raise_submodule_changed_event() { local handler; for handler in "${submoduleChangedEvent[@]}"; do $handler "$@"; done; }
+
 ######################
 # Bundle
 repo_bundle_id()
@@ -328,6 +331,7 @@ repo_commit_submodules()
   # echo repo_commit_submodules "${*@Q}" >&2
   local mroot=$1; shift
   [ $# -eq 0 ] && return 1
+  [[ -z $mroot ]] && mroot=$moduleRoot
   [[ -z $mroot ]] && { mroot=$(repo_module_root) || return 1; }
 
   local opwd=$PWD cslist=$(string_join ', ' "$@")
@@ -335,6 +339,7 @@ repo_commit_submodules()
   local branch=$(branch_current)
   git commit -m "zou-flow: update submodules '$cslist' on branch '$branch'" -- "$@" >/dev/null \
   && [[ $showSubmoduleMessage == true ]] && io_success "Commited submodules '$cslist' on branch '$branch'" "$moduleTracePrefix"
+  repo_raise_submodule_changed_event "$@"
   cd "$opwd"
 }
 repo_discard_submodule()
@@ -342,6 +347,7 @@ repo_discard_submodule()
   local smpath=$1
   git submodule update --recursive "$smpath" &>/dev/null
   [[ $showSubmoduleMessage == true ]] && io_success "Discarded submodule '$smpath' from branch '$moduleBranch'" "$moduleTracePrefix"
+  repo_raise_submodule_changed_event "$smpath"
 }
 repo_discard_clean_submodules_async()
 {
@@ -354,6 +360,7 @@ repo_remove_dangling_submodule()
   git submodule deinit $smid 2>/dev/null && git rm --cached $smid 2>/dev/null
   rm -rf "$smpath"
   io_warning "Removed dangling submodule '${smpath%/}'" "$moduleTracePrefix"
+  repo_raise_submodule_changed_event "$smpath"
 }
 repo_remove_dangling_submodules_async()
 {
@@ -367,6 +374,7 @@ repo_update_submodules()
   while read -r line; do
     [[ -n $line ]] && io_info "$line" "$moduleTracePrefix"
   done
+  repo_raise_submodule_changed_event
 }
 repo_update_submodule()
 {
@@ -375,6 +383,7 @@ repo_update_submodule()
   while read -r line; do
     [[ -n $line ]] && io_info "$line" "$moduleTracePrefix"
   done
+  repo_raise_submodule_changed_event "$path"
 }
 repo_check_submodule()
 {
