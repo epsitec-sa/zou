@@ -9,22 +9,55 @@ ZOUL_GIT_MODULE=true
 [[ -z $ZOUL_GIT_REPO ]]        && . zoul-git-repo
 [[ -z $ZOUL_GIT_BRANCH_CORE ]] && . zoul-git-branch-core
 
-# module state variables
-# readonly moduleScope='moduleRoot moduleId moduleBranch moduleTracePrefix'
-# readonly moduleStartupScope='startupDir startupRoot bundleRoot bundleId bundleBranch'
-
 # global options
-#   useLongModuleTracePrefix
-#   showVisitModuleMessage
+useLongModuleTracePrefix=true
+showVisitModuleMessage=''
 
-# io_trace "branchChangedEvent+=( _module_reset_scope )"
+# events registration
 branchChangedEvent+=( _module_reset_scope )
 
+# run a function in the startup module root folder with startup, bundle and module scopes defined
 module_run()
 {
-  module_scope_startup module_scope $*
+  _module_scope_startup _module_scope $*
 }
-module_scope_startup()
+# usage:
+#   module_visit sm-path next ...
+# in:
+#   $1     -- submodule path
+#   ${@:2} -- next ...
+module_visit()
+{
+  local sm=( "$1" )
+  visit 'sm[@]' _module_submodule_visitor "${@:2}"
+}
+# usage:
+#   module_visit_submodules enumerator next ...
+#   module_visit_submodules array[@] next ...
+# in:
+#   $1     -- enumerator or array name
+#   ${@:2} -- next ...
+module_visit_submodules()
+{
+  visit $1 _module_submodule_visitor "${@:2}"
+}
+# usage:
+#   module_visit_submodules_async enumerator next ...
+#   module_visit_submodules_async array[@] next ...
+# in:
+#   $1     -- enumerator or array name
+#   ${@:2} -- next ...
+module_visit_submodules_async()
+{
+  visit_async $1 _module_submodule_visitor "${@:2}"
+}
+module_visit_submodules_async_fast()
+{
+  visit_async_fast $1 _module_submodule_visitor "${@:2}"
+}
+
+# run a function in the startup module root folder with startup and bundle scopes defined
+_module_scope_startup()
 {
   # setup startup context
   local startupDir=$PWD startupRoot bundleId bundleRoot bundleBranch submodulePathMaxLength
@@ -38,15 +71,13 @@ module_scope_startup()
   bundleBranch=$(branch_current_root_branch)
 
   # enter startup module
-  module_enter "$startupRoot" || return $?
+  _module_enter "$startupRoot" || return $?
 
   # execute next russian doll
   $*
 }
-# usage:
-#   module_enter "$moduleDir" || return $?
-#   module_scope $*
-module_scope()
+# run a function in the module root folder with module scope defined
+_module_scope()
 {
   # setup module context
   local \
@@ -77,56 +108,24 @@ module_scope()
   $*
 }
 # usage:
-#   module_enter "$moduleDir" || return $?
-module_enter()
+#   _module_submodule_visitor path next ...
+# in:
+#   $1     -- path
+#   ${@:2} -- next ...
+_module_submodule_visitor()
+{
+  _module_enter "$1" || return $?
+  repo_check_submodule "$1" || return $?
+  _module_scope "${@:2}" || return $?
+}
+# usage:
+#   _module_enter "$moduleDir" || return $?
+_module_enter()
 {
   cd "$1" &>/dev/null || {
     io_error "No such [sub]module directory '$1'" "$moduleTracePrefix"
     return 1
   }
-}
-
-# usage:
-#   module_visit_submodules enumerator next ...
-# in:
-#   $1     -- enumerator
-#   ${@:2} -- next ...
-module_visit_submodules()
-{
-  visit $1 module_submodule_visitor "${@:2}"
-}
-# usage:
-#   module_visit_submodules_async enumerator next ...
-# in:
-#   $1     -- enumerator
-#   ${@:2} -- next ...
-module_visit_submodules_async()
-{
-  visit_async $1 module_submodule_visitor "${@:2}"
-}
-module_visit_submodules_async_fast()
-{
-  visit_async_fast $1 module_submodule_visitor "${@:2}"
-}
-# Default submodules enumerator
-# exemple:
-#   module_visit_submodules \
-#     module_submodules_enumerator \
-#     module_submodule_visitor ...
-module_submodules_enumerator()
-{
-  echo "${moduleSubmodulePaths[@]}"
-}
-# usage:
-#   module_submodule_visitor path next ...
-# in:
-#   $1     -- path
-#   ${@:2} -- next ...
-module_submodule_visitor()
-{
-  module_enter "$1" || return $?
-  repo_check_submodule "$1" || return $?
-  module_scope "${@:2}" || return $?
 }
 _module_reset_scope()
 {
