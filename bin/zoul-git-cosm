@@ -13,7 +13,7 @@ ZOUL_GIT_COSM=true
 #   commitSubmodules
 #   commitDirtySubmodules
 
-branchChangedEvent+=( _cosm_reset_scope )
+branchChangedEvent+=( _cosm_on_branch_changed )
 submoduleChangedEvent+=( _cosm_reset_scope )
 
 # usage:
@@ -29,6 +29,14 @@ cosm_scope()
   # execute next russian doll
   $1 "${@:2}"
 }
+_cosm_on_branch_changed()
+{
+  _cosm_reset_scope
+
+  [ ${#moduleSubmodulePaths[@]} -eq 0 ] && return 0
+  _cosm_update_submodules_excluded_from_select
+  _cosm_discard_submodules_excluded_from_sku
+}
 _cosm_reset_scope()
 {
   [[ $cosmScopeEnabled == true ]] || return 0
@@ -38,6 +46,28 @@ _cosm_reset_scope()
     repo_split_unstaged_submodules "$moduleRoot"
     # io_trace "_cosm_reset_scope -- $(print_vars unstagedCleanSubmodules[@])"
     # io_trace "_cosm_reset_scope -- $(print_vars unstagedDirtySubmodules[@])"
+  fi
+}
+# Update active submodules that are excluded from select
+_cosm_update_submodules_excluded_from_select()
+{
+  [[ $commitExcludedSubmodules == true ]] && return 0
+  local needUpdate=( $(array_remove_array 'configSelectExclude[@]' 'configSkuExclude[@]') ) ec=0
+  # io_trace "_cosm_update_submodules_excluded_from_select $(print_vars configSelectExclude[@] configSkuExclude[@] needUpdate[@])"
+  if [ ${#needUpdate[@]} -ne 0 ]; then
+    visit_async 'needUpdate[@]' 'repo_update_submodule' || ec=$?
+    [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
+  fi
+}
+_cosm_discard_submodules_excluded_from_sku()
+{
+  # discard unstaged clean submodules which are excluded from SKU
+  local discard=( $(array_intersect_array 'unstagedCleanSubmodules[@]' 'configSkuExclude[@]') )
+  # io_trace "_cosm_discard_submodules_excluded_from_sku -- $(print_vars unstagedCleanSubmodules[@] discard[@])"
+  if [ ${#discard[@]} -ne 0 ]; then
+    visit_async 'discard[@]' 'repo_discard_submodule' || ec=$?
+    unstagedCleanSubmodules=( $(array_remove_array 'unstagedCleanSubmodules[@]' 'discard[@]') )
+    [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
   fi
 }
 # Process unstaged submodules
@@ -51,26 +81,6 @@ _cosm_reset_scope()
 cosm_process_unstaged_submodules()
 {
   [ ${#moduleSubmodulePaths[@]} -eq 0 ] && return 0
-
-  if [[ $commitExcludedSubmodules != true ]]; then
-    # update active submodules which are excluded from select
-    local needUpdate=( $(array_remove_array 'configSelectExclude[@]' 'configSkuExclude[@]') ) ec=0
-    # io_trace "cosm_process_unstaged_submodules $(print_vars configSelectExclude[@] configSkuExclude[@] needUpdate[@])"
-    if [ ${#needUpdate[@]} -ne 0 ]; then
-      visit_async 'needUpdate[@]' 'repo_update_submodule' || ec=$?
-      [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
-    fi
-  fi
-
-  # discard unstaged clean submodules which are excluded from SKU
-  local discard=( $(array_intersect_array 'unstagedCleanSubmodules[@]' 'configSkuExclude[@]') )
-  # io_trace "cosm_process_unstaged_submodules -- $(print_vars unstagedCleanSubmodules[@] discard[@])"
-  if [ ${#discard[@]} -ne 0 ]; then
-    visit_async 'discard[@]' 'repo_discard_submodule' || ec=$?
-    unstagedCleanSubmodules=( $(array_remove_array 'unstagedCleanSubmodules[@]' 'discard[@]') )
-    [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
-  fi
-
   [[ $commitSubmodules == true ]] || return 0
 
   if [[ $commitDirtySubmodules == true ]]; then
