@@ -132,6 +132,12 @@ branch_list_remote_untracked()
   local tracked=( $(branch_list_remote_tracked) )
   array_remove_array branches[@] tracked[@]
 }
+branch_list_remote_untracked_at()
+{
+  local branches=( $(branch_list_remote_at $1) )
+  local tracked=( $(branch_list_remote_tracked) )
+  array_remove_array branches[@] tracked[@]
+}
 branch_list_all_untracked()
 {
   local branches=( $(branch_list_all) )
@@ -149,6 +155,14 @@ branch_list_all_flatten()
 {
   branch_list_local
   branch_list_remote_untracked_flatten
+}
+branch_list_all_at_flatten()
+{
+  local b
+  branch_list_local_at $1
+  for b in $(branch_list_remote_untracked_at "$1"); do
+    echo ${b#*/}
+  done
 }
 branch_list_tracked_flatten()
 {
@@ -275,13 +289,14 @@ branch_checkout()
     return $ec
   fi
 }
-branch_push()
+branch_set_upstream()
 {
   local branch=$1 remote=${2:-origin} line
+  branch_upstream "$branch" >/dev/null && return 0
   (git push $remote --set-upstream "$branch" 2>/dev/null) | \
   while read -r line; do
     [[ -z $line ]] && continue
-    io_info "  $line" "$moduleTracePrefix"
+    io_message "  $line" "$moduleTracePrefix" DarkGray
   done
   return ${PIPESTATUS[0]}
 }
@@ -300,34 +315,6 @@ branch_move()
   fi
   return 1
 }
-branch_list_attach_candidates()
-{
-  branch_list_local_at $1
-  local remoteBranches=( $(branch_list_remote_at $1) )
-  remoteBranches=( $(branch_remove_remote_tracked remoteBranches[@]) )
-  printf '%s\n' ${remoteBranches[@]#origin/}
-}
-branch_filter_hint()
-{
-  local hintType=$1 branch; shift
-  if [[ $hintType == 'prod' ]]; then
-    for branch in "$@"; do
-      if branch_is_prod $branch; then
-        echo $branch
-      fi
-    done
-  elif [[ $hintType == 'dev' ]]; then
-    for branch in "$@"; do
-      if ! branch_is_prod $branch; then
-        echo $branch
-      fi
-    done
-  else
-    for branch in "$@"; do
-      echo $branch
-    done
-  fi
-}
 branch_set_hint_type()
 {
   # in:  $1 -- branch or tag
@@ -337,78 +324,69 @@ branch_set_hint_type()
   [[ $hintType =~ ^(.*/)?v?[0-9]+\.[0-9]+ ]] && { hintType='prod'; return 0; }
   hintType='dev'
 }
-branch_set_hint_info()
-{ 
-  # in:  $1 -- [ branch ref ]
-  #      $2 -- [ hint or branch or tag ]
-  # out: hintType -- (dev|prod)
-  #      refHint  -- ref fallback hint 
-  local ref=${1:-HEAD} hint=$2 branch
-  branch=$(branch_current_root_branch) || branch="$(git_symbolic_ref $ref)"
-  if [[ -z $hint ]]; then
-    [[ $branch == 'HEAD' ]] && return 1
-    hint=$branch
+branch_list_attach_candidates()
+{
+  # io_trace "branch_list_attach_candidates ${*@Q}"
+  local ref=$1 sku=$2 branches folder version hint branch
+  
+  if vtag_is_semver $ref; then
+    folder=${BASH_REMATCH[1]}
+    version="${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
+    if [[ -n $folder ]]; then
+      branches=()
+      hint=$(regex_escape $folder)
+      for branch in $(branch_list_all_at_flatten $ref); do
+        [[ $branch =~ ^$hint ]] && branches+=( $branch )
+      done
+    else
+      branches=( $(branch_list_all_at_flatten $ref) )
+    fi
+  else
+    branches=( $(branch_list_all_at_flatten $ref) )
   fi
-  branch_set_hint_type $hint
-  [[ $hintType == 'prod' ]] && refHint=${branch/%\/dev/\/prod} || refHint=$branch
+  [ ${#branches[@]} -eq 0 ] && return 0
+  
+  # io_trace "branch_list_attach_candidates -- $(print_vars ref sku branches[@])"
+  if [[ $sku == 'master' ]]; then
+    for branch in ${branches[@]}; do
+      [[ $branch == 'master' ]] && { echo 'master'; break; }
+    done
+    for branch in ${branches[@]}; do
+      [[ $branch == "$version" ]] && { echo $branch; break; }
+    done
+  else
+    for hint in $(ref_dev_fallback "$sku"); do
+      # io_trace "branch_list_attach_candidates -- $(print_vars ref sku hint)"
+      for branch in ${branches[@]}; do
+        [[ $branch == $hint ]] && { echo $branch; break 2; }
+      done
+    done
+    if [[ -n $version ]]; then
+      for hint in $(ref_prod_fallback "${sku%/dev}/prod"); do
+        # replace prod suffix with vbranch regex
+        hint=$(regex_escape "${hint/%prod/$version}")
+        # io_trace "branch_list_attach_candidates -- $(print_vars ref sku hint)"
+        for branch in ${branches[@]}; do
+          [[ $branch =~ ^$hint ]] && { echo $branch; break 2; }
+        done
+      done
+    fi
+  fi
 }
 # try to attach a detached head to a branch that's pointing at it.
 branch_try_attach()
 {
   # io_trace "branch_try_attach ${*@Q}"
 
-  local ref=$1 hint=$2 showCheckout=${3:-true}
-  local branches=( $(branch_list_attach_candidates $ref | grep -v '^other/') )
-  # io_trace "branch_try_attach -- $(print_vars ref hint branches[@])"
-  [ ${#branches[@]} -eq 0 ] && return 1
-  [ ${#branches[@]} -eq 1 ] && { branch_checkout "${branches[0]}" $showCheckout $ref; return 0; }
+  local ref=$1 sku=$2 showCheckout=${3:-true}
+  [[ -z $sku ]] && sku=$bundleBranch
+  [[ -z $sku ]] && sku=$(branch_current_root_branch)
 
-  # try to discriminate using given hint
-  local hint=$2 hintType refHint hintBranches
-  if [[ -n $hint ]]; then
-    branch_set_hint_type $hint
-    hintBranches=( $(branch_filter_hint "$hintType" "${branches[@]}") )
-    # io_trace "branch_filter_hint $hintType ${branches[*]@Q} : ${hintBranches[*]@Q}"
-    [ ${#hintBranches[@]} -eq 1 ] && { branch_checkout "${hintBranches[0]}" $showCheckout $ref; return 0; }
+  local branches=( $(branch_list_attach_candidates $ref $sku) )
+  # io_trace "branch_try_attach -- $(print_vars ref sku branches[@])"
+  if [ ${#branches[@]} -eq 0 ]; then
+    branch_checkout "$ref" $showCheckout $ref
+  else
+    branch_checkout "${branches[0]}" $showCheckout $ref
   fi
-  # try to discriminate using root branch or ref and hint
-  branch_set_hint_info "$@"
-  # no hint, checkout first branch
-  [ $? -ne 0 ] && { branch_checkout "${branches[0]}" $showCheckout $ref; return 1; }
-  hintBranches=( $(branch_filter_hint "$hintType" "${branches[@]}") )
-  # io_trace "branch_filter_hint $hintType ${branches[*]@Q} : ${hintBranches[*]@Q}"
-  [ ${#hintBranches[@]} -eq 1 ] && { branch_checkout "${hintBranches[0]}" $showCheckout $ref; return 0; }
-
-  # io_trace "branch_try_attach -- $(print_vars hintType refHint)"
-  # try to discriminate using fallbacks
-  local branch reHint pHint
-  if [[ $hintType == 'prod' ]]; then
-    for hint in $(ref_prod_fallback "$refHint"); do
-      # replace prod suffix with vbranch regex
-      reHint=$(regex_escape "${hint%prod}")
-      pHint="^${reHint}[0-9]+\.[0-9]+"
-      for branch in ${hintBranches[@]}; do
-        [[ $branch =~ $pHint ]] && { branch_checkout "$branch" $showCheckout $ref; return 0; }
-      done
-    done
-  fi
-  # dev
-  for hint in $(ref_dev_fallback "$refHint"); do
-    for branch in ${branches[@]}; do
-      [[ $branch == $hint ]] && { branch_checkout "$branch" $showCheckout $ref; return 0; }
-    done
-  done
-  # nothing found try prod
-  if [[ $hintType == 'dev' ]]; then
-    for hint in $(ref_prod_fallback "${refHint%/dev}/prod"); do
-      # replace prod suffix with vbranch regex
-      reHint=$(regex_escape "${hint%prod}")
-      pHint="^${reHint}[0-9]+\.[0-9]+"
-      # io_trace "branch_try_attach -- $(print_vars hintType hint reHint pHint)"
-      for branch in ${branches[@]}; do
-        [[ $branch =~ $pHint ]] && { branch_checkout "$branch" $showCheckout $ref; return 0; }
-      done
-    done
-  fi
-  return 1
 }

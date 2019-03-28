@@ -23,7 +23,7 @@ select_parse()
 select_run()
 {
   # parse command line
-  local jobsCount stopOnError noSkuFilter selectHint='pub' commitSubmodules sku recursive=true
+  local jobsCount stopOnError noSkuFilter selectHint commitSubmodules sku recursive=true
   select_parse "$@" || return $?
 
   local selectScopes=( config_scope cosm_scope )
@@ -53,7 +53,7 @@ select_prolog()
 {
   repo_require_clean_work_tree 'Cannot select' || return 1
   # io_trace "select_prolog $(print_vars recursive noSkuFilter selectHint commitSubmodules sku)"
-  branch_select_auto "$sku" "$selectHint" "$moduleRoot" "$bundleRoot" true
+  branch_select_auto "$sku" "$selectHint" true
 }
 select_epilog()
 {

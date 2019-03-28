@@ -13,7 +13,7 @@ vbranch_prev_vtag()
 {
   # io_trace "vbranch_prev_vtag ${*@Q}"
 
-  local rev=${1:-HEAD} prerelPrefix=$2 ltag stag lsuf vbranch htag
+  local rev=${1:-HEAD} prerelPrefix=$2 ltag stag lsuf vbranch
 
   ltag=$(vtag_describe "$rev")
   io_debug ltag vbranch_prev_vtag
@@ -36,8 +36,7 @@ vbranch_prev_vtag()
   vbranch=$(vtag_get_vbranch_name $stag)
   io_debug lsuf vbranch_prev_vtag
 
-  htag=$(vtag_highest $(vtag_list $vbranch | grep -vE "\-@$" ) )
-  [[ -n $htag ]] && stag=$htag
+  stag=$(vtag_highest $vbranch)
   io_debug stag vbranch_prev_vtag
   echo $stag
 }

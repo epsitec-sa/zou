@@ -38,7 +38,7 @@ vstatus_main()
     io_error "Branch '$ref' does not exist" "$moduleTracePrefix"
     return 1
   fi
-  local ltag stag htag ntag lsuf delta tags branch
+  local ltag stag ntag lsuf delta tags vbranch
   ltag=$(vtag_describe $ref)
   if [[ -z $ltag ]]; then
     io_error "Version tag not found" "$moduleTracePrefix"
@@ -46,11 +46,10 @@ vstatus_main()
   fi
   stag=${ltag%-*-g*}
   lsuf=${ltag#$stag}
-  branch=$(vtag_get_vbranch_name $stag)
+  vbranch=$(vtag_get_vbranch_name $stag)
 
   # get the highest vtag on vbranch
-  htag=$(vtag_highest $(vtag_list $branch | grep -vE "\-@$" ) )
-  [[ -n $htag ]] && stag=$htag
+  stag=$(vtag_highest $vbranch)
 
   ntag=$(vtag_increment "$stag" "$prerelPrefix")
   if [[ -z $lsuf ]]; then

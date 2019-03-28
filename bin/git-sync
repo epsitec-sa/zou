@@ -72,9 +72,9 @@ sync_epilog()
 }
 sync_select_auto()
 {
-  array_contains_element "$moduleId" "${syncSelectExclude[@]}" && return 0
-
-  branch_is_attached || branch_select_auto "$bundleBranch" '' "$moduleRoot" "$bundleRoot" true
+  # io_trace "sync_select_auto $(print_vars moduleId syncSelectExcludeIds[@])"
+  array_contains_element "$moduleId" "${syncSelectExcludeIds[@]}" && return 0
+  branch_is_attached || branch_select_auto "$bundleBranch"
 }
 sync_clean_local_branches()
 {

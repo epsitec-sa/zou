@@ -21,7 +21,7 @@ vtag_is_other()  { [[ $1 =~ ^other/ ]]; }
 #   patch=${BASH_RE_MATCH[5]}           3
 #   prerel=${BASH_RE_MATCH[6]}          -rc4
 #   prerel-prefix=${BASH_RE_MATCH[7]}   -rc 
-#   prerel-number=${BASH_RE_MATCH[8]}   4
+#   prerel-rev=${BASH_RE_MATCH[8]}      4
 #   meta=${BASH_RE_MATCH[9]}            +meta
 vtag_is_semver() { [[ $1 =~ ^(.*/)?v([0-9]+).([0-9]+)(-@|.([0-9]+)((-alpha|-beta|-rc)([0-9]+))?(\+.+)?)$ ]]; }
 vtag_is_vnode()  { [[ $1 =~ ^(.*/)?v[0-9]+\.[0-9]+-@ ]]; }
@@ -54,6 +54,67 @@ vtag_list()
   fi
   # io_debug regex vtag_list
   git tag -l --sort=-v:refname | grep -E $regex | grep -v '^other/' || true
+}
+
+# get highest version on a specific vbranch
+# - a bundle can have the same version twice (SKU version)
+#   sku/sal/v13.1.0
+#   sku/acc/v13.1.0 - OK
+# - a submodule must not have twice the same version (module version)
+#   v1.0.0
+#   sku/sal/v1.0.0 - WRONG
+#   sku/sal/v1.0.1 - OK
+# in:
+#   $1 -- vbranch
+#   $2 -- allowDuplicates (default to true in bundle, false in submodule)
+#         true  : limit to vtags with same vbranch version and folder
+#         false : take in account all vtags with same vbranch version
+#         unset : true in bundle, false in submodule
+#   $3 -- vnodes
+#         true  : include vnodes
+#         unset : skip vnodes
+# stdout:
+#   htag -- highest version tag
+# exemple:
+#   tags: v1.0.0 v1.0.1 v1.0.2 sku/v1.0.0 sku/v1.0.1
+#   vtag_highest 1.0          -> v1.0.2
+#   vtag_highest 1.0     true -> v1.0.2
+#   vtag_highest sku/1.0      -> sku/v1.0.2 (does not exist - used as a base for next vtag computation)
+#   vtag_highest sku/1.0 true -> sku/v1.0.1
+vtag_highest()
+{
+  local vbranch=$1 allowDuplicates=$2 skipVNodes=$3
+
+  if [[ $vbranch =~ ^(.*/)?([0-9]+\.[0-9]+) ]]; then
+    local folder=${BASH_REMATCH[1]}
+    local version=${BASH_REMATCH[2]}
+    local regex
+    [[ -z $allowDuplicates && $moduleRoot == $bundleRoot ]] && allowDuplicates=true
+    if [[ $allowDuplicates == true ]]; then
+      # restrict vtags to vbranch folder
+      regex="^$(regex_escape $folder)v$(regex_escape $version)"
+    else
+      regex="^(.*/)?v$(regex_escape $version)"
+    fi
+    # io_trace "vtag_highest $(print_vars vbranch allowDuplicates skipVNodes regex)"
+    local tags=() tag
+    for tag in $(git tag -l "*v${version}*"); do
+      [[ $tag =~ ^other/ ]] && continue
+      [[ $skipVNodes == true && $tag =~ -@$ ]] && continue
+      if [[ $tag =~ $regex ]]; then
+        if [[ $allowDuplicates == true ]]; then
+          tags+=( "$tag" )
+        else
+          # replace vtag folder with vbranch folder
+          tags+=( "$folder${tag##*/}" )
+        fi
+      fi
+    done
+    vtag_highest_of "${tags[@]}"
+  else
+    io_error "vbranch invalid format : '$1'" "$moduleTracePrefix"
+    return 1
+  fi
 }
 vtag_group_by_version()
 {
@@ -151,21 +212,6 @@ vtag_visit_by_date()
       $visitor "${vtags[@]}"
     }
   done
-}
-vtag_most_recent()
-{
-  local vbranch=$(vtag_get_vbranch_name $1) vtag
-  for vtag in $(vtag_list $vbranch); do
-    # check if vtag is really more recent than given tag
-    if git merge-base --is-ancestor "$1" "$vtag"; then
-      echo $vtag
-    else
-      echo $1
-    fi
-    return 0;
-  done
-  echo $1
-  return 1
 }
 # find first vtag ancestor starting from given commit
 # input:
@@ -316,8 +362,9 @@ vtag_get_next_vtag()
     fi
   done
 }
-vtag_highest()
+vtag_highest_of()
 {
+  # io_trace "vtag_highest_of ${*@Q}"
   if [ $# -eq 1 ]; then
     echo $1
   else

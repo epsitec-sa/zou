@@ -11,16 +11,12 @@ ZOUL_GIT_BRANCH_SELECT=true
 [[ -z $ZOUL_GIT_VTAG ]]        && . zoul-git-vtag
 [[ -z $ZOUL_GIT_BRANCH_CORE ]] && . zoul-git-branch-core
 
-branch_ensure_current()
-{
-  local branch=$(git rev-parse --abbrev-ref HEAD)
-  if ! branch_is_local "$branch"; then
-    branch=$(branch_select_sku "$bundleBranch" 'dev')
-  fi
-  echo $branch
-}
 # Use this method to find the development branch which best matches
 # any superproject branch (dev|prod)
+# in:
+#   $1: sku
+# out:
+#   bestMatch -- local or remote dev branch
 branch_best_match_dev()
 {
   local patterns=$(ref_dev_fallback $1) \
@@ -44,32 +40,38 @@ branch_best_match_dev()
 }
 branch_best_match_prod()
 {
-  local target=$1 branch
-  branch=$(branch_realize $target 2>/dev/null)
+  local sku=$1 branch
+  branch=$(branch_realize $sku 2>/dev/null)
   if [ $? -eq 0 ]; then
     echo $branch
   else
-    vtag_get_vbranch_name $(vtag_describe $(branch_best_match_dev $target))
+    vtag_get_vbranch_name $(vtag_describe $(branch_best_match_dev $sku))
   fi
 }
+# in:
+#   $1: sku
+#   $2: hint (dev|prod)
+# out:
+#   bestMatch -- local or remote branch
 branch_best_match()
 {
-  local target=$1 hint=$2
+  # io_trace "branch_best_match ${*@Q}"
+  local sku=$1 hint=$2
   if [[ $hint == 'prod' ]]; then
-    vtag_get_vbranch_name $(vtag_describe $(branch_best_match_dev $target))
+    vtag_get_vbranch_name $(vtag_describe $(branch_best_match_dev $sku))
   elif [[ $hint == 'dev' ]]; then
-    branch_best_match_dev $target
+    branch_best_match_dev $sku
   else
-    if branch_is_prod $target; then
-      branch_best_match_prod $target
+    if branch_is_prod $sku; then
+      branch_best_match_prod $sku
     else
-      branch_best_match_dev $target
+      branch_best_match_dev $sku
     fi
   fi
 }
 # Compute tag properties
 # in:
-#   $1 -- ltag
+#   $1: ltag
 # out:
 #   vtag
 #   delta
@@ -88,66 +90,65 @@ vtag_set_info()
 }
 branch_select_auto()
 {
-  local sku=$1 hint=${2:-dev} mroot=$3 broot=$4 showCheckout=${5:-true}
+  # io_trace "branch_select_auto ${*@Q}"
+
+  local sku=$1 hint=$2 mroot=$3 broot=$4 showCheckout=${5:-true} ec=0
+  [[ -z $sku ]]   && sku=$bundleBranch
   [[ -z $sku ]]   && sku=$(branch_current_root_branch)
+  [[ -z $mroot ]] && mroot=$moduleRoot
   [[ -z $mroot ]] && mroot=$(repo_module_root)
+  [[ -z $broot ]] && broot=$bundleRoot
   [[ -z $broot ]] && broot=$(repo_bundle_root)
   
-  if [[ "$mroot" == "$broot" || $hint == 'dev' ]]; then
-    branch_select_sku "$sku" "dev" $showCheckout >/dev/null
-  else
-    branch_select_vtag $(branch_best_match "$sku") 'dev' $showCheckout >/dev/null
-  fi
-}
-branch_select_sku()
-{
-  local sku=$1 hint=$2 showCheckout=${3:-true} bestMatch
-  [[ -z $sku ]] && io_error 'branch_select_sku: specify a branch to match' && return 1
-  bestMatch=$(branch_best_match $sku $hint)
 
+  local bestMatch=$(branch_best_match_dev "$sku")
+  #  io_trace "branch_select_auto -- $(print_vars sku hint bestMatch)"
+  if [[ "$mroot" == "$broot" || $hint == 'dev' ]]; then
+    branch_select_branch "$bestMatch" "$showCheckout" >/dev/null || ec=$?
+  else
+    branch_select_vtag  "$bestMatch" "$showCheckout" >/dev/null || ec=$?
+  fi
+  if [ $ec -eq 10 ]; then
+    # cannot checkout
+    repo_require_clean_work_tree 'Cannot select'
+  else
+    branch_set_upstream "$bestMatch"
+  fi
+  return $ec
+}
+branch_select_branch()
+{
+  local branch=$1 showCheckout=${2:-true} bestMatch
   local vtag delta alias ec=0
   vtag_set_info $(vtag_describe $bestMatch)
   
-  # io_trace "branch_select_sku ${*@Q} -- $(print_vars bestMatch alias)"
-  
-  branch_checkout "$bestMatch" "$showCheckout" "$alias" se1 >/dev/null || ec=$?
-  if ! branch_upstream "$bestMatch" >/dev/null; then
-    git push -u origin "$bestMatch" &>/dev/null
-  fi
-  echo $bestMatch
-  if [ $ec -ne 0 ]; then
-    repo_require_clean_work_tree 'Cannot select'
-    return $ec
-  fi
+  # io_trace "branch_select_branch ${*@Q} -- $(print_vars branch alias)"
+  branch_checkout "$branch" "$showCheckout" "$alias" >/dev/null || return 10
+  echo $branch
 }
 branch_select_vtag()
 {
+  # branch can be remote or local
   # io_trace "branch_select_vtag ${*@Q}"
+  local branch=$1 showCheckout=${2:-true} ltag
 
-  local branch=$1 hint=${2:-dev} showCheckout=${3:-true} ltag
-  branch=$(branch_realize $1)
   ltag=$(vtag_describe "$branch") || {
-    branch_checkout "$branch" "$showCheckout"
+    branch_checkout "$branch" "$showCheckout" || return 10
     echo $branch
-    return 2  # no vtag
-  }
-
-  [[ -z $ltag ]] && {
-    io_error "No vtag found for branch '$branch'" "$moduleTracePrefix"
     return 2  # no vtag
   }
 
   local vtag delta alias
   vtag_set_info $ltag
-  # io_trace "branch_select_vtag -- $(print_vars branch hint vtag delta alias)"
+  # io_trace "branch_select_vtag -- $(print_vars branch vtag delta alias)"
   if vtag_is_vnode $vtag; then
-    branch_checkout "$branch" "$showCheckout" "$alias"
+    branch_checkout "$branch" "$showCheckout" "$alias" || return 10
     echo $vtag
     return 2  # vnode
   fi
 
   if [[ $delta -eq 0 ]]; then
-    branch_try_attach "$vtag" "$hint" "$showCheckout"
+    branch_checkout "$branch" "$showCheckout" "$vtag" || return 10
     echo $vtag
     return 1  # branch == vtag
   fi
@@ -157,8 +158,8 @@ branch_select_vtag()
     return 3  # vtag is more recent
   fi
 
-  branch_try_attach "$vtag" "$hint" "$showCheckout" || branch_checkout "$vtag" "$showCheckout"
+  branch_try_attach "$vtag" "$branch" "$showCheckout" || return 10
   repo_update_submodules
   echo $vtag
-  return 0  # switch to vtag ( or vbranch )
+  return 0  # switched to vtag
 }

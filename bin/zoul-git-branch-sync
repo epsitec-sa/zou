@@ -68,7 +68,7 @@ _branch_sync_visit()
           if branch_is_prod "$l"; then
             # automatically track vbranches
             local remote=$(git remote)
-            branch_push $l $remote && {
+            branch_set_upstream $l $remote && {
               r="$remote/$l"
               i='>'
               [[ $l == $current ]] && color=Yellow || color=Brown
