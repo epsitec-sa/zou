@@ -282,7 +282,11 @@ branch_checkout()
           color=Gray
         fi
       fi
-      [[ -n $alias ]] && line="$line (${Brown}$alias${!color})"
+      if [[ -n $alias ]]; then
+        local acolor=Brown
+        [[ $alias =~ ^\> ]] && acolor=LightPurple
+        line="$line (${!acolor}$alias${!color})"
+      fi
       io_message "$line" "$moduleTracePrefix" $color
       unset alias
     done <<< "$info"
