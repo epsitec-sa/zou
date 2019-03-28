@@ -7,16 +7,14 @@ attach_parse()
 {
   while [[ "$#" > 0 ]]; do case "$1" in
     -h|--help) zou-help $0; exit 0;;
-    -r|--recursive) recursive=true;;
-    -d|--dev)       attachHint='dev';;
-    -p|--prod)      attachHint='prod';;
-    -*)             forOpts+=($1);;
+    .)  unset recursive;;
+    -*) forOpts+=($1);;
   esac; shift; done
 }
 
 attach_run()
 {
-  local recursive forOpts=() attachHint
+  local recursive=true forOpts=()
   attach_parse "$@" || return $?
 
   if [[ $recursive = true ]]; then
