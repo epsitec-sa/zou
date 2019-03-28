@@ -26,9 +26,7 @@ select_run()
   local jobsCount stopOnError noSkuFilter selectHint='pub' commitSubmodules sku recursive=true
   select_parse "$@" || return $?
 
-  local useLongModuleTracePrefix=true \
-        showSwitchingMessage=true \
-        selectScopes=( config_scope cosm_scope )
+  local selectScopes=( config_scope cosm_scope )
   
   module_run "${selectScopes[@]}" select_main
 }
