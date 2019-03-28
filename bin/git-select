@@ -33,11 +33,21 @@ select_run()
 select_main()
 {
   local ec=0
-  [[ -z $sku ]] && sku=$bundleBranch
-  select_tree
+  if [[ -z $sku ]]; then
+    sku=$bundleBranch
+    select_tree
+  else
+    if [[ "$moduleRoot" == "$bundleRoot" ]]; then
+      select_tree
+    else
+      module_visit "$bundleRoot" "${selectScopes[@]}" select_tree
+    fi
+  fi
 }
 select_tree()
 {
+  # io_trace "select_tree $(print_vars sku selectHint)"
+
   select_prolog || ec=$?
   [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
 
