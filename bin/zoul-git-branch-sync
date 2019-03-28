@@ -54,8 +54,10 @@ _branch_sync_visit()
 
     $visitor $r $l $i || return 1
     case $i in
-      '>'|'<'|'<>') [[ $l == $current ]] && color=Yellow     || color=Brown;;  # ahead, behind, ahead and behind
-      '=')          [[ $l == $current ]] && color=LightGreen || color=Green;;
+      '>')  [[ $l == $current ]] && color=Yellow      || color=Brown;;   # ahead
+      '<')  [[ $l == $current ]] && color=Yellow      || color=Brown;;   # behind
+      '<>') [[ $l == $current ]] && color=LightPurple || color=Purple;;  # ahead and behind
+      '=')  [[ $l == $current ]] && color=LightGreen  || color=Green;;
       *)
         if [[ -n $r ]]; then
           # tracking branch was deleted or renamed

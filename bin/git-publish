@@ -163,11 +163,9 @@ publish_select_vtag()
 
   case $? in
   0)
-    io_success "Published existing version ${Brown}$branchOrTag" "$moduleTracePrefix"
-    publish_try_attach;;
+    io_success "Published existing version ${Brown}$branchOrTag" "$moduleTracePrefix";;
   1)
-    io_info "Already published at ${Brown}$branchOrTag" "$moduleTracePrefix"
-    publish_try_attach;;
+    io_message "Already published at ${Brown}$branchOrTag" "$moduleTracePrefix" LightBlue;;
   2)
     io_warning "Branch '$branch' was never published" "$moduleTracePrefix"
     neverPublished=true;;
@@ -196,7 +194,7 @@ publish_commit_vtable()
     branch_merge $vbranch $branch
   fi
   if [[ -n $vtag ]]; then
-    [ $ec -eq 0 ] && io_info "Created version table for '$branch' at ${Brown}$vtag" "$moduleTracePrefix"
+    [ $ec -eq 0 ] && io_success "Created version table for '$branch' at ${Brown}$vtag" "$moduleTracePrefix"
     tag_move "$vtag" "$branch" &>/dev/null
   fi
 }
