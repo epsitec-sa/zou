@@ -14,6 +14,7 @@ ZOUL_GIT_CONFIG=true
 
 io_trace "branchChangedEvent+=( _config_reset_scope )"
 branchChangedEvent+=( _config_reset_scope )
+branchSyncEvent+=( _config_on_sync )
 
 # usage:
 #   module_run config_scope $*
@@ -29,8 +30,16 @@ config_scope()
   # execute next russian doll
   $1 "${@:2}"
 }
+_config_on_sync()
+{
+  case $3 in
+    '<'|'<>') _config_reset_scope;;
+  esac
+}
 _config_reset_scope()
 {
+  # io_trace "_config_reset_scope"
+
   [[ $configScopeEnabled == true ]] || return 0
 
   if [ ${#moduleSubmodulePaths[@]} -eq 0 ]; then
