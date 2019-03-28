@@ -52,11 +52,14 @@ cosm_process_unstaged_submodules()
 {
   [ ${#moduleSubmodulePaths[@]} -eq 0 ] && return 0
 
-  # update active submodules which are excluded from select
-  local needUpdate=( $(array_remove_array 'configSelectExclude[@]' 'configSkuExclude[@]') ) ec=0
-  if [ ${#needUpdate[@]} -ne 0 ]; then
-    visit_async 'needUpdate[@]' 'repo_update_submodule' || ec=$?
-    [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
+  if [[ $commitExcludedSubmodules != true ]]; then
+    # update active submodules which are excluded from select
+    local needUpdate=( $(array_remove_array 'configSelectExclude[@]' 'configSkuExclude[@]') ) ec=0
+    # io_trace "cosm_process_unstaged_submodules $(print_vars configSelectExclude[@] configSkuExclude[@] needUpdate[@])"
+    if [ ${#needUpdate[@]} -ne 0 ]; then
+      visit_async 'needUpdate[@]' 'repo_update_submodule' || ec=$?
+      [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
+    fi
   fi
 
   # discard unstaged clean submodules which are excluded from SKU
