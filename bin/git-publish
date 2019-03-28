@@ -55,8 +55,8 @@ publish_run()
   local jobsCount quiet stopOnError vtable prerelPrefix publishHint recursive=true
   publish_parse "$@" || return $?
 
-  local useLongModuleTracePrefix=true \
-        commitSubmodules=true \
+  local commitSubmodules=true \
+        publishSelectExcludeIds=() \
         publishScopes=( config_scope cosm_scope )
 
   module_run "${publishScopes[@]}" publish_main
@@ -78,12 +78,15 @@ publish_main()
     lookupPath="$(mktemp)"
     vtable_init "$startupRoot" "$lookupPath"
   }
-  publish_tree 'configSelectExclude[@]'
+  publish_tree
 }
 publish_tree()
 {
-  # io_trace "publish_tree -- $(print_vars modulePath $1)"
-  if array_contains_element "$modulePath" "${!1}"; then
+  # feed exclude list with moduleIds (modulePaths by default)
+  publishSelectExcludeIds+=( "${configSelectExcludeIds}" )
+  # io_trace "publish_tree -- $(print_vars moduleId publishSelectExcludeIds[@])"
+
+  if array_contains_element "$moduleId" "${publishSelectExcludeIds[@]}"; then
     publish_update_vtable
   else
     local ec=0 branchOrTag=$moduleBranch stopPublish neverPublished ffPublish
@@ -100,8 +103,7 @@ publish_tree()
 publish_submodules()
 {
   local publishSubmodules=( $(array_sort configSkuInclude[@]) )
-  local parentConfigSelectExclude=( "${configSelectExclude[@]}" )
-  module_visit_submodules_async 'publishSubmodules[@]' "${publishScopes[@]}" 'publish_tree parentConfigSelectExclude[@]'
+  module_visit_submodules_async 'publishSubmodules[@]' "${publishScopes[@]}" 'publish_tree'
 }
 publish_prolog()
 {
