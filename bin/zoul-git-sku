@@ -58,9 +58,7 @@ _sku_init_scope()
   if [[ $dev_vtag != $prod_vtag ]]; then
     io_warning "Last development vtag '$dev_vtag' is different from last production vtag '$prod_vtag'" "$moduleTracePrefix"
   fi
-  lastVersion=$(vtag_highest $(vtag_list $prod_branch | grep -Ev "\-@$") )  # exclude vnode
-  [[ -z $lastVersion ]] && lastVersion=$prod_vtag
-  [[ -z $lastVersion ]] && lastVersion=$dev_vtag
+  lastVersion=$(vtag_highest $prod_branch)  # exclude vnode
 
   io_trace "_sku_init_scope ${*@Q} -> $(print_vars skuMode dev_branch prod_branch lastVersion dev_vtag prod_vtag dev_delta prod_delta)"
 }
