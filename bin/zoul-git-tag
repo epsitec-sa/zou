@@ -8,6 +8,9 @@ ZOUL_GIT_TAG=true
 [[ -z $ZOUL_GIT_CORE ]] && . zoul-git-core
 [[ -z $ZOUL_GIT_REPO ]] && . zoul-git-repo
 
+# global options
+#   noTagPush
+
 tagger_name()  { git show $1 -q | grep Tagger: | sed -E 's,Tagger:s+(.*)s+<(.*)>,1,'; }
 tagger_email() { git show $1 -q | grep Tagger: | sed -E 's,Tagger:s+(.*)s+<(.*)>,2,'; }
 tag_date()     { git show $1 -q | grep Date: | sed -E 's,Date:s+(.*),1,' | head -n 1; }
@@ -20,6 +23,7 @@ commit_is_pushed()   { [[ -n $(git branch -r --contains $1) ]]; }
 
 tag_push_not_followed()
 {
+  [[ $noTagPush == true ]] && return 0
   local tag=$1 commit=$2 remote=$(git remote); shift 2
   # 'git push --follow-tags' push only tags associated with commits that are not pushed
   if [[ $1 == '--delete' ]]; then
@@ -34,40 +38,48 @@ tag_push_not_followed()
 }
 tag_rename()
 {
-  local tag1=$1 tag2=$2
+  local tag1=$1 tag2=$2 force=$3 tagOpt
+  # force rename if tags point at same commit
+  { [[ $force == true ]] || { ref_exists $tag2 && ref_equals $tag1 $tag2; }; } && tagOpt='-f'
+
   local tagger=$(tagger_name $tag1)
   if [[ -z "$tagger" ]]; then
-    git tag -f "$tag2" "$tag1^{}"
-    io_info "Renamed lightweight tag '$tag1' to '$tag2'" "$moduleTracePrefix"
+    git tag $tagOpt "$tag2" "$tag1^{}" \
+    && io_info "Renamed lightweight tag '$tag1' to '$tag2'" "$moduleTracePrefix" \
+    || return $?
   else
     local message=$(tag_comment "$tag1")
     GIT_COMMITTER_NAME="$tagger" \
     GIT_COMMITTER_EMAIL=$(tagger_email "$tag1") \
     GIT_COMMITTER_DATE=$(tag_date "$tag1") \
-    git tag -f -m "$message" "$tag2" "$tag1^{}"
-    io_info "Renamed annotated tag '$tag1' to '$tag2'" "$moduleTracePrefix"
+    git tag $tagOpt -m "$message" "$tag2" "$tag1^{}" \
+    && io_info "Renamed annotated tag '$tag1' to '$tag2'" "$moduleTracePrefix" \
+    || return $?
   fi
   tag_push_not_followed $tag2 $tag1
-  [[ "$tag1" != "$tag2" ]] && tag_delete "$tag1"
+  [[ "$tag1" != "$tag2" ]] && tag_delete "$tag1" &>/dev/null
 }
 tag_move_to_commit()
 {
   [[ $(git_get_commit $1) == $(git_get_commit $2) ]] && return 0
-  local tag=$1 commit=$2
+  local tag=$1 commit=$2 force=$3 tagOpt
+  # force move if tag point at commit
+  { [[ $force == true ]] || ref_equals $tag $commit; } && tagOpt='-f'
+
   local tagger=$(tagger_name $tag)
   if [[ -z "$tagger" ]]; then
-    tag_delete $tag
-    git tag -f "$tag" "$commit^{}"
-    io_info "Moved lightweight tag '$tag' to '$commit'" "$moduleTracePrefix"
+    tag_delete $tag &>/dev/null
+    git tag $tagOpt "$tag" "$commit^{}" \
+    && io_info "Moved lightweight tag '$tag' to '$commit'" "$moduleTracePrefix"
   else
     local message=$(tag_comment "$tag")
     local email=$(tagger_email "$tag")
     local date=$(tag_date "$tag")
 
-    tag_delete $tag
+    tag_delete $tag &>/dev/null
     GIT_COMMITTER_NAME="$tagger" GIT_COMMITTER_EMAIL="$email" GIT_COMMITTER_DATE="$date" \
-    git tag -a -m "'$message'" "$tag" "$commit"
-    io_info "Moved annotated tag '$tag' to '$commit'" "$moduleTracePrefix"
+    git tag $tagOpt -a -m "'$message'" "$tag" "$commit" \
+    && io_info "Moved annotated tag '$tag' to '$commit'" "$moduleTracePrefix"
   fi
   tag_push_not_followed $tag $commit
 }
@@ -101,16 +113,23 @@ tag_delete()
 
 tag_move()
 {
-  # io_trace "tag_move ${*@Q}"
+  # ZOU_TRACE=true io_trace "tag_move ${*@Q}"
 
-  local tag1=$1 tag2=$2
+  local tag1=$1 tag2=$2 force=$3
   if ! git_object_exists "$tag1"; then
     io_error "Object '$tag1' does not exist." "$moduleTracePrefix"
     return 1
   fi
   if git_object_exists "$tag2"; then
-    # tag2 exists, assume it's a commit'ish
-    tag_move_to_commit "$@"
+    # ZOU_TRACE=true io_trace "tag_move -- $(print_vars tag1 tag2 type2)"
+    if tag_exists $tag2; then
+      # if ! ref_equals $tag1 $tag2; then
+      #   tag_rename "$tag2" "other/backup/$tag2"
+      # fi
+      tag_rename "$@"
+    else
+      tag_move_to_commit "$@"
+    fi
   else
     # tag2 does not exist, assume it's a tag
     tag_rename "$@"
