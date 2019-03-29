@@ -124,18 +124,21 @@ vtag_group_by_version()
     ref_is_other $vtag && continue
     # skip non semver tags
     ! vtag_is_semver $vtag && continue
-    vbranch=$(vtag_get_vbranch_name $vtag)
+    vbranch="${BASH_REMATCH[1]}${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
     if [ -z "${lookup[$vbranch]}" ]; then
       lookup[$vbranch]=$vtag
     else
       lookup[$vbranch]="${lookup[$vbranch]} $vtag"
     fi
+    # io_trace "vtag_group_by_version $(print_vars vbranch vtag)"
   done
-  declare -p lookup
+  [ ${#lookup[@]} -eq 0 ] && echo 'declare -A lookup=()' || declare -p lookup
 }
+# out:
+#   vtagGrouping
 vtag_group_by_date_visitor()
 {
-  # assume caller has a vtagGrouping variable defined
+  # assume caller has a vtagGrouping lookup defined
   local vtag vbranch
   if [ $# -eq 1 ]; then
     vtag=$1
@@ -177,7 +180,7 @@ vtag_group_by_date()
 {
   declare -A vtagGrouping
   vtag_visit_by_date vtag_group_by_date_visitor vtag_group_by_date_filter
-  declare -p vtagGrouping
+  [ ${#vtagGrouping[@]} -eq 0 ] && echo 'declare -A vtagGrouping=()' || declare -p vtagGrouping
 }
 vtag_list_by_date_visitor() { (( $# > 1 )) && echo $(string_join '=' "$@") || echo $1; }
 vtag_list_by_date() { vtag_visit_by_date vtag_list_by_date_visitor; }
