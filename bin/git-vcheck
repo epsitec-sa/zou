@@ -8,18 +8,22 @@ vcheck_parse()
   while [[ "$#" > 0 ]]; do case "$1" in
     -h|--help) zou-help $0; exit 0;;
     --debug)    debug=true;;
-    -q|--quiet) quiet=true;;
-    -*) io_error "unknown option: $1"; return 1;;
+    -r|--recursive) recursive=true;;
+    -*) forOpts+=($1);;
   esac; shift; done
 }
 vcheck_run()
 {
-  local jobsCount quiet
+  local recursive forOpts=()
   vcheck_parse "$@" || return $?
   
-  module_run vcheck_main
+  if [[ $recursive = true ]]; then
+    . git-for "${forOpts[@]}" -- 'vcheck_node'
+  else
+    module_run vcheck_node
+  fi
 }
-vcheck_main()
+vcheck_node()
 {
   local ec=0 lookup vtag pvtag vbranch rvbranch remote=$(git remote)
 
@@ -28,6 +32,10 @@ vcheck_main()
   declare -A byVersion="${lookup#*=}"
   
   local vbranches=( ${!byVersion[@]} )
+  [ ${#vbranches[@]} -eq 0 ] && {
+    io_success "  There are no vtag in this repository" "$moduleTracePrefix"
+    return 0
+  }
   vbranches=$(array_sort vbranches[@])
   for vbranch in $vbranches; do
     vtags=( ${byVersion[$vbranch]} )
@@ -35,14 +43,13 @@ vcheck_main()
       # local vbranch not found try remote vbranch
       rvbranch=$remote/$vbranch
       if [[ -z $(git show-ref refs/remotes/$rvbranch) ]]; then
-        git branch $vbranch ${vtags[0]} &>/dev/null
-        git push -u origin $vbranch &>/dev/null
-        io_warning "Created branch '$vbranch'" "$moduleTracePrefix"
+        io_warning "  Branch not found '$vbranch'" "$moduleTracePrefix"
         continue
       fi
     fi
-    io_success "Checked existence of vbranch '$vbranch' - OK" "$moduleTracePrefix"
+    io_success "  Checked existence of vbranch '$vbranch' - OK" "$moduleTracePrefix"
   done
+  # io_trace "vcheck_node $(print_vars vbranches)"
 
   io_info "Grouping vtags ordered by date..." "$moduleTracePrefix"
   lookup=$(vtag_group_by_date)
@@ -52,31 +59,36 @@ vcheck_main()
   for vbranch in $vbranches; do
     ec=0
     rvbranch=$(branch_realize $vbranch)
-    for vtag in ${byVersion[$vbranch]}; do
-      if ! git merge-base --is-ancestor "$vtag" "$rvbranch"; then
-        io_warning "vtag '$vtag' is not inside vbranch '$rvbranch'" "$moduleTracePrefix"
-        (( ec = $ec + 1 ))
-      fi
-      if [[ -n $pvtag ]]; then
-        if ! git merge-base --is-ancestor "$vtag" "$pvtag"; then
-          io_warning "vtag '$vtag' is not an ancestor of '$pvtag'" "$moduleTracePrefix"
+    if [ $? -eq 0 ]; then
+      for vtag in ${byVersion[$vbranch]}; do
+        if ! git merge-base --is-ancestor "$vtag" "$rvbranch"; then
+          io_message "  vtag '$vtag' is not inside vbranch '$rvbranch'" "$moduleTracePrefix" LightPurple
           (( ec = $ec + 1 ))
         fi
-      fi
-      pvtag=$vtag
-    done
-    unset pvtag
-    if [ $ec -eq 0 ]; then
-      io_success "Checked tag appartenance and history on vbranch '$vbranch' - OK" "$moduleTracePrefix"
+        if [[ -n $pvtag ]]; then
+          if ! git merge-base --is-ancestor "$vtag" "$pvtag"; then
+            io_message "  vtag '$vtag' is not an ancestor of '$pvtag'" "$moduleTracePrefix" LightPurple
+            (( ec = $ec + 1 ))
+          fi
+        fi
+        pvtag=$vtag
+      done
+      unset pvtag
     else
-      io_warning "Checked tag appartenance and history on vbranch '$vbranch' - $ec warning[s]" "$moduleTracePrefix"
+      io_message "  vtags (${byVersion[$vbranch]}) are orphans" "$moduleTracePrefix" LightPurple
+      (( ec += 1 ))
+    fi
+    if [ $ec -eq 0 ]; then
+      io_success "  Checked vtag appartenance and history on vbranch '$vbranch' - OK" "$moduleTracePrefix"
+    else
+      io_warning "  Checked vtag appartenance and history on vbranch '$vbranch' - $ec warning[s]" "$moduleTracePrefix"
     fi
   done
 
   # check by date and by version coherence : order should match
   for vbranch in $vbranches; do
     if [[ ${byVersion[$vbranch]} == ${byDate[$vbranch]} ]]; then
-      io_success "Checked tag ordering on vbranch '$vbranch' - OK" "$moduleTracePrefix"
+      io_success "  Checked vtag ordering on vbranch '$vbranch' - OK" "$moduleTracePrefix"
     else
       # check item by item
       local a1 a2 ai2 i1=0 i2=0 j2 e2 ec=0
@@ -90,11 +102,11 @@ vcheck_main()
         if [ ${#ai2[@]} -eq 1 ]; then
           if [[ ${a1[$i1]} != ${a2[$i2]} ]]; then
             if [ $ec -eq 0 ]; then
-              io_error "vtag orders differ for vbranch '$vbranch'" "$moduleTracePrefix"
-              io_message "  ${byVersion[$vbranch]}" "$moduleTracePrefix" Gray
-              io_message "  ${byDate[$vbranch]}" "$moduleTracePrefix" Gray
+              io_message "  vtags order differ for vbranch '$vbranch'" "$moduleTracePrefix" LightPurple
+              io_message "    ${byVersion[$vbranch]}" "$moduleTracePrefix" Gray
+              io_message "    ${byDate[$vbranch]}" "$moduleTracePrefix" Gray
             fi
-            io_error "vtag '${a1[$i1]}' does not match ${a2[$i2]} on vbranch '$vbranch'" "$moduleTracePrefix"
+            io_message "    ${a1[$i1]} <> ${a2[$i2]}" "$moduleTracePrefix" Gray
             (( ec = $ec + 1 ))
           fi
           (( i1 = $i1 + 1 ))
@@ -102,11 +114,11 @@ vcheck_main()
           for j2 in ${!ai2[@]}; do
             if ! array_contains_element "${a1[$i1]}" "${ai2[@]}"; then
               if [ $ec -eq 0 ]; then
-                io_error "vtag orders differ for vbranch '$vbranch'" "$moduleTracePrefix"
+                io_message "  vtags order differ for vbranch '$vbranch'" "$moduleTracePrefix" LightPurple
                 io_message "  ${byVersion[$vbranch]}" "$moduleTracePrefix" Gray
                 io_message "  ${byDate[$vbranch]}" "$moduleTracePrefix" Gray
               fi
-              io_error "vtag '${a1[$i1]}' not found in ${ai2[*]@Q} on vbranch '$vbranch'" "$moduleTracePrefix"
+              io_message "    ${a1[$i1]} not in (${ai2[*]})" "$moduleTracePrefix" Gray
               (( ec = $ec + 1 ))
             fi
             (( i1 = $i1 + 1 ))
