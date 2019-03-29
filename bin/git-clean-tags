@@ -9,106 +9,197 @@
 #    group tags pointing to the same commit hash
 #      create a lookup table with the commit hash as key and the commit tags (space separated) as value.
 
-[[ -z $ZOUL_CORE ]]       && . zoul-core
-[[ -z $ZOUL_GIT_TAG ]]    && . zoul-git-tag
-[[ -z $ZOUL_GIT_VTAG ]]   && . zoul-git-vtag
-[[ -z $ZOUL_GIT_CORE ]]   && . zoul-git-core
-[[ -z $ZOUL_GIT_REPO ]]   && . zoul-git-repo
-[[ -z $ZOUL_GIT_MODULE ]] && . zoul-git-module
+[[ -z $ZOUL_CORE ]]        && . zoul-core
+[[ -z $ZOUL_GIT_TAG ]]     && . zoul-git-tag
+[[ -z $ZOUL_GIT_VTAG ]]    && . zoul-git-vtag
+[[ -z $ZOUL_GIT_CORE ]]    && . zoul-git-core
+[[ -z $ZOUL_GIT_REPO ]]    && . zoul-git-repo
+[[ -z $ZOUL_GIT_VBRANCH ]] && . zoul-git-vbranch
+[[ -z $ZOUL_GIT_MODULE ]]  && . zoul-git-module
 
 clean_parse()
 {
   while [[ "$#" > 0 ]]; do case "$1" in
     -h|--help) zou-help $0; exit 0;;
-    -*) io_error "unknown option: $1"; return 1;;
+    -r|--recursive) recursive=true;;
+    -p|--push)  cleanPushTags=true;;
+    -f|--force) forceMove=true;;
+    -*) forOpts+=($1);;
   esac; shift; done
 }
 clean_run()
 {
+  local cleanPushTags forceMove recursive forOpts=()
   clean_parse "$@" || return $?
   
-  module_run clean_main
+  if [[ $recursive = true ]]; then
+    . git-for "${forOpts[@]}" -- 'clean_node'
+  else
+    module_run clean_node
+  fi
 }
-clean_main()
+clean_node()
 {
-  # delete tags that have been moved to the other folder
-  # this can happen if a git prunetags has not been executed
-  # on another copy of the repo and a push all tags has been executed
+  io_info "Cleaning tags..." "$moduleTracePrefix"
+  
+  local noTagPush=true
+
+  tag_stow_semver
+  tag_move_semver_orphan
   tag_delete_othered
-  tag_move_non_semver_and_big_patch_to_other
+  tag_archive_other_semver
+  tag_archive_big_patch
+  tag_move_non_semver_to_other
   tag_remove_prerelease_leading_zero
-  tag_remove_other_redondant
+
+  [[ $cleanPushTags == true ]] && git-mirrortags
 }
 
+tag_stow_semver()
+{
+  local ec=0 lookup vtag tvbranch tvbranches evbranches version tfolder efolder evtag
+
+  # io_info "Grouping vtags by version..." "$moduleTracePrefix"
+  lookup=$(vtag_group_by_version)
+  declare -A vtagsByVersion="${lookup#*=}"
+
+  tvbranches=( ${!vtagsByVersion[@]} )
+  [ ${#tvbranches[@]} -eq 0 ] && return 0
+
+  # io_info "Grouping vbranches by version..." "$moduleTracePrefix"
+  lookup=$(vbranch_group_by_version)
+  declare -A vbranchesByVersion="${lookup#*=}"
+
+  tvbranches=( $(array_sort tvbranches[@]) )
+  # io_trace "tag_stow_semver $(print_vars tvbranches[@])"
+  for tvbranch in "${tvbranches[@]}"; do
+    # io_trace "tag_stow_semver $(print_vars tvbranch)"
+    ref_exists $tvbranch || ref_exists origin/$tvbranch && continue
+    # get all existing vbranches with same version
+    vbranch_is_vbranch $tvbranch
+    version=${BASH_REMATCH[2]}
+    evbranches=( ${vbranchesByVersion[$version]} )
+    vtags=${vtagsByVersion[$tvbranch]}
+    # io_trace "tag_stow_semver $(print_vars version evbranches[@])"
+    if [ ${#evbranches[@]} -eq 0 ]; then
+      # orphans
+      for vtag in $vtags; do
+        tag_move $vtag "other/orphan/$vtag" $forceMove
+      done
+    else
+      # extract tvbranch folder
+      vbranch_is_vbranch $tvbranch
+      tfolder=${BASH_REMATCH[1]}
+      if [ ${#evbranches[@]} -eq 1 ]; then
+        # stow in first branch folder
+        vbranch_is_vbranch ${evbranches[0]}
+        efolder=${BASH_REMATCH[1]}
+      else
+        # ambiguity : look for best match efolder
+        io_error "Cannot stow '$tvbranch' vtags in multiple brnaches (${evbranches[*]})" "$moduleTracePrefix"
+        continue
+        # for evbranch in "${evbranches[@]}"; do
+        #   efolder=${evbranch%/*}
+        # done
+      fi
+      for vtag in $vtags; do
+        evtag="$efolder${vtag#$tfolder}"
+        tag_move $vtag $evtag $forceMove
+      done
+    fi
+  done
+}
+tag_move_semver_orphan()
+{
+  local tag branch atag
+  for tag in $(git tag); do
+    if ! ref_is_other $tag; then
+      # move orphaned semver tag to orphan folder
+      ! vtag_is_semver $tag && continue
+      branch="${BASH_REMATCH[1]}${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
+      ref_exists "$branch" || ref_exists "origin/$branch" && continue
+      # io_trace "tag_move_semver_orphan $(print_vars tag branch)"
+      tag_move $tag "other/orphan/$tag" $forceMove
+    elif ref_is_orphan $tag; then
+      # move orphan tag back if vbranch exists
+      atag=${BASH_REMATCH[1]}
+      ! vtag_is_semver $atag && continue
+      branch="${BASH_REMATCH[1]}${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
+      ! ref_exists "$branch" && continue
+      # io_trace "tag_move_semver_orphan $(print_vars tag atag branch)"
+      tag_move $tag $atag $forceMove
+    fi
+  done
+}
 tag_delete_othered()
 {
   local tag rtag
   for tag in $(git tag); do
-    if [[ $tag =~ ^other(/archive)?/(.*)$ ]]; then
+    if [[ $tag =~ ^other/(archive/|orphan/|backup/)?(.*)$ ]]; then
       rtag=${BASH_REMATCH[2]}
-      tag_exists $rtag && tag_equals $rtag $tag && tag_delete $rtag
+      tag_exists $rtag && ref_equals $rtag $tag && tag_delete $rtag || continue
+      # io_trace "tag_delete_othered $(print_vars tag rtag)"
     fi
   done
 }
-tag_move_non_semver_and_big_patch_to_other()
+tag_archive_other_semver()
+{
+  local tag atag
+  for tag in $(git tag); do
+    ! ref_is_other $tag && continue
+    ref_is_archive $tag && continue
+    ref_is_orphan $tag && continue
+    ! vtag_is_semver $tag && continue
+    atag="other/archive/${tag#other/}"
+    tag_move $tag $atag $forceMove
+    # io_trace "tag_archive_other_semver $(print_vars tag atag)"
+  done
+}
+tag_archive_big_patch()
 {
   local tag patch
   for tag in $(git tag); do
-    vtag_is_other $tag && continue;
-    if vtag_is_semver $tag; then
-      patch=${BASH_REMATCH[5]}
-      [[ -z $patch ]] && continue
-      (( $patch < 1000 )) && continue
+    ref_is_archive $tag && continue
+    ref_is_orphan $tag && continue
+    ! vtag_is_semver $tag && continue
+    patch=${BASH_REMATCH[5]}
+    [[ -z $patch ]] && continue
+    if (( $patch > 1000 )); then
+      tag_move $tag "other/archive/${tag#other/}" $forceMove
+      # io_trace "tag_archive_big_patch $(print_vars tag rtag)"
     fi
-    tag_move $tag "other/$tag"
   done
 }
-tag_remove_other_redondant()
+tag_move_non_semver_to_other()
 {
-  declare -A lookup
-  local tag h
+  local tag patch folder
   for tag in $(git tag); do
-    h=$(git_get_commit $tag)
-    if [ -z "${lookup[$h]}" ]; then
-      lookup[$h]=$tag
-    else
-      lookup[$h]="${lookup[$h]} $tag"
-    fi
+    ref_is_other $tag && continue
+    vtag_is_semver $tag && continue
+    tag_move $tag "other/$tag" $forceMove
+    # io_trace "tag_move_non_semver_to_other $(print_vars tag rtag)"
   done
-
-  local remove=() k r
-  for k in ${!lookup[@]}; do
-    r=( ${lookup[$k]} )
-    if [[ ${#r[@]} > 1 ]]; then
-      for tag in "${r[@]}"; do
-        [[ $tag =~ ^other/.* ]] && remove+=( $tag )
-      done
-    fi
-  done
-
-  if [ ${#remove[@]} -ne 0 ]; then
-    for tag in ${remove[@]}; do
-      tag_delete $tag
-    done
-  fi
 }
 tag_remove_prerelease_leading_zero()
 {
   local tag0 tag1 pv0 pv1
   for tag0 in $(git tag -l --sort=v:refname); do
-    vtag_is_other $tag0 && continue;
-    if vtag_is_semver $tag0; then
-      pv0=${BASH_REMATCH[8]}
-      [[ -z $pv0 ]] && continue
-      pv1=$((10#$pv0))  # remove leading zeros
-      [[ $pv0 == $pv1 ]] && continue
-      tag1="${BASH_REMATCH[1]}v${BASH_REMATCH[2]}.${BASH_REMATCH[3]}.${BASH_REMATCH[5]}${BASH_REMATCH[7]}$pv1${BASH_REMATCH[9]}"
-      # echo "$tag0 -> $tag1"
-      if tag_exists "$tag1"; then
+    ref_is_other $tag0 && continue
+    ! vtag_is_semver $tag0 && continue
+    pv0=${BASH_REMATCH[8]}
+    [[ -z $pv0 ]] && continue
+    pv1=$((10#$pv0))  # remove leading zeros
+    [[ $pv0 == $pv1 ]] && continue
+    tag1="${BASH_REMATCH[1]}v${BASH_REMATCH[2]}.${BASH_REMATCH[3]}.${BASH_REMATCH[5]}${BASH_REMATCH[7]}$pv1${BASH_REMATCH[9]}"
+    # io_trace "tag_remove_prerelease_leading_zero $(print_vars tag0 tag1)"
+    if tag_exists "$tag1"; then
+      if ref_equals $tag0 $tag1; then
         tag_delete "$tag0"
       else
-        tag_move "$tag0" "$tag1"
+        tag_move "$tag0" "other/archive/$tag0" $forceMove
       fi
+    else
+      tag_move "$tag0" "$tag1" $forceMove
     fi
   done
 }
