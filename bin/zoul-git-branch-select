@@ -103,7 +103,7 @@ branch_select_auto()
   
 
   local bestMatch=$(branch_best_match_dev "$sku")
-  # # ZOU_TRACE=true  io_trace "branch_select_auto -- $(print_vars sku hint bestMatch mroot broot)"
+  # ZOU_TRACE=true  io_trace "branch_select_auto -- $(print_vars sku hint bestMatch mroot broot)"
   if [[ "$mroot" == "$broot" || $hint == 'dev' ]]; then
     branch_select_branch "$bestMatch" "$showCheckout" >/dev/null || ec=$?
   else
@@ -130,7 +130,7 @@ branch_select_branch()
 branch_select_vtag()
 {
   # branch can be remote or local
-  # # ZOU_TRACE=true io_trace "branch_select_vtag ${*@Q}"
+  # ZOU_TRACE=true io_trace "branch_select_vtag ${*@Q}"
   local branch=$1 showCheckout=${2:-true} ltag
 
   ltag=$(vtag_describe "$branch") || {

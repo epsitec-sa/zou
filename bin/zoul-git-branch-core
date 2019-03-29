@@ -222,7 +222,7 @@ branch_ref_type()
 }
 branch_checkout()
 {
-  # io_trace "branch_checkout ${*@Q}"
+  # ZOU_TRACE=true io_trace "branch_checkout ${*@Q}"
   
   local ref=$1 always=$2 alias=$3 refType isCurrent
   [[ $alias == 'HEAD' ]] && unset alias
@@ -246,7 +246,7 @@ branch_checkout()
     # switching message
     [[ $isCurrent -ne 0 && $showSwitchingMessage == true ]] && io_info "Switching to $symType $symRef" "$moduleTracePrefix"
 
-    # io_trace "branch_checkout -- $(print_vars ref always alias refType isCurrent symType symRef)"
+    # ZOU_TRACE=true io_trace "branch_checkout -- $(print_vars ref always alias refType isCurrent symType symRef)"
 
     # checkout
     local line color info ec=0
@@ -379,14 +379,14 @@ branch_list_attach_candidates()
 # try to attach a detached head to a branch that's pointing at it.
 branch_try_attach()
 {
-  # io_trace "branch_try_attach ${*@Q}"
+  # ZOU_TRACE=true io_trace "branch_try_attach ${*@Q}"
 
   local ref=$1 sku=$2 showCheckout=${3:-true}
   [[ -z $sku ]] && sku=$bundleBranch
   [[ -z $sku ]] && sku=$(branch_current_root_branch)
 
   local branches=( $(branch_list_attach_candidates $ref $sku) )
-  # io_trace "branch_try_attach -- $(print_vars ref sku branches[@])"
+  # ZOU_TRACE=true io_trace "branch_try_attach -- $(print_vars ref sku branches[@])"
   if [ ${#branches[@]} -eq 0 ]; then
     branch_checkout "$ref" $showCheckout $ref
   else
