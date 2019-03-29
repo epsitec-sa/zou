@@ -4,8 +4,10 @@
 #   [[ -z $ZOUL_GIT_VBRANCH ]] && . zoul-git-vbranch
 ZOUL_GIT_VBRANCH=true
 
-[[ -z $ZOUL_GIT_REPO ]] && . zoul-git-repo
-[[ -z $ZOUL_GIT_VTAG ]] && . zoul-git-vtag
+[[ -z $ZOUL_GIT_CORE ]]        && . zoul-git-core
+[[ -z $ZOUL_GIT_REPO ]]        && . zoul-git-repo
+[[ -z $ZOUL_GIT_VTAG ]]        && . zoul-git-vtag
+[[ -z $ZOUL_GIT_BRANCH_CORE ]] && . zoul-git-branch-core
 
 vbranch_without_prefix() { [[ $1 =~ ^(.*/)?([0-9]+\.[0-9]+)$ ]] && echo "${BASH_REMATCH[2]}"; }
 
@@ -47,4 +49,27 @@ vbranch_next_vtag()
   [ $ec -eq 0 ] && vtag=$(vtag_increment "$vtag" "$prerelPrefix")
   echo $vtag
   return $ec
+}
+# out:
+#   folder=${BASH_REMATCH[1]}
+#   version=${BASH_REMATCH[2]}
+vbranch_is_vbranch() { [[ $1 =~ ^(.*/)?([0-9]+\.[0-9]+)$ ]]; }
+vbranch_group_by_version()
+{
+  declare -A lookup
+  local version vbranch
+  for vbranch in $(branch_list_all_flatten); do
+    # skip other vbranches
+    ref_is_other $vbranch && continue
+    # keep only vbranches
+    vbranch_is_vbranch $vbranch || continue
+    version=${BASH_REMATCH[2]}
+    if [ -z "${lookup[$version]}" ]; then
+      lookup[$version]=$vbranch
+    else
+      lookup[$version]="${lookup[$version]} $vbranch"
+    fi
+    # io_trace "vvbranch_group_by_version $(print_vars version vtag)"
+  done
+  [ ${#lookup[@]} -eq 0 ] && echo 'declare -A lookup=()' || declare -p lookup
 }
