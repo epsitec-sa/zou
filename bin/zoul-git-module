@@ -142,9 +142,11 @@ _module_branch_prefix()
 {
   local ref=$(git rev-parse --abbrev-ref HEAD)
   if [[ $ref == HEAD ]]; then
-    ref=$(git tag --points-at HEAD | head -n1)
-    if [[ -z $ref ]]; then
+    local refs=( $(git tag --points-at HEAD) )
+    if [ ${#refs[@]} -eq 0 ]; then
       ref="$(git rev-parse --short HEAD)"
+    else
+      ref=${refs[-1]}
     fi
     echo "$ref"
     return 1
