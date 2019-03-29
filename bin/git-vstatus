@@ -34,7 +34,7 @@ vstatus_run()
 vstatus_main()
 {
   local ref=$(git_symbolic_ref ${1:-HEAD})
-  if ! branch_exists "$ref"; then
+  if ! ref_exists "$ref"; then
     io_error "Branch '$ref' does not exist" "$moduleTracePrefix"
     return 1
   fi

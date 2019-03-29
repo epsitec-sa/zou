@@ -1,5 +1,6 @@
 #!/bin/bash
 
+[[ -z $ZOUL_GIT_CORE ]]   && . zoul-git-core
 [[ -z $ZOUL_GIT_MODULE ]] && . zoul-git-module
 
 vbranch_parse()
@@ -28,7 +29,7 @@ vbranch_main()
     prefix=${BASH_REMATCH[1]}
     version=${BASH_REMATCH[2]}
     vnode="${prefix}v${version}-@"
-    if branch_exists $branch; then
+    if ref_exists $branch; then
       io_error "Branch '$branch' already exists" "$moduleTracePrefix"
     else
       git branch "$branch" "$commit"

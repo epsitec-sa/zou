@@ -13,8 +13,7 @@ tagger_email() { git show $1 -q | grep Tagger: | sed -E 's,Tagger:s+(.*)s+<(.*)>
 tag_date()     { git show $1 -q | grep Date: | sed -E 's,Date:s+(.*),1,' | head -n 1; }
 tag_comment()  { git tag -l -n1 $1 | sed -E 's,w+s+(.*),1,'; }
 
-tag_exists()         { git rev-parse --quiet --verify $1 >/dev/null; }
-tag_equals()         { [[ $(git rev-parse $1^{}) == $(git rev-parse $2^{}) ]]; }
+tag_exists()         { git show-ref -s --verify "refs/tags/$1" &>/dev/null; }
 tag_is_lightweight() { [[ $(git rev-parse $1) == $(git rev-parse $1^{}) ]]; }
 tag_is_annotated()   { [[ $(git rev-parse $1) != $(git rev-parse $1^{}) ]]; }
 commit_is_pushed()   { [[ -n $(git branch -r --contains $1) ]]; }
