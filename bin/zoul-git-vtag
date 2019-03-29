@@ -5,23 +5,26 @@
 ZOUL_GIT_VTAG=true
 
 [[ -z $ZOUL_CORE ]]     && . zoul-core
-[[ -z $ZOUL_GIT_REF ]]  && . zoul-git-ref
 [[ -z $ZOUL_GIT_CORE ]] && . zoul-git-core
+[[ -z $ZOUL_GIT_REF ]]  && . zoul-git-ref
+[[ -z $ZOUL_GIT_TAG ]]  && . zoul-git-tag
 
 vtag_get_patch()  { vtag_is_semver $1 && echo ${BASH_REMATCH[5]}; }
+
+# Parse semver tag
 # input:
 #   x/y/v1.2.3-rc4+meta
 #   x/y/v1.2-@
 # output:
-#   folder=${BASH_RE_MATCH[1]}          x/y/
-#   major=${BASH_RE_MATCH[2]}           1
-#   minor=${BASH_RE_MATCH[3]}           2
-#   tail=${BASH_RE_MATCH[4]}            .3-rc4+meta | -@
-#   patch=${BASH_RE_MATCH[5]}           3
-#   prerel=${BASH_RE_MATCH[6]}          -rc4
-#   prerel-prefix=${BASH_RE_MATCH[7]}   -rc 
-#   prerel-rev=${BASH_RE_MATCH[8]}      4
-#   meta=${BASH_RE_MATCH[9]}            +meta
+#   folder=${BASH_REMATCH[1]}          x/y/
+#   major=${BASH_REMATCH[2]}           1
+#   minor=${BASH_REMATCH[3]}           2
+#   tail=${BASH_REMATCH[4]}            .3-rc4+meta | -@
+#   patch=${BASH_REMATCH[5]}           3
+#   prerel=${BASH_REMATCH[6]}          -rc4
+#   prerel-prefix=${BASH_REMATCH[7]}   -rc 
+#   prerel-rev=${BASH_REMATCH[8]}      4
+#   meta=${BASH_REMATCH[9]}            +meta
 vtag_is_semver() { [[ $1 =~ ^(.*/)?v([0-9]+).([0-9]+)(-@|.([0-9]+)((-alpha|-beta|-rc)([0-9]+))?(\+.+)?)$ ]]; }
 vtag_is_vnode()  { [[ $1 =~ ^(.*/)?v[0-9]+\.[0-9]+-@ ]]; }
 vtag_is_vtag()   { [[ $1 =~ ^(.*/)?v[0-9]+\.[0-9]+\.[0-9] ]]; }
