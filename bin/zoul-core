@@ -15,17 +15,9 @@ zou_startupDir="${zou_startupPath%/*}"
 zou_binDir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 zou_command="${zou_startupFileName##git-}"
 
-io_print_colors()
-{
-  local color colors=()
-  for color in Black DarkGray Red LightRed Green LightGreen Brown Yellow Blue LightBlue Purple LightPurple Cyan LightCyan LightGray White; do
-    colors+=( ${!color}$color )
-  done
-  printf '%20b%20b\n' "${colors[@]}"
-}
 # colors usage
 #   colors="${Red}Red ${Green}Green${NC}"
-#   printf '%b\n' "$message"
+#   printf '%b\n' "$colors"
 NC='\e[0m'  # No Color
 Black='\e[0;30m'     DarkGray='\e[1;30m'
 Red='\e[0;31m'       LightRed='\e[1;31m'
@@ -35,6 +27,59 @@ Blue='\e[0;34m'      LightBlue='\e[1;34m'
 Purple='\e[0;35m'    LightPurple='\e[1;35m'
 Cyan='\e[0;36m'      LightCyan='\e[1;36m'
 LightGray='\e[0;37m' White='\e[1;37m'
+
+io_print_colors()
+{
+  local color colors=()
+  for color in Black DarkGray Red LightRed Green LightGreen Brown Yellow Blue LightBlue Purple LightPurple Cyan LightCyan LightGray White; do
+    colors+=( ${!color}$color )
+  done
+  printf '%20b%20b\n' "${colors[@]}"
+}
+io_set_version()
+{
+  local line regex='Version>(.*)</'
+  while read -r line || [[ -n "$line" ]]; do
+    [[ "$line" =~ $regex ]] && {
+      version=${BASH_REMATCH[1]}
+      break
+    }
+  done < "$zou_binDir/../Version.props"
+}
+io_banner()
+{
+  local version; io_set_version
+  local banner="${LightBlue}Zou tools [Version ${Green}$version${LightBlue}]
+Copyright © 2019, EPSITEC SA, CH-1400 Yverdon-les-Bains, Switzerland${NC}"
+  printf "%b\n\n" "$banner" 1>&2
+}
+io_help()
+{
+  local hdir=$(realpath "$zou_binDir/../help") \
+        hname=$(basename "$1") \
+        hpath help
+
+  hpath=$hdir/$hname
+  if [[ -f "$hpath" ]]; then
+    help=$(cat "$hpath")
+    io_message "$help"
+  else
+    local htpl=$hdir/template/$hname
+    if [[ -f "$htpl" ]]; then
+      io_warning "help file not found at $hpath\n"
+      io_info "  use the following commands to create and edit the following template
+
+      mv \"$htpl\" \"$hpath\"
+      vim \"$hpath\"
+
+  "
+      help=$(cat "$htpl")
+      io_message "$help" '' Gray
+    else
+      io_error "help file not found - $hpath"
+    fi
+  fi
+}
 
 io_trace()
 {
