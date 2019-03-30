@@ -4,9 +4,20 @@
 [[ -z $ZOUL_GIT_REPO ]]        && . zoul-git-repo
 [[ -z $ZOUL_GIT_MODULE ]]      && . zoul-git-module
 
+mvbranch_parse()
+{
+  while [[ "$#" > 0 ]]; do case "$1" in
+    -h|--help) zou-help $0; exit 0;;
+    --debug) debug=true;;
+    -*) io_error "unknown option: $1"; exit 1;;
+    *) args+=("$1");;
+  esac; shift; done
+}
 mvbranch_run()
 {
-  module_run mvbranch_main "$@"
+  local args=()
+  mvbranch_parse "$@"
+  module_run mvbranch_main "${args[@]}"
 }
 mvbranch_main()
 {

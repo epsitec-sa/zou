@@ -21,6 +21,7 @@ module_run()
 {
   # ZOU_TRACE=true io_trace "module_run ${*@Q}"
   if [[ $moduleScopeInitialized == true ]]; then
+    # execute next russian doll
     $1 "${@:2}"
   else
     _module_scope_startup _module_scope "$@"
