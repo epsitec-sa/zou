@@ -1,36 +1,34 @@
 #!/bin/bash
 
-selectOpts=()
-while [[ "$#" > 0 ]]; do case "$1" in
-  -r|--reset) resetConfig=true;;
-  -f|--fast)  fast=true;;
-  --dev)      selectOpts+=($1);;
-  -*) echo "unknown option: $1" >&2; exit 1;;
-esac; shift; done
+[[ -z $ZOUL_CONFIG ]]     && . zoul-config
+[[ -z $ZOUL_GIT_MODULE ]] && . zoul-git-module
 
-[[ -z $ZOUL_GIT_REPO ]]        && . zoul-git-repo
-[[ -z $ZOUL_CONFIG ]]          && . zoul-config
-[[ -z $ZOUL_GIT_BRANCH_CORE ]] && . zoul-git-branch-core
-[[ -z $ZOUL_GIT_MODULE ]]      && . zoul-git-module
+zou_parse()
+{
+  while [[ "$#" > 0 ]]; do case "$1" in
+    -z|--zou-only) zouOnly=true;;
+    *)             selectArgs+=($1);;
+  esac; shift; done
+}
 
 zou_update()
 {
-  local sku=$1
+  local resetConfig zouOnly selectArgs=()
+  zou_parse "$@"
   
-  [[ $resetConfig == true ]] && config_reset
   config_setup
 
-  if [[ $fast == true || "$bundleRoot" == "$PWD" ]]; then
+  if [[ $zouOnly == true || "$bundleRoot" == "$PWD" ]]; then
     # zou repo alone, fetch has already been done
-    . git-select "${selectOpts[@]}" "$sku"
+    . git-select "${selectArgs[@]}"
   else
     # zou repo inside zou-dev bundle, synchronize and select all
     cd "$bundleRoot"
     . git-sync
-    . git-select "${selectOpts[@]}" "$sku"
+    . git-select "${selectArgs[@]}"
   fi
 
   io_warning "Update finished, press the [Enter] key." "$moduleTracePrefix"
 }
 
-module_run zou_update 'master'
+module_run zou_update "$@"

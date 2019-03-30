@@ -6,42 +6,26 @@ ZOUL_CONFIG=true
 
 [[ -z $ZOUL_CORE ]] && . zoul-core
 
-config_reset() { git config --global --unset 'zou.initialized'; }
-
 config_setup()
 {
-  [[ $(git config --global 'zou.initialized') == true ]] || {
+  # remove obsolete value
+  git config --global --unset 'zou.initialized'
 
-    [ -f $(realPath ~/.gitconfig) ] && cp -f "$(realPath ~/.gitconfig)" "$(realpath ~/.gitconfig.backup)"
+  # zou-flow semantic versioning
+  git config --global --remove-section versionsort &>/dev/null
+  git config --global --add versionsort.suffix -@
+  git config --global --add versionsort.suffix -alpha
+  git config --global --add versionsort.suffix -beta
+  git config --global --add versionsort.suffix -rc
 
-    # setup default credential helper (save credentials in ~/.git-credentials)
-    ! git config credential.helper &>/dev/null && git config --global credential.helper store
-    
-    git config --global --remove-section status &>/dev/null
-    git config --global --remove-section diff &>/dev/null
-    git config --global --remove-section alias &>/dev/null
-
-    # Semantic versioning
-    git config --global --remove-section versionsort &>/dev/null
-    git config --global --add versionsort.suffix -@
-    git config --global --add versionsort.suffix -alpha
-    git config --global --add versionsort.suffix -beta
-    git config --global --add versionsort.suffix -rc
-
-    git config --global zou.initialized true
-  }
-
+  # push tags pointing at un-pushed commits
   git config --global push.followTags true
 
   # update zou aliases
-  git config --global --unset alias.csku
-  git config --global --unset alias.csel
-  git config --global --unset alias.cver
-  git config --global --unset alias.cpub
-  git config --global --unset alias.smaster
-  git config --global --unset alias.spull
-  git config --global --unset alias.sclean
-
+  local alias
+  for alias in csku csel cver cpub smaster spull sclean; do
+    git config --global --unset-all alias.$alias
+  done
   git config --global --add alias.csku 'config-sku'
   git config --global --add alias.csel 'config-select'
   git config --global --add alias.cver 'config-version'

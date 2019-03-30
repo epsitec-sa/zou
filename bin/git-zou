@@ -1,10 +1,36 @@
 #!/bin/bash
 
-main()
+zou_banner()
 {
-  local zouDir=$(realpath "$(dirname "${BASH_SOURCE[0]}")/..")
-  local setup=$(mktemp)
+  local line version regex='Version>(.*)</'
+  while read -r line || [[ -n "$line" ]]; do
+    [[ "$line" =~ $regex ]] && {
+      version=${BASH_REMATCH[1]}
+      break
+    }
+  done < "$zouDir/Version.props"
+  printf "%b\n\n" "\e[1;34mZou tools [Version \e[0;32m$version\e[1;34m]
+Copyright © 2019, EPSITEC SA, CH-1400 Yverdon-les-Bains, Switzerland"
+}
+zou_help()
+{
+  local help=$(cat "$zouDir/help/git-zou")
+  printf "%b\n" "\e[0;36m$help\e[0m" 1>&2
+}
+zou_parse()
+{
+  while [[ "$#" > 0 ]]; do case "$1" in
+    -h|--help) zou_help; exit 0;;
+    -*) args+=($1);;
+  esac; shift; done
+}
+zou_main()
+{
+  local zouDir=$(realpath "$(dirname "${BASH_SOURCE[0]}")/..") args=()
+  zou_banner
+  zou_parse "$@"
 
+  local setup=$(mktemp)
   cat >"$setup" <<\EOF
 #!/bin/bash
 
@@ -37,7 +63,7 @@ rm "$0"
 EOF
 
   chmod u+x "$setup"
-  ("$setup" "$zouDir" "$@") &
+  ("$setup" "$zouDir" "${args[@]}") &
 }
 
-main "$@"
+zou_main "$@"
