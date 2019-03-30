@@ -9,7 +9,6 @@ vstatus_parse()
 {
   while [[ "$#" > 0 ]]; do case "$1" in
     -h|--help) zou-help $0; exit 0;;
-    -q|--quiet)     forOpts+=($1); quiet=true;;
     .)              unset recursive;;
     --alpha)        prerelPrefix='alpha';;
     --beta)         prerelPrefix='beta';;
@@ -22,21 +21,32 @@ vstatus_parse()
 }
 vstatus_run()
 {
-  local quiet recursive prerelPrefix forOpts=() ref recursive=true
+  local prerelPrefix forOpts=() ref recursive=true
   vstatus_parse "$@" || return $?
 
-  if [[ $recursive == true ]]; then
-    . git-for -q "${forOpts[@]}" -- "vstatus_main >/dev/null"
-  else
-    module_run vstatus_main "$ref"
-  fi
+  module_run vstatus_main "$ref"
 }
 vstatus_main()
 {
-  local ref=$(git_symbolic_ref ${1:-HEAD})
+  [ ${#moduleSubmodulePaths[@]} -eq 0 ] && unset recursive
+
+  if [[ $recursive == true ]]; then
+    . git-for "${forOpts[@]}" -- vstatus_node "$@"
+  else
+    module_run vstatus_node "$@"
+  fi
+}
+vstatus_node()
+{
+  local ref=$(git_symbolic_ref "${1:-HEAD}") verbose
+  [[ -z $recursive ]] && verbose=true
+  # ZOU_TRACE=true io_trace "vstatus_node ${*@Q} -- $(print_vars ref verbose)"
   if ! ref_exists "$ref"; then
-    io_error "Branch '$ref' does not exist" "$moduleTracePrefix"
-    return 1
+    ref=$(branch_realize $ref)
+    if ! ref_exists "$ref"; then
+      io_error "Branch '$1' does not exist" "$moduleTracePrefix"
+      return 1
+    fi
   fi
   local ltag stag ntag lsuf delta tags vbranch
   ltag=$(vtag_describe $ref)
@@ -51,18 +61,16 @@ vstatus_main()
   # get the highest vtag on vbranch
   stag=$(vtag_highest $vbranch)
 
+  # Already published at   v12.1.1 -- next version = v12.1.2
+  # 123 commit[s] ahead of v12.1.1 -- next version = v12.1.2
   ntag=$(vtag_increment "$stag" "$prerelPrefix")
   if [[ -z $lsuf ]]; then
-    io_message "Already published at ${Brown}$stag" "$moduleTracePrefix" LightBlue
-    [[ -z $quiet ]] && io_info "Next version      at ${Brown}$ntag" "$moduleTracePrefix"
+    io_message "Already published   at ${Brown}$(string_pad_right 8 $stag)${LightBlue} -- next version = ${Brown}$(string_pad_right 8 $ntag)" "$moduleTracePrefix" LightBlue
   else
-    [[ -z $quiet ]] && {
-      io_info "Actual version at ${Brown}$stag" "$moduleTracePrefix"
-      io_info "Next   version at ${Brown}$ntag" "$moduleTracePrefix"
-    }
     delta=${lsuf%-g*}
     delta=${delta#-}
-    io_info "Active branch is $(string_pad_left 3 ${Brown}$delta${Cyan}) commit[s] ahead of tag ${Brown}$stag" "$moduleTracePrefix"
+    # io_info "Active branch is ${Brown}$(string_pad_left 3 $delta)${Cyan} commit[s] ahead of tag ${Brown}$(string_pad_right 8 $stag)${Cyan} -- next version = ${Brown}$(string_pad_right 8 $ntag)" "$moduleTracePrefix"
+    io_info "${Brown}$(string_pad_left 3 $delta)${Cyan} commit[s] ahead of ${Brown}$(string_pad_right 8 $stag)${Cyan} -- next version = ${Brown}$(string_pad_right 8 $ntag)" "$moduleTracePrefix"
   fi
   return 0
 }
