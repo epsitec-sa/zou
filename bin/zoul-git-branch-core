@@ -312,6 +312,7 @@ branch_set_upstream()
 branch_move()
 {
   local branch1=$1 branch2=$2
+  [[ -z $branch1 || -z $branch2 ]] && { io_error "branch_move: missing argument[s]" "$moduleTracePrefix"; return 1; }
   if git checkout $branch1 &>/dev/null; then
     git checkout - &>/dev/null
     git ls-remote --heads --exit-code origin "$branch1" &>/dev/null || git push origin "$branch1"
