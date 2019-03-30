@@ -20,7 +20,11 @@ branchChangedEvent+=( _module_reset_scope )
 module_run()
 {
   # ZOU_TRACE=true io_trace "module_run ${*@Q}"
-  _module_scope_startup _module_scope "$@"
+  if [[ $moduleScopeInitialized == true ]]; then
+    $1 "${@:2}"
+  else
+    _module_scope_startup _module_scope "$@"
+  fi
 }
 # usage:
 #   module_visit sm-path next ...
