@@ -1,7 +1,8 @@
 #!/bin/bash
 
 [[ -z $ZOUL_GIT_MODULE ]]      && . zoul-git-module
-[[ -z $ZOUL_GIT_BRABCH_CORE ]] && . zoul-git-branch-core
+[[ -z $ZOUL_GIT_BRANCH_CORE ]]   && . zoul-git-branch-core
+[[ -z $ZOUL_GIT_BRANCH_SELECT ]] && . zoul-git-branch-select
 
 attach_parse()
 {
@@ -11,11 +12,16 @@ attach_parse()
     -*) forOpts+=($1);;
   esac; shift; done
 }
-
 attach_run()
 {
   local recursive=true forOpts=()
   attach_parse "$@" || return $?
+
+  module_run attach_main
+}
+attach_main()
+{
+  [ ${#moduleSubmodulePaths[@]} -eq 0 ] && unset recursive
 
   if [[ $recursive = true ]]; then
     . git-for "${forOpts[@]}" -- 'attach_node'
@@ -25,7 +31,9 @@ attach_run()
 }
 attach_node()
 {
-  branch_try_attach 'HEAD'
+  local vtag delta alias
+  vtag_set_info $(vtag_describe HEAD)
+  branch_try_attach 'HEAD' '' '' "$alias"
 }
 
 attach_run "$@"
