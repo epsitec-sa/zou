@@ -10,7 +10,6 @@ for_parse()
   while [[ "$#" > 0 ]]; do case "$1" in
     --) shift; forCommand+=("$@"); break;;
     -h|--help) zou-help $0; exit 0;;
-    -q|--quiet)         quiet=true;;
     -e|--stop-on-error) stopOnError=true;;
     -a|--all)           noSkuFilter=true;;
     -p|--deep)          noSelectFilter=true;;
@@ -30,7 +29,7 @@ for_parse()
 for_run()
 {
   # parse command line
-  local jobsCount quiet stopOnError \
+  local jobsCount stopOnError \
         noSkuFilter noSelectFilter \
         smOnly bottomUp visitAncestors \
         zou_command \
