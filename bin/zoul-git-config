@@ -23,7 +23,7 @@ config_scope()
   # setup config context
   local configSkuInclude configSkuExclude \
         configSelectInclude configSelectExclude configSelectExcludeIds \
-        configScopeEnabled=true
+        configScopeInitialized=true
   
   _config_reset_scope
 
@@ -40,7 +40,7 @@ _config_reset_scope()
 {
   # io_trace "_config_reset_scope"
 
-  [[ $configScopeEnabled == true ]] || return 0
+  [[ $configScopeInitialized == true ]] || return 0
 
   if [ ${#moduleSubmodulePaths[@]} -eq 0 ]; then
     configSkuExclude=()
