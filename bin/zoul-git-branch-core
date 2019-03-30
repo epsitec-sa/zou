@@ -282,8 +282,14 @@ branch_checkout()
         fi
       fi
       if [[ -n $alias ]]; then
-        local acolor=Brown
-        [[ $alias =~ ^\> ]] && acolor=LightPurple
+        local acolor=Green
+        if [[ $alias =~ -@ ]]; then
+          # vnode
+          acolor=Brown
+        elif [[ $alias =~ ^\> ]]; then
+          # delta != 0
+          acolor=LightPurple
+        fi
         line="$line (${!acolor}$alias${!color})"
       fi
       io_message "$line" "$moduleTracePrefix" $color
