@@ -9,7 +9,7 @@ zou_banner()
       break
     }
   done < "$zouDir/Version.props"
-  printf "%b\n\n" "\e[1;34mZou tools [Version \e[0;32m$version\e[1;34m]
+  printf "%b" "\e[1;34mZou tools [Version \e[0;32m$version\e[1;34m]
 Copyright © 2019, EPSITEC SA, CH-1400 Yverdon-les-Bains, Switzerland"
 }
 zou_help()
@@ -49,7 +49,7 @@ zou_setup()
     printf '%b\n' "$message"
   else
     message="${Cyan}[zou]${NC} : ${Cyan}Downloading, please wait...${NC}"
-    printf '%b\n' "$message"
+    printf '%b\n\n' "$message"
     git fetch --prune --all &>/dev/null
     git fetch --tags --force &>/dev/null
     git merge FETCH_HEAD &>/dev/null

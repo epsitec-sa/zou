@@ -216,8 +216,9 @@ repo_submodule_path()
 
 repo_url_from_path()
 {
-  local pwd=$PWD; cd "${1:-.}"
-  local url=$(git config remote.origin.url)
+  local pwd=$PWD url
+  cd "${1:-.}"
+  url=$(git config remote.origin.url)
   cd $pwd
   echo $url
 }
