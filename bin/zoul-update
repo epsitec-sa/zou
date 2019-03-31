@@ -1,19 +1,22 @@
 #!/bin/bash
 
-[[ -z $ZOUL_CONFIG ]]     && . zoul-config
-[[ -z $ZOUL_GIT_MODULE ]] && . zoul-git-module
+[[ -z $ZOUL_CONFIG ]]            && . zoul-config
+[[ -z $ZOUL_GIT_MODULE ]]        && . zoul-git-module
+[[ -z $ZOUL_GIT_BRANCH_SELECT ]] && . zoul-git-branch-select
 
 zou_parse()
 {
   while [[ "$#" > 0 ]]; do case "$1" in
     -z|--zou-only) zouOnly=true;;
+    ---version)    actualVersion=$2; shift;;
     *)             selectArgs+=($1);;
   esac; shift; done
 }
 
 zou_update()
 {
-  local resetConfig zouOnly selectArgs=()
+  local resetConfig zouOnly actualVersion selectArgs=()
+  unset 
   zou_parse "$@"
   
   config_setup
@@ -22,13 +25,35 @@ zou_update()
     # zou repo alone, fetch has already been done
     . git-select "${selectArgs[@]}"
   else
-    # zou repo inside zou-dev bundle, synchronize and select all
-    cd "$bundleRoot"
-    . git-sync
-    . git-select "${selectArgs[@]}"
+    # zou repo inside zou-dev bundle
+    module_visit "$bundleRoot" zou_update_bundle "${selectArgs[@]}"
   fi
 
-  io_warning "Update finished, press the [Enter] key." "$moduleTracePrefix"
+  printf '\n'
+
+  local vtag delta alias version
+  vtag_set_info $(vtag_describe $moduleBranch)
+  io_set_version
+  local tracePrefix="${Cyan}[zou]${NC}" traceVersion traceMessage
+  if [[ $actualVersion == $version ]]; then
+    traceVersion="still using ${Green}$version${Brown}"
+  else
+    traceVersion="switched to ${Green}$version${Brown}"
+  fi
+  [ $delta -gt 0 ] && traceVersion="$traceVersion in dev mode, ${LightPurple}$delta${Brown} commit[s] ahead"
+  traceMessage="Update finished ($traceVersion)."
+  io_warning "$traceMessage" "$tracePrefix"
+}
+zou_update_bundle()
+{
+  io_info "Synchronizing, please wait..." "$moduleTracePrefix"
+  . git-sync --no-push
+
+  local vtag delta alias acolor=Brown
+  vtag_set_info $(vtag_describe $moduleBranch)
+  [ $delta -gt 0 ] && acolor=LightPurple
+  io_info "Activating bundle (${!acolor}$alias${Cyan}), please wait..." "$moduleTracePrefix"
+  . git-select "$@"
 }
 
 module_run zou_update "$@"
