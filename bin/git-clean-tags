@@ -33,6 +33,12 @@ clean_run()
   local cleanPushTags forceMove recursive forOpts=()
   clean_parse "$@" || return $?
   
+  module_run clean_main
+}
+clean_main()
+{
+  [ ${#moduleSubmodulePaths[@]} -eq 0 ] && unset recursive
+
   if [[ $recursive = true ]]; then
     . git-for "${forOpts[@]}" -- 'clean_node'
   else
