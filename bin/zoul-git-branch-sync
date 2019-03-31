@@ -67,7 +67,7 @@ _branch_sync_visit()
           # nothing tracked
           if branch_is_prod "$l"; then
             # automatically track vbranches
-            local remote=$(git remote)
+            local remote=$(git remote | head -n1)
             branch_set_upstream $l $remote && {
               r="$remote/$l"
               i='>'
