@@ -125,9 +125,10 @@ tag_move_semver_orphan()
       atag=${BASH_REMATCH[1]}
       ! vtag_is_semver $atag && continue
       branch="${BASH_REMATCH[1]}${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
-      ! ref_exists "$branch" && continue
-      # io_trace "tag_move_semver_orphan $(print_vars tag atag branch)"
-      tag_move $tag $atag $forceMove
+      ref_exists "$branch" || ref_exists "origin/$branch" && {
+        # io_trace "tag_move_semver_orphan $(print_vars tag atag branch)"
+        tag_move $tag $atag $forceMove
+      }
     fi
   done
 }
