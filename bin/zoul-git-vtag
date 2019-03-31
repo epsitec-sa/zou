@@ -4,10 +4,11 @@
 #   [[ -z $ZOUL_GIT_VTAG ]] && . zoul-git-vtag
 ZOUL_GIT_VTAG=true
 
-[[ -z $ZOUL_CORE ]]     && . zoul-core
-[[ -z $ZOUL_GIT_CORE ]] && . zoul-git-core
-[[ -z $ZOUL_GIT_REF ]]  && . zoul-git-ref
-[[ -z $ZOUL_GIT_TAG ]]  && . zoul-git-tag
+[[ -z $ZOUL_CORE ]]            && . zoul-core
+[[ -z $ZOUL_GIT_CORE ]]        && . zoul-git-core
+[[ -z $ZOUL_GIT_REF ]]         && . zoul-git-ref
+[[ -z $ZOUL_GIT_TAG ]]         && . zoul-git-tag
+[[ -z $ZOUL_GIT_BRANCH_CORE ]] && . zoul-git-branch-core
 
 vtag_get_patch()  { vtag_is_semver $1 && echo ${BASH_REMATCH[5]}; }
 
@@ -297,6 +298,10 @@ vtag_get_vbranch_name ()
 # - remote vbranch (ex: origin/1.0) if local vbranch does not exist
 vtag_get_vbranch()
 {
+  local vtag=$1 vbranch
+  vbranch=$(branch_realize $(vtag_get_vbranch_name $vtag))
+  [ $? -eq 0 ] && echo $vbranch
+  io_warning "vtag_get_vbranch: vtag '$vtag' has no associated vbranch"
 }
 vtag_highest_of()
 {
