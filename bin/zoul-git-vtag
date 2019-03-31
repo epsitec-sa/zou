@@ -226,9 +226,10 @@ vtag_visit_by_date()
 # - vtag description (ex: v1.0.0-rc1-5-ge5d2fe9)
 vtag_describe()
 {
-  local branch=$(git_symbolic_ref ${1:-HEAD}) match ltag stag
+  local branch=$(git_symbolic_ref ${1:-HEAD}) match ltag stag skipVNode=$2 exclude=('other/*')
+  [[ $skipVNode == true ]] && exclude+=('*-@')
   for match in $(ref_tag_fallback $branch 'v[0-9]*'); do
-    ltag=$(git describe --tags --match "$match" --exclude 'other/*' "$branch" 2>/dev/null)
+    ltag=$(git describe --tags --match "$match" ${exclude[@]/#/--exclude } "$branch" 2>/dev/null)
     if [[ -n $ltag ]]; then
       stag=${ltag%-*-g*}
       if git merge-base --is-ancestor $stag^{} $branch; then
