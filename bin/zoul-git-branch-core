@@ -183,19 +183,10 @@ branch_remove_remote_tracked()
 }
 
 # Check if a given branch name exists and convert it to its remote counterpart if it does not exist
-# Display error and return empty if branch is unknown
 branch_realize()
 {
-  if branch_is_local "$1" || branch_is_remote "$1" || [[ $1 == HEAD ]]; then
-    echo "$1"
-  else
-    local remote=$(git remote)
-    if branch_is_remote "$remote/$1"; then
-      echo "$remote/$1"
-    else
-      return 1
-    fi
-  fi
+  local ref=$(git_symbolic_ref "$1")
+  { [[ "$ref" == 'HEAD' ]] || branch_is_local "$ref"; } && echo "$ref" || branch_upstream "$ref"
 }
 
 branch_without_remote_prefix() { branch_is_remote $1 && echo ${1#*/} || echo $1; }
@@ -203,7 +194,7 @@ branch_without_remote_prefix() { branch_is_remote $1 && echo ${1#*/} || echo $1;
 branch_ensure_local()
 {
   if ! branch_is_local $1; then
-    git branch $1 "$(git remote)/$1" >/dev/null
+    git branch "$1" "$(branch_upstream $1)" >/dev/null
   fi
 }
 # out:
