@@ -281,12 +281,12 @@ branch_checkout()
       fi
       if [[ -n $alias ]]; then
         local acolor=Green
-        if [[ $alias =~ -@ ]]; then
-          # vnode
-          acolor=Brown
-        elif [[ $alias =~ ^\> ]]; then
+        if [[ $alias =~ ^\> ]]; then
           # delta != 0
           acolor=LightPurple
+        elif [[ $alias =~ -@ ]]; then
+          # vnode
+          acolor=Brown
         fi
         line="$line (${!acolor}$alias${!color})"
       fi
