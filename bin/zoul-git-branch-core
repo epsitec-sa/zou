@@ -386,7 +386,7 @@ branch_try_attach()
 {
   # ZOU_TRACE=true io_trace "branch_try_attach ${*@Q}"
 
-  local ref=$1 sku=$2 showCheckout=${3:-true} alias=$4
+  local ref=$1 sku=$2 forceCheckout=${3:-true} alias=$4
   [[ -z $sku ]] && sku=$bundleBranch
   [[ -z $sku ]] && sku=$(branch_current_root_branch)
   [[ -z $alias ]] && alias=$ref
@@ -394,8 +394,8 @@ branch_try_attach()
   local branches=( $(branch_list_attach_candidates $ref $sku) )
   # ZOU_TRACE=true io_trace "branch_try_attach -- $(print_vars ref sku branches[@])"
   if [ ${#branches[@]} -eq 0 ]; then
-    branch_checkout "$ref" $showCheckout "$alias"
+    branch_checkout "$ref" $forceCheckout "$alias"
   else
-    branch_checkout "${branches[0]}" $showCheckout "$alias"
+    branch_checkout "${branches[0]}" $forceCheckout "$alias"
   fi
 }

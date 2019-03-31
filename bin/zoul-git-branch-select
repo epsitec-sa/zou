@@ -98,7 +98,7 @@ branch_select_auto()
 {
   # # ZOU_TRACE=true io_trace "branch_select_auto ${*@Q}"
 
-  local sku=$1 hint=$2 showCheckout=${3:-true} mroot broot ec=0
+  local sku=$1 hint=$2 forceCheckout=${3:-true} mroot broot ec=0
   [[ -z $sku ]]   && sku=$bundleBranch
   [[ -z $sku ]]   && sku=$(branch_current_root_branch)
   [[ -z $mroot ]] && mroot=$moduleRoot
@@ -110,9 +110,9 @@ branch_select_auto()
   local bestMatch=$(branch_best_match_dev "$sku")
   # ZOU_TRACE=true  io_trace "branch_select_auto -- $(print_vars sku hint bestMatch mroot broot)"
   if [[ "$mroot" == "$broot" || $hint == 'dev' ]]; then
-    branch_select_branch "$bestMatch" "$showCheckout" >/dev/null || ec=$?
+    branch_select_branch "$bestMatch" "$forceCheckout" >/dev/null || ec=$?
   else
-    branch_select_vtag  "$bestMatch" "$showCheckout" >/dev/null || ec=$?
+    branch_select_vtag  "$bestMatch" "$forceCheckout" >/dev/null || ec=$?
   fi
   if [ $ec -eq 10 ]; then
     # cannot checkout
@@ -124,22 +124,22 @@ branch_select_auto()
 }
 branch_select_branch()
 {
-  local branch=$1 showCheckout=${2:-true}
+  local branch=$1 forceCheckout=${2:-true}
   local vtag delta alias ec=0
   vtag_set_info $(vtag_describe $branch)
   
   # ZOU_TRACE=true io_trace "branch_select_branch ${*@Q} -- $(print_vars branch vtag delta alias)"
-  branch_checkout "$branch" "$showCheckout" "$alias" >/dev/null || return 10
+  branch_checkout "$branch" "$forceCheckout" "$alias" >/dev/null || return 10
   echo $branch
 }
 branch_select_vtag()
 {
   # branch can be remote or local
   # ZOU_TRACE=true io_trace "branch_select_vtag ${*@Q}"
-  local branch=$1 showCheckout=${2:-true} ltag
+  local branch=$1 forceCheckout=${2:-true} ltag
 
   ltag=$(vtag_describe "$branch") || {
-    branch_checkout "$branch" "$showCheckout" || return 10
+    branch_checkout "$branch" "$forceCheckout" || return 10
     echo $branch
     return 2  # no vtag
   }
@@ -148,13 +148,13 @@ branch_select_vtag()
   vtag_set_info $ltag
   # ZOU_TRACE=true io_trace "branch_select_vtag -- $(print_vars branch vtag delta alias)"
   if vtag_is_vnode $vtag; then
-    branch_checkout "$branch" "$showCheckout" "$alias" || return 10
+    branch_checkout "$branch" "$forceCheckout" "$alias" || return 10
     echo $vtag
     return 2  # vnode
   fi
 
   if [[ $delta -eq 0 ]]; then
-    branch_checkout "$branch" "$showCheckout" "$vtag" || return 10
+    branch_checkout "$branch" "$forceCheckout" "$vtag" || return 10
     echo $vtag
     return 1  # branch == vtag
   fi
@@ -164,7 +164,7 @@ branch_select_vtag()
     return 3  # vtag is more recent
   fi
 
-  branch_try_attach "$vtag" "$branch" "$showCheckout" || return 10
+  branch_try_attach "$vtag" "$branch" "$forceCheckout" || return 10
   echo $vtag
   return 0  # switched to vtag
 }
