@@ -9,13 +9,14 @@
 #    group tags pointing to the same commit hash
 #      create a lookup table with the commit hash as key and the commit tags (space separated) as value.
 
-[[ -z $ZOUL_CORE ]]        && . zoul-core
-[[ -z $ZOUL_GIT_TAG ]]     && . zoul-git-tag
-[[ -z $ZOUL_GIT_VTAG ]]    && . zoul-git-vtag
-[[ -z $ZOUL_GIT_CORE ]]    && . zoul-git-core
-[[ -z $ZOUL_GIT_REPO ]]    && . zoul-git-repo
-[[ -z $ZOUL_GIT_VBRANCH ]] && . zoul-git-vbranch
-[[ -z $ZOUL_GIT_MODULE ]]  && . zoul-git-module
+[[ -z $ZOUL_CORE ]]            && . zoul-core
+[[ -z $ZOUL_GIT_TAG ]]         && . zoul-git-tag
+[[ -z $ZOUL_GIT_VTAG ]]        && . zoul-git-vtag
+[[ -z $ZOUL_GIT_CORE ]]        && . zoul-git-core
+[[ -z $ZOUL_GIT_REPO ]]        && . zoul-git-repo
+[[ -z $ZOUL_GIT_VBRANCH ]]     && . zoul-git-vbranch
+[[ -z $ZOUL_GIT_MODULE ]]      && . zoul-git-module
+[[ -z $ZOUL_GIT_BRANCH_CORE ]] && . zoul-git-branch-core
 
 clean_parse()
 {
@@ -74,7 +75,7 @@ tag_stow_semver()
   # io_trace "tag_stow_semver $(print_vars tvbranches[@])"
   for tvbranch in "${tvbranches[@]}"; do
     # io_trace "tag_stow_semver $(print_vars tvbranch)"
-    ref_exists $tvbranch || ref_exists origin/$tvbranch && continue
+    branch_realize $tvbranch >/dev/null && continue
     # get all existing vbranches with same version
     vbranch_is_vbranch $tvbranch
     version=${BASH_REMATCH[2]}
@@ -117,7 +118,7 @@ tag_move_semver_orphan()
       # move orphaned semver tag to orphan folder
       ! vtag_is_semver $tag && continue
       branch="${BASH_REMATCH[1]}${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
-      ref_exists "$branch" || ref_exists "origin/$branch" && continue
+      branch_realize "$branch" >/dev/null && continue
       # io_trace "tag_move_semver_orphan $(print_vars tag branch)"
       tag_move $tag "other/orphan/$tag" $forceMove
     elif ref_is_orphan $tag; then
@@ -125,7 +126,7 @@ tag_move_semver_orphan()
       atag=${BASH_REMATCH[1]}
       ! vtag_is_semver $atag && continue
       branch="${BASH_REMATCH[1]}${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
-      ref_exists "$branch" || ref_exists "origin/$branch" && {
+      branch_realize "$branch" >/dev/null && {
         # io_trace "tag_move_semver_orphan $(print_vars tag atag branch)"
         tag_move $tag $atag $forceMove
       }

@@ -25,7 +25,7 @@ vcheck_run()
 }
 vcheck_node()
 {
-  local ec=0 lookup vtag pvtag vbranch rvbranch remote=$(git remote)
+  local ec=0 lookup vtag pvtag vbranch rvbranch
 
   io_info "Grouping vtags ordered by version..." "$moduleTracePrefix"
   lookup=$(vtag_group_by_version)
@@ -39,10 +39,10 @@ vcheck_node()
   vbranches=$(array_sort vbranches[@])
   for vbranch in $vbranches; do
     vtags=( ${byVersion[$vbranch]} )
-    if [[ -z $(git show-ref refs/heads/$vbranch) ]]; then
-      # local vbranch not found try remote vbranch
-      rvbranch=$remote/$vbranch
-      if [[ -z $(git show-ref refs/remotes/$rvbranch) ]]; then
+    if ! branch_is_local "$vbranch"; then
+      # local vbranch not found try upstream
+      rvbranch=$(branch_upstream $vbranch)
+      if [ $? -ne 0 ]; then
         io_warning "  Branch not found '$vbranch'" "$moduleTracePrefix"
         continue
       fi
