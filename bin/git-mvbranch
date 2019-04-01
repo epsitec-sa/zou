@@ -9,28 +9,52 @@ mvbranch_parse()
   while [[ "$#" > 0 ]]; do case "$1" in
     -h|--help) zou-help $0; exit 0;;
     --debug) debug=true;;
+    -n|--dry-run) dryRun='echo';;
     -*) io_error "unknown option: $1"; exit 1;;
     *) args+=("$1");;
   esac; shift; done
 }
 mvbranch_run()
 {
-  local args=()
+  local dryRun args=()
   mvbranch_parse "$@"
   module_run mvbranch_main "${args[@]}"
 }
 mvbranch_main()
 {
-  repo_require_clean_work_tree 'Cannot move branch[es]'
-
+  # ZOU_TRACE=true io_trace "mvbranch_main ${*@Q}"
   local branch1=$1 branch2=$2 branch
-  if ! branch_move $branch1 $branch2; then
+  if branch_exists "$branch1"; then
+    [[ $branch2 =~ /$ ]] && branch2="$branch2${branch1##*/}"
+    $dryRun branch_move $branch1 $branch2
+  else
     # assume branch1 and branch2 are folders
-    for branch in $(branch_list_all_flatten); do
-      if [[ $branch =~ ^${branch1%/}(/[^/]+$) ]]; then
-        branch_move $branch ${branch2%/}${BASH_REMATCH[1]}
-      fi
+    for branch in $(mvbranch_branch_enumerator "$1"); do
+      branch2=${branch2#.}            # remove leading dot from dest
+      dest=${branch2%/}/${branch##*/} # remove trailing slash from dest and concat branch name without folder
+      # ZOU_TRACE=true io_trace "mvbranch_main -- $(print_vars branch branch2 dest)"
+      $dryRun branch_move $branch ${dest#/}
     done
   fi
 }
+mvbranch_branch_enumerator()
+{
+  local branch
+  case "$1" in
+    .)
+      for branch in $(branch_list_all_flatten); do
+        [[ $branch =~ (/|^master$) ]] && continue
+        echo $branch
+      done;;
+    *)
+      local regex
+      wildcard_set_regex "$1"
+      regex="^$regex"
+      for branch in $(branch_list_all_flatten); do
+        [[ $branch =~ /dev$ ]] && continue
+        [[ $branch =~ $regex ]] && echo $branch
+      done;;
+  esac
+}
+
 mvbranch_run "$@"

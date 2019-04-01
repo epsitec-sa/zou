@@ -1,10 +1,22 @@
-usage: git mvbranch <source-branch> <target-branch>
-   or: git mvbranch <source-folder> <target-folder>
+usage: git mvbranch [<options>] [--] <source-branch> <target-branch>
+   or: git mvbranch [<options>] [--] <source-branch> <target-folder>/
+   or: git mvbranch [<options>] [--] <source-glob> <target-folder>[/]
+   or: git mvbranch [<options>] [--] <source-glob> .
+   or: git mvbranch [<options>] [--] . <target-folder>
    
-Rename <source-branch> to <target-branch>, or move <source-folder> branches to <target-folder> branches
+Rename <source-branch> to <target-branch>
+or move <source-branch> to <target-folder>
+or move <source-glob> branches to <target-folder>
+or move <source-glob> to root folder
+or move root branches to <target-folder>
 
     -h|--help               display help
+    -n|--dry-run            do not execute, print out commands that will be executed
+    -u|--no-push)           do not push branchs
     
 example:
-    git mvbranch 1.0 sku/fact/std/1.0      # rename '1.0' branch to 'sku/fact/std/1.0'
-    git mvbranch sku/fact sku/fact/std     # move 'sku/fact/*' branches to 'sku/fatc/std'
+    git mvbranch 1.0 1.1                   # rename branch '1.0' to '1.1'
+    git mvbranch sku/1.0 sku/fact/std/     # rename branch 'sku/1.0' to 'sku/fact/std/1.0'
+    git mvbranch sku/fact/* sku/fact/std   # move branches 'sku/fact/*' to 'sku/fact/std' folder
+    git mvbranch sku/fact/* .              # move branches 'sku/fact/*' to root folder
+    git mvbranch . sku/fact                # move root branches to 'sku/fact' folder
