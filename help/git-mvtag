@@ -1,18 +1,22 @@
 usage: git mvtag [<options>] [--] <source-tag> <target-tag>
-   or: git mvtag [<options>] [--] <source-glob> <target-folder>
+   or: git mvtag [<options>] [--] <source-tag> <target-folder>/
+   or: git mvtag [<options>] [--] <source-glob> <target-folder>[/]
    or: git mvtag [<options>] [--] <source-glob> .
    or: git mvtag [<options>] [--] . <target-folder>
    
 Rename <source-tag> to <target-tag>
+or move <source-tag> to <target-folder>
 or move <source-glob> tags to <target-folder>
 or move <source-glob> to root folder
 or move root tags to <target-folder>
 
     -h|--help               display help
     -n|--dry-run            do not execute, print out commands that will be executed
+    -u|--no-push)           do not push tags
     
 example:
-    git mvtag v1.0.0 v1.0.1             # rename 'v1.0.0' tag to 'v1.0.1'
-    git mvtag sku/fact/* sku/fact/std   # move 'sku/fact/*' tags to 'sku/fatc/std' folder
-    git mvtag server/* .                # move 'server/*' tags to root folder
-    git mvtag . server                  # move root tags to 'server' folder
+    git mvtag v1.0.0 v1.0.1             # rename tag 'v1.0.0' to 'v1.0.1'
+    git mvtag sku/v1.0.0 sku/fact/std/  # rename tag 'sku/v1.0.0' to 'sku/fact/std/v1.0.0'
+    git mvtag sku/fact/* sku/fact/std   # move tags 'sku/fact/*' to 'sku/fact/std' folder
+    git mvtag sku/fact/* .              # move tags 'sku/fact/*' to root folder
+    git mvtag . sku/fact                # move root tags to 'sku/fact' folder
