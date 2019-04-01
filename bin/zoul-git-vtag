@@ -301,7 +301,7 @@ vtag_get_vbranch()
 {
   local vtag=$1 vbranch
   vbranch=$(branch_realize $(vtag_get_vbranch_name $vtag))
-  [ $? -eq 0 ] && echo $vbranch
+  [ $? -le 1 ] && echo $vbranch
   io_warning "vtag_get_vbranch: vtag '$vtag' has no associated vbranch"
 }
 vtag_highest_of()

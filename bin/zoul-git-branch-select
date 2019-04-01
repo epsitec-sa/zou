@@ -42,7 +42,7 @@ branch_best_match_prod()
 {
   local sku=$1 branch
   branch=$(branch_realize $sku 2>/dev/null)
-  if [ $? -eq 0 ]; then
+  if [ $? -le 1 ]; then
     echo $branch
   else
     vtag_get_vbranch_name $(vtag_describe $(branch_best_match_dev $sku))

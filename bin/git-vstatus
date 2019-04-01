@@ -43,7 +43,7 @@ vstatus_node()
   # ZOU_TRACE=true io_trace "vstatus_node ${*@Q} -- $(print_vars ref verbose)"
   if ! ref_exists "$ref"; then
     ref=$(branch_realize $ref)
-    if ! ref_exists "$ref"; then
+    if [ $? -gt 1 ]; then
       io_error "Branch '$1' does not exist" "$moduleTracePrefix"
       return 1
     fi

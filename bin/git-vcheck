@@ -59,7 +59,7 @@ vcheck_node()
   for vbranch in $vbranches; do
     ec=0
     rvbranch=$(branch_realize $vbranch)
-    if [ $? -eq 0 ]; then
+    if [ $? -le 1 ]; then
       for vtag in ${byVersion[$vbranch]}; do
         if ! git merge-base --is-ancestor "$vtag" "$rvbranch"; then
           io_message "  vtag '$vtag' is not inside vbranch '$rvbranch'" "$moduleTracePrefix" LightPurple
