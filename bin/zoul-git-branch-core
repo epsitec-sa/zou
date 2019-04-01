@@ -26,6 +26,11 @@ branch_upstream()
   done
   return 1
 }
+branch_exists()
+{
+  branch_realize "$1" >/dev/null
+  [ $? -le 1 ]
+}
 branch_list_local()     { git for-each-ref --format='%(refname:short)' refs/heads; }
 branch_list_local_at()
 {

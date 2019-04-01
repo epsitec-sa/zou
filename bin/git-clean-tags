@@ -81,7 +81,7 @@ tag_stow_semver()
   # io_trace "tag_stow_semver $(print_vars tvbranches[@])"
   for tvbranch in "${tvbranches[@]}"; do
     # io_trace "tag_stow_semver $(print_vars tvbranch)"
-    branch_realize $tvbranch >/dev/null && continue
+    branch_exists $tvbranch && continue
     # get all existing vbranches with same version
     vbranch_is_vbranch $tvbranch
     version=${BASH_REMATCH[2]}
@@ -124,7 +124,7 @@ tag_move_semver_orphan()
       # move orphaned semver tag to orphan folder
       ! vtag_is_semver $tag && continue
       branch="${BASH_REMATCH[1]}${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
-      branch_realize "$branch" >/dev/null && continue
+      branch_exists "$branch" && continue
       # io_trace "tag_move_semver_orphan $(print_vars tag branch)"
       tag_move $tag "other/orphan/$tag" $forceMove
     elif ref_is_orphan $tag; then
@@ -132,7 +132,7 @@ tag_move_semver_orphan()
       atag=${BASH_REMATCH[1]}
       ! vtag_is_semver $atag && continue
       branch="${BASH_REMATCH[1]}${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
-      branch_realize "$branch" >/dev/null && {
+      branch_exists "$branch" && {
         # io_trace "tag_move_semver_orphan $(print_vars tag atag branch)"
         tag_move $tag $atag $forceMove
       }
