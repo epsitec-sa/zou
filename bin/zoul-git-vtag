@@ -48,7 +48,7 @@ vtag_list()
     # vbranch
     local prefix=${BASH_REMATCH[1]}
     local version=${BASH_REMATCH[2]}
-    regex="^$(regex_escape $prefix)v$(regex_escape $version)"
+    regex="^$(wildcard_to_regex $prefix)v$(wildcard_to_regex $version)"
     # io_debug prefix vtag_list
     # io_debug version vtag_list
   else
@@ -95,9 +95,9 @@ vtag_highest()
     [[ -z $allowDuplicates && $moduleRoot == $bundleRoot ]] && allowDuplicates=true
     if [[ $allowDuplicates == true ]]; then
       # restrict vtags to vbranch folder
-      regex="^$(regex_escape $folder)v$(regex_escape $version)"
+      regex="^$(wildcard_to_regex $folder)v$(wildcard_to_regex $version)"
     else
-      regex="^(.*/)?v$(regex_escape $version)"
+      regex="^(.*/)?v$(wildcard_to_regex $version)"
     fi
     # io_trace "vtag_highest $(print_vars vbranch allowDuplicates skipVNodes regex)"
     local tags=() tag
@@ -262,7 +262,7 @@ vtag_best_match_vtag_at()
   vtags=( $(vtag_vtags_at $ref) )
   [ ${#vtags[@]} -eq 0 ] && return 1
   for hint in $(ref_tag_fallback $ref 'v'); do
-    reHint=$(regex_escape "$hint")
+    reHint=$(wildcard_to_regex "$hint")
     vHint="^${reHint}[0-9]+\.[0-9]+\.[0-9]+"
     # echo vtagHint=$vHint >&2
     for tag in ${vtags[@]}; do

@@ -216,8 +216,30 @@ assert_exit_code()
     io_success "expected exit code '$status' OK" "$label"
   fi
 }
-regex_whole()  { echo "^${1//./\\.}$"; }
-regex_escape() { echo "${1//./\\.}"; }
+wildcard_to_regex_match_whole()
+{
+  local regex
+  wildcard_set_regex_match_whole "$1"
+  echo "$regex"
+}
+wildcard_to_regex()
+{
+  local regex
+  wildcard_set_regex "$1"
+  echo "$regex"
+}
+wildcard_set_regex_match_whole()
+{
+  wildcard_set_regex "$1"
+  regex="^$regex$"
+}
+wildcard_set_regex()
+{
+  regex="${1//./\\.}"         # .   ->   \.
+  regex="${regex//\*/\.\*}"   # *   ->   .*
+  regex="${regex//\?/\.}"     # ?   ->   .
+  # ZOU_TRACE=true io_trace "wildcard_set_regex ${*@Q} -> $(print_vars regex)"
+}
 
 array_remove_array()
 {

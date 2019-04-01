@@ -45,7 +45,7 @@ vtable_row()
     local sku=${BASH_REMATCH[1]}
     local major=${BASH_REMATCH[2]}
     local minor=${BASH_REMATCH[3]}
-    local reSku=$(regex_escape $sku)
+    local reSku=$(wildcard_to_regex $sku)
     vminor=$(echo $tags | grep -m1 "^${reSku}v$major\.$minor")
     vmajor=$(echo $tags | grep -m1 "^${reSku}v$major\.")
   fi

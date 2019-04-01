@@ -23,7 +23,7 @@ config_sku_exclude()
 {
   local path=$1
   [[ -z $path ]] && path=$(repo_path_relative_to_module_root)
-  local rePath=$(regex_whole "$path")
+  local rePath=$(wildcard_to_regex_match_whole "$path")
   git config --file "$moduleConfigFile" --get-all "sku.exclude" "$rePath" >/dev/null \
   || git config --file "$moduleConfigFile" --add "sku.exclude" "$path"
 
@@ -38,7 +38,7 @@ config_sku_exclude_many()
 {
   local path rePath
   for path in "$@"; do
-    rePath=$(regex_whole "$path")
+    rePath=$(wildcard_to_regex_match_whole "$path")
     git config --file "$moduleConfigFile" --get-all "sku.exclude" "$rePath" >/dev/null \
     || git config --file "$moduleConfigFile" --add "sku.exclude" "$path"
   done
@@ -50,7 +50,7 @@ config_sku_include()
 {
   local path=$1
   [[ -z $path ]] && path=$(repo_path_relative_to_module_root)
-  local rePath=$(regex_escape "$path")
+  local rePath=$(wildcard_to_regex "$path")
   git config --file "$moduleConfigFile" --unset-all "sku.exclude" "$rePath"
 
   git update-index --add -- "$moduleConfigFile" &>/dev/null \
@@ -67,7 +67,7 @@ config_sku_include_many()
 {
   local path rePath
   for path in $@; do
-    rePath=$(regex_whole "$path")
+    rePath=$(wildcard_to_regex_match_whole "$path")
     git config --file "$moduleConfigFile" --unset-all "sku.exclude" "$rePath"
   done
 
@@ -79,7 +79,7 @@ config_sku_is_excluded()
 {
   local path=$1
   [[ -z $path ]] && path=$(repo_path_relative_to_module_root)
-  local rePath=$(regex_whole "$path")
+  local rePath=$(wildcard_to_regex_match_whole "$path")
   git config --file "$moduleConfigFile" --get-all "sku.exclude" "$rePath" >/dev/null
 }
 config_sku_list_excluded()

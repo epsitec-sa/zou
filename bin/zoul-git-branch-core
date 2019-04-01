@@ -127,7 +127,7 @@ branch_list_local_can_delete()
   local l c
   while read l; do
     # exclude branch 'master' and current branch
-    [[ -z $c ]] && c=$(regex_escape $(branch_current))
+    [[ -z $c ]] && c=$(wildcard_to_regex $(branch_current))
     [[ $l =~ (master|$c) ]] || echo $l
   done < <(branch_list_local_tracked_merged)
 }
@@ -358,7 +358,7 @@ branch_list_attach_candidates()
     version="${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
     if [[ -n $folder ]]; then
       branches=()
-      hint=$(regex_escape $folder)
+      hint=$(wildcard_to_regex $folder)
       for branch in $(branch_list_all_at_flatten $ref); do
         [[ $branch =~ ^$hint ]] && branches+=( $branch )
       done
@@ -388,7 +388,7 @@ branch_list_attach_candidates()
     if [[ -n $version ]]; then
       for hint in $(ref_prod_fallback "${sku%/dev}/prod"); do
         # replace prod suffix with vbranch regex
-        hint=$(regex_escape "${hint/%prod/$version}")
+        hint=$(wildcard_to_regex "${hint/%prod/$version}")
         # io_trace "branch_list_attach_candidates -- $(print_vars ref sku hint)"
         for branch in ${branches[@]}; do
           [[ $branch =~ ^$hint ]] && { echo $branch; break 2; }
