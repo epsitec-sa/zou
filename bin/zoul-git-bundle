@@ -8,13 +8,14 @@ ZOUL_GIT_BUNDLE=true
 
 bundle_register()
 {
-  local url=$1 path=$2
-  git config --global "zou.$url.path" "$path"
+  local url=$1 path=$2 opath
+  git config --global --unset "zou.$url.path" "$path"
+  git config --global --add "zou.$url.path" "$path"
 }
 bundle_unregister()
 {
-  local url=$1
-  git config --global --unset "zou.$url.path"
+  local url=$1 path=$2
+  git config --global --unset "zou.$url.path" "$path"
 }
 bundle_set_registered_paths()
 {
@@ -49,7 +50,7 @@ _bundle_visitor()
   local bundleTracePrefix \
         bundleId=${bundleRoot##*/} \
         bundleUrl=$(git config remote.origin.url)
-        
+
   printf -v bundleTracePrefix "%-${bundleTracePrefixLength}s" "[$bundleId]"
   bundleTracePrefix="${Cyan}$bundleTracePrefix${NC}"
 

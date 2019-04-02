@@ -12,7 +12,7 @@ bundle_parse()
     -h|--help) zou-help $0; exit 0;;
     -u|--unregister) unregister=true;;
     -*) io_error "unknown option '$1'"; return 1;;
-    *) bundlePaths+=("$1")
+    *)  bundlePaths+=( "$(realpath $1)" )
   esac; shift; done
 }
 bundle_run()
@@ -43,7 +43,7 @@ _bundle_register()
 _bundle_unregister()
 {
   local url=$(git config remote.origin.url)
-  bundle_unregister "$url"
+  bundle_unregister "$url" "$bundleRoot"
 }
 _bundle_status()
 {
