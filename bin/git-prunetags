@@ -1,42 +1,64 @@
 #!/bin/bash
 
+[[ -z $ZOUL_GIT_BUNDLE ]] && . zoul-git-bundle
 [[ -z $ZOUL_GIT_MODULE ]] && . zoul-git-module
 
 ptags_parse()
 {
   while [[ "$#" > 0 ]]; do case "$1" in
-    -h|--help) zou-help $0; exit 0;;
-    .)  unset recursive;;
-    -*) forOpts+=($1);;
+    -h|--help)   zou-help $0; exit 0;;
+    -q|--quiet)  quiet=true;;
+    -g|--global) global=true;;
+    .)           unset recursive;;
+    -*)          forOpts+=($1);;
   esac; shift; done
 }
 ptags_run()
 {
-  local recursive=true forOpts=()
+  local recursive=true forOpts=() quiet global
   ptags_parse "$@" || return $?
 
-  if [[ $recursive = true ]]; then
-    . git-for "${forOpts[@]}" -- 'ptags_node'
+  if [[ $global == true ]]; then
+    ptags_prune_registered_bundles_tags
+  elif [[ $recursive = true ]]; then
+    . git-for -a "${forOpts[@]}" -- 'ptags_node'
   else
     module_run ptags_node
   fi
 }
 ptags_node()
 {
-
-  local tag line
-  io_info "Deleting local tags..." "$moduleTracePrefix"
-  for tag in $(git tag --list); do
-    git tag --delete $tag &>/dev/null
-  done
-  io_info "Fetching remote tags..." "$moduleTracePrefix"
-  (git fetch --tags 2>&1) | \
-  while read line; do
+  if [[ $quiet == true ]]; then
+    git tag -d $(git tag -l) &>/dev/null
+    git fetch --tags &>/dev/null
+  else
+    io_info "Pruning tags..." "$moduleTracePrefix"
+    git tag -d $(git tag -l) &>/dev/null
+    local IFS=$'\n'
+    local lines=( $(git fetch --tags 2>&1) )
+    io_lock ptags_io_lines
+  fi
+}
+ptags_io_lines()
+{
+  local line
+  for line in "${lines[@]}"; do
     [[ -z $line ]] && continue
     [[ $line =~ ^.*\[new\ tag\][[:blank:]]+(.*)$ ]] && {
-      io_message "  ${BASH_REMATCH[1]}" "$moduleTracePrefix" LightGray
+      io_message_unsafe "  ${BASH_REMATCH[1]}" "$moduleTracePrefix" LightGray
     }
   done
+}
+ptags_prune_registered_bundles_tags()
+{
+  local bundleRegisteredPaths
+  bundle_set_registered_paths
+  bundle_visit_async 'bundleRegisteredPaths[@]' ptags_prune_bundle_tags
+}
+ptags_prune_bundle_tags()
+{
+  io_warning "Pruning tags, please wait..." "$bundleTracePrefix"
+  git-prunetags -q
 }
 
 ptags_run "$@"
