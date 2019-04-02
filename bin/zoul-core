@@ -4,6 +4,9 @@
 #   [[ -z $ZOUL_CORE ]] && . zoul-core
 ZOUL_CORE=true
 
+[[ -z $ZOUL_LOCK ]]    && . zoul-lock
+[[ -z $ZOUL_PROCESS ]] && . zoul-process
+
 # declare startup constants
 zou_startupPath=$(realpath "${BASH_SOURCE[-1]}")
 zou_startupFileName="${zou_startupPath##*/}"
@@ -87,13 +90,30 @@ io_trace()
   io_message "  $1" "$moduleTracePrefix" ${2:-Gray}
 }
 
+[[ -z $zou_ioLockDir ]] && {
+  zou_iolock=$(lock_init)
+  export zou_iolock
+}
+
+io_lock()
+{
+  lock "$zou_iolock" 0 "$@"
+}
+io_message()
+{
+  io_lock io_message_unsafe "$@"
+}
+# io_message()
+# {
+#   io_message_unsafe "$@"
+# }
 # usage: io_message <message> [<label> [<color=LightCyan>]]
 # example:
 #   $ io_message 'message' 'info' Cyan
 #   -> info: message
 #   $ io_message 'message' '' Gray
 #   -> message
-io_message()
+io_message_unsafe()
 {
   local message=$1 label=$2 color=${3:-Cyan}
   if [[ -n $label ]]; then
