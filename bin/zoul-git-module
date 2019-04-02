@@ -7,8 +7,8 @@ ZOUL_GIT_MODULE=true
 [[ -z $ZOUL_CORE ]]            && . zoul-core
 [[ -z $ZOUL_PROCESS ]]         && . zoul-process
 [[ -z $ZOUL_GIT_REPO ]]        && . zoul-git-repo
+[[ -z $ZOUL_GIT_BUNDLE ]]      && . zoul-git-bundle
 [[ -z $ZOUL_GIT_BRANCH_CORE ]] && . zoul-git-branch-core
-
 # global options
 useLongModuleTracePrefix=true
 showVisitModuleMessage=false
@@ -73,12 +73,18 @@ _module_scope_startup()
     io_error "Not a git repository '$PWD' (or any of the parent directories)"
     return 1
   }
+  # enter startup module
+  _module_enter "$startupRoot" || return $?
+
   bundleId=$(repo_bundle_id)
   bundleRoot=$(repo_bundle_root)
   bundleBranch=$(branch_current_root_branch)
 
-  # enter startup module
-  _module_enter "$startupRoot" || return $?
+  # register bundle
+  [[ $startupRoot == $bundleRoot ]] && {
+    bundleUrl=$(git config remote.origin.url)
+    bundle_register "$bundleUrl" "$bundleRoot"
+  }
 
   # execute next russian doll
   $1 "${@:2}"
@@ -143,6 +149,11 @@ _module_reset_scope()
   _module_set_trace_prefix
   # ZOU_TRACE=true io_trace "_module_reset_scope ${*@Q} -> $(print_vars bundleBranch moduleBranch)"
 }
+
+##############
+# TRACE PREFIX
+##############
+
 _module_branch_prefix()
 {
   local ref=$(git rev-parse --abbrev-ref HEAD)
@@ -164,11 +175,9 @@ _module_branch_prefix()
 }
 _module_set_submodule_path_max_length()
 {
-  local path
-  submodulePathMaxLength=${#moduleId}
-  for path in ${moduleSubmodulePaths[@]}; do
-    (( ${#path} > $submodulePathMaxLength )) && submodulePathMaxLength=${#path}
-  done
+  local maxLength
+  string_set_max_length "${moduleSubmodulePaths[@]}"
+  submodulePathMaxLength=$maxLength
 }
 # in:
 #   $1 -- id
