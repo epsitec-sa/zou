@@ -1,0 +1,57 @@
+#!/bin/bash
+
+# Use the following statement to include current lib only once
+#   [[ -z $ZOUL_GIT_BUNDLE ]] && . zoul-git-bundle
+ZOUL_GIT_BUNDLE=true
+
+[[ -z $ZOUL_CORE ]] && . zoul-core
+
+bundle_register()
+{
+  local url=$1 path=$2
+  git config --global "zou.$url.path" "$path"
+}
+bundle_unregister()
+{
+  local url=$1
+  git config --global --unset "zou.$url.path"
+}
+bundle_set_registered_paths()
+{
+  local IFS=$'\n' kv
+  bundleRegisteredPaths=()
+  for kv in $(git config --global --get-regexp '^zou\..*\.path$'); do
+    # zou.https://git.epsitec.ch/Build/zou-dev.git.path C:/devel/zou-dev
+    # zou.https://git.epsitec.ch/cresus-suite/cresus-dev.git.path C:/devel/cresus-dev
+    [[ $kv =~ ^[^[:blank:]]+[[:blank:]]+(.*)$ ]]
+    bundleRegisteredPaths+=( ${BASH_REMATCH[1]} )
+  done
+}
+bundle_visit_async()
+{
+  local _bundleVisitPaths
+  [[ $1 =~ \[@\]$ ]] && _bundleVisitPaths=( "${!1}" ) || _bundleVisitPaths=( "$($1)" )
+  [ ${#_bundleVisitPaths[@]} -eq 0 ] && return 0
+
+  local bundleTracePrefixLength=$(( 2 + $(string_max_length "${_bundleVisitPaths[@]##*/}") ))
+  
+  # ZOU_TRACE=true io_trace "bundle_visit_async ${*@Q} -- $(print_vars _bundleVisitPaths[@])"
+  visit_async '_bundleVisitPaths[@]' _bundle_visitor "${@:2}"
+}
+_bundle_visitor()
+{
+  local bundleRoot=$1
+  # ZOU_TRACE=true io_trace "bundle_visitor ${*@Q} -- $(print_vars bundleRoot)"
+  cd "$bundleRoot" &>/dev/null || {
+    io_error "No such bundle directory '$bundleRoot'" "$moduleTracePrefix"
+    return 1
+  }
+  local bundleTracePrefix \
+        bundleId=${bundleRoot##*/} \
+        bundleUrl=$(git config remote.origin.url)
+        
+  printf -v bundleTracePrefix "%-${bundleTracePrefixLength}s" "[$bundleId]"
+  bundleTracePrefix="${Cyan}$bundleTracePrefix${NC}"
+
+  "$2" "${@:3}" || return $?
+}
