@@ -25,12 +25,13 @@ clean_parse()
     -r|--recursive) recursive=true;;
     -p|--push)  cleanPushTags=true;;
     -f|--force) forceMove=true;;
+    -w|--stow)  stowSemver=true;;
     -*) forOpts+=($1);;
   esac; shift; done
 }
 clean_run()
 {
-  local cleanPushTags forceMove recursive forOpts=()
+  local cleanPushTags forceMove recursive stowSemver forOpts=()
   clean_parse "$@" || return $?
   
   module_run clean_main
@@ -51,7 +52,7 @@ clean_node()
   
   local noTagPush=true
 
-  tag_stow_semver
+  [[ $stowSemver == true ]] && tag_stow_semver
   tag_move_semver_orphan
   tag_delete_othered
   tag_archive_other_semver

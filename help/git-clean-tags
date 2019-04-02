@@ -1,8 +1,20 @@
 usage: git clean-tags [<options>]
 
+Clean tags
+- stow vtags in associated vbranch folder (need --stow option)
+- delete root tags that exist in other folder
+- archive vtags with patch > 1000
+- move non semver tags to other folder
+- remove vtag prerelease leading zeros
+
 Move non semver tags to other folder and delete other redondant tags.
 
     -h|--help               display help
+    -r|--recursive          traverse submodules recursively
+    -f|--force              override destination tag[s]
+    -w|--stow               stow vtags in vbranch folder
+    -p|--push               mirror tags when done
+                            WARNING: remote tags are deleted and replaced with local tags
     
 example:
-    git clean-tags
+    git clean-tags -w
