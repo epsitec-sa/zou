@@ -8,24 +8,22 @@ ZOUL_LOCK=true
 # MSYS2 has a version of flock but it creates a conflict with cygwin.dll
 # use atomic mkdir
 
+lock_init()
+{
+  local lockDir=$(mktemp -u)
+  # Remove lockdir when the script finishes, or when it receives a signal
+  trap "rm -rf \"$lockDir\"" 0
+  echo $lockDir
+}
 lock()
 (
   local lockDir=$1 delay=$2; shift 2
-  _lock "$lockDir" "$delay"
-  $*
-  _unlock "$lockDir"
-)
-_lock()
-{
-  local lockdir=$1 delay=$2
-  while ! mkdir "$lockdir" &>/dev/null; do
+  while ! mkdir "$lockDir" &>/dev/null; do
     sleep "$delay"
   done
-  # Remove lockdir when the script finishes, or when it receives a signal
-  trap 'rm -rf "$lockdir"' 0    # remove directory when script finishes
-}
-_unlock()
-{
-  local lockdir=$1
-  rm -rf "$lockdir"
-}
+  
+  # execute next russian doll
+  "$1" "${@:2}"
+
+  rm -rf "$lockDir"
+)

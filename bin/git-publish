@@ -69,11 +69,11 @@ publish_main()
   fi
   # trace_method publish_main createVTable
 
-  local lockDir lookupPath
+  local vtableLock vtableLookupPath
   [[ $createVTable == true ]] && {
-    lockDir=$(mktemp -u)
-    lookupPath="$(mktemp)"
-    vtable_init "$startupRoot" "$lookupPath"
+    vtableLock=$(lock_init)
+    vtableLookupPath="$(mktemp)"
+    vtable_init "$startupRoot" "$vtableLookupPath"
   }
   publish_tree
 }
@@ -177,14 +177,14 @@ publish_update_vtable()
 {
   [[ $createVTable == true ]] || return 1
   # io_trace "publish_update_vtable ${*@Q}"
-  lock "$lockDir" 0.1 vtable_update "$startupRoot" "$moduleId" "$lookupPath"
+  lock "$vtableLock" 0.1 vtable_update "$startupRoot" "$moduleId" "$vtableLookupPath"
 }
 publish_commit_vtable()
 {
   [[ $createVTable == true ]] || return 1
   # io_trace "publish_commit_vtable ${*@Q}"
   local ec=0 branch=$1 vtag=$2 vbranch=$3
-  vtable_update "$startupRoot" "$moduleId" "$lookupPath" true || ec=$?
+  vtable_update "$startupRoot" "$moduleId" "$vtableLookupPath" true || ec=$?
 
   # synchronize dev with prod
   if [[ -n $vbranch ]]; then
