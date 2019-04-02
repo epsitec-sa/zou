@@ -392,9 +392,11 @@ ised()
 #   ${@:3} -- next
 visit()
 {
-  local ec=0 paths path
-  [[ $1 =~ \[@\]$ ]] && paths="${!1}" || paths=$($1)
-  for path in $paths; do
+  local ec=0 _zouVisitPaths path
+  [[ $1 =~ \[@\]$ ]] && _zouVisitPaths=("${!1}") || _zouVisitPaths=("$($1)")
+  [ ${#_zouVisitPaths[@]} -eq 0 ] && return 0
+
+  for path in "${_zouVisitPaths[@]}"; do
     (
       $2 "$path" "${@:3}" || exit $?
     ) || ec=$?
@@ -411,11 +413,13 @@ visit()
 #   ${@:3} -- next ...
 visit_async()
 {
-  local ec=0 paths path pids=()
-  [[ $1 =~ \[@\]$ ]] && paths="${!1}" || paths=$($1)
+  local ec=0 _zouVisitPaths path pids=()
+  [[ "$1" =~ \[@\]$ ]] && _zouVisitPaths=("${!1}") || _zouVisitPaths=("$($1)")
+  [ ${#_zouVisitPaths[@]} -eq 0 ] && return 0
+
   [[ -z $jobsCount ]] && jobsCount=32
 
-  for path in $(string_sort $paths); do
+  for path in $(array_sort _zouVisitPaths[@]); do
     (
       $2 "$path" "${@:3}" || exit $?
     ) &
@@ -432,9 +436,11 @@ visit_async()
 }
 visit_async_fast()
 {
-  local paths path
-  [[ $1 =~ \[@\]$ ]] && paths="${!1}" || paths=$($1)
-  for path in $(string_sort $paths); do
+  local _zouVisitPaths path
+  [[ $1 =~ \[@\]$ ]] && _zouVisitPaths=("${!1}") || _zouVisitPaths=("$($1)")
+  [ ${#_zouVisitPaths[@]} -eq 0 ] && return 0
+
+  for path in $(array_sort _zouVisitPaths[@]); do
     ( $2 "$path" "${@:3}" || exit $? ) &
   done
   wait
