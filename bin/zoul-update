@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# Use the following statement to include current lib only once
+#   [[ -z $ZOUL_UPDATE ]] && . zoul-update
+ZOUL_UPDATE=true
+
+[[ -z $ZOUL_CORE ]]              && . zoul-core
 [[ -z $ZOUL_CONFIG ]]            && . zoul-config
 [[ -z $ZOUL_GIT_MODULE ]]        && . zoul-git-module
 [[ -z $ZOUL_GIT_BRANCH_SELECT ]] && . zoul-git-branch-select
@@ -7,15 +12,16 @@
 zou_parse()
 {
   while [[ "$#" > 0 ]]; do case "$1" in
-    -z|--zou-only) zouOnly=true;;
-    ---version)    actualVersion=$2; shift;;
-    *)             selectArgs+=($1);;
+    -z|--zou-only)      zouOnly=true;;
+    -u|--no-prune-tags) noPruneTags=true;;
+    ---version)         actualVersion=$2; shift;;
+    *)                  selectArgs+=($1);;
   esac; shift; done
 }
 
 zou_update()
 {
-  local resetConfig zouOnly actualVersion selectArgs=()
+  local resetConfig zouOnly noPruneTags actualVersion selectArgs=()
   unset 
   zou_parse "$@"
   
@@ -28,7 +34,27 @@ zou_update()
     # zou repo inside zou-dev bundle
     module_visit "$bundleRoot" zou_update_bundle "${selectArgs[@]}"
   fi
+  zou_update_prune_tags
+  zou_update_epilog
+}
+zou_update_bundle()
+{
+  io_info "Synchronizing, please wait..." "$moduleTracePrefix"
+  . git-sync --no-push
 
+  local vtag delta alias acolor=Brown
+  vtag_set_info $(vtag_describe $moduleBranch)
+  [ $delta -gt 0 ] && acolor=LightPurple
+  io_info "Activating bundle (${!acolor}$alias${Cyan}), please wait..." "$moduleTracePrefix"
+  . git-select "$@"
+}
+zou_update_prune_tags()
+{
+  [[ $noPruneTags == true ]] && return 0
+  git-prunetags -g
+}
+zou_update_epilog()
+{
   printf '\n'
 
   local vtag delta alias version
@@ -43,17 +69,6 @@ zou_update()
   [ $delta -gt 0 ] && traceVersion="$traceVersion in dev mode, ${LightPurple}$delta${Brown} commit[s] ahead"
   traceMessage="Update finished ($traceVersion)."
   io_warning "$traceMessage" "$tracePrefix"
-}
-zou_update_bundle()
-{
-  io_info "Synchronizing, please wait..." "$moduleTracePrefix"
-  . git-sync --no-push
-
-  local vtag delta alias acolor=Brown
-  vtag_set_info $(vtag_describe $moduleBranch)
-  [ $delta -gt 0 ] && acolor=LightPurple
-  io_info "Activating bundle (${!acolor}$alias${Cyan}), please wait..." "$moduleTracePrefix"
-  . git-select "$@"
 }
 
 module_run zou_update "$@"
