@@ -9,6 +9,7 @@ ZOUL_GIT_MODULE=true
 [[ -z $ZOUL_GIT_REPO ]]        && . zoul-git-repo
 [[ -z $ZOUL_GIT_BUNDLE ]]      && . zoul-git-bundle
 [[ -z $ZOUL_GIT_BRANCH_CORE ]] && . zoul-git-branch-core
+
 # global options
 useLongModuleTracePrefix=true
 showVisitModuleMessage=false
@@ -84,6 +85,7 @@ _module_scope_startup()
   [[ $startupRoot == $bundleRoot ]] && {
     bundleUrl=$(git config remote.origin.url)
     bundle_register "$bundleUrl" "$bundleRoot"
+    # ZOU_TRACE=true io_trace "_module_scope_startup ${*@Q} -- $(print_vars bundleUrl bundleRoot)"
   }
 
   # execute next russian doll

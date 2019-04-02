@@ -35,19 +35,17 @@ ptags_node()
     io_info "Pruning tags..." "$moduleTracePrefix"
     git tag -d $(git tag -l) &>/dev/null
     local IFS=$'\n'
-    local lines=( $(git fetch --tags 2>&1) )
-    io_lock ptags_io_lines
+    local line lines=( $(git fetch --tags 2>&1) )
+
+    io_lock_enter
+    for line in "${lines[@]}"; do
+      [[ -z $line ]] && continue
+      [[ $line =~ ^.*\[new\ tag\][[:blank:]]+(.*)$ ]] && {
+        io_message_unsafe "  ${BASH_REMATCH[1]}" "$moduleTracePrefix" LightGray
+      }
+    done
+    io_lock_exit
   fi
-}
-ptags_io_lines()
-{
-  local line
-  for line in "${lines[@]}"; do
-    [[ -z $line ]] && continue
-    [[ $line =~ ^.*\[new\ tag\][[:blank:]]+(.*)$ ]] && {
-      io_message_unsafe "  ${BASH_REMATCH[1]}" "$moduleTracePrefix" LightGray
-    }
-  done
 }
 ptags_prune_registered_bundles_tags()
 {

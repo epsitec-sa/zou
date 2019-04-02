@@ -69,9 +69,9 @@ publish_main()
   fi
   # trace_method publish_main createVTable
 
-  local vtableLock vtableLookupPath
+  local vtableGate vtableLookupPath
   [[ $createVTable == true ]] && {
-    vtableLock=$(lock_init)
+    vtableGate=$(lock_init)
     vtableLookupPath="$(mktemp)"
     vtable_init "$startupRoot" "$vtableLookupPath"
   }
@@ -177,7 +177,9 @@ publish_update_vtable()
 {
   [[ $createVTable == true ]] || return 1
   # io_trace "publish_update_vtable ${*@Q}"
-  lock "$vtableLock" 0.1 vtable_update "$startupRoot" "$moduleId" "$vtableLookupPath"
+  lock_enter "$vtableGate" 0.1 
+  vtable_update "$startupRoot" "$moduleId" "$vtableLookupPath"
+  lock_exit "$vtableGate"
 }
 publish_commit_vtable()
 {

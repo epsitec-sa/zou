@@ -10,20 +10,26 @@ ZOUL_LOCK=true
 
 lock_init()
 {
-  local lockDir=$(mktemp -u)
+  local gate=$(mktemp -u)
   # Remove lockdir when the script finishes, or when it receives a signal
-  trap "rm -rf \"$lockDir\"" 0
-  echo $lockDir
+  trap "rm -rf \"$gate\"" 0
+  echo $gate
+}
+lock_enter()
+{
+  while ! mkdir "$1" &>/dev/null; do
+    sleep ${2:-0}
+  done
+}
+lock_exit()
+{
+  rm -rf "$1"
 }
 lock()
 (
-  local lockDir=$1 delay=$2; shift 2
-  while ! mkdir "$lockDir" &>/dev/null; do
-    sleep "$delay"
-  done
-  
+  local gate=$1 delay=$2; shift 2
+  lock_enter "$gate" $delay
   # execute next russian doll
-  "$1" "${@:2}"
-
-  rm -rf "$lockDir"
+  $1 "${@:2}"
+  lock_exit "$gate"
 )

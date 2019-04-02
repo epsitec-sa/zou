@@ -27,8 +27,8 @@ vtable_run()
 }
 vtable_main()
 {
-  local lockDir lookupPath
-  lockDir=$(mktemp -u)
+  local vtableGate lookupPath
+  vtableGate=$(lock_init)
   lookupPath="$(mktemp)"
   vtable_init "$startupRoot" "$lookupPath"
   vtable_tree
@@ -39,7 +39,9 @@ vtable_tree()
   if [[ "$PWD" == "$startupRoot" ]]; then
     vtable_commit_vtable
   else
-    lock "$lockDir" 0.1 vtable_update_vtable
+    lock_enter "$vtableGate" 0.1
+    vtable_update_vtable
+    lock_exit "$vtableGate"
   fi
 }
 vtable_commit_vtable()

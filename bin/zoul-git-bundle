@@ -4,13 +4,18 @@
 #   [[ -z $ZOUL_GIT_BUNDLE ]] && . zoul-git-bundle
 ZOUL_GIT_BUNDLE=true
 
+[[ -z $ZOUL_LOCK ]] && . zoul-lock
 [[ -z $ZOUL_CORE ]] && . zoul-core
+
+gitConfigGate=$(lock_init)
 
 bundle_register()
 {
-  local url=$1 path=$2 opath
+  local url=$1 path=$2
+  lock_enter "$gitConfigGate"
   git config --global --unset "zou.$url.path" "$path"
   git config --global --add "zou.$url.path" "$path"
+  lock_exit "$gitConfigGate"
 }
 bundle_unregister()
 {
@@ -19,14 +24,15 @@ bundle_unregister()
 }
 bundle_set_registered_paths()
 {
+  lock_enter "$gitConfigGate"
   local IFS=$'\n' kv
-  bundleRegisteredPaths=()
   for kv in $(git config --global --get-regexp '^zou\..*\.path$'); do
     # zou.https://git.epsitec.ch/Build/zou-dev.git.path C:/devel/zou-dev
     # zou.https://git.epsitec.ch/cresus-suite/cresus-dev.git.path C:/devel/cresus-dev
     [[ $kv =~ ^[^[:blank:]]+[[:blank:]]+(.*)$ ]]
     bundleRegisteredPaths+=( ${BASH_REMATCH[1]} )
   done
+  lock_exit "$gitConfigGate"
 }
 bundle_visit_async()
 {

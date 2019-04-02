@@ -90,19 +90,18 @@ io_trace()
   io_message "  $1" "$moduleTracePrefix" ${2:-Gray}
 }
 
-[[ -z $zou_ioLockDir ]] && {
-  zou_iolock=$(lock_init)
-  export zou_iolock
+#########
+# io lock
+#########
+[[ -z $ioGate ]] && {
+  ioGate=$(lock_init)
+  export ioGate
 }
 
-io_lock()
-{
-  lock "$zou_iolock" 0 "$@"
-}
-io_message()
-{
-  io_lock io_message_unsafe "$@"
-}
+io_lock()       { lock "$ioGate" 0 "$@"; }
+io_lock_enter() { lock_enter "$ioGate"; }
+io_lock_exit()  { lock_exit "$ioGate"; }
+
 # io_message()
 # {
 #   io_message_unsafe "$@"
@@ -113,6 +112,7 @@ io_message()
 #   -> info: message
 #   $ io_message 'message' '' Gray
 #   -> message
+io_message() { io_lock io_message_unsafe "$@"; }
 io_message_unsafe()
 {
   local message=$1 label=$2 color=${3:-Cyan}
