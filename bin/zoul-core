@@ -184,6 +184,23 @@ string_sort_descending()
   local IFS=$'\n'
   sort -r <<<"$*"
 }
+string_max_length()
+{
+  local maxLength
+  string_set_max_length "$@"
+  echo $maxLength
+}
+# out:
+#   maxLength
+string_set_max_length()
+{
+  local s len
+  maxLength=0
+  for s; do
+    len=${#s}
+    (( $len > $maxLength )) && maxLength=$len
+  done
+}
 array_sort()
 {
   local array=( ${!1} )
