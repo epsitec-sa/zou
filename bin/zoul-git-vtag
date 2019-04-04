@@ -241,6 +241,31 @@ vtag_describe()
   done
   return 1
 }
+# Compute tag properties
+# in:
+#   $1: ltag
+# out:
+#   vtag
+#   delta
+#   alias
+vtag_set_info()
+{
+  # ZOU_TRACE=true io_trace "vtag_set_info ${*@Q}"
+  local ltag=$1 lsuf
+    # compute checkout alias
+  if [[ -n $ltag ]]; then
+    vtag=${ltag%-*-g*}
+    lsuf=${ltag#$vtag}
+    delta=${lsuf%-g*}
+    delta=${delta#-}
+    if [[ -z $delta ]]; then
+      alias="$vtag"
+      delta=0
+    else
+      alias="> $vtag ($delta)"
+    fi
+  fi
+}
 # list all vtags pointing at given commit
 # input:
 # - $1: rev to list
@@ -276,21 +301,23 @@ vtag_best_match_vtag_at()
   done
   echo "${vtags[0]}"
 }
-# extract vbranch name from vtag
-# input:
-# - $1: vtag (ex: v1.0.0-rc1)
-# output:
-# - vbranch name (ex: 1.0)
-# - nothing if $1 is not a vtag
-vtag_get_vbranch_name ()
+# Extract vbranch name from vtag
+# in:
+#   $1:vtag -- (sku/v1.0.0-rc1)
+# out:
+#   0,vbranch -- (sku/1.0)
+#   1         -- $1 is not a vtag
+vtag_set_vbranch_name ()
 {
   if [[ $1 =~ ^(.*/)?v([0-9]+)\.([0-9]+)(\.|-) ]]; then
     local prefix=${BASH_REMATCH[1]}
     local major=${BASH_REMATCH[2]}
     local minor=${BASH_REMATCH[3]}
-    echo ${prefix}$major.$minor;
+    vbranch=${prefix}$major.$minor;
   fi
 }
+vtag_get_vbranch_name () { local vbranch; vtag_set_vbranch_name "$1" && echo $vbranch; }
+
 # find  local or remote vbranch - priority to local vbranch
 # input:
 # - $1: vtag (ex: v1.0.0-rc1)

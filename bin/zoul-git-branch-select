@@ -69,102 +69,121 @@ branch_best_match()
     fi
   fi
 }
-# Compute tag properties
-# in:
-#   $1: ltag
-# out:
-#   vtag
-#   delta
-#   alias
-vtag_set_info()
+branch_set_select_info()
 {
-  # ZOU_TRACE=true io_trace "vtag_set_info ${*@Q}"
-  local ltag=$1 lsuf
-    # compute checkout alias
-  if [[ -n $ltag ]]; then
-    vtag=${ltag%-*-g*}
-    lsuf=${ltag#$vtag}
-    delta=${lsuf%-g*}
-    delta=${delta#-}
-    if [[ -z $delta ]]; then
-      alias="$vtag"
-      delta=0
-    else
-      alias="> $vtag ($delta)"
-    fi
-  fi
-}
-branch_select_auto()
-{
-  # # ZOU_TRACE=true io_trace "branch_select_auto ${*@Q}"
+  local sku=${1:-$bundleBranch} skipVNodes=$2 allowDuplicateTags=$3 ltag ec=0
 
-  local sku=$1 hint=$2 forceCheckout=${3:-true} mroot broot ec=0
+  branch=$(branch_best_match_dev "$sku")
+  if ltag=$(vtag_describe "$branch" $skipVNodes); then
+    vtag_set_info $ltag
+    vtag_set_vbranch_name $vtag
+    htag=$(vtag_highest $vbranch true)
+    if [[ $htag != $vtag ]]; then
+      git merge-base --is-ancestor "$branch" "$htag" >&2 || io_warning "$branch was never published as $htag" "$moduleTracePrefix"
+      delta=$(( -$(git rev-list --count $vtag..$htag) + 1 ))
+      vtag=$htag
+      alias="< $vtag ($delta)"
+    fi
+    if [[ $allowDuplicateTags != true ]]; then
+      htag=$(vtag_highest $vbranch false)
+    fi
+    if vtag_is_vnode $vtag; then
+      local vtags=( $(vtag_list "$vbranch" | grep -v '\-@$') )
+      if [ ${#vtags[@]} -eq 0 ]; then
+        status='vnodeOnly'
+      else
+        status='vnode'
+      fi
+    else
+      status='vtag'
+    fi
+  else
+    status='noVTag'
+  fi
+  # ZOU_TRACE=true io_trace "branch_set_select_info -- $(print_vars sku skipVNodes allowDuplicateTags branch vbranch vtag delta alias status)"
+}
+# Select branch or vtag
+#   if module == bundle || hint == dev
+#     select dev branch
+#   else
+#     select vtag
+#
+# in:
+#   $1:sku=bundleBranch
+#   $2:hint -- hint == dev ? select dev branch : select vtag
+#   $2:forceCheckout=true
+# out:
+#   branchOrTag
+#   0:devBranch,        branch -- switched to dev branch
+#   1:neverPublished,   branch -- switched to branch (no vtag)
+#   2:vnodeOnly,        branch -- switched to branch (vtag == vnode)
+#   3:vnode,            branch -- switched to branch (vtag == vnode)
+#   4:alreadyPublished, vtag -- switched to branch (vtag == branch)
+#   5:ffPublish,        vtag   -- no change (vtag > branch)
+#  10:error
+branch_set_select_auto()
+{
+  local sku=$1 hint=$2 forceCheckout=${3:-true} skipVNodes=${4:-true} allowDuplicateTags=$5 mroot broot ec=0
   [[ -z $sku ]]   && sku=$bundleBranch
   [[ -z $sku ]]   && sku=$(branch_current_root_branch)
   [[ -z $mroot ]] && mroot=$moduleRoot
   [[ -z $mroot ]] && mroot=$(repo_module_root)
   [[ -z $broot ]] && broot=$bundleRoot
   [[ -z $broot ]] && broot=$(repo_bundle_root)
-  
+  [[ -z $allowDuplicateTags && $mroot == $broot ]] && allowDuplicateTags=true
 
-  local bestMatch=$(branch_best_match_dev "$sku")
-  # ZOU_TRACE=true  io_trace "branch_select_auto -- $(print_vars sku hint bestMatch mroot broot)"
-  if [[ "$mroot" == "$broot" || $hint == 'dev' ]]; then
-    branch_select_branch "$bestMatch" "$forceCheckout" >/dev/null || ec=$?
-  else
-    branch_select_vtag  "$bestMatch" "$forceCheckout" >/dev/null || ec=$?
-  fi
+  # ZOU_TRACE=true io_trace "branch_set_select_auto -- $(print_vars sku hint forceCheckout skipVNodes allowDuplicateTags mroot broot)"
+
+  _branch_set_select_auto_core "$sku" "$hint" "$forceCheckout" "$skipVNodes" "$allowDuplicateTags" "$mroot" "$broot"  || ec=$?
   if [ $ec -eq 10 ]; then
-    # cannot checkout
-    repo_require_clean_work_tree 'Cannot select'
+    repo_require_clean_work_tree "Cannot switch to '$branch'"
   else
-    branch_set_upstream "$bestMatch"
+    branch_set_upstream "$branch"
   fi
   return $ec
 }
-branch_select_branch()
+_branch_set_select_auto_core()
 {
-  local branch=$1 forceCheckout=${2:-true}
-  local vtag delta alias ec=0
-  vtag_set_info $(vtag_describe $branch)
+  local sku=$1 hint=$2 forceCheckout=$3 skipVNodes=$4 allowDuplicateTags=$5 mroot=$6 broot=$7 ec=0
   
-  # ZOU_TRACE=true io_trace "branch_select_branch ${*@Q} -- $(print_vars branch vtag delta alias)"
-  branch_checkout "$branch" "$forceCheckout" "$alias" >/dev/null || return 10
-  echo $branch
-}
-branch_select_vtag()
-{
-  # branch can be remote or local
-  # ZOU_TRACE=true io_trace "branch_select_vtag ${*@Q}"
-  local branch=$1 forceCheckout=${2:-true} ltag
+  local branch vbranch vtag htag delta alias status
+  branch_set_select_info $sku $skipVNodes $allowDuplicateTags
 
-  ltag=$(vtag_describe "$branch") || {
-    branch_checkout "$branch" "$forceCheckout" || return 10
-    echo $branch
-    return 2  # no vtag
-  }
-
-  local vtag delta alias
-  vtag_set_info $ltag
-  # ZOU_TRACE=true io_trace "branch_select_vtag -- $(print_vars branch vtag delta alias)"
-  if vtag_is_vnode $vtag; then
+  if [[ "$mroot" == "$broot" || $hint == 'dev' ]]; then
+    # force dev branch
+    branch_checkout "$branch" "$forceCheckout" "$alias" >/dev/null || return 10
+    branchOrTag=$branch
+    return 0 # switched to dev branch
+  elif [[ $status == 'noVTag' ]]; then
+    # no vtag, stay in dev mode
     branch_checkout "$branch" "$forceCheckout" "$alias" || return 10
-    echo $vtag
-    return 2  # vnode
+    branchOrTag=$branch
+    return 1  # never published
+  elif [[ $status == 'vnodeOnly' ]]; then
+    # preview mode, stay in dev mode
+    branch_checkout "$branch" "$forceCheckout" "$alias" || return 10
+    branchOrTag=$vtag
+    return 2  # vnode only
+  elif [[ $status == 'vnode' ]]; then
+    # preview mode, stay in dev mode
+    branch_checkout "$branch" "$forceCheckout" "$alias" || return 10
+    branchOrTag=$vtag
+    return 3  # vnode
+  elif [[ $status == 'vtag' ]]; then
+    # already published
+    if [ $delta -ge 0 ]; then
+      # dev == prod (branch == vtag)
+      branch_checkout "$vtag" "$forceCheckout" "$vtag" || return 10
+      branchOrTag=$vtag
+      return 4  # already published
+    elif [ $delta -lt 0 ]; then
+      branch_try_attach "$vtag" "$branch" "$forceCheckout" || return 10
+      branchOrTag=$vtag
+      return 5  # vtag is more recent
+    else
+      io_error "_branch_set_select_auto_core: delta '$delta' not implemented" "$moduleTracePrefix"
+    fi
+  else
+    io_error "_branch_set_select_auto_core: status '$status' not implemented" "$moduleTracePrefix"
   fi
-
-  if [[ $delta -eq 0 ]]; then
-    branch_checkout "$branch" "$forceCheckout" "$vtag" || return 10
-    echo $vtag
-    return 1  # branch == vtag
-  fi
-
-  if git merge-base --is-ancestor "$branch" "$vtag" >&2; then
-    echo $vtag
-    return 3  # vtag is more recent
-  fi
-
-  branch_try_attach "$vtag" "$branch" "$forceCheckout" || return 10
-  echo $vtag
-  return 0  # switched to vtag
 }

@@ -61,9 +61,14 @@ select_tree()
 }
 select_prolog()
 {
-  repo_require_clean_work_tree 'Cannot select' || return 1
-  # io_trace "select_prolog $(print_vars recursive noSkuFilter selectHint commitSubmodules sku)"
-  branch_select_auto "$sku" "$selectHint" true
+  # repo_require_clean_work_tree 'Cannot select' || return 1
+
+  local hint=$selectHint
+  [[ -z $hint && $moduleRoot == $bundleRoot ]] && hint=dev
+
+  # io_trace "select_prolog $(print_vars recursive noSkuFilter hint commitSubmodules sku)"
+  local branchOrTag
+  branch_set_select_auto "$sku" "$hint" || true
 }
 select_epilog()
 {
