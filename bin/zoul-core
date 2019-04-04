@@ -220,7 +220,6 @@ assert_equals()
   while [[ "$#" > 0 ]]; do case "$1" in
     -l|--label) label="$2"; shift;;
     -n|--no-exit) no_exit=true;;
-    -*) echo "unknown option: '$1'" >&2; exit 1;;
     *) args+=("$1");;
   esac; shift; done
   local expected=${args[0]}
@@ -241,7 +240,6 @@ assert_exit_code()
   while [[ "$#" > 0 ]]; do case "$1" in
     -l|--label) label="$2"; shift;;
     -n|--no-exit) no_exit=true;;
-    -*) echo "unknown option: '$1'" >&2; exit 1;;
     *) args+=("$1");;
   esac; shift; done
   local expected=${args[0]}

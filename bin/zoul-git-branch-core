@@ -448,9 +448,15 @@ branch_list_attach_candidates()
   fi
 }
 # try to attach a detached head to a branch that's pointing at it.
+# in:
+#   $1:ref
+#   $2:sku = bundleBranch
+#   $3:forceCheckout = true
+#   $4:alias = ref
+# out:
+#   $?:branch_checkout
 branch_try_attach()
 {
-  # ZOU_TRACE=true io_trace "branch_try_attach ${*@Q}"
 
   local ref=$1 sku=$2 forceCheckout=${3:-true} alias=$4
   [[ -z $sku ]] && sku=$bundleBranch
@@ -458,7 +464,7 @@ branch_try_attach()
   [[ -z $alias ]] && alias=$ref
 
   local branches=( $(branch_list_attach_candidates $ref $sku) )
-  # ZOU_TRACE=true io_trace "branch_try_attach -- $(print_vars ref sku branches[@])"
+  # ZOU_TRACE=true io_trace "branch_try_attach -- $(print_vars ref sku forceCheckout alias branches[@])"
   if [ ${#branches[@]} -eq 0 ]; then
     branch_checkout "$ref" $forceCheckout "$alias"
   else

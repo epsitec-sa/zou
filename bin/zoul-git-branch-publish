@@ -36,7 +36,7 @@ branch_publish()
     obranch=$(branch_current)
   fi
 
-  # io_trace "branch_publish ${*@Q} -- $(print_vars branch prerelPrefix obranch)"
+  # ZOU_TRACE=true io_trace "branch_publish ${*@Q} -- $(print_vars branch prerelPrefix obranch)"
 
   if ! branch_is_local "$branch"; then
     # detached head
@@ -84,7 +84,7 @@ branch_publish()
     vtag=$(vbranch_next_vtag $branch $prerelPrefix) || ec=$?
   fi
 
-  # io_trace "branch_publish ${*@Q} -- $(print_vars branch prerelPrefix vtag)"
+  # ZOU_TRACE=true io_trace "branch_publish ${*@Q} -- $(print_vars branch prerelPrefix vtag)"
 
   # ec = 3 means already published
   [[ $ec -ne 0 && $ec -ne 3 ]] && return 4
