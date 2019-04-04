@@ -240,9 +240,11 @@ branch_ref_type()
 }
 branch_checkout()
 {
-  # ZOU_TRACE=true io_trace "branch_checkout ${*@Q}"
   
   local ref=$1 always=$2 alias=$3 refType isCurrent
+
+  # ZOU_TRACE=true io_trace "branch_checkout 1 -- $(print_vars ref always alias)"
+  
   [[ $alias == 'HEAD' ]] && unset alias
   branch_ref_type $ref; refType=$?
   case $refType in
@@ -264,7 +266,7 @@ branch_checkout()
     # switching message
     [[ $isCurrent -ne 0 && $showSwitchingMessage == true ]] && io_info "Switching to $symType $symRef" "$moduleTracePrefix"
 
-    # ZOU_TRACE=true io_trace "branch_checkout -- $(print_vars ref always alias refType isCurrent symType symRef)"
+    # ZOU_TRACE=true io_trace "branch_checkout 2 -- $(print_vars ref always alias refType isCurrent symType symRef)"
 
     # checkout
     local line color info ec=0
@@ -389,10 +391,12 @@ branch_move()
   fi
   io_success "Moved branch '$branch1' to '$branch2'" "$moduleTracePrefix"
 }
+# in:
+#   $1:branchOrTag
+# out:
+#   hintType -- (dev|prod)
 branch_set_hint_type()
 {
-  # in:  $1 -- branch or tag
-  # out: hintType -- (dev|prod)
   hintType=${1##*/}
   [[ $hintType == 'dev' || $hintType == 'prod' ]] && return 0
   [[ $hintType =~ ^(.*/)?v?[0-9]+\.[0-9]+ ]] && { hintType='prod'; return 0; }

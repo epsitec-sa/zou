@@ -21,10 +21,10 @@ branch_best_match_dev()
 {
   local patterns=$(ref_dev_fallback $1) \
         branches=( $(branch_list_local) ) \
-        remoteIndex=${#branches[@]}
+        remoteIndex=${#branches[@]} \
+        pattern branch lbranch i
         
   branches+=( $(branch_list_remote_untracked) )
-  local pattern i branch lbranch
   # try to find a branch matching bundle branch name
   for pattern in $patterns; do
     for i in ${!branches[@]}; do

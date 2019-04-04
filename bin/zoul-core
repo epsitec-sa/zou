@@ -39,6 +39,8 @@ io_print_colors()
   done
   printf '%20b%20b\n' "${colors[@]}"
 }
+# out:
+#   version
 io_set_version()
 {
   local line regex='Version>(.*)</'
@@ -194,8 +196,9 @@ string_max_length()
 #   maxLength
 string_set_max_length()
 {
-  local s len
   maxLength=0
+
+  local s len
   for s; do
     len=${#s}
     (( $len > $maxLength )) && maxLength=$len
@@ -263,11 +266,15 @@ wildcard_to_regex()
   wildcard_set_regex "$1"
   echo "$regex"
 }
+# out:
+#   regex
 wildcard_set_regex_match_whole()
 {
   wildcard_set_regex "$1"
   regex="^$regex$"
 }
+# out:
+#   regex
 wildcard_set_regex()
 {
   regex="${1//./\\.}"         # .   ->   \.

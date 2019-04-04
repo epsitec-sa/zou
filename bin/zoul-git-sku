@@ -62,8 +62,12 @@ _sku_init_scope()
 
   io_trace "_sku_init_scope ${*@Q} -> $(print_vars skuMode dev_branch prod_branch lastVersion dev_vtag prod_vtag dev_delta prod_delta)"
 }
-_sku_set_sku_mode() { [[ $1 =~ ^(.*/)?[0-9]+\.[0-9]+$ ]] && skuMode='prod' || skuMode='dev'; }
-
+# out:
+#   skuMode -- (dev|prod)
+_sku_set_sku_mode()
+{
+  [[ $1 =~ ^(.*/)?[0-9]+\.[0-9]+$ ]] && skuMode='prod' || skuMode='dev'
+}
 _sku_set_dev_scope()
 {
   io_trace "_sku_set_dev_scope ${*@Q}" Purple
