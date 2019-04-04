@@ -259,7 +259,7 @@ branch_checkout()
     case $refType in
       0) symType='branch'; symRef="'$ref'";;
       1|2) symType='new branch'; symRef="'$ref'";;
-      3) symType='tag'; symRef="($ref)";;
+      3) symType='version'; symRef="($ref)";;
       4) symType='commit'; symRef="($(git rev-parse --short $ref^{})";;
     esac
 
@@ -269,13 +269,14 @@ branch_checkout()
     # ZOU_TRACE=true io_trace "branch_checkout 2 -- $(print_vars ref always alias refType isCurrent symType symRef)"
 
     # checkout
-    local line color info ec=0
+    local line color info breakLoop ec=0
     info=$(git checkout "$ref" 2>&1 >/dev/null); ec=$?
 
     if [[ $ec -eq 0 && $isCurrent -ne 0 ]]; then
       branch_raise_branch_changed_event $ref
     fi
     
+    io_lock_enter
     while read -r line; do
       [[ -z $line ]] && continue
       if [[ $line =~ ^Switched ]]; then
@@ -284,17 +285,18 @@ branch_checkout()
         if [[ $line =~ ^Already ]]; then
           color=LightBlue
         elif [[ $line =~ ^HEAD\ is\ now\ at\ ([0-9a-f]+) ]]; then
-          commit="(${BASH_REMATCH[1]})"
-          [[ -z $alias ]] && alias=$ref
+          commit=${BASH_REMATCH[1]}
+          line="Already at '$ref'"
           color=LightBlue
-          line="Already at $commit"
+          [[ -z $alias ]] && alias=$ref
         elif [[ $line =~ ^Warning ]]; then
           color=Brown
         elif [[ $line =~ ^error ]]; then
           color=Red
         elif [[ $line =~ ^Note:\ checking\ out ]]; then
-          io_message "Switched to $symType $symRef" "$moduleTracePrefix" Green
-          break
+          line="Switched to $symType $symRef"
+          color=Green
+          breakLoop=true
         elif [[ $line =~ ^Previous\ HEAD ]]; then
           continue
         else
@@ -302,19 +304,28 @@ branch_checkout()
         fi
       fi
       if [[ -n $alias ]]; then
-        local acolor=Green
-        if [[ $alias =~ ^(\>|\<) ]]; then
-          # delta != 0
-          acolor=LightPurple
-        elif [[ $alias =~ -@ ]]; then
-          # vnode
-          acolor=Brown
+        local acolor
+        if [[ $alias =~ \< ]]; then
+          # delta < 0
+          acolor=Purple
+        elif [[ $alias =~ \> ]]; then
+          # delta > 0
+          if [[ -n $moduleRoot && $moduleRoot == $bundleRoot ]]; then
+            acolor=Cyan
+          else
+            [[ $alias =~ -@ ]] && acolor=Cyan || acolor=Brown
+          fi
+        else
+          # delta == 0
+          acolor=Green
         fi
         line="$line (${!acolor}$alias${!color})"
       fi
-      io_message "$line" "$moduleTracePrefix" $color
+      io_message_unsafe "$line" "$moduleTracePrefix" $color
       unset alias
+      [[ $breakLoop == true ]] && break
     done <<< "$info"
+    io_lock_exit
     return $ec
   fi
 }
