@@ -122,6 +122,14 @@ branch_set_select_info()
     fi
     # ZOU_TRACE=true io_trace "branch_set_select_info 2 -- $(print_vars sku skipVNodes allowDuplicateTags branch vbranch vtag delta alias status)"
   else
+    if [[ $skipVNodes == true ]]; then
+      # compute alias without skipping vnodes
+      if ltag=$(vtag_describe "$branch" false) && vtag_set_info $ltag; then
+        [ $delta -ne 0 ] && alias="$branch $alias" # (master > v2.0.0 (8))
+      fi
+    else
+      alias='<>'
+    fi
     unset vbranch vtag htag delta
     status='noVTag'
     # ZOU_TRACE=true io_trace "branch_set_select_info 3 -- $(print_vars sku skipVNodes allowDuplicateTags branch vbranch vtag delta alias status)"
