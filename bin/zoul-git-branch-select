@@ -168,6 +168,7 @@ branch_set_select_auto()
 
   # ZOU_TRACE=true io_trace "branch_set_select_auto 1 -- $(print_vars sku hint forceCheckout skipVNodes allowDuplicateTags mroot broot)"
 
+  local branch vbranch vtag htag delta alias status
   _branch_set_select_auto_core "$sku" "$hint" "$forceCheckout" "$skipVNodes" "$allowDuplicateTags" "$mroot" "$broot"  || ec=$?
 
   # ZOU_TRACE=true io_trace "branch_set_select_auto 1 -- $(print_vars branch vbranch vtag htag alias status ec)"
@@ -181,10 +182,7 @@ branch_set_select_auto()
 }
 _branch_set_select_auto_core()
 {
-  local sku=$1 hint=$2 forceCheckout=$3 skipVNodes=$4 allowDuplicateTags=$5 mroot=$6 broot=$7 ec=0
-  
-  local branch vbranch vtag htag delta alias status
-  branch_set_select_info $sku $skipVNodes $allowDuplicateTags
+  branch_set_select_info "$sku" "$skipVNodes" "$allowDuplicateTags"
 
   if [[ "$mroot" == "$broot" || $hint == 'dev' ]]; then
     # force dev branch
