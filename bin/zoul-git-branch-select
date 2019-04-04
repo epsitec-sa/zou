@@ -206,13 +206,18 @@ _branch_set_select_auto_core()
     return 3  # vnode
   elif [[ $status == 'vtag' ]]; then
     # already published
-    if [ $delta -ge 0 ]; then
+    if [ $delta -gt 0 ]; then
       # dev == prod (branch == vtag)
-      branch_checkout "$vtag" "$forceCheckout" "$vtag" || return 10
+      branch_checkout "$vtag" "$forceCheckout" "$alias" || return 10
+      branchOrTag=$vtag
+      return 4  # already published
+    elif [ $delta -eq 0 ]; then
+      # dev == prod (branch == vtag)
+      branch_try_attach "$vtag" "$branch" "$forceCheckout" "$alias" || return 10
       branchOrTag=$vtag
       return 4  # already published
     elif [ $delta -lt 0 ]; then
-      branch_try_attach "$vtag" "$branch" "$forceCheckout" || return 10
+      branch_checkout "$vtag" "$forceCheckout" "$alias" || return 10
       branchOrTag=$vtag
       return 5  # vtag is more recent
     else
