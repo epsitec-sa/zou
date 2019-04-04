@@ -266,7 +266,10 @@ vtag_set_info()
     else
       alias="> $vtag ($delta)"
     fi
+    return 0
   fi
+  unset vtag delta alias
+  return 1
 }
 # list all vtags pointing at given commit
 # input:
@@ -316,6 +319,8 @@ vtag_set_vbranch_name ()
     local major=${BASH_REMATCH[2]}
     local minor=${BASH_REMATCH[3]}
     vbranch=${prefix}$major.$minor;
+  else
+    unset vbranch
   fi
 }
 vtag_get_vbranch_name () { local vbranch; vtag_set_vbranch_name "$1" && echo $vbranch; }
