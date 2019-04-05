@@ -7,10 +7,6 @@ ZOUL_GIT_VTAG=true
 [[ -z $ZOUL_CORE ]]            && . zoul-core
 [[ -z $ZOUL_GIT_CORE ]]        && . zoul-git-core
 [[ -z $ZOUL_GIT_REF ]]         && . zoul-git-ref
-[[ -z $ZOUL_GIT_TAG ]]         && . zoul-git-tag
-[[ -z $ZOUL_GIT_BRANCH_CORE ]] && . zoul-git-branch-core
-
-vtag_get_patch()  { vtag_is_semver $1 && echo ${BASH_REMATCH[5]}; }
 
 # Parse semver tag
 # input:
@@ -28,36 +24,6 @@ vtag_get_patch()  { vtag_is_semver $1 && echo ${BASH_REMATCH[5]}; }
 #   meta=${BASH_REMATCH[9]}            +meta
 vtag_is_semver() { [[ $1 =~ ^(.*/)?v([0-9]+).([0-9]+)(-@|.([0-9]+)((-alpha|-beta|-rc)([0-9]+))?(\+.+)?)$ ]]; }
 vtag_is_vnode()  { [[ $1 =~ ^(.*/)?v[0-9]+\.[0-9]+-@ ]]; }
-vtag_is_vtag()   { [[ $1 =~ ^(.*/)?v[0-9]+\.[0-9]+\.[0-9] ]]; }
-vtag_at_vtag()
-{
-  local tag
-  tag=$(git describe --exact-match "$1" 2>/dev/null) || return 1
-  vtag_is_vtag "$tag" && echo $tag
-}
-vtag_list()
-{
-  # input             output
-  # 1.0               v1.0-@ v1.0.0
-  # sku/sal/1.0       sku/sal/v1.0-@
-  local vbranch=$1
-  local regex
-  if [[ -z $vbranch ]]; then
-    regex='v[0-9]+\.[0-9]+(\.|-)'
-  elif [[ $vbranch =~ ^(.*/)?([0-9]+\.[0-9]+) ]]; then
-    # vbranch
-    local prefix=${BASH_REMATCH[1]}
-    local version=${BASH_REMATCH[2]}
-    regex="^$(wildcard_to_regex $prefix)v$(wildcard_to_regex $version)"
-    # io_debug prefix vtag_list
-    # io_debug version vtag_list
-  else
-    io_error "vtag invalid format : '$1'"
-    return 1
-  fi
-  # io_debug regex vtag_list
-  git tag -l --sort=-v:refname | grep -E $regex | grep -v '^other/' || true
-}
 
 # get highest version on a specific vbranch
 # - a bundle can have the same version twice (SKU version)
@@ -118,106 +84,6 @@ vtag_highest()
     io_error "vbranch invalid format : '$1'" "$moduleTracePrefix"
     return 1
   fi
-}
-vtag_group_by_version()
-{
-  declare -A lookup
-  local vtag vbranch
-  for vtag in $(git tag -l --sort=-v:refname); do
-    # skip other tags
-    ref_is_other $vtag && continue
-    # skip non semver tags
-    ! vtag_is_semver $vtag && continue
-    vbranch="${BASH_REMATCH[1]}${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
-    if [ -z "${lookup[$vbranch]}" ]; then
-      lookup[$vbranch]=$vtag
-    else
-      lookup[$vbranch]="${lookup[$vbranch]} $vtag"
-    fi
-    # io_trace "vtag_group_by_version $(print_vars vbranch vtag)"
-  done
-  [ ${#lookup[@]} -eq 0 ] && echo 'declare -A lookup=()' || declare -p lookup
-}
-# out:
-#   vtagGrouping
-vtag_group_by_date_visitor()
-{
-  # assume caller has a vtagGrouping lookup defined
-  local vtag vbranch
-  if [ $# -eq 1 ]; then
-    vtag=$1
-    vbranch=$(vtag_get_vbranch_name $vtag)
-    if [ -z "${vtagGrouping[$vbranch]}" ]; then
-      vtagGrouping[$vbranch]=$vtag
-    else
-      vtagGrouping[$vbranch]="${vtagGrouping[$vbranch]} $vtag"
-    fi
-  else
-    declare -A vlookup
-    for vtag in "$@"; do
-      vbranch=$(vtag_get_vbranch_name $vtag)
-      if [ -z "${vlookup[$vbranch]}" ]; then
-        vlookup[$vbranch]=$vtag
-      else
-        vlookup[$vbranch]="${vlookup[$vbranch]} $vtag"
-      fi
-    done
-    # merge groupings
-    for vbranch in ${!vlookup[@]}; do
-      vtag=$(string_join '=' ${vlookup[$vbranch]})
-      if [ -z "${vtagGrouping[$vbranch]}" ]; then
-        vtagGrouping[$vbranch]=$vtag
-      else
-        vtagGrouping[$vbranch]="${vtagGrouping[$vbranch]} $vtag"
-      fi
-    done
-    unset vlookup
-  fi
-}
-vtag_group_by_date_filter()
-{
-  ! vtag_is_semver $1 && return 1
-  ref_is_other $1 && return 1
-  return 0
-}
-vtag_group_by_date()
-{
-  declare -A vtagGrouping
-  vtag_visit_by_date vtag_group_by_date_visitor vtag_group_by_date_filter
-  [ ${#vtagGrouping[@]} -eq 0 ] && echo 'declare -A vtagGrouping=()' || declare -p vtagGrouping
-}
-vtag_list_by_date_visitor() { (( $# > 1 )) && echo $(string_join '=' "$@") || echo $1; }
-vtag_list_by_date() { vtag_visit_by_date vtag_list_by_date_visitor; }
-vtag_visit_by_date()
-{
-  local visitor=$1
-  local filter=$2
-  local line atoms vtags item
-  local IFS=$'\n'
-  for line in $(git log --date-order --tags --simplify-by-decoration --pretty=format:'%d'); do
-    local IFS=' '
-    # look only for lines with a tag label
-    [[ $line =~ tag: ]] || continue
-    # remove parentheses
-    [[ $line =~ \((.*)\) ]] && {
-      line=${BASH_REMATCH[1]}
-      # remove space between tag label and tag value ?
-      line=${line//tag: /tag:}
-      atoms=( ${line//, / } )
-      vtags=()
-      for item in "${atoms[@]}"; do
-        [[ $item =~ ^tag:(.*) ]] && {
-          item=${BASH_REMATCH[1]}
-          if [[ -n $filter ]]; then
-            $filter $item && vtags+=( $item )
-          else
-            vtags+=( $item )
-          fi
-        }
-      done
-      $visitor "${vtags[@]}"
-    }
-  done
 }
 # find first vtag ancestor starting from given commit
 # input:
@@ -358,19 +224,6 @@ vtag_set_vbranch_name ()
 }
 vtag_get_vbranch_name () { local vbranch; vtag_set_vbranch_name "$1" && echo $vbranch; }
 
-# find  local or remote vbranch - priority to local vbranch
-# input:
-# - $1: vtag (ex: v1.0.0-rc1)
-# output:
-# - local vbranch (ex: 1.0) if it exists
-# - remote vbranch (ex: origin/1.0) if local vbranch does not exist
-vtag_get_vbranch()
-{
-  local vtag=$1 vbranch
-  vbranch=$(branch_realize $(vtag_get_vbranch_name $vtag))
-  [ $? -le 1 ] && echo $vbranch
-  io_warning "vtag_get_vbranch: vtag '$vtag' has no associated vbranch"
-}
 vtag_highest_of()
 {
   # io_trace "vtag_highest_of ${*@Q}"
