@@ -44,12 +44,13 @@ publish_parse()
     --rtm)                prerelPrefix='rtm';;
     --dev)                publishHint='dev';;
     -*) io_error "unknown option '$1'"; return 1;;
+    *) sku=$1;;
   esac; shift; done
 }
 publish_run()
 {
   # parse command line
-  local jobsCount quiet stopOnError vtable prerelPrefix publishHint recursive=true
+  local jobsCount quiet stopOnError sku vtable prerelPrefix publishHint recursive=true
   publish_parse "$@" || return $?
 
   local commitSubmodules=true \
@@ -61,6 +62,8 @@ publish_run()
 publish_main()
 {
   local createVTable
+
+  [[ -z $sku ]] && sku=$bundleBranch
 
   if [[ $vtable == true ]]; then
     createVTable=true
@@ -84,91 +87,75 @@ publish_tree()
 
   if array_contains_element "$moduleId" "${publishSelectExcludeIds[@]}"; then
     publish_update_vtable
-  else
-    local ec=0 branchOrTag=$moduleBranch \
-          publishDev neverPublished preview alreadyPublished ffPublish
-
-    publish_prolog || ec=$?
-    [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
-    [[ $recursive == true ]] && {
-      publish_submodules || ec=$?
-      [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
-    }
-    publish_epilog || ec=$?
-    return $ec
+    return 0
   fi
+
+  local branch vbranch vtag htag publishStatus
+  publish_prolog || return $?
+  [[ $recursive == true ]] && publish_submodules || return $?
+  publish_epilog || return $?
+}
+publish_prolog()
+{
+  local hint allowDuplicateTags
+  [[ $publishHint == 'dev' || "$PWD" == "$startupRoot" ]] && hint='dev'
+  [[ $moduleRoot == $bundleRoot ]] && allowDuplicateTags=true || allowDuplicateTags=false
+
+  branch_set_select_auto "$sku" "$hint" false false "$allowDuplicateTags" || return $?
+
+  # ZOU_TRACE=true io_trace "publish_prolog -- $(print_vars branch vbranch vtag htag publishStatus)"
+
+  case $publishStatus in
+    vtagMissing) io_error   "Branch '$branch' cannot be published (no vbranch associated)" "$moduleTracePrefix"; return 1;;
+    published)   io_message "Already published at ${Brown}$vtag" "$moduleTracePrefix" LightBlue;;
+  esac
 }
 publish_submodules()
 {
   local publishSubmodules=( $(array_sort configSkuInclude[@]) )
   module_visit_submodules_async 'publishSubmodules[@]' "${publishScopes[@]}" 'publish_tree'
 }
-publish_prolog()
-{
-  local hint
-  [[ $publishHint == 'dev' || "$PWD" == "$startupRoot" ]] && hint='dev'
-  branch_set_select_auto "$bundleBranch" "$hint" false
-
-  case $? in
-    0)   publishDev=true;; 
-    1|2) neverPublished=true;   io_warning "Branch '$branchOrTag' was never published" "$moduleTracePrefix";;
-    3)   preview=true;          io_warning "Branch '$branchOrTag' is a preview" "$moduleTracePrefix";;
-    4)   alreadyPublished=true; io_message "Already published at ${Brown}$branchOrTag" "$moduleTracePrefix" LightBlue;;
-    5)   ffPublish=true;;
-    10)  return $?;;
-  esac
-}
 publish_epilog()
 {
-  local info ec=0
-  
   cosm_process_unstaged_submodules
-
-  if [[ "$PWD" == "$startupRoot" ]]; then
-    # in startup module
-    info=( $(branch_publish "$branchOrTag" "$prerelPrefix") ) || ec=$?
-    publish_try_attach
-    publish_commit_vtable "$branchOrTag" "${info[@]}"
-    # ZOU_TRACE=true io_trace "publish_epilog[STARTUP-ROOT] -- $(print_vars info[@])"
-  # in submodule
-  elif [[ $publishDev == true ]]; then
-    branch_publish "$branchOrTag" "$prerelPrefix" >/dev/null || ec=$?
-    publish_try_attach
-    publish_update_vtable
-    # ZOU_TRACE=true io_trace "publish_epilog[SUBMODULE-DEV]"
-  elif [[ $neverPublished == true ]]; then
-    branch_publish >/dev/null || ec=$?
-    publish_try_attach
-    publish_update_vtable
-    # ZOU_TRACE=true io_trace "publish_epilog[SUBMODULE-NEVER-PUBLISHED]"
-  elif [[ $ffPublish == true ]]; then
-    branch_merge $branchOrTag $moduleBranch
-    publish_try_attach
-    publish_update_vtable
-    io_success "Published branch '$moduleBranch' at ${Brown}$branchOrTag${Green} (fast-forward)" "$moduleTracePrefix"
-    # ZOU_TRACE=true io_trace "publish_epilog[SUBMODULE-FF-PUBLISH]"
-  else
-    publish_update_vtable
-    # ZOU_TRACE=true io_trace "publish_epilog[SUBMODULE-FF-PUBLISH]"
-  fi
-  return $ec
+  publish_publish || return $?
+  publish_update_vtable
 }
-publish_try_attach()
+publish_publish()
 {
-  branch_try_attach 'HEAD' "$bundleBranch" false >/dev/null
+  # ZOU_TRACE=true io_trace "publish_publish 1 -- $(print_vars branch vbranch vtag htag prerelPrefix publishStatus)"
+  local vnext
+  
+  if [[ $publishStatus == 'notPublished' || $publishStatus == 'neverPublished' ]]; then
+    io_info "Publishing branch '$branch' on '$vbranch'" "$moduleTracePrefix"
+    branch_set_publish "$branch" "$vbranch" "$vtag" "$htag" "$prerelPrefix" \
+    && io_success "Published branch '$branch' at ${Brown}$vnext" "$moduleTracePrefix" \
+    || { io_error "Publish of branch '$branch' failed" "$moduleTracePrefix"; return 1; }
+  elif [[ $publishStatus == 'ffPublish' ]]; then
+    branch_merge "$vtag" "$moduleBranch" \
+    && io_success "Published branch '$branch' at ${Brown}$vnext${Green} (fast-forward)" "$moduleTracePrefix" \
+    || { io_error "Fast-forward publish of branch '$branch' failed" "$moduleTracePrefix"; return 1; }
+  else
+    return 0
+  fi
+  branch_try_attach 'HEAD' "$sku" false >/dev/null
+  # ZOU_TRACE=true io_trace "publish_publish 1 -- $(print_vars branch vbranch vtag htag prerelPrefix publishStatus)"
 }
 publish_update_vtable()
 {
   [[ $createVTable == true ]] || return 1
-  lock_enter "$vtableGate"
-  vtable_update "$startupRoot" "$moduleId" "$vtableLookupPath"
-  lock_exit "$vtableGate"
+  if [[ "$PWD" == "$startupRoot" ]]; then
+    publish_commit_vtable
+  else
+    lock_enter "$vtableGate"
+    vtable_update "$startupRoot" "$moduleId" "$vtableLookupPath"
+    lock_exit "$vtableGate"
+  fi
 }
 publish_commit_vtable()
 {
-  [[ $createVTable == true ]] || return 1
   # ZOU_TRACE=true io_trace "publish_commit_vtable ${*@Q}"
-  local ec=0 branch=$1 vtag=$2 vbranch=$3
+  local ec=0
   vtable_update "$startupRoot" "$moduleId" "$vtableLookupPath" true || ec=$?
 
   # synchronize dev with prod
@@ -176,9 +163,9 @@ publish_commit_vtable()
     branch_merge $branch $vbranch
     branch_merge $vbranch $branch
   fi
-  if [[ -n $vtag ]]; then
-    [ $ec -eq 0 ] && io_success "Created version table for '$branch' at ${Brown}$vtag" "$moduleTracePrefix"
-    tag_move "$vtag" "$branch" &>/dev/null
+  if [[ -n $vnext ]]; then
+    [ $ec -eq 0 ] && io_success "Created version table for '$branch' at ${Brown}$vnext" "$moduleTracePrefix"
+    tag_move "$vnext" "$branch" &>/dev/null
   fi
 }
 
