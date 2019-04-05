@@ -243,6 +243,36 @@ vtag_describe()
   done
   return 1
 }
+# usage:
+#  local branch lbranch
+#  branch_set_best_match_dev "$sku"
+#  vtag_set_describe "$branch" "$lbranch" $skipVNodes
+#  
+# in:
+#   $1:branch  -- local or remote
+#   $2:lbranch -- local name
+#   $3:skipVNodes
+# out:
+#   ltag
+vtag_set_describe()
+{
+  local branch=$1 lbranch=$2 skipVNodes=$2 match stag exclude=('--exclude' 'other/*')
+  # ZOU_TRACE=true io_trace "vtag_describe 1 -- $(print_vars branch skipVNodes)"
+  [[ $skipVNodes == true ]] && exclude+=('--exclude' '*-@')
+  for match in $(ref_tag_fallback $lbranch 'v[0-9]*'); do
+    ltag=$(git describe --tags --match "$match" "${exclude[@]}" "$branch" 2>/dev/null)
+    # ZOU_TRACE=true io_trace "vtag_describe 2 -- $(print_vars branch skipVNodes match ltag)"
+    if [[ -n $ltag ]]; then
+      stag=${ltag%-*-g*}
+      if git merge-base --is-ancestor $stag^{} $branch; then
+        # ZOU_TRACE=true io_trace "vtag_describe 3 -> $(print_vars branch skipVNodes match ltag stag)"
+        return 0
+      fi
+    fi
+  done
+  unset ltag
+  return 1
+}
 # Compute tag properties
 # in:
 #   $1: ltag
@@ -310,17 +340,20 @@ vtag_best_match_vtag_at()
 # in:
 #   $1:vtag -- (sku/v1.0.0-rc1)
 # out:
-#   0,vbranch -- (sku/1.0)
-#   1         -- $1 is not a vtag
+#   vbranch  -- (sku/1.0)
+#   folder   -- (sku/)
+#   version  -- (1.0)
+# return:
+#   1 -- $1 is not a vtag
 vtag_set_vbranch_name ()
 {
-  if [[ $1 =~ ^(.*/)?v([0-9]+)\.([0-9]+)(\.|-) ]]; then
-    local prefix=${BASH_REMATCH[1]}
-    local major=${BASH_REMATCH[2]}
-    local minor=${BASH_REMATCH[3]}
-    vbranch=${prefix}$major.$minor;
+  if [[ $1 =~ ^(.*/)?v([0-9]+\.[0-9]+)(\.|-) ]]; then
+    folder=${BASH_REMATCH[1]}
+    version=${BASH_REMATCH[2]}
+    vbranch=${folder}$version;
   else
-    unset vbranch
+    unset vbranch folder version
+    return 1
   fi
 }
 vtag_get_vbranch_name () { local vbranch; vtag_set_vbranch_name "$1" && echo $vbranch; }
@@ -411,17 +444,20 @@ vtag_compare()
 }
 vtag_increment()
 {
-  local vtag=$1
-  local prerel_prefix=$2
-  local prerel_default rtm result
-  [[ $prerel_prefix == 'rtm' ]] && { unset prerel_prefix; rtm=true; }
-  [[ -n $prerel_prefix ]] && prerel_default=-${prerel_prefix}1
-
-  io_debug vtag vtag_increment
-  io_debug prerel_prefix vtag_increment
-  io_debug prerel_default vtag_increment
-  io_debug rtm vtag_increment
-
+  local vnext
+  vtag_set_increment "$@" && echo $vnext
+}
+# in:
+#   vtag
+#   prerelPrefix
+# out:
+#   vnext
+vtag_set_increment()
+{
+  unset vnext
+  local vtag=$1 prerelPrefix=$2 prerelDefault rtm
+  [[ $prerelPrefix == 'rtm' ]] && { unset prerelPrefix; rtm=true; }
+  [[ -n $prerelPrefix ]] && prerelDefault=-${prerelPrefix}1
   #  <major>.<minor>-@
   #  <major>.<minor>.<patch>[-<pre-release>][+<meta>]-<delta>-g<sha1>
   if [[ $vtag =~ ^(.*/)?v([0-9]+)\.([0-9]+)(\.|-)(.*)$ ]]; then
@@ -429,49 +465,37 @@ vtag_increment()
     local major=${BASH_REMATCH[2]}
     local minor=${BASH_REMATCH[3]}
     local patch=${BASH_REMATCH[5]}
-    io_debug prefix vtag_increment
-    io_debug major vtag_increment
-    io_debug minor vtag_increment
-
     if [[ $patch == '@' ]]; then
       io_debug patch vtag_increment
-      result="${prefix}v$major.$minor.0$prerel_default"
+      vnext="${prefix}v$major.$minor.0$prerelDefault"
     elif [[ $patch =~ ^([0-9]+)(\.[0-9]+)?(-[[:alnum:]]+)?(\+.+)?$ ]]; then
       patch=${BASH_REMATCH[1]}
       local build=${BASH_REMATCH[2]}
       local prerel=${BASH_REMATCH[3]}
       local meta=${BASH_REMATCH[4]}
-      io_debug patch vtag_increment
-      io_debug build vtag_increment
-      io_debug prerel vtag_increment
-      io_debug meta vtag_increment
       if [[ $prerel =~ -(alpha|beta|rc)([0-9]*) ]]; then
         if [[ -n $rtm ]]; then
-          result="${prefix}v$major.$minor.$patch"
+          vnext="${prefix}v$major.$minor.$patch"
         else
-          local actual_prerel_prefix=${BASH_REMATCH[1]}
+          local actual_prerelPrefix=${BASH_REMATCH[1]}
           local prerel_rev=${BASH_REMATCH[2]}
-          io_debug actual_prerel_prefix vtag_increment
-          io_debug prerel_rev vtag_increment
-          if [[ $prerel_prefix > $actual_prerel_prefix ]]; then
+          if [[ $prerelPrefix > $actual_prerelPrefix ]]; then
             prerel_rev=1
           else
-            prerel_prefix=$actual_prerel_prefix
+            prerelPrefix=$actual_prerelPrefix
             (( prerel_rev = prerel_rev + 1 ))
           fi
-          prerel=-$prerel_prefix$prerel_rev
-          io_debug prerel vtag_increment
-          result="${prefix}v$major.$minor.$patch$prerel"
+          prerel=-$prerelPrefix$prerel_rev
+          vnext="${prefix}v$major.$minor.$patch$prerel"
         fi
       else
-        result="${prefix}v$major.$minor.$((patch+1))$prerel_default"
+        vnext="${prefix}v$major.$minor.$((patch+1))$prerelDefault"
       fi
     fi
   fi
-  if [[ -z $result ]]; then
+  if [[ -z $vnext ]]; then
     io_error "vtag_increment: wrong vtag format: $vtag" "$moduleTracePrefix"
-  else
-    echo $result
+    return 1
   fi
 }
 
