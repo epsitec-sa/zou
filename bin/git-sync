@@ -73,8 +73,9 @@ sync_select_auto()
   # io_trace "sync_select_auto $(print_vars moduleId syncSelectExcludeIds[@])"
   array_contains_element "$moduleId" "${syncSelectExcludeIds[@]}" && return 0
   if ! branch_is_attached; then
-    local branchOrTag
-    branch_set_select_auto "$bundleBranch" || true
+    local hint forceCheckout=true skipVNodes=false allowDuplicateTags=false branchOrTag
+    [[ $moduleRoot == $bundleRoot ]] && allowDuplicateTags=true
+    branch_set_select_auto "$bundleBranch" "$hint" "$forceCheckout" "$skipVNodes" "$allowDuplicateTags"
   fi
 }
 sync_clean_local_branches()
