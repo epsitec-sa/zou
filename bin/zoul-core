@@ -39,8 +39,12 @@ io_print_colors()
   done
   printf '%20b%20b\n' "${colors[@]}"
 }
+# out:
+#   version
 io_set_version()
 {
+  unset version
+
   local line regex='Version>(.*)</'
   while read -r line || [[ -n "$line" ]]; do
     [[ "$line" =~ $regex ]] && {
@@ -194,8 +198,9 @@ string_max_length()
 #   maxLength
 string_set_max_length()
 {
-  local s len
   maxLength=0
+
+  local s len
   for s; do
     len=${#s}
     (( $len > $maxLength )) && maxLength=$len
@@ -220,7 +225,6 @@ assert_equals()
   while [[ "$#" > 0 ]]; do case "$1" in
     -l|--label) label="$2"; shift;;
     -n|--no-exit) no_exit=true;;
-    -*) echo "unknown option: '$1'" >&2; exit 1;;
     *) args+=("$1");;
   esac; shift; done
   local expected=${args[0]}
@@ -241,7 +245,6 @@ assert_exit_code()
   while [[ "$#" > 0 ]]; do case "$1" in
     -l|--label) label="$2"; shift;;
     -n|--no-exit) no_exit=true;;
-    -*) echo "unknown option: '$1'" >&2; exit 1;;
     *) args+=("$1");;
   esac; shift; done
   local expected=${args[0]}
@@ -265,11 +268,15 @@ wildcard_to_regex()
   wildcard_set_regex "$1"
   echo "$regex"
 }
+# out:
+#   regex
 wildcard_set_regex_match_whole()
 {
   wildcard_set_regex "$1"
   regex="^$regex$"
 }
+# out:
+#   regex
 wildcard_set_regex()
 {
   regex="${1//./\\.}"         # .   ->   \.

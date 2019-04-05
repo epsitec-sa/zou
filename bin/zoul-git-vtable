@@ -24,32 +24,33 @@ print_head()
 }
 vtable_row()
 {
-  local moduleId=$1 setHash=${2:-true} vminor vmajor head hash tag
+  local moduleId=$1 setHash=${2:-true} vminor vmajor head hash tag version delta
   head=$(branch_current)
   if ! branch_is_local $head; then
     head=$(branch_list_local_at $head | cut -f 1 -d ' ')
   fi
   [[ $setHash == true ]] && hash=$(git rev-parse --short HEAD 2>/dev/null)
-  tag=$(vtag_describe $head)
+  tag=$(vtag_describe "$head")
   tag=${tag%-g*}
 
   if [[ $tag =~ (.*)-([0-9]+)$ ]]; then
-    local version=${BASH_REMATCH[1]}
-    local delta=${BASH_REMATCH[2]}
+    version=${BASH_REMATCH[1]}
+    delta=${BASH_REMATCH[2]}
   else
-    local version=$tag
+    version=$tag
   fi
   local IFS=' '
   local tags=$(git tag -l --sort=-v:refname)
+  local folder major minor refolder
   if [[ $version =~ ^(.*/)?v([0-9]+)\.([0-9]+) ]]; then
-    local sku=${BASH_REMATCH[1]}
-    local major=${BASH_REMATCH[2]}
-    local minor=${BASH_REMATCH[3]}
-    local reSku=$(wildcard_to_regex $sku)
-    vminor=$(echo $tags | grep -m1 "^${reSku}v$major\.$minor")
-    vmajor=$(echo $tags | grep -m1 "^${reSku}v$major\.")
+    folder=${BASH_REMATCH[1]}
+    major=${BASH_REMATCH[2]}
+    minor=${BASH_REMATCH[3]}
+    refolder=$(wildcard_to_regex $folder)
+    vminor=$(echo $tags | grep -m1 "^${refolder}v$major\.$minor")
+    vmajor=$(echo $tags | grep -m1 "^${refolder}v$major\.")
   fi
-  local vnext=$(echo $tags | grep -m1 "^${reSku}v[0-9]")
+  local vnext=$(echo $tags | grep -m1 "^${refolder}v[0-9]")
   local md_moduleId=$moduleId
   local md_version=$version
   [[ $version =~ ^.*-@$ || -z $version || -n $delta ]] && md_moduleId="##$moduleId##"
@@ -57,6 +58,7 @@ vtable_row()
   [[ $version == $vminor ]] && unset vminor || vminor="#$vminor#"
   [[ $version == $vmajor ]] && unset vmajor || vmajor="#$vmajor#"
   [[ $version == $vnext ]] && unset vnext || vnext="#$vnext#"
+  # ZOU_TRACE=true io_trace "vtable_row -- $(print_vars moduleId head hash version delta tag folder major minor vmajor vminor vnext)"
   local module_content=$(print_row "$md_moduleId" "$head" "$hash" "$delta" "$md_version" "$vminor" "$vmajor" "$vnext")
   echo "$module_content"
 }
@@ -72,9 +74,9 @@ vtable_init()
 }
 vtable_update()
 {
-  # echo vtable_update "${*@Q}"
 
   local root=$1 moduleId=$2 lookupPath=$3 commitVTable=$4
+  # ZOU_TRACE=true io_trace "vtable_update -- $(print_vars root moduleId lookupPath commitVTable)"
 
   if [[ "$PWD" == "$root" ]]; then
     local IFS=$'\n'

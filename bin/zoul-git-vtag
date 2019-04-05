@@ -7,10 +7,6 @@ ZOUL_GIT_VTAG=true
 [[ -z $ZOUL_CORE ]]            && . zoul-core
 [[ -z $ZOUL_GIT_CORE ]]        && . zoul-git-core
 [[ -z $ZOUL_GIT_REF ]]         && . zoul-git-ref
-[[ -z $ZOUL_GIT_TAG ]]         && . zoul-git-tag
-[[ -z $ZOUL_GIT_BRANCH_CORE ]] && . zoul-git-branch-core
-
-vtag_get_patch()  { vtag_is_semver $1 && echo ${BASH_REMATCH[5]}; }
 
 # Parse semver tag
 # input:
@@ -28,36 +24,6 @@ vtag_get_patch()  { vtag_is_semver $1 && echo ${BASH_REMATCH[5]}; }
 #   meta=${BASH_REMATCH[9]}            +meta
 vtag_is_semver() { [[ $1 =~ ^(.*/)?v([0-9]+).([0-9]+)(-@|.([0-9]+)((-alpha|-beta|-rc)([0-9]+))?(\+.+)?)$ ]]; }
 vtag_is_vnode()  { [[ $1 =~ ^(.*/)?v[0-9]+\.[0-9]+-@ ]]; }
-vtag_is_vtag()   { [[ $1 =~ ^(.*/)?v[0-9]+\.[0-9]+\.[0-9] ]]; }
-vtag_at_vtag()
-{
-  local tag
-  tag=$(git describe --exact-match "$1" 2>/dev/null) || return 1
-  vtag_is_vtag "$tag" && echo $tag
-}
-vtag_list()
-{
-  # input             output
-  # 1.0               v1.0-@ v1.0.0
-  # sku/sal/1.0       sku/sal/v1.0-@
-  local vbranch=$1
-  local regex
-  if [[ -z $vbranch ]]; then
-    regex='v[0-9]+\.[0-9]+(\.|-)'
-  elif [[ $vbranch =~ ^(.*/)?([0-9]+\.[0-9]+) ]]; then
-    # vbranch
-    local prefix=${BASH_REMATCH[1]}
-    local version=${BASH_REMATCH[2]}
-    regex="^$(wildcard_to_regex $prefix)v$(wildcard_to_regex $version)"
-    # io_debug prefix vtag_list
-    # io_debug version vtag_list
-  else
-    io_error "vtag invalid format : '$1'"
-    return 1
-  fi
-  # io_debug regex vtag_list
-  git tag -l --sort=-v:refname | grep -E $regex | grep -v '^other/' || true
-}
 
 # get highest version on a specific vbranch
 # - a bundle can have the same version twice (SKU version)
@@ -119,106 +85,6 @@ vtag_highest()
     return 1
   fi
 }
-vtag_group_by_version()
-{
-  declare -A lookup
-  local vtag vbranch
-  for vtag in $(git tag -l --sort=-v:refname); do
-    # skip other tags
-    ref_is_other $vtag && continue
-    # skip non semver tags
-    ! vtag_is_semver $vtag && continue
-    vbranch="${BASH_REMATCH[1]}${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
-    if [ -z "${lookup[$vbranch]}" ]; then
-      lookup[$vbranch]=$vtag
-    else
-      lookup[$vbranch]="${lookup[$vbranch]} $vtag"
-    fi
-    # io_trace "vtag_group_by_version $(print_vars vbranch vtag)"
-  done
-  [ ${#lookup[@]} -eq 0 ] && echo 'declare -A lookup=()' || declare -p lookup
-}
-# out:
-#   vtagGrouping
-vtag_group_by_date_visitor()
-{
-  # assume caller has a vtagGrouping lookup defined
-  local vtag vbranch
-  if [ $# -eq 1 ]; then
-    vtag=$1
-    vbranch=$(vtag_get_vbranch_name $vtag)
-    if [ -z "${vtagGrouping[$vbranch]}" ]; then
-      vtagGrouping[$vbranch]=$vtag
-    else
-      vtagGrouping[$vbranch]="${vtagGrouping[$vbranch]} $vtag"
-    fi
-  else
-    declare -A vlookup
-    for vtag in "$@"; do
-      vbranch=$(vtag_get_vbranch_name $vtag)
-      if [ -z "${vlookup[$vbranch]}" ]; then
-        vlookup[$vbranch]=$vtag
-      else
-        vlookup[$vbranch]="${vlookup[$vbranch]} $vtag"
-      fi
-    done
-    # merge groupings
-    for vbranch in ${!vlookup[@]}; do
-      vtag=$(string_join '=' ${vlookup[$vbranch]})
-      if [ -z "${vtagGrouping[$vbranch]}" ]; then
-        vtagGrouping[$vbranch]=$vtag
-      else
-        vtagGrouping[$vbranch]="${vtagGrouping[$vbranch]} $vtag"
-      fi
-    done
-    unset vlookup
-  fi
-}
-vtag_group_by_date_filter()
-{
-  ! vtag_is_semver $1 && return 1
-  ref_is_other $1 && return 1
-  return 0
-}
-vtag_group_by_date()
-{
-  declare -A vtagGrouping
-  vtag_visit_by_date vtag_group_by_date_visitor vtag_group_by_date_filter
-  [ ${#vtagGrouping[@]} -eq 0 ] && echo 'declare -A vtagGrouping=()' || declare -p vtagGrouping
-}
-vtag_list_by_date_visitor() { (( $# > 1 )) && echo $(string_join '=' "$@") || echo $1; }
-vtag_list_by_date() { vtag_visit_by_date vtag_list_by_date_visitor; }
-vtag_visit_by_date()
-{
-  local visitor=$1
-  local filter=$2
-  local line atoms vtags item
-  local IFS=$'\n'
-  for line in $(git log --date-order --tags --simplify-by-decoration --pretty=format:'%d'); do
-    local IFS=' '
-    # look only for lines with a tag label
-    [[ $line =~ tag: ]] || continue
-    # remove parentheses
-    [[ $line =~ \((.*)\) ]] && {
-      line=${BASH_REMATCH[1]}
-      # remove space between tag label and tag value ?
-      line=${line//tag: /tag:}
-      atoms=( ${line//, / } )
-      vtags=()
-      for item in "${atoms[@]}"; do
-        [[ $item =~ ^tag:(.*) ]] && {
-          item=${BASH_REMATCH[1]}
-          if [[ -n $filter ]]; then
-            $filter $item && vtags+=( $item )
-          else
-            vtags+=( $item )
-          fi
-        }
-      done
-      $visitor "${vtags[@]}"
-    }
-  done
-}
 # find first vtag ancestor starting from given commit
 # input:
 # - $1: branch symbol
@@ -226,19 +92,79 @@ vtag_visit_by_date()
 # - vtag description (ex: v1.0.0-rc1-5-ge5d2fe9)
 vtag_describe()
 {
-  local branch=$(git_symbolic_ref ${1:-HEAD}) match ltag stag skipVNode=$2 exclude=('other/*')
-  [[ $skipVNode == true ]] && exclude+=('*-@')
+  local branch=$(git_symbolic_ref ${1:-HEAD}) skipVNodes=$2 match ltag stag exclude=('--exclude' 'other/*')
+  # ZOU_TRACE=true io_trace "vtag_describe 1 -- $(print_vars branch skipVNodes)"
+  [[ $skipVNodes == true ]] && exclude+=('--exclude' '*-@')
   for match in $(ref_tag_fallback $branch 'v[0-9]*'); do
-    ltag=$(git describe --tags --match "$match" ${exclude[@]/#/--exclude } "$branch" 2>/dev/null)
+    ltag=$(git describe --tags --match "$match" "${exclude[@]}" "$branch" 2>/dev/null)
+    # ZOU_TRACE=true io_trace "vtag_describe 2 -- $(print_vars branch skipVNodes match ltag)"
     if [[ -n $ltag ]]; then
       stag=${ltag%-*-g*}
       if git merge-base --is-ancestor $stag^{} $branch; then
         echo $ltag
-        # io_trace "vtag_describe -> $(print_vars branch match ltag stag)"
+        # ZOU_TRACE=true io_trace "vtag_describe 3 -> $(print_vars branch skipVNodes match ltag stag)"
         return 0
       fi
     fi
   done
+  return 1
+}
+# usage:
+#  local branch lbranch
+#  branch_set_best_match_dev "$sku"
+#  vtag_set_describe "$branch" "$lbranch" $skipVNodes
+#  
+# in:
+#   $1:branch  -- local or remote
+#   $2:lbranch -- local name
+#   $3:skipVNodes
+# out:
+#   ltag
+vtag_set_describe()
+{
+  local branch=$1 lbranch=$2 skipVNodes=$2 match stag exclude=('--exclude' 'other/*')
+  # ZOU_TRACE=true io_trace "vtag_describe 1 -- $(print_vars branch skipVNodes)"
+  [[ $skipVNodes == true ]] && exclude+=('--exclude' '*-@')
+  for match in $(ref_tag_fallback $lbranch 'v[0-9]*'); do
+    ltag=$(git describe --tags --match "$match" "${exclude[@]}" "$branch" 2>/dev/null)
+    # ZOU_TRACE=true io_trace "vtag_describe 2 -- $(print_vars branch skipVNodes match ltag)"
+    if [[ -n $ltag ]]; then
+      stag=${ltag%-*-g*}
+      if git merge-base --is-ancestor $stag^{} $branch; then
+        # ZOU_TRACE=true io_trace "vtag_describe 3 -> $(print_vars branch skipVNodes match ltag stag)"
+        return 0
+      fi
+    fi
+  done
+  unset ltag
+  return 1
+}
+# Compute tag properties
+# in:
+#   $1: ltag
+# out:
+#   vtag
+#   delta
+#   alias
+vtag_set_info()
+{
+  # ZOU_TRACE=true io_trace "vtag_set_info ${*@Q}"
+  local ltag=$1 lsuf
+    # compute checkout alias
+  if [[ -n $ltag ]]; then
+    vtag=${ltag%-*-g*}
+    lsuf=${ltag#$vtag}
+    delta=${lsuf%-g*}
+    delta=${delta#-}
+    if [[ -z $delta ]]; then
+      alias="$vtag"
+      delta=0
+    else
+      alias="> $vtag ($delta)"
+    fi
+    return 0
+  fi
+  unset vtag delta alias
   return 1
 }
 # list all vtags pointing at given commit
@@ -276,34 +202,28 @@ vtag_best_match_vtag_at()
   done
   echo "${vtags[0]}"
 }
-# extract vbranch name from vtag
-# input:
-# - $1: vtag (ex: v1.0.0-rc1)
-# output:
-# - vbranch name (ex: 1.0)
-# - nothing if $1 is not a vtag
-vtag_get_vbranch_name ()
+# Extract vbranch name from vtag
+# in:
+#   $1:vtag -- (sku/v1.0.0-rc1)
+# out:
+#   vbranch  -- (sku/1.0)
+#   folder   -- (sku/)
+#   version  -- (1.0)
+# return:
+#   1 -- $1 is not a vtag
+vtag_set_vbranch_name ()
 {
-  if [[ $1 =~ ^(.*/)?v([0-9]+)\.([0-9]+)(\.|-) ]]; then
-    local prefix=${BASH_REMATCH[1]}
-    local major=${BASH_REMATCH[2]}
-    local minor=${BASH_REMATCH[3]}
-    echo ${prefix}$major.$minor;
+  if [[ $1 =~ ^(.*/)?v([0-9]+\.[0-9]+)(\.|-) ]]; then
+    folder=${BASH_REMATCH[1]}
+    version=${BASH_REMATCH[2]}
+    vbranch=${folder}$version;
+  else
+    unset vbranch folder version
+    return 1
   fi
 }
-# find  local or remote vbranch - priority to local vbranch
-# input:
-# - $1: vtag (ex: v1.0.0-rc1)
-# output:
-# - local vbranch (ex: 1.0) if it exists
-# - remote vbranch (ex: origin/1.0) if local vbranch does not exist
-vtag_get_vbranch()
-{
-  local vtag=$1 vbranch
-  vbranch=$(branch_realize $(vtag_get_vbranch_name $vtag))
-  [ $? -le 1 ] && echo $vbranch
-  io_warning "vtag_get_vbranch: vtag '$vtag' has no associated vbranch"
-}
+vtag_get_vbranch_name () { local vbranch; vtag_set_vbranch_name "$1" && echo $vbranch; }
+
 vtag_highest_of()
 {
   # io_trace "vtag_highest_of ${*@Q}"
@@ -377,17 +297,20 @@ vtag_compare()
 }
 vtag_increment()
 {
-  local vtag=$1
-  local prerel_prefix=$2
-  local prerel_default rtm result
-  [[ $prerel_prefix == 'rtm' ]] && { unset prerel_prefix; rtm=true; }
-  [[ -n $prerel_prefix ]] && prerel_default=-${prerel_prefix}1
-
-  io_debug vtag vtag_increment
-  io_debug prerel_prefix vtag_increment
-  io_debug prerel_default vtag_increment
-  io_debug rtm vtag_increment
-
+  local vnext
+  vtag_set_increment "$@" && echo $vnext
+}
+# in:
+#   vtag
+#   prerelPrefix
+# out:
+#   vnext
+vtag_set_increment()
+{
+  unset vnext
+  local vtag=$1 prerelPrefix=$2 prerelDefault rtm
+  [[ $prerelPrefix == 'rtm' ]] && { unset prerelPrefix; rtm=true; }
+  [[ -n $prerelPrefix ]] && prerelDefault=-${prerelPrefix}1
   #  <major>.<minor>-@
   #  <major>.<minor>.<patch>[-<pre-release>][+<meta>]-<delta>-g<sha1>
   if [[ $vtag =~ ^(.*/)?v([0-9]+)\.([0-9]+)(\.|-)(.*)$ ]]; then
@@ -395,49 +318,37 @@ vtag_increment()
     local major=${BASH_REMATCH[2]}
     local minor=${BASH_REMATCH[3]}
     local patch=${BASH_REMATCH[5]}
-    io_debug prefix vtag_increment
-    io_debug major vtag_increment
-    io_debug minor vtag_increment
-
     if [[ $patch == '@' ]]; then
       io_debug patch vtag_increment
-      result="${prefix}v$major.$minor.0$prerel_default"
+      vnext="${prefix}v$major.$minor.0$prerelDefault"
     elif [[ $patch =~ ^([0-9]+)(\.[0-9]+)?(-[[:alnum:]]+)?(\+.+)?$ ]]; then
       patch=${BASH_REMATCH[1]}
       local build=${BASH_REMATCH[2]}
       local prerel=${BASH_REMATCH[3]}
       local meta=${BASH_REMATCH[4]}
-      io_debug patch vtag_increment
-      io_debug build vtag_increment
-      io_debug prerel vtag_increment
-      io_debug meta vtag_increment
       if [[ $prerel =~ -(alpha|beta|rc)([0-9]*) ]]; then
         if [[ -n $rtm ]]; then
-          result="${prefix}v$major.$minor.$patch"
+          vnext="${prefix}v$major.$minor.$patch"
         else
-          local actual_prerel_prefix=${BASH_REMATCH[1]}
+          local actual_prerelPrefix=${BASH_REMATCH[1]}
           local prerel_rev=${BASH_REMATCH[2]}
-          io_debug actual_prerel_prefix vtag_increment
-          io_debug prerel_rev vtag_increment
-          if [[ $prerel_prefix > $actual_prerel_prefix ]]; then
+          if [[ $prerelPrefix > $actual_prerelPrefix ]]; then
             prerel_rev=1
           else
-            prerel_prefix=$actual_prerel_prefix
+            prerelPrefix=$actual_prerelPrefix
             (( prerel_rev = prerel_rev + 1 ))
           fi
-          prerel=-$prerel_prefix$prerel_rev
-          io_debug prerel vtag_increment
-          result="${prefix}v$major.$minor.$patch$prerel"
+          prerel=-$prerelPrefix$prerel_rev
+          vnext="${prefix}v$major.$minor.$patch$prerel"
         fi
       else
-        result="${prefix}v$major.$minor.$((patch+1))$prerel_default"
+        vnext="${prefix}v$major.$minor.$((patch+1))$prerelDefault"
       fi
     fi
   fi
-  if [[ -z $result ]]; then
+  if [[ -z $vnext ]]; then
     io_error "vtag_increment: wrong vtag format: $vtag" "$moduleTracePrefix"
-  else
-    echo $result
+    return 1
   fi
 }
 

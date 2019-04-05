@@ -385,7 +385,7 @@ repo_update_submodule()
   io_info 'Updating submodule '$path'' "$moduleTracePrefix"
   (git submodule update --init --recursive "$path" 2>&1) | \
   while read -r line; do
-    [[ -n $line ]] && io_message "$line" "$moduleTracePrefix" DarkGray
+    [[ -n $line ]] && io_message "  $line" "$moduleTracePrefix" DarkGray
   done
   repo_raise_submodule_changed_event "$path"
 }

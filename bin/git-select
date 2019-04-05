@@ -61,9 +61,14 @@ select_tree()
 }
 select_prolog()
 {
-  repo_require_clean_work_tree 'Cannot select' || return 1
-  # io_trace "select_prolog $(print_vars recursive noSkuFilter selectHint commitSubmodules sku)"
-  branch_select_auto "$sku" "$selectHint" true
+  # repo_require_clean_work_tree 'Cannot select' || return 1
+
+  local hint=$selectHint forceCheckout=true skipVNodes allowDuplicateTags branchOrTag
+  [[ -z $hint && $moduleRoot == $bundleRoot ]] && { hint='dev'; skipVNodes=false; } || skipVNodes=true
+  [[ $moduleRoot == $bundleRoot ]] && allowDuplicateTags=true
+
+  # ZOUL_TRACE=true io_trace "select_prolog -- $(print_vars recursive noSkuFilter commitSubmodules sku hint forceCheckout skipVNodes allowDuplicateTags)"
+  branch_set_select_auto "$sku" "$hint" "$forceCheckout" "$skipVNodes" "$allowDuplicateTags"
 }
 select_epilog()
 {

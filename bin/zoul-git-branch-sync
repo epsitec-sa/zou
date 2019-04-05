@@ -84,14 +84,16 @@ _branch_sync_visit()
       if [[ $cleanLocalBranches == true ]]; then
         io_message "$linfo $i $r (delete pending)" "$moduleTracePrefix" $color
       else
-        io_message "$linfo $i $r" "$moduleTracePrefix" $color
+        io_lock_enter
+        io_message_unsafe "$linfo $i $r" "$moduleTracePrefix" $color
 
-        io_message "  Remote branch $r was deleted or renamed." "$moduleTracePrefix"
-        io_message "  Either rename $l and update its tracking information:" "$moduleTracePrefix"
-        io_message "    git branch -m $l <newbranch>" "$moduleTracePrefix" Gray
-        io_message "    git branch -u <upstream> <newbranch>" "$moduleTracePrefix" Gray
-        io_message "  Or clean local tracked branches with:" "$moduleTracePrefix"
-        io_message "    git sync --clean" "$moduleTracePrefix" Gray
+        io_message_unsafe "  Remote branch $r was deleted or renamed." "$moduleTracePrefix"
+        io_message_unsafe "  Either rename $l and update its tracking information:" "$moduleTracePrefix"
+        io_message_unsafe "    git branch -m $l <newbranch>" "$moduleTracePrefix" Gray
+        io_message_unsafe "    git branch -u <upstream> <newbranch>" "$moduleTracePrefix" Gray
+        io_message_unsafe "  Or clean local tracked branches with:" "$moduleTracePrefix"
+        io_message_unsafe "    git sync --clean" "$moduleTracePrefix" Gray
+        io_lock_exit
       fi
     else
       [[ $syncNoPush == true && $i =~ '>' ]] || io_message "$linfo $i $r" "$moduleTracePrefix" $color

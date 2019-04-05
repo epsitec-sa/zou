@@ -22,8 +22,12 @@ bundle_unregister()
   local url=$1 path=$2
   git config --global --unset "zou.$url.path" "$path"
 }
+# out:
+#   bundleRegisteredPaths
 bundle_set_registered_paths()
 {
+  bundleRegisteredPaths=()
+  
   lock_enter "$gitConfigGate"
   local IFS=$'\n' kv
   for kv in $(git config --global --get-regexp '^zou\..*\.path$'); do

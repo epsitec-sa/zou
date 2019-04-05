@@ -12,53 +12,74 @@ ZOUL_GIT_BRANCH_PUBLISH=true
 [[ -z $ZOUL_GIT_BRANCH_MERGE ]]   && . zoul-git-branch-merge
 [[ -z $ZOUL_GIT_CONFIG_VERSION ]] && . zoul-git-config-version
 
-
-branch_get_vbranch_name()
-{
-  local ltag=$(vtag_describe $1)
-  vtag_get_vbranch_name $ltag
-}
-# Publish a development branch
-# inputs:
-#  $1 : branch to publish
-#  $2 : prerelease prefix (alpha, beta, rc, rtm, reuse)
-#       if prerelease prefix == 'reuse' then move previous vtag
-#  $3 : vtable root folder
-#       if vtable root folder is specified, create a vtable
-# return the vtag at which the dev branch has been published
+# Publish a development branch (obsolete)
+#
+# usage:
+#   local vnext vbranch
+#   branch_publish $branch $prerelPrefix
+#
+# in:
+#  $1:sku
+#  $2:hint
+#  $3:allowDuplicateTags
+#  $4:prerelPrefix   -- prerelease prefix (alpha, beta, rc, rtm, reuse)
+#                    -- if prerelease prefix == 'reuse' then move previous vtag
+# out:
+#   vnext    -- the vtag at which the dev branch has been published
 branch_publish()
 {
-  local branch=$1 prerelPrefix=$2 obranch
+  io_warning "branch_publish is deprecated, use branch_set_publish instead" "$moduleTracePrefix"
   
-  if [[ -z $branch ]]; then
-    branch=$(branch_current)
-  elif [[ $(git_get_commit $branch) != $(git rev-parse HEAD) ]]; then
-    obranch=$(branch_current)
-  fi
+  local sku=$1 hint=$2 allowDuplicateTags=$3 prerelPrefix=$4
+  local branch vtag htag publishStatus
+  branch_set_select_auto "$sku" "$hint" false false "$allowDuplicateTags"
 
-  # io_trace "branch_publish ${*@Q} -- $(print_vars branch prerelPrefix obranch)"
+  case $publishStatus in
+    vtagMissing)
+      io_error   "Branch '$branch' cannot be published (no vbranch associated)" "$moduleTracePrefix"
+      return 1;;
+    published)
+      io_message "Already published at ${Brown}$vtag" "$moduleTracePrefix" LightBlue;;
+    notPublished|neverPublished)
+      io_info "Publishing branch '$branch' on '$vbranch'" "$moduleTracePrefix"
+      branch_set_publish "$branch" "$vbranch" "$vtag" "$htag" "$prerelPrefix" \
+      && io_success "Published branch '$branch' at ${Brown}$vnext" "$moduleTracePrefix" \
+      || { io_error "Publish of branch '$branch' failed" "$moduleTracePrefix"; return 1; };;
+    ffPublish)
+      branch_merge "$vtag" "$moduleBranch" \
+      && io_success "Published branch '$branch' at ${Brown}$vnext${Green} (fast-forward)" "$moduleTracePrefix" \
+      || { io_error "Fast-forward publish of branch '$branch' failed" "$moduleTracePrefix"; return 1; };;
+  esac
+}
+# Publish a development branch
+#
+# usage:
+#  local branch vbranch vtag htag publishStatus
+#  branch_set_select_auto $sku $hint false false $allowDuplicateTags
+#  local vnext
+#  branch_set_publish $branch $vbranch $vtag $htag $prerelPrefix"
+# in:
+#  $1:branch        -- branch to publish
+#  $2:vbranch       -- vbranch
+#  $3:vtag          -- previous vtag
+#  $4:htag          -- base vtag for vnext computation
+#  $5:prerelPrefix  -- prerelease prefix (alpha, beta, rc, rtm, reuse)
+#                      [[ prerelPrefix == reuse ]] && tag_move vtag branch
+# out:
+#  vnext
+branch_set_publish()
+{
+  unset vnext
 
-  if ! branch_is_local "$branch"; then
-    # detached head
-    local vtags=( $(vtag_vtags_at $branch | grep -v '\-@$') )
-    if [ ${#vtags[@]} -ne 0 ]; then
-      io_info "Published detached head '$branch' at '${vtags[0]}'" "$moduleTracePrefix"
-      return 0
-    else
-      io_warning "Detached head '$branch' cannot be published" "$moduleTracePrefix"
-    fi
-    return 1
-  fi
+  local branch=$1 vbranch=$2 vtag=$3 htag=$4 prerelPrefix=$5 obranch ec=0
+  
+  [[ -z $branch ]]  && { io_error "Argument 'branch' not specified." "$moduleTracePrefix"; return 1; }
+  [[ -z $vbranch ]] && { io_error "Argument 'vbranch' not specified." "$moduleTracePrefix"; return 1; }
+  ! branch_ensure_local $branch && { io_error "Branch '$branch' does not exist." "$moduleTracePrefix"; return 1; }
+  ! branch_ensure_local $vbranch && { io_error "Branch '$vbranch' does not exist." "$moduleTracePrefix"; return 1; }
+  ! branch_is_current $branch && obranch=$(branch_current)
 
-  local vbranch=$(branch_get_vbranch_name $branch)
-  if [[ -z $vbranch ]]; then
-    io_warning "Branch '$branch' is not associated with a vbranch" "$moduleTracePrefix"
-    return 2
-  fi
-  if ! branch_ensure_local $vbranch; then
-    io_warning "The vbranch '$vbranch' does not exist" "$moduleTracePrefix"
-    return 2
-  fi
+  # ZOU_TRACE=true io_trace "branch_set_publish 1 -- $(print_vars branch vbranch vtag htag prerelPrefix obranch)"
 
   # synchonize submodules to avoid merge conflicts
   commit_sync_submodules $branch $vbranch
@@ -70,49 +91,40 @@ branch_publish()
     branch_merge_core $branch $vbranch '-Xtheirs'
   fi
 
-  local vtag ec=0
-
   if [[ $prerelPrefix == 'reuse' ]]; then
     # reuse previous vtag if it's not a vnode
-    vtag=$(vbranch_prev_vtag $branch) || ec=$?
-    if [[ -z $vtag ]] || vtag_is_vnode $vtag; then
-      vtag=$(vbranch_next_vtag $branch) || ec=$?
+    if vtag_is_vnode $vtag; then
+      vtag_set_increment $htag || return 1
       unset prerelPrefix
+    else
+      vnext=$vtag
     fi
   else
     # compute next vtag
-    vtag=$(vbranch_next_vtag $branch $prerelPrefix) || ec=$?
+    vtag_set_increment $htag $prerelPrefix || return 1
   fi
 
-  # io_trace "branch_publish ${*@Q} -- $(print_vars branch prerelPrefix vtag)"
+  # ZOU_TRACE=true io_trace "branch_set_publish 2 -- $(print_vars branch vbranch vtag htag prerelPrefix obranch vnext)"
 
-  # ec = 3 means already published
-  [[ $ec -ne 0 && $ec -ne 3 ]] && return 4
-
-  if [[ $prerelPrefix == 'reuse' || $ec -eq 3 ]]; then
-    _branch_publish_commit_and_merge "$obranch" "$branch" "$vbranch" "$vtag"
-    # move previous vtag if asked
+  if [[ $prerelPrefix == 'reuse' ]]; then
+    _branch_set_publish_epilog
     tag_move "$vtag" "$branch"
   else
     # update technical version
-    _branch_publish_commit_and_merge "$obranch" "$branch" "$vbranch" "$vtag" 'version_update'
+    _branch_set_publish_epilog 'version_update'
     # create vtag
-    local comment="publish branch '$branch' as '$vtag'"
-    git tag -a -m "zou-flow: $comment" $vtag $vbranch
+    local comment="publish branch '$branch' as '$vnext'"
+    git tag -a -m "zou-flow: $comment" "$vnext" "$vbranch"
   fi
-
-  [ $ec -eq 3 ] || io_success "Published branch '$branch' at ${Brown}$vtag" "$moduleTracePrefix"
-  echo "$vtag" "$vbranch"
 }
-
-_branch_publish_commit_and_merge()
+_branch_set_publish_epilog()
 {
   # io_trace "_branch_publish_commit_and_merge ${*@Q}"
-  local obranch=$1 branch=$2 vbranch=$3 vtag=$4 updater=$5 vcommit
+  local updater=$1 vcommit
   # update technical version - modify resources files
   [[ -n $obranch ]] && git checkout $branch &>/dev/null
   # update resource files
-  [[ -n $updater ]] && vcommit=( $($updater $vtag) ) || vcommit=($vtag)
+  [[ -n $updater ]] && vcommit=( $($updater $vnext) ) || vcommit=($vnext)
   # commit dev and merge into prod
   version_commit_files "${vcommit[@]}" $(repo_list_unstaged_clean_submodules) \
   && branch_merge $branch $vbranch '-Xtheirs'
