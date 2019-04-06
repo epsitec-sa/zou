@@ -119,6 +119,8 @@ publish_submodules()
 }
 publish_epilog()
 {
+  [ $publishStatus == 'published' ] && cosm_has_unstaged_submodules && publishStatus='notPublished'
+  
   cosm_process_unstaged_submodules
   publish_publish || return $?
   publish_update_vtable
