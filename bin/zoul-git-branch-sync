@@ -44,7 +44,7 @@ _branch_sync_visitor()
     '<>') _branch_sync_sync  "$r" "$l" || return 1;; # ahead and behind
     *) return 0;;
   esac
-  [[ $l == $current ]] && _branch_raise_branch_sync_event "$r" "$l" "$i"
+  [[ $l == $current ]] && _branch_raise_branch_sync_event "$r" "$l" "$i" || return 0
 }
 _branch_oreset_visitor()
 {
