@@ -10,7 +10,7 @@ ZOUL_LOCK=true
 
 lock_init()
 {
-  local gate=$(mktemp -u)
+  local gate=${1:-$(mktemp -u)}
   # Remove lockdir when the script finishes, or when it receives a signal
   trap "rm -rf \"$gate\"" 0
   echo $gate

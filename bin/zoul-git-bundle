@@ -7,20 +7,20 @@ ZOUL_GIT_BUNDLE=true
 [[ -z $ZOUL_LOCK ]] && . zoul-lock
 [[ -z $ZOUL_CORE ]] && . zoul-core
 
-gitConfigGate=$(lock_init)
+gitConfigGate=$(lock_init $(realpath ~/.gitconfig.lock))
 
 bundle_register()
 {
   local url=$1 path=$2
   lock_enter "$gitConfigGate"
-  git config --global --unset "zou.$url.path" "$path"
-  git config --global --add "zou.$url.path" "$path"
+  git config --global --unset "zou.$url.path" "$path" 2>/dev/null
+  git config --global --add "zou.$url.path" "$path" 2>/dev/null
   lock_exit "$gitConfigGate"
 }
 bundle_unregister()
 {
   local url=$1 path=$2
-  git config --global --unset "zou.$url.path" "$path"
+  git config --global --unset "zou.$url.path" "$path" 2>/dev/null
 }
 # out:
 #   bundleRegisteredPaths
@@ -30,7 +30,7 @@ bundle_set_registered_paths()
   
   lock_enter "$gitConfigGate"
   local IFS=$'\n' kv
-  for kv in $(git config --global --get-regexp '^zou\..*\.path$'); do
+  for kv in $(git config --global --get-regexp '^zou\..*\.path$' 2>/dev/null); do
     # zou.https://git.epsitec.ch/Build/zou-dev.git.path C:/devel/zou-dev
     # zou.https://git.epsitec.ch/cresus-suite/cresus-dev.git.path C:/devel/cresus-dev
     [[ $kv =~ ^[^[:blank:]]+[[:blank:]]+(.*)$ ]]
