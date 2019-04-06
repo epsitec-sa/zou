@@ -7,7 +7,6 @@ cleanex_parse()
 {
   while [[ "$#" > 0 ]]; do case "$1" in
     -h|--help) zou-help $0; exit 0;;
-    -q|--quiet)     forOpts+=($1); quiet=true;;
     .)              unset recursive;;
     -d|--dsm-only)  dsmOnly=true;;
     -f|--force)     force=true;;
@@ -16,7 +15,7 @@ cleanex_parse()
 }
 cleanex_run()
 {
-  local quiet recursive dsmOnly force forOpts=() recursive=true
+  local dsmOnly force forOpts=() recursive=true
   cleanex_parse "$@" || return $?
 
   if [[ $recursive = true ]]; then
