@@ -23,7 +23,7 @@ config_setup()
 
   # update zou aliases
   local alias
-  for alias in csku csel cver cpub smaster spull sclean; do
+  for alias in csku csel cver cpub smaster spull sclean oprune; do
     git config --global --unset-all alias.$alias
   done
   git config --global --add alias.csku 'config-sku'
@@ -33,4 +33,5 @@ config_setup()
   git config --global --add alias.smaster 'git-select --dev master'
   git config --global --add alias.spull 'git-sync --nopush'
   git config --global --add alias.sclean 'git-cleanex'
+  git config --global --add alias.oprune 'fetch origin --prune'
 }
