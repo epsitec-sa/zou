@@ -41,7 +41,6 @@ branch_publish()
     published)
       io_message "Already published at ${Brown}$vtag" "$moduleTracePrefix" LightBlue;;
     notPublished|neverPublished)
-      io_info "Publishing branch '$branch' on '$vbranch'" "$moduleTracePrefix"
       branch_set_publish "$branch" "$vbranch" "$vtag" "$htag" "$prerelPrefix" \
       && io_success "Published branch '$branch' at ${Brown}$vnext" "$moduleTracePrefix" \
       || { io_error "Publish of branch '$branch' failed" "$moduleTracePrefix"; return 1; };;

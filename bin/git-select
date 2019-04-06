@@ -28,6 +28,8 @@ select_run()
 
   local selectScopes=( config_scope cosm_scope )
   
+  io_message "Selecting, please wait...\n"
+
   module_run "${selectScopes[@]}" select_main
 }
 select_main()
@@ -46,7 +48,7 @@ select_main()
 }
 select_tree()
 {
-  # io_trace "select_tree $(print_vars sku selectHint)"
+  # ZOU_TRACE=true io_trace "select_tree $(print_vars sku selectHint)"
 
   select_prolog || ec=$?
   [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
