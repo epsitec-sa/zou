@@ -106,8 +106,8 @@ _branch_sync_fix_tracking()
     # no tracking info
     if branch_is_prod "$l"; then
       # automatically push vbranches
-      local remote=$(git remote | head -n1)
-      if branch_set_upstream $l $remote; then
+      local remote=$(git_remote)
+      if [[ -n $remote ]] && ! branch_is_archived "$l" "$remote" && branch_set_upstream "$l" "$remote"; then
         r="$remote/$l"; i='>'
         [[ $l == $current ]] && color=Yellow || color=Brown
       fi

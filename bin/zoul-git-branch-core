@@ -38,7 +38,7 @@ branch_exists()
 branch_is_archived()
 {
   local branch=$1 remote=$2
-  ref_exists "other/archive/$branch" && return 0
+  ref_exists "other/archive/$branch" &>/dev/null && return 0
   [[ -z $remote ]] && remote=$(git_remote)
   [[ -n $remote ]] && ref_exists "$remote/other/archive/$branch"
 }
@@ -117,30 +117,24 @@ branch_list_all_tracked()
     }
   done < <(branch_sync_info)
 }
-branch_list_local_tracked_merged()
-{
-  # list local branches that can be removed safely
-  local l r i c
-  while read l r i; do
-    # list tracking branches
-    if [[ -n $l && -n $r ]]; then
-      # that are merged into tracked branches...
-      # or that have the tracking info broken but are merged in another remote
-      if [[ $i =~ (=|<) ]] || [[ -z $i && -n $(git branch -r --contains $l) ]]; then
-        echo $l
-      fi
-    fi
-  done < <(branch_sync_info)
-}
 branch_list_local_can_delete()
 {
-  # list local branches that can be deleted safely
-  local l c
-  while read l; do
+  # list local branches that can be removed safely
+  local l r i c remote=$(git_remote)
+  while read l r i; do
     # exclude branch 'master' and current branch
-    [[ -z $c ]] && c=$(wildcard_to_regex $(branch_current))
-    [[ $l =~ (master|$c) ]] || echo $l
-  done < <(branch_list_local_tracked_merged)
+    [[ -z $c ]] && c=$(wildcard_to_regex ${moduleBranch:-$(branch_current)})
+    [[ $l =~ (master|$c) ]] && continue
+    # tracking branches
+    #   that are merged into tracked branches...
+    #   or that have the tracking info broken but are merged in another remote
+    if [[ -n $l && -n $r ]] && ([[ $i =~ (=|<) ]] || [[ -z $i && -n $(git branch -r --contains $l) ]]); then
+      echo $l
+    # archived branches merged in another remote
+    elif [[ -n $l ]] && branch_is_archived "$l" "$remote" && [[ -n $(git branch -r --contains $l) ]]; then
+      echo $l
+    fi
+  done < <(branch_sync_info)
 }
 branch_list_local_untracked()
 {
