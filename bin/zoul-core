@@ -452,6 +452,20 @@ visit_async_fast()
   done
   wait
 }
+# Intercept and trace error
+#
+# usage:
+#   func || error $? "label" || return $?
+# in:
+#   $1 -- error code
+#   $2 -- label
+# return:
+#   $1
+error()
+{
+  [ $1 -ne 0 ] && ZOU_TRACE=true io_trace "error '$1' at '$2'"
+  return $1
+}
 
 # trace constants (if debug == true)
 io_debug zou_startupPath
