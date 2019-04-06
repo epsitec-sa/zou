@@ -14,6 +14,8 @@ ref_is_backup()  { [[ $1 =~ ^other/backup/(.*)$ ]]; }
 ref_exists()     { git rev-parse --quiet --verify $1 >/dev/null; }
 ref_equals()     { [[ $(git rev-parse $1^{}) == $(git rev-parse $2^{}) ]]; }
 
+git_remote()     { git remote | head -n1; }
+
 git_get_commit()
 {
   # io_trace "git_get_commit ${*@Q}"
