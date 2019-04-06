@@ -9,84 +9,53 @@ sync_parse()
 {
   while [[ "$#" > 0 ]]; do case "$1" in
     -h|--help) zou-help $0; exit 0;;
-    -q|--quiet)         quiet=true;;
-    -e|--stop-on-error) stopOnError=true;;
     -a|--all)           noSkuFilter=true;;
     .)                  unset recursive;;
     -c|--clean)         cleanLocalBranches=true;;
-    -n|--no-push)       syncNoPush=true;;
+    -p|--pull)          syncNoPush=true;;
     -j*)                jobsCount=${1#-j};;
     -*) io_error "unknown option '$1'"; return 1;;
   esac; shift; done
-
-  if [[ $moduleRootOnly == true && $smOnly == true ]]; then
-    io_error "options '--root-only' and '--sm-only' are incompatible."
-    return 1
-  fi
 }
 sync_run()
 {
   # parse command line
-  local jobsCount quiet stopOnError noSkuFilter moduleRootOnly smOnly cleanLocalBranches syncNoPush recursive=true
+  local jobsCount noSkuFilter cleanLocalBranches syncNoPush recursive=true
   sync_parse "$@" || return $?
   
   local showSubmoduleMessage=true \
         syncSelectExcludeIds=()
         syncScopes=( config_scope cosm_scope )
 
+  io_message "Synchronizing, please wait...\n"
+
   module_run "${syncScopes[@]}" sync_tree
 }
 sync_tree()
 {
-  sync_prolog || ec=$?
-  [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
-
-  if [[ $recursive == true ]]; then
-    sync_submodules || ec=$?
-    [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
-  fi
-
-  sync_epilog || ec=$?
-  return $ec
+  sync_prolog
+  [[ $recursive == true ]] && sync_submodules
+  cosm_process_unstaged_submodules
 }
 sync_prolog()
 {
-  branch_sync_all || ec=$?
-  [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
-
-  sync_select_auto || ec=$?
-  [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
-
-  # feed module IDs exclude list
+  branch_sync_all
+  sync_ensure_attached
+  sync_clean_local_branches
+}
+sync_ensure_attached()
+{
+  ! array_contains_element "$moduleId" "${syncSelectExcludeIds[@]}" && branch_ensure_attached
   syncSelectExcludeIds+=( "${configSelectExcludeIds[@]}" )
-  # io_trace "sync_prolog $(print_vars syncSelectExcludeIds[@])"
-
-  sync_clean_local_branches || ec=$?
-  return $ec
-}
-sync_epilog()
-{
-  cosm_process_unstaged_submodules
-}
-sync_select_auto()
-{
-  # io_trace "sync_select_auto $(print_vars moduleId syncSelectExcludeIds[@])"
-  array_contains_element "$moduleId" "${syncSelectExcludeIds[@]}" && return 0
-  if ! branch_is_attached; then
-    local hint forceCheckout=true skipVNodes=false allowDuplicateTags=false branchOrTag
-    [[ $moduleRoot == $bundleRoot ]] && allowDuplicateTags=true
-    branch_set_select_auto "$bundleBranch" "$hint" "$forceCheckout" "$skipVNodes" "$allowDuplicateTags"
-  fi
 }
 sync_clean_local_branches()
 {
-  if [[ $cleanLocalBranches == true ]]; then
-    local branch
-    for branch in $(branch_list_local_can_delete); do
-      local info=$(git branch -D "$branch" 2>/dev/null)
-      [[ -n $info ]] && io_warning "$info" "$moduleTracePrefix"
-    done
-  fi
+  [[ $cleanLocalBranches == true ]] || return 0
+  local branch
+  for branch in $(branch_list_local_can_delete); do
+    local info=$(git branch -D "$branch" 2>/dev/null)
+    [[ -n $info ]] && io_warning "$info" "$moduleTracePrefix"
+  done
 }
 sync_submodules()
 {
