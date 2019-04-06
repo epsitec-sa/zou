@@ -35,6 +35,13 @@ branch_exists()
   branch_realize "$1" >/dev/null
   [ $? -le 1 ]
 }
+branch_is_archived()
+{
+  local branch=$1 remote=$2
+  ref_exists "other/archive/$branch" && return 0
+  [[ -z $remote ]] && remote=$(git_remote)
+  [[ -n $remote ]] && ref_exists "$remote/other/archive/$branch"
+}
 branch_list_local()     { git for-each-ref --format='%(refname:short)' refs/heads; }
 branch_list_local_at()
 {
