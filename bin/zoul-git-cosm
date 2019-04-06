@@ -29,6 +29,11 @@ cosm_scope()
   # execute next russian doll
   $1 "${@:2}"
 }
+cosm_has_unstaged_submodules()
+{
+  [ ${#unstagedCleanSubmodules[@]} -gt 0 ] || [ ${#unstagedDirtySubmodules[@]} -gt 0 ]
+}
+
 _cosm_on_branch_changed()
 {
   _cosm_reset_scope
