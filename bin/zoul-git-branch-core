@@ -240,7 +240,6 @@ branch_ref_type()
 }
 branch_checkout()
 {
-  
   local ref=$1 always=$2 alias=$3 refType isCurrent
 
   # ZOU_TRACE=true io_trace "branch_checkout 1 -- $(print_vars ref always alias)"
@@ -339,6 +338,17 @@ branch_set_upstream()
     io_message "  $line" "$moduleTracePrefix" DarkGray
   done
   return ${PIPESTATUS[0]}
+}
+branch_force_delete()
+{
+  local branch=$1 ec=0
+  if branch_is_local "$branch"; then
+    git branch -D "$branch" >/dev/null 2>&1
+  elif branch_is_remote "$branch"; then
+    local remote=${branch%%/*} lbranch=${branch#*/}
+    git branch --unset-upstream "$lbranch"
+    git push --delete --force "$remote" "$lbranch" >/dev/null 2>&1
+  fi
 }
 branch_move()
 {
