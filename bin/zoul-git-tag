@@ -87,6 +87,7 @@ tag_new()
   local tag=$1 commit=$2 message=$3
   if tag_exists "$tag"; then
     io_error "Tag '$tag' already exists" "$moduleTracePrefix"
+    return 1
   elif git tag -a -m "'$message'" "$tag" "$commit"; then
     io_info "Created tag '$tag' on '$commit'" "$moduleTracePrefix"
   fi

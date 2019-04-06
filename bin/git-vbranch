@@ -32,6 +32,7 @@ vbranch_main()
     vnode="${prefix}v${version}-@"
     if ref_exists $branch; then
       io_error "Branch '$branch' already exists" "$moduleTracePrefix"
+      return 1
     else
       git branch "$branch" "$commit"
       io_info "Branch created '$branch'" "$moduleTracePrefix"
