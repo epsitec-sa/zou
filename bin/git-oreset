@@ -1,0 +1,53 @@
+#!/bin/bash
+
+[[ -z $ZOUL_GIT_MODULE ]]      && . zoul-git-module
+[[ -z $ZOUL_GIT_CONFIG ]]      && . zoul-git-config
+[[ -z $ZOUL_GIT_COSM ]]        && . zoul-git-cosm
+[[ -z $ZOUL_GIT_BRANCH_SYNC ]] && . zoul-git-branch-sync
+
+oreset_parse()
+{
+  while [[ "$#" > 0 ]]; do case "$1" in
+    -h|--help) zou-help $0; exit 0;;
+    -a|--all)           noSkuFilter=true;;
+    -r|--recursive)     recursive=true;;
+    -j*)                jobsCount=${1#-j};;
+    -*) io_error "unknown option '$1'"; return 1;;
+  esac; shift; done
+}
+oreset_run()
+{
+  # parse command line
+  local jobsCount noSkuFilter recursive
+  oreset_parse "$@" || return $?
+  
+  local showSubmoduleMessage=true \
+        oresetSelectExcludeIds=()
+        oresetScopes=( config_scope cosm_scope )
+
+  io_message "Resetting, please wait...\n"
+
+  module_run "${oresetScopes[@]}" oreset_tree
+}
+oreset_tree()
+{
+  oreset_prolog
+  [[ $recursive == true ]] && oreset_submodules
+  cosm_process_unstaged_submodules
+}
+oreset_prolog()
+{
+  branch_oreset_all
+  oreset_ensure_attached
+}
+oreset_ensure_attached()
+{
+  ! array_contains_element "$moduleId" "${oresetSelectExcludeIds[@]}" && branch_ensure_attached
+  oresetSelectExcludeIds+=( "${configSelectExcludeIds[@]}" )
+}
+oreset_submodules()
+{
+  module_visit_submodules_async 'configSkuInclude[@]' "${oresetScopes[@]}" 'oreset_tree'
+}
+
+oreset_run "$@"

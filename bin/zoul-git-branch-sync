@@ -46,6 +46,31 @@ _branch_sync_visitor()
   esac
   [[ $l == $current ]] && _branch_raise_branch_sync_event "$r" "$l" "$i"
 }
+_branch_oreset_visitor()
+{
+  local r=$1 l=$2 i=$3 current=$4
+  [[ -z $r || $(git rev-parse "$l") == $(git rev-parse "$r") ]] && return 0
+
+  # ZOU_TRACE=true io_trace "_branch_reset_visitor 1 -- $(print_vars r l i current)"
+
+
+  # pull changes
+  [[ $i =~ ^\< ]] && { _branch_sync_merge "$r" "$l" || return 1; }
+  # reset to upstream
+  if [[ $l == $current ]]; then
+    # prune tags asynchronously
+    (
+      io_warning "Pruning tags" "$moduleTracePrefix"
+      git tag -d $(git tag -l) &>/dev/null
+      git fetch --tags &>/dev/null
+    ) &
+    git reset --hard @{u} >/dev/null
+    _branch_raise_branch_sync_event "$r" "$l" "$i"
+  else
+    # reset ref
+    git update-ref "refs/heads/$l" "$r" >/dev/null
+  fi
+
 }
 _branch_sync_visit() 
 {
@@ -99,4 +124,12 @@ branch_sync_all()
   repo_require_clean_work_tree 'Cannot synchronize' || return 1
 
   _branch_sync_visit _branch_sync_visitor "$@"
+}
+branch_oreset_all()
+{
+  git fetch --prune --all &>/dev/null
+  git fetch --tags --force &>/dev/null
+  repo_require_clean_work_tree 'Cannot reset' || return 1
+
+  syncNoPush=true _branch_sync_visit _branch_oreset_visitor "$@"
 }
