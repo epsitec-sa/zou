@@ -9,6 +9,7 @@ sync_parse()
 {
   while [[ "$#" > 0 ]]; do case "$1" in
     -h|--help) zou-help $0; exit 0;;
+    -q|--quiet)         quiet=true;;
     -a|--all)           noSkuFilter=true;;
     .)                  unset recursive;;
     -c|--clean)         cleanLocalBranches=true;;
@@ -20,14 +21,14 @@ sync_parse()
 sync_run()
 {
   # parse command line
-  local jobsCount noSkuFilter cleanLocalBranches syncNoPush recursive=true
+  local jobsCount quiet noSkuFilter cleanLocalBranches syncNoPush recursive=true
   sync_parse "$@" || return $?
   
   local showSubmoduleMessage=true \
         syncSelectExcludeIds=()
         syncScopes=( config_scope cosm_scope )
 
-  io_message "Synchronizing, please wait...\n"
+  [[ -z $quiet ]] && io_message "Synchronizing, please wait...\n"
 
   module_run "${syncScopes[@]}" sync_tree
 }

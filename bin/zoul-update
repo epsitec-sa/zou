@@ -40,13 +40,13 @@ zou_update()
 zou_update_bundle()
 {
   io_info "Synchronizing, please wait..." "$moduleTracePrefix"
-  . git-sync --no-push
+  . git-sync -q --pull --clean
 
   local vtag delta alias acolor=Brown
   vtag_set_info $(vtag_describe $moduleBranch)
   [ $delta -gt 0 ] && acolor=LightPurple
   io_info "Activating bundle (${!acolor}$alias${Cyan}), please wait..." "$moduleTracePrefix"
-  . git-select "$@"
+  . git-select -q "$@"
 }
 zou_update_prune_tags()
 {

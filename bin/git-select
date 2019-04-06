@@ -10,6 +10,7 @@ select_parse()
   while [[ "$#" > 0 ]]; do case "$1" in
     --) shift; args+=("$@"); break;;
     -h|--help) zou-help $0; exit 0;;
+    -q|--quiet)         quiet=true;;
     -e|--stop-on-error) stopOnError=true;;
     -j*)                jobsCount=${1#-j};;
     .)                  unset recursive;;
@@ -23,12 +24,12 @@ select_parse()
 select_run()
 {
   # parse command line
-  local jobsCount stopOnError noSkuFilter selectHint commitSubmodules sku recursive=true
+  local jobsCount quiet stopOnError noSkuFilter selectHint commitSubmodules sku recursive=true
   select_parse "$@" || return $?
 
   local selectScopes=( config_scope cosm_scope )
   
-  io_message "Selecting, please wait...\n"
+  [[ -z $quiet ]] && io_message "Selecting, please wait...\n"
 
   module_run "${selectScopes[@]}" select_main
 }
