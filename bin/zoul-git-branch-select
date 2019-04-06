@@ -118,6 +118,11 @@ branch_set_select_info()
     # ZOU_TRACE=true io_trace "branch_set_select_info 3 -- $(print_vars sku skipVNodes allowDuplicateTags branch lbranch vbranch vtag htag delta alias status)"
   fi
 }
+branch_ensure_attached()
+{
+  local sku=$1 branch vbranch vtag htag publishStatus
+  ! branch_is_attached && branch_set_select_auto "$sku" '' false false
+}
 # Select branch or vtag and return status for publish
 #
 # usage:
@@ -145,9 +150,10 @@ branch_set_select_auto()
 {
   unset publishStatus branchOrTag
 
-  local sku=$1 hint=$2 forceCheckout=${3:-true} skipVNodes=${4:-true} allowDuplicateTags=${5:-true} ec=0
+  local sku=$1 hint=$2 forceCheckout=${3:-true} skipVNodes=${4:-true} allowDuplicateTags ec=0
   [[ -z $sku ]]   && sku=$bundleBranch
   [[ -z $sku ]]   && sku=$(branch_current_root_branch)
+  [[ -z $allowDuplicateTags && -n $moduleRoot && $moduleRoot == $bundleRoot ]] && allowDuplicateTags=true
 
   # ZOU_TRACE=true io_trace "branch_set_select_auto 1 -- $(print_vars sku hint forceCheckout skipVNodes allowDuplicateTags mroot broot)"
 
