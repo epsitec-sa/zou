@@ -57,6 +57,8 @@ publish_run()
         publishSelectExcludeIds=() \
         publishScopes=( config_scope cosm_scope )
 
+  io_message "Publishing, please wait...\n"
+
   module_run "${publishScopes[@]}" publish_main
 }
 publish_main()
@@ -92,8 +94,8 @@ publish_tree()
 
   local branch vbranch vtag htag publishStatus
   publish_prolog || return $?
-  [[ $recursive == true ]] && publish_submodules || return $?
-  publish_epilog || return $?
+  [[ $recursive == true ]] && { publish_submodules || return $?; }
+  publish_epilog
 }
 publish_prolog()
 {
@@ -127,7 +129,6 @@ publish_publish()
   local vnext
   
   if [[ $publishStatus == 'notPublished' || $publishStatus == 'neverPublished' ]]; then
-    io_info "Publishing branch '$branch' on '$vbranch'" "$moduleTracePrefix"
     branch_set_publish "$branch" "$vbranch" "$vtag" "$htag" "$prerelPrefix" \
     && io_success "Published branch '$branch' at ${Brown}$vnext" "$moduleTracePrefix" \
     || { io_error "Publish of branch '$branch' failed" "$moduleTracePrefix"; return 1; }
@@ -138,7 +139,7 @@ publish_publish()
   else
     return 0
   fi
-  branch_try_attach 'HEAD' "$sku" false >/dev/null
+  branch_try_attach 'HEAD' "$sku" false
   # ZOU_TRACE=true io_trace "publish_publish 1 -- $(print_vars branch vbranch vtag htag prerelPrefix publishStatus)"
 }
 publish_update_vtable()
