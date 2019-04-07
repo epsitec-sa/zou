@@ -16,11 +16,11 @@ ZOUL_GIT_BRANCH_PUBLISH=true
 #
 # usage:
 #   local vnext vbranch
-#   branch_publish $branch $prerelPrefix
+#   branch_publish $branch $forceDev $allowDuplicateTags $prerelPrefix
 #
 # in:
 #  $1:sku
-#  $2:hint
+#  $2:forceDev
 #  $3:allowDuplicateTags
 #  $4:prerelPrefix   -- prerelease prefix (alpha, beta, rc, rtm, reuse)
 #                    -- if prerelease prefix == 'reuse' then move previous vtag
@@ -30,32 +30,35 @@ branch_publish()
 {
   io_warning "branch_publish is deprecated, use branch_set_publish instead" "$moduleTracePrefix"
   
-  local sku=$1 hint=$2 allowDuplicateTags=$3 prerelPrefix=$4
+  local sku=$1 forceDev=${2:-false} allowDuplicateTags=${3:-false} prerelPrefix=$4
   local branch vtag htag publishStatus
-  branch_set_select_auto "$sku" "$hint" false false "$allowDuplicateTags"
+  branch_set_select_auto "$sku" "$forceDev" false false "$allowDuplicateTags"
 
+  local vnext=$vtag
   case $publishStatus in
-    vtagMissing)
-      io_error   "Branch '$branch' cannot be published (no vbranch associated)" "$moduleTracePrefix"
-      return 1;;
-    published)
-      io_message "Already published at ${Brown}$vtag" "$moduleTracePrefix" LightBlue;;
-    notPublished|neverPublished)
-      branch_set_publish "$branch" "$vbranch" "$vtag" "$htag" "$prerelPrefix" \
+  unpublishable)
+    io_error   "Branch '$branch' cannot be published (no vbranch associated)" "$moduleTracePrefix"
+    return 1;;
+  published)
+    io_message "Already published at ${Brown}$vtag" "$moduleTracePrefix" LightBlue;;
+  ffPublish)
+    branch_merge "$vtag" "$moduleBranch" \
+      && io_message "Already published at ${Brown}$vnext${LightBlue} (${Brown}fast-forward${LightBlue})" "$moduleTracePrefix" LightBlue \
+      || { io_error "Fast-forward publish of branch '$branch' failed" "$moduleTracePrefix"; return 1; };;
+  notPublished)
+    branch_set_publish "$branch" "$vbranch" "$vtag" "$htag" "$prerelPrefix" \
       && io_success "Published branch '$branch' at ${Brown}$vnext" "$moduleTracePrefix" \
       || { io_error "Publish of branch '$branch' failed" "$moduleTracePrefix"; return 1; };;
-    ffPublish)
-      branch_merge "$vtag" "$moduleBranch" \
-      && io_success "Published branch '$branch' at ${Brown}$vnext${Green} (fast-forward)" "$moduleTracePrefix" \
-      || { io_error "Fast-forward publish of branch '$branch' failed" "$moduleTracePrefix"; return 1; };;
+  *)
+    io_error "Fatal: publishStatus '$publishStatus' not implemented" "$moduleTracePrefix"
+    exit 1;;
   esac
 }
 # Publish a development branch
 #
 # usage:
-#  local branch vbranch vtag htag publishStatus
-#  branch_set_select_auto $sku $hint false false $allowDuplicateTags
-#  local vnext
+#  local branch vbranch vtag htag publishStatus vnext
+#  branch_set_select_auto $sku $forceDev false false $allowDuplicateTags
 #  branch_set_publish $branch $vbranch $vtag $htag $prerelPrefix"
 # in:
 #  $1:branch        -- branch to publish
@@ -70,7 +73,7 @@ branch_set_publish()
 {
   unset vnext
 
-  local branch=$1 vbranch=$2 vtag=$3 htag=$4 prerelPrefix=$5 obranch ec=0
+  local branch=$1 vbranch=$2 vtag=$3 htag=$4 prerelPrefix=$5 obranch
   
   [[ -z $branch ]]  && { io_error "Argument 'branch' not specified." "$moduleTracePrefix"; return 1; }
   [[ -z $vbranch ]] && { io_error "Argument 'vbranch' not specified." "$moduleTracePrefix"; return 1; }

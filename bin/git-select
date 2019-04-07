@@ -11,11 +11,10 @@ select_parse()
     --) shift; args+=("$@"); break;;
     -h|--help) zou-help $0; exit 0;;
     -q|--quiet)         quiet=true;;
-    -e|--stop-on-error) stopOnError=true;;
     -j*)                jobsCount=${1#-j};;
     .)                  unset recursive;;
     -a|--all)           noSkuFilter=true;;
-    --dev)              selectHint='dev';;
+    --dev)              selectDev=true;;
     --cosm)             commitSubmodules=true;;
     -*) io_error "unknown option '$1'"; return 1;;
     *) sku=$1;;
@@ -24,7 +23,7 @@ select_parse()
 select_run()
 {
   # parse command line
-  local jobsCount quiet stopOnError noSkuFilter selectHint commitSubmodules sku recursive=true
+  local jobsCount quiet stopOnError noSkuFilter selectDev commitSubmodules sku recursive=true
   select_parse "$@" || return $?
 
   local selectScopes=( config_scope cosm_scope )
@@ -49,33 +48,23 @@ select_main()
 }
 select_tree()
 {
-  # ZOU_TRACE=true io_trace "select_tree $(print_vars sku selectHint)"
+  # ZOU_TRACE=true io_trace "select_tree $(print_vars sku selectDev)"
 
-  select_prolog || ec=$?
-  [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
-
-  [[ $recursive == true ]] && {
-    select_submodules || ec=$?
-    [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
-  }
-  
-  select_epilog || ec=$
-  return $ec
+  select_prolog || return $?
+  [[ $recursive == true ]] && select_submodules || return $?
+  cosm_process_unstaged_submodules
 }
 select_prolog()
 {
-  # repo_require_clean_work_tree 'Cannot select' || return 1
-
-  local hint=$selectHint forceCheckout=true skipVNodes allowDuplicateTags branchOrTag
-  [[ -z $hint && $moduleRoot == $bundleRoot ]] && { hint='dev'; skipVNodes=false; } || skipVNodes=true
-  [[ $moduleRoot == $bundleRoot ]] && allowDuplicateTags=true
+  local forceDev=${selectDev:-false} skipVNodes=true allowDuplicateTags=false
+  if [[ $moduleRoot == $bundleRoot ]]; then
+    forceDev=true
+    skipVNodes=false
+    allowDuplicateTags=true
+  fi
 
   # ZOUL_TRACE=true io_trace "select_prolog -- $(print_vars recursive noSkuFilter commitSubmodules sku hint forceCheckout skipVNodes allowDuplicateTags)"
-  branch_set_select_auto "$sku" "$hint" "$forceCheckout" "$skipVNodes" "$allowDuplicateTags"
-}
-select_epilog()
-{
-  cosm_process_unstaged_submodules
+  branch_set_select_auto "$sku" "$forceDev" true "$skipVNodes" "$allowDuplicateTags"
 }
 select_submodules()
 {

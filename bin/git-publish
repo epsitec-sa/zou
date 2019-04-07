@@ -36,13 +36,13 @@ publish_parse()
     -e|--stop-on-error)   stopOnError=true;;
     -j*)                  jobsCount=${1#-j};;
     .)                    unset recursive;;
+    --dev)                publishDev=true;;
     -t|--vtable)          vtable=true;;
     -u|--reuse)           prerelPrefix='reuse';;
     --alpha)              prerelPrefix='alpha';;
     --beta)               prerelPrefix='beta';;
     --rc)                 prerelPrefix='rc';;
     --rtm)                prerelPrefix='rtm';;
-    --dev)                publishHint='dev';;
     -*) io_error "unknown option '$1'"; return 1;;
     *) sku=$1;;
   esac; shift; done
@@ -50,7 +50,7 @@ publish_parse()
 publish_run()
 {
   # parse command line
-  local jobsCount quiet stopOnError sku vtable prerelPrefix publishHint recursive=true
+  local jobsCount quiet stopOnError sku vtable prerelPrefix publishDev recursive=true
   publish_parse "$@" || return $?
 
   local commitSubmodules=true \
@@ -93,24 +93,24 @@ publish_tree()
   fi
 
   local branch vbranch vtag htag publishStatus
+
   publish_prolog || return $?
   [[ $recursive == true ]] && { publish_submodules || return $?; }
   publish_epilog
 }
 publish_prolog()
 {
-  local hint allowDuplicateTags
-  [[ $publishHint == 'dev' || "$PWD" == "$startupRoot" ]] && hint='dev'
-  [[ $moduleRoot == $bundleRoot ]] && allowDuplicateTags=true || allowDuplicateTags=false
+  local forceDev=false allowDuplicateTags=false
+  [[ $publishDev == true || "$PWD" == "$startupRoot" ]] && forceDev=true
+  [[ $moduleRoot == $bundleRoot ]] && allowDuplicateTags=true
 
-  branch_set_select_auto "$sku" "$hint" false false "$allowDuplicateTags" || return $?
+  branch_set_select_auto "$sku" "$forceDev" false false "$allowDuplicateTags" || return $?
 
+  if [[ $publishStatus == 'unpublishable' ]]; then
+    io_error "Branch '$branch' cannot be published (no vbranch associated)" "$moduleTracePrefix"
+    return 1
+  fi
   # ZOU_TRACE=true io_trace "publish_prolog -- $(print_vars branch vbranch vtag htag publishStatus)"
-
-  case $publishStatus in
-    vtagMissing) io_error   "Branch '$branch' cannot be published (no vbranch associated)" "$moduleTracePrefix"; return 1;;
-    published)   io_message "Already published at ${Brown}$vtag" "$moduleTracePrefix" LightBlue;;
-  esac
 }
 publish_submodules()
 {
@@ -125,24 +125,34 @@ publish_epilog()
   publish_publish || return $?
   publish_update_vtable
 }
+
 publish_publish()
 {
   # ZOU_TRACE=true io_trace "publish_publish 1 -- $(print_vars branch vbranch vtag htag prerelPrefix publishStatus)"
-  local vnext
+  local vnext=$vtag
   
-  if [[ $publishStatus == 'notPublished' || $publishStatus == 'neverPublished' ]]; then
-    branch_set_publish "$branch" "$vbranch" "$vtag" "$htag" "$prerelPrefix" \
-    && io_success "Published branch '$branch' at ${Brown}$vnext" "$moduleTracePrefix" \
-    || { io_error "Publish of branch '$branch' failed" "$moduleTracePrefix"; return 1; }
-  elif [[ $publishStatus == 'ffPublish' ]]; then
+  case $publishStatus in
+  published)
+    io_message "Already published at ${Brown}$vtag" "$moduleTracePrefix" LightBlue;;
+  ffPublish)
     branch_merge "$vtag" "$moduleBranch" \
-    && io_success "Published branch '$branch' at ${Brown}$vnext${Green} (fast-forward)" "$moduleTracePrefix" \
-    || { io_error "Fast-forward publish of branch '$branch' failed" "$moduleTracePrefix"; return 1; }
-  else
-    return 0
-  fi
-  branch_try_attach 'HEAD' "$sku" false
+      && io_message "Already published at ${Brown}$vnext${LightBlue} (${Brown}fast-forward${LightBlue})" "$moduleTracePrefix" LightBlue \
+      || { io_error "Fast-forward publish of branch '$branch' failed" "$moduleTracePrefix"; return 1; }
+    publish_try_attach;;
+  notPublished)
+    branch_set_publish "$branch" "$vbranch" "$vtag" "$htag" "$prerelPrefix" \
+      && io_success "Published branch '$branch' at ${Brown}$vnext" "$moduleTracePrefix" \
+      || { io_error "Publish of branch '$branch' failed" "$moduleTracePrefix"; return 1; }
+    publish_try_attach;;
+  *)
+    io_error "Fatal: publishStatus '$publishStatus' not implemented" "$moduleTracePrefix"
+    exit 1;;
+  esac
   # ZOU_TRACE=true io_trace "publish_publish 1 -- $(print_vars branch vbranch vtag htag prerelPrefix publishStatus)"
+}
+publish_try_attach()
+{
+  branch_try_attach 'HEAD' "$sku" false || true
 }
 publish_update_vtable()
 {
