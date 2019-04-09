@@ -10,7 +10,6 @@ ZOUL_GIT_BRANCH_CORE=true
 [[ -z $ZOUL_GIT_REF ]]    && . zoul-git-ref
 [[ -z $ZOUL_GIT_CORE ]]   && . zoul-git-core
 [[ -z $ZOUL_GIT_REPO ]]   && . zoul-git-repo
-[[ -z $ZOUL_GIT_COMMIT ]] && . zoul-git-commit
 
 # global options
 #   showSwitchingMessage
@@ -251,7 +250,7 @@ branch_checkout()
     0) branch_is_current $ref; isCurrent=$?;; # local branch
     1) isCurrent=1; ref=$(branch_without_remote_prefix $ref);; # remote branch
     2) isCurrent=1;; # remote branch without remote prefix
-    3|4) commit_is_head $ref; isCurrent=$?;; # tag | commit
+    3|4) ref_is_head $ref; isCurrent=$?;; # tag | commit
   esac
   if [[ $isCurrent -ne 0 || $always == true ]]; then
     # compute symbols
