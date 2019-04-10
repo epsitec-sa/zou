@@ -57,11 +57,14 @@ zou_update_epilog()
   io_set_version
   local tracePrefix="${Cyan}[zou]${NC}" traceVersion traceMessage
   if [[ $actualVersion == $version ]]; then
-    traceVersion="still using ${Green}$version${Brown}"
+    if [ $delta -eq 0 ]; then
+      traceVersion="no changes, still using version ${Green}$version${Brown}"
+    else
+      traceVersion="switched to development version ${Green}$version${Brown}, ${LightPurple}$delta${Brown} commit[s] ahead"
+    fi
   else
-    traceVersion="switched to ${Green}$version${Brown}"
+    traceVersion="switched to new version ${Green}$version${Brown}"
   fi
-  [ $delta -gt 0 ] && traceVersion="$traceVersion in dev mode, ${LightPurple}$delta${Brown} commit[s] ahead"
   traceMessage="Update finished ($traceVersion)."
   io_warning "$traceMessage" "$tracePrefix"
 }
