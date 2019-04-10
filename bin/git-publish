@@ -108,7 +108,7 @@ publish_prolog()
     io_error "Branch '$branch' cannot be published (no vbranch associated)" "$moduleTracePrefix"
     return 1
   fi
-  # ZOU_TRACE=true io_trace "publish_prolog -- $(print_vars branch vbranch vtag htag publishStatus)"
+  # io_trace "publish_prolog -- $(print_vars branch vbranch vtag htag publishStatus)"
 }
 publish_submodules()
 {
@@ -126,7 +126,7 @@ publish_epilog()
 
 publish_publish()
 {
-  # ZOU_TRACE=true io_trace "publish_publish 1 -- $(print_vars branch vbranch vtag htag prerelPrefix publishStatus)"
+  # io_trace "publish_publish 1 -- $(print_vars branch vbranch vtag htag prerelPrefix publishStatus)"
   local vnext=$vtag
   
   case $publishStatus in
@@ -146,7 +146,7 @@ publish_publish()
     io_error "Fatal: publishStatus '$publishStatus' not implemented" "$moduleTracePrefix"
     exit 1;;
   esac
-  # ZOU_TRACE=true io_trace "publish_publish 1 -- $(print_vars branch vbranch vtag htag prerelPrefix publishStatus)"
+  # io_trace "publish_publish 1 -- $(print_vars branch vbranch vtag htag prerelPrefix publishStatus)"
 }
 publish_try_attach()
 {
@@ -165,7 +165,7 @@ publish_update_vtable()
 }
 publish_commit_vtable()
 {
-  # ZOU_TRACE=true io_trace "publish_commit_vtable ${*@Q}"
+  # io_trace "publish_commit_vtable ${*@Q}"
   local ec=0
   vtable_update "$startupRoot" "$moduleId" "$vtableLookupPath" true || ec=$?
 

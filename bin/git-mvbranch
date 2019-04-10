@@ -22,7 +22,7 @@ mvbranch_run()
 }
 mvbranch_main()
 {
-  # ZOU_TRACE=true io_trace "mvbranch_main ${*@Q}"
+  # io_trace "mvbranch_main ${*@Q}"
   local branch1=$1 branch2=$2 branch
   if branch_exists "$branch1"; then
     [[ $branch2 =~ /$ ]] && branch2="$branch2${branch1##*/}"
@@ -32,7 +32,7 @@ mvbranch_main()
     for branch in $(mvbranch_branch_enumerator "$1"); do
       branch2=${branch2#.}            # remove leading dot from dest
       dest=${branch2%/}/${branch##*/} # remove trailing slash from dest and concat branch name without folder
-      # ZOU_TRACE=true io_trace "mvbranch_main -- $(print_vars branch branch2 dest)"
+      # io_trace "mvbranch_main -- $(print_vars branch branch2 dest)"
       $dryRun branch_move $branch ${dest#/}
     done
   fi

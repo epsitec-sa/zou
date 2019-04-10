@@ -242,7 +242,7 @@ branch_checkout()
 {
   local ref=$1 always=$2 alias=$3 refType isCurrent
 
-  # ZOU_TRACE=true io_trace "branch_checkout 1 -- $(print_vars ref always alias)"
+  # io_trace "branch_checkout 1 -- $(print_vars ref always alias)"
   
   [[ $alias == 'HEAD' ]] && unset alias
   branch_ref_type $ref; refType=$?
@@ -265,7 +265,7 @@ branch_checkout()
     # switching message
     [[ $isCurrent -ne 0 && $showSwitchingMessage == true ]] && io_info "Switching to $symType $symRef" "$moduleTracePrefix"
 
-    # ZOU_TRACE=true io_trace "branch_checkout 2 -- $(print_vars ref always alias refType isCurrent symType symRef)"
+    # io_trace "branch_checkout 2 -- $(print_vars ref always alias refType isCurrent symType symRef)"
 
     # checkout
     local line color info breakLoop deferIndent indent ec=0
@@ -494,7 +494,7 @@ branch_try_attach()
   [[ -z $alias ]] && alias=$ref
 
   local branches=( $(branch_list_attach_candidates $ref $sku) )
-  # ZOU_TRACE=true io_trace "branch_try_attach -- $(print_vars ref sku forceCheckout alias branches[@])"
+  # io_trace "branch_try_attach -- $(print_vars ref sku forceCheckout alias branches[@])"
   if [ ${#branches[@]} -eq 0 ]; then
     branch_checkout "$ref" $forceCheckout "$alias"
   else

@@ -46,13 +46,13 @@ bundle_visit_async()
 
   local bundleTracePrefixLength=$(( 2 + $(string_max_length "${_bundleVisitPaths[@]##*/}") ))
   
-  # ZOU_TRACE=true io_trace "bundle_visit_async ${*@Q} -- $(print_vars _bundleVisitPaths[@])"
+  # io_trace "bundle_visit_async ${*@Q} -- $(print_vars _bundleVisitPaths[@])"
   visit_async '_bundleVisitPaths[@]' _bundle_visitor "${@:2}"
 }
 _bundle_visitor()
 {
   local bundleRoot=$1
-  # ZOU_TRACE=true io_trace "bundle_visitor ${*@Q} -- $(print_vars bundleRoot)"
+  # io_trace "bundle_visitor ${*@Q} -- $(print_vars bundleRoot)"
   cd "$bundleRoot" &>/dev/null || {
     io_error "No such bundle directory '$bundleRoot'" "$moduleTracePrefix"
     return 1

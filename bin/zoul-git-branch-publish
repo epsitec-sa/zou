@@ -80,7 +80,7 @@ branch_set_publish()
   ! branch_ensure_local $vbranch && { io_error "Branch '$vbranch' does not exist." "$moduleTracePrefix"; return 1; }
   # ! branch_is_current $branch && obranch=$(branch_current)
 
-  # ZOU_TRACE=true io_trace "branch_set_publish 1 -- $(print_vars branch vbranch vtag htag prerelPrefix obranch)"
+  # io_trace "branch_set_publish 1 -- $(print_vars branch vbranch vtag htag prerelPrefix obranch)"
 
   # synchronize branches
   # branch_merge_sync "$branch" "$vbranch" '-Xtheirs'
@@ -98,7 +98,7 @@ branch_set_publish()
     vtag_set_increment $htag $prerelPrefix || return 1
   fi
 
-  # ZOU_TRACE=true io_trace "branch_set_publish 2 -- $(print_vars branch vbranch vtag htag prerelPrefix obranch vnext)"
+  # io_trace "branch_set_publish 2 -- $(print_vars branch vbranch vtag htag prerelPrefix obranch vnext)"
 
   if [[ $prerelPrefix == 'reuse' ]]; then
     _branch_set_publish_epilog

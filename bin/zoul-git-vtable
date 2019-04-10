@@ -58,7 +58,7 @@ vtable_row()
   [[ $version == $vminor ]] && unset vminor || vminor="#$vminor#"
   [[ $version == $vmajor ]] && unset vmajor || vmajor="#$vmajor#"
   [[ $version == $vnext ]] && unset vnext || vnext="#$vnext#"
-  # ZOU_TRACE=true io_trace "vtable_row -- $(print_vars moduleId head hash version delta tag folder major minor vmajor vminor vnext)"
+  # io_trace "vtable_row -- $(print_vars moduleId head hash version delta tag folder major minor vmajor vminor vnext)"
   local module_content=$(print_row "$md_moduleId" "$head" "$hash" "$delta" "$md_version" "$vminor" "$vmajor" "$vnext")
   echo "$module_content"
 }
@@ -76,7 +76,7 @@ vtable_update()
 {
 
   local root=$1 moduleId=$2 lookupPath=$3 commitVTable=$4
-  # ZOU_TRACE=true io_trace "vtable_update -- $(print_vars root moduleId lookupPath commitVTable)"
+  # io_trace "vtable_update -- $(print_vars root moduleId lookupPath commitVTable)"
 
   if [[ "$PWD" == "$root" ]]; then
     local IFS=$'\n'

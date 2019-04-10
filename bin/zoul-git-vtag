@@ -93,16 +93,16 @@ vtag_highest()
 vtag_describe()
 {
   local branch=$(git_symbolic_ref ${1:-HEAD}) skipVNodes=$2 match ltag stag exclude=('--exclude' 'other/*')
-  # ZOU_TRACE=true io_trace "vtag_describe 1 -- $(print_vars branch skipVNodes)"
+  # io_trace "vtag_describe 1 -- $(print_vars branch skipVNodes)"
   [[ $skipVNodes == true ]] && exclude+=('--exclude' '*-@')
   for match in $(ref_tag_fallback $branch 'v[0-9]*'); do
     ltag=$(git describe --tags --match "$match" "${exclude[@]}" "$branch" 2>/dev/null)
-    # ZOU_TRACE=true io_trace "vtag_describe 2 -- $(print_vars branch skipVNodes match ltag)"
+    # io_trace "vtag_describe 2 -- $(print_vars branch skipVNodes match ltag)"
     if [[ -n $ltag ]]; then
       stag=${ltag%-*-g*}
       if git merge-base --is-ancestor $stag^{} $branch; then
         echo $ltag
-        # ZOU_TRACE=true io_trace "vtag_describe 3 -> $(print_vars branch skipVNodes match ltag stag)"
+        # io_trace "vtag_describe 3 -> $(print_vars branch skipVNodes match ltag stag)"
         return 0
       fi
     fi
@@ -123,15 +123,15 @@ vtag_describe()
 vtag_set_describe()
 {
   local branch=$1 lbranch=$2 skipVNodes=$2 match stag exclude=('--exclude' 'other/*')
-  # ZOU_TRACE=true io_trace "vtag_describe 1 -- $(print_vars branch skipVNodes)"
+  # io_trace "vtag_describe 1 -- $(print_vars branch skipVNodes)"
   [[ $skipVNodes == true ]] && exclude+=('--exclude' '*-@')
   for match in $(ref_tag_fallback $lbranch 'v[0-9]*'); do
     ltag=$(git describe --tags --match "$match" "${exclude[@]}" "$branch" 2>/dev/null)
-    # ZOU_TRACE=true io_trace "vtag_describe 2 -- $(print_vars branch skipVNodes match ltag)"
+    # io_trace "vtag_describe 2 -- $(print_vars branch skipVNodes match ltag)"
     if [[ -n $ltag ]]; then
       stag=${ltag%-*-g*}
       if git merge-base --is-ancestor $stag^{} $branch; then
-        # ZOU_TRACE=true io_trace "vtag_describe 3 -> $(print_vars branch skipVNodes match ltag stag)"
+        # io_trace "vtag_describe 3 -> $(print_vars branch skipVNodes match ltag stag)"
         return 0
       fi
     fi
@@ -148,7 +148,7 @@ vtag_set_describe()
 #   alias
 vtag_set_info()
 {
-  # ZOU_TRACE=true io_trace "vtag_set_info ${*@Q}"
+  # io_trace "vtag_set_info ${*@Q}"
   local ltag=$1 lsuf
     # compute checkout alias
   if [[ -n $ltag ]]; then

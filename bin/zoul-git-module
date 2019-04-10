@@ -20,7 +20,7 @@ branchChangedEvent+=( _module_reset_scope )
 # run a function in the startup module root folder with startup, bundle and module scopes defined
 module_run()
 {
-  # ZOU_TRACE=true io_trace "module_run ${*@Q}"
+  # io_trace "module_run ${*@Q}"
   if [[ $moduleScopeInitialized == true ]]; then
     # execute next russian doll
     $1 "${@:2}"
@@ -67,7 +67,7 @@ module_has_submodules() { [ ${#moduleSubmodulePaths[@]} -gt 0 ]; }
 # run a function in the startup module root folder with startup and bundle scopes defined
 _module_scope_startup()
 {
-  # ZOU_TRACE=true io_trace "_module_scope_startup ${*@Q}"
+  # io_trace "_module_scope_startup ${*@Q}"
   # setup startup context
   local startupDir=$PWD startupRoot bundleId bundleRoot bundleBranch submodulePathMaxLength
   startupRoot=$(repo_module_root)
@@ -86,7 +86,7 @@ _module_scope_startup()
   [[ $startupRoot == $bundleRoot ]] && {
     bundleUrl=$(git config remote.origin.url)
     bundle_register "$bundleUrl" "$bundleRoot"
-    # ZOU_TRACE=true io_trace "_module_scope_startup ${*@Q} -- $(print_vars bundleUrl bundleRoot)"
+    # io_trace "_module_scope_startup ${*@Q} -- $(print_vars bundleUrl bundleRoot)"
   }
 
   # execute next russian doll
@@ -95,7 +95,7 @@ _module_scope_startup()
 # run a function in the module root folder with module scope defined
 _module_scope()
 {
-  # ZOU_TRACE=true io_trace "_module_scope ${*@Q}"
+  # io_trace "_module_scope ${*@Q}"
   # setup module context
   local \
     moduleRoot="$PWD" \
@@ -150,7 +150,7 @@ _module_reset_scope()
   [[ "$PWD" == "$bundleRoot" ]] && bundleBranch=$1
   moduleBranch=$1
   _module_set_trace_prefix
-  # ZOU_TRACE=true io_trace "_module_reset_scope ${*@Q} -> $(print_vars bundleBranch moduleBranch)"
+  # io_trace "_module_reset_scope ${*@Q} -> $(print_vars bundleBranch moduleBranch)"
 }
 
 ##############
@@ -168,11 +168,11 @@ _module_branch_prefix()
       ref=${refs[-1]}
     fi
     echo "$ref"
-    # ZOU_TRACE=true io_trace "_module_branch_prefix ${*@Q} -> $(print_vars moduleBranch ref refs[@])"
+    # io_trace "_module_branch_prefix ${*@Q} -> $(print_vars moduleBranch ref refs[@])"
     return 1
   else
     echo "$ref"
-    # ZOU_TRACE=true io_trace "_module_branch_prefix ${*@Q} -> $(print_vars moduleBranch ref)"
+    # io_trace "_module_branch_prefix ${*@Q} -> $(print_vars moduleBranch ref)"
     branch_is_prod "$ref" && return 1 || return 0
   fi
 }
@@ -191,7 +191,7 @@ _module_set_submodule_path_max_length()
 #   rlen -- remaining length
 _module_set_smart_id()
 {
-  # ZOU_TRACE=true io_trace "_module_set_smart_id0 <- ${*@Q}"
+  # io_trace "_module_set_smart_id0 <- ${*@Q}"
   local len=$1 id=$2 color=$3
   rlen=$len
   if (( ${#id} <= $len )); then
@@ -205,7 +205,7 @@ _module_set_smart_id()
         # start from the end
         j=$(( ${#atoms[@]} - $i ))
         (( rlen -= ${#atoms[$j]} ))
-        # ZOU_TRACE=true io_trace "_module_set_smart_id0 -> $(print_vars i j rlen)"
+        # io_trace "_module_set_smart_id0 -> $(print_vars i j rlen)"
         (( rlen <= 0 )) && break
         (( rlen -= 1 ))
       done
@@ -222,7 +222,7 @@ _module_set_smart_id()
     fi
   fi
   (( rlen = len - ${#id} ))
-  # ZOU_TRACE=true io_trace "_module_set_smart_id0 -> $(print_vars rlen sid)"
+  # io_trace "_module_set_smart_id0 -> $(print_vars rlen sid)"
 }
 _module_set_smart_id2()
 {
@@ -236,21 +236,21 @@ _module_set_smart_id2()
     (( grlen = -spaces + 1 ))
     (( brlen = ( grlen * ${#bid} ) / ( ${#bid} + ${#mid} ) + 4 ))
     (( mrlen = grlen - brlen ))
-    # ZOU_TRACE=true io_trace "_module_set_smart_id2 -- $(print_vars spaces grlen mrlen brlen)"
+    # io_trace "_module_set_smart_id2 -- $(print_vars spaces grlen mrlen brlen)"
     _module_set_smart_id $(( ${#bid} - brlen )) $bid ${bcolor}
     bid=$sid
     (( mrlen -= rlen ))
-    # ZOU_TRACE=true io_trace "_module_set_smart_id2 -- $(print_vars spaces grlen mrlen brlen)"
+    # io_trace "_module_set_smart_id2 -- $(print_vars spaces grlen mrlen brlen)"
     _module_set_smart_id $(( ${#mid} - mrlen )) $mid ${mcolor}
     mid=$sid
-    # ZOU_TRACE=true io_trace "_module_set_smart_id2 -- $(print_vars spaces grlen mrlen brlen rlen sid)"
+    # io_trace "_module_set_smart_id2 -- $(print_vars spaces grlen mrlen brlen rlen sid)"
     printf -v sep '%0.s-' $(seq 1 $spaces)
     sid="${!mcolor}[$mid]${DarkGray}${sep}${!bcolor}($bid)${NC}"
     (( spaces = rlen + 1 ))
   fi
   printf -v sep '%0.s-' $(seq 1 $spaces)
   sid="${!mcolor}[$mid]${DarkGray}${sep}${!bcolor}($bid)${NC}"
-  # ZOU_TRACE=true io_trace "_module_set_smart_id2 -- $(print_vars spaces sid)"
+  # io_trace "_module_set_smart_id2 -- $(print_vars spaces sid)"
 }
 _module_set_trace_prefix()
 {

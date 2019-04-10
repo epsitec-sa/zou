@@ -113,7 +113,7 @@ tag_delete()
 
 tag_move()
 {
-  # ZOU_TRACE=true io_trace "tag_move ${*@Q}"
+  # io_trace "tag_move ${*@Q}"
 
   local tag1=$1 tag2=$2 force=$3
   if ! git_object_exists "$tag1"; then
@@ -121,7 +121,7 @@ tag_move()
     return 1
   fi
   if git_object_exists "$tag2"; then
-    # ZOU_TRACE=true io_trace "tag_move -- $(print_vars tag1 tag2 type2)"
+    # io_trace "tag_move -- $(print_vars tag1 tag2 type2)"
     if tag_exists $tag2; then
       # if ! ref_equals $tag1 $tag2; then
       #   tag_rename "$tag2" "other/backup/$tag2"

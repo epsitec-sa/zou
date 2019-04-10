@@ -78,7 +78,7 @@ branch_set_select_info()
   branch_set_best_match_dev "$sku"                   # -> branch lbranch
   vtag_set_describe "$branch" "$lbranch" $skipVNodes # -> ltag
   if [[ -n $ltag ]]; then
-    # ZOU_TRACE=true io_trace "branch_set_select_info 1 -- $(print_vars sku skipVNodes allowDuplicateTags branch ltag)"
+    # io_trace "branch_set_select_info 1 -- $(print_vars sku skipVNodes allowDuplicateTags branch ltag)"
     vtag_set_info $ltag         # -> vtag delta alias
     local folder version
     vtag_set_vbranch_name $vtag # -> vbranch folder version
@@ -96,7 +96,7 @@ branch_set_select_info()
     fi
     # vnode or vtag
     vtag_is_vnode $vtag && status='vnode' || status='vtag'
-    # ZOU_TRACE=true io_trace "branch_set_select_info 2 -- $(print_vars sku skipVNodes allowDuplicateTags branch lbranch vbranch vtag htag delta alias status)"
+    # io_trace "branch_set_select_info 2 -- $(print_vars sku skipVNodes allowDuplicateTags branch lbranch vbranch vtag htag delta alias status)"
   else
     if [[ $skipVNodes == true ]]; then
       # compute alias without skipping vnodes
@@ -108,7 +108,7 @@ branch_set_select_info()
     fi
     unset vbranch vtag htag delta
     status='vtagMissing'
-    # ZOU_TRACE=true io_trace "branch_set_select_info 3 -- $(print_vars sku skipVNodes allowDuplicateTags branch lbranch vbranch vtag htag delta alias status)"
+    # io_trace "branch_set_select_info 3 -- $(print_vars sku skipVNodes allowDuplicateTags branch lbranch vbranch vtag htag delta alias status)"
   fi
 }
 branch_ensure_attached()
@@ -151,12 +151,12 @@ branch_set_select_auto()
   [[ -z $sku ]]   && sku=$(branch_current_root_branch)
   [[ -z $allowDuplicateTags && -n $moduleRoot && $moduleRoot == $bundleRoot ]] && allowDuplicateTags=true
 
-  # ZOU_TRACE=true io_trace "branch_set_select_auto 1 -- $(print_vars sku forceDev forceCheckout skipVNodes allowDuplicateTags mroot broot)"
+  # io_trace "branch_set_select_auto 1 -- $(print_vars sku forceDev forceCheckout skipVNodes allowDuplicateTags mroot broot)"
 
   local lbranch delta alias status head
   _branch_set_select_auto_core || ec=$?
 
-  # ZOU_TRACE=true io_trace "branch_set_select_auto 2 -- $(print_vars branch vbranch vtag htag alias status publishStatus ec)"
+  # io_trace "branch_set_select_auto 2 -- $(print_vars branch vbranch vtag htag alias status publishStatus ec)"
 
   if [ $ec -ne 0 ]; then
     repo_require_clean_work_tree "Cannot switch to '$branch'"

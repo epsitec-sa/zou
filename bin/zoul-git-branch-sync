@@ -37,7 +37,7 @@ _branch_sync_sync()
 _branch_sync_visitor()
 {
   local r=$1 l=$2 i=$3 current=$4
-  # ZOU_TRACE=true io_trace "_branch_sync_visitor -- $(print_vars r l i)"
+  # io_trace "_branch_sync_visitor -- $(print_vars r l i)"
   case $i in
     '>')  _branch_sync_push  "$r" "$l" || return 1;; # l > r ahead   -- move r
     '<')  _branch_sync_merge "$r" "$l" || return 1;; # l < r behind  -- move l
@@ -51,7 +51,7 @@ _branch_oreset_visitor()
   local r=$1 l=$2 i=$3 current=$4
   [[ -z $r || $(git rev-parse "$l") == $(git rev-parse "$r") ]] && return 0
 
-  # ZOU_TRACE=true io_trace "_branch_reset_visitor 1 -- $(print_vars r l i current)"
+  # io_trace "_branch_reset_visitor 1 -- $(print_vars r l i current)"
 
 
   # pull changes

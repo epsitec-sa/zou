@@ -90,7 +90,6 @@ io_help()
 
 io_trace()
 {
-  [[ -z $ZOU_TRACE ]] && return 0
   io_message "  $1" "$moduleTracePrefix" ${2:-Gray}
 }
 
@@ -282,7 +281,7 @@ wildcard_set_regex()
   regex="${1//./\\.}"         # .   ->   \.
   regex="${regex//\*/\.\*}"   # *   ->   .*
   regex="${regex//\?/\.}"     # ?   ->   .
-  # ZOU_TRACE=true io_trace "wildcard_set_regex ${*@Q} -> $(print_vars regex)"
+  # io_trace "wildcard_set_regex ${*@Q} -> $(print_vars regex)"
 }
 
 array_remove_array()
@@ -463,7 +462,7 @@ visit_async_fast()
 #   $1
 error()
 {
-  [ $1 -ne 0 ] && ZOU_TRACE=true io_trace "error '$1' at '$2'"
+  [ $1 -ne 0 ] && io_trace "error '$1' at '$2'"
   return $1
 }
 

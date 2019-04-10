@@ -40,7 +40,7 @@ vstatus_node()
 {
   local ref=$(git_symbolic_ref "${1:-HEAD}") verbose
   [[ -z $recursive ]] && verbose=true
-  # ZOU_TRACE=true io_trace "vstatus_node ${*@Q} -- $(print_vars ref verbose)"
+  # io_trace "vstatus_node ${*@Q} -- $(print_vars ref verbose)"
   if ! ref_exists "$ref"; then
     ref=$(branch_realize $ref)
     if [ $? -gt 1 ]; then

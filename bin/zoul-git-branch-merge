@@ -100,13 +100,13 @@ _branch_merge_ff()
       return 1
     fi
   fi
-  # ZOU_TRACE=true io_trace "_branch_merge_ff -- $(print_vars toMerge intoBranch ref)" Green
+  # io_trace "_branch_merge_ff -- $(print_vars toMerge intoBranch ref)" Green
 }
 _branch_merge()
 {
   local message=$1 toMerge=$2; shift 2
   if git merge -m "$message" "$@" "$toMerge" &>/dev/null; then
-    # ZOU_TRACE=true io_trace "_branch_merge -- $(print_vars toMerge intoBranch ref)" Green
+    # io_trace "_branch_merge -- $(print_vars toMerge intoBranch ref)" Green
     return 0
   fi
 
