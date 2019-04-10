@@ -72,22 +72,18 @@ branch_set_publish()
 {
   unset vnext
 
-  local branch=$1 vbranch=$2 vtag=$3 htag=$4 prerelPrefix=$5 obranch
+  local branch=$1 vbranch=$2 vtag=$3 htag=$4 prerelPrefix=$5 # obranch
   
   [[ -z $branch ]]  && { io_error "Argument 'branch' not specified." "$moduleTracePrefix"; return 1; }
   [[ -z $vbranch ]] && { io_error "Argument 'vbranch' not specified." "$moduleTracePrefix"; return 1; }
   ! branch_ensure_local $branch && { io_error "Branch '$branch' does not exist." "$moduleTracePrefix"; return 1; }
   ! branch_ensure_local $vbranch && { io_error "Branch '$vbranch' does not exist." "$moduleTracePrefix"; return 1; }
-  ! branch_is_current $branch && obranch=$(branch_current)
+  # ! branch_is_current $branch && obranch=$(branch_current)
 
   # ZOU_TRACE=true io_trace "branch_set_publish 1 -- $(print_vars branch vbranch vtag htag prerelPrefix obranch)"
 
   # synchronize branches
-  if branch_is_merged $branch $vbranch; then
-    branch_merge_ff $vbranch $branch &>/dev/null
-  else
-    branch_merge_core $branch $vbranch '-Xtheirs'
-  fi
+  # branch_merge_sync "$branch" "$vbranch" '-Xtheirs'
 
   if [[ $prerelPrefix == 'reuse' ]]; then
     # reuse previous vtag if it's not a vnode
@@ -120,13 +116,10 @@ _branch_set_publish_epilog()
   # io_trace "_branch_publish_commit_and_merge ${*@Q}"
   local updater=$1 vcommit
   # update technical version - modify resources files
-  [[ -n $obranch ]] && git checkout $branch &>/dev/null
-  # update resource files
   [[ -n $updater ]] && vcommit=( $($updater $vnext) ) || vcommit=($vnext)
-  # commit dev and merge into prod
+  # commit resources and clean submodules in dev branch
+  # merge dev into prod
   version_commit_files "${vcommit[@]}" $(repo_list_unstaged_clean_submodules) \
-  && branch_merge $branch $vbranch '-Xtheirs'
-  [[ -n $obranch ]] && git checkout $obranch &>/dev/null
-  # be sure dev == prod
-  branch_merge $vbranch $branch
+  && branch_merge_sync $branch $vbranch '-Xtheirs'
+  # [[ -n $obranch ]] && git checkout $obranch &>/dev/null
 }

@@ -10,162 +10,150 @@ ZOUL_GIT_BRANCH_MERGE=true
 [[ -z $ZOUL_GIT_REPO ]]        && . zoul-git-repo
 [[ -z $ZOUL_GIT_BRANCH_CORE ]] && . zoul-git-branch-core
 
-branch_is_merged()
-{
-  local isMerged=$1 into=$2
-  git branch --merged $into | grep -E "^(\*|\ )\ $isMerged" &>/dev/null
-}
 branch_merge_ff()
+{
+  local toMerge=$1 intoBranch=$2 intoBranchName needCheckout
+  _branch_merge_ff
+}
+branch_merge_sync()
+{
+  branch_merge "$@" && branch_merge_ff "$2" "$1"
+}
+branch_merge()
+{
+  local toMerge=$1 intoBranch=$2 intoBranchName needCheckout ec=0; shift 2
+  _branch_merge_ff || ec=$?
+  case $ec in
+    0|128) return $ec;;
+    *) ec=0;;
+  esac
+
+  local message="zou-flow: merge '$toMerge' into '$intoBranch'"
+
+  if [[ $needCheckout == true ]] && git checkout $intoBranchName &>/dev/null; then
+    _branch_merge "$message" "$toMerge" "$@" || ec=$?
+    git checkout - &>/dev/null
+    [ $ec -eq 0 ] && return 0
+  else
+    _branch_merge "$message" "$toMerge" "$@" && return 0
+  fi
+  repo_require_clean_work_tree "Cannot merge '$toMerge' into '$intoBranch'"
+  return 1
+}
+# usage
+#  local toMerge=$1 intoBranch=$2 needCheckout
+#  _branch_merge_ff
+# in/out:
+#  toMerge    -- commish to merge
+#  intoBranch -- branch to merge into (local name)
+# out:
+#  intoBranchName -- branch name without remote prefix
+#  needCheckout
+# return:
+#  0   -- ff merge succeeded
+#  1   -- ff merge failed 
+#  128 -- bad arguments
+
+_branch_merge_ff()
 {
   # merge 'toMerge' (invariant) into 'intoBranch' < 'toMerge'
   # 'intoBranch' should be a local branch with a symbolic name
-  local toMerge=$1 intoBranch=$2 \
-        hashToMerge hashMergeInto
+  local hashToMerge hashMergeInto intoRef
 
-  hashMergeInto=$(git show-ref -s --verify "refs/heads/$intoBranch" 2>/dev/null)
+  intoBranch=$(branch_realize "$intoBranch")
+  case $? in
+  0) intoRef="refs/heads/$intoBranch"; intoBranchName=$intoBranch;;
+  1) intoRef="refs/remotes/$intoBranch"; intoBranchName=${intoBranch#*/}; needCheckout=true;;
+  *) io_error "Invalid branch name '$intoBranch'" "$moduleTracePrefix"; return 128;;
+  esac
+
+  hashToMerge="$(git rev-parse --verify "$toMerge" 2>/dev/null)"
   if [ $? -ne 0 ]; then
-    io_error "not a local branch $intoBranch" "$moduleTracePrefix"
-    return 1
+    toMerge=$(branch_realize "$toMerge")
+    if [ $? -gt 1 ]; then
+      io_error "Invalid commish '$toMerge'" "$moduleTracePrefix"
+      return 128
+    fi
+    hashToMerge="$(git rev-parse --verify "$toMerge" 2>/dev/null)"
+    if [ $? -ne 0 ]; then
+      io_error "Invalid commish '$toMerge'" "$moduleTracePrefix"
+      return 128
+    fi
+  fi
+  hashMergeInto=$(git show-ref -s --verify "$intoRef" 2>/dev/null)
+  if [ $? -ne 0 ]; then
+    io_error "Invalid reference '$intoRef'" "$moduleTracePrefix"
+    return 128
   fi
 
-  hashToMerge="$(git rev-parse --verify $toMerge 2> /dev/null)"
-  if [ $? -ne 0 ]; then
-    io_error "unknown branch to merge $toMerge" "$moduleTracePrefix"
-    return 2
-  fi
-
-  if [[ "$(git symbolic-ref HEAD)" == "refs/heads/$intoBranch" ]]; then
-    if ! git merge --ff-only "$toMerge"; then
-      io_error "merging $toMerge into $intoBranch would not be a fast-forward" "$moduleTracePrefix"
-      return 3
+  if [[ "$(git symbolic-ref HEAD)" == "$intoRef" ]]; then
+    if ! git merge --ff-only "$toMerge" &>/dev/null; then
+      return 1
     fi
   else
+    needCheckout=true
     if [[ "$(git merge-base $hashMergeInto $hashToMerge)" != "$hashMergeInto" ]]; then
-      io_error "merging $toMerge into $intoBranch would not be a fast-forward" "$moduleTracePrefix"
-      return 4
+      return 1
     fi
-    io_info "Updating ${hashMergeInto:0:7}..${hashToMerge:0:7}"
-    if ! git update-ref -m "merge $toMerge into $intoBranch (fast forward)" "refs/heads/$intoBranch" "$hashToMerge" "$hashMergeInto"; then
-      io_error "fast forward using update-ref failed" "$moduleTracePrefix"
-      return 5
+    if ! git update-ref -m "merge $toMerge into $intoBranch (fast forward)" "$intoRef" "$hashToMerge" "$hashMergeInto"; then
+      return 1
     fi
   fi
+  # ZOU_TRACE=true io_trace "_branch_merge_ff -- $(print_vars toMerge intoBranch ref)" Green
 }
-branch_merge_in_memory()
+_branch_merge()
 {
-  local toMerge=$1 intoBranch=$2 mbase
-  mbase=$(git merge-base $toMerge $intoBranch 2>/dev/null)
-  [ $? -ne 0 ] && return 1
-  git merge-tree $mbase $intoBranch $toMerge
+  local message=$1 toMerge=$2; shift 2
+  if git merge -m "$message" "$@" "$toMerge" &>/dev/null; then
+    # ZOU_TRACE=true io_trace "_branch_merge -- $(print_vars toMerge intoBranch ref)" Green
+    return 0
+  fi
+
+  ! repo_is_merging && return 1
+
+  if _branch_merge_resolve_submodule_conflicts; then
+    git commit -m "$message" >/dev/null
+  elif ! _branch_merge_interactive; then
+    local conflicts=$(git diff)
+    io_lock_enter
+    io_message_unsafe "while auto-merging $toMerge into $intoBranch."             "$moduleTracePrefix" Red
+    local IFS=$'\n'
+    for line in $(git diff); do
+      io_message_unsafe "  $line" "$moduleTracePrefix" DarkGray
+    done
+    io_message_unsafe "  configure your mergetool and run 'git sync' again"   "$moduleTracePrefix" LightCyan
+    io_message_unsafe "  or finalize the merge using the following commands:" "$moduleTracePrefix" LightCyan
+    io_message_unsafe "    <merge-tool>"          "$moduleTracePrefix" Brown
+    io_message_unsafe "    git commit --no-edit"  "$moduleTracePrefix" DarkGray
+    io_lock_exit
+    return 1
+  fi
 }
-branch_merge_dry_run()
-{
-  local conflicts
-  conflicts=$(branch_merge_in_memory "$@")
-  echo "$conflicts" | grep -q -E '^[+-\ ]>{7}' && return 1 || return 0
-}
-branch_merge_interactive()
+_branch_merge_interactive()
 {
   local ec=0
-  git mergetool || ec=1
-  if (( $ec == 0 )); then
-    git commit --no-edit >/dev/null
-  fi
+  git mergetool && git commit --no-edit >/dev/null || ec=$?
   # clean temp merge files
   repo_list_untracked | grep -E '(\.orig$|_(BACKUP|BASE|LOCAL|REMOTE)_[0-9]+)' | xargs --no-run-if-empty rm --
   return $ec
 }
-branch_merge()
+_branch_merge_resolve_submodule_conflicts()
 {
-  branch_is_merged "$1" "$2" || branch_merge_core "$@"
-}
-branch_merge_core()
-{
-  # merge toMerge into intoBranch
-  # before: intoBranch < toMerge
-  # after : intoBranch = toMerge -- intoBranch moved towards toMerge
-  local toMerge=$1 intoBranch=$2; shift 2
-  local message="zou-flow: merge branch '$toMerge' into '$intoBranch'"
-
-  local ec=0 targetBranchIsNotLocal
-  # try fast-forward merge
-  branch_merge_ff $toMerge $intoBranch &>/dev/null && return 0
-  # fast forward failed
-        
-
-  if [ $ec -eq 1 ]; then
-    targetBranchIsNotLocal=true
-    # ensure target branch name is realized
-    intoBranch=$(branch_realize $intoBranch 2>/dev/null)
-    ec=0
-  else
-    branch_is_current $intoBranch && intoBranchIsCurrent=true
-  fi
-  # on active branch...
-  if [[ -z $targetBranchIsNotLocal ]] && branch_is_head $intoBranch; then
-    # ... merge even if conflicts
-    if ! git merge --log -m "$message" "$@" "$toMerge" &>/dev/null; then
-      if repo_is_merging; then
-        branch_merge_interactive || {
-          local conflicts=$(git diff)
-          io_lock_enter
-          io_message_unsafe "while auto-merging $toMerge into $intoBranch."             "$moduleTracePrefix" Red
-          io_message_unsafe "$(echo "$conflicts" | sed 's/^/  /')"                      "$moduleTracePrefix" Red
-          io_message_unsafe "  configure your mergetool and run 'git sync' again"       "$moduleTracePrefix" LightCyan
-          io_message_unsafe "  ... or finalize the merge using the following commands:" "$moduleTracePrefix" LightCyan
-          io_message_unsafe "    <merge-tool>"          "$moduleTracePrefix" Brown
-          io_message_unsafe "    git commit --no-edit"  "$moduleTracePrefix" DarkGray
-          io_message_unsafe "    git push"              "$moduleTracePrefix" DarkGray
-          io_lock_exit
-          return 1
-        }
-      else
-        return 1
+  local IFS=$'\n' line status path ec=0
+  for line in $(git status -s --porcelain); do
+    if [[ $line =~ ^([A-Z]+)[[:blank:]]+(.+)$ ]]; then
+      status=${BASH_REMATCH[1]}
+      path=${BASH_REMATCH[2]}
+      if [[ $status =~ U ]]; then
+        if [[ -f "$path/.git" ]]; then
+          # keep local submodule
+          git reset -q "$path"
+        else
+          # still unmerged files
+          ec=1
+        fi
       fi
     fi
-  # on inactive branch check if there will be merge conflicts before switching
-  else
-    if branch_merge_dry_run $toMerge $intoBranch; then
-      # no conflicts: merge
-      [[ $targetBranchIsNotLocal == true ]] && intoBranch=$(branch_without_remote_prefix $intoBranch)
-      if git checkout $intoBranch &>/dev/null; then
-        ec=0
-        git merge --log -m "$message" "$@" $toMerge &>/dev/null || branch_merge_interactive || {
-          io_error "unable to merge $toMerge into $intoBranch branch" "$moduleTracePrefix"
-          ec=1
-        }
-        git checkout - &>/dev/null
-        return $ec
-      else
-        io_error "unable to checkout $intoBranch branch" "$moduleTracePrefix"
-        return 1
-      fi
-    else
-      if git checkout $intoBranch &>/dev/null; then
-        git merge --log -m "$message" "$@" "$toMerge" &>/dev/null || branch_merge_interactive ||
-        {
-          local conflicts=$(git diff)
-          io_lock_enter
-          io_message_unsafe "while auto-merging $toMerge into $intoBranch." "$moduleTracePrefix" Red
-          io_message_unsafe "$(echo "$conflicts" | sed 's/^/  /')" "$moduleTracePrefix" Red
-          io_message_unsafe "  configure your mergetool and run 'git sync' again" "$moduleTracePrefix" LightCyan
-          io_message_unsafe "  ... or merge $toMerge into $intoBranch using the following commands:" "$moduleTracePrefix" LightCyan
-          io_message_unsafe "    git checkout $intoBranch" "$moduleTracePrefix" DarkGray
-          io_message_unsafe "    git pull"                 "$moduleTracePrefix" DarkGray
-          io_message_unsafe "    <merge-tool>"             "$moduleTracePrefix" Brown
-          io_message_unsafe "    git commit --no-edit"     "$moduleTracePrefix" DarkGray
-          io_message_unsafe "    git push"                 "$moduleTracePrefix" DarkGray
-          io_message_unsafe "    git checkout -"           "$moduleTracePrefix" DarkGray
-          io_lock_exit
-          git merge --abort
-          ec=1
-        }
-        git checkout - &>/dev/null
-        return $ec
-      else
-        io_error "unable to checkout $intoBranch branch" "$moduleTracePrefix"
-        return 1
-      fi
-    fi
-  fi
+  done
+  return $ec
 }
