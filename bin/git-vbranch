@@ -1,6 +1,7 @@
 #!/bin/bash
 
 [[ -z $ZOUL_GIT_CORE ]]   && . zoul-git-core
+[[ -z $ZOUL_GIT_TAG ]]    && . zoul-git-tag
 [[ -z $ZOUL_GIT_MODULE ]] && . zoul-git-module
 
 vbranch_parse()
@@ -8,22 +9,22 @@ vbranch_parse()
   while [[ "$#" > 0 ]]; do case "$1" in
     -h|--help) zou-help $0; exit 0;;
     -c¦--checkout) checkout=true; shift;;
-    -m|--message) newtagOpts+=("$1" "$2"); shift;;
-    -*) newtagOpts+=($1);;
+    -m|--message) message=$2; shift;;
+    -*) io_error "unknown option: $1"; exit 1;;
     *) args+=("$1");;
   esac; shift; done
 }
 
 vbranch_run()
 {
-  local checkout newtagOpts=() args=()
+  local checkout message args=()
   vbranch_parse "$@" || return $?
 
   module_run vbranch_main "${args[@]}"
 }
 vbranch_main()
 {
-  local branch=$1 commit=${2:-$moduleBranch} \
+  local branch=$1 commit=${2:-$moduleBranch} message=$3 \
         prefix version vnode line
 
   if [[ $branch =~ ^(.*/)?([0-9]+\.[0-9]+)$ ]]; then
@@ -31,15 +32,14 @@ vbranch_main()
     version=${BASH_REMATCH[2]}
     vnode="${prefix}v${version}-@"
     if ref_exists $branch; then
-      io_error "Branch '$branch' already exists" "$moduleTracePrefix"
-      return 1
+      io_warning "Branch '$branch' already exists" "$moduleTracePrefix"
     else
       git branch "$branch" "$commit"
       io_info "Branch created '$branch'" "$moduleTracePrefix"
     fi
     [[ $checkout == true ]] && branch_checkout "$branch" true >/dev/null
     # create vnode
-    . git-newtag "${newtagOpts[@]}" "$vnode" "$branch"
+    tag_new "$vnode" "$branch" "$message"
   else
     io_error "Branch '$branch' is not a vbranch" "$moduleTracePrefix"
   fi
