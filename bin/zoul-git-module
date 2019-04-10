@@ -10,6 +10,9 @@ ZOUL_GIT_MODULE=true
 [[ -z $ZOUL_GIT_BUNDLE ]]      && . zoul-git-bundle
 [[ -z $ZOUL_GIT_BRANCH_CORE ]] && . zoul-git-branch-core
 
+# global variables
+startupMessage=''
+
 # global options
 useLongModuleTracePrefix=true
 showVisitModuleMessage=false
@@ -82,15 +85,24 @@ _module_scope_startup()
   bundleRoot=$(repo_bundle_root)
   bundleBranch=$(branch_current_root_branch)
 
+  _module_startup_message
   _module_register_bundle
 
   # execute next russian doll
   $1 "${@:2}"
 }
+_module_startup_message()
+{
+  if [[ -n $startupMessage ]]; then
+    local bundleTracePrefix
+    _module_set_bundle_trace_prefix
+    io_message "$startupMessage" "$bundleTracePrefix" White
+  fi
+}
 _module_register_bundle()
 {
   # cach bundle registration: avoid blocking call to bundle_register
-  if [[ $startupRoot == $bundleRoot ]] && ! git config --local --get zou.bundle.registered; then
+  if [[ $startupRoot == $bundleRoot ]] && ! git config --local --get zou.bundle.registered >/dev/null; then
     git config --local zou.bundle.registered true
     bundleUrl=$(git config remote.origin.url)
     bundle_register "$bundleUrl" "$bundleRoot"
@@ -270,5 +282,23 @@ _module_set_trace_prefix()
     local len; (( len = ${submodulePathMaxLength} + 2 ))
     printf -v moduleTracePrefix "%-${len}s" "[$moduleId]"
     moduleTracePrefix="${!mcolor}$moduleTracePrefix${NC}"
+  fi
+}
+_module_set_bundle_trace_prefix()
+{
+  if [[ $useLongModuleTracePrefix == true ]]; then
+    local sid bid mid=$bundleId
+    cd "$bundleRoot"
+    
+    bid=$(_module_branch_prefix)
+    # [ $? -eq 0 ] && bcolor=Cyan || bcolor=Brown
+    _module_set_smart_id2 42 "$mid" White "$bid" White
+    bundleTracePrefix=$sid
+    
+    cd - &>/dev/null
+  else
+    local len; (( len = ${submodulePathMaxLength} + 2 ))
+    printf -v bundleTracePrefix "%-${len}s" "[$bundleId]"
+    bundleTracePrefix="${White}$bundleTracePrefix${NC}"
   fi
 }

@@ -44,8 +44,6 @@ bundle_visit_async()
   [[ $1 =~ \[@\]$ ]] && _bundleVisitPaths=( "${!1}" ) || _bundleVisitPaths=( "$($1)" )
   [ ${#_bundleVisitPaths[@]} -eq 0 ] && return 0
 
-  local bundleTracePrefixLength=$(( 2 + $(string_max_length "${_bundleVisitPaths[@]##*/}") ))
-  
   # io_trace "bundle_visit_async ${*@Q} -- $(print_vars _bundleVisitPaths[@])"
   visit_async '_bundleVisitPaths[@]' _bundle_visitor "${@:2}"
 }
@@ -57,12 +55,5 @@ _bundle_visitor()
     io_error "No such bundle directory '$bundleRoot'" "$moduleTracePrefix"
     return 1
   }
-  local bundleTracePrefix \
-        bundleId=${bundleRoot##*/} \
-        bundleUrl=$(git config remote.origin.url)
-
-  printf -v bundleTracePrefix "%-${bundleTracePrefixLength}s" "[$bundleId]"
-  bundleTracePrefix="${Cyan}$bundleTracePrefix${NC}"
-
   "$2" "${@:3}" || return $?
 }

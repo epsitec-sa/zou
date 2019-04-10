@@ -31,7 +31,6 @@ publish_parse()
 {
   while [[ "$#" > 0 ]]; do case "$1" in
     -h|--help) zou-help $0; exit 0;;
-    -q|--quiet)           quiet=true;;
     -j*)                  jobsCount=${1#-j};;
     .)                    unset recursive;;
     --dev)                publishDev=true;;
@@ -48,14 +47,14 @@ publish_parse()
 publish_run()
 {
   # parse command line
-  local jobsCount quiet sku vtable prerelPrefix publishDev recursive=true
+  local jobsCount sku vtable prerelPrefix publishDev recursive=true
   publish_parse "$@" || return $?
 
   local commitSubmodules=true \
         publishSelectExcludeIds=() \
         publishScopes=( config_scope cosm_scope )
 
-  io_message "Publishing, please wait...\n"
+  startupMessage="Publishing, please wait..."
 
   module_run "${publishScopes[@]}" publish_main
 }
