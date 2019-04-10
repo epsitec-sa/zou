@@ -60,11 +60,12 @@ _branch_merge_ff()
   # 'intoBranch' should be a local branch with a symbolic name
   local hashToMerge hashMergeInto intoRef
 
+  local obranch=$intoBranch
   intoBranch=$(branch_realize "$intoBranch")
   case $? in
   0) intoRef="refs/heads/$intoBranch"; intoBranchName=$intoBranch;;
   1) intoRef="refs/remotes/$intoBranch"; intoBranchName=${intoBranch#*/}; needCheckout=true;;
-  *) io_error "Invalid branch name '$intoBranch'" "$moduleTracePrefix"; return 128;;
+  *) io_error "Invalid branch name '$obranch'" "$moduleTracePrefix"; return 128;;
   esac
 
   hashToMerge="$(git rev-parse --verify "$toMerge" 2>/dev/null)"

@@ -268,7 +268,7 @@ branch_checkout()
     # ZOU_TRACE=true io_trace "branch_checkout 2 -- $(print_vars ref always alias refType isCurrent symType symRef)"
 
     # checkout
-    local line color info breakLoop ec=0
+    local line color info breakLoop deferIndent indent ec=0
     info=$(git checkout "$ref" 2>&1 >/dev/null); ec=$?
 
     if [[ $ec -eq 0 && $isCurrent -ne 0 ]]; then
@@ -277,7 +277,7 @@ branch_checkout()
     
     io_lock_enter
     while read -r line; do
-      [[ -z $line ]] && continue
+      # [[ -z $line ]] && continue
       if [[ $line =~ ^Switched ]]; then
         color=Green
       elif [[ -z $color ]]; then
@@ -288,8 +288,11 @@ branch_checkout()
           line="Already at '$ref'"
           color=LightBlue
           [[ -z $alias ]] && alias=$ref
-        elif [[ $line =~ ^Warning ]]; then
-          color=Brown
+        elif [[ $line =~ ^Warning:(.*) ]]; then
+          line="${Brown}Warning${NC} : ${DarkGray}${BASH_REMATCH[1]}"
+          unset alias
+          deferIndent=true
+          color=DarkGray
         elif [[ $line =~ ^error ]]; then
           color=Red
         elif [[ $line =~ ^Note:\ checking\ out ]]; then
@@ -320,8 +323,9 @@ branch_checkout()
         fi
         line="$line (${!acolor}$alias${!color})"
       fi
-      io_message_unsafe "$line" "$moduleTracePrefix" $color
-      unset alias
+      io_message_unsafe "$indent$line" "$moduleTracePrefix" $color
+      [[ $deferIndent == true ]] && indent='  '
+      unset alias deferIndent
       [[ $breakLoop == true ]] && break
     done <<< "$info"
     io_lock_exit

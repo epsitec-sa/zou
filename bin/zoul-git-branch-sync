@@ -91,7 +91,7 @@ _branch_sync_visit()
     local linfo=$(string_pad_right 18 $l)
     [[ $l == $current ]] && linfo="* $linfo" || linfo="  $linfo"
     [[ $syncNoPush == true && $i =~ '>' ]] && color=DarkGray
-    io_message "$linfo $i $r" "$moduleTracePrefix" $color
+    io_message "$linfo $(string_pad_right 2 $i) $r" "$moduleTracePrefix" $color
   done < <(branch_sync_info "$@")
   return 0
 }
