@@ -217,6 +217,22 @@ branch_ensure_local()
     git branch "$1" "$(branch_upstream $1)" >/dev/null
   fi
 }
+branch_ensure_local_vbranch()
+{
+  local vbranch=$1 vtag=$2 rvbranch
+  rvbranch=$(branch_realize "$vbranch")
+  case $? in
+  0) ;;
+  1) local line
+     (git branch "$vbranch" "$rvbranch" 2>/dev/null) | \
+     while read -r line; do
+       [[ -z $line ]] && continue
+       io_message "  $line" "$moduleTracePrefix" DarkGray
+     done;;
+  *) git branch "$vbranch" "$vtag";;
+  esac
+}
+
 # out:
 #   return code
 #   0 local branch

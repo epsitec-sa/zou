@@ -72,18 +72,16 @@ branch_set_publish()
 {
   unset vnext
 
-  local branch=$1 vbranch=$2 vtag=$3 htag=$4 prerelPrefix=$5 # obranch
+  local branch=$1 vbranch=$2 vtag=$3 htag=$4 prerelPrefix=$5
   
   [[ -z $branch ]]  && { io_error "Argument 'branch' not specified." "$moduleTracePrefix"; return 1; }
   [[ -z $vbranch ]] && { io_error "Argument 'vbranch' not specified." "$moduleTracePrefix"; return 1; }
   ! branch_ensure_local $branch && { io_error "Branch '$branch' does not exist." "$moduleTracePrefix"; return 1; }
-  ! branch_ensure_local $vbranch && { io_error "Branch '$vbranch' does not exist." "$moduleTracePrefix"; return 1; }
-  # ! branch_is_current $branch && obranch=$(branch_current)
+
+  # restore deleted vbranch
+  branch_ensure_local_vbranch "$vbranch" "$vtag"
 
   # io_trace "branch_set_publish 1 -- $(print_vars branch vbranch vtag htag prerelPrefix obranch)"
-
-  # synchronize branches
-  # branch_merge_sync "$branch" "$vbranch" '-Xtheirs'
 
   if [[ $prerelPrefix == 'reuse' ]]; then
     # reuse previous vtag if it's not a vnode
@@ -103,12 +101,14 @@ branch_set_publish()
   if [[ $prerelPrefix == 'reuse' ]]; then
     _branch_set_publish_epilog
     tag_move "$vtag" "$branch"
+    # io_trace "branch_set_publish 3 -- $(print_vars branch vbranch vtag htag prerelPrefix obranch vnext)"
   else
     # update technical version
     _branch_set_publish_epilog 'version_update'
     # create vtag
     local comment="publish branch '$branch' as '$vnext'"
     git tag -a -m "zou-flow: $comment" "$vnext" "$vbranch"
+    # io_trace "branch_set_publish 4 -- $(print_vars branch vbranch vtag htag prerelPrefix obranch vnext)"
   fi
 }
 _branch_set_publish_epilog()
@@ -118,8 +118,6 @@ _branch_set_publish_epilog()
   # update technical version - modify resources files
   [[ -n $updater ]] && vcommit=( $($updater $vnext) ) || vcommit=($vnext)
   # commit resources and clean submodules in dev branch
-  # merge dev into prod
   version_commit_files "${vcommit[@]}" $(repo_list_unstaged_clean_submodules) \
   && branch_merge_sync $branch $vbranch '-Xtheirs'
-  # [[ -n $obranch ]] && git checkout $obranch &>/dev/null
 }
