@@ -82,15 +82,20 @@ _module_scope_startup()
   bundleRoot=$(repo_bundle_root)
   bundleBranch=$(branch_current_root_branch)
 
-  # register bundle
-  [[ $startupRoot == $bundleRoot ]] && {
-    bundleUrl=$(git config remote.origin.url)
-    bundle_register "$bundleUrl" "$bundleRoot"
-    # io_trace "_module_scope_startup ${*@Q} -- $(print_vars bundleUrl bundleRoot)"
-  }
+  _module_register_bundle
 
   # execute next russian doll
   $1 "${@:2}"
+}
+_module_register_bundle()
+{
+  # cach bundle registration: avoid blocking call to bundle_register
+  if [[ $startupRoot == $bundleRoot ]] && ! git config --local --get zou.bundle.registered; then
+    git config --local zou.bundle.registered true
+    bundleUrl=$(git config remote.origin.url)
+    bundle_register "$bundleUrl" "$bundleRoot"
+    # io_trace "_module_scope_startup ${*@Q} -- $(print_vars bundleUrl bundleRoot)"
+  fi
 }
 # run a function in the module root folder with module scope defined
 _module_scope()
