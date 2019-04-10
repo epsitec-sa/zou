@@ -37,7 +37,7 @@ config_sku_exclude_all()
 config_sku_exclude_many()
 {
   local path rePath
-  for path in "$@"; do
+  for path in $(string_sort "$@"); do
     rePath=$(wildcard_to_regex_match_whole "$path")
     git config --file "$moduleConfigFile" --get-all "sku.exclude" "$rePath" >/dev/null \
     || git config --file "$moduleConfigFile" --add "sku.exclude" "$path"
@@ -66,7 +66,7 @@ config_sku_include_all()
 config_sku_include_many()
 {
   local path rePath
-  for path in $@; do
+  for path in $(string_sort "$@"); do
     rePath=$(wildcard_to_regex_match_whole "$path")
     git config --file "$moduleConfigFile" --unset-all "sku.exclude" "$rePath"
   done
