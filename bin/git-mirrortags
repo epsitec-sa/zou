@@ -7,13 +7,16 @@ mtags_parse()
   while [[ "$#" > 0 ]]; do case "$1" in
     -h|--help) zou-help $0; exit 0;;
     -r|--recursive) recursive=true;;
+    -v|--verbose)   verbose=true;;
     -*) forOpts+=($1);;
   esac; shift; done
 }
 mtags_run()
 {
-  local recursive forOpts=()
+  local recursive verbose forOpts=()
   mtags_parse "$@" || return $?
+
+  startupMessage="Mirroring tags, please wait..."
 
   if [[ $recursive = true ]]; then
     . git-for "${forOpts[@]}" -- 'mtags_node'
@@ -24,16 +27,22 @@ mtags_run()
 mtags_node()
 {
   local tag line
-  io_info "Pushing tags..." "$moduleTracePrefix"
-  (git push --tags --prune -f 2>&1) | \
-  while read line; do
-    [[ -z $line ]] && continue
-    if [[ $line =~ ^.*\[new\ tag\][[:blank:]]+(.*)$ ]]; then
-      io_message "  ${BASH_REMATCH[1]}" "$moduleTracePrefix" LightGray
-    else
-      io_message "  $line" "$moduleTracePrefix" LightGray
-    fi
-  done
+  if [[ $verbose == true ]]; then
+    io_info "Mirroring tags..." "$moduleTracePrefix"
+    local IFS=$'\n'
+    local line lines=( $(git push --tags --prune -f 2>&1) )
+    io_lock_enter
+    for line in "${lines[@]}"; do
+      if [[ $line =~ ^.*\[new\ tag\][[:blank:]]+(.*)$ ]]; then
+        io_message_unsafe "  ${BASH_REMATCH[1]}" "$moduleTracePrefix" LightGray
+      else
+        io_message_unsafe "  $line" "$moduleTracePrefix" DarkGray
+      fi
+    done
+    io_lock_exit
+  else
+    git push --tags --prune -f &>/dev/null
+  fi
 }
 
 mtags_run "$@"
