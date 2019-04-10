@@ -10,6 +10,7 @@
 #      create a lookup table with the commit hash as key and the commit tags (space separated) as value.
 
 [[ -z $ZOUL_GIT_REPO ]]          && . zoul-git-repo
+[[ -z $ZOUL_GIT_TAG ]]           && . zoul-git-tag
 [[ -z $ZOUL_GIT_VBRANCH ]]       && . zoul-git-vbranch
 [[ -z $ZOUL_GIT_MODULE ]]        && . zoul-git-module
 [[ -z $ZOUL_GIT_BRANCH_CORE ]]   && . zoul-git-branch-core
@@ -50,7 +51,9 @@ clean_node()
   local noTagPush=true
 
   [[ $stowSemver == true ]] && tag_stow_semver
-  tag_move_semver_orphan
+  # TODO leading zeros in orphans
+  # TODO remove archived orphans
+  tag_move_semver_orphan # TODO check if archived
   tag_delete_othered
   tag_archive_other_semver
   tag_archive_big_patch
@@ -190,7 +193,6 @@ tag_remove_prerelease_leading_zero()
 {
   local tag0 tag1 pv0 pv1
   for tag0 in $(git tag -l --sort=v:refname); do
-    ref_is_other $tag0 && continue
     ! vtag_is_semver $tag0 && continue
     pv0=${BASH_REMATCH[8]}
     [[ -z $pv0 ]] && continue
