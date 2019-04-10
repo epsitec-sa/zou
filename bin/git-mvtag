@@ -12,7 +12,7 @@ mvtag_parse()
     -h|--help) zou-help $0; exit 0;;
     --) args+=( "$@" ); break;;
     -n|--dry-run) dryRun='echo';;
-    -u|--no-push) noPushTags=true;;
+    -u|--no-push) noTagPush=true;;
     --debug) debug=true;;
     -*) io_error "unknown option: $1"; exit 1;;
     *) args+=("$1");;
@@ -20,7 +20,7 @@ mvtag_parse()
 }
 mvtag_run()
 {
-  local dryRun args=() noPushTags
+  local dryRun args=() noTagPush
   mvtag_parse "$@" || return $?
   
   module_run mvtag_main "${args[@]}"
@@ -34,15 +34,14 @@ mvtag_main()
     [[ $tag2 =~ /$ ]] && tag2="$tag2${tag1##*/}"  # tag2 is a folder
     $dryRun tag_move "$tag1" "$tag2"
   else
-    local noPushTagsOpt=$noPushTags tag dest
-    noPushTags=true
+    local tag dest
     # assume tag1 is a glob and tag2 is a folder
     for tag in $(mvtag_tag_enumerator "$tag1"); do
       tag2=${tag2#.}            # remove leading dot from dest
       dest=${tag2%/}/${tag##*/} # remove trailing slash from dest and concat tag name without folder
       $dryRun tag_move $tag ${dest#/}
     done
-    [[ -z $noPushTagsOpt ]] && $dryRun . git-mirrortags
+    [[ -z $noTagPush ]] && $dryRun . git-mirrortags
   fi
 }
 mvtag_tag_enumerator()
