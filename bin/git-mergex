@@ -5,18 +5,12 @@
 args=()
 while [[ "$#" > 0 ]]; do case "$1" in
   -h|--help) zou-help $0; exit 0;;
-  -n) dry_run=true;;
-  -*) echo "unknown option: $1" >&2; exit 1;;
-  *) args+=( $1 );;
+  -y|--sync) mergeAction='_sync';;
+  -*) io_error "unknown option: $1"; exit 1;;
+  *) args+=( "$1" );;
 esac; shift; done
 
-# merge remote into local
-remote=${args[0]:-HEAD}
-local=${args[1]}
-[[ -z $local ]] && local=$(branch_current)
+toMerge=${args[0]}
+intoBranch=${args[1]:-$(branch_current)}
 
-if [[ $dry_run == true ]]; then
-  echo merge $remote into $local
-else
-  branch_merge $remote $local
-fi
+"branch_merge$mergeAction" "$toMerge" "$intoBranch"

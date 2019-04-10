@@ -1,12 +1,14 @@
-usage: git mergex [<options>] [--] <commit> [<into-branch>]
+usage: git mergex [<options>] <commitish> [<into-branch>]
 
-Merge commit into branch.
+Merge commitish into branch - do not checkout target branch.
 
     -h|--help               display help
-    -n                      Dry run
-    <commit>                Commit to merge (default to HEAD)
-    <into-branch>           Branch to merge into (default to current branch)
+    -y|--sync               if commitish is a branch, merge both
+    <commitish>             commitish to merge (default to HEAD)
+    <into-branch>           branch to merge into (default to current branch)
     
 example:
     git mergex wip/feature              # merge wip/feature into current branch
+    git mergex v1.0.0 master            # merge vtag into master (stay on master)
     git mergex master 1.0               # merge master into 1.0 (stay on master)
+    git mergex --sync master 1.0        # merge master into 1.0 and 1.0 in master (stay on master)
