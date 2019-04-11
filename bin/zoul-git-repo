@@ -355,10 +355,8 @@ repo_commit_submodules()
 {
   # echo repo_commit_submodules "${*@Q}" >&2
   local mroot=$1; shift
-  [ $# -eq 0 ] && {
-    io_error "fatal: repo_commit_submodules - missing arguments"
-    return 1
-  }
+  [ $# -eq 0 ] && return 0
+  
   [[ -z $mroot ]] && mroot=$moduleRoot
   [[ -z $mroot ]] && { mroot=$(repo_module_root) || return 1; }
 
