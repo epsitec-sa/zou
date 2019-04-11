@@ -71,8 +71,14 @@ module_has_submodules() { [ ${#moduleSubmodulePaths[@]} -gt 0 ]; }
 _module_scope_startup()
 {
   # io_trace "_module_scope_startup ${*@Q}"
+
   # setup startup context
-  local startupDir=$PWD startupRoot bundleId bundleRoot bundleBranch submodulePathMaxLength
+  local startupDir=$PWD startupRoot \
+        bundleId bundleRoot bundleBranch \
+        bundleUrl bundleUrlName \
+        principalModuleId \
+        submodulePathMaxLength
+
   startupRoot=$(repo_module_root)
   [[ -z $startupRoot ]] && {
     io_error "Not a git repository '$PWD' (or any of the parent directories)"
@@ -85,8 +91,14 @@ _module_scope_startup()
   bundleRoot=$(repo_bundle_root)
   bundleBranch=$(branch_current_root_branch)
 
+  repo_set_bundle_url_info "$bundleRoot"  # -> bundleUrl bundleUrlName
+  _module_set_principal_module_id
+
   _module_startup_message
   _module_register_bundle
+
+  # io_trace "_module_scope_startup -- $(print_vars startupDir startupRoot bundleId bundleRoot bundleBranch)"
+  # io_trace "_module_scope_startup -- $(print_vars bundleUrl bundleUrlName principalModuleId)"
 
   # execute next russian doll
   $1 "${@:2}"
@@ -104,7 +116,6 @@ _module_register_bundle()
   # cach bundle registration: avoid blocking call to bundle_register
   if [[ $startupRoot == $bundleRoot ]] && ! git config --local --get zou.bundle.registered >/dev/null; then
     git config --local zou.bundle.registered true
-    bundleUrl=$(git config remote.origin.url)
     bundle_register "$bundleUrl" "$bundleRoot"
     # io_trace "_module_scope_startup ${*@Q} -- $(print_vars bundleUrl bundleRoot)"
   fi
@@ -124,7 +135,7 @@ _module_scope()
     modulePath moduleTracePrefix \
     moduleScopeInitialized=true
   
-  [[ -z $moduleParent ]] || modulePath=${moduleRoot#$moduleParent/}
+  [[ -n $moduleParent ]] && modulePath=${moduleRoot#$moduleParent/}
 
   if [[ $moduleRoot == $startupRoot ]]; then
     # initialize startup module context
@@ -164,10 +175,36 @@ _module_enter()
 _module_reset_scope()
 {
   [[ $moduleScopeInitialized == true ]] || return 0
-  [[ "$PWD" == "$bundleRoot" ]] && bundleBranch=$1
+
+  if [[ "$PWD" == "$bundleRoot" ]]; then
+    bundleBranch=$1
+    _module_set_principal_module_id
+  fi
+
   moduleBranch=$1
   _module_set_trace_prefix
-  # io_trace "_module_reset_scope ${*@Q} -> $(print_vars bundleBranch moduleBranch)"
+  
+  # io_trace "_module_reset_scope ${*@Q} -> $(print_vars bundleBranch moduleBranch principalModuleId)"
+  # io_trace "_module_reset_scope ${*@Q} -> $(print_vars moduleBranchPrefix)"
+}
+
+##################
+# PRINCIPAL MODULE
+##################
+
+_module_set_principal_module_id()
+{
+  # if the bundle branch name starts with 'sku/', use the following part as the principal module ID
+  # else use the bundle name without '-dev' suffix
+
+  if [[ $bundleBranch =~ ^sku/([^/]+) ]]; then
+    principalModuleId=${BASH_REMATCH[1]}
+    [ -d "$bundleRoot/$principalModuleId" ] && return 0
+  fi
+  principalModuleId=${bundleUrlName%-dev}
+  [ -d "$bundleRoot/$principalModuleId" ] && return 0
+  unset principalModuleId
+  return 1
 }
 
 ##############
