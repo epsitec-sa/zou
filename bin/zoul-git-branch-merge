@@ -87,7 +87,7 @@ _branch_merge_ff()
     return 128
   fi
 
-  if [[ "$(git symbolic-ref HEAD)" == "$intoRef" ]]; then
+  if [[ "$(git symbolic-ref HEAD &>/dev/null)" == "$intoRef" ]]; then
     if ! git merge --ff-only "$toMerge" &>/dev/null; then
       return 1
     fi
