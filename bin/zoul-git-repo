@@ -1,9 +1,10 @@
 #!/bin/bash
 
-# Manage repository
+# Repository helpers
 # 
-# bundle ID
-# bundle root path
+# bundle ID                    (zou-dev)
+#   = bundle root path name
+# bundle root path             (/c/devel/zou-dev)
 #   
 # module ID
 #   = module relative path
@@ -18,15 +19,14 @@
 #   = relative path to the parent module / bundle
 #
 # Exemples:
-# repo_bundle_id        # zou-dev
-# repo_bundle_root      # /c/devel/zou-dev
-# repo_module_id        # zou, Bcx
-# repo_module_root      # /c/devel/zou-dev/zou, /c/devel/zou-dev/Bcx, ...
-
-
-
+#  repo_bundle_id        # zou-dev
+#  repo_bundle_root      # /c/devel/zou-dev
+#  repo_module_id        # zou, Bcx
+#  repo_module_root      # /c/devel/zou-dev/zou, /c/devel/zou-dev/Bcx, ...
+#
 # http://schacon.github.io/git/git.html
 # https://stackoverflow.com/questions/2657935/checking-for-a-dirty-index-or-untracked-files-with-git/2658301
+
 
 # Use the following statement to include current lib only once
 #   [[ -z $ZOUL_GIT_REPO ]] && . zoul-git-repo
@@ -60,6 +60,28 @@ repo_bundle_root()
   done
   [[ -z $dir ]] && return 1
   echo "$dir"
+}
+# usage:
+#  local bundleUrl bundleUrlName
+#  repo_set_bundle_url_info "$broot"
+# in:
+#  $1:broot=bundleRoot
+# out:
+#  bundleUrl
+#  bundleUrlName
+# ex:
+#  repo_set_bundle_url_info '/c/devel/zou-dev'
+#  -> bundleUrl     = https://git.epsitec.ch/Build/zou-dev.git
+#  -> bundleUrlName = zou-dev
+repo_set_bundle_url_info()
+{
+  local broot=${1:-$bundleRoot}
+  [[ -z $broot ]] && broot=$(repo_bundle_root)
+  cd "$broot"
+  bundleUrl=$(git config remote.origin.url)
+  cd - &>/dev/null
+  bundleUrlName=${bundleUrl##*/}
+  bundleUrlName=${bundleUrlName%.git}
 }
 # return the path relative to the bundle root of any bundle folder
 # input:
