@@ -53,6 +53,36 @@ branch_publish()
     exit 1;;
   esac
 }
+# Compute next version
+#
+# usage:
+#  local prerelPrefix='reuse' vnext
+#  branch_set_vnext $vtag $htag $noIncrement
+# in:
+#  prerelPrefix     -- prerelease prefix (alpha, beta, rc, rtm, reuse)
+#  $1:vtag          -- previous vtag
+#  $2:htag          -- base vtag for vnext computation
+#  $3:noIncrement   -- use htag
+# out:
+#  prerelPrefix     -- prerelease prefix (alpha, beta, rc, rtm, reuse)
+#  vnext
+branch_set_vnext()
+{
+  local vtag=$1 htag=$2 noIncrement=$3
+
+  if [[ $prerelPrefix == 'reuse' ]]; then
+    # reuse previous vtag if it's not a vnode
+    if vtag_is_vnode $vtag; then
+      [[ $noIncrement == true ]] && vnext=$htag || vtag_set_increment $htag || return 1
+      unset prerelPrefix
+    else
+      vnext=$vtag
+    fi
+  else
+    # compute next vtag
+    [[ $noIncrement == true ]] && vnext=$htag || vtag_set_increment $htag $prerelPrefix || return 1
+  fi
+}
 # Publish a development branch
 #
 # usage:
@@ -66,13 +96,14 @@ branch_publish()
 #  $4:htag          -- base vtag for vnext computation
 #  $5:prerelPrefix  -- prerelease prefix (alpha, beta, rc, rtm, reuse)
 #                      [[ prerelPrefix == reuse ]] && tag_move vtag branch
+#  $6:noIncrement   -- use htag
 # out:
 #  vnext
 branch_set_publish()
 {
   unset vnext
 
-  local branch=$1 vbranch=$2 vtag=$3 htag=$4 prerelPrefix=$5
+  local branch=$1 vbranch=$2 vtag=$3 htag=$4 prerelPrefix=$5 noIncrement=$6
   
   [[ -z $branch ]]  && { io_error "Argument 'branch' not specified." "$moduleTracePrefix"; return 1; }
   [[ -z $vbranch ]] && { io_error "Argument 'vbranch' not specified." "$moduleTracePrefix"; return 1; }
@@ -85,18 +116,7 @@ branch_set_publish()
 
   # io_trace "branch_set_publish 1 -- $(print_vars branch vbranch vtag htag prerelPrefix obranch)"
 
-  if [[ $prerelPrefix == 'reuse' ]]; then
-    # reuse previous vtag if it's not a vnode
-    if vtag_is_vnode $vtag; then
-      vtag_set_increment $htag || return 1
-      unset prerelPrefix
-    else
-      vnext=$vtag
-    fi
-  else
-    # compute next vtag
-    vtag_set_increment $htag $prerelPrefix || return 1
-  fi
+  branch_set_vnext "$vtag" "$htag" "$noIncrement" # -> prerelPrefix vnext
 
   # io_trace "branch_set_publish 2 -- $(print_vars branch vbranch vtag htag prerelPrefix obranch vnext)"
 

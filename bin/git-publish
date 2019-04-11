@@ -125,7 +125,7 @@ publish_epilog()
 publish_publish()
 {
   # io_trace "publish_publish 1 -- $(print_vars branch vbranch vtag htag prerelPrefix publishStatus)"
-  local vnext=$vtag
+  local vnext=$vtag noIncrement
   
   case $publishStatus in
   published)
@@ -136,7 +136,8 @@ publish_publish()
       || { io_error "Fast-forward publish of branch '$branch' failed" "$moduleTracePrefix"; return 1; }
     publish_try_attach;;
   notPublished)
-    branch_set_publish "$branch" "$vbranch" "$vtag" "$htag" "$prerelPrefix" \
+    publish_set_bundle_version
+    branch_set_publish "$branch" "$vbranch" "$vtag" "$htag" "$prerelPrefix" "$noIncrement" \
       && io_success "Published branch '$branch' at ${Brown}$vnext" "$moduleTracePrefix" \
       || { io_error "Publish of branch '$branch' failed" "$moduleTracePrefix"; return 1; }
     publish_try_attach;;
@@ -146,6 +147,28 @@ publish_publish()
   esac
   # io_trace "publish_publish 1 -- $(print_vars branch vbranch vtag htag prerelPrefix publishStatus)"
 }
+# Compute next bundle version
+# in:
+#  (module_scope)
+# out:
+#  htag         -- high
+#  noIncrement
+publish_set_bundle_version()
+{
+  if [[ $moduleRoot == $bundleRoot && -n $principalModuleId ]]; then
+    local smtag=$(module_visit "$principalModuleId" publish_principal_version)
+    [ -n $smtag ] && { htag=$smtag; noIncrement=true; }
+    # io_trace "publish_set_bundle_version -- $(print_vars principalModuleId vtag smtag htag noIncrement)"
+  fi
+}
+publish_principal_version()
+{
+  local branch lbranch vbranch vtag htag delta alias status
+  branch_set_select_info "$bundleBranch" true false
+  # io_trace "_publish_principal_module_highest_version $(print_vars branch lbranch vbranch vtag htag delta alias status)"
+  echo "$htag"
+}
+
 publish_try_attach()
 {
   branch_try_attach 'HEAD' "$sku" false || true
