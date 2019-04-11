@@ -113,11 +113,8 @@ branch_set_publish()
 
   # restore deleted vbranch
   branch_ensure_local_vbranch "$vbranch" "$vtag"
-
   # io_trace "branch_set_publish 1 -- $(print_vars branch vbranch vtag htag prerelPrefix obranch)"
-
   branch_set_vnext "$vtag" "$htag" "$noIncrement" # -> prerelPrefix vnext
-
   # io_trace "branch_set_publish 2 -- $(print_vars branch vbranch vtag htag prerelPrefix obranch vnext)"
 
   if [[ $prerelPrefix == 'reuse' ]]; then
@@ -140,6 +137,6 @@ _branch_set_publish_epilog()
   # update technical version - modify resources files
   [[ -n $updater ]] && vcommit=( $($updater $vnext) ) || vcommit=($vnext)
   # commit resources and clean submodules in dev branch
-  version_commit_files "${vcommit[@]}" $(repo_list_unstaged_clean_submodules) \
-  && branch_merge_sync $branch $vbranch '-Xtheirs'
+  version_commit_files "${vcommit[@]}" $(repo_list_unstaged_clean_submodules)
+  branch_merge_sync $branch $vbranch '-Xtheirs'
 }
