@@ -199,14 +199,24 @@ branch_remove_remote_tracked()
 #     2 -- branch does not exists
 branch_realize()
 {
-  local ref=$(git_symbolic_ref "$1")
-  if { [[ "$ref" == 'HEAD' ]] || branch_is_local "$ref"; }; then
+  local ref=${1:-HEAD}
+  if [[ $ref == 'HEAD' ]]; then
+    ref=$(git symbolic-ref --short HEAD 2>/dev/null)
+    [ $? -ne 0 ] && return 2
+  fi
+  if branch_is_local "$ref"; then
     echo "$ref"
     return 0
-  elif branch_upstream "$ref"; then
+  elif branch_is_remote "$ref"; then
+    echo "$ref"
+    return 1
+  else
+    local upstream
+    upstream=$(branch_upstream "$ref")
+    [ $? -ne 0 ] && return 2
+    echo "$upstream"
     return 1
   fi
-  return 2
 }
 
 branch_without_remote_prefix() { branch_is_remote $1 && echo ${1#*/} || echo $1; }
