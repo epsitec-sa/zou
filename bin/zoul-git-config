@@ -30,6 +30,8 @@ config_scope()
   # execute next russian doll
   $1 "${@:2}"
 }
+config_has_submodules() { [ ${#configSelectInclude[@]} -gt 0 ]; }
+
 _config_on_sync()
 {
   [[ $3 =~ ^\< ]] && _config_reset_scope
