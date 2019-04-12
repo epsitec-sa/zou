@@ -15,7 +15,7 @@ ZOUL_GIT_BRANCH_PUBLISH=true
 #
 # usage:
 #   local vnext vbranch
-#   branch_publish $branch $forceDev $allowDuplicateTags $prerelPrefix
+#   branch_publish $lbranch $forceDev $allowDuplicateTags $prerelPrefix
 #
 # in:
 #  $1:sku
@@ -30,24 +30,24 @@ branch_publish()
   io_warning "branch_publish is deprecated, use branch_set_publish instead" "$moduleTracePrefix"
   
   local sku=$1 forceDev=${2:-false} allowDuplicateTags=${3:-false} prerelPrefix=$4
-  local branch vtag htag publishStatus
+  local lbranch vtag htag publishStatus
   branch_set_select_auto "$sku" "$forceDev" false false "$allowDuplicateTags"
 
   local vnext=$vtag
   case $publishStatus in
   unpublishable)
-    io_error   "Branch '$branch' cannot be published (no vbranch associated)" "$moduleTracePrefix"
+    io_error   "Branch '$lbranch' cannot be published (no vbranch associated)" "$moduleTracePrefix"
     return 1;;
   published)
     io_message "Already published at ${Brown}$vtag" "$moduleTracePrefix" LightBlue;;
   ffPublish)
     branch_merge "$vtag" "$moduleBranch" \
       && io_message "Already published at ${Brown}$vnext${LightBlue} (${Brown}fast-forward${LightBlue})" "$moduleTracePrefix" LightBlue \
-      || { io_error "Fast-forward publish of branch '$branch' failed" "$moduleTracePrefix"; return 1; };;
+      || { io_error "Fast-forward publish of branch '$lbranch' failed" "$moduleTracePrefix"; return 1; };;
   notPublished)
-    branch_set_publish "$branch" "$vbranch" "$vtag" "$htag" "$prerelPrefix" \
-      && io_success "Published branch '$branch' at ${Brown}$vnext" "$moduleTracePrefix" \
-      || { io_error "Publish of branch '$branch' failed" "$moduleTracePrefix"; return 1; };;
+    branch_set_publish "$lbranch" "$vbranch" "$vtag" "$htag" "$prerelPrefix" \
+      && io_success "Published branch '$lbranch' at ${Brown}$vnext" "$moduleTracePrefix" \
+      || { io_error "Publish of branch '$lbranch' failed" "$moduleTracePrefix"; return 1; };;
   *)
     io_error "Fatal: publishStatus '$publishStatus' not implemented" "$moduleTracePrefix"
     exit 1;;
@@ -86,11 +86,11 @@ branch_set_vnext()
 # Publish a development branch
 #
 # usage:
-#  local branch vbranch vtag htag publishStatus vnext
+#  local lbranch vbranch vtag htag publishStatus vnext
 #  branch_set_select_auto $sku $forceDev false false $allowDuplicateTags
-#  branch_set_publish $branch $vbranch $vtag $htag $prerelPrefix"
+#  branch_set_publish $lbranch $vbranch $vtag $htag $prerelPrefix"
 # in:
-#  $1:branch        -- branch to publish
+#  $1:lbranch       -- branch to publish (local name)
 #  $2:vbranch       -- vbranch
 #  $3:vtag          -- previous vtag
 #  $4:htag          -- base vtag for vnext computation
@@ -103,31 +103,31 @@ branch_set_publish()
 {
   unset vnext
 
-  local branch=$1 vbranch=$2 vtag=$3 htag=$4 prerelPrefix=$5 noIncrement=$6
+  local lbranch=$1 vbranch=$2 vtag=$3 htag=$4 prerelPrefix=$5 noIncrement=$6
   
-  [[ -z $branch ]]  && { io_error "Argument 'branch' not specified." "$moduleTracePrefix"; return 1; }
+  [[ -z $lbranch ]] && { io_error "Argument 'lbranch' not specified." "$moduleTracePrefix"; return 1; }
   [[ -z $vbranch ]] && { io_error "Argument 'vbranch' not specified." "$moduleTracePrefix"; return 1; }
-  ! branch_ensure_local $branch && { io_error "Branch '$branch' does not exist." "$moduleTracePrefix"; return 1; }
+  ! branch_ensure_local $lbranch && { io_error "Branch '$lbranch' does not exist." "$moduleTracePrefix"; return 1; }
 
   repo_require_clean_work_tree "Cannot publish" || return $?
 
   # restore deleted vbranch
   branch_ensure_local_vbranch "$vbranch" "$vtag"
-  # io_trace "branch_set_publish 1 -- $(print_vars branch vbranch vtag htag prerelPrefix obranch)"
+  # io_trace "branch_set_publish 1 -- $(print_vars lbranch vbranch vtag htag prerelPrefix obranch)"
   branch_set_vnext "$vtag" "$htag" "$noIncrement" # -> prerelPrefix vnext
-  # io_trace "branch_set_publish 2 -- $(print_vars branch vbranch vtag htag prerelPrefix obranch vnext)"
+  # io_trace "branch_set_publish 2 -- $(print_vars lbranch vbranch vtag htag prerelPrefix obranch vnext)"
 
   if [[ $prerelPrefix == 'reuse' ]]; then
     _branch_set_publish_epilog
-    tag_move "$vtag" "$branch"
-    # io_trace "branch_set_publish 3 -- $(print_vars branch vbranch vtag htag prerelPrefix obranch vnext)"
+    tag_move "$vtag" "$lbranch"
+    # io_trace "branch_set_publish 3 -- $(print_vars lbranch vbranch vtag htag prerelPrefix obranch vnext)"
   else
     # update technical version
     _branch_set_publish_epilog 'version_update'
     # create vtag
-    local comment="publish branch '$branch' as '$vnext'"
+    local comment="publish lbranch '$lbranch' as '$vnext'"
     git tag -a -m "zou-flow: $comment" "$vnext" "$vbranch"
-    # io_trace "branch_set_publish 4 -- $(print_vars branch vbranch vtag htag prerelPrefix obranch vnext)"
+    # io_trace "branch_set_publish 4 -- $(print_vars lbranch vbranch vtag htag prerelPrefix obranch vnext)"
   fi
 }
 _branch_set_publish_epilog()
@@ -138,5 +138,5 @@ _branch_set_publish_epilog()
   [[ -n $updater ]] && vcommit=( $($updater $vnext) ) || vcommit=($vnext)
   # commit resources and clean submodules in dev branch
   version_commit_files "${vcommit[@]}" $(repo_list_unstaged_clean_submodules)
-  branch_merge_sync $branch $vbranch '-Xtheirs'
+  branch_merge_sync $lbranch $vbranch '-Xtheirs'
 }
