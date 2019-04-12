@@ -268,7 +268,7 @@ version_update()
   varray+=( $(version_parse "$1") )
   [ $? -eq 0 ] && {
     local techver=$(version_technical "${varray[@]}")
-    io_debug techver version_update
+    # io_trace "version_update ${*@Q} -- $(print_vars varray[@] techver)"
     echo "$techver"
 
     # execute .net zou-flow updaters
