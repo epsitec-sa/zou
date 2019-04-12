@@ -73,14 +73,25 @@ branch_set_vnext()
   if [[ $prerelPrefix == 'reuse' ]]; then
     # reuse previous vtag if it's not a vnode
     if vtag_is_vnode $vtag; then
-      [[ $noIncrement == true ]] && vnext=$htag || vtag_set_increment $htag || return 1
       unset prerelPrefix
+      _branch_set_vnext_core
     else
       vnext=$vtag
     fi
   else
-    # compute next vtag
-    [[ $noIncrement == true ]] && vnext=$htag || vtag_set_increment $htag $prerelPrefix || return 1
+    _branch_set_vnext_core
+  fi
+}
+_branch_set_vnext_core()
+{
+  if [[ $noIncrement == true ]]; then
+    if vtag_is_vnode $htag; then
+      vtag_set_increment "$htag" "$prerelPrefix" || return 1
+    else
+      vnext=$htag
+    fi
+  else
+    vtag_set_increment "$htag" "$prerelPrefix" || return 1
   fi
 }
 # Publish a development branch
