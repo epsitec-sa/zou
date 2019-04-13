@@ -69,8 +69,8 @@ vtable_init()
 vtable_update()
 {
 
-  local root=$1 moduleId=$2 lookupPath=$3 commitVTable=$4
-  # io_trace "vtable_update -- $(print_vars root moduleId lookupPath commitVTable)"
+  local root=$1 moduleId=$2 lookupPath=$3 lookupGate=$4 commitVTable=$5
+  # io_trace "vtable_update -- $(print_vars root moduleId lookupPath lookupGate commitVTable)"
 
   if [[ "$PWD" == "$root" ]]; then
     local IFS=$'\n'
@@ -99,13 +99,17 @@ vtable_update()
     local IFS=$'\n'
 
     # deserialize lookup
+    lock_enter "$lookupGate"
     . "$lookupPath"
+    lock_exit "$lookupGate"
 
     # add vtable row
     local value=$(vtable_row "$moduleId" true)
     lookup[$moduleId]="$value"
 
     # serialize lookup
+    lock_enter "$lookupGate"
     declare -p lookup >"$lookupPath"
+    lock_exit "$lookupGate"
   fi
 }

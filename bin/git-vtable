@@ -28,10 +28,10 @@ vtable_run()
 }
 vtable_main()
 {
-  local vtableGate lookupPath
+  local vtableGate vtableLookupPath
   vtableGate=$(lock_init)
-  lookupPath="$(mktemp)"
-  vtable_init "$startupRoot" "$lookupPath"
+  vtableLookupPath="$(mktemp)"
+  vtable_init "$startupRoot" "$vtableLookupPath"
   vtable_tree
 }
 vtable_tree()
@@ -40,20 +40,18 @@ vtable_tree()
   if [[ "$PWD" == "$startupRoot" ]]; then
     vtable_commit_vtable
   else
-    lock_enter "$vtableGate" 0.1
     vtable_update_vtable
-    lock_exit "$vtableGate"
   fi
 }
 vtable_commit_vtable()
 {
-  vtable_update "$startupRoot" "$moduleId" "$lookupPath" "$commitVTable" \
+  vtable_update "$startupRoot" "$moduleId" "$vtableLookupPath" "$vtableGate" "$commitVTable" \
   && io_success "Created version table" "$moduleTracePrefix" \
   || io_success "No change in the version table" "$moduleTracePrefix"
 }
 vtable_update_vtable()
 {
-  vtable_update "$startupRoot" "$moduleId" "$lookupPath"
+  vtable_update "$startupRoot" "$moduleId" "$vtableLookupPath" "$vtableGate"
   io_info "Updated version table" "$moduleTracePrefix"
 }
 vtable_submodules()

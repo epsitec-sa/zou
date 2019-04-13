@@ -256,9 +256,7 @@ publish_update_vtable()
   if [[ "$PWD" == "$startupRoot" ]]; then
     publish_commit_vtable
   else
-    lock_enter "$vtableGate"
-    vtable_update "$startupRoot" "$moduleId" "$vtableLookupPath"
-    lock_exit "$vtableGate"
+    vtable_update "$startupRoot" "$moduleId" "$vtableLookupPath" "$vtableGate"
   fi
 }
 publish_commit_vtable()
@@ -266,7 +264,7 @@ publish_commit_vtable()
   # io_trace "publish_commit_vtable -- $(print_vars lbranch vbranch vnext)"
   local commit=true
   [[ $dryRun == true ]] && commit=false
-  if vtable_update "$startupRoot" "$moduleId" "$vtableLookupPath" $commit; then
+  if vtable_update "$startupRoot" "$moduleId" "$vtableLookupPath" "$vtableGate" $commit; then
     if [[ $commit == true ]]; then
       branch_merge_sync $lbranch $vbranch
       tag_move "$vnext" "$lbranch" &>/dev/null

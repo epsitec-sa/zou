@@ -25,6 +25,20 @@ lock_exit()
 {
   rm -rf "$1"
 }
+lock_enter_trace()
+{
+  local count=0
+  while ! mkdir "$1" &>/dev/null; do
+    (( count += 1 ))
+    sleep ${2:-0}
+  done
+  echo "lock_enter[$count] $1 -- $moduleId"
+}
+lock_exit_trace()
+{
+  echo "lock_exit $1 -- $moduleId"
+  rm -rf "$1"
+}
 lock()
 (
   local gate=$1 delay=$2; shift 2
