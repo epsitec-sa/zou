@@ -233,21 +233,28 @@ publish_try_attach()
 #  noIncrement
 publish_set_bundle_version()
 {
-  if [[ $moduleRoot == $bundleRoot && -n $principalModuleId ]]; then
-    local pinfo=$(module_visit "$principalModuleId" "${publishScopes[@]}" publish_principal_info) pstatus ptag
-    pstatus=${pinfo%;*}
-    ptag=${pinfo#*;}
-    # io_trace "publish_set_bundle_version 1 -- $(print_vars principalModuleId ptag pstatus htag noIncrement)"
-    if [ -n $ptag ]; then
-      if [[ $pstatus == 'published' && $htag == $ptag ]]; then
-        branch_io_message "Bundle ${Brown}$bundleId${LightPurple} and module ${Brown}$principalModuleId${LightPurple} have same version" "$alias" LightPurple
-      else
-        noIncrement=true
-      fi
-      htag=$(vtag_highest_of $ptag $htag)
-    fi
-    # io_trace "publish_set_bundle_version 2 -- $(print_vars principalModuleId ptag pstatus htag noIncrement)"
+  [[ $moduleRoot == $bundleRoot && -n $principalModuleId ]] || return 0
+
+  local pinfo pstatus ptag pver hver
+
+  pinfo=$(module_visit "$principalModuleId" "${publishScopes[@]}" publish_principal_info)
+  pstatus=${pinfo%;*}
+  ptag=${pinfo#*;}
+  [ -z $ptag ] && return 0
+
+  pver=${ptag##*/}
+  hver=${htag##*/}
+  # io_trace "publish_set_bundle_version 1 -- $(print_vars principalModuleId ptag pstatus htag noIncrement)"
+  if [[ $pstatus == 'published' && $hver == $pver ]]; then
+    branch_io_message "Bundle ${Brown}$bundleId${LightPurple} and module ${Brown}$principalModuleId${LightPurple} have same version" "$alias" LightPurple
+  else
+    noIncrement=true
   fi
+  hver=$(vtag_highest_of $pver $hver)
+  # restore folder
+  [[ $htag =~ ^.*/ ]]
+  htag=${BASH_REMATCH[0]}$hver
+  # io_trace "publish_set_bundle_version 2 -- $(print_vars principalModuleId ptag pstatus htag noIncrement)"
 }
 # run in principal module context
 publish_principal_info()
