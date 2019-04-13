@@ -15,7 +15,7 @@ ZOUL_GIT_BRANCH_SELECT=true
 branch_ensure_attached()
 {
   local sku=$1 lbranch vbranch vtag htag publishStatus
-  ! branch_is_attached && branch_set_select_auto "$sku" false false false
+  ! branch_is_attached && branch_set_select_auto "$sku" false false
 }
 
 # Use this method to find the development branch which best matches
@@ -56,17 +56,13 @@ branch_set_best_match_dev()
 #
 # usage:
 #  local branch vbranch vtag htag publishStatus
-#  branch_set_select_auto $sku $forceDev $forceCheckout $skipVNodes $allowDuplicateTags
+#  branch_set_select_auto $sku $forceDev $forceCheckout $allowDuplicateTags
 #
 # in:
 #   $1:sku=bundleBranch
 #   $2:forceDev=false     -- force checkout of dev branch
 #   $3:forceCheckout=true -- checkout even if already checked out (display already checked out message)
-#   $4:skipVNodes         -- (auto | true | *)
-#                         -- auto - match vtag  then match vnode then fallback
-#                         -- true - match vtag  then fallback
-#                         -- *    - match vnode then fallback
-#   $5:allowDuplicateTags -- influence highest tag computation (false in submodule, true in bundle)
+#   $4:allowDuplicateTags -- influence highest tag computation (false in submodule, true in bundle)
 # out:
 #   lbranch       -- best match branch (local name)
 #   vbranch       -- associated version branch
@@ -82,12 +78,11 @@ branch_set_select_auto()
 {
   unset lbranch vbranch vtag htag publishStatus
 
-  local sku=$1 forceDev=$2 forceCheckout=$3 skipVNodes=$4 allowDuplicateTags=$5 \
-        delta alias status \
-        ec=0
+  local sku=$1 forceDev=$2 forceCheckout=$3 allowDuplicateTags=$4 \
+        delta alias status ec=0
 
-  # io_trace "branch_set_select_auto 1 -- $(print_vars sku forceDev forceCheckout skipVNodes allowDuplicateTags mroot broot)"
-  branch_set_sku_info "$sku" "$forceDev" "$skipVNodes" "$allowDuplicateTags" \
+  # io_trace "branch_set_select_auto 1 -- $(print_vars sku forceDev forceCheckout allowDuplicateTags mroot broot)"
+  branch_set_sku_info "$sku" "$forceDev" "$allowDuplicateTags" \
   && branch_checkout "$nextHead" "$forceCheckout" "$alias" || ec=$?
   # io_trace "branch_set_select_auto 2 -- $(print_vars branch vbranch vtag htag alias status publishStatus ec)"
 
@@ -102,22 +97,18 @@ branch_set_select_auto()
 # Create SKU information
 #
 # usage:
-#   local sku forceDev skipVNodes allowDuplicateTags
+#   local sku forceDev allowDuplicateTags
 #   ...
 #   local lbranch vbranch vtag htag delta alias status nextHead publishStatus
-#   branch_set_sku_info $sku $forceDev $skipVNodes $allowDuplicateTags
+#   branch_set_sku_info $sku $forceDev $allowDuplicateTags
 # in:
 #   $1:sku=bundleBranch
-#   $2:forceDev=false     -- force checkout of dev branch
-#   $3:skipVNodes         -- (auto | true | *)
-#                         -- auto - match vtag  then match vnode then fallback
-#                         -- true - match vtag  then fallback
-#                         -- *    - match vnode then fallback
+#   $2:forceDev=false     -- favour dev branch instead of vtag
 #   $4:allowDuplicateTags -- influence htag computation (false in submodule, true in bundle)
 # out:
 #   lbranch       -- best match branch (local name)
 #   vbranch       -- associated version branch
-#   vtag          -- nearest vtag (depends on skipVNodes value)
+#   vtag          -- nearest vtag (depends on forceDev value)
 #   htag          -- highest vtag on vbranch (depends on allowDuplicateTags value)
 #   delta         -- number of commits between branch and vtag (can be negative if branch is behind vtag)
 #   alias         -- condensed vtag info - (> v1.0.0 (8)) means branch is ahead of v1.0.0 by 8 commits
@@ -134,11 +125,12 @@ branch_set_sku_info()
 {
   unset branch lbranch vbranch vtag htag delta alias status
 
-  local sku=${1:-$bundleBranch} forceDev=${2:-false} skipVNodes=$3 allowDuplicateTags=$4 \
-        branch
+  local sku=${1:-$bundleBranch} forceDev=${2:-false} allowDuplicateTags=$3 \
+        skipVNodes branch
 
   [[ -z $sku ]] && sku=$(branch_current_root_branch)
   [[ -z $allowDuplicateTags && -n $moduleRoot && $moduleRoot == $bundleRoot ]] && allowDuplicateTags=true
+  [[ $forceDev == true ]] && skipVNodes=false || skipVNodes=auto
 
   # io_trace "branch_set_sku_info 1 -- $(print_vars sku forceDev skipVNodes allowDuplicateTags)"
   branch_set_select_info "$sku" "$skipVNodes" "$allowDuplicateTags" \
@@ -151,15 +143,9 @@ branch_set_sku_info()
 #   local branch lbranch vbranch vtag htag delta alias status
 #   branch_set_select_info $sku $skipVNodes $allowDuplicateTags
 #
-#                       skipVNodes allowDuplicateTags
-#   publish.submodule:    false        false 
-#      publish.bundle:    false        true 
-#    select.submodule:    true         false 
-#       select.bundle:    true         true 
-#
 # in:
 #   $1:sku=bundleBranch
-#   $2:skipVNodes         -- (auto | true | *)
+#   $2:skipVNodes=auto    -- (auto | true | *)
 #                         -- auto - match vtag  then match vnode then fallback
 #                         -- true - match vtag  then fallback
 #                         -- *    - match vnode then fallback

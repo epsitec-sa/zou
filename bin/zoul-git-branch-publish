@@ -31,7 +31,7 @@ branch_publish()
   
   local sku=$1 forceDev=${2:-false} allowDuplicateTags=${3:-false} prerelPrefix=$4
   local lbranch vtag htag publishStatus
-  branch_set_select_auto "$sku" "$forceDev" false 'auto' "$allowDuplicateTags"
+  branch_set_select_auto "$sku" "$forceDev" false "$allowDuplicateTags"
 
   local vnext=$vtag
   case $publishStatus in
@@ -98,7 +98,7 @@ _branch_set_vnext_core()
 #
 # usage:
 #  local lbranch vbranch vtag htag publishStatus vnext
-#  branch_set_select_auto $sku $forceDev false auto $allowDuplicateTags
+#  branch_set_select_auto $sku $forceDev false $allowDuplicateTags
 #  branch_set_publish $lbranch $vbranch $vtag $htag $prerelPrefix"
 # in:
 #  $1:lbranch       -- branch to publish (local name)
