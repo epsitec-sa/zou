@@ -15,32 +15,23 @@ vbranch_prev_vtag()
 {
   # io_trace "vbranch_prev_vtag ${*@Q}"
 
-  local rev=${1:-HEAD} prerelPrefix=$2 ltag stag lsuf vbranch
+  local branch=$(git_symbolic_ref ${1:-HEAD}) prerelPrefix=$2 vbranch
+  local vtag delta alias
+  vtag_set_describe "$branch" "$branch"
+  # io_trace "vbranch_prev_vtag -- $(print_vars branch prerelPrefix vtag delta alias)"
 
-  ltag=$(vtag_describe "$rev")
-  io_debug ltag vbranch_prev_vtag
-
-  [[ -z $ltag ]] && {
-    io_error "vbranch_prev_vtag: $rev has no vtag ancestor" "$moduleTracePrefix"
+  [[ -z $vtag ]] && {
+    io_error "vbranch_prev_vtag: $branch has no vtag ancestor" "$moduleTracePrefix"
     return 1
   }
-  stag=${ltag%-*-g*}
-  lsuf=${ltag#$stag}
 
-  # io_trace "vbranch_prev_vtag -- $(print_vars rev prerelPrefix ltag stag lsuf)"
-
-  [[ -z $lsuf ]] && ! vtag_is_vnode $stag && {
-    io_message "Already published at ${Brown}$stag" "$moduleTracePrefix" LightBlue
-    echo $stag
+  [ $delta -eq 0 ] && ! vtag_is_vnode $vtag && {
+    io_message "Already published at ${Brown}$vtag" "$moduleTracePrefix" LightBlue
+    echo $vtag
     return 3
   }
 
-  vbranch=$(vtag_get_vbranch_name $stag)
-  io_debug lsuf vbranch_prev_vtag
-
-  stag=$(vtag_highest $vbranch)
-  io_debug stag vbranch_prev_vtag
-  echo $stag
+  vtag_highest $(vtag_get_vbranch_name $vtag)
 }
 vbranch_next_vtag()
 {

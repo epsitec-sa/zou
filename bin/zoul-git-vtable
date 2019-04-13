@@ -24,25 +24,19 @@ print_head()
 }
 vtable_row()
 {
-  local moduleId=$1 setHash=${2:-true} vminor vmajor head hash tag version delta
+  local moduleId=$1 setHash=${2:-true} vminor vmajor head hash vtag delta alias
   head=$(branch_current)
   if ! branch_is_local $head; then
     head=$(branch_list_local_at $head | cut -f 1 -d ' ')
   fi
   [[ $setHash == true ]] && hash=$(git rev-parse --short HEAD 2>/dev/null)
-  tag=$(vtag_describe "$head")
-  tag=${tag%-g*}
+  vtag_set_describe "$head"
+  [ $delta -eq 0 ] && unset delta
 
-  if [[ $tag =~ (.*)-([0-9]+)$ ]]; then
-    version=${BASH_REMATCH[1]}
-    delta=${BASH_REMATCH[2]}
-  else
-    version=$tag
-  fi
   local IFS=' '
   local tags=$(git tag -l --sort=-v:refname)
   local folder major minor refolder
-  if [[ $version =~ ^(.*/)?v([0-9]+)\.([0-9]+) ]]; then
+  if [[ $vtag =~ ^(.*/)?v([0-9]+)\.([0-9]+) ]]; then
     folder=${BASH_REMATCH[1]}
     major=${BASH_REMATCH[2]}
     minor=${BASH_REMATCH[3]}
@@ -52,14 +46,14 @@ vtable_row()
   fi
   local vnext=$(echo $tags | grep -m1 "^${refolder}v[0-9]")
   local md_moduleId=$moduleId
-  local md_version=$version
-  [[ $version =~ ^.*-@$ || -z $version || -n $delta ]] && md_moduleId="##$moduleId##"
-  [[ $version =~ ^.*-@$ ]] && md_version="##$version##"
-  [[ $version == $vminor ]] && unset vminor || vminor="#$vminor#"
-  [[ $version == $vmajor ]] && unset vmajor || vmajor="#$vmajor#"
-  [[ $version == $vnext ]] && unset vnext || vnext="#$vnext#"
-  # io_trace "vtable_row -- $(print_vars moduleId head hash version delta tag folder major minor vmajor vminor vnext)"
-  local module_content=$(print_row "$md_moduleId" "$head" "$hash" "$delta" "$md_version" "$vminor" "$vmajor" "$vnext")
+  local md_vtag=$vtag
+  [[ $vtag =~ ^.*-@$ || -z $vtag || -n $delta ]] && md_moduleId="##$moduleId##"
+  [[ $vtag =~ ^.*-@$ ]] && md_vtag="##$vtag##"
+  [[ $vtag == $vminor ]] && unset vminor || vminor="#$vminor#"
+  [[ $vtag == $vmajor ]] && unset vmajor || vmajor="#$vmajor#"
+  [[ $vtag == $vnext ]] && unset vnext || vnext="#$vnext#"
+  # io_trace "vtable_row -- $(print_vars moduleId head hash vtag delta folder major minor vmajor vminor vnext)"
+  local module_content=$(print_row "$md_moduleId" "$head" "$hash" "$delta" "$md_vtag" "$vminor" "$vmajor" "$vnext")
   echo "$module_content"
 }
 vtable_init()
@@ -97,10 +91,10 @@ vtable_update()
     sed -i -E 's,_,|,g; s,#,\*,g' "$file"
     rm "$lookupPath"
 
-    [[ $commitVTable == true ]] && {
+    if [[ $commitVTable == true ]]; then
       git update-index --add -- "$file" &>/dev/null \
       && git commit -m "zou-flow: update version table" -- "$file" &>/dev/null
-    }
+    fi
   else
     local IFS=$'\n'
 

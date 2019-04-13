@@ -109,9 +109,11 @@ vtag_describe()
   done
   return 1
 }
+# find first vtag ancestor starting from given commit
 # usage:
 #  local branch lbranch
 #  branch_set_best_match_dev "$sku"
+#  local vtag delta alias
 #  vtag_set_describe "$branch" "$lbranch" $skipVNodes
 #  
 # in:
@@ -119,24 +121,39 @@ vtag_describe()
 #   $2:lbranch -- local name
 #   $3:skipVNodes
 # out:
-#   ltag
+#   vtag
+#   delta
+#   alias
 vtag_set_describe()
 {
-  local branch=$1 lbranch=$2 skipVNodes=$3 match stag exclude=('--exclude' 'other/*')
+  unset vtag alias
+  delta=0
+  local branch=$1 lbranch=${2:-$1} skipVNodes=$3 ltag lsuf match exclude=('--exclude' 'other/*')
   [[ $skipVNodes == true ]] && exclude+=('--exclude' '*-@')
-  # io_trace "vtag_describe 1 -- $(print_vars branch skipVNodes exclude[@])"
+  # io_trace "vtag_set_describe 1 -- $(print_vars branch lbranch skipVNodes exclude[@])"
   for match in $(ref_tag_fallback $lbranch 'v[0-9]*'); do
     ltag=$(git describe --tags --match "$match" "${exclude[@]}" "$branch" 2>/dev/null)
-    # io_trace "vtag_describe 2 -- $(print_vars branch skipVNodes match ltag)"
+    # io_trace "vtag_set_describe 2 -- $(print_vars branch lbranch skipVNodes match ltag)"
     if [[ -n $ltag ]]; then
-      stag=${ltag%-*-g*}
-      if git merge-base --is-ancestor $stag^{} $branch; then
-        # io_trace "vtag_describe 3 -> $(print_vars branch skipVNodes match ltag stag)"
+      vtag=${ltag%-*-g*}
+      if git merge-base --is-ancestor $vtag^{} $branch; then
+        lsuf=${ltag#$vtag}
+        vtag=$(vtag_highest_of $(vtag_vtags_match_at "$vtag^{}" "$(wildcard_to_regex $match)"))
+        delta=${lsuf%-g*}
+        delta=${delta#-}
+        if [[ -z $delta ]]; then
+          alias="$vtag"
+          delta=0
+        else
+          alias="> $vtag ($delta)"
+        fi
+        # io_trace "vtag_set_describe 3 -> $(print_vars branch lbranch skipVNodes vtag delta alias)"
         return 0
       fi
     fi
   done
-  unset ltag
+  unset vtag alias
+  delta=0
   return 1
 }
 # Compute tag properties
@@ -166,6 +183,19 @@ vtag_set_info()
   fi
   unset vtag delta alias
   return 1
+}
+# list all vtags pointing at given commit that match a regex
+# input:
+#  $1:ref    -- commish
+#  $2:regex  -- regex to match with
+# output:
+#  list of vtags pointing at given commit
+vtag_vtags_match_at()
+{
+  local ref=$1 regex=$2 tag
+  for tag in $(git tag --sort=-v:refname --points-at "$ref"); do
+    [[ $tag =~ $regex ]] && echo $tag
+  done
 }
 # list all vtags pointing at given commit
 # input:

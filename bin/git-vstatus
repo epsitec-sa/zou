@@ -48,29 +48,24 @@ vstatus_node()
       return 1
     fi
   fi
-  local ltag stag ntag lsuf delta tags vbranch
-  ltag=$(vtag_describe $ref)
-  if [[ -z $ltag ]]; then
+  local vtag delta alias ntag tags
+  vtag_set_describe "$ref" "$ref"
+  if [[ -z $vtag ]]; then
     io_error "Version tag not found" "$moduleTracePrefix"
     return 1
   fi
-  stag=${ltag%-*-g*}
-  lsuf=${ltag#$stag}
-  vbranch=$(vtag_get_vbranch_name $stag)
 
   # get the highest vtag on vbranch
-  stag=$(vtag_highest $vbranch)
+  vtag=$(vtag_highest $(vtag_get_vbranch_name $vtag))
 
   # Already published at   v12.1.1 -- next version = v12.1.2
   # 123 commit[s] ahead of v12.1.1 -- next version = v12.1.2
-  ntag=$(vtag_increment "$stag" "$prerelPrefix")
-  if [[ -z $lsuf ]]; then
-    io_message "Already published   at ${Brown}$(string_pad_right 8 $stag)${LightBlue} -- next version = ${Brown}$(string_pad_right 8 $ntag)" "$moduleTracePrefix" LightBlue
+  ntag=$(vtag_increment "$vtag" "$prerelPrefix")
+  if [ $delta -eq 0 ]; then
+    io_message "Already published   at ${Brown}$(string_pad_right 8 $vtag)${LightBlue} -- next version = ${Brown}$(string_pad_right 8 $ntag)" "$moduleTracePrefix" LightBlue
   else
-    delta=${lsuf%-g*}
-    delta=${delta#-}
-    # io_info "Active branch is ${Brown}$(string_pad_left 3 $delta)${Cyan} commit[s] ahead of tag ${Brown}$(string_pad_right 8 $stag)${Cyan} -- next version = ${Brown}$(string_pad_right 8 $ntag)" "$moduleTracePrefix"
-    io_info "${Brown}$(string_pad_left 3 $delta)${Cyan} commit[s] ahead of ${Brown}$(string_pad_right 8 $stag)${Cyan} -- next version = ${Brown}$(string_pad_right 8 $ntag)" "$moduleTracePrefix"
+    # io_info "Active branch is ${Brown}$(string_pad_left 3 $delta)${Cyan} commit[s] ahead of tag ${Brown}$(string_pad_right 8 $vtag)${Cyan} -- next version = ${Brown}$(string_pad_right 8 $ntag)" "$moduleTracePrefix"
+    io_info "${Brown}$(string_pad_left 3 $delta)${Cyan} commit[s] ahead of ${Brown}$(string_pad_right 8 $vtag)${Cyan} -- next version = ${Brown}$(string_pad_right 8 $ntag)" "$moduleTracePrefix"
   fi
   return 0
 }
