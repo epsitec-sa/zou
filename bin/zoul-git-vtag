@@ -86,30 +86,6 @@ vtag_highest()
   fi
 }
 # find first vtag ancestor starting from given commit
-# input:
-# - $1: branch symbol
-# output:
-# - vtag description (ex: v1.0.0-rc1-5-ge5d2fe9)
-vtag_describe()
-{
-  local branch=$(git_symbolic_ref ${1:-HEAD}) skipVNodes=$2 match ltag stag exclude=('--exclude' 'other/*')
-  # io_trace "vtag_describe 1 -- $(print_vars branch skipVNodes)"
-  [[ $skipVNodes == true ]] && exclude+=('--exclude' '*-@')
-  for match in $(ref_tag_fallback $branch 'v[0-9]*'); do
-    ltag=$(git describe --tags --match "$match" "${exclude[@]}" "$branch" 2>/dev/null)
-    # io_trace "vtag_describe 2 -- $(print_vars branch skipVNodes match ltag)"
-    if [[ -n $ltag ]]; then
-      stag=${ltag%-*-g*}
-      if git merge-base --is-ancestor $stag^{} $branch; then
-        echo $ltag
-        # io_trace "vtag_describe 3 -> $(print_vars branch skipVNodes match ltag stag)"
-        return 0
-      fi
-    fi
-  done
-  return 1
-}
-# find first vtag ancestor starting from given commit
 # usage:
 #  local branch lbranch
 #  branch_set_best_match_dev "$sku"
@@ -156,34 +132,6 @@ vtag_set_describe()
   delta=0
   return 1
 }
-# Compute tag properties
-# in:
-#   $1: ltag
-# out:
-#   vtag
-#   delta
-#   alias
-vtag_set_info()
-{
-  # io_trace "vtag_set_info ${*@Q}"
-  local ltag=$1 lsuf
-    # compute checkout alias
-  if [[ -n $ltag ]]; then
-    vtag=${ltag%-*-g*}
-    lsuf=${ltag#$vtag}
-    delta=${lsuf%-g*}
-    delta=${delta#-}
-    if [[ -z $delta ]]; then
-      alias="$vtag"
-      delta=0
-    else
-      alias="> $vtag ($delta)"
-    fi
-    return 0
-  fi
-  unset vtag delta alias
-  return 1
-}
 # list all vtags pointing at given commit that match a regex
 # input:
 #  $1:ref    -- commish
@@ -196,41 +144,6 @@ vtag_vtags_match_at()
   for tag in $(git tag --sort=-v:refname --points-at "$ref"); do
     [[ $tag =~ $regex ]] && echo $tag
   done
-}
-# list all vtags pointing at given commit
-# input:
-# - $1: rev to list
-# output:
-# - list of vtags pointing at given commit (ex: v1.0-@ v1.0.0-rc1 v1.0.0)
-vtag_vtags_at()
-{
-  git tag --sort=-v:refname --points-at "${1:-HEAD}^{}" | grep -E '^(.*/)?v[0-9]+\.[0-9]+(\.|-)' | grep -v '^other/'
-}
-# get best match vtag at given commit
-# input:
-# - $1: branch (ex: sku/dev, master)
-# output:
-# - best match vtag  (ex: sku/dev -> sku/v1.0.0, master -> v2.0.0)
-# io_info "vtag_best_match_vtag_at ${*@Q}" "$moduleTracePrefix"
-vtag_best_match_vtag_at()
-{
-  local ref=$1 vtags hint reHint vHint tag
-  vtags=( $(vtag_vtags_at $ref) )
-  [ ${#vtags[@]} -eq 0 ] && return 1
-  for hint in $(ref_tag_fallback $ref 'v'); do
-    reHint=$(wildcard_to_regex "$hint")
-    vHint="^${reHint}[0-9]+\.[0-9]+\.[0-9]+"
-    # echo vtagHint=$vHint >&2
-    for tag in ${vtags[@]}; do
-      [[ $tag =~ $vHint ]] && { echo $tag; return 0; }
-    done
-    vHint="^${reHint}[0-9]+\.[0-9]+-@$"
-    # echo vnodeHint=$vHint >&2
-    for tag in ${vtags[@]}; do
-      [[ $tag =~ $vHint ]] && { echo $tag; return 0; }
-    done
-  done
-  echo "${vtags[0]}"
 }
 # Extract vbranch name from vtag
 # in:
