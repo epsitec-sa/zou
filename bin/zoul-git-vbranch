@@ -16,8 +16,8 @@ vbranch_prev_vtag()
   # io_trace "vbranch_prev_vtag ${*@Q}"
 
   local branch=$(git_symbolic_ref ${1:-HEAD}) prerelPrefix=$2 vbranch
-  local vtag delta alias
-  vtag_set_describe "$branch" "$branch"
+  local vbranch vtag delta alias
+  vtag_set_describe "$branch"
   # io_trace "vbranch_prev_vtag -- $(print_vars branch prerelPrefix vtag delta alias)"
 
   [[ -z $vtag ]] && {
@@ -31,7 +31,7 @@ vbranch_prev_vtag()
     return 3
   }
 
-  vtag_highest $(vtag_get_vbranch_name $vtag)
+  vtag_highest "$vbranch"
 }
 vbranch_next_vtag()
 {

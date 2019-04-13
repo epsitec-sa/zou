@@ -89,48 +89,75 @@ vtag_highest()
 # usage:
 #  local branch lbranch
 #  branch_set_best_match_dev "$sku"
-#  local vtag delta alias
+#  local vbranch vtag delta alias
 #  vtag_set_describe "$branch" "$lbranch" $skipVNodes
 #  
 # in:
-#   $1:branch  -- local or remote
-#   $2:lbranch -- local name
+#   $1:branch     -- local or remote branch name
+#   $2:lbranch    -- local branch name
 #   $3:skipVNodes
 # out:
-#   vtag
-#   delta
-#   alias
+#   vbranch -- the infered vbranch name 
+#   vtag    -- the highest vtag that match the glob
+#   delta   -- number of commits between branch and vtag (extracted from ltag)
+#   alias   -- condensed vtag info - (> v1.0.0 (8)) means branch is ahead of v1.0.0 by 8 commits
 vtag_set_describe()
 {
-  unset vtag alias
-  delta=0
-  local branch=$1 lbranch=${2:-$1} skipVNodes=$3 ltag lsuf match exclude=('--exclude' 'other/*')
+  unset vbranch vtag alias; delta=0
+
+  local branch=$1 lbranch=${2:-$1} skipVNodes=$3 \
+        ltag stag match exclude=('--exclude' 'other/*')
+
   [[ $skipVNodes == true ]] && exclude+=('--exclude' '*-@')
+
   # io_trace "vtag_set_describe 1 -- $(print_vars branch lbranch skipVNodes exclude[@])"
   for match in $(ref_tag_fallback $lbranch 'v[0-9]*'); do
     ltag=$(git describe --tags --match "$match" "${exclude[@]}" "$branch" 2>/dev/null)
     # io_trace "vtag_set_describe 2 -- $(print_vars branch lbranch skipVNodes match ltag)"
     if [[ -n $ltag ]]; then
-      vtag=${ltag%-*-g*}
-      if git merge-base --is-ancestor $vtag^{} $branch; then
-        lsuf=${ltag#$vtag}
-        vtag=$(vtag_highest_of $(vtag_vtags_match_at "$vtag^{}" "$(wildcard_to_regex $match)"))
-        delta=${lsuf%-g*}
-        delta=${delta#-}
-        if [[ -z $delta ]]; then
-          alias="$vtag"
-          delta=0
-        else
-          alias="> $vtag ($delta)"
-        fi
-        # io_trace "vtag_set_describe 3 -> $(print_vars branch lbranch skipVNodes vtag delta alias)"
+      stag=${ltag%-*-g*}
+      if git merge-base --is-ancestor $stag^{} $branch; then
+        _vtag_set_info "$ltag" "$stag" "$match" # -> vbranch vtag delta alias
         return 0
       fi
     fi
   done
-  unset vtag alias
-  delta=0
+  unset vbranch vtag alias; delta=0
   return 1
+}
+# Compute tag properties
+# in:
+#   $1: ltag  -- long tag description (ex: v1.0.0-g8-16ef0ca)
+#   $2: stag  -- short tag description (ex: v1.0.0)
+#   $3: match -- glob to match (ex: v[0-9]*)
+# out:
+#   vbranch -- the infered vbranch name 
+#   vtag    -- the highest vtag that match the glob
+#   delta   -- number of commits between branch and vtag (extracted from ltag)
+#   alias   -- condensed vtag info - (> v1.0.0 (8)) means branch is ahead of v1.0.0 by 8 commits
+_vtag_set_info()
+{
+  local ltag=$1 stag=$2 regex=$(wildcard_to_regex $3) lsuf
+
+  lsuf=${ltag#$stag}
+  delta=${lsuf%-g*}
+  delta=${delta#-}
+
+  # infer vbranch name
+  [[ $stag =~ ^(.*/)?v([0-9]+\.[0-9]+)(\.|-) ]]
+  vbranch=${BASH_REMATCH[1]}${BASH_REMATCH[2]};
+
+  # get the highest vtag pointing at the same commit that matches given regex
+  vtag=$(vtag_highest_of $(vtag_match_vtags_at "$stag^{}" "$regex"))
+
+  # compute alias
+  if [[ -z $delta ]]; then
+    alias="$vtag"
+    delta=0
+  else
+    alias="> $vtag ($delta)"
+  fi
+  # io_trace "_vtag_set_info -> $(print_vars vtag delta alias)"
 }
 # list all vtags pointing at given commit that match a regex
 # input:
@@ -138,35 +165,13 @@ vtag_set_describe()
 #  $2:regex  -- regex to match with
 # output:
 #  list of vtags pointing at given commit
-vtag_vtags_match_at()
+vtag_match_vtags_at()
 {
   local ref=$1 regex=$2 tag
   for tag in $(git tag --sort=-v:refname --points-at "$ref"); do
     [[ $tag =~ $regex ]] && echo $tag
   done
 }
-# Extract vbranch name from vtag
-# in:
-#   $1:vtag -- (sku/v1.0.0-rc1)
-# out:
-#   vbranch  -- (sku/1.0)
-#   folder   -- (sku/)
-#   version  -- (1.0)
-# return:
-#   1 -- $1 is not a vtag
-vtag_set_vbranch_name ()
-{
-  if [[ $1 =~ ^(.*/)?v([0-9]+\.[0-9]+)(\.|-) ]]; then
-    folder=${BASH_REMATCH[1]}
-    version=${BASH_REMATCH[2]}
-    vbranch=${folder}$version;
-  else
-    unset vbranch folder version
-    return 1
-  fi
-}
-vtag_get_vbranch_name () { local vbranch; vtag_set_vbranch_name "$1" && echo $vbranch; }
-
 vtag_highest_of()
 {
   # io_trace "vtag_highest_of ${*@Q}"

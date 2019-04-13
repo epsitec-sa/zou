@@ -81,7 +81,7 @@ _vtag_group_by_date_visitor()
   local vtag vbranch
   if [ $# -eq 1 ]; then
     vtag=$1
-    vbranch=$(vtag_get_vbranch_name $vtag)
+    vbranch=$(_vtag_get_vbranch_name $vtag)
     if [ -z "${vtagGrouping[$vbranch]}" ]; then
       vtagGrouping[$vbranch]=$vtag
     else
@@ -90,7 +90,7 @@ _vtag_group_by_date_visitor()
   else
     declare -A vlookup
     for vtag in "$@"; do
-      vbranch=$(vtag_get_vbranch_name $vtag)
+      vbranch=$(_vtag_get_vbranch_name $vtag)
       if [ -z "${vlookup[$vbranch]}" ]; then
         vlookup[$vbranch]=$vtag
       else
@@ -114,4 +114,8 @@ _vtag_group_by_date_filter()
   ! vtag_is_semver $1 && return 1
   ref_is_other $1 && return 1
   return 0
+}
+_vtag_get_vbranch_name ()
+{
+  [[ $1 =~ ^(.*/)?v([0-9]+\.[0-9]+)(\.|-) ]] && echo ${BASH_REMATCH[1]}${BASH_REMATCH[2]} || return 1
 }
