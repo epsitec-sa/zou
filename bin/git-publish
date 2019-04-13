@@ -55,7 +55,9 @@ publish_run()
         publishSelectExcludeIds=() \
         publishScopes=( config_scope cosm_scope )
 
-  startupMessage="Publishing, please wait..."
+  [[ $dryRun == true ]] \
+  && startupMessage="Guessing publish, please wait..." \
+  || startupMessage="Publishing, please wait..."
 
   module_run "${publishScopes[@]}" publish_main
 }
@@ -70,15 +72,10 @@ publish_main()
 }
 publish_tree()
 {
-  # feed exclude list with moduleIds (modulePaths by default)
-  publishSelectExcludeIds+=( "${configSelectExcludeIds[@]}" )
+  publish_require_clean_repo || return $?
+  publish_process_excluded && return 0
 
-  if array_contains_element "$moduleId" "${publishSelectExcludeIds[@]}"; then
-    publish_update_vtable
-    return 0
-  fi
-
-  local lbranch vbranch vtag htag delta alias status nextHead publishStatus
+  local lbranch vbranch vtag htag delta alias status nextHead publishStatus vnext
 
   publish_prolog || return $?
   [[ $recursive == true ]] && { publish_submodules || return $?; }
@@ -109,18 +106,36 @@ publish_submodules()
 }
 publish_epilog()
 {
+  publish_update_status
+  publish_publish || return $?
+  publish_update_vtable
+}
+publish_require_clean_repo()
+{
+  [[ $dryRun == true ]] && return 0
+  repo_require_clean_work_tree "Cannot publish"
+}
+publish_process_excluded()
+{
+  # feed exclude list with moduleIds (modulePaths by default)
+  publishSelectExcludeIds+=( "${configSelectExcludeIds[@]}" )
+  if array_contains_element "$moduleId" "${publishSelectExcludeIds[@]}"; then
+    publish_update_vtable
+    return 0
+  fi
+  return 1
+}
+publish_update_status()
+{
   if [[ $publishStatus == 'published' ]]; then
     if [[ $dryRun == true ]]; then
-      (( smToPublishCount > 0 )) && publishStatus='notPublished'
+      # assume submodules can be published
+      { config_has_submodules || cosm_has_unstaged_submodules; } && publishStatus='notPublished'
     else
       cosm_has_unstaged_submodules && publishStatus='notPublished'
     fi
   fi
-  
-  publish_publish || return $?
-  publish_update_vtable
 }
-
 publish_publish()
 {
   # io_trace "publish_publish 1 -- $(print_vars lbranch vbranch vtag htag prerelPrefix publishStatus)"
@@ -135,29 +150,34 @@ publish_publish()
 }
 publish_already_published()
 {
+  # head will not change
   io_message "Already published at ${Brown}$vtag" "$moduleTracePrefix" LightBlue
 }
 publish_ff_publish()
 {
+  # head will not change
   if [[ $dryRun == true ]]; then
-    branch_io_message "Branch '$lbranch' will be fast-forwarded at ${Brown}$vtag" "$alias" LightPurple
+    branch_io_message "Branch ${Brown}$lbranch${Green} will be fast-forwarded at ${Brown}$vtag${Green} (${Brown}not synchronized${LightBlue})" "$alias" Green
   else
     branch_merge "$vtag" "$moduleBranch" \
-    && io_message "Already published at ${Brown}$vtag${LightBlue} (${Brown}fast-forward${LightBlue})" "$moduleTracePrefix" LightBlue \
-    || { io_error "Fast-forward publish of branch '$lbranch' failed" "$moduleTracePrefix"; return 1; }
+    && io_success "Fast-forwarded branch ${Brown}$lbranch${Green} at ${Brown}$vtag${LightBlue}" "$moduleTracePrefix" \
+    || { io_error "Fast-forward of branch ${Brown}$lbranch${Red} failed" "$moduleTracePrefix"; return 1; }
     publish_try_attach
   fi
 }
 publish_not_published()
 {
-  local vnext=$vtag noIncrement
+  # head will change
+
+  local noIncrement
+  vnext=$vtag
 
   # get principal module version
   publish_set_bundle_version # update htag and noIncrement
 
   if [[ $dryRun == true ]]; then
     branch_set_vnext "$vtag" "$htag" "$noIncrement" # -> prerelPrefix vnext
-    branch_io_message "Branch '$lbranch' will be published at ${Brown}$vnext" "$alias" Green
+    branch_io_message "Branch ${Brown}$lbranch${Green} will be published at ${Brown}$vnext" "$alias" Green
     # io_trace "$(print_vars lbranch vbranch vtag htag delta status nextHead publishStatus vnext prerelPrefix)"
   else
     branch_set_publish "$lbranch" "$vbranch" "$vtag" "$htag" "$prerelPrefix" "$noIncrement" \
@@ -180,20 +200,36 @@ publish_not_implemented()
 publish_set_bundle_version()
 {
   if [[ $moduleRoot == $bundleRoot && -n $principalModuleId ]]; then
-    local smtag=$(module_visit "$principalModuleId" publish_principal_version)
-    if [ -n $smtag ]; then
-      htag=$smtag
-      noIncrement=true
+    local pinfo=$(module_visit "$principalModuleId" "${publishScopes[@]}" publish_principal_info) pstatus ptag
+    pstatus=${pinfo%;*}
+    ptag=${pinfo#*;}
+    # io_trace "publish_set_bundle_version 1 -- $(print_vars principalModuleId ptag pstatus htag noIncrement)"
+    if [ -n $ptag ]; then
+      if [[ $pstatus == 'published' && $htag == $ptag ]]; then
+        branch_io_message "Bundle ${Brown}$bundleId${LightPurple} and module ${Brown}$principalModuleId${LightPurple} have same version" "$alias" LightPurple
+      else
+        noIncrement=true
+      fi
+      htag=$(vtag_highest_of $ptag $htag)
     fi
-    # io_trace "publish_set_bundle_version -- $(print_vars principalModuleId vtag smtag htag noIncrement)"
+    # io_trace "publish_set_bundle_version 2 -- $(print_vars principalModuleId ptag pstatus htag noIncrement)"
   fi
 }
-publish_principal_version()
+# run in principal module context
+publish_principal_info()
 {
-  local lbranch vbranch vtag htag delta alias status nextHead publishStatus
+  local lbranch vbranch vtag htag delta alias status nextHead publishStatus vnext
   branch_set_sku_info "$bundleBranch" "$publishDev" false false
-  # io_trace "publish_principal_version << $(print_vars lbranch vbranch vtag htag delta alias status nextHead publishStatus)"
-  echo "$htag"
+  # io_trace "publish_principal_info 1 -- $(print_vars lbranch vbranch vtag htag delta status nextHead publishStatus)"
+  [[ $dryRun == true ]] && publish_update_status
+  # io_trace "publish_principal_info 2 -- $(print_vars lbranch vbranch vtag htag delta status nextHead publishStatus)"
+  if [[ $publishStatus == 'published' ]]; then
+    vnext=$htag
+  else
+    branch_set_vnext "$vtag" "$htag"
+  fi
+  # io_trace "publish_principal_version << $(print_vars lbranch vbranch vtag htag delta status nextHead publishStatus vnext)"
+  echo "$publishStatus;$vnext"
 }
 publish_try_attach()
 {
@@ -201,21 +237,21 @@ publish_try_attach()
 }
 publish_set_vtable_info()
 {
-  if [[ $dryRun != true ]]; then
-    if [[ $vtable == true ]]; then
-      vtableCreate=true
-    elif [[ $startupRoot == $bundleRoot ]] && module_has_submodules; then
-      vtableCreate=true
-    fi
-    [[ $vtableCreate == true ]] && {
-      vtableGate=$(lock_init)
-      vtableLookupPath="$(mktemp)"
-      vtable_init "$startupRoot" "$vtableLookupPath"
-    }
+  # [[ $dryRun == true ]] && return 0
+  if [[ $vtable == true ]]; then
+    vtableCreate=true
+  elif [[ $startupRoot == $bundleRoot ]] && module_has_submodules; then
+    vtableCreate=true
+  fi
+  if [[ $vtableCreate == true ]]; then
+    vtableGate=$(lock_init)
+    vtableLookupPath="$(mktemp)"
+    vtable_init "$startupRoot" "$vtableLookupPath"
   fi
 }
 publish_update_vtable()
 {
+  # io_trace "publish_update_vtable -- $(print_vars vtable vtableCreate)"
   [[ $vtableCreate == true ]] || return 0
   if [[ "$PWD" == "$startupRoot" ]]; then
     publish_commit_vtable
@@ -227,13 +263,15 @@ publish_update_vtable()
 }
 publish_commit_vtable()
 {
-  # io_trace "publish_commit_vtable ${*@Q}"
-  if vtable_update "$startupRoot" "$moduleId" "$vtableLookupPath" true; then
-    branch_merge_sync $lbranch $vbranch
-    tag_move "$vnext" "$lbranch" &>/dev/null
+  # io_trace "publish_commit_vtable -- $(print_vars lbranch vbranch vnext)"
+  local commit=true
+  [[ $dryRun == true ]] && commit=false
+  if vtable_update "$startupRoot" "$moduleId" "$vtableLookupPath" $commit; then
+    if [[ $commit == true ]]; then
+      branch_merge_sync $lbranch $vbranch
+      tag_move "$vnext" "$lbranch" &>/dev/null
+    fi
     io_success "Created version table for '$lbranch' at ${Brown}$vnext" "$moduleTracePrefix"
-  else
-    io_error "Failed to create version table for '$lbranch' at ${Brown}$vnext" "$moduleTracePrefix"
   fi
 }
 

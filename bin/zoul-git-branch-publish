@@ -120,8 +120,6 @@ branch_set_publish()
   [[ -z $vbranch ]] && { io_error "Argument 'vbranch' not specified." "$moduleTracePrefix"; return 1; }
   ! branch_ensure_local $lbranch && { io_error "Branch '$lbranch' does not exist." "$moduleTracePrefix"; return 1; }
 
-  repo_require_clean_work_tree "Cannot publish" || return $?
-
   # restore deleted vbranch
   branch_ensure_local_vbranch "$vbranch" "$vtag"
   # io_trace "branch_set_publish 1 -- $(print_vars lbranch vbranch vtag htag prerelPrefix obranch)"
