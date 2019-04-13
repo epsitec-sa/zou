@@ -65,13 +65,22 @@ publish_main()
 {
   [[ -z $sku ]] && sku=$bundleBranch
 
+  # version table
   local vtableCreate vtableGate vtableLookupPath
   publish_set_vtable_info
 
-  publish_tree
+  local pstatusParentGate pstatusLookupPath pstatusParentLookupPath principalPublishStatus
+
+  publish_node
 }
-publish_tree()
+
+##############
+# Publish node
+##############
+
+publish_node()
 {
+
   publish_require_clean_repo || return $?
   publish_process_excluded && return 0
 
@@ -80,35 +89,6 @@ publish_tree()
   publish_prolog || return $?
   [[ $recursive == true ]] && { publish_submodules || return $?; }
   publish_epilog
-}
-publish_prolog()
-{
-  local forceDev=false allowDuplicateTags=false
-  [[ $publishDev == true || "$PWD" == "$startupRoot" ]] && forceDev=true
-  [[ $moduleRoot == $bundleRoot ]] && allowDuplicateTags=true
-
-  if [[ $dryRun == true ]]; then
-    branch_set_sku_info "$sku" "$forceDev" false "$allowDuplicateTags"
-  else
-    branch_set_select_auto "$sku" "$forceDev" false false "$allowDuplicateTags" || return $?
-  fi
-
-  if [[ $publishStatus == 'unpublishable' ]]; then
-    io_error "Branch '$lbranch' cannot be published (no vbranch associated)" "$moduleTracePrefix"
-    return 1
-  fi
-  # io_trace "publish_prolog -- $(print_vars lbranch vbranch vtag htag publishStatus)"
-}
-publish_submodules()
-{
-  local publishSubmodules=( $(array_sort configSkuInclude[@]) )
-  module_visit_submodules_async 'publishSubmodules[@]' "${publishScopes[@]}" 'publish_tree'
-}
-publish_epilog()
-{
-  publish_update_status
-  publish_publish || return $?
-  publish_update_vtable
 }
 publish_require_clean_repo()
 {
@@ -125,17 +105,62 @@ publish_process_excluded()
   fi
   return 1
 }
-publish_update_status()
+
+################
+# Publish prolog
+################
+
+publish_prolog()
 {
-  if [[ $publishStatus == 'published' ]]; then
-    if [[ $dryRun == true ]]; then
-      # assume submodules can be published
-      { config_has_submodules || cosm_has_unstaged_submodules; } && publishStatus='notPublished'
-    else
-      cosm_has_unstaged_submodules && publishStatus='notPublished'
-    fi
+  local forceDev=false allowDuplicateTags=false
+  [[ $publishDev == true || "$PWD" == "$startupRoot" ]] && forceDev=true
+  [[ $moduleRoot == $bundleRoot ]] && allowDuplicateTags=true
+
+  if [[ $dryRun == true ]]; then
+    # io_trace "publish_prolog -- $(print_vars moduleId)"
+    branch_set_sku_info "$sku" "$forceDev" false "$allowDuplicateTags"
+    publish_init_pstatus
+  else
+    branch_set_select_auto "$sku" "$forceDev" false false "$allowDuplicateTags" || return $?
   fi
+
+  if [[ $publishStatus == 'unpublishable' ]]; then
+    io_error "Branch '$lbranch' cannot be published (no vbranch associated)" "$moduleTracePrefix"
+    return 1
+  fi
+  # io_trace "publish_prolog -- $(print_vars lbranch vbranch vtag htag publishStatus)"
 }
+
+####################
+# Publish submodules
+####################
+
+publish_submodules()
+{
+  local publishSubmodules=( $(array_sort configSkuInclude[@]) )
+  module_visit_submodules_async 'publishSubmodules[@]' "${publishScopes[@]}" 'publish_node'
+}
+
+################
+# Publish epilog
+################
+
+publish_epilog()
+{
+  publish_fix_status
+  publish_publish || return $?
+  publish_update_vtable
+}
+publish_fix_status()
+{
+  [[ $dryRun == true ]] && publish_update_pstatus
+  [[ $publishStatus == 'published' ]] && cosm_has_unstaged_submodules && publishStatus='notPublished'
+}
+
+#################
+# Publish helpers
+#################
+
 publish_publish()
 {
   # io_trace "publish_publish 1 -- $(print_vars lbranch vbranch vtag htag prerelPrefix publishStatus)"
@@ -191,6 +216,15 @@ publish_not_implemented()
   io_error "Fatal: publishStatus '$publishStatus' not implemented" "$moduleTracePrefix"
   exit 1
 }
+publish_try_attach()
+{
+  branch_try_attach 'HEAD' "$sku" false || true
+}
+
+################
+# Bundle version
+################
+
 # Compute next bundle version
 # in:
 #  (module_scope)
@@ -221,7 +255,7 @@ publish_principal_info()
   local lbranch vbranch vtag htag delta alias status nextHead publishStatus vnext
   branch_set_sku_info "$bundleBranch" "$publishDev" false false
   # io_trace "publish_principal_info 1 -- $(print_vars lbranch vbranch vtag htag delta status nextHead publishStatus)"
-  [[ $dryRun == true ]] && publish_update_status
+  [[ $dryRun == true && -n $principalPublishStatus ]] && publishStatus=$principalPublishStatus
   # io_trace "publish_principal_info 2 -- $(print_vars lbranch vbranch vtag htag delta status nextHead publishStatus)"
   if [[ $publishStatus == 'published' ]]; then
     vnext=$htag
@@ -231,10 +265,11 @@ publish_principal_info()
   # io_trace "publish_principal_version << $(print_vars lbranch vbranch vtag htag delta status nextHead publishStatus vnext)"
   echo "$publishStatus;$vnext"
 }
-publish_try_attach()
-{
-  branch_try_attach 'HEAD' "$sku" false || true
-}
+
+###############
+# Version table
+###############
+
 publish_set_vtable_info()
 {
   # [[ $dryRun == true ]] && return 0
@@ -271,6 +306,68 @@ publish_commit_vtable()
     fi
     io_success "Created version table for ${Brown}$lbranch${Green} at ${Brown}$vnext" "$moduleTracePrefix"
   fi
+}
+
+################################
+# Publish status in dry run mode
+################################
+
+publish_init_pstatus()
+{
+  pstatusParentGate=$(lock_init)
+  pstatusParentLookupPath=$pstatusLookupPath
+  unset pstatusLookupPath
+  # io_trace "publish_init_pstatus 1 -- $(print_vars moduleId pstatusParentLookupPath pstatusLookupPath)"
+  if config_has_submodules; then
+    pstatusLookupPath="$(mktemp)"
+    pstatus_init "$pstatusLookupPath"
+    # io_trace "publish_init_pstatus 2 -- $(print_vars moduleId pstatusParentLookupPath pstatusLookupPath)"
+  fi
+}
+publish_update_pstatus()
+{
+  # io_trace "publish_update_pstatus -- $(print_vars moduleId pstatusParentLookupPath pstatusLookupPath)"
+  if [[ -n $pstatusLookupPath ]]; then
+    pstatus_commit "$pstatusLookupPath"
+    rm "$pstatusLookupPath"
+  fi
+  if [[ -n $pstatusParentLookupPath ]]; then
+    pstatus_update "$pstatusParentLookupPath" "$pstatusParentGate" "$moduleId" "$publishStatus"
+  fi
+}
+pstatus_init()
+{
+  local lookupPath=$1
+  
+  declare -A lookup                 # create lookup
+  declare -p lookup >"$lookupPath"  # serialize lookup
+  # io_trace "pstatus_init -- $(print_vars lookupPath)"
+}
+pstatus_update()
+{
+  local lookupPath=$1 gate=$2 moduleId=$3 publishStatus=$4
+  
+  lock_enter "$gate"
+  . "$lookupPath"                     # deserialize lookup
+  lookup[$moduleId]="$publishStatus"  # save publish status
+  declare -p lookup >"$lookupPath"    # serialize lookup
+  lock_exit "$gate"
+  # io_trace "pstatus_update -- $(print_vars lookupPath publishStatus)"
+}
+# 
+# out:
+#   publishStatus
+#   principalPublishStatus
+pstatus_commit()
+{
+  local lookupPath=$1 mid status
+  . "$lookupPath"
+  for mid in ${!lookup[@]}; do
+    status=${lookup[$mid]}
+    [[ $status == 'notPublished' ]] && publishStatus=$status
+    [[ $mid == $principalModuleId ]] && principalPublishStatus=$status
+  done
+  return 0
 }
 
 publish_run "$@"
