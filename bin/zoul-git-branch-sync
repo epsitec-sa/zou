@@ -49,11 +49,17 @@ _branch_sync_visitor()
 _branch_oreset_visitor()
 {
   local r=$1 l=$2 i=$3 current=$4
-  [[ -z $r || $(git rev-parse "$l") == $(git rev-parse "$r") ]] && return 0
-
   # io_trace "_branch_reset_visitor 1 -- $(print_vars r l i current)"
 
-
+  if [[ $l == $current ]]; then
+    # prune tags asynchronously
+    (
+      # io_warning "Pruning tags" "$moduleTracePrefix"
+      git tag -d $(git tag -l) &>/dev/null
+      git fetch --tags &>/dev/null
+    ) &
+  fi
+  [[ -z $r || $(git rev-parse "$l") == $(git rev-parse "$r") ]] && return 0
   # pull changes
   [[ $i =~ ^\< ]] && { _branch_sync_merge "$r" "$l" || return 1; }
   # reset to upstream
@@ -70,7 +76,6 @@ _branch_oreset_visitor()
     # reset ref
     git update-ref "refs/heads/$l" "$r" >/dev/null
   fi
-
 }
 _branch_sync_visit() 
 {
