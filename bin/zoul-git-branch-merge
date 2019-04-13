@@ -67,8 +67,9 @@ _branch_merge_ff()
   1) intoRef="refs/remotes/$intoBranch"; intoBranchName=${intoBranch#*/}; needCheckout=true;;
   *) io_error "Invalid branch name '$obranch' (error code = $ec)" "$moduleTracePrefix"; return 128;;
   esac
+  # io_trace "_branch_merge_ff -- $(print_vars toMerge intoBranch intoRef intoBranchName)"
 
-  hashToMerge="$(git rev-parse --verify "$toMerge" 2>/dev/null)"
+  hashToMerge="$(git rev-parse --verify "$toMerge^{}" 2>/dev/null)"
   if [ $? -ne 0 ]; then
     toMerge=$(branch_realize "$toMerge")
     if [ $? -gt 1 ]; then
@@ -87,7 +88,7 @@ _branch_merge_ff()
     return 128
   fi
 
-  if [[ "$(git symbolic-ref HEAD &>/dev/null)" == "$intoRef" ]]; then
+  if [[ "$(git symbolic-ref HEAD 2>/dev/null)" == "$intoRef" ]]; then
     if ! git merge --ff-only "$toMerge" &>/dev/null; then
       return 1
     fi
