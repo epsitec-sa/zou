@@ -95,7 +95,10 @@ vtag_highest()
 # in:
 #   $1:branch     -- local or remote branch name
 #   $2:lbranch    -- local branch name
-#   $3:skipVNodes
+#   $3:skipVNodes -- (auto | true | *)
+#                 -- auto - match vtag  then match vnode then fallback
+#                 -- true - match vtag  then fallback
+#                 -- *    - match vnode then fallback
 # out:
 #   vbranch -- the infered vbranch name 
 #   vtag    -- the highest vtag that match the glob
@@ -106,13 +109,15 @@ vtag_set_describe()
   unset vbranch vtag alias; delta=0
 
   local branch=$1 lbranch=${2:-$1} skipVNodes=$3 \
-        ltag stag match exclude=('--exclude' 'other/*')
+        ltag stag match
 
-  [[ $skipVNodes == true ]] && exclude+=('--exclude' '*-@')
-
-  # io_trace "vtag_set_describe 1 -- $(print_vars branch lbranch skipVNodes exclude[@])"
+  # io_trace "vtag_set_describe 1 -- $(print_vars branch lbranch skipVNodes)"
   for match in $(ref_tag_fallback $lbranch 'v[0-9]*'); do
-    ltag=$(git describe --tags --match "$match" "${exclude[@]}" "$branch" 2>/dev/null)
+    case $SkipVNodes in
+    auto) ltag=$(_vtag_describe '*-@') || ltag=$(_vtag_describe);;
+    true) ltag=$(_vtag_describe '*-@');;
+    *)    ltag=$(_vtag_describe);;
+    esac
     # io_trace "vtag_set_describe 2 -- $(print_vars branch lbranch skipVNodes match ltag)"
     if [[ -n $ltag ]]; then
       stag=${ltag%-*-g*}
@@ -124,6 +129,12 @@ vtag_set_describe()
   done
   unset vbranch vtag alias; delta=0
   return 1
+}
+_vtag_describe()
+{
+  local exclude=() pattern
+  for pattern; do exclude+=('--exclude' "$pattern"); done
+  git describe --tags --match "$match" --exclude 'other/*' ${exclude[@]} -- "$branch" 2>/dev/null  
 }
 # Compute tag properties
 # in:
@@ -138,6 +149,7 @@ vtag_set_describe()
 _vtag_set_info()
 {
   local ltag=$1 stag=$2 regex=$(wildcard_to_regex $3) lsuf
+  # io_trace "_vtag_set_info 1 -- $(print_vars ltag stag regex)"
 
   lsuf=${ltag#$stag}
   delta=${lsuf%-g*}
@@ -157,7 +169,7 @@ _vtag_set_info()
   else
     alias="> $vtag ($delta)"
   fi
-  # io_trace "_vtag_set_info -> $(print_vars vtag delta alias)"
+  # io_trace "_vtag_set_info 2 -> $(print_vars vtag delta alias)"
 }
 # list all vtags pointing at given commit that match a regex
 # input:

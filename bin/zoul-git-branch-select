@@ -62,7 +62,10 @@ branch_set_best_match_dev()
 #   $1:sku=bundleBranch
 #   $2:forceDev=false     -- force checkout of dev branch
 #   $3:forceCheckout=true -- checkout even if already checked out (display already checked out message)
-#   $4:skipVNodes         -- always select vtag if true        (false to publish,   true to select)
+#   $4:skipVNodes         -- (auto | true | *)
+#                         -- auto - match vtag  then match vnode then fallback
+#                         -- true - match vtag  then fallback
+#                         -- *    - match vnode then fallback
 #   $5:allowDuplicateTags -- influence highest tag computation (false in submodule, true in bundle)
 # out:
 #   lbranch       -- best match branch (local name)
@@ -106,8 +109,11 @@ branch_set_select_auto()
 # in:
 #   $1:sku=bundleBranch
 #   $2:forceDev=false     -- force checkout of dev branch
-#   $4:skipVNodes         -- always select vtag if true (false to publish,   true to select)
-#   $5:allowDuplicateTags -- influence htag computation (false in submodule, true in bundle)
+#   $3:skipVNodes         -- (auto | true | *)
+#                         -- auto - match vtag  then match vnode then fallback
+#                         -- true - match vtag  then fallback
+#                         -- *    - match vnode then fallback
+#   $4:allowDuplicateTags -- influence htag computation (false in submodule, true in bundle)
 # out:
 #   lbranch       -- best match branch (local name)
 #   vbranch       -- associated version branch
@@ -137,7 +143,7 @@ branch_set_sku_info()
   # io_trace "branch_set_sku_info 1 -- $(print_vars sku forceDev skipVNodes allowDuplicateTags)"
   branch_set_select_info "$sku" "$skipVNodes" "$allowDuplicateTags" \
   && branch_set_publish_info "$lbranch" "$vtag" "$delta" "$status" "$forceDev"
-  # io_trace "branch_set_sku_info 2 -- $(print_vars lbranch vbranch vtag htag delta alias status nextHead publishStatus)"
+  # io_trace "branch_set_sku_info 2 -- $(print_vars forceDev lbranch vbranch vtag htag delta alias status nextHead publishStatus)"
 }
 # Create SKU selection information
 #
@@ -153,8 +159,11 @@ branch_set_sku_info()
 #
 # in:
 #   $1:sku=bundleBranch
-#   $2:skipVNodes=true          -- false to publish,   true to select 
-#   $3:allowDuplicateTags=true  -- false in submodule, true in bundle
+#   $2:skipVNodes         -- (auto | true | *)
+#                         -- auto - match vtag  then match vnode then fallback
+#                         -- true - match vtag  then fallback
+#                         -- *    - match vnode then fallback
+#   $3:allowDuplicateTags -- false in submodule, true in bundle
 # out:
 #   branch    -- best match branch (local or remote)
 #   lbranch   -- local branch name
@@ -169,22 +178,16 @@ branch_set_sku_info()
 branch_set_select_info()
 {
   unset branch lbranch vbranch vtag htag delta alias status
-  local sku=${1:-$bundleBranch} skipVNodes=$2 allowDuplicateTags=$3 skip=${2:-true} ltag ec=0
+  local sku=${1:-$bundleBranch} skipVNodes=${2:-auto} allowDuplicateTags=$3
   # io_trace "branch_set_select_info ${*@Q}"
-  branch_set_best_match_dev "$sku"               # -> branch lbranch
-  vtag_set_describe "$branch" "$lbranch" "$skip" # -> vbranch vtag delta alias
+  branch_set_best_match_dev "$sku"                     # -> branch lbranch
+  vtag_set_describe "$branch" "$lbranch" "$skipVNodes" # -> vbranch vtag delta alias
   # io_trace "branch_set_select_info 1 -- $(print_vars sku skipVNodes allowDuplicateTags branch lbranch vtag delta alias)"
   if [[ -n $vtag ]]; then
     htag=$(vtag_highest $vbranch true)
     if [[ $htag != $vtag ]]; then
       if ! git merge-base --is-ancestor "$branch" "$htag" >&2; then
-        # retry without skipping vnodes
-        if [[ -z $skipVNodes && $skip == true ]]; then
-          branch_set_select_info "$sku" false "$allowDuplicateTags"
-          return $?
-        else
-          io_message "Branch '$lbranch' was never published as '$htag'" "$moduleTracePrefix" LightPurple
-        fi
+        io_message "Branch '$lbranch' was never published as '$htag'" "$moduleTracePrefix" LightPurple
       fi
       delta=$(( -$(git rev-list --count $vtag..$htag) ))
       # io_trace "branch_set_select_info 2 -- $(print_vars sku skipVNodes allowDuplicateTags branch lbranch vbranch vtag htag delta alias status)"
@@ -201,7 +204,7 @@ branch_set_select_info()
     # io_trace "branch_set_select_info 3 -- $(print_vars sku skipVNodes allowDuplicateTags branch lbranch vbranch vtag htag delta alias status)"
   else
     # compute alias without skipping vnodes
-    if [[ $skip == true ]] && vtag_set_describe "$branch" "$lbranch" false; then
+    if [[ $skipVNodes == true ]] && vtag_set_describe "$branch" "$lbranch" false; then
       [ $delta -ne 0 ] && alias="$branch $alias" # (master > v2.0.0 (8))
     else
       alias='<>'
@@ -253,10 +256,12 @@ branch_set_publish_info()
     else
       # head has been moved since last publish
       # move to last vtag unless dev mode is forced
-      [[ $forceDev == true ]] || nextHead=$vtag
-      [ $delta -gt 0 ] \
-        && publishStatus='notPublished' \
-        || publishStatus='ffPublish'
+      if [[ $forceDev == true ]]; then
+        [ $delta -gt 0 ] && publishStatus='notPublished' || publishStatus='ffPublish'
+      else
+        [ $delta -gt 0 ] && publishStatus='published' || publishStatus='ffPublish'
+        nextHead=$vtag
+      fi
     fi
   elif [[ $status == 'vnode' ]]; then
     # never published on this vbranch, stay in dev mode

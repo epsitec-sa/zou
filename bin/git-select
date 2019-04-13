@@ -49,14 +49,14 @@ select_tree()
 {
   # io_trace "select_tree $(print_vars sku selectDev)"
   repo_discard_internal_ignore_list
-  
+
   select_prolog || return $?
   [[ $recursive == true ]] && select_submodules || return $?
   cosm_process_unstaged_submodules
 }
 select_prolog()
 {
-  local forceDev=${selectDev:-false} skipVNodes allowDuplicateTags=false
+  local forceDev=${selectDev:-false} skipVNodes='auto' allowDuplicateTags=false
   if [[ $moduleRoot == $bundleRoot ]]; then
     forceDev=true
     skipVNodes=false

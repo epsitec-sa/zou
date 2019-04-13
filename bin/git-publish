@@ -118,10 +118,10 @@ publish_prolog()
 
   if [[ $dryRun == true ]]; then
     # io_trace "publish_prolog -- $(print_vars moduleId)"
-    branch_set_sku_info "$sku" "$forceDev" false "$allowDuplicateTags"
+    branch_set_sku_info "$sku" "$forceDev" 'auto' "$allowDuplicateTags"
     publish_init_pstatus
   else
-    branch_set_select_auto "$sku" "$forceDev" false false "$allowDuplicateTags" || return $?
+    branch_set_select_auto "$sku" "$forceDev" false 'auto' "$allowDuplicateTags" || return $?
   fi
 
   if [[ $publishStatus == 'unpublishable' ]]; then
@@ -260,7 +260,7 @@ publish_set_bundle_version()
 publish_principal_info()
 {
   local lbranch vbranch vtag htag delta alias status nextHead publishStatus vnext
-  branch_set_sku_info "$bundleBranch" "$publishDev" false false
+  branch_set_sku_info "$bundleBranch" "$publishDev" 'auto' false
   # io_trace "publish_principal_info 1 -- $(print_vars lbranch vbranch vtag htag delta status nextHead publishStatus)"
   [[ $dryRun == true && -n $principalPublishStatus ]] && publishStatus=$principalPublishStatus
   # io_trace "publish_principal_info 2 -- $(print_vars lbranch vbranch vtag htag delta status nextHead publishStatus)"
