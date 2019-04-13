@@ -128,13 +128,15 @@ branch_set_sku_info()
 {
   unset branch lbranch vbranch vtag htag delta alias status
 
-  local sku=${1:-$bundleBranch} forceDev=${2:-false} skipVNodes=$3 allowDuplicateTags=$4 branch
+  local sku=${1:-$bundleBranch} forceDev=${2:-false} skipVNodes=$3 allowDuplicateTags=$4 \
+        branch
+
   [[ -z $sku ]] && sku=$(branch_current_root_branch)
   [[ -z $allowDuplicateTags && -n $moduleRoot && $moduleRoot == $bundleRoot ]] && allowDuplicateTags=true
 
   # io_trace "branch_set_sku_info 1 -- $(print_vars sku forceDev skipVNodes allowDuplicateTags)"
-  branch_set_select_info "$sku" "$skipVNodes" "$allowDuplicateTags" && \
-  branch_set_publish_info "$lbranch" "$vtag" "$delta" "$status" "$forceDev"
+  branch_set_select_info "$sku" "$skipVNodes" "$allowDuplicateTags" \
+  && branch_set_publish_info "$lbranch" "$vtag" "$delta" "$status" "$forceDev"
   # io_trace "branch_set_sku_info 2 -- $(print_vars lbranch vbranch vtag htag delta alias status nextHead publishStatus)"
 }
 # Create SKU selection information

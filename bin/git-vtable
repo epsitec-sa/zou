@@ -47,8 +47,9 @@ vtable_tree()
 }
 vtable_commit_vtable()
 {
-  vtable_update "$startupRoot" "$moduleId" "$lookupPath" "$commitVTable"
-  io_success "Created version table" "$moduleTracePrefix"
+  vtable_update "$startupRoot" "$moduleId" "$lookupPath" "$commitVTable" \
+  && io_success "Created version table" "$moduleTracePrefix" \
+  || io_success "No change in the version table" "$moduleTracePrefix"
 }
 vtable_update_vtable()
 {

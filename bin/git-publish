@@ -56,7 +56,7 @@ publish_run()
         publishScopes=( config_scope cosm_scope )
 
   [[ $dryRun == true ]] \
-  && startupMessage="Guessing publish, please wait..." \
+  && startupMessage="${DarkGray}Publishing, please wait..." \
   || startupMessage="Publishing, please wait..."
 
   module_run "${publishScopes[@]}" publish_main
@@ -271,7 +271,7 @@ publish_commit_vtable()
       branch_merge_sync $lbranch $vbranch
       tag_move "$vnext" "$lbranch" &>/dev/null
     fi
-    io_success "Created version table for '$lbranch' at ${Brown}$vnext" "$moduleTracePrefix"
+    io_success "Created version table for ${Brown}$lbranch${Green} at ${Brown}$vnext" "$moduleTracePrefix"
   fi
 }
 
