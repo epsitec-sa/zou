@@ -48,7 +48,8 @@ select_main()
 select_tree()
 {
   # io_trace "select_tree $(print_vars sku selectDev)"
-
+  repo_discard_internal_ignore_list
+  
   select_prolog || return $?
   [[ $recursive == true ]] && select_submodules || return $?
   cosm_process_unstaged_submodules

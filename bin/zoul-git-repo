@@ -388,6 +388,10 @@ repo_discard_clean_submodules_async()
 {
   visit_async repo_list_unstaged_clean_submodules repo_discard_submodule
 }
+repo_discard_internal_ignore_list()
+{
+  git checkout -- "${internalIgnoreList[@]}" &>/dev/null
+}
 repo_remove_dangling_submodule()
 {
   local smpath=$1 smid=${1%/}
