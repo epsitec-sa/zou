@@ -8,22 +8,34 @@ ZOUL_GIT_VTAG=true
 [[ -z $ZOUL_GIT_CORE ]]        && . zoul-git-core
 [[ -z $ZOUL_GIT_REF ]]         && . zoul-git-ref
 
-# Parse semver tag
-# input:
-#   x/y/v1.2.3-rc4+meta
-#   x/y/v1.2-@
-# output:
-#   folder=${BASH_REMATCH[1]}          x/y/
-#   major=${BASH_REMATCH[2]}           1
-#   minor=${BASH_REMATCH[3]}           2
-#   tail=${BASH_REMATCH[4]}            .3-rc4+meta | -@
-#   patch=${BASH_REMATCH[5]}           3
-#   prerel=${BASH_REMATCH[6]}          -rc4
-#   prerel-prefix=${BASH_REMATCH[7]}   -rc 
-#   prerel-rev=${BASH_REMATCH[8]}      4
-#   meta=${BASH_REMATCH[9]}            +meta
-vtag_is_semver() { [[ $1 =~ ^(.*/)?v([0-9]+).([0-9]+)(-@|.([0-9]+)((-alpha|-beta|-rc)([0-9]+))?(\+.+)?)$ ]]; }
-vtag_is_vnode()  { [[ $1 =~ ^(.*/)?v[0-9]+\.[0-9]+-@ ]]; }
+# Tokenize semver tag
+# in:
+#   $1:ref                              x/y/v1.2.3-rc4+meta
+# out:
+#   ${BASH_REMATCH[1]} -- folder        x/y/
+#   ${BASH_REMATCH[2]} -- major         1
+#   ${BASH_REMATCH[3]} -- minor         2
+#   ${BASH_REMATCH[4]} -- tail          .3-rc4+meta
+#   ${BASH_REMATCH[5]} -- patch         3
+#   ${BASH_REMATCH[6]} -- prel          -rc4
+#   ${BASH_REMATCH[7]} -- prel-pfx      -rc 
+#   ${BASH_REMATCH[8]} -- prel-rev      4
+#   ${BASH_REMATCH[9]} -- meta          +meta
+# return:
+#   0 if ref is a semver 2.0 tag
+vtag_is_semver() { [[ $1 =~ ^(.*/)?v([0-9]+)\.([0-9]+)(-@|.([0-9]+)((-alpha|-beta|-rc)([0-9]+))?(\+.+)?)$ ]]; }
+
+# Tokenize vnode
+# in:
+#   $1:ref                              x/y/v1.2-@
+# out:
+#   ${BASH_REMATCH[1]} -- folder        x/y/
+#   ${BASH_REMATCH[2]} -- major         1
+#   ${BASH_REMATCH[3]} -- minor         2
+#   ${BASH_REMATCH[4]} -- tail          -@
+# return:
+#   0 if ref is a vnode
+vtag_is_vnode()  { [[ $1 =~ ^(.*/)?v([0-9]+)\.([0-9]+)(-@) ]]; }
 
 # get highest version on a specific vbranch
 # - a bundle can have the same version twice (SKU version)
