@@ -6,11 +6,19 @@ ZOUL_GIT_CORE=true
 
 [[ -z $ZOUL_CORE ]] && . zoul-core
 
-# out: ref=${BASH_REMATCH[1]}
+# Tokenize other refs
+# in:
+#   $1:ref
+# out:
+#  ${BASH_REMATCH[0]} -- ref
+#  ${BASH_REMATCH[1]} -- system folder
+#  ${BASH_REMATCH[2]} -- archive subfolder
+#  ${BASH_REMATCH[2]} -- ref
 ref_is_other()   { [[ $1 =~ ^other/(.*)$ ]]; }
-ref_is_orphan()  { [[ $1 =~ ^other/orphan/(.*)$ ]]; }
 ref_is_archive() { [[ $1 =~ ^other/archive/(.*)$ ]]; }
-ref_is_backup()  { [[ $1 =~ ^other/backup/(.*)$ ]]; }
+ref_is_orphan()  { [[ $1 =~ ^other/orphan(.*)$ ]]; }
+ref_is_marker()  { [[ $1 =~ ^other/marker/(.*)$ ]]; }
+ref_is_oldver()    { [[ $1 =~ ^other/oldver/(.*)$ ]]; }     # non semver version tag + big patch (> 1000)
 ref_exists()     { git rev-parse --quiet --verify $1 >/dev/null; }
 ref_equals()     { [[ $(git rev-parse $1^{}) == $(git rev-parse $2^{}) ]]; }
 ref_is_head()    { [[ $(git rev-parse $1^{}) == $(git rev-parse HEAD) ]]; }
