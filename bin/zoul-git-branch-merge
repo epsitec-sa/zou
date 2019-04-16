@@ -19,8 +19,17 @@ branch_merge_sync()
 {
   branch_merge "$@" && branch_merge_ff "$2" "$1"
 }
+branch_merge_abort()
+{
+  if repo_is_merging; then
+    git merge --abort
+    _branch_remove_temp_merge_files
+  fi
+}
 branch_merge()
 {
+  branch_merge_abort
+
   local toMerge=$1 intoBranch=$2 intoBranchName needCheckout ec=0; shift 2
   _branch_merge_ff || ec=$?
   case $ec in
@@ -116,28 +125,33 @@ _branch_merge()
   if _branch_merge_resolve_submodule_conflicts; then
     git commit -m "$message" >/dev/null
   elif ! _branch_merge_interactive; then
-    local conflicts=$(git diff)
-    io_lock_enter
-    io_message_unsafe "while auto-merging $toMerge into $intoBranch."             "$moduleTracePrefix" Red
-    local IFS=$'\n'
-    for line in $(git diff); do
-      io_message_unsafe "  $line" "$moduleTracePrefix" DarkGray
-    done
-    io_message_unsafe "  configure your mergetool and run 'git sync' again"   "$moduleTracePrefix" LightCyan
-    io_message_unsafe "  or finalize the merge using the following commands:" "$moduleTracePrefix" LightCyan
-    io_message_unsafe "    <merge-tool>"          "$moduleTracePrefix" Brown
-    io_message_unsafe "    git commit --no-edit"  "$moduleTracePrefix" DarkGray
-    io_lock_exit
+    git diff
     return 1
   fi
 }
 _branch_merge_interactive()
 {
   local ec=0
-  git mergetool && git commit --no-edit >/dev/null || ec=$?
+  _branch_merge_tool && git commit --no-edit >/dev/null || ec=$?
+  _branch_remove_temp_merge_files
+  return $ec
+}
+_branch_remove_temp_merge_files()
+{
   # clean temp merge files
   repo_list_untracked | grep -E '(\.orig$|_(BACKUP|BASE|LOCAL|REMOTE)_[0-9]+)' | xargs --no-run-if-empty rm --
-  return $ec
+}
+_branch_merge_tool()
+{
+  local line IFS=$'\n'
+  io_lock_enter
+  (git mergetool 2>&1) | \
+  while read -r line; do
+    [[ -z $line ]] && continue
+    io_message_unsafe "  $line" "$moduleTracePrefix" DarkGray
+  done
+  io_lock_exit
+  return ${PIPESTATUS[0]}
 }
 _branch_merge_resolve_submodule_conflicts()
 {
@@ -146,14 +160,12 @@ _branch_merge_resolve_submodule_conflicts()
     if [[ $line =~ ^([A-Z]+)[[:blank:]]+(.+)$ ]]; then
       status=${BASH_REMATCH[1]}
       path=${BASH_REMATCH[2]}
-      if [[ $status =~ U ]]; then
-        if [[ -f "$path/.git" ]]; then
-          # keep local submodule
-          git reset -q "$path"
-        else
-          # still unmerged files
-          ec=1
-        fi
+      if [[ -f "$path/.git" ]]; then
+        # ignore submodules - keep local one
+        git reset -q "$path"
+      else
+        # still unmerged files
+        ec=1
       fi
     fi
   done

@@ -105,10 +105,17 @@ _branch_sync_visit()
 _branch_sync_fix_tracking()
 {
   if [[ -n $r ]]; then
-    # tracking branch was deleted or renamed - fallback to local case
-    git branch --unset-upstream "$l"
-    unset r
-    color=LightBlue
+    # tracking branch was deleted or renamed
+    if branch_is_current "$l"; then
+      # detach head
+      git checkout "$l^{}" &>/dev/null
+    fi
+    if git branch -d "$l" &>/dev/null; then
+      io_message "  Deleted obsolete branch '$l'" "$moduleTracePrefix" DarkGray
+    else
+      git branch --unset-upstream "$l"
+      color=LightBlue
+    fi
   else
     # no tracking info
     if [[ $l =~ ^sku/ ]] || branch_is_prod "$l"; then
@@ -125,6 +132,8 @@ branch_sync_all()
 {
   git fetch --prune --all &>/dev/null
   git fetch --tags --force &>/dev/null
+
+  branch_merge_abort
   repo_require_clean_work_tree 'Cannot synchronize' || return 1
 
   _branch_sync_visit _branch_sync_visitor "$@"
@@ -133,6 +142,8 @@ branch_oreset_all()
 {
   git fetch --prune --all &>/dev/null
   git fetch --tags --force &>/dev/null
+
+  branch_merge_abort
   repo_require_clean_work_tree 'Cannot reset' || return 1
 
   syncNoPush=true _branch_sync_visit _branch_oreset_visitor "$@"
