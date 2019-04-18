@@ -4,8 +4,8 @@
 #   [[ -z $ZOUL_GIT_STOW ]] && . zoul-git-stow
 ZOUL_GIT_STOW=true
 
-[[ -z $ZOUL_CORE ]]     && . zoul-core
-# [[ -z $ZOUL_GIT_VTAG ]] && . zoul-git_vtag
+[[ -z $ZOUL_CORE ]]            && . zoul-core
+[[ -z $ZOUL_GIT_BRANCH_CORE ]] && . zoul-git-branch-core
 
 # Tokenize stow folder
 #
@@ -304,7 +304,7 @@ stow_promote_vtags()
       # remove non descendant vbranches
       local vbranchTagPairs=()
       for vbranchPair in ${vbranchPairs[@]}; do
-        vbranch=${vbranchPair#*:}
+        vbranch=$(branch_realize "${vbranchPair#*:}")
         if git merge-base --is-ancestor "$vtag" "$vbranch"; then
           vbranchTagPairs+=("$vbranchPair")
         # else
@@ -332,7 +332,7 @@ stow_promote_vtags()
         unset vbranchFolder
         local deltaMin=0xFFFF
         for vbranchPair in "${vbranchTagPairs[@]}"; do
-          vbranch=${vbranchPair#*:}
+          vbranch=$(branch_realize "${vbranchPair#*:}")
           delta=$(( $(git rev-list --count "$vtag".."$vbranch") ))
           (( delta == deltaMin )) && break
           if (( delta < deltaMin )); then
