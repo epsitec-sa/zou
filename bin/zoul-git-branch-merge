@@ -143,15 +143,7 @@ _branch_remove_temp_merge_files()
 }
 _branch_merge_tool()
 {
-  local line IFS=$'\n'
-  io_lock_enter
-  (git mergetool 2>&1) | \
-  while read -r line; do
-    [[ -z $line ]] && continue
-    io_message_unsafe "  $line" "$moduleTracePrefix" DarkGray
-  done
-  io_lock_exit
-  return ${PIPESTATUS[0]}
+  io_locked_eval 'git mergetool 2>&1' : DarkGray
 }
 _branch_merge_resolve_submodule_conflicts()
 {

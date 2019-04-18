@@ -33,20 +33,15 @@ ptags_node()
   if [[ $verbose == true ]]; then
     io_info "Pruning tags..." "$moduleTracePrefix"
     git tag -d $(git tag -l) &>/dev/null
-    local IFS=$'\n'
-    local line lines=( $(git fetch --tags 2>&1) )
-
-    io_lock_enter
-    for line in "${lines[@]}"; do
-      if [[ $line =~ ^.*\[new\ tag\][[:blank:]]+(.*)$ ]]; then
-        io_message_unsafe "  ${BASH_REMATCH[1]}" "$moduleTracePrefix" LightGray
-      fi
-    done
-    io_lock_exit
+    io_buffered_eval 'git fetch --tags 2>&1' _ptags_line_selector
   else
     git tag -d $(git tag -l) &>/dev/null
     git fetch --tags &>/dev/null
   fi
+}
+_ptags_line_selector()
+{
+  [[ $line =~ ^.*\[new\ tag\][[:blank:]]+(.*)$ ]] && line="${BASH_REMATCH[1]}"
 }
 ptags_prune_registered_bundles_tags()
 {

@@ -29,20 +29,14 @@ mtags_node()
   local tag line
   if [[ $verbose == true ]]; then
     io_info "Mirroring tags..." "$moduleTracePrefix"
-    local IFS=$'\n'
-    local line lines=( $(git push --tags --prune -f 2>&1) )
-    io_lock_enter
-    for line in "${lines[@]}"; do
-      if [[ $line =~ ^.*\[new\ tag\][[:blank:]]+(.*)$ ]]; then
-        io_message_unsafe "  ${BASH_REMATCH[1]}" "$moduleTracePrefix" LightGray
-      else
-        io_message_unsafe "  $line" "$moduleTracePrefix" DarkGray
-      fi
-    done
-    io_lock_exit
+    io_buffered_eval 'git push --tags --prune -f 2>&1' _mtags_line_selector
   else
     git push --tags --prune -f &>/dev/null
   fi
+}
+_mtags_line_selector()
+{
+  [[ $line =~ ^.*\[new\ tag\][[:blank:]]+(.*)$ ]] && line="${BASH_REMATCH[1]}"
 }
 
 mtags_run "$@"

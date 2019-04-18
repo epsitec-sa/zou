@@ -465,11 +465,62 @@ error()
   [ $1 -ne 0 ] && io_trace "error '$1' at '$2'"
   return $1
 }
+# Execute a command and transform stdout
+#
+#  io_eval 'git fetch --tags 2>&1' _ptags_line_selector LightGray
+#  io_eval 'git fetch --tags 2>&1' : LightGray
+#
+# in:
+#   command=$1  -- command to evaluate
+#   selector=$2 -- selector $line $color
+#   color=$3    -- default color
+io_eval()
+{
+  local selector=${2:-:} color=${3:-NC}
+  # io_trace "io_eval ${*@Q} -- $(print_vars selector color)"
+  ( eval "$1" ) | \
+  while read -r line; do
+    $selector "$line" "$color"
+    io_message "  $line" "$moduleTracePrefix" "$color"
+  done
+  return ${PIPESTATUS[0]}
+}
+io_locked_eval()
+{
+  local selector=${2:-:} color=${3:-NC}
+  io_lock_enter
+  ( eval "$1" ) | \
+  while read -r line; do
+    $selector "$line" "$color"
+    io_message_unsafe "  $line" "$moduleTracePrefix" "$color"
+  done
+  io_lock_exit
+  return ${PIPESTATUS[0]}
+}
+io_buffered_eval()
+{
+  local selector=${2:-:} color=$3 IFS=$'\n' line lines=() ec=0
+  lines=( $(eval "$1") ) || ec=$?
+  if [[ -z $color ]]; then
+    [ $ec -eq 0 ] && color=NC || color=Red
+  fi
+  io_lock_enter
+  for line in ${lines[@]}; do
+    $selector "$line" "$color"
+    io_message_unsafe "  $line" "$moduleTracePrefix" "$color"
+  done
+  io_lock_exit
+  return $ec
+}
+faketty()
+{
+  script -eqc "$*" /dev/null
+}
 
 # trace constants (if debug == true)
-io_debug zou_startupPath
-io_debug zou_startupDir
-io_debug zou_startupFileName
-io_debug zou_binDir
-io_debug zou_command
-io_debug zou_lencoding
+# io_debug zou_startupPath
+# io_debug zou_startupDir
+# io_debug zou_startupFileName
+# io_debug zou_binDir
+# io_debug zou_command
+# io_debug zou_lencoding

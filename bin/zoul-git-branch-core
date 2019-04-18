@@ -371,14 +371,9 @@ branch_io_message_unsafe()
 }
 branch_set_upstream()
 {
-  local branch=$1 remote=${2:-origin} line
+  local branch=$1 remote=${2:-origin}
   branch_upstream "$branch" >/dev/null && return 0
-  (git push $remote --set-upstream "$branch" 2>/dev/null) | \
-  while read -r line; do
-    [[ -z $line ]] && continue
-    io_message "  $line" "$moduleTracePrefix" DarkGray
-  done
-  return ${PIPESTATUS[0]}
+  io_eval "git push "$remote" --set-upstream "$branch" 2>/dev/null" : DarkGray
 }
 branch_force_delete()
 {
