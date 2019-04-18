@@ -203,10 +203,11 @@ stow_orphan_tags()
     stow_set_info "$tag"                          # -> refPath stowFolder stowType
     stow_is_orphan && continue
     stow_set_tag_info                             # -> refPath refType refStowType
+    # io_trace "stow_orphan_tags 1 -- $(print_vars srcRef stowFolder refPath stowType refStowType refType stowPath)"
     refStowType=${refStowType/active./other.}
     refStowType=${refStowType/.*/.orphan}
     stow_set_folder "$refStowType"                # -> stowPath
-    # io_trace "stow_orphan_tags -- $(print_vars srcRef stowFolder refPath stowType refStowType refType stowPath)"
+    # io_trace "stow_orphan_tags 2 -- $(print_vars srcRef stowFolder refPath stowType refStowType refType stowPath)"
     $tagMove "$tag" "$stowPath" || ec=1
   done
   return $ec
@@ -220,10 +221,11 @@ stow_adopt_tags()
     stow_set_info "$tag"                          # -> refPath stowFolder stowType
     ! stow_is_orphan && continue
     stow_set_tag_info                             # -> refPath refType refStowType
+    # io_trace "stow_adopt_tags 1 -- $(print_vars srcRef stowFolder refPath stowType refStowType refType stowPath)"
     refStowType=${refStowType/other./active.}
     refStowType=${refStowType/.orphan/.root}
     stow_set_folder "$refStowType"                # -> stowPath
-    # io_trace "stow_adopt_tags -- $(print_vars srcRef stowFolder refPath stowType refStowType refType stowPath)"
+    # io_trace "stow_adopt_tags 2 -- $(print_vars srcRef stowFolder refPath stowType refStowType refType stowPath)"
     $tagMove "$tag" "$stowPath" || ec=1
   done
   return $ec
@@ -272,7 +274,7 @@ stow_remove_duplicate_tags()
 stow_promote_vtags()
 {
   local tagMove=$1 branches=(${!2}) refPath stowFolder stowType refType refStowType \
-        vtag vbranch vbranchFolder vbranchFolders vbranchPairs vtagFolder version ec=0
+        vtag vbranch vbranchFolder vbranchFolders vbranchPairs vtagFolder version
   shift 2
   # group vbranchFolder:vbranch pair by version
   declare -A vbranchMap
@@ -348,8 +350,7 @@ stow_promote_vtags()
 }
 stow_orphans()
 {
-  local tagMove=$1 branches=(${!2}) refPath stowFolder stowType refType refStowType \
-        vtag vbranch vbranchFolder vbranchFolders vbranchPairs vtagFolder version ec=0
+  local tagMove=$1 branches=(${!2}) vbranch version vtag vbranches 
   shift 2
   # group vbranchFolder:vbranch pair by version
   declare -A vbranchMap
