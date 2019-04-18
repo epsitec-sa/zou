@@ -87,6 +87,7 @@ stow_is_oldver()    { [[ $stowType =~ \.oldver$ ]]; }
 #  refStowType   -- stow type for tag ref
 stow_set_tag_info()
 {
+  local ref="$stowFolder$refPath"
   if [[ $refPath =~ ^(.*/)?v([0-9]+)\.([0-9]+)(-@|.([0-9]+)((-alpha|-beta|-rc)([0-9]+))?(\+.+)?)$ ]]; then
     refType='semver'
     # remove prerelease leading zeros
@@ -110,6 +111,7 @@ stow_set_tag_info()
   else
     refType='marker'
   fi
+
   local ns0=${stowType%%.*} cl0=${stowType##*.} ns1 cl1
   case $refType in
   semver*) ns1=$ns0;                               [[ $cl0 == 'orphan' ]] && cl1='orphan' || cl1='root';;
@@ -117,6 +119,14 @@ stow_set_tag_info()
   marker*) [[ $ns0 == 'active'  ]] && ns1='other'; cl1='marker';;
   system*) [[ $ns0 == 'archive' ]] && ns1=$ns0 || ns1='active'; cl1='root';;
   esac
+
+  # archive after 365 days
+  if [[ $ns1 != 'archive' ]]; then
+    local dt=$(ref_timespan "$ref")
+    (( dt = dt / 86400 )) # time in days
+    (( dt > 365 )) && ns1='archive'
+  fi
+
   refStowType="$ns1.$cl1"
 }
 
