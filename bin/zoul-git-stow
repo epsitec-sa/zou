@@ -112,9 +112,9 @@ stow_set_tag_info()
   fi
   local ns0=${stowType%%.*} cl0=${stowType##*.} ns1 cl1
   case $refType in
-  semver*)                            ns1=$ns0;                 cl1='root';;
-  oldver*) [[ $ns0 == 'active' ]]  && ns1='other';              cl1='oldver';;
-  marker*) [[ $ns0 == 'active' ]]  && ns1='other';              cl1='marker';;
+  semver*) ns1=$ns0; [[ $cl0 == 'orphan' ]] && cl1='orphan' || cl1='root';;
+  oldver*) [[ $ns0 == 'active'  ]] && ns1='other'; cl1='oldver';;
+  marker*) [[ $ns0 == 'active'  ]] && ns1='other'; cl1='marker';;
   system*) [[ $ns0 == 'archive' ]] && ns1=$ns0 || ns1='active'; cl1='root';;
   esac
   refStowType="$ns1.$cl1"
