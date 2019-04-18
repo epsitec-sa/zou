@@ -146,7 +146,7 @@ _vtag_describe()
 {
   local exclude=() pattern
   for pattern; do exclude+=('--exclude' "$pattern"); done
-  git describe --tags --match "$match" --exclude 'other/*' ${exclude[@]} -- "$branch" 2>/dev/null  
+  git describe --tags --match "$match" --exclude 'other/*' --exclude '_*' ${exclude[@]} -- "$branch" 2>/dev/null  
 }
 # Compute tag properties
 # in:
