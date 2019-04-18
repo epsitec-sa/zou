@@ -13,7 +13,7 @@ ZOUL_GIT_TAG=true
 tagger_name()  { git show $1 -q | grep Tagger: | sed -E 's,Tagger:s+(.*)s+<(.*)>,1,'; }
 tagger_email() { git show $1 -q | grep Tagger: | sed -E 's,Tagger:s+(.*)s+<(.*)>,2,'; }
 tag_date()     { git show $1 -q | grep Date: | sed -E 's,Date:s+(.*),1,' | head -n 1; }
-tag_comment()  { git tag -l -n1 $1 | sed -E 's,w+s+(.*),1,'; }
+tag_comment()  { git tag -l -n1 $1 | sed -E "s,^[^']+'([^']*).*$,\1,"; }
 
 tag_exists()         { git show-ref -s --verify "refs/tags/$1" &>/dev/null; }
 tag_is_lightweight() { [[ $(git rev-parse $1) == $(git rev-parse $1^{}) ]]; }
@@ -37,13 +37,14 @@ tag_push_not_followed()
 }
 tag_rename()
 {
-  local tag1=$1 tag2=$2 force=$3 tagOpt
+  local tag1=$1 tag2=$2 force=$3 tagOpts=()
+  [[ $tag1 == $tag2 ]] && return 0
   # force rename if tags point at same commit
-  { [[ $force == true ]] || { ref_exists $tag2 && ref_equals $tag1 $tag2; }; } && tagOpt='-f'
+  { [[ $force == true ]] || { ref_exists $tag2 && ref_equals $tag1 $tag2; }; } && tagOpts+=( '-f' )
 
   local tagger=$(tagger_name $tag1)
   if [[ -z "$tagger" ]]; then
-    git tag $tagOpt "$tag2" "$tag1^{}" \
+    io_buffered_eval "git tag ${tagOpts[@]} "$tag2" "$tag1^{}"" : DarkGray \
     && io_info "Renamed lightweight tag '$tag1' to '$tag2'" "$moduleTracePrefix" \
     || return $?
   else
@@ -51,7 +52,7 @@ tag_rename()
     GIT_COMMITTER_NAME="$tagger" \
     GIT_COMMITTER_EMAIL=$(tagger_email "$tag1") \
     GIT_COMMITTER_DATE=$(tag_date "$tag1") \
-    git tag $tagOpt -m "$message" "$tag2" "$tag1^{}" \
+    io_buffered_eval "git tag -m '$message' ${tagOpts[@]} "$tag2" "$tag1^{}"" : DarkGray \
     && io_info "Renamed annotated tag '$tag1' to '$tag2'" "$moduleTracePrefix" \
     || return $?
   fi
@@ -123,10 +124,15 @@ tag_move()
   if git_object_exists "$tag2"; then
     # io_trace "tag_move -- $(print_vars tag1 tag2 type2)"
     if tag_exists $tag2; then
-      # if ! ref_equals $tag1 $tag2; then
-      #   tag_rename "$tag2" "other/backup/$tag2"
-      # fi
-      tag_rename "$@"
+      if ref_equals $tag1 $tag2; then
+        tag_rename "$@"
+      elif [[ $force == true ]]; then
+        tag_rename "$tag2" "other/backup/$tag2"
+        tag_rename "$@"
+      else
+        io_warning "Unable to rename tag '$tag1': tag '$tag2' already exists"
+        return 1
+      fi
     else
       tag_move_to_commit "$@"
     fi
