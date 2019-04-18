@@ -213,12 +213,12 @@ version_add_file_spec()
     fi
   done
   git update-index --add -- "$moduleConfigFile" &>/dev/null && \
-  git commit -m "zou-flow: register '$@' for technical version update" -- "$moduleConfigFile" &>/dev/null
+  git commit -m "zou-flow: register '$(string_join ', ' $@)' for technical version update" -- "$moduleConfigFile" &>/dev/null
 }
 version_remove_file_spec()
 {
   git config --file "$moduleConfigFile" --unset update-version.$1 && \
-  git commit -m "zou-flow: unregister '$@' from technical version update" -- "$moduleConfigFile" &>/dev/null
+  git commit -m "zou-flow: unregister '$(string_join ', ' $@)' from technical version update" -- "$moduleConfigFile" &>/dev/null
 }
 
 version_list_version_props() { version_list_file_spec 'version-props'; }
