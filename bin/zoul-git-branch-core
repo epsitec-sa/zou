@@ -82,6 +82,7 @@ branch_current_root_branch()
 }
 branch_sync_info()
 {
+  # io_trace "branch_sync_info ${*@Q}"
   local patterns=() ref
   if [ $# -eq 0 ]; then
     patterns=( 'refs/heads' )
@@ -90,6 +91,7 @@ branch_sync_info()
       patterns+=( "refs/heads/$ref" )
     done
   fi
+  # io_trace "branch_sync_info -- $(print_vars patterns[@])"
   git for-each-ref --format="%(refname:short) %(upstream:short) %(upstream:trackshort)" "${patterns[@]}"
 }
 branch_list_local_tracked()
