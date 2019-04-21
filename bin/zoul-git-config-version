@@ -316,7 +316,6 @@ version_config_auto()
 {
   version_verify_context 'version_config_auto'
   git config --file "$moduleConfigFile" update-version.freezed && return 0
-  git config --file "$moduleConfigFile" update-version.freezed true
 
   local type specs file files=() IFS=$'\n'
   for type in "${!versionAutoSpecs[@]}"; do
@@ -330,6 +329,7 @@ version_config_auto()
   done
   if [ ${#files[@]} -gt 0 ]; then
     # io_trace "version_config_auto -- $(print_vars files[@])"
+    git config --file "$moduleConfigFile" update-version.freezed true
     git update-index --add -- "$moduleConfigFile" &>/dev/null \
     && git commit -m 'zou-flow: register version resources' -- "$moduleConfigFile" &>/dev/null
   fi
