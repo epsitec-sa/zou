@@ -51,14 +51,6 @@ _branch_oreset_visitor()
   local r=$1 l=$2 i=$3 current=$4
   # io_trace "_branch_reset_visitor 1 -- $(print_vars r l i current)"
 
-  if [[ $l == $current ]]; then
-    # prune tags asynchronously
-    (
-      # io_warning "Pruning tags" "$moduleTracePrefix"
-      git tag -d $(git tag -l) &>/dev/null
-      git fetch --tags &>/dev/null
-    ) &
-  fi
   [[ -z $r || $(git rev-parse "$l") == $(git rev-parse "$r") ]] && return 0
   # pull changes
   [[ $i =~ ^\< ]] && { _branch_sync_merge "$r" "$l" || return 1; }
@@ -66,7 +58,7 @@ _branch_oreset_visitor()
   if [[ $l == $current ]]; then
     # prune tags asynchronously
     (
-      io_warning "Pruning tags" "$moduleTracePrefix"
+      io_warning "Pruning tags..." "$moduleTracePrefix"
       git tag -d $(git tag -l) &>/dev/null
       git fetch --tags &>/dev/null
     ) &
@@ -140,11 +132,18 @@ branch_sync_all()
 }
 branch_oreset_all()
 {
+  local forceReset=$1; shift 1
+  
   git fetch --prune --all &>/dev/null
   git fetch --tags --force &>/dev/null
 
   branch_merge_abort
-  repo_require_clean_work_tree 'Cannot reset' || return 1
+  if [[ $forceReset == true ]]; then
+    git checkout . &>/dev/null
+    repo_list_untracked | xargs --no-run-if-empty rm
+  else
+   repo_require_clean_work_tree 'Cannot reset' || return 1
+  fi
 
   syncNoPush=true _branch_sync_visit _branch_oreset_visitor "$@"
 }
