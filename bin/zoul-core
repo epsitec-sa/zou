@@ -164,7 +164,7 @@ print_vars()
   for param in "$@"; do
     if [[ $param =~ \[@\]$ ]]; then
       array=( "${!param}" )
-      params+=( "${param%\[@\]}=(${array[@]})" )
+      params+=( "${param%\[@\]}=(${array[@]@Q})" )
     else
       params+=( "$param='${!param}'" )
     fi
