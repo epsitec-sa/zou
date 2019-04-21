@@ -385,6 +385,35 @@ ised()
   realpath "$file"
   return $ec
 }
+# Escape arguments for command line usage
+#
+# exemple:
+#   cl_escape 'a b c' 'x y' z
+#   -> a\ b\ c x\ y z
+cl_escape()
+{
+  local arg
+  for arg; do
+    printf '%q ' "$arg"
+  done
+}
+# Adapt file encoding for encoding agnostic commands.
+#
+# exemple:
+#   ieval "grep 'FILEVERSION'" resources.rc
+ieval()
+{
+  local command=$1 file=$2 fEncoding=$(get_file_encoding "$2")
+  # io_trace "ieval $(print_vars command file fEncoding)"
+
+  if [[ $fEncoding == $zou_lencoding || $fEncoding == 'us-ascii' || $fEncoding == 'utf-8' || $fEncoding == 'iso-8859-1' ]]; then
+    eval "$command "$(cl_escape "$file")""
+  else
+    iconv -f "$fEncoding" -t "$zou_lencoding" "$file" 2>/dev/null \
+    | eval "$command" \
+    | iconv -f "$zou_lencoding" -t "$fEncoding"
+    return ${PIPESTATUS[1]}
+  fi
 }
 
 # usage:
