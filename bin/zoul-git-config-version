@@ -9,8 +9,7 @@ ZOUL_GIT_CONFIG_VERSION=true
 
 version_parse()
 {
-  local version=$1
-  local varray=()
+  local version=$1 varray=()
   if [[ $version =~ ^(.*/)?v([0-9]+)\.([0-9]+)\.([0-9]+)(-[[:alnum:]]+)?(\+.+)?$ ]]; then
     echo ${BASH_REMATCH[0]} ${BASH_REMATCH[@]:2}  # skip prefix
   else
@@ -30,117 +29,147 @@ version_commit_files()
 }
 
 # Update Version tags in *.csproj file
+# Add yyww field, skip prerelease and meta
 #
 # Example:
-#   version_update_csproj_recursive v3.0.5-rc1
+#   version_update_csproj sku/sal/v1.2.3-rc1+meta
 #
 # *.csproj format:
-# <ApplicationVersion>2.38.2.1844</ApplicationVersion>
+# <ApplicationVersion>1.2.3.1926</ApplicationVersion>
 version_update_csproj()
 {
-  local file=$1; shift
-  local varray=$1; shift
-  local techver=$1; shift
-  local stechver=$1; shift
-  local script="\
+  local file=$1 stechver=$4 script="\
   0,/<ProductVersion>/{s,(<ProductVersion>).*(</ProductVersion>),\1$stechver\2,};\
   0,/<ApplicationVersion>/{s,(<ApplicationVersion>).*(</ApplicationVersion>),\1$stechver\2,}"
+
+  # io_trace "version_update_csproj -- $(print_vars file stechver)"
 
   ised "$file" "$script"
 }
 # Update Version tag in AssemblyInfo.cs file
+# Add yyww field, skip prerelease and meta
 #
 # Example:
-#   version_update_assembly_info_recursive v3.0.5-rc1
+#   version_update_assembly_info sku/sal/v1.2.3-rc1+meta
 #
 # AssemblyInfo.cs format:
-# [assembly: AssemblyVersion ("2.40.0.1849")]
-# [assembly: AssemblyFileVersion ("2.40.0.1849")]
+# [assembly: AssemblyVersion ("1.2.3.1926")]
+# [assembly: AssemblyFileVersion ("1.2.3.1926")]
 version_update_assembly_info()
 {
-  local file=$1; shift
-  local varray=$1; shift
-  local techver=$1; shift
-  local stechver=$1; shift
-  local script="\
-    s,^(\[assembly:[[:space:]]*AssemblyVersion[[:space:]]*\(\").*(\"\)\]),\1$stechver\2,;\
-    s,^(\[assembly:[[:space:]]*AssemblyFileVersion[[:space:]]*\(\").*(\"\)\]),\1$stechver\2,"
+  local file=$1 stechver=$4 script="\
+  s,^(\[assembly:[[:space:]]*AssemblyVersion[[:space:]]*\(\").*(\"\)\]),\1$stechver\2,;\
+  s,^(\[assembly:[[:space:]]*AssemblyFileVersion[[:space:]]*\(\").*(\"\)\]),\1$stechver\2,"
+
+  # io_trace "version_update_assembly_info -- $(print_vars file stechver)"
 
   ised "$file" "$script"
 }
 # Update Version tag in Version.props XML file
+# Add yyww field
 #
 # Example:
-#   version_update_version_props v3.0.5-rc1
+#   version_update_version_props sku/sal/v1.2.3-rc1+meta
 #
 # Version.props format:
-#   <Project>
-#     <PropertyGroup>
-#       <Version>3.0.5</Version>
-#     </PropertyGroup>
-#   </Project>
+# ...
+#       <Version>1.2.3.1926-rc1+meta</Version>
+# ...
 version_update_version_props()
 {
-  local file=$1; shift
-  local varray=$1; shift
-  local techver=$1; shift
-  local stechver=$1; shift
-  local script="\
+  local file=$1 techver=$3 script="\
   s,(<Version>).*(</Version>),\1$techver\2,;\
   s,(<AssemblyVersion>).*(</AssemblyVersion>),\1$techver\2,"
+
+  # io_trace "version_update_version_props -- $(print_vars file techver)"
 
   ised "$file" "$script"
 }
 # Update Version tag in package.json file
+# Add yyww field, skip prerelease and meta
 #
 # Example:
-#   version_update_package_json v3.0.5-rc1
+#   version_update_package_json sku/sal/v1.2.3-rc1+meta
 #
 # package.json format:
-# {
-#   "name": "cresus-bankin-gui",
-#   "version": "2.2.2",
-#   ...
+# ...
+#   "version": "1.2.3.1926",
+# ...
 version_update_package_json()
 {
-  local file=$1; shift
-  local varray=$1; shift
-  local techver=$1; shift
-  local stechver=$1; shift
-  local script="\
+  local file=$1 stechver=$4 script="\
   0,/^[[:blank:]]*\"version\"/{s/(^[[:blank:]]*\"version\":[[:blank:]]*\").*(\",)/\1$stechver\2/}"
+
+  # io_trace "version_update_package_json -- $(print_vars file stechver)"
 
   ised "$file" "$script"
 }
+# Update Version tag in C++ resource file
+# Add yyww field, skip prerelease and meta
+#
+# Example:
+#   version_update_rc sku/sal/v1.2.3-rc1+meta
+#
+# .rc format:
+# ...
+#  FILEVERSION 1,2,3,1926
+#  PRODUCTVERSION 1,2,3,1926
+# ...
+#             VALUE "FileVersion", "1.2.3.1926"
+#             VALUE "ProductVersion", "1.2.3.1926"
+# ...
 version_update_rc()
 {
-  local file=$1; shift
-  local varray=( ${!1} ); shift
-  local techver=$1; shift
-  local stechver=$1; shift
-
-  # local version=${varray[0]}
-  local major=${varray[1]}
-  local minor=${varray[2]}
-  local patch=${varray[3]}
-  # local prerelease=${varray[4]}
-  # local meta=${varray[5]}
-
-  local yyww=$(date +%y%V)
+  local file=$1 varray=( ${!2} ) major minor patch yyww=$(date +%y%V)
+  major=${varray[1]}
+  minor=${varray[2]}
+  patch=${varray[3]}
 
   local script="\
-  s/([[:blank:]]+FILEVERSION[[:blank:]]+).*$/\1$major,$minor,$patch,$yyww/;\
-  s/([[:blank:]]+PRODUCTVERSION[[:blank:]]+).*$/\1$major,$minor,$patch,$yyww/;\
-  s/([[:blank:]]+VALUE \"FileVersion\",[[:blank:]]+).*$/\1\"$major.$minor.$patch.$yyww\"/;\
-  s/([[:blank:]]+VALUE \"ProductVersion\",[[:blank:]]+).*$/\1\"$major.$minor.$patch.$yyww\"/"
+  s/([[:blank:]]+FILEVERSION[[:blank:]]+)[^a-zA-Z\"\\]+(.*)$/\1$major,$minor,$patch,$yyww\2/;\
+  s/([[:blank:]]+PRODUCTVERSION[[:blank:]]+)[^a-zA-Z\"\\]+(.*)$/\1$major,$minor,$patch,$yyww\2/;\
+  s/([[:blank:]]+VALUE \"FileVersion\",[[:blank:]]+\")[^a-zA-Z\"\\]+(.*)$/\1$major.$minor.$patch.$yyww\2/;\
+  s/([[:blank:]]+VALUE \"ProductVersion\",[[:blank:]]+\")[^a-zA-Z\"\\]+(.*)$/\1$major.$minor.$patch.$yyww\2/"
+
+  # io_trace "version_update_rc -- $(print_vars file varray[@] major minor patch yyww)"
+  
+  ised "$file" "$script"
+}
+# Update Version tag in C++ resource file
+# Shift patch right, skip prerelease and meta
+#
+# Example:
+#   version_update_rc sku/sal/v1.2.3-rc1+meta
+#
+# .rc format:
+# ...
+#  FILEVERSION 1,2,0,3
+#  PRODUCTVERSION 1,2,0,3
+# ...
+#             VALUE "FileVersion", "1.2.0.3"
+#             VALUE "ProductVersion", "1.2.0.3"
+# ...
+version_update_rc_mmop()
+{
+  # major.minor.0.patch
+  local file=$1 varray=( ${!2} ) major minor patch
+  major=${varray[1]}
+  minor=${varray[2]}
+  patch=${varray[3]}
+
+  local script="\
+  s/([[:blank:]]+FILEVERSION[[:blank:]]+)[^a-zA-Z\"\\]+(.*)$/\1$major,$minor,0,$patch\2/;\
+  s/([[:blank:]]+PRODUCTVERSION[[:blank:]]+)[^a-zA-Z\"\\]+(.*)$/\1$major,$minor,0,$patch\2/;\
+  s/([[:blank:]]+VALUE \"FileVersion\",[[:blank:]]+\")[^a-zA-Z\"\\]+(.*)$/\1$major.$minor.0,$patch\2/;\
+  s/([[:blank:]]+VALUE \"ProductVersion\",[[:blank:]]+\")[^a-zA-Z\"\\]+(.*)$/\1$major.$minor.0,$patch\2/"
+
+  # io_trace "version_update_rc_mmop -- $(print_vars file varray[@] major minor patch yyww)"
 
   ised "$file" "$script"
 }
 version_update_custom()
 {
-  local techver=$1; shift
-  local varray=( ${!1} ); shift
-  local updater="${1:-$PWD/update-version}"
+  local techver=$1 varray=( ${!2} ) updater="${1:-$PWD/update-version}"
   if [[ -f "$updater" ]]; then
     source "$updater" "${varray[@]}"
   else
@@ -198,7 +227,7 @@ EOF
 
 version_list_file_spec_all()
 {
-  git config --file "$moduleConfigFile" --get-regexp update-version
+  git config --file "$moduleConfigFile" --get-regexp update-version | grep -v 'freezed'
 }
 version_list_file_spec()
 {
@@ -206,7 +235,8 @@ version_list_file_spec()
 }
 version_add_file_spec()
 {
-  local file key=$1 specs=$(version_list_file_spec $1); shift
+  local key=$1 specs=$(version_list_file_spec $1) file
+  shift
   for file in "$@"; do
     if ! array_contains_element "$file" $specs; then
       git config --file "$moduleConfigFile" --add update-version.$key $file
@@ -221,68 +251,80 @@ version_remove_file_spec()
   git commit -m "zou-flow: unregister '$(string_join ', ' $@)' from technical version update" -- "$moduleConfigFile" &>/dev/null
 }
 
-version_list_version_props() { version_list_file_spec 'version-props'; }
-version_list_package_json()  { version_list_file_spec 'package-json'; }
-version_list_assembly_info() { version_list_file_spec 'assembly-info'; }
-version_list_csproj()        { version_list_file_spec 'csproj'; }
-version_list_rc()            { version_list_file_spec 'rc'; }
-
-version_add_version_props() { version_add_file_spec 'version-props' "$@"; }
-version_add_package_json()  { version_add_file_spec 'package-json' "$@"; }
-version_add_assembly_info() { version_add_file_spec 'assembly-info' "$@"; }
-version_add_csproj()        { version_add_file_spec 'csproj' "$@"; }
-version_add_rc()            { version_add_file_spec 'rc' "$@"; }
-
-version_remove_version_props() { version_remove_file_spec 'version-props' "$@"; }
-version_remove_package_json()  { version_remove_file_spec 'package-json' "$@"; }
-version_remove_assembly_info() { version_remove_file_spec 'assembly-info' "$@"; }
-version_remove_csproj()        { version_remove_file_spec 'csproj' "$@"; }
-version_remove_rc()            { version_remove_file_spec 'rc' "$@"; }
-
-version_update_file_spec()
+version_verify_context()
 {
-  local specs=$($1); shift
-  local func=$1; shift
-  local varray=$1; shift
-  local techver=$1; shift
-  local stechver=$1; shift
-  local fileSpec file hasSpec
-  for fileSpec in $specs; do
-    hasSpec=1
-    for file in $(find -type f -ipath "$fileSpec" "$@"); do
-      "version_update_$func" "$file" "$varray" "$techver" "$stechver"
-    done
-  done
-  return $hasSpec
+  if [[ -z $moduleConfigFile ]]; then
+    io_error "fatal: $1 should run in module scope context"
+    exit 1
+  fi
 }
-version_update_config()
-{
-  local func=$1; shift
-  version_update_file_spec "version_list_$func" "$func" "$@"
-}
-
 version_update()
 {
-  set -f
-  local varray=()
-  varray+=( $(version_parse "$1") )
-  [ $? -eq 0 ] && {
-    local techver=$(version_technical "${varray[@]}")
-    # io_trace "version_update ${*@Q} -- $(print_vars varray[@] techver)"
-    echo "$techver"
+  version_verify_context 'version_update'
+  local version=$1 varray techver stechver kv key value
+  varray=( $(version_parse "$1") ) || return 1
+  techver=$(version_technical "${varray[@]}")
+  local IFS=$'\n'
+  for kv in $(version_list_file_spec_all); do
+    kv=${kv#update-version.}
+    key=${kv%% *}; key=${key//-/_}
+    value=${kv#* }
+    io_trace "version_update -- $(print_vars key value)"
+    IFS=' ' "version_update_$key" "$value" 'varray[@]' "$techver" "$stechver"
+  done
+  # execute custom updater (use git config-version --custom to create one)
+  version_update_custom "$techver" 'varray[@]' './update-version'
+}
+version_list_resources()
+{
+  # skip directories beginning with a dot, modules and Mono folders
+  git ls-files "$@" | grep -vE -e '(^\.|/\.)[^/]+/' -e '^modules/' -e '^Mono/'
+}
+version_config_reset()
+{
+  version_verify_context 'version_config_reset'
+  [ -f "$moduleConfigFile" ] && git config --file "$moduleConfigFile" --remove-section update-version &>/dev/null
+}
+version_config_auto()
+{
+  version_verify_context 'version_config_auto'
+  git config --file "$moduleConfigFile" update-version.freezed && return 0
+  git config --file "$moduleConfigFile" update-version.freezed true
 
-    # execute .net zou-flow updaters
-    if [[ -f "$moduleConfigFile" ]]; then
-      local stechver=$(version_technical_short "${varray[@]}")
-      # exclude submodules from find file (-not -path './<sm-path>/*'] ...)
-      local findNotPaths=$(git config --file .gitmodules --get-regexp path | cut -d' ' -f2 | sed "s,\(.*\),-not -path \./\1/\*,")
-      version_update_config 'version_props' 'varray[@]' $techver $stechver $findNotPaths
-      version_update_config 'package_json'  'varray[@]' $techver $stechver $findNotPaths
-      version_update_config 'assembly_info' 'varray[@]' $techver $stechver $findNotPaths
-      version_update_config 'csproj'        'varray[@]' $techver $stechver $findNotPaths
+  local file files=() IFS=$'\n'
+  for file in $(version_list_resources 'Version.props' '*/Version.props'); do
+    if ieval "grep -qE '(<Version>|<AssemblyVersion>)'" "$file"; then
+      git config --file "$moduleConfigFile" --add update-version.version-props "$file"
+      files+=( "$file" )
     fi
-    # execute custom updater (use git config-version --custom to create one)
-    version_update_custom $techver 'varray[@]' './update-version'
-  }
-  set +f
+  done
+  for file in $(version_list_resources '*AssemblyInfo*.cs'); do
+    if ieval "grep -qE '\[assembly:[[:blank:]]*(AssemblyVersion|AssemblyFileVersion)'" "$file"; then
+      git config --file "$moduleConfigFile" --add update-version.assembly-info "$file"
+      files+=( "$file" )
+    fi
+  done
+  for file in $(version_list_resources '*.csproj'); do
+    if ieval "grep -qE '(<ProductVersion>|<ApplicationVersion>)'" "$file"; then
+      git config --file "$moduleConfigFile" --add update-version.csproj "$file"
+      files+=( "$file" )
+    fi
+  done
+  for file in $(version_list_resources 'package.json' '*/package.json'); do
+    if ieval "grep -qE '\"version\":[[:blank:]]*\"[0-9]'" "$file"; then
+      git config --file "$moduleConfigFile" --add update-version.package-json "$file"
+      files+=( "$file" )
+    fi
+  done
+  for file in $(version_list_resources '*.rc'); do
+    if ieval "grep -qE '(FILEVERSION[[:blank:]]+[0-9]|\"FileVersion\",[[:blank:]]*\"[0-9])'" "$file"; then
+      git config --file "$moduleConfigFile" --add update-version.rc "$file"
+      files+=( "$file" )
+    fi
+  done
+  if [ ${#files[@]} -gt 0 ]; then
+    # io_trace "version_config_auto -- $(print_vars files[@])"
+    git update-index --add -- "$moduleConfigFile" &>/dev/null \
+    && git commit -m 'zou-flow: register version resources' -- "$moduleConfigFile" &>/dev/null
+  fi
 }

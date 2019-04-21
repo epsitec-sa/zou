@@ -16,78 +16,96 @@ cver_parse()
     --ai=*|--assembly-info=*) assemblyInfo+=("${1#*=}");;
     --cs=*|--csproj=*)        csProj+=("${1#*=}");;
     --rc=*)                   rc+=("${1#*=}");;
-    --pj|--package-json)      packageJson+=('./package.json');;
-    --vp|--version-props)     versionProps+=('./Version.props');;
-    --ai|--assembly-info)     assemblyInfo+=('*/AssemblyInfo*.cs');;
-    --cs|--csproj)            csProj+=('*/*.csproj');;
-    --rc)                     rc+=('*/*.rc');;
+    --rc-mmop=*)              rcMmop+=("${1#*=}");;
+    --pj|--package-json)      packageJson+=('package.json');;
+    --vp|--version-props)     versionProps+=('Version.props');;
+    --ai|--assembly-info)     assemblyInfo+=('*AssemblyInfo*.cs');;
+    --cs|--csproj)            csProj+=('*.csproj');;
+    --rc)                     rc+=('*.rc');;
+    --rc-mmop)                rcMmop+=('*.rc');;
     --custom)                 customDir='.';;
     --no-edit)                noEdit=true;;
     --remove)                 action='remove';;
+    --auto)                   autoConfigVersion=true;;
+    --reset)                  resetConfigVersion=true;;
     -*)                       forOpts+=($1);;
   esac; shift; done
 }
 cver_run()
 {
   local recursive forOpts=() \
-        versionProps=() assemblyInfo=() csProj=() rc=() packageJson=() \
-        customDir noEdit action='add'
+        versionProps=() assemblyInfo=() csProj=() rc=() rcMmop=() packageJson=() \
+        customDir noEdit action='add' \
+        autoConfigVersion resetConfigVersion
+
   cver_parse "$@" || return $?
 
   if [[ $recursive = true ]]; then
-    . git-for "${forOpts[@]}" -- 'cver_list'
+    . git-for "${forOpts[@]}" -- 'cver_main'
   else
     module_run cver_main
   fi
 }
-cver_list()
-{
-  local spec key value message IFS=$'\n'
-  for spec in $(version_list_file_spec_all); do
-    key=${spec% *}
-    key=${key#update-version.}
-    value=${spec#* }
-    key=$(string_pad_left 13 $key)
-    message="${LightCyan}${key}${NC} = ${Green}$value${NC}"
-    io_message "$message" "$moduleTracePrefix"
-  done
-  if [ -f update-version ]; then
-    message="${LightCyan}$(string_pad_left 13 custom)${NC} = ${Brown}./update-version${NC}"
-    io_message "$message" "$moduleTracePrefix"
-  fi
-}
 cver_main()
 {
-  if [ ${#versionProps[@]} -ne 0 ]; then
-    version_${action}_version_props "${versionProps[@]}"
+  if [[ $resetConfigVersion == true ]]; then
+    version_config_reset
   fi
-  if [ ${#assemblyInfo[@]} -ne 0 ]; then
-    version_${action}_assembly_info "${assemblyInfo[@]}"
-  fi
-  if [ ${#csProj[@]} -ne 0 ]; then
-    version_${action}_csproj "${csProj[@]}"
-  fi
-  if [ ${#rc[@]} -ne 0 ]; then
-    version_${action}_rc "${rc[@]}"
-  fi
-  if [ ${#packageJson[@]} -ne 0 ]; then
-    version_${action}_package_json "${packageJson[@]}"
-  fi
+  if [[ $autoConfigVersion == true ]]; then
+    version_config_auto
+  elif [[ $recursive != true ]]; then
+    if [ ${#versionProps[@]} -ne 0 ]; then
+      version_${action}_file_spec 'version-props' "${versionProps[@]}"
+    fi
+    if [ ${#assemblyInfo[@]} -ne 0 ]; then
+      version_${action}_file_spec 'assembly-info' "${assemblyInfo[@]}"
+    fi
+    if [ ${#csProj[@]} -ne 0 ]; then
+      version_${action}_file_spec 'csproj' "${csProj[@]}"
+    fi
+    if [ ${#rc[@]} -ne 0 ]; then
+      version_${action}_file_spec 'rc' "${rc[@]}"
+    fi
+    if [ ${#rcMmop[@]} -ne 0 ]; then
+      version_${action}_file_spec 'rc-mmop' "${rc[@]}"
+    fi
+    if [ ${#packageJson[@]} -ne 0 ]; then
+      version_${action}_file_spec 'package-json' "${packageJson[@]}"
+    fi
 
-  if [[ -n $customDir ]]; then
-    local customFile=$(version_create_custom "$customDir")
-    if [[ -n $customFile ]]; then
-      local command=$(git config core.editor)
-      if [[ $noEdit == true ]]; then
-        io_info    "Modify the version updater script with the following command" "$moduleTracePrefix"
-        io_message "  $command '$customFile'" "$moduleTracePrefix" Gray
-      else
-        eval "$command '$customFile'"
+    if [[ -n $customDir ]]; then
+      local customFile=$(version_create_custom "$customDir")
+      if [[ -n $customFile ]]; then
+        local command=$(git config core.editor)
+        if [[ $noEdit == true ]]; then
+          io_info    "Modify the version updater script with the following command" "$moduleTracePrefix"
+          io_message "  $command '$customFile'" "$moduleTracePrefix" Gray
+        else
+          eval "$command '$customFile'"
+        fi
       fi
     fi
   fi
 
   cver_list
+}
+cver_list()
+{
+  local spec key value message IFS=$'\n'
+  io_lock_enter
+  for spec in $(version_list_file_spec_all); do
+    key=${spec%% *}
+    key=${key#update-version.}
+    value=${spec#* }
+    key=$(string_pad_left 13 $key)
+    message="${LightCyan}${key}${NC} = ${Green}$value${NC}"
+    io_message_unsafe "$message" "$moduleTracePrefix"
+  done
+  if [ -f update-version ]; then
+    message="${LightCyan}$(string_pad_left 13 custom)${NC} = ${Brown}update-version${NC}"
+    io_message_unsafe "$message" "$moduleTracePrefix"
+  fi
+  io_lock_exit
 }
 
 cver_run "$@"

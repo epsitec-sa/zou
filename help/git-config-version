@@ -2,21 +2,25 @@ usage: git config-version --recursive
    or: git config-version [<options>] --remove
 
  Add or remove version configuration options.
+ Files to update are retrieved with 'git ls-files'
 
     -h|--help                       display help
     -r|--recursive                  traverse submodules recursively
-    --vp|--version-props[=FILE]     Use Version.props style files (default to './Version.props').
-    --pj|--package-json[=FILE]      Use package.json style files (default to './package.json').
-    --ai|--assembly-info[=FILE]     Use AssemblyInfo.cs style files (default to '*/AssemblyInfo*.cs').
-    --cs|--csproj[=FILE]            Use .NET Framework C# project style files (default to '*/*.cspro').
-    --rc[=FILE]                     Use C++ resource files (default to '*/*.rc').
+    --vp|--version-props[=FILE]     Use Version.props style files (default to 'Version.props').
+    --ai|--assembly-info[=FILE]     Use AssemblyInfo.cs style files (default to '*AssemblyInfo*.cs').
+    --pj|--package-json[=FILE]      Use package.json style files (default to 'package.json').
+    --cs|--csproj[=FILE]            Use .NET Framework C# project style files (default to '*.csproj').
+    --rc[=FILE]                     Use C++ resource files (default to '*.rc') with major.minor.patch.yyww format.
+    --rc-mmop[=FILE]                Use C++ resource files (default to '*.rc') with major.minor.0.patch format.
     --custom                        Add a custom version updater template file (update-version).
     --no-edit                       Do not edit custom version updater
     --remove                        Remove specified option
+    --auto                          Register all resource files automatically
+    --reset                         Unregister all resource files
     
 example:
     git config-version                          # display file specs
     git config-version -r                       # display file specs recursively
-    git config-version --vp                     # add 'update_version.version-props = ./Version.props'
-    git config-version --vp --remove            # remove 'update_version.version-props' key
-    git config-version --ai='./AssemblyInfo.cs' # add 'update_version.assembly-info = ./AssemblyInfo.cs'
+    git config-version --vp                     # register all 'Version.props' files for update
+    git config-version --vp --remove            # unregister all version-props style files from update
+    git config-version --ai=AssemblyInfo.cs     # register 'AssemblyInfo.cs' for update
