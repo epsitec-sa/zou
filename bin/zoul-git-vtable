@@ -96,20 +96,13 @@ vtable_update()
       && git commit -m "zou-flow: update version table" -- "$file" &>/dev/null
     fi
   else
-    local IFS=$'\n'
-
-    # deserialize lookup
-    lock_enter "$lookupGate"
-    . "$lookupPath"
-    lock_exit "$lookupGate"
-
-    # add vtable row
+    # create vtable row
     local value=$(vtable_row "$moduleId" true)
-    lookup[$moduleId]="$value"
 
-    # serialize lookup
     lock_enter "$lookupGate"
-    declare -p lookup >"$lookupPath"
+    . "$lookupPath"                   # deserialize
+    lookup[$moduleId]="$value"        # modify
+    declare -p lookup >"$lookupPath"  # serialize
     lock_exit "$lookupGate"
   fi
 }
