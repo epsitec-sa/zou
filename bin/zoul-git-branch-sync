@@ -71,12 +71,14 @@ _branch_oreset_visitor()
 }
 _branch_sync_visit() 
 {
-  local visitor=$1 current=$moduleBranch color l r i; shift 1
+  local visitor=$1 fixTracking=$2 current=$moduleBranch color l r i; shift 2
   [[ -z $current ]] && current=$(branch_current)
 
-  while read l r i; do
-    [[ -z $i ]] && _branch_sync_fix_tracking
-  done < <(branch_sync_info "$@")
+  if [[ $fixTracking == true ]]; then
+    while read l r i; do
+      [[ -z $i ]] && _branch_sync_fix_tracking
+    done < <(branch_sync_info "$@")
+  fi
 
   while read l r i; do
     [[ $l == $current ]] && linfo="* $l"
@@ -128,7 +130,7 @@ branch_sync_all()
   branch_merge_abort
   repo_require_clean_work_tree 'Cannot synchronize' || return 1
 
-  _branch_sync_visit _branch_sync_visitor "$@"
+  _branch_sync_visit _branch_sync_visitor true "$@"
 }
 branch_oreset_all()
 {
@@ -145,5 +147,5 @@ branch_oreset_all()
    repo_require_clean_work_tree 'Cannot reset' || return 1
   fi
 
-  syncNoPush=true _branch_sync_visit _branch_oreset_visitor "$@"
+  syncNoPush=true _branch_sync_visit _branch_oreset_visitor false "$@"
 }
