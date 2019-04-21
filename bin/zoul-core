@@ -356,37 +356,35 @@ get_file_encoding()
 {
   local info=$(file -i $1)
   info="${info##*=}"
-  echo "${info^^}"
+  info="${info,,}"
+  [[ $info == 'unknown-8bit' ]] && info='utf-8'
+  echo $info
 }
 _locale_encoding()
 {
   local info=$(locale | grep -0 'LANG=')
   info="${info##*.}"
-  echo "${info^^}"
+  echo "${info,,}"
 }
 
 zou_lencoding="$(_locale_encoding)"
 
 ised()
 {
-  local file=$1
-  local script=$2
-  local fEncoding=$(get_file_encoding $file)
+  local file=$1 script=$2 fEncoding=$(get_file_encoding "$1") ec=0
 
-  if [[ $fEncoding == $zou_lencoding ]]; then
-    sed -i -E "$script" "$file"
+  if [[ $fEncoding == $zou_lencoding || $fEncoding == 'us-ascii' || $fEncoding == 'utf-8' || $fEncoding == 'iso-8859-1' ]]; then
+    sed -b -E -i "$script" "$file"
   else
-    local tmp="$file.zou"
-    if iconv -t "$zou_lencoding" "$file" 2>/dev/null >"$tmp"; then
-      sed -i -E "$script" "$tmp"
-      iconv -t "$fEncoding" "$tmp" >"$file"
-    else
-      sed -i -E "$script" "$file"
-    fi
-    rm --force "$tmp"
+    iconv -f "$fEncoding" -t "$zou_lencoding" "$file" 2>/dev/null \
+    | sed -b -E "$script" \
+    | iconv -f "$zou_lencoding" -t "$fEncoding" >"$file"
+    ec=${PIPESTATUS[0]}
   fi
   
   realpath "$file"
+  return $ec
+}
 }
 
 # usage:
