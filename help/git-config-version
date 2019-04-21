@@ -1,26 +1,27 @@
-usage: git config-version --recursive
-   or: git config-version [<options>] --remove
+usage: git config-version [<options>]
 
- Add or remove version configuration options.
- Files to update are retrieved with 'git ls-files'
+ Register, unregister or display resources subject to version update.
+ Resources are retrieved with the 'git ls-files' command (POSIX style regexp).
 
     -h|--help                       display help
     -r|--recursive                  traverse submodules recursively
-    --vp|--version-props[=FILE]     Use Version.props style files (default to 'Version.props').
-    --ai|--assembly-info[=FILE]     Use AssemblyInfo.cs style files (default to '*AssemblyInfo*.cs').
-    --pj|--package-json[=FILE]      Use package.json style files (default to 'package.json').
-    --cs|--csproj[=FILE]            Use .NET Framework C# project style files (default to '*.csproj').
-    --rc[=FILE]                     Use C++ resource files (default to '*.rc') with major.minor.patch.yyww format.
-    --rc-mmop[=FILE]                Use C++ resource files (default to '*.rc') with major.minor.0.patch format.
-    --custom                        Add a custom version updater template file (update-version).
-    --no-edit                       Do not edit custom version updater
-    --remove                        Remove specified option
-    --auto                          Register all resource files automatically
-    --reset                         Unregister all resource files
+    --vp|--version-props[=FILE]     register Version.props style files (default to 'Version.props' and '*/Version.props').
+    --ai|--assembly-info[=FILE]     register AssemblyInfo.cs style files (default to '*AssemblyInfo*.cs').
+    --pj|--package-json[=FILE]      register package.json style files (default to 'package.json'and '*/package.json').
+    --cs|--csproj[=FILE]            register .NET Framework C# project style files (default to '*.csproj').
+    --rc-mmop[=FILE]                register C++ resource files (default to '*.rc') with major.minor.0.patch format.
+    --rc[=FILE]                     register C++ resource files (default to '*.rc') with major.minor.patch.yyww format.
+    --custom                        add a custom version updater template file (update-version).
+    --no-edit                       do not edit custom version updater (default starts an editor)
+    --remove                        unregister specific resources (default registers resources)
+    --auto                          register all resource files automatically
+    --reset                         unregister all resource files
     
 example:
-    git config-version                          # display file specs
-    git config-version -r                       # display file specs recursively
-    git config-version --vp                     # register all 'Version.props' files for update
-    git config-version --vp --remove            # unregister all version-props style files from update
-    git config-version --ai=AssemblyInfo.cs     # register 'AssemblyInfo.cs' for update
+    git config-version                          # display registered resources
+    git config-version -r                       # display registered resources recursively
+    git config-version -r --reset --auto        # reset and register all resources types recursively
+    git config-version --reset --auto           # reset and register all resources types
+    git config-version --vp                     # register Version.props style files
+    git config-version --vp --remove            # unregister Version.props style files
+    git config-version --ai=AssemblyInfo.cs     # register 'AssemblyInfo.cs' file

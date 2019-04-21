@@ -17,8 +17,8 @@ cver_parse()
     --cs=*|--csproj=*)        csProj+=("${1#*=}");;
     --rc=*)                   rc+=("${1#*=}");;
     --rc-mmop=*)              rcMmop+=("${1#*=}");;
-    --pj|--package-json)      packageJson+=('package.json');;
-    --vp|--version-props)     versionProps+=('Version.props');;
+    --pj|--package-json)      packageJson+=('package.json''*/package.json');;
+    --vp|--version-props)     versionProps+=('Version.props' '*/Version.props');;
     --ai|--assembly-info)     assemblyInfo+=('*AssemblyInfo*.cs');;
     --cs|--csproj)            csProj+=('*.csproj');;
     --rc)                     rc+=('*.rc');;
@@ -93,7 +93,7 @@ cver_list()
 {
   local spec key value message IFS=$'\n'
   io_lock_enter
-  for spec in $(version_list_file_spec_all); do
+  for spec in $(version_list_all_files); do
     key=${spec%% *}
     key=${key#update-version.}
     value=${spec#* }

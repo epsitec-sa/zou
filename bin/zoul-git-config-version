@@ -58,8 +58,8 @@ version_update_csproj()
 version_update_assembly_info()
 {
   local file=$1 stechver=$4 script="\
-  s,^(\[assembly:[[:space:]]*AssemblyVersion[[:space:]]*\(\").*(\"\)\]),\1$stechver\2,;\
-  s,^(\[assembly:[[:space:]]*AssemblyFileVersion[[:space:]]*\(\").*(\"\)\]),\1$stechver\2,"
+  s,^(\[assembly:[[:blank:]]*AssemblyVersion[[:blank:]]*\(\").*(\"\)\]),\1$stechver\2,;\
+  s,^(\[assembly:[[:blank:]]*AssemblyFileVersion[[:blank:]]*\(\").*(\"\)\]),\1$stechver\2,"
 
   # io_trace "version_update_assembly_info -- $(print_vars file stechver)"
 
@@ -169,7 +169,7 @@ version_update_rc_mmop()
 }
 version_update_custom()
 {
-  local techver=$1 varray=( ${!2} ) updater="${1:-$PWD/update-version}"
+  local techver=$1 varray=( ${!2} ) updater="${3:-$PWD/update-version}"
   if [[ -f "$updater" ]]; then
     source "$updater" "${varray[@]}"
   else
@@ -225,30 +225,41 @@ EOF
   }
 }
 
-version_list_file_spec_all()
+version_list_all_files()
 {
   git config --file "$moduleConfigFile" --get-regexp update-version | grep -v 'freezed'
 }
-version_list_file_spec()
+version_list_files_of_type()
 {
   git config --file "$moduleConfigFile" --get-all update-version.$1
 }
 version_add_file_spec()
 {
-  local key=$1 specs=$(version_list_file_spec $1) file
+  local type=$1 files=$(version_list_files_of_type $1) spec file
   shift
-  for file in "$@"; do
-    if ! array_contains_element "$file" $specs; then
-      git config --file "$moduleConfigFile" --add update-version.$key $file
-    fi
+  git config --file "$moduleConfigFile" update-version.freezed true
+  for spec in "$@"; do
+    for file in $(version_list_resources "$spec"); do
+      if ! array_contains_element "$file" $files; then
+        if ieval "grep -qE '${versionFilters[$type]}'" "$file"; then
+          git config --file "$moduleConfigFile" --add update-version.$type "$file"
+        fi
+      fi
+    done
   done
   git update-index --add -- "$moduleConfigFile" &>/dev/null && \
-  git commit -m "zou-flow: register '$(string_join ', ' $@)' for technical version update" -- "$moduleConfigFile" &>/dev/null
+  git commit -m "zou-flow: register version resources" -- "$moduleConfigFile" &>/dev/null
 }
 version_remove_file_spec()
 {
-  git config --file "$moduleConfigFile" --unset update-version.$1 && \
-  git commit -m "zou-flow: unregister '$(string_join ', ' $@)' from technical version update" -- "$moduleConfigFile" &>/dev/null
+  local type=$1 spec file
+  shift
+  for spec in "$@"; do
+    for file in $(version_list_resources "$spec"); do
+      git config --file "$moduleConfigFile" --unset update-version.$type $file
+    done
+  done
+  git commit -m "zou-flow: unregister version resources" -- "$moduleConfigFile" &>/dev/null
 }
 
 version_verify_context()
@@ -264,14 +275,14 @@ version_update()
   local version=$1 varray techver stechver kv key value IFS=' '
   varray=( $(version_parse "$1") ) || return 1
   techver=$(version_technical "${varray[@]}")
+  stechver=$(version_technical_short "${varray[@]}")
   IFS=$'\n'
-  for kv in $(version_list_file_spec_all); do
-    IFS=' '
+  for kv in $(version_list_all_files); do
     kv=${kv#update-version.}
     key=${kv%% *}; key=${key//-/_}
     value=${kv#* }
     # io_trace "version_update -- $(print_vars key value varray[@] techVer)"
-    "version_update_$key" "$value" 'varray[@]' "$techver" "$stechver"
+    IFS=' ' "version_update_$key" "$value" 'varray[@]' "$techver" "$stechver"
   done
   # execute custom updater (use git config-version --custom to create one)
   version_update_custom "$techver" 'varray[@]' './update-version'
@@ -286,42 +297,36 @@ version_config_reset()
   version_verify_context 'version_config_reset'
   [ -f "$moduleConfigFile" ] && git config --file "$moduleConfigFile" --remove-section update-version &>/dev/null
 }
+declare -A versionFilters=( \
+  [version-props]='(<Version>|<AssemblyVersion>)' \
+  [assembly-info]='\[assembly:[[:blank:]]*(AssemblyVersion|AssemblyFileVersion)' \
+  [csproj]='(<ProductVersion>|<ApplicationVersion>)' \
+  [package-json]='\"version\":[[:blank:]]*\"[0-9]' \
+  [rc]='(FILEVERSION[[:blank:]]+[0-9]|\"FileVersion\",[[:blank:]]*\"[0-9])' \
+  [rc-mmop]='(FILEVERSION[[:blank:]]+[0-9]|\"FileVersion\",[[:blank:]]*\"[0-9])' \
+)
+declare -A versionAutoSpecs=( \
+  [version-props]='Version.props:*/Version.props' \
+  [assembly-info]='*AssemblyInfo*.cs' \
+  [csproj]='*.csproj' \
+  [package-json]='package.json:*/package.json' \
+  [rc]='*.rc' \
+)
 version_config_auto()
 {
   version_verify_context 'version_config_auto'
   git config --file "$moduleConfigFile" update-version.freezed && return 0
   git config --file "$moduleConfigFile" update-version.freezed true
 
-  local file files=() IFS=$'\n'
-  for file in $(version_list_resources 'Version.props' '*/Version.props'); do
-    if ieval "grep -qE '(<Version>|<AssemblyVersion>)'" "$file"; then
-      git config --file "$moduleConfigFile" --add update-version.version-props "$file"
-      files+=( "$file" )
-    fi
-  done
-  for file in $(version_list_resources '*AssemblyInfo*.cs'); do
-    if ieval "grep -qE '\[assembly:[[:blank:]]*(AssemblyVersion|AssemblyFileVersion)'" "$file"; then
-      git config --file "$moduleConfigFile" --add update-version.assembly-info "$file"
-      files+=( "$file" )
-    fi
-  done
-  for file in $(version_list_resources '*.csproj'); do
-    if ieval "grep -qE '(<ProductVersion>|<ApplicationVersion>)'" "$file"; then
-      git config --file "$moduleConfigFile" --add update-version.csproj "$file"
-      files+=( "$file" )
-    fi
-  done
-  for file in $(version_list_resources 'package.json' '*/package.json'); do
-    if ieval "grep -qE '\"version\":[[:blank:]]*\"[0-9]'" "$file"; then
-      git config --file "$moduleConfigFile" --add update-version.package-json "$file"
-      files+=( "$file" )
-    fi
-  done
-  for file in $(version_list_resources '*.rc'); do
-    if ieval "grep -qE '(FILEVERSION[[:blank:]]+[0-9]|\"FileVersion\",[[:blank:]]*\"[0-9])'" "$file"; then
-      git config --file "$moduleConfigFile" --add update-version.rc "$file"
-      files+=( "$file" )
-    fi
+  local type specs file files=() IFS=$'\n'
+  for type in "${!versionAutoSpecs[@]}"; do
+    IFS=':' specs=( ${versionAutoSpecs[$type]} )
+    for file in $(version_list_resources "${specs[@]}"); do
+      if ieval "grep -qE '${versionFilters[$type]}'" "$file"; then
+        git config --file "$moduleConfigFile" --add update-version.$type "$file"
+        files+=( "$file" )
+      fi
+    done
   done
   if [ ${#files[@]} -gt 0 ]; then
     # io_trace "version_config_auto -- $(print_vars files[@])"
