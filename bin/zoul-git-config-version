@@ -261,16 +261,17 @@ version_verify_context()
 version_update()
 {
   version_verify_context 'version_update'
-  local version=$1 varray techver stechver kv key value
+  local version=$1 varray techver stechver kv key value IFS=' '
   varray=( $(version_parse "$1") ) || return 1
   techver=$(version_technical "${varray[@]}")
-  local IFS=$'\n'
+  IFS=$'\n'
   for kv in $(version_list_file_spec_all); do
+    IFS=' '
     kv=${kv#update-version.}
     key=${kv%% *}; key=${key//-/_}
     value=${kv#* }
-    io_trace "version_update -- $(print_vars key value)"
-    IFS=' ' "version_update_$key" "$value" 'varray[@]' "$techver" "$stechver"
+    # io_trace "version_update -- $(print_vars key value varray[@] techVer)"
+    "version_update_$key" "$value" 'varray[@]' "$techver" "$stechver"
   done
   # execute custom updater (use git config-version --custom to create one)
   version_update_custom "$techver" 'varray[@]' './update-version'
