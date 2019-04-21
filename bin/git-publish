@@ -307,11 +307,13 @@ publish_commit_vtable()
   local commit=true
   [[ $dryRun == true ]] && commit=false
   if vtable_update "$startupRoot" "$moduleId" "$vtableLookupPath" "$vtableGate" $commit; then
-    if [[ $commit == true ]]; then
+    if [[ $dryRun == true ]]; then
+      io_message "Created version table for ${Brown}$lbranch${DarkGray} at ${Brown}$vnext" "$moduleTracePrefix" DarkGray
+    else
       branch_merge_sync $lbranch $vbranch
       tag_move "$vnext" "$lbranch" &>/dev/null
+      io_success "Created version table for ${Brown}$lbranch${Green} at ${Brown}$vnext" "$moduleTracePrefix"
     fi
-    io_success "Created version table for ${Brown}$lbranch${Green} at ${Brown}$vnext" "$moduleTracePrefix"
   fi
 }
 

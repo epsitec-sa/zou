@@ -141,11 +141,14 @@ branch_set_publish()
 }
 _branch_set_publish_epilog()
 {
-  # io_trace "_branch_publish_commit_and_merge ${*@Q}"
-  local updater=$1 vcommit
+  # io_trace "_branch_set_publish_epilog ${*@Q}"
+  local updater=$1 vresources=()
   # update technical version - modify resources files
-  [[ -n $updater ]] && vcommit=( $($updater $vnext) ) || vcommit=($vnext)
+  if [[ -n $updater ]]; then
+    IFS=$'\n' vresources=( $($updater $vnext) )
+  fi
+  # io_trace "_branch_set_publish_epilog -- $(print_vars updater vresources[@])"
   # commit resources and clean submodules in dev branch
-  version_commit_files "${vcommit[@]}" $(repo_list_unstaged_clean_submodules)
+  version_commit_files "$vnext" "${vresources[@]}" $(repo_list_unstaged_clean_submodules)
   branch_merge_sync $lbranch $vbranch '-Xtheirs'
 }
