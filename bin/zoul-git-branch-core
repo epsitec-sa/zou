@@ -16,10 +16,10 @@ ZOUL_GIT_BRANCH_CORE=true
 
 branchChangedEvent=()
 branch_raise_branch_changed_event() { local handler; for handler in "${branchChangedEvent[@]}"; do $handler "$@"; done; }
-# out:
-# 0 -- success
-#   upstream -- upstream branch (event if local branch has been deleted)
-# 1 -- failure
+# in:
+#  lbranch=$1 -- local branch name
+# std-out:
+#  rbranch    -- remote branch (even if lbranch does not exist)
 branch_upstream()
 {
   git rev-parse --abbrev-ref $1@{upstream} 2>/dev/null && return 0
@@ -27,6 +27,29 @@ branch_upstream()
   for remote in $(git remote); do
     branch_is_remote "$remote/$1" && { echo "$remote/$1"; return 0; }
   done
+  return 1
+}
+# Determine remote branch name
+#
+# usage:
+#  local rbranch
+#  branch_set_upstream LBRANCH
+# in:
+#  lbranch=$1 -- local branch name
+# var-out:
+#  rbranch    -- remote branch (even if lbranch does not exist)
+branch_set_upstream()
+{
+  rbranch=$(git rev-parse --abbrev-ref $1@{upstream} 2>/dev/null)
+  [ $? -eq 0 ] && return 0
+  local remote
+  for remote in $(git remote); do
+    if branch_is_remote "$remote/$1"; then
+      rbranch="$remote/$1"
+      return 0
+    fi
+  done
+  unset rbranch
   return 1
 }
 branch_exists()
@@ -220,6 +243,49 @@ branch_realize()
     return 1
   fi
 }
+# Check if a given branch name exists and convert it to its remote counterpart if it does not exist
+#
+# usage:
+#   local branch lbranch bref
+#   branch_set_realize BRANCH
+# in:
+#   ref=$1    -- local or remote branch ref
+# var-out:
+#   branch    -- local branch name (0) if it exists || remote branch name (1) if it exists || empty (2) 
+#   lbranch   -- local branch name (even if it does not exist)
+#   bref      -- branch reference (refs/heads/$lbranch || refs/remotes/$branch)
+# return:
+#   0 -- branch is local
+#   1 -- branch is remote
+#   2 -- branch does not exists
+branch_set_realize()
+{
+  unset branch lbranch bref
+  local ref=${1:-HEAD}
+  if [[ $ref == 'HEAD' ]]; then
+    ref=$(git symbolic-ref --short HEAD 2>/dev/null)
+    [ $? -ne 0 ] && return 2
+  fi
+  if branch_is_local "$ref"; then
+    branch=$ref
+    lbranch=$branch
+    bref="refs/heads/$branch"
+    return 0
+  elif branch_is_remote "$ref"; then
+    branch=$ref
+    lbranch=${branch#*/}
+    bref="refs/remotes/$branch"
+    return 1
+  else
+    local rbranch
+    branch_set_upstream "$ref"
+    [ $? -ne 0 ] && return 2
+    branch=$rbranch
+    lbranch=${branch#*/}
+    bref="refs/remotes/$branch"
+    return 1
+  fi
+}
 
 branch_without_remote_prefix() { branch_is_remote $1 && echo ${1#*/} || echo $1; }
 
@@ -371,7 +437,7 @@ branch_io_message_unsafe()
   fi
   io_message_unsafe "$message" "$moduleTracePrefix" "$color"
 }
-branch_set_upstream()
+branch_ensure_remote()
 {
   local branch=$1 remote=${2:-origin}
   branch_upstream "$branch" >/dev/null && return 0

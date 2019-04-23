@@ -67,15 +67,16 @@ _branch_merge_ff()
 {
   # merge 'toMerge' (invariant) into 'intoBranch' < 'toMerge'
   # 'intoBranch' should be a local branch with a symbolic name
-  local hashToMerge hashMergeInto intoRef ec=0
-
-  local obranch=$intoBranch
-  intoBranch=$(branch_realize "$intoBranch") || ec=$?
-  case $ec in
-  0) intoRef="refs/heads/$intoBranch"; intoBranchName=$intoBranch;;
-  1) intoRef="refs/remotes/$intoBranch"; intoBranchName=${intoBranch#*/}; needCheckout=true;;
-  *) io_error "Invalid branch name '$obranch' (error code = $ec)" "$moduleTracePrefix"; return 128;;
-  esac
+  local hashToMerge hashMergeInto intoRef branch lbranch bref ec=0
+  branch_set_realize "$intoBranch" || ec=$?
+  if [ $ec -eq 2 ]; then
+    io_error "Invalid branch name '$intoBranch' (error code = $ec)" "$moduleTracePrefix"
+    return 128
+  else
+    intoBranch=$branch
+    intoBranchName=$lbranch
+    intoRef=$bref
+  fi
   # io_trace "_branch_merge_ff -- $(print_vars toMerge intoBranch intoRef intoBranchName)"
 
   hashToMerge="$(git rev-parse --verify "$toMerge^{}" 2>/dev/null)"
