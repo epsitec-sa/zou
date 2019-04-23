@@ -115,7 +115,7 @@ _branch_sync_fix_tracking()
     if [[ $l =~ ^sku/ ]] || branch_is_prod "$l"; then
       # automatically push sku vbranches
       local remote=$(git_remote)
-      [[ -n $remote ]] && ! branch_is_archived "$l" "$remote" && branch_set_upstream "$l" "$remote"
+      [[ -n $remote ]] && ! branch_is_archived "$l" "$remote" && branch_ensure_remote "$l" "$remote"
     else
       # branch has no tracking info
       color=LightBlue
