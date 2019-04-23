@@ -38,6 +38,7 @@ tag_push_not_followed()
 tag_rename()
 {
   local tag1=$1 tag2=$2 force=$3 tagOpts=()
+  # io_trace "tag_rename -- $(print_vars tag1 tag2 force)"
   [[ $tag1 == $tag2 ]] && return 0
   # force rename if tags point at same commit
   { [[ $force == true ]] || { ref_exists $tag2 && ref_equals $tag1 $tag2; }; } && tagOpts+=( '-f' )
@@ -98,12 +99,7 @@ tag_delete()
 {
   if tag_exists "$1"; then
     tag_push_not_followed $1 $1^{} '--delete'
-    local line
-    (git tag --delete "$1") | \
-    while read -r line; do
-      [[ -z $line ]] && continue
-      io_info "$line" "$moduleTracePrefix"
-    done
+    io_buffered_eval "git tag --delete "$1"" : Cyan
   else
     io_error "Tag '$tag' does not exist" "$moduleTracePrefix"
     if git push --delete origin "$tag" &>/dev/null; then
