@@ -25,7 +25,7 @@ vcheck_run()
 }
 vcheck_node()
 {
-  local ec=0 lookup vtag pvtag vbranch rvbranch
+  local ec=0 lookup vtag pvtag vbranch
 
   io_info "Grouping vtags ordered by version..." "$moduleTracePrefix"
   lookup=$(vtag_group_by_version)
@@ -37,18 +37,6 @@ vcheck_node()
     return 0
   }
   vbranches=$(array_sort vbranches[@])
-  for vbranch in $vbranches; do
-    vtags=( ${byVersion[$vbranch]} )
-    if ! branch_is_local "$vbranch"; then
-      # local vbranch not found try upstream
-      rvbranch=$(branch_upstream $vbranch)
-      if [ $? -ne 0 ]; then
-        io_warning "  Branch not found '$vbranch'" "$moduleTracePrefix"
-        continue
-      fi
-    fi
-    io_success "  Checked existence of vbranch '$vbranch' - OK" "$moduleTracePrefix"
-  done
   # io_trace "vcheck_node $(print_vars vbranches)"
 
   io_info "Grouping vtags ordered by date..." "$moduleTracePrefix"
@@ -58,11 +46,15 @@ vcheck_node()
   # check appartenance and ancestry order
   for vbranch in $vbranches; do
     ec=0
-    rvbranch=$(branch_realize $vbranch)
+    local branch lbranch bref
+    branch_set_realize $vbranch
+    if [ $? -gt 1 ]; then
+      branch_set_realize "other/archive/$vbranch"
+    fi
     if [ $? -le 1 ]; then
       for vtag in ${byVersion[$vbranch]}; do
-        if ! git merge-base --is-ancestor "$vtag" "$rvbranch"; then
-          io_message "  vtag '$vtag' is not inside vbranch '$rvbranch'" "$moduleTracePrefix" LightPurple
+        if ! git merge-base --is-ancestor "$vtag" "$branch"; then
+          io_message "  vtag '$vtag' is not inside vbranch '$vbranch'" "$moduleTracePrefix" LightPurple
           (( ec = $ec + 1 ))
         fi
         if [[ -n $pvtag ]]; then
@@ -75,7 +67,7 @@ vcheck_node()
       done
       unset pvtag
     else
-      io_message "  vtags (${byVersion[$vbranch]}) are orphans" "$moduleTracePrefix" LightPurple
+      io_message "  Branch not found '$vbranch' - vtags (${byVersion[$vbranch]}) are orphans" "$moduleTracePrefix" LightPurple
       (( ec += 1 ))
     fi
     if [ $ec -eq 0 ]; then
