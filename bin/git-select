@@ -34,15 +34,30 @@ select_run()
 select_main()
 {
   local ec=0
-  if [[ -z $sku ]]; then
-    sku=$bundleBranch
+  select_set_sku
+  if [[ "$moduleRoot" == "$bundleRoot" || $sku == $bundleBranch ]]; then
     select_tree
   else
-    if [[ "$moduleRoot" == "$bundleRoot" ]]; then
-      select_tree
-    else
-      module_visit "$bundleRoot" "${selectScopes[@]}" select_tree
-    fi
+    module_visit "$bundleRoot" "${selectScopes[@]}" select_tree
+  fi
+}
+select_set_sku()
+{
+  if [[ -z $sku ]]; then
+    sku=$bundleBranch
+  elif [[ "$moduleRoot" == "$bundleRoot" ]]; then
+    select_set_sku_core
+  else
+    cd "$bundleRoot"
+    select_set_sku_core
+    cd "$moduleRoot"
+  fi
+}
+select_set_sku_core()
+{
+  if ! branch_exists "$sku"; then
+    io_error "SKU '${Brown}$sku${Red}' does not exist." "fatal"
+    exit 1
   fi
 }
 select_tree()
