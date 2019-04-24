@@ -11,7 +11,7 @@ mvtag_parse()
   while [[ "$#" > 0 ]]; do case "$1" in
     -h|--help) zou-help $0; exit 0;;
     --) args+=( "$@" ); break;;
-    -n|--dry-run) dryRun='echo';;
+    -n|--dry-run) dryRun=true;;
     -u|--no-push) noTagPush=true;;
     --debug) debug=true;;
     -*) io_error "unknown option: $1"; exit 1;;
@@ -32,16 +32,25 @@ mvtag_main()
   if tag_exists $tag1; then
     [[ -z $tag2 ]] && { io_error "missing target tag"; exit 1; }
     [[ $tag2 =~ /$ ]] && tag2="$tag2${tag1##*/}"  # tag2 is a folder
-    $dryRun tag_move "$tag1" "$tag2"
+    mvtag_move "$tag1" "$tag2"
   else
     local tag dest
     # assume tag1 is a glob and tag2 is a folder
     for tag in $(mvtag_tag_enumerator "$tag1"); do
       tag2=${tag2#.}            # remove leading dot from dest
       dest=${tag2%/}/${tag##*/} # remove trailing slash from dest and concat tag name without folder
-      $dryRun tag_move $tag ${dest#/}
+      mvtag_move $tag ${dest#/}
     done
-    [[ -z $noTagPush ]] && $dryRun . git-mirrortags
+    [[ -z $noTagPush ]] && tag_mirror false $dryRun
+  fi
+}
+mvtag_move()
+{
+  local tag1=$1 tag2=$2
+  if [[ $dryRun == true ]]; then
+    io_message "Moved tag ${Brown}$tag1${DarkGray} to ${Brown}$tag2${DarkGray}" "$moduleTracePrefix" DarkGray
+  else
+    tag_move "$tag1" "$tag2"
   fi
 }
 mvtag_tag_enumerator()

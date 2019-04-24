@@ -108,7 +108,6 @@ tag_delete()
     fi
   fi
 }
-
 tag_move()
 {
   # io_trace "tag_move ${*@Q}"
@@ -145,3 +144,21 @@ tag_move()
     tag_rename "$@"
   fi
 }
+tag_mirror()
+{
+  local verbose=$1 dryRun=$2 color=LightGray
+  [[ $dryRun == true ]] && color=DarkGray
+  io_message "Mirroring tags..." "$moduleTracePrefix" $color
+  [[ $dryRun == true ]] && return 0
+  if [[ $verbose == true ]]; then
+    local line
+    io_buffered_eval 'git push --tags --prune -f 2>&1' _tag_mirror_line_selector
+  else
+    git push --tags --prune -f &>/dev/null
+  fi
+}
+_tag_mirror_line_selector()
+{
+  [[ $line =~ ^.*\[new\ tag\][[:blank:]]+(.*)$ ]] && line="${BASH_REMATCH[1]}"
+}
+

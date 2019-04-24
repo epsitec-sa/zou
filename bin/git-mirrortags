@@ -26,17 +26,7 @@ mtags_run()
 }
 mtags_node()
 {
-  local tag line
-  if [[ $verbose == true ]]; then
-    io_info "Mirroring tags..." "$moduleTracePrefix"
-    io_buffered_eval 'git push --tags --prune -f 2>&1' _mtags_line_selector
-  else
-    git push --tags --prune -f &>/dev/null
-  fi
-}
-_mtags_line_selector()
-{
-  [[ $line =~ ^.*\[new\ tag\][[:blank:]]+(.*)$ ]] && line="${BASH_REMATCH[1]}"
+  tag_mirror $verbose
 }
 
 mtags_run "$@"

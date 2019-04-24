@@ -8,7 +8,7 @@ deltag_parse()
   while [[ "$#" > 0 ]]; do case "$1" in
     -h|--help) zou-help $0; exit 0;;
     --) args+=( "$@" ); break;;
-    -n|--dry-run) dryRun='echo';;
+    -n|--dry-run) dryRun=true;;
     -u|--no-push) noTagPush=true;;
     --debug) debug=true;;
     -*) io_error "unknown option: $1"; exit 1;;
@@ -28,13 +28,22 @@ deltag_main()
   local tag=$1
   [[ -z $tag ]] && { io_error "missing argument"; exit 1; }
   if tag_exists $tag; then
-    $dryRun tag_delete "$tag"
+    deltag_delete $tag
   else
     # assume tag is a glob
     for tag in $(deltag_tag_enumerator "$tag"); do
-      $dryRun tag_delete "$tag"
+      deltag_delete $tag
     done
-    [[ -z $noTagPush ]] && $dryRun . git-mirrortags
+    [[ -z $noTagPush ]] && tag_mirror false $dryRun
+  fi
+}
+deltag_delete()
+{
+  local tag=$1
+  if [[ $dryRun == true ]]; then
+    io_message "Deleted tag ${Brown}$tag${DarkGray}" "$moduleTracePrefix" DarkGray
+  else
+    tag_delete "$tag"
   fi
 }
 deltag_tag_enumerator()
