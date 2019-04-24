@@ -1,0 +1,173 @@
+#!/bin/bash
+
+# Use the following statement to include current lib only once
+#   [[ -z $ZOUL_GIT_STOW_CORE ]] && . zoul-git-stow-core
+ZOUL_GIT_STOW_CORE=true
+
+[[ -z $ZOUL_CORE ]]            && . zoul-core
+[[ -z $ZOUL_GIT_BRANCH_CORE ]] && . zoul-git-branch-core
+
+# Tokenize stow folder
+#
+#  stowPath   = other/archive/orphan/sku/v1.2.3
+#  stowFolder = other/archive/orphan
+#  refPath    = sku/v1.2.3
+#
+#
+# usage:
+#   local stowType stowFolder refPath
+#   stow_set_info 'other/archive/orphan/sku/v1.2.3' && stow_is_other && stow_is_archive && stow_is_orphan    # return 0
+# in:
+#   $1:stowPath       -- $stowFolder$refPath
+# out:
+#  ${BASH_REMATCH[0]} -- stowPath     - other/archive/orphan/sku/v1.2.3
+#  ${BASH_REMATCH[1]} -- stowFolder   - other/archive/orphan/
+#  ${BASH_REMATCH[2]} -- archivePart  - archive/
+#  ${BASH_REMATCH[3]} -- subtypePart  - orphan/
+#  ${BASH_REMATCH[4]} -- refPath      - sku/v1.2.3
+#
+#  stowFolder         -- stow folder
+#  stowType           -- <ns>.<cl>
+#                     -- <ns>:: (active|other|archive)
+#                     -- <cl>:: (root|marker|oldver|orphan)
+#  refPath            -- full ref path
+#
+#  stowPath                         | stowFolder            | stowType       | refPath    
+#  ---------------------------------|-----------------------|----------------|------------
+#  other/archive/orphan/sku/v1.2.3  | other/archive/orphan/ | archive.orphan | sku/v1.2.3 
+#  other/archive/sku/v1.2.3         | other/archive/        | archive.root   | sku/v1.2.3 
+#  other/orphan/sku/v1.2.3          | other/orphan/         | other.orphan   | sku/v1.2.3 
+#  other/sku/v1.2.3                 | other/                | other.root     | sku/v1.2.3 
+#  sku/v1.2.3                       |                       | active.root    | sku/v1.2.3 
+
+# other/
+# other/archive/
+# ''
+stow_set_info()
+{
+  # for x in other/archive/orphan/a/b/c other/orphan/a/b/c other/a/b/c orphan/a/b/c a/b/c; do [[ $x =~ ^((other/(archive/)?)?(orphan/|marker/|oldver/)?)(.*)$ ]] && echo ${BASH_REMATCH[@]@Q}; done
+  local ns cl ar
+  
+  [[ $1 =~ ^((other/(archive/)?)?(orphan/|marker/|oldver/)?)(.*)$ ]]
+  stowFolder=${BASH_REMATCH[1]} # ^((other/(archive/)?)?(orphan/|marker/|oldver/)?)
+  ns=${BASH_REMATCH[2]:-active} # (other/(archive/)?)?
+  ar=${BASH_REMATCH[3]}         # (archive/)?
+  cl=${BASH_REMATCH[4]:-root}   # (orphan/|marker/|oldver/)?
+  refPath=${BASH_REMATCH[5]}    # (.*)$
+
+  [[ -n $ar ]] && ns=$ar
+  stowType=${ns%/}.${cl%/}
+}
+# usage:
+#   local stowType stowFolder refPath
+#   stow_set_info 'other/archive/orphan/sku/v1.2.3' && stow_is_archive
+# in:
+#  stowType
+stow_is_archive() { [[ $stowType =~ ^archive\. ]]; }
+stow_is_other()   { [[ $stowType =~ ^other\. ]]; }
+stow_is_active()  { [[ $stowType =~ ^active\. ]]; }
+stow_is_root()    { [[ $stowType =~ \.root$ ]]; }
+stow_is_orphan()  { [[ $stowType =~ \.orphan$ ]]; }
+stow_is_marker()  { [[ $stowType =~ \.marker$ ]]; }
+stow_is_oldver()    { [[ $stowType =~ \.oldver$ ]]; }
+
+# 
+# 
+# usage:
+#   local stowType stowFolder refPath
+#   stow_set_info 'other/archive/sku/v1.2.3'
+#   local refType refStowType 
+#   stow_set_tag_info
+#
+# in:
+#  refPath -- tag ref
+# out:
+#  refPath       -- fixed ref path if [[ $refType =~ \.fixed ]]
+#  refType       -- (oldver[.semver]|semver[.fixed]|marker|system)
+#  refStowType   -- stow type for tag ref
+stow_set_tag_info()
+{
+  local ref="$stowFolder$refPath"
+  if [[ $refPath =~ ^(.*/)?v([0-9]+)\.([0-9]+)(-@|.([0-9]+)((-alpha|-beta|-rc)([0-9]+))?(\+.+)?)$ ]]; then
+    refType='semver'
+    # remove prerelease leading zeros
+    local pv0=${BASH_REMATCH[8]}
+    if [[ -n $pv0 ]]; then
+      local pv1=$((10#$pv0))
+      if [[ $pv0 != $pv1 ]]; then
+        refPath="${BASH_REMATCH[1]}v${BASH_REMATCH[2]}.${BASH_REMATCH[3]}.${BASH_REMATCH[5]}${BASH_REMATCH[7]}$pv1${BASH_REMATCH[9]}"
+        refType="${refType}.fixed"
+      fi
+    fi
+    # patch.length > 3 is considered as old version format
+    local patch=${BASH_REMATCH[5]}
+    if [[ ${#patch} -gt 3 ]]; then
+      refType="oldver.${refType}"
+    fi
+  elif [[ $refPath =~ ^(.*/)?v?[0-9]+\.[0-9]+ ]]; then
+    refType='oldver'
+  elif [[ $refPath =~ ^(.*/)?_(.*)$ ]]; then
+    refType='system'
+  else
+    refType='marker'
+  fi
+
+  local ns0=${stowType%%.*} cl0=${stowType##*.} ns1 cl1 dt
+  case $refType in
+  semver*) ns1=$ns0;                               [[ $cl0 == 'orphan' ]] && cl1='orphan' || cl1='root';;
+  oldver*) [[ $ns0 == 'active'  ]] && ns1='other'; [[ $cl0 == 'orphan' ]] && cl1='orphan' || cl1='oldver';;
+  marker*) [[ $ns0 == 'active'  ]] && ns1='other'; cl1='marker';;
+  system*) [[ $ns0 == 'archive' ]] && ns1=$ns0 || ns1='active'; cl1='root';;
+  esac
+
+  # archive after 365 days
+  if [[ $ns1 != 'archive' ]]; then
+    if dt=$(ref_timespan "$ref"); then
+      (( dt = dt / 86400 )) # time in days
+      (( dt > 365 )) && ns1='archive'
+    fi
+  fi
+
+  refStowType="$ns1.$cl1"
+}
+
+# usage:
+#   local stowType stowFolder refPath stowPath
+#   stow_set_info 'other/archive/sku/v1.2.3'
+#   stow_set_folder 'archive'
+#   stow_set_folder 'other.orphan'
+#   stow_set_folder 'active.root'
+#
+# in:
+#   stowType stowFolder refPath
+#   $1     -- destination stow type
+#          -- [(active|other|archive)][.(root|marker|oldver|orphan)]
+# out:
+#   stowPath
+
+declare -A stowNamespaceFolder=( [archive]='other/archive/' [other]='other/' [active]='' )
+declare -A stowClassFolder=( [orphan]='orphan/' [oldver]='oldver/' [marker]='marker/' [root]='' )
+
+stow_set_folder()
+{
+  [[ $1 =~ ^([^\.]*)(\.(.*))?$ ]]
+  local ns1=${BASH_REMATCH[1]} cl1=${BASH_REMATCH[3]}
+  local ns0=${stowType%%.*} cl0=${stowType##*.}
+  ns1=${ns1:-$ns0}
+  cl1=${cl1:-$cl0}
+  if [[ $ns0 == $ns1 && $cl0 == $cl1 ]]; then
+    stowPath="$stowFolder$refPath"
+    return 1
+  elif [[ $ns0 != $ns1 ]]; then
+    local nsf1=${stowNamespaceFolder[$ns1]} nsf0=${stowNamespaceFolder[$ns0]}
+    local f1=$nsf1${stowFolder#$nsf0}
+    stowPath="$f1$refPath"
+    if [[ $cl0 != $cl1 ]]; then
+      local clf1=${stowClassFolder[$cl1]} clf0=${stowClassFolder[$cl0]}
+      stowPath="${f1%$clf0}$clf1$refPath"
+    fi
+  else
+    local clf1=${stowClassFolder[$cl1]} clf0=${stowClassFolder[$cl0]}
+    stowPath="${stowFolder%$clf0}$clf1$refPath"
+  fi
+}
