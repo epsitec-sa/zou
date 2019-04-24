@@ -113,7 +113,8 @@ tag_move()
 {
   # io_trace "tag_move ${*@Q}"
 
-  local tag1=$1 tag2=$2 force=$3
+  local tag1=$1 tag2=$2
+  [[ "$tag1" == "$tag2" ]] && return 0
   if ! git_object_exists "$tag1"; then
     io_error "Object '$tag1' does not exist." "$moduleTracePrefix"
     return 1
@@ -123,17 +124,17 @@ tag_move()
     if tag_exists $tag2; then
       if ref_equals $tag1 $tag2; then
         tag_rename "$@"
-      elif [[ $force == true ]]; then
-        # move tag2 to backup folder
-        local refPath stowFolder stowType
-        stow_set_info "$tag2" # -> refPath stowFolder stowType
-        io_warning "Override of '$tag2' with '$tag1': making a copy of '$refPath' in 'other/backup'" "$moduleTracePrefix"
-        tag_rename "$tag2" "other/backup/$refPath"
-        tag_rename "$@"
       else
+        local refPath stowFolder stowType refType refStowType stowPath
         stow_set_info "$tag1" # -> refPath stowFolder stowType
-        io_warning "Cannot override '$tag2' with '$tag1': moving '$refPath' to 'other/backup'" "$moduleTracePrefix"
-        tag_rename "$tag1" "other/backup/$refPath"
+        stow_set_tag_info
+        refStowType=${refStowType/*./twin.}
+        stow_set_folder "$refStowType" # -> stowPath
+        # io_trace "tag_move 2 -- $(print_vars tag1 stowFolder refPath stowType stowPath)"
+        if [[ $tag1 != $stowPath ]]; then
+          io_warning "Cannot override '$tag2' with '$tag1': moving '$tag1' to '$stowPath'" "$moduleTracePrefix"
+          tag_rename "$tag1" "$stowPath"
+        fi
         return 1
       fi
     else
