@@ -55,10 +55,17 @@ select_set_sku()
 }
 select_set_sku_core()
 {
-  if ! branch_exists "$sku"; then
-    io_error "SKU '${Brown}$sku${Red}' does not exist." "fatal"
-    exit 1
-  fi
+  branch_exists "$sku" && return 0
+  local candidates=() resku="^(.*/)?$(wildcard_to_regex "$sku")(/.*)?$"
+  for branch in $(branch_list_all_flatten); do
+    [[ $branch =~ /[0-9]+\.[0-9]+.*$ ]] && continue   # skip prod branches
+    [[ $branch =~ $resku ]] && candidates+=( "$branch" )
+  done
+  case ${#candidates[@]} in
+    0) io_error "SKU ${Brown}$sku${Red} does not exist." "fatal"; exit 1;;
+    1) sku=${candidates[0]};;
+    *) io_error "SKU ${Brown}$sku${Red} is ambiguous, use one of (${Brown}$(string_join ', ' "${candidates[@]}")${Red})"; exit 1;;
+  esac
 }
 select_tree()
 {
