@@ -45,17 +45,16 @@ ZOUL_GIT_STOW_CORE=true
 # ''
 stow_set_info()
 {
-  # for x in other/archive/orphan/a/b/c other/orphan/a/b/c other/a/b/c orphan/a/b/c a/b/c; do [[ $x =~ ^((other/(archive/)?)?(orphan/|marker/|oldver/)?)(.*)$ ]] && echo ${BASH_REMATCH[@]@Q}; done
-  local ns cl ar
+  local ns cl at
   
-  [[ $1 =~ ^((other/(archive/)?)?(orphan/|marker/|oldver/)?)(.*)$ ]]
-  stowFolder=${BASH_REMATCH[1]} # ^((other/(archive/)?)?(orphan/|marker/|oldver/)?)
-  ns=${BASH_REMATCH[2]:-active} # (other/(archive/)?)?
-  ar=${BASH_REMATCH[3]}         # (archive/)?
+  [[ $1 =~ ^((other/(archive/|twin/)?)?(orphan/|marker/|oldver/)?)(.*)$ ]]
+  stowFolder=${BASH_REMATCH[1]} # ^((other/(archive/|twin/)?)?(orphan/|marker/|oldver/)?)
+  ns=${BASH_REMATCH[2]:-active} # (other/(archive/|twin/)?)?
+  at=${BASH_REMATCH[3]}         # (archive/|twin/)?
   cl=${BASH_REMATCH[4]:-root}   # (orphan/|marker/|oldver/)?
   refPath=${BASH_REMATCH[5]}    # (.*)$
 
-  [[ -n $ar ]] && ns=$ar
+  [[ -n $at ]] && ns=$at
   stowType=${ns%/}.${cl%/}
 }
 # usage:
@@ -64,12 +63,13 @@ stow_set_info()
 # in:
 #  stowType
 stow_is_archive() { [[ $stowType =~ ^archive\. ]]; }
+stow_is_twin()    { [[ $stowType =~ ^twin\. ]]; }
 stow_is_other()   { [[ $stowType =~ ^other\. ]]; }
 stow_is_active()  { [[ $stowType =~ ^active\. ]]; }
 stow_is_root()    { [[ $stowType =~ \.root$ ]]; }
 stow_is_orphan()  { [[ $stowType =~ \.orphan$ ]]; }
 stow_is_marker()  { [[ $stowType =~ \.marker$ ]]; }
-stow_is_oldver()    { [[ $stowType =~ \.oldver$ ]]; }
+stow_is_oldver()  { [[ $stowType =~ \.oldver$ ]]; }
 
 # 
 # 
@@ -121,7 +121,7 @@ stow_set_tag_info()
   esac
 
   # archive after 365 days
-  if [[ $ns1 != 'archive' ]]; then
+  if [[ $ns1 != 'archive' && $ns1 != 'twin' ]]; then
     if dt=$(ref_timespan "$ref"); then
       (( dt = dt / 86400 )) # time in days
       (( dt > 365 )) && ns1='archive'
@@ -145,7 +145,7 @@ stow_set_tag_info()
 # out:
 #   stowPath
 
-declare -A stowNamespaceFolder=( [archive]='other/archive/' [other]='other/' [active]='' )
+declare -A stowNamespaceFolder=( [archive]='other/archive/' [twin]='other/twin/' [other]='other/' [active]='' )
 declare -A stowClassFolder=( [orphan]='orphan/' [oldver]='oldver/' [marker]='marker/' [root]='' )
 
 stow_set_folder()
