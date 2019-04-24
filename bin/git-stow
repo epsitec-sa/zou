@@ -23,7 +23,7 @@ stow_parse()
 }
 stow_run()
 {
-  local stowPushTags forceMove recursive stowSemver forOpts=()
+  local stowPushTags recursive forOpts=()
   stow_parse "$@" || return $?
 
   startupMessage="Stowing tags, please wait..."
@@ -51,7 +51,7 @@ stow_node()
 
   local vbranches=( $(branch_list_all_flatten) )
   io_message "Promoting vtags..." "$moduleTracePrefix" LightGray
-  stow_promote_vtags tag_move 'vbranches[@]' $(git tag -l)
+  stow_promote_vtags tag_move 'vbranches[@]' $(git tag -l --sort=-v:refname)
 
   io_message "Processing orphans..." "$moduleTracePrefix" LightGray
   stow_orphans tag_move 'vbranches[@]' $(git tag -l)
