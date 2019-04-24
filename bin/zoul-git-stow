@@ -80,16 +80,18 @@ stow_remove_duplicate_tags()
   # group by namespace
   declare -A archiveMap
   declare -A otherMap
+  declare -A twinMap
   declare -A activeMap
   for tag; do
     stow_set_info "$tag" # -> refPath stowFolder stowType
     case ${stowType%.*} in
     archive) archiveMap[$refPath]=$tag;;
     other)   otherMap[$refPath]=$tag;;
+    twin)    twinMap[$refPath]=$tag;;
     active)  activeMap[$refPath]=$tag;;
     esac
   done
-  # delete archive tags in other and active namespaces
+  # delete archive tags in other twin and active namespaces
   for refPath in ${!archiveMap[@]}; do
     tag1=${archiveMap[$refPath]}
     tag2=${otherMap[$refPath]}
@@ -97,19 +99,38 @@ stow_remove_duplicate_tags()
       tag_delete $tag2 || ec=$?
       unset otherMap[$refPath]
     fi
+    tag2=${twinMap[$refPath]}
+    if [[ -n $tag2 ]] && ref_equals $tag1 $tag2; then
+      tag_delete $tag2 || ec=$?
+      unset twinMap[$refPath]
+    fi
     tag2=${activeMap[$refPath]}
     if [[ -n $tag2 ]] && ref_equals $tag1 $tag2; then
       tag_delete $tag2 || ec=$?
       unset activeMap[$refPath]
     fi
   done
-  # delete other tags in active namespace
+  # delete other tags in twin and active namespace
   for refPath in ${!otherMap[@]}; do
     tag1=${otherMap[$refPath]}
+    tag2=${twinMap[$refPath]}
+    if [[ -n $tag2 ]] && ref_equals $tag1 $tag2; then
+      tag_delete $tag2 || ec=$?
+      unset twinMap[$refPath]
+    fi
     tag2=${activeMap[$refPath]}
     if [[ -n $tag2 ]] && ref_equals $tag1 $tag2; then
       tag_delete $tag2 || ec=$?
       unset activeMap[$refPath]
+    fi
+  done
+  # delete active tags in twin namespace
+  for refPath in ${!activeMap[@]}; do
+    tag1=${activeMap[$refPath]}
+    tag2=${twinMap[$refPath]}
+    if [[ -n $tag2 ]] && ref_equals $tag1 $tag2; then
+      tag_delete $tag2 || ec=$?
+      unset twinMap[$refPath]
     fi
   done
 }
