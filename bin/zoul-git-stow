@@ -169,8 +169,10 @@ stow_promote_vtags()
         vbranch=$(branch_realize "${vbranchPair#*:}")
         if git merge-base --is-ancestor "$vtag" "$vbranch"; then
           vbranchTagPairs+=("$vbranchPair")
-        # else
-        #   io_trace "stow_promote_vtags 2 -- git merge-base --is-ancestor "$vtag" "$vbranch" failed" Red
+        elif git merge-base --is-ancestor "$vbranch" "$vtag"; then
+          io_info "Branch ${Brown}$vbranch${Cyan} should be fast forwarded to tag ${Brown}$vtag${Cyan}" "$moduleTracePrefix"
+        else
+          io_info "Tag ${Brown}$vtag${Cyan} is not associated with branch ${Brown}$vbranch${Cyan}" "$moduleTracePrefix"
         fi
       done
       [ ${#vbranchTagPairs[@]} -eq 0 ] && continue
