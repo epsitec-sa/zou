@@ -4,8 +4,9 @@
 #   [[ -z $ZOUL_GIT_TAG ]] && . zoul-git-tag
 ZOUL_GIT_TAG=true
 
-[[ -z $ZOUL_CORE ]]     && . zoul-core
-[[ -z $ZOUL_GIT_CORE ]] && . zoul-git-core
+[[ -z $ZOUL_CORE ]]          && . zoul-core
+[[ -z $ZOUL_GIT_CORE ]]      && . zoul-git-core
+[[ -z $ZOUL_GIT_STOW_CORE ]] && . zoul-git-stow-core
 
 # global options
 #   noTagPush
@@ -123,10 +124,16 @@ tag_move()
       if ref_equals $tag1 $tag2; then
         tag_rename "$@"
       elif [[ $force == true ]]; then
-        tag_rename "$tag2" "other/backup/$tag2"
+        # move tag2 to backup folder
+        local refPath stowFolder stowType
+        stow_set_info "$tag2" # -> refPath stowFolder stowType
+        io_warning "Override of '$tag2' with '$tag1': making a copy of '$refPath' in 'other/backup'" "$moduleTracePrefix"
+        tag_rename "$tag2" "other/backup/$refPath"
         tag_rename "$@"
       else
-        io_warning "Unable to rename tag '$tag1': tag '$tag2' already exists"
+        stow_set_info "$tag1" # -> refPath stowFolder stowType
+        io_warning "Cannot override '$tag2' with '$tag1': moving '$refPath' to 'other/backup'" "$moduleTracePrefix"
+        tag_rename "$tag1" "other/backup/$refPath"
         return 1
       fi
     else
