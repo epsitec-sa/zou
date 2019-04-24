@@ -146,6 +146,7 @@ stow_promote_vtags()
     if [[ $vbranch =~ ^(.*/)?([0-9]+\.[0-9]+) ]]; then
       vbranchFolder=${BASH_REMATCH[1]:-/}
       version=${BASH_REMATCH[2]}
+      vbranch=$(branch_realize "$vbranch")
       vbranchMap[$version]="${vbranchMap[$version]} "$vbranchFolder:$vbranch""
       # io_trace "stow_promote_vtags 1 -- vbranchMap[$version]=${vbranchMap[$version]}"
     fi
@@ -166,15 +167,20 @@ stow_promote_vtags()
       # remove non descendant vbranches
       local vbranchTagPairs=()
       for vbranchPair in ${vbranchPairs[@]}; do
-        vbranch=$(branch_realize "${vbranchPair#*:}")
-        if git merge-base --is-ancestor "$vtag" "$vbranch"; then
-          vbranchTagPairs+=("$vbranchPair")
-        elif git merge-base --is-ancestor "$vbranch" "$vtag"; then
-          io_info "Branch ${Brown}$vbranch${Cyan} should be fast forwarded to tag ${Brown}$vtag${Cyan}" "$moduleTracePrefix"
-        else
-          io_info "Tag ${Brown}$vtag${Cyan} is not associated with branch ${Brown}$vbranch${Cyan}" "$moduleTracePrefix"
-        fi
+        vbranch=${vbranchPair#*:}
+        # skip vbranch with suffix (ex: 1.9-og)
+        [[ $vbranch =~ ^(.*/)?[0-9]+\.[0-9]+$ ]] || continue
+        _stow_check_ancestry && vbranchTagPairs+=("$vbranchPair")
       done
+      if [ ${#vbranchTagPairs[@]} -eq 0 ]; then
+        for vbranchPair in ${vbranchPairs[@]}; do
+          vbranch=${vbranchPair#*:}
+          # keep only branch with suffix
+          [[ $vbranch =~ ^(.*/)?[0-9]+\.[0-9]+$ ]] && continue
+          _stow_check_ancestry && vbranchTagPairs+=("$vbranchPair")
+        done
+      fi
+
       [ ${#vbranchTagPairs[@]} -eq 0 ] && continue
       [[ $vtag =~ ^(.*/)?(.*)$ ]] # split to folder / name
       vtagFolder=${BASH_REMATCH[1]:-/}
@@ -188,7 +194,7 @@ stow_promote_vtags()
           vtag2="${vbranchFolder#/}$vtagName"
           # io_trace "stow_promote_vtags 3 -- $(print_vars vtag vtagFolder vbranchFolder vtag2)"
           stow_set_info "$vtag2"          # -> stowType stowFolder refPath
-          stow_set_tag_info               # -> refType refStowType refPath
+          stow_set_tag_info "$vtag"       # -> refType refStowType refPath
           stow_set_folder "$refStowType"  # -> stowPath
           tag_move "$vtag" "$stowPath"
         fi
@@ -198,7 +204,7 @@ stow_promote_vtags()
         unset vbranchFolder
         local deltaMin=0xFFFF
         for vbranchPair in "${vbranchTagPairs[@]}"; do
-          vbranch=$(branch_realize "${vbranchPair#*:}")
+          vbranch=${vbranchPair#*:}
           delta=$(( $(git rev-list --count "$vtag".."$vbranch") ))
           (( delta == deltaMin )) && break
           if (( delta < deltaMin )); then
@@ -211,13 +217,24 @@ stow_promote_vtags()
           vtag2="${vbranchFolder#/}$vtagName"
           # io_trace "stow_promote_vtags 5 -- $(print_vars vtag vtagFolder vbranchFolder vtag2)"
           stow_set_info "$vtag2"          # -> stowType stowFolder refPath
-          stow_set_tag_info               # -> refType refStowType refPath
+          stow_set_tag_info "$vtag"       # -> refType refStowType refPath
           stow_set_folder "$refStowType"  # -> stowPath
           tag_move "$vtag" "$stowPath"
         fi
       fi
     done
   done
+}
+_stow_check_ancestry()
+{
+  if git merge-base --is-ancestor "$vtag" "$vbranch"; then
+    return 0
+  elif git merge-base --is-ancestor "$vbranch" "$vtag"; then
+    io_info "Branch ${Brown}$vbranch${Cyan} should be fast forwarded to tag ${Brown}$vtag${Cyan}" "$moduleTracePrefix"
+  else
+    io_info "Tag ${Brown}$vtag${Cyan} is not associated with branch ${Brown}$vbranch${Cyan}" "$moduleTracePrefix"
+  fi
+  return 1
 }
 stow_orphans()
 {

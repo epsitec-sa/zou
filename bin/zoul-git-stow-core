@@ -80,51 +80,59 @@ stow_is_oldver()  { [[ $stowType =~ \.oldver$ ]]; }
 #   stow_set_tag_info
 #
 # in:
-#  refPath -- tag ref
+#  archiveRef=$1  -- existing ref for archiving decision
+#  refPath        -- tag ref
 # out:
-#  refPath       -- fixed ref path if [[ $refType =~ \.fixed ]]
-#  refType       -- (oldver[.semver]|semver[.fixed]|marker|system)
-#  refStowType   -- stow type for tag ref
+#  refPath        -- fixed ref path if [[ $refType =~ \.fixed ]]
+#  refType        -- (oldver[.semver]|semver[.fixed]|marker|system)
+#  refStowType    -- stow type for tag ref
 stow_set_tag_info()
 {
-  local ref="$stowFolder$refPath"
-  if [[ $refPath =~ ^(.*/)?v([0-9]+)\.([0-9]+)(-@|.([0-9]+)((-alpha|-beta|-rc)([0-9]+))?(\+.+)?)$ ]]; then
-    refType='semver'
-    # remove prerelease leading zeros
-    local pv0=${BASH_REMATCH[8]}
-    if [[ -n $pv0 ]]; then
-      local pv1=$((10#$pv0))
-      if [[ $pv0 != $pv1 ]]; then
-        refPath="${BASH_REMATCH[1]}v${BASH_REMATCH[2]}.${BASH_REMATCH[3]}.${BASH_REMATCH[5]}${BASH_REMATCH[7]}$pv1${BASH_REMATCH[9]}"
-        refType="${refType}.fixed"
+  local archiveRef=$1 ref="$stowFolder$refPath" ns0=${stowType%%.*} cl0=${stowType##*.} ns1 cl1 dt
+  ns1=$ns0
+  cl1=$cl0
+
+  # twins are almost immutable - they can only be deleted
+  if [[ $ns0 != 'twin' ]]; then
+    if [[ $refPath =~ ^(.*/)?v([0-9]+)\.([0-9]+)(-@|.([0-9]+)((-alpha|-beta|-rc)([0-9]+))?(\+.+)?)$ ]]; then
+      refType='semver'
+      # remove prerelease leading zeros
+      local pv0=${BASH_REMATCH[8]}
+      if [[ -n $pv0 ]]; then
+        local pv1=$((10#$pv0))
+        if [[ $pv0 != $pv1 ]]; then
+          refPath="${BASH_REMATCH[1]}v${BASH_REMATCH[2]}.${BASH_REMATCH[3]}.${BASH_REMATCH[5]}${BASH_REMATCH[7]}$pv1${BASH_REMATCH[9]}"
+          refType="${refType}.fixed"
+        fi
       fi
+      # patch.length > 3 is considered as old version format
+      local patch=${BASH_REMATCH[5]}
+      if [[ ${#patch} -gt 3 ]]; then
+        refType="oldver.${refType}"
+      fi
+    elif [[ $refPath =~ ^(.*/)?v?[0-9]+\.[0-9]+ ]]; then
+      refType='oldver'
+    elif [[ $refPath =~ ^(.*/)?_(.*)$ ]]; then
+      refType='system'
+    else
+      refType='marker'
     fi
-    # patch.length > 3 is considered as old version format
-    local patch=${BASH_REMATCH[5]}
-    if [[ ${#patch} -gt 3 ]]; then
-      refType="oldver.${refType}"
-    fi
-  elif [[ $refPath =~ ^(.*/)?v?[0-9]+\.[0-9]+ ]]; then
-    refType='oldver'
-  elif [[ $refPath =~ ^(.*/)?_(.*)$ ]]; then
-    refType='system'
-  else
-    refType='marker'
-  fi
 
-  local ns0=${stowType%%.*} cl0=${stowType##*.} ns1 cl1 dt
-  case $refType in
-  semver*) ns1=$ns0;                               [[ $cl0 == 'orphan' ]] && cl1='orphan' || cl1='root';;
-  oldver*) [[ $ns0 == 'active'  ]] && ns1='other'; [[ $cl0 == 'orphan' ]] && cl1='orphan' || cl1='oldver';;
-  marker*) [[ $ns0 == 'active'  ]] && ns1='other'; cl1='marker';;
-  system*) [[ $ns0 == 'archive' ]] && ns1=$ns0 || ns1='active'; cl1='root';;
-  esac
+    case $refType in
+      semver*) [[ $cl0 == 'orphan' ]] || cl1='root';;
+      oldver*) [[ $cl0 == 'orphan' ]] || cl1='oldver';
+              [[ $ns0 == 'active' ]] && ns1='other';;
+      marker*) [[ $ns0 == 'active' ]] && ns1='other';  cl1='marker';;
+      system*) [[ $ns0 == 'archive' ]] || ns1='active'; cl1='root';;
+    esac
 
-  # archive after 365 days
-  if [[ $ns1 != 'archive' && $ns1 != 'twin' ]]; then
-    if dt=$(ref_timespan "$ref"); then
-      (( dt = dt / 86400 )) # time in days
-      (( dt > 365 )) && ns1='archive'
+    # archive after 365 days
+    if [[ $ns1 != 'archive' ]]; then
+      [[ -z $archiveRef ]] && archiveRef=$ref
+      if dt=$(ref_timespan "$archiveRef"); then
+        (( dt = dt / 86400 )) # time in days
+        (( dt > 365 )) && ns1='archive'
+      fi
     fi
   fi
 
