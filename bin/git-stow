@@ -44,17 +44,17 @@ stow_node()
 {
   local noTagPush=true
 
-  stow_tags tag_move $(git tag -l)
+  stow_tags $(git tag -l)
   
   io_message "Removing duplicates..." "$moduleTracePrefix" LightGray
-  stow_remove_duplicate_tags tag_delete $(git tag -l)
+  stow_remove_duplicate_tags $(git tag -l)
 
   local vbranches=( $(branch_list_all_flatten) )
   io_message "Promoting vtags..." "$moduleTracePrefix" LightGray
-  stow_promote_vtags tag_move 'vbranches[@]' $(git tag -l --sort=-v:refname)
+  stow_promote_vtags 'vbranches[@]' $(git tag -l --sort=-v:refname)
 
   io_message "Processing orphans..." "$moduleTracePrefix" LightGray
-  stow_orphans tag_move 'vbranches[@]' $(git tag -l)
+  stow_orphans 'vbranches[@]' $(git tag -l)
 
   [[ $stowPushTags == true ]] && git-mirrortags
 }
