@@ -97,10 +97,13 @@ version_update_version_props()
 # ...
 version_update_package_json()
 {
-  local file=$1 stechver=$4 script="\
-  0,/^[[:blank:]]*\"version\"/{s/(^[[:blank:]]*\"version\":[[:blank:]]*\").*(\",)/\1$stechver\2/}"
+  local file=$1 varray=( ${!2} ) techver script
+  techver=${varray[1]}.${varray[2]}.${varray[3]}${varray[4]}
 
-  # io_trace "version_update_package_json -- $(print_vars file stechver)"
+  script="\
+  0,/^[[:blank:]]*\"version\"/{s/(^[[:blank:]]*\"version\":[[:blank:]]*\").*(\",)/\1$techver\2/}"
+
+  # io_trace "version_update_package_json -- $(print_vars file varray[@] techver stechver)"
 
   ised "$file" "$script"
 }
