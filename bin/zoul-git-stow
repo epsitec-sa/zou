@@ -4,8 +4,9 @@
 #   [[ -z $ZOUL_GIT_STOW ]] && . zoul-git-stow
 ZOUL_GIT_STOW=true
 
-[[ -z $ZOUL_GIT_STOW_CORE ]] && . zoul-git-stow-core
-[[ -z $ZOUL_GIT_TAG ]]       && . zoul-git-tag
+[[ -z $ZOUL_GIT_STOW_CORE ]]   && . zoul-git-stow-core
+[[ -z $ZOUL_GIT_TAG ]]         && . zoul-git-tag
+[[ -z $ZOUL_GIT_BRANCH_CORE ]] && . zoul-git-branch-core
 
 # in:
 #  tags=$@ -- tag list
@@ -19,8 +20,25 @@ stow_tags()
     stow_set_info "$tag"            # -> stowType stowFolder refPath
     stow_set_tag_info               # -> refType refStowType refPath
     stow_set_folder "$refStowType"  # -> stowPath
-    # io_trace "stow_tag -- $(print_vars tag stowFolder refPath stowType refStowType refType stowPath)"
+    # io_trace "stow_tags -- $(print_vars tag stowFolder refPath stowType refStowType refType stowPath)"
     tag_move "$tag" "$stowPath" || ec=1
+  done
+  return $ec
+}
+# in:
+#  branches=$@ -- branch list
+# return code:
+#  1 if any branch move fails
+stow_branches()
+{
+  local stowType stowFolder refPath refType refStowType stowPath branch ec=0
+
+  for branch; do
+    stow_set_info "$branch"         # -> stowType stowFolder refPath
+    stow_set_branch_info            # -> refType refStowType refPath
+    stow_set_folder "$refStowType"  # -> stowPath
+    # io_trace "stow_branches -- $(print_vars branch stowFolder refPath stowType refStowType refType stowPath)"
+    branch_move "$branch" "$stowPath" || ec=1
   done
   return $ec
 }

@@ -171,8 +171,10 @@ stow_set_branch_info()
     esac
 
     # archive after 365 days
-    if [[ $ns1 != 'archive' ]]; then
+    if [[ $ns1 != 'archive' && $refType != 'master' ]]; then
+      commit=$(branch_realize "$commit")
       if dt=$(ref_timespan "$commit"); then
+        # io_trace "stow_set_branch_info -- $(print_vars commit dt)"
         (( dt = dt / 86400 )) # time in days
         (( dt > 365 )) && ns1='archive'
       fi

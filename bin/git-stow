@@ -26,7 +26,7 @@ stow_run()
   local stowPushTags recursive forOpts=()
   stow_parse "$@" || return $?
 
-  startupMessage="Stowing tags, please wait..."
+  startupMessage="Stowing, please wait..."
 
   module_run stow_main
 }
@@ -44,6 +44,10 @@ stow_node()
 {
   local noTagPush=true
 
+  io_message "Stowing branches..." "$moduleTracePrefix" LightGray
+  stow_branches $(branch_list_all_flatten)
+
+  io_message "Stowing tags..." "$moduleTracePrefix" LightGray
   stow_tags $(git tag -l)
   
   io_message "Removing duplicates..." "$moduleTracePrefix" LightGray
