@@ -427,11 +427,11 @@ branch_io_message_unsafe()
       if [[ -n $moduleRoot && $moduleRoot == $bundleRoot ]]; then
         acolor=Cyan
       else
-        [[ $alias =~ -@ ]] && acolor=Cyan || acolor=Brown
+        [[ $alias =~ -@ ]] && acolor=Purple || acolor=Brown
       fi
     else
       # delta == 0
-      acolor=Green
+      [[ $alias =~ -@ ]] && acolor=Purple || acolor=Green
     fi
     message="$message ${!acolor}($alias)"
   fi
