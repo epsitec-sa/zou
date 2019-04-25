@@ -13,10 +13,10 @@ ZOUL_GIT_STOW_CORE=true
 #  stowFolder = other/archive/orphan
 #  refPath    = sku/v1.2.3
 #
-#
 # usage:
 #   local stowType stowFolder refPath
 #   stow_set_info 'other/archive/orphan/sku/v1.2.3' && stow_is_other && stow_is_archive && stow_is_orphan    # return 0
+#
 # in:
 #   $1:stowPath       -- $stowFolder$refPath
 # out:
@@ -28,7 +28,7 @@ ZOUL_GIT_STOW_CORE=true
 #
 #  stowFolder         -- stow folder
 #  stowType           -- <ns>.<cl>
-#                     -- <ns>:: (active|other|archive)
+#                     -- <ns>:: (active|other|archive|twin)
 #                     -- <cl>:: (root|marker|oldver|orphan)
 #  refPath            -- full ref path
 #
@@ -39,10 +39,6 @@ ZOUL_GIT_STOW_CORE=true
 #  other/orphan/sku/v1.2.3          | other/orphan/         | other.orphan   | sku/v1.2.3 
 #  other/sku/v1.2.3                 | other/                | other.root     | sku/v1.2.3 
 #  sku/v1.2.3                       |                       | active.root    | sku/v1.2.3 
-
-# other/
-# other/archive/
-# ''
 stow_set_info()
 {
   local ns cl at
@@ -71,16 +67,15 @@ stow_is_orphan()  { [[ $stowType =~ \.orphan$ ]]; }
 stow_is_marker()  { [[ $stowType =~ \.marker$ ]]; }
 stow_is_oldver()  { [[ $stowType =~ \.oldver$ ]]; }
 
-# 
+# Determine tag type and stow type
 # 
 # usage:
-#   local stowType stowFolder refPath
-#   stow_set_info 'other/archive/sku/v1.2.3'
-#   local refType refStowType 
-#   stow_set_tag_info
+#   local stowType stowFolder refPath refType refStowType
+#   stow_set_info 'other/archive/sku/v1.2.3' # -> stowType=archive.root stowFolder=other/archive/ refPath=sku/v1.2.3
+#   stow_set_tag_info                        # -> refType=semver refStowType=archive.root
 #
 # in:
-#  archiveRef=$1  -- existing ref for archiving decision
+#  commit=$1      -- optional commit at which tag points (used if for archiving decision)
 #  refPath        -- tag ref
 # out:
 #  refPath        -- fixed ref path if [[ $refType =~ \.fixed ]]
@@ -88,7 +83,7 @@ stow_is_oldver()  { [[ $stowType =~ \.oldver$ ]]; }
 #  refStowType    -- stow type for tag ref
 stow_set_tag_info()
 {
-  local archiveRef=$1 ref="$stowFolder$refPath" ns0=${stowType%%.*} cl0=${stowType##*.} ns1 cl1 dt
+  local commit=${1:-$stowFolder$refPath} ns0=${stowType%%.*} cl0=${stowType##*.} ns1 cl1 dt
   ns1=$ns0
   cl1=$cl0
 
@@ -121,15 +116,14 @@ stow_set_tag_info()
     case $refType in
       semver*) [[ $cl0 == 'orphan' ]] || cl1='root';;
       oldver*) [[ $cl0 == 'orphan' ]] || cl1='oldver';
-              [[ $ns0 == 'active' ]] && ns1='other';;
+               [[ $ns0 == 'active' ]] && ns1='other';;
       marker*) [[ $ns0 == 'active' ]] && ns1='other';  cl1='marker';;
       system*) [[ $ns0 == 'archive' ]] || ns1='active'; cl1='root';;
     esac
 
     # archive after 365 days
     if [[ $ns1 != 'archive' ]]; then
-      [[ -z $archiveRef ]] && archiveRef=$ref
-      if dt=$(ref_timespan "$archiveRef"); then
+      if dt=$(ref_timespan "$commit"); then
         (( dt = dt / 86400 )) # time in days
         (( dt > 365 )) && ns1='archive'
       fi
@@ -139,17 +133,19 @@ stow_set_tag_info()
   refStowType="$ns1.$cl1"
 }
 
-# usage:
+# Determine stow folder
+#
+# exemple:
 #   local stowType stowFolder refPath stowPath
-#   stow_set_info 'other/archive/sku/v1.2.3'
+#   stow_set_info   'sku/v1.2.3'
 #   stow_set_folder 'archive'
-#   stow_set_folder 'other.orphan'
-#   stow_set_folder 'active.root'
+#   stow_set_info   'mytag'
+#   stow_set_folder 'other.marker'
 #
 # in:
 #   stowType stowFolder refPath
 #   $1     -- destination stow type
-#          -- [(active|other|archive)][.(root|marker|oldver|orphan)]
+#          -- [(active|other|archive|twin)][.(root|marker|oldver|orphan)]
 # out:
 #   stowPath
 
