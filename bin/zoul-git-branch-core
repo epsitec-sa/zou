@@ -459,6 +459,7 @@ branch_move()
   # io_trace "branch_move ${*@Q}"
   local branch1=$1 branch2=$2 ec=0
   [[ -z "$branch1" || -z "$branch2" ]] && { io_error "branch_move: missing argument[s]" "$moduleTracePrefix"; return 1; }
+  [[ $branch1 == $branch2 ]] && return 0
   [[ $branch1 == 'master' ]] && { io_error "branch_move: branch 'master' cannot be renamed" "$moduleTracePrefix"; return 1; }
   branch_exists "$branch2" && { io_error "branch_move: destination branch '$branch2' already exists" "$moduleTracePrefix"; return 1; }
 
