@@ -132,6 +132,55 @@ stow_set_tag_info()
 
   refStowType="$ns1.$cl1"
 }
+# Determine branch type and stow type
+# 
+# usage:
+#   local stowType stowFolder refPath refType refStowType
+#   stow_set_info 'other/archive/sku/1.2'    # -> stowType=archive.root stowFolder=other/archive/ refPath=sku/1.2
+#   stow_set_branch_info                     # -> refType=prod refStowType=archive.root
+#
+# in:
+#  commit=$1      -- optional commit at which branch points (used if for archiving decision)
+#  refPath        -- branch ref
+# out:
+#  refPath        -- fixed ref path if [[ $refType =~ \.fixed ]]
+#  refType        -- (oldver|semver|dev|master)
+#  refStowType    -- stow type for branch ref
+stow_set_branch_info()
+{
+  local commit=${1:-$stowFolder$refPath} ns0=${stowType%%.*} cl0=${stowType##*.} ns1 cl1 dt
+  ns1=$ns0
+  cl1=$cl0
+
+  # twins are almost immutable - they can only be deleted
+  if [[ $ns0 != 'twin' ]]; then
+    if [[ $refPath =~ ^(.*/)?([0-9]+)\.([0-9]+)$ ]]; then
+      refType='semver'
+    elif [[ $refPath =~ ^(.*/)?[0-9]+\.[0-9]+ ]]; then
+      refType='oldver'
+    elif [[ $refPath == 'master' ]]; then
+      refType='master'
+    else
+      refType='dev'
+    fi
+
+    case $refType in
+      master) cl1='root';   ns1='active';;
+      oldver) cl1='oldver'; [[ $ns0 == 'active' ]] && ns1='other';;
+      *)      cl1='root';;
+    esac
+
+    # archive after 365 days
+    if [[ $ns1 != 'archive' ]]; then
+      if dt=$(ref_timespan "$commit"); then
+        (( dt = dt / 86400 )) # time in days
+        (( dt > 365 )) && ns1='archive'
+      fi
+    fi
+  fi
+
+  refStowType="$ns1.$cl1"
+}
 
 # Determine stow folder
 #
