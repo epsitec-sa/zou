@@ -354,7 +354,7 @@ path_make_relative()
 }
 get_file_encoding()
 {
-  local info=$(file -i $1)
+  local info=$(file -i "$1")
   info="${info##*=}"
   info="${info,,}"
   [[ $info == 'unknown-8bit' ]] && info='utf-8'
@@ -372,6 +372,7 @@ zou_lencoding="$(_locale_encoding)"
 ised()
 {
   local file=$1 script=$2 fEncoding=$(get_file_encoding "$1") ec=0
+  # io_trace "ised $(print_vars file fEncoding)"
 
   if [[ $fEncoding == $zou_lencoding || $fEncoding == 'us-ascii' || $fEncoding == 'utf-8' || $fEncoding == 'iso-8859-1' ]]; then
     sed -b -E -i "$script" "$file"
