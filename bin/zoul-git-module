@@ -176,6 +176,8 @@ _module_reset_scope()
 {
   [[ $moduleScopeInitialized == true ]] || return 0
 
+  moduleSubmodulePaths=( $(repo_list_submodule_paths $PWD) )
+  
   if [[ "$PWD" == "$bundleRoot" ]]; then
     bundleBranch=$1
     _module_set_principal_module_id
