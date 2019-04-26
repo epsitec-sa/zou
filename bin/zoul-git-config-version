@@ -101,9 +101,9 @@ version_update_package_json()
   techver=${varray[1]}.${varray[2]}.${varray[3]}${varray[4]}
 
   script="\
-  0,/^[[:blank:]]*\"version\"/{s/(^[[:blank:]]*\"version\":[[:blank:]]*\").*(\",)/\1$techver\2/}"
+  0,/^[[:blank:]]*\"version\"/{s/(^[[:blank:]]*\"version\":[[:blank:]]*\").*(\",?)/\1$techver\2/}"
 
-  # io_trace "version_update_package_json -- $(print_vars file varray[@] techver stechver)"
+  # io_trace "version_update_package_json -- $(print_vars file varray[@] techver)"
 
   ised "$file" "$script"
 }
@@ -284,7 +284,7 @@ version_update()
     kv=${kv#update-version.}
     key=${kv%% *}; key=${key//-/_}
     value=${kv#* }
-    # io_trace "version_update -- $(print_vars key value varray[@] techVer)"
+    # io_trace "version_update -- $(print_vars key value varray[@] techver stechver)"
     IFS=' ' "version_update_$key" "$value" 'varray[@]' "$techver" "$stechver"
   done
   # execute custom updater (use git config-version --custom to create one)
