@@ -374,6 +374,14 @@ branch_checkout()
       # [[ -z $line ]] && continue
       if [[ $line =~ ^Switched ]]; then
         color=Green
+      elif [[ $line =~ ^([wW]arning:)(.*) ]]; then
+        line="  ${Brown}${BASH_REMATCH[1]}${NC}${LightGray}${BASH_REMATCH[2]}"
+        unset alias
+        color=LightGray
+      elif [[ $line =~ ^Note:\ checking\ out ]]; then
+        line="Switched to $symType $symRef"
+        color=Green
+        breakLoop=true
       elif [[ -z $color ]]; then
         if [[ $line =~ ^Already ]]; then
           color=LightBlue
@@ -382,17 +390,8 @@ branch_checkout()
           line="Already at '$ref'"
           color=LightBlue
           [[ -z $alias ]] && alias=$ref
-        elif [[ $line =~ ^Warning:(.*) ]]; then
-          line="${Brown}Warning${NC} : ${DarkGray}${BASH_REMATCH[1]}"
-          unset alias
-          deferIndent=true
-          color=DarkGray
         elif [[ $line =~ ^error ]]; then
           color=Red
-        elif [[ $line =~ ^Note:\ checking\ out ]]; then
-          line="Switched to $symType $symRef"
-          color=Green
-          breakLoop=true
         elif [[ $line =~ ^Previous\ HEAD ]]; then
           continue
         else
