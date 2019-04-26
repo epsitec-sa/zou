@@ -132,6 +132,11 @@ stow_set_tag_info()
 
   refStowType="$ns1.$cl1"
 }
+stow_tag_is_semver() { [[ $refType =~ ^semver ]]; }
+stow_tag_is_oldver() { [[ $refType =~ ^oldver ]]; }
+stow_tag_is_marker() { [[ $refType =~ ^marker ]]; }
+stow_tag_is_system() { [[ $refType =~ ^system ]]; }
+
 # Determine branch type and stow type
 # 
 # usage:
@@ -172,8 +177,7 @@ stow_set_branch_info()
 
     # archive after 365 days
     if [[ $ns1 != 'archive' && $refType != 'master' ]]; then
-      commit=$(branch_realize "$commit")
-      if dt=$(ref_timespan "$commit"); then
+      if commit=$(branch_realize "$commit" 2>/dev/null) && dt=$(ref_timespan "$commit"); then
         # io_trace "stow_set_branch_info -- $(print_vars commit dt)"
         (( dt = dt / 86400 )) # time in days
         (( dt > 365 )) && ns1='archive'

@@ -8,20 +8,105 @@ ZOUL_GIT_STOW=true
 [[ -z $ZOUL_GIT_TAG ]]         && . zoul-git-tag
 [[ -z $ZOUL_GIT_BRANCH_CORE ]] && . zoul-git-branch-core
 
-# in:
-#  tags=$@ -- tag list
-# return code:
-#  1 if any tag move fails
-stow_tags()
+stow_remove_classified_branches()
 {
-  local stowType stowFolder refPath refType refStowType stowPath tag ec=0
+  local refPath stowFolder stowType branch branch1 branch2 rbranch ec=0
 
-  for tag; do
-    stow_set_info "$tag"            # -> stowType stowFolder refPath
-    stow_set_tag_info               # -> refType refStowType refPath
-    stow_set_folder "$refStowType"  # -> stowPath
-    # io_trace "stow_tags -- $(print_vars tag stowFolder refPath stowType refStowType refType stowPath)"
-    tag_move "$tag" "$stowPath" || ec=1
+  # group by namespace
+  declare -A archiveMap
+  declare -A otherMap
+  declare -A activeMap
+  declare -A rbranchMap
+  for branch; do
+    stow_set_info "$branch" # -> refPath stowFolder stowType
+    case ${stowType%.*} in
+    archive) archiveMap[$refPath]=$branch;;
+    other)   otherMap[$refPath]=$branch;;
+    active)  activeMap[$refPath]=$branch;;
+    esac
+    rbranchMap[$branch]=$(branch_realize "$branch")
+  done
+  # delete archive branchs in other and active namespaces
+  for refPath in ${!archiveMap[@]}; do
+    branch1=${archiveMap[$refPath]}
+    branch2=${otherMap[$refPath]}
+    if [[ -n $branch2 ]] && ref_equals ${rbranchMap[$branch1]} ${rbranchMap[$branch2]}; then
+      branch_delete $branch2 || ec=$?
+      unset otherMap[$refPath]
+    fi
+    branch2=${activeMap[$refPath]}
+    if [[ -n $branch2 ]] && ref_equals ${rbranchMap[$branch1]} ${rbranchMap[$branch2]}; then
+      branch_delete $branch2 || ec=$?
+      unset activeMap[$refPath]
+    fi
+  done
+  # delete other branchs in active namespace
+  for refPath in ${!otherMap[@]}; do
+    branch1=${otherMap[$refPath]}
+    branch2=${activeMap[$refPath]}
+    if [[ -n $branch2 ]] && ref_equals ${rbranchMap[$branch1]} ${rbranchMap[$branch2]}; then
+      branch_delete $branch2 || ec=$?
+      unset activeMap[$refPath]
+    fi
+  done
+}
+# in:
+#  branches=$@ -- branch list
+# return code:
+#  1 if any branch delete fails
+stow_remove_promoted_vbranches()
+{
+  local stowType stowFolder refPath refType refStowType stowPath \
+        version branch branches vbranch rbranch vbranches hash folder ec=0
+
+  declare -A hashMap
+  for branch; do
+    [[ $branch =~ ^(.*/)?([0-9]+\.[0-9]+) ]] || continue
+    version=${BASH_REMATCH[2]}
+    rbranch=$(branch_realize $branch)
+    hash=$(git rev-parse "$rbranch^{}")
+    hashMap[$hash]="${hashMap[$hash]} "$branch""
+  done
+
+  # detect vbranches with same version pointing at same commit
+  for hash in ${!hashMap[@]}; do
+    branches=( ${hashMap[$hash]} )
+    if [ ${#branches[@]} -gt 1 ]; then
+      # group branches by version
+      unset vbranchMap
+      declare -A vbranchMap
+      for branch in ${branches[@]}; do
+        if [[ $branch =~ ^(.*/)?([0-9]+\.[0-9]+) ]]; then
+          version=${BASH_REMATCH[2]}
+          vbranchMap[$version]="${vbranchMap[$version]} "$branch""
+        fi
+      done
+      for version in ${!vbranchMap[@]}; do
+        vbranches=( ${vbranchMap[$version]} )
+        if [ ${#vbranches[@]} -gt 1 ]; then
+          # io_info "Branches (${Brown}$(string_join ', ' ${vbranches[@]})${Cyan}) are pointing at the same commit (${Brown}${hash:0:7}${Cyan})" "$moduleTracePrefix"
+          # group vbranches branches by folder
+          unset fbranchMap
+          declare -A fbranchMap
+          for vbranch in ${vbranches[@]}; do
+            stow_set_info "$vbranch"
+            [[ $refPath =~ ^(.*/)? ]] && folder=${BASH_REMATCH[1]:-/}
+            fbranchMap[$folder]="${fbranchMap[$folder]} "$vbranch""
+          done
+          # io_trace "branch_delete 1 -- $(declare -p fbranchMap)"
+          for folder in ${!fbranchMap[@]}; do
+            [[ $folder =~ ^sku/ ]] && unset fbranchMap[$folder]
+          done
+          # io_trace "branch_delete 2 -- $(declare -p fbranchMap)"
+          for folder in ${!fbranchMap[@]}; do
+            vbranches=( ${fbranchMap[$folder]} )
+            for vbranch in ${vbranches[@]}; do
+              branch_delete "$vbranch"
+            done
+          done
+        fi
+      done
+    fi
   done
   return $ec
 }
@@ -29,7 +114,7 @@ stow_tags()
 #  branches=$@ -- branch list
 # return code:
 #  1 if any branch move fails
-stow_branches()
+stow_classify_branches()
 {
   local stowType stowFolder refPath refType refStowType stowPath branch ec=0
 
@@ -37,61 +122,12 @@ stow_branches()
     stow_set_info "$branch"         # -> stowType stowFolder refPath
     stow_set_branch_info            # -> refType refStowType refPath
     stow_set_folder "$refStowType"  # -> stowPath
-    # io_trace "stow_branches -- $(print_vars branch stowFolder refPath stowType refStowType refType stowPath)"
+    # io_trace "stow_classify_branches -- $(print_vars branch stowFolder refPath stowType refStowType refType stowPath)"
     branch_move "$branch" "$stowPath" || ec=1
   done
   return $ec
 }
-stow_archive_tags()
-{
-  local refPath stowFolder stowType refType refStowType stowPath tag ec=0
-
-  for tag; do
-    stow_set_info "$tag"                          # -> refPath stowFolder stowType
-    stow_set_tag_info                             # -> refPath refType refStowType
-    # io_trace "stow_archive_tags -- $(print_vars tag stowFolder refPath stowType refStowType refType stowPath)"
-    refStowType=${refStowType/*./archive.}
-    stow_set_folder "$refStowType"                # -> stowPath
-    # io_trace "stow_archive_tags -- $(print_vars tag stowFolder refPath stowType refStowType refType stowPath)"
-    tag_move "$tag" "$stowPath" || ec=1
-  done
-  return $ec
-}
-stow_orphan_tags()
-{
-  local refPath stowFolder stowType refType refStowType stowPath tag ec=0
-
-  for tag; do
-    stow_set_info "$tag"                          # -> refPath stowFolder stowType
-    stow_is_orphan && continue
-    stow_set_tag_info                             # -> refPath refType refStowType
-    # io_trace "stow_orphan_tags 1 -- $(print_vars tag stowFolder refPath stowType refStowType refType stowPath)"
-    refStowType=${refStowType/active./other.}
-    refStowType=${refStowType/.*/.orphan}
-    stow_set_folder "$refStowType"                # -> stowPath
-    # io_trace "stow_orphan_tags 2 -- $(print_vars tag stowFolder refPath stowType refStowType refType stowPath)"
-    tag_move "$tag" "$stowPath" || ec=1
-  done
-  return $ec
-}
-stow_adopt_tags()
-{
-  local refPath stowFolder stowType refType refStowType stowPath tag ec=0
-
-  for tag; do
-    stow_set_info "$tag"                          # -> refPath stowFolder stowType
-    ! stow_is_orphan && continue
-    stow_set_tag_info                             # -> refPath refType refStowType
-    # io_trace "stow_adopt_tags 1 -- $(print_vars tag stowFolder refPath stowType refStowType refType stowPath)"
-    refStowType=${refStowType/other./active.}
-    refStowType=${refStowType/.orphan/.root}
-    stow_set_folder "$refStowType"                # -> stowPath
-    # io_trace "stow_adopt_tags 2 -- $(print_vars tag stowFolder refPath stowType refStowType refType stowPath)"
-    tag_move "$tag" "$stowPath" || ec=1
-  done
-  return $ec
-}
-stow_remove_duplicate_tags()
+stow_remove_classified_tags()
 {
   local refPath stowFolder stowType tag tag1 tag2 ec=0
 
@@ -152,24 +188,105 @@ stow_remove_duplicate_tags()
     fi
   done
 }
+# in:
+#  tags=$@ -- tag list
+# return code:
+#  1 if any tag delete fails
+stow_remove_promoted_vtags()
+{
+  local stowType stowFolder refPath refType refStowType stowPath \
+        version tag tags vtag vtags hash folder ec=0
+
+  declare -A hashMap
+  for tag; do
+    [[ $tag =~ ^(.*/)?v([0-9]+\.[0-9]+(\.[0-9]+|-@)) ]] || continue
+    version=${BASH_REMATCH[2]}
+    hash=$(git rev-parse "$tag^{}")
+    hashMap[$hash]="${hashMap[$hash]} "$tag""
+  done
+
+  # detect vtags with same version pointing at same commit
+  for hash in ${!hashMap[@]}; do
+    tags=( ${hashMap[$hash]} )
+    if [ ${#tags[@]} -gt 1 ]; then
+      # group tags by version
+      # io_trace "stow_remove_promoted_vtags 1 -- $(print_vars tags[@])"
+      unset vtagMap
+      declare -A vtagMap
+      for tag in ${tags[@]}; do
+        if [[ $tag =~ ^(.*/)?v([0-9]+\.[0-9]+(\.[0-9]+|-@)) ]]; then
+          version=${BASH_REMATCH[2]}
+          vtagMap[$version]="${vtagMap[$version]} "$tag""
+        fi
+      done
+      # io_trace "stow_remove_promoted_vtags 2 -- $(declare -p vtagMap)"
+      for version in ${!vtagMap[@]}; do
+        vtags=( ${vtagMap[$version]} )
+        if [ ${#vtags[@]} -gt 1 ]; then
+          # io_info "Tags (${Brown}$(string_join ', ' ${vtags[@]})${Cyan}) are pointing at the same commit (${Brown}${hash:0:7}${Cyan})" "$moduleTracePrefix"
+          # group vtags tags by folder
+          unset ftagMap
+          declare -A ftagMap
+          for vtag in ${vtags[@]}; do
+            stow_set_info "$vtag"
+            [[ $refPath =~ ^(.*/)? ]] && folder=${BASH_REMATCH[1]:-/}
+            ftagMap[$folder]="${ftagMap[$folder]} "$vtag""
+          done
+          # io_trace "tag_delete 1 -- $(declare -p ftagMap)"
+          for folder in ${!ftagMap[@]}; do
+            [[ $folder =~ ^sku/ ]] && unset ftagMap[$folder]
+          done
+          # io_trace "tag_delete 2 -- $(declare -p ftagMap)"
+          for folder in ${!ftagMap[@]}; do
+            vtags=( ${ftagMap[$folder]} )
+            for vtag in ${vtags[@]}; do
+              tag_delete "$vtag"
+            done
+          done
+        fi
+      done
+    fi
+  done
+  return $ec
+}
+# in:
+#  tags=$@ -- tag list
+# return code:
+#  1 if any tag move fails
+stow_classify_tags()
+{
+  local stowType stowFolder refPath refType refStowType stowPath tag ec=0
+
+  for tag; do
+    stow_set_info "$tag"            # -> stowType stowFolder refPath
+    stow_set_tag_info               # -> refType refStowType refPath
+    stow_set_folder "$refStowType"  # -> stowPath
+    # io_trace "stow_classify_tags -- $(print_vars tag stowFolder refPath stowType refStowType refType stowPath)"
+    tag_move "$tag" "$stowPath" || ec=1
+  done
+  return $ec
+}
 stow_promote_vtags()
 {
   local branches=(${!1}) stowType stowFolder refPath refType refStowType \
-        vtag vtag2 vbranch vbranchFolder vbranchFolders vbranchPairs vtagFolder version ec=0
+        version vtag vtag2 vtagFolder \
+        vbranch vbranchFolder vbranchFolders \
+        vbranchPair vbranchPairs ec=0
   shift
 
   # group vbranchFolder:vbranch pair by version
   declare -A vbranchMap
+  declare -A rvbranchMap
   for vbranch in "${branches[@]}"; do
     if [[ $vbranch =~ ^(.*/)?([0-9]+\.[0-9]+) ]]; then
       vbranchFolder=${BASH_REMATCH[1]:-/}
       version=${BASH_REMATCH[2]}
-      vbranch=$(branch_realize "$vbranch")
+      rvbranchMap[$vbranch]=$(branch_realize "$vbranch")
       vbranchMap[$version]="${vbranchMap[$version]} "$vbranchFolder:$vbranch""
       # io_trace "stow_promote_vtags 1 -- vbranchMap[$version]=${vbranchMap[$version]}"
     fi
   done
-  # group vtags by version
+  # group vtags by version and by hash
   declare -A vtagMap
   for vtag; do
     if [[ $vtag =~ ^(.*/)?(v?([0-9]+\.[0-9]+).*)$ ]]; then
@@ -178,42 +295,65 @@ stow_promote_vtags()
     fi
   done
   for version in "${!vtagMap[@]}"; do
+    # # FOR TEST ONLY FOR TEST ONLY FOR TEST ONLY FOR TEST ONLY FOR TEST ONLY FOR TEST ONLY FOR TEST ONLY FOR TEST ONLY FOR TEST ONLY
+    # [[ $version =~ 11\.8 ]] || continue
+
     vbranchPairs=( ${vbranchMap[$version]} )
     [ ${#vbranchPairs[@]} -eq 0 ] && continue
     # io_trace "stow_promote_vtags 2 -- $(print_vars version vbranchPairs[@])"
     for vtag in ${vtagMap[$version]}; do
+      stow_set_info "$vtag"
+      stow_set_tag_info
+
+      # skip already stowed vtag (having a vbranch with same folder)
+      _stow_check_stowed && continue
+
       # remove non descendant vbranches
       local vbranchTagPairs=()
       for vbranchPair in ${vbranchPairs[@]}; do
         vbranch=${vbranchPair#*:}
         # skip vbranch with suffix (ex: 1.9-og)
-        [[ $vbranch =~ ^(.*/)?[0-9]+\.[0-9]+$ ]] || continue
+        # [[ $vbranch =~ ^(.*/)?[0-9]+\.[0-9]+$ ]] || continue
+        # io_trace "stow_promote_vtags 3 -- $(print_vars vtag vbranch vbranchPair)"
         _stow_check_ancestry && vbranchTagPairs+=("$vbranchPair") || ec=1
       done
+      # if [ ${#vbranchTagPairs[@]} -eq 0 ]; then
+      #   for vbranchPair in ${vbranchPairs[@]}; do
+      #     vbranch=${vbranchPair#*:}
+      #     # keep only branch with suffix
+      #     [[ $vbranch =~ ^(.*/)?[0-9]+\.[0-9]+$ ]] && continue
+      #     io_trace "stow_promote_vtags 3 -- $(print_vars vtag vbranch vbranchPair)"
+      #     _stow_check_ancestry && vbranchTagPairs+=("$vbranchPair") || ec=1
+      #   done
+      # fi
+
       if [ ${#vbranchTagPairs[@]} -eq 0 ]; then
+        # display warnings
         for vbranchPair in ${vbranchPairs[@]}; do
           vbranch=${vbranchPair#*:}
-          # keep only branch with suffix
-          [[ $vbranch =~ ^(.*/)?[0-9]+\.[0-9]+$ ]] && continue
-          _stow_check_ancestry && vbranchTagPairs+=("$vbranchPair") || ec=1
+          _stow_show_ancestry_warnings
         done
+        continue
       fi
 
-      [ ${#vbranchTagPairs[@]} -eq 0 ] && continue
+      # io_trace "stow_promote_vtags 4 -- $(print_vars vtag vbranchTagPairs[@])"
+
       [[ $vtag =~ ^(.*/)?(.*)$ ]] # split to folder / name
       vtagFolder=${BASH_REMATCH[1]:-/}
       vtagName=${BASH_REMATCH[2]}
 
       vbranchFolders=( ${vbranchTagPairs[@]%:*} )
+      # io_trace "stow_promote_vtags 5 -- $(print_vars vtagFolder vtagName vbranchFolders[@])"
       # only one branch for this vtag
       if [ ${#vbranchFolders[@]} -eq 1 ]; then
         vbranchFolder=${vbranchFolders[0]}
         if [[ $vbranchFolder != $vtagFolder ]]; then
           vtag2="${vbranchFolder#/}$vtagName"
-          # io_trace "stow_promote_vtags 3 -- $(print_vars vtag vtagFolder vbranchFolder vtag2)"
+          # io_trace "stow_promote_vtags 6 -- $(print_vars vtag vtagFolder vbranchFolder vtag2)"
           stow_set_info "$vtag2"          # -> stowType stowFolder refPath
           stow_set_tag_info "$vtag"       # -> refType refStowType refPath
           stow_set_folder "$refStowType"  # -> stowPath
+          # io_trace "tag_move -- $(print_vars vtag stowPath)"
           tag_move "$vtag" "$stowPath" || ec=1
         fi
       # more than one branch for this vtag
@@ -222,7 +362,7 @@ stow_promote_vtags()
         unset vbranchFolder
         local deltaMin=0xFFFF
         for vbranchPair in "${vbranchTagPairs[@]}"; do
-          vbranch=${vbranchPair#*:}
+          vbranch=${rvbranchMap[${vbranchPair#*:}]}
           delta=$(( $(git rev-list --count "$vtag".."$vbranch") ))
           (( delta == deltaMin )) && break
           if (( delta < deltaMin )); then
@@ -244,23 +384,65 @@ stow_promote_vtags()
   done
   return $ec
 }
+_stow_check_stowed()
+{
+  local vbranchFolder vtagFolder
+  for vbranchPair in ${vbranchPairs[@]}; do
+    vbranchFolder=${vbranchPair%:*}
+    [[ $refPath =~ ^(.*/)? ]] && vtagFolder=${BASH_REMATCH[1]}
+    # io_trace "_stow_check_stowed -- $(print_vars vtag vtagFolder vbranchFolder)"
+    [[ $vtagFolder == ${vbranchFolder#/} ]] && return 0
+  done
+  return 1
+}
+# in-scope:
+#   vtag        -- current vtag
+#   vbranch     -- current vbranch
+#   rvbranchMap -- realized vbranch map ([vbranch]=rvbranch)
 _stow_check_ancestry()
 {
-  if git merge-base --is-ancestor "$vtag" "$vbranch"; then
-    return 0
-  elif git merge-base --is-ancestor "$vbranch" "$vtag"; then
-    io_info "Branch ${Brown}$vbranch${Cyan} should be fast forwarded to tag ${Brown}$vtag${Cyan}" "$moduleTracePrefix"
+  git merge-base --is-ancestor "$vtag" "${rvbranchMap[$vbranch]}"
+}
+_stow_show_ancestry_warnings()
+{
+  # vtag is not an ancestor of vbranch
+  if git merge-base --is-ancestor "${rvbranchMap[$vbranch]}" "$vtag"; then
+    if _stow_promoted_versions_equals; then
+      io_info "Branch ${Brown}$vbranch${Cyan} could be fast forwarded to tag ${Brown}$vtag${Cyan}" "$moduleTracePrefix"
+    # else
+    #   io_info "Tag ${Brown}$vtag${Cyan} is not on vbranch ${Brown}$vbranch${Cyan}" "$moduleTracePrefix"
+    fi
   else
-    io_info "Tag ${Brown}$vtag${Cyan} is not associated with branch ${Brown}$vbranch${Cyan}" "$moduleTracePrefix"
+    io_info "Tag ${Brown}$vtag${Cyan} is not on vbranch ${Brown}$vbranch${Cyan}" "$moduleTracePrefix"
+    # io_info "Tag ${Brown}$vtag${Cyan} is not on any vbranch" "$moduleTracePrefix"
   fi
-  return 1
+}
+# in-scope:
+#   vtag        -- current vtag
+#   vbranch     -- current vbranch
+#   stowType stowFolder refPath refType refStowType -- vtag info
+_stow_promoted_versions_equals()
+{
+  local ptagVer pbranchVer
+  # parse vtag ref path
+  [[ $refPath =~ ^(.*/)?v([0-9]+\.[0-9]+) ]]
+  ptagVer=${BASH_REMATCH[1]}${BASH_REMATCH[2]}
+  # get branch refPath ()
+  local stowType stowFolder refPath
+  stow_set_info "$vbranch"
+  # parse vbranch ref path
+  [[ $refPath =~ ^(.*/)?([0-9]+\.[0-9]+) ]]
+  pbranchVer=${BASH_REMATCH[1]}${BASH_REMATCH[2]}
+  [[ $ptagVer == $pbranchVer ]] && return 0
+  # io_trace "_stow_promoted_versions_equals -- $(print_vars vtag vbranch ptagVer pbranchVer)"
+  # return 1
 }
 stow_orphans()
 {
   local branches=(${!1}) vbranch version vtag vbranches
   shift
 
-  # group vbranchFolder:vbranch pair by version
+  # group vbranch by version
   declare -A vbranchMap
   for vbranch in "${branches[@]}"; do
     if [[ $vbranch =~ ^(.*/)?([0-9]+\.[0-9]+) ]]; then
@@ -280,9 +462,58 @@ stow_orphans()
   for version in "${!vtagMap[@]}"; do
     vbranches=( ${vbranchMap[$version]} )
     if [ ${#vbranches[@]} -eq 0 ]; then
-      stow_orphan_tags ${vtagMap[$version]}
+      _stow_orphan_tags ${vtagMap[$version]}
     else
-      stow_adopt_tags ${vtagMap[$version]}
+      _stow_adopt_tags ${vtagMap[$version]}
     fi
   done
+}
+_stow_orphan_tags()
+{
+  local refPath stowFolder stowType refType refStowType stowPath tag ec=0
+
+  for tag; do
+    stow_set_info "$tag"                          # -> refPath stowFolder stowType
+    stow_is_orphan && continue
+    stow_set_tag_info                             # -> refPath refType refStowType
+    # io_trace "_stow_orphan_tags 1 -- $(print_vars tag stowFolder refPath stowType refStowType refType stowPath)"
+    refStowType=${refStowType/active./other.}
+    refStowType=${refStowType/.*/.orphan}
+    stow_set_folder "$refStowType"                # -> stowPath
+    # io_trace "_stow_orphan_tags 2 -- $(print_vars tag stowFolder refPath stowType refStowType refType stowPath)"
+    tag_move "$tag" "$stowPath" || ec=1
+  done
+  return $ec
+}
+_stow_adopt_tags()
+{
+  local refPath stowFolder stowType refType refStowType stowPath tag ec=0
+
+  for tag; do
+    stow_set_info "$tag"                          # -> refPath stowFolder stowType
+    ! stow_is_orphan && continue
+    stow_set_tag_info                             # -> refPath refType refStowType
+    # io_trace "_stow_adopt_tags 1 -- $(print_vars tag stowFolder refPath stowType refStowType refType stowPath)"
+    refStowType=${refStowType/other./active.}
+    refStowType=${refStowType/.orphan/.root}
+    stow_set_folder "$refStowType"                # -> stowPath
+    # io_trace "_stow_adopt_tags 2 -- $(print_vars tag stowFolder refPath stowType refStowType refType stowPath)"
+    tag_move "$tag" "$stowPath" || ec=1
+  done
+  return $ec
+}
+stow_archive_tags()
+{
+  local refPath stowFolder stowType refType refStowType stowPath tag ec=0
+
+  for tag; do
+    stow_set_info "$tag"                          # -> refPath stowFolder stowType
+    stow_set_tag_info                             # -> refPath refType refStowType
+    # io_trace "stow_archive_tags -- $(print_vars tag stowFolder refPath stowType refStowType refType stowPath)"
+    refStowType=${refStowType/*./archive.}
+    stow_set_folder "$refStowType"                # -> stowPath
+    # io_trace "stow_archive_tags -- $(print_vars tag stowFolder refPath stowType refStowType refType stowPath)"
+    tag_move "$tag" "$stowPath" || ec=1
+  done
+  return $ec
 }

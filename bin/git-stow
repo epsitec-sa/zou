@@ -44,20 +44,29 @@ stow_node()
 {
   local noTagPush=true
 
-  io_message "Stowing branches..." "$moduleTracePrefix" LightGray
-  stow_branches $(branch_list_all_flatten)
-
-  io_message "Stowing tags..." "$moduleTracePrefix" LightGray
-  stow_tags $(git tag -l)
+  io_message "Removing already classified branches..." "$moduleTracePrefix" LightGray
+  stow_remove_classified_branches $(branch_list_all_flatten)
   
-  io_message "Removing duplicates..." "$moduleTracePrefix" LightGray
-  stow_remove_duplicate_tags $(git tag -l)
+  io_message "Removing already promoted vbranches..." "$moduleTracePrefix" LightGray
+  stow_remove_promoted_vbranches $(branch_list_all_flatten)
+  
+  io_message "Classifying branches..." "$moduleTracePrefix" LightGray
+  stow_classify_branches $(branch_list_all_flatten)
 
+  io_message "Removing already classified tags..." "$moduleTracePrefix" LightGray
+  stow_remove_classified_tags $(git tag -l)
+
+  io_message "Removing already promoted vtags..." "$moduleTracePrefix" LightGray
+  stow_remove_promoted_vtags $(git tag -l --sort=-v:refname)
+  
+  io_message "Classifying tags..." "$moduleTracePrefix" LightGray
+  stow_classify_tags $(git tag -l)
+  
   local vbranches=( $(branch_list_all_flatten) )
   io_message "Promoting vtags..." "$moduleTracePrefix" LightGray
   stow_promote_vtags 'vbranches[@]' $(git tag -l --sort=-v:refname)
 
-  io_message "Processing orphans..." "$moduleTracePrefix" LightGray
+  io_message "Taking care of orphans..." "$moduleTracePrefix" LightGray
   stow_orphans 'vbranches[@]' $(git tag -l)
 
   [[ $stowPushTags == true ]] && tag_mirror
