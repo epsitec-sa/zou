@@ -119,11 +119,13 @@ tag_move()
     return 1
   fi
   if git_object_exists "$tag2"; then
-    # io_trace "tag_move -- $(print_vars tag1 tag2 type2)"
+    # io_trace "tag_move 1 -- $(print_vars tag1 tag2 type2)"
     if tag_exists $tag2; then
       if ref_equals $tag1 $tag2; then
         tag_rename "$@"
       else
+        local hash1=$(git rev-parse --short $tag1^{}) hash2=$(git rev-parse --short $tag2^{})
+        io_warning "Cannot move '$tag1 ($hash1)' to '$tag2 ($hash2)'" "$moduleTracePrefix"
         local refPath stowFolder stowType refType refStowType stowPath
         stow_set_info "$tag1" # -> refPath stowFolder stowType
         stow_set_tag_info
@@ -131,7 +133,6 @@ tag_move()
         stow_set_folder "$refStowType" # -> stowPath
         # io_trace "tag_move 2 -- $(print_vars tag1 stowFolder refPath stowType stowPath)"
         if [[ $tag1 != $stowPath ]]; then
-          io_warning "Cannot override '$tag2' with '$tag1': moving '$tag1' to '$stowPath'" "$moduleTracePrefix"
           tag_rename "$tag1" "$stowPath"
         fi
         return 1
