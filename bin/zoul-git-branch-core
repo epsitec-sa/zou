@@ -457,7 +457,7 @@ branch_force_delete()
 branch_move()
 {
   # io_trace "branch_move ${*@Q}"
-  local branch1=$1 branch2=$2 ec=0
+  local branch1=$1 branch2=$2 rbranch1 ec=0
   [[ -z "$branch1" || -z "$branch2" ]] && { io_error "branch_move: missing argument[s]" "$moduleTracePrefix"; return 1; }
   [[ $branch1 == $branch2 ]] && return 0
   [[ $branch1 == 'master' ]] && { io_error "branch_move: branch 'master' cannot be renamed" "$moduleTracePrefix"; return 1; }
@@ -517,6 +517,41 @@ branch_move()
     return 1
   fi
   io_success "Moved branch '$branch1' to '$branch2'" "$moduleTracePrefix"
+}
+branch_delete()
+{
+  # io_trace "branch_delete ${*@Q}"
+  local branch=$1 rbranch remote ec=0
+  [[ -z "$branch" ]] && { io_error "branch_delete: missing argument[s]" "$moduleTracePrefix"; return 1; }
+  [[ $branch == 'master' ]] && { io_error "branch_delete: branch 'master' cannot be deleted" "$moduleTracePrefix"; return 1; }
+  branch=$(branch_realize "$branch"); ec=$?
+  branch_is_current "$branch" &&  { io_error "branch_delete: current branch '$branch' cannot be deleted" "$moduleTracePrefix"; return 1; }
+  if [ $ec -eq 0 ]; then
+    # local branch exists
+    if [ $? -eq 0 ]; then
+      rbranch=$(branch_upstream "$branch")
+      remote=${rbranch%%/*}
+      # io_trace "branch_delete (DELETE BOTH) -- $(print_vars branch branch2 rbranch remote)"
+      # delete remote branch
+      git push --delete --force "$remote" "$branch" >/dev/null 2>&1
+      # delete local branch
+      git branch -D "$branch" >/dev/null 2>&1
+    else
+      # remote branch does not exist : delete local only
+      # io_trace "branch_delete (DELETE LOCAL ONLY) -- $(print_vars branch branch2)"
+      git branch -D "$branch" >/dev/null 2>&1
+    fi 
+  elif [ $ec -eq 1 ]; then
+    # local branch does not exist : delete remote only
+    remote=${branch%%/*}
+    # io_trace "branch_delete (DELETE REMOTE ONLY) -- $(print_vars branch branch2 remote)"
+    # delete remote branch
+    git push --delete --force "$remote" "${branch#*/}" >/dev/null 2>&1
+  else
+    io_error "branch_delete: branch '$branch' does not exist" "$moduleTracePrefix"
+    return 1
+  fi
+  io_success "Deleted branch '$branch'" "$moduleTracePrefix"
 }
 # in:
 #   $1:branchOrTag
