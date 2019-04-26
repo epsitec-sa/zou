@@ -87,6 +87,7 @@ _branch_sync_visit()
       '<')  [[ $l == $current ]] && color=Yellow      || color=Brown;;   # behind
       '<>') [[ $l == $current ]] && color=LightPurple || color=Purple;;  # ahead and behind
       '=')  [[ $l == $current ]] && color=LightGreen  || color=Green;;
+      *)    color=LightBlue;;
     esac
     $visitor "$r" "$l" "$i" "$current" || return $?
     local linfo=$(string_pad_right 18 $l)
@@ -108,19 +109,16 @@ _branch_sync_fix_tracking()
       io_message "  Deleted obsolete branch '$l'" "$moduleTracePrefix" DarkGray
     else
       git branch --unset-upstream "$l"
-      color=LightBlue
     fi
   else
     # no tracking info
-    if [[ $l =~ ^sku/ ]] || branch_is_prod "$l"; then
+    if [[ $l =~ (^|/)sku/ ]] || branch_is_prod "$l"; then
       # automatically push sku vbranches
       local remote=$(git_remote)
       [[ -n $remote ]] && ! branch_is_archived "$l" "$remote" && branch_ensure_remote "$l" "$remote"
-    else
-      # branch has no tracking info
-      color=LightBlue
     fi
   fi
+  # io_trace "_branch_sync_fix_tracking -- $(print_vars l r i color)"
 }
 branch_sync_all()
 {
