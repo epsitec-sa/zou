@@ -177,8 +177,9 @@ stow_set_branch_info()
 
     # archive after 365 days
     if [[ $ns1 != 'archive' && $refType != 'master' ]]; then
-      if commit=$(branch_realize "$commit" 2>/dev/null) && dt=$(ref_timespan "$commit"); then
-        # io_trace "stow_set_branch_info -- $(print_vars commit dt)"
+      commit=$(branch_realize "$commit")
+      if [ $? -le 1 ] && dt=$(ref_timespan "$commit"); then
+        # io_trace "stow_set_branch_info 3 -- $(print_vars commit dt)"
         (( dt = dt / 86400 )) # time in days
         (( dt > 365 )) && ns1='archive'
       fi
