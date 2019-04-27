@@ -6,20 +6,19 @@ Stow branches and tags
     -r|--recursive          traverse submodules recursively
     -p|--push               mirror tags when done
                             WARNING: remote tags are deleted and replaced with local tags
+    -a|--all                execute all stow steps (default to step 5)
 
-1. Remove already classified branches
-2. Remove already promoted vbranches
-3. Classify branches
+1. Remove redondant branches
+2. Classify branches
    - archive old branches (> 1 year)
-4. Remove already classified tags
-5. Remove already promoted vtags
-6. Classify tags
+3. Remove redondant tags
+4. Classify tags
    - archive old tags (> 1 year)
    - remove vtags prerelease leading zeros
-7. Promote vtags
+5. Promote vtags
    - move vtags in associated vbranch folder
-8. Process orphan vtags
+   - process orphan vtags
 
 example:
     git stow
-    git stow --push
+    git stow --all --push

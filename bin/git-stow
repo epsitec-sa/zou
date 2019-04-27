@@ -18,12 +18,15 @@ stow_parse()
     -h|--help) zou-help $0; exit 0;;
     -r|--recursive) recursive=true;;
     -p|--push)      stowPushTags=true;;
+    -a|--all)       archive=true; stowBranches=true; stowTags=true;;
     -*) forOpts+=($1);;
   esac; shift; done
 }
 stow_run()
 {
-  local stowPushTags recursive forOpts=()
+  local stowPushTags recursive forOpts=() \
+        archive stowBranches stowTags
+
   stow_parse "$@" || return $?
 
   startupMessage="Stowing, please wait..."
@@ -44,32 +47,36 @@ stow_node()
 {
   local noTagPush=true stowArchiveDelay
 
-  io_message "Computing archive delay..." "$moduleTracePrefix" LightGray
-  stow_set_archive_delay $(branch_list_all_flatten)
-  io_info "Archive delay = ${Brown}$stowArchiveDelay${Cyan} days" "$moduleTracePrefix"
+  if [[ $archive == true ]]; then
+    io_message "Computing archive delay..." "$moduleTracePrefix" LightGray
+    stow_set_archive_delay $(branch_list_all_flatten)
+    io_info "Archive delay = ${Brown}$stowArchiveDelay${Cyan} days" "$moduleTracePrefix"
+  fi
 
-  io_message "Removing redondant branches..." "$moduleTracePrefix" LightGray
-  stow_remove_classified_branches $(branch_list_all_flatten)
-  stow_remove_promoted_vbranches $(branch_list_all_flatten)
-  
-  io_message "Classifying branches..." "$moduleTracePrefix" LightGray
-  stow_classify_branches $(branch_list_all_flatten)
+  if [[ $stowBranches == true ]]; then
+    io_message "Removing redondant branches..." "$moduleTracePrefix" LightGray
+    stow_remove_classified_branches $(branch_list_all_flatten)
+    stow_remove_promoted_vbranches $(branch_list_all_flatten)
+    
+    io_message "Classifying branches..." "$moduleTracePrefix" LightGray
+    stow_classify_branches $(branch_list_all_flatten)
+  fi
 
-  io_message "Removing redondant tags..." "$moduleTracePrefix" LightGray
-  stow_remove_classified_tags $(git tag -l)
-  stow_remove_promoted_vtags $(git tag -l --sort=-v:refname)
-  
-  io_message "Classifying tags..." "$moduleTracePrefix" LightGray
-  stow_classify_tags $(git tag -l)
+  if [[ $stowTags == true ]]; then
+    io_message "Removing redondant tags..." "$moduleTracePrefix" LightGray
+    stow_remove_classified_tags $(git tag -l)
+    stow_remove_promoted_vtags $(git tag -l --sort=-v:refname)
+    
+    io_message "Classifying tags..." "$moduleTracePrefix" LightGray
+    stow_classify_tags $(git tag -l)
+  fi
   
   local vbranches=( $(branch_list_all_flatten) )
   io_message "Promoting vtags..." "$moduleTracePrefix" LightGray
   stow_promote_vtags 'vbranches[@]' $(git tag -l --sort=-v:refname)
-
-  io_message "Taking care of orphans..." "$moduleTracePrefix" LightGray
   stow_orphans 'vbranches[@]' $(git tag -l)
 
-  # [[ $stowPushTags == true ]] && tag_mirror
+  [[ $stowPushTags == true ]] && tag_mirror
 }
 
 stow_run "$@"
