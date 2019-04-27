@@ -42,21 +42,21 @@ stow_main()
 }
 stow_node()
 {
-  local noTagPush=true
+  local noTagPush=true stowArchiveDelay
 
-  io_message "Removing already classified branches..." "$moduleTracePrefix" LightGray
+  io_message "Computing archive delay..." "$moduleTracePrefix" LightGray
+  stow_set_archive_delay $(branch_list_all_flatten)
+  io_info "Archive delay = ${Brown}$stowArchiveDelay${Cyan} days" "$moduleTracePrefix"
+
+  io_message "Removing redondant branches..." "$moduleTracePrefix" LightGray
   stow_remove_classified_branches $(branch_list_all_flatten)
-  
-  io_message "Removing already promoted vbranches..." "$moduleTracePrefix" LightGray
   stow_remove_promoted_vbranches $(branch_list_all_flatten)
   
   io_message "Classifying branches..." "$moduleTracePrefix" LightGray
   stow_classify_branches $(branch_list_all_flatten)
 
-  io_message "Removing already classified tags..." "$moduleTracePrefix" LightGray
+  io_message "Removing redondant tags..." "$moduleTracePrefix" LightGray
   stow_remove_classified_tags $(git tag -l)
-
-  io_message "Removing already promoted vtags..." "$moduleTracePrefix" LightGray
   stow_remove_promoted_vtags $(git tag -l --sort=-v:refname)
   
   io_message "Classifying tags..." "$moduleTracePrefix" LightGray
@@ -69,7 +69,7 @@ stow_node()
   io_message "Taking care of orphans..." "$moduleTracePrefix" LightGray
   stow_orphans 'vbranches[@]' $(git tag -l)
 
-  [[ $stowPushTags == true ]] && tag_mirror
+  # [[ $stowPushTags == true ]] && tag_mirror
 }
 
 stow_run "$@"

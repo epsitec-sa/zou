@@ -75,8 +75,9 @@ stow_is_oldver()  { [[ $stowType =~ \.oldver$ ]]; }
 #   stow_set_tag_info                        # -> refType=semver refStowType=archive.root
 #
 # in:
-#  commit=$1      -- optional commit at which tag points (used if for archiving decision)
-#  refPath        -- tag ref
+#  commit=$1        -- optional commit at which tag points (used if for archiving decision)
+#  stowArchiveDelay -- archive delay (do not archive if not specified)
+#  refPath          -- tag ref
 # out:
 #  refPath        -- fixed ref path if [[ $refType =~ \.fixed ]]
 #  refType        -- (oldver[.semver]|semver[.fixed]|marker|system)
@@ -84,53 +85,65 @@ stow_is_oldver()  { [[ $stowType =~ \.oldver$ ]]; }
 stow_set_tag_info()
 {
   local commit=${1:-$stowFolder$refPath} ns0=${stowType%%.*} cl0=${stowType##*.} ns1 cl1 dt
-  ns1=$ns0
-  cl1=$cl0
+  ns1=$ns0; cl1=$cl0; refStowType="$ns1.$cl1"
 
   # twins are almost immutable - they can only be deleted
-  if [[ $ns0 != 'twin' ]]; then
-    if [[ $refPath =~ ^(.*/)?v([0-9]+)\.([0-9]+)(-@|.([0-9]+)((-alpha|-beta|-rc)([0-9]+))?(\+.+)?)$ ]]; then
-      refType='semver'
-      # remove prerelease leading zeros
-      local pv0=${BASH_REMATCH[8]}
-      if [[ -n $pv0 ]]; then
-        local pv1=$((10#$pv0))
-        if [[ $pv0 != $pv1 ]]; then
-          refPath="${BASH_REMATCH[1]}v${BASH_REMATCH[2]}.${BASH_REMATCH[3]}.${BASH_REMATCH[5]}${BASH_REMATCH[7]}$pv1${BASH_REMATCH[9]}"
-          refType="${refType}.fixed"
-        fi
-      fi
-      # patch.length > 3 is considered as old version format
-      local patch=${BASH_REMATCH[5]}
-      if [[ ${#patch} -gt 3 ]]; then
-        refType="oldver.${refType}"
-      fi
-    elif [[ $refPath =~ ^(.*/)?v?[0-9]+\.[0-9]+ ]]; then
-      refType='oldver'
-    elif [[ $refPath =~ ^(.*/)?_(.*)$ ]]; then
-      refType='system'
-    else
-      refType='marker'
-    fi
+  [[ $ns0 == 'twin' ]] && return 0
 
-    case $refType in
-      semver*) [[ $cl0 == 'orphan' ]] || cl1='root';;
-      oldver*) [[ $cl0 == 'orphan' ]] || cl1='oldver';
-               [[ $ns0 == 'active' ]] && ns1='other';;
-      marker*) [[ $ns0 == 'active' ]] && ns1='other';  cl1='marker';;
-      system*) [[ $ns0 == 'archive' ]] || ns1='active'; cl1='root';;
-    esac
-
-    # archive after 365 days
-    if [[ $ns1 != 'archive' ]]; then
-      if dt=$(ref_timespan "$commit"); then
-        (( dt = dt / 86400 )) # time in days
-        (( dt > 365 )) && ns1='archive'
+  if [[ $refPath =~ ^(.*/)?v([0-9]+)\.([0-9]+)(-@|.([0-9]+)((-alpha|-beta|-rc)([0-9]+))?(\+.+)?)$ ]]; then
+    refType='semver'
+    # remove prerelease leading zeros
+    local pv0=${BASH_REMATCH[8]}
+    if [[ -n $pv0 ]]; then
+      local pv1=$((10#$pv0))
+      if [[ $pv0 != $pv1 ]]; then
+        refPath="${BASH_REMATCH[1]}v${BASH_REMATCH[2]}.${BASH_REMATCH[3]}.${BASH_REMATCH[5]}${BASH_REMATCH[7]}$pv1${BASH_REMATCH[9]}"
+        refType="${refType}.fixed"
       fi
     fi
+    # patch.length > 3 is considered as old version format
+    local patch=${BASH_REMATCH[5]}
+    if [[ ${#patch} -gt 3 ]]; then
+      refType="oldver.${refType}"
+    fi
+  elif [[ $refPath =~ ^(.*/)?v?[0-9]+\.[0-9]+ ]]; then
+    refType='oldver'
+  elif [[ $refPath =~ ^(.*/)?_(.*)$ ]]; then
+    refType='system'
+  else
+    refType='marker'
   fi
 
+  case $refType in
+    semver*) [[ $cl0 == 'orphan'  ]] || cl1='root';;
+    oldver*) [[ $cl0 == 'orphan'  ]] || cl1='oldver';
+             [[ $ns0 == 'active'  ]] && ns1='other';;
+    marker*) [[ $ns0 == 'active'  ]] && ns1='other';  cl1='marker';;
+    system*) [[ $ns0 == 'archive' ]] || ns1='active'; cl1='root';;
+  esac
+
   refStowType="$ns1.$cl1"
+
+  # archiving
+  [[ -z $stowArchiveDelay ]] && return 0
+
+  dt=$(ref_timespan "$commit") || return 1
+  (( dt = dt / 86400 )) # time in days
+
+  if stow_is_archive; then
+    if (( dt < stowArchiveDelay )); then
+      # restore from archive
+      case $refType in
+        semver*) ns1='active';;
+        oldver*) ns1='other';;
+        marker*) ns1='other';;
+        system*) ns1='active';;
+      esac
+      refStowType="$ns1.$cl1"
+    fi
+  else
+    (( dt > stowArchiveDelay )) && refStowType="archive.$cl1"
+  fi
 }
 stow_tag_is_semver() { [[ $refType =~ ^semver ]]; }
 stow_tag_is_oldver() { [[ $refType =~ ^oldver ]]; }
@@ -145,8 +158,9 @@ stow_tag_is_system() { [[ $refType =~ ^system ]]; }
 #   stow_set_branch_info                     # -> refType=prod refStowType=archive.root
 #
 # in:
-#  commit=$1      -- optional commit at which branch points (used if for archiving decision)
-#  refPath        -- branch ref
+#  commit=$1        -- optional commit at which branch points (used if for archiving decision)
+#  stowArchiveDelay -- archive delay (do not archive if not specified)
+#  refPath          -- branch ref
 # out:
 #  refPath        -- fixed ref path if [[ $refType =~ \.fixed ]]
 #  refType        -- (oldver|semver|dev|master)
@@ -154,40 +168,59 @@ stow_tag_is_system() { [[ $refType =~ ^system ]]; }
 stow_set_branch_info()
 {
   local commit=${1:-$stowFolder$refPath} ns0=${stowType%%.*} cl0=${stowType##*.} ns1 cl1 dt
-  ns1=$ns0
-  cl1=$cl0
+  ns1=$ns0; cl1=$cl0; refStowType="$ns1.$cl1"
 
   # twins are almost immutable - they can only be deleted
-  if [[ $ns0 != 'twin' ]]; then
-    if [[ $refPath =~ ^(.*/)?([0-9]+)\.([0-9]+)$ ]]; then
-      refType='semver'
-    elif [[ $refPath =~ ^(.*/)?[0-9]+\.[0-9]+ ]]; then
-      refType='oldver'
-    elif [[ $refPath == 'master' ]]; then
-      refType='master'
-    else
-      refType='dev'
-    fi
+  [[ $ns0 == 'twin' ]] && return 0
 
-    case $refType in
-      master) cl1='root';   ns1='active';;
-      oldver) cl1='oldver'; [[ $ns0 == 'active' ]] && ns1='other';;
-      *)      cl1='root';;
-    esac
-
-    # archive after 365 days
-    if [[ $ns1 != 'archive' && $refType != 'master' ]]; then
-      commit=$(branch_realize "$commit")
-      if [ $? -le 1 ] && dt=$(ref_timespan "$commit"); then
-        # io_trace "stow_set_branch_info 3 -- $(print_vars commit dt)"
-        (( dt = dt / 86400 )) # time in days
-        (( dt > 365 )) && ns1='archive'
-      fi
-    fi
+  if [[ $refPath == 'master' ]]; then
+    refType='master'
+  elif [[ $refPath =~ /dev$ ]]; then
+    refType='dev'
+  elif [[ $refPath =~ ^(.*/)?([0-9]+)\.([0-9]+)$ ]]; then
+    refType='semver'
+  elif [[ $refPath =~ ^(.*/)?[0-9]+\.[0-9]+ ]]; then
+    refType='oldver'
+  else
+    refType='wip'
   fi
 
+  case $refType in
+    master) cl1='root';   ns1='active';;
+    oldver) cl1='oldver'; [[ $ns0 == 'active' ]] && ns1='other';;
+    *)      cl1='root';;
+  esac
+
   refStowType="$ns1.$cl1"
+
+  # archiving
+  [[ -z $stowArchiveDelay ]] || stow_branch_is_master && return 0
+  
+  commit=$(branch_realize "$commit")
+  [ $? -gt 1 ] && return 1
+
+  dt=$(ref_timespan "$commit") || return 1
+  (( dt = dt / 86400 )) # time in days
+
+  if stow_is_archive; then
+    if (( dt < stowArchiveDelay )); then
+      # restore from archive
+      case $refType in
+        oldver) ns1='other';;
+        *)      ns1='active';;
+      esac
+      refStowType="$ns1.$cl1"
+    fi
+  else
+    (( dt > stowArchiveDelay )) && refStowType="archive.$cl1"
+  fi
 }
+stow_branch_is_semver() { [[ $refType =~ ^semver ]]; }
+stow_branch_is_oldver() { [[ $refType =~ ^oldver ]]; }
+stow_branch_is_master() { [[ $refType =~ ^master ]]; }
+stow_branch_is_dev()    { [[ $refType =~ ^dev    ]]; }
+stow_branch_is_prod()   { [[ $refType =~ ^semver ]]; }
+stow_branch_is_wip()    { [[ $refType =~ ^wip ]]; }
 
 # Determine stow folder
 #

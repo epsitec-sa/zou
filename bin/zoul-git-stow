@@ -8,6 +8,34 @@ ZOUL_GIT_STOW=true
 [[ -z $ZOUL_GIT_TAG ]]         && . zoul-git-tag
 [[ -z $ZOUL_GIT_BRANCH_CORE ]] && . zoul-git-branch-core
 
+# global settings
+#   stowArchiveDelay -- refs with timespan bigger than stowArchiveDelay will be archived
+
+# in:
+#  branches=$@      -- branch list
+# out:
+#  stowArchiveDelay -- archive delay in days (default to 365)
+stow_set_archive_delay()
+{
+  # archive delay = max(365, youngest prod branch timespan)
+  local branch rbranch dtProd=0xFFFF
+  stowArchiveDelay=365
+
+  for branch; do
+    # keep only semver branches
+    [[ $branch =~ ^(.*/)?[0-9]+\.[0-9]+$ ]] || continue
+    rbranch=$(branch_realize "$branch")
+    [ $? -gt 1 ] && continue
+    dt=$(ref_timespan "$rbranch") || continue
+    (( dt = dt / 86400 )) # time in days
+    (( dt < dtProd )) && dtProd=$dt
+  done
+  (( dtProd > stowArchiveDelay )) && stowArchiveDelay=$(( dtProd + 7 ))
+}
+# in:
+#  branches=$@ -- branch list
+# return code:
+#  1 if any branch delete fails
 stow_remove_classified_branches()
 {
   local refPath stowFolder stowType branch branch1 branch2 rbranch ec=0
@@ -111,7 +139,8 @@ stow_remove_promoted_vbranches()
   return $ec
 }
 # in:
-#  branches=$@ -- branch list
+#  branches=$@      -- branch list
+#  stowArchiveDelay -- archive delay
 # return code:
 #  1 if any branch move fails
 stow_classify_branches()
@@ -127,6 +156,7 @@ stow_classify_branches()
   done
   return $ec
 }
+
 stow_remove_classified_tags()
 {
   local refPath stowFolder stowType tag tag1 tag2 ec=0
