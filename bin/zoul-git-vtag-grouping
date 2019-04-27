@@ -14,7 +14,7 @@ vtag_group_by_version()
   local vtag vbranch
   for vtag in $(git tag -l --sort=-v:refname); do
     # skip other tags
-    ref_is_other $vtag && continue
+    # ref_is_other $vtag && continue
     # skip non semver tags
     ! vtag_is_semver $vtag && continue
     vbranch="${BASH_REMATCH[1]}${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
@@ -112,7 +112,7 @@ _vtag_group_by_date_visitor()
 _vtag_group_by_date_filter()
 {
   ! vtag_is_semver $1 && return 1
-  ref_is_other $1 && return 1
+  # ref_is_other $1 && return 1
   return 0
 }
 _vtag_get_vbranch_name ()

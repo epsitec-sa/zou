@@ -95,8 +95,8 @@ vcheck_node()
           if [[ ${a1[$i1]} != ${a2[$i2]} ]]; then
             if [ $ec -eq 0 ]; then
               io_message "  vtags order differ for vbranch '$vbranch'" "$moduleTracePrefix" LightPurple
-              io_message "    ${byVersion[$vbranch]}" "$moduleTracePrefix" Gray
-              io_message "    ${byDate[$vbranch]}" "$moduleTracePrefix" Gray
+              # io_message "    ${byVersion[$vbranch]}" "$moduleTracePrefix" Gray
+              # io_message "    ${byDate[$vbranch]}" "$moduleTracePrefix" Gray
             fi
             io_message "    ${a1[$i1]} <> ${a2[$i2]}" "$moduleTracePrefix" Gray
             (( ec = $ec + 1 ))
@@ -107,8 +107,8 @@ vcheck_node()
             if ! array_contains_element "${a1[$i1]}" "${ai2[@]}"; then
               if [ $ec -eq 0 ]; then
                 io_message "  vtags order differ for vbranch '$vbranch'" "$moduleTracePrefix" LightPurple
-                io_message "  ${byVersion[$vbranch]}" "$moduleTracePrefix" Gray
-                io_message "  ${byDate[$vbranch]}" "$moduleTracePrefix" Gray
+                # io_message "  ${byVersion[$vbranch]}" "$moduleTracePrefix" Gray
+                # io_message "  ${byDate[$vbranch]}" "$moduleTracePrefix" Gray
               fi
               io_message "    ${a1[$i1]} not in (${ai2[*]})" "$moduleTracePrefix" Gray
               (( ec = $ec + 1 ))
