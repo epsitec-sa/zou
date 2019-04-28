@@ -258,3 +258,41 @@ branch_set_publish_info()
   fi
   # io_trace "branch_set_publish_info -> $(print_vars nextHead publishStatus)"
 }
+
+# usage:
+#   local sku
+#   branch_set_bestmatch_sku $skuSpec
+# in/out
+#   skuSpec=$1  -- SKU dev branch spec (fact/std, fact/net, ...)
+# out:
+#   sku
+branch_set_bestmatch_sku()
+{
+  local skuSpec=$1
+  if [[ -z $skuSpec ]]; then
+    sku=$bundleBranch
+  elif [[ "$moduleRoot" == "$bundleRoot" ]]; then
+    _branch_set_bestmatch_sku_core
+  else
+    cd "$bundleRoot"
+    _branch_set_bestmatch_sku_core
+    cd "$moduleRoot"
+  fi
+}
+_branch_set_bestmatch_sku_core()
+{
+  if branch_exists "$skuSpec"; then
+    sku=$skuSpec
+  else
+    local candidates=() resku="^(.*/)?$(wildcard_to_regex "$skuSpec")(/.*)?$"
+    for branch in $(branch_list_all_flatten); do
+      [[ $branch =~ /[0-9]+\.[0-9]+.*$ ]] && continue   # skip prod branches
+      [[ $branch =~ $resku ]] && candidates+=( "$branch" )
+    done
+    case ${#candidates[@]} in
+      0) io_error "SKU ${Brown}$skuSpec${Red} does not exist." "fatal"; exit 1;;
+      1) sku=${candidates[0]};;
+      *) io_error "SKU ${Brown}$skuSpec${Red} is ambiguous, use one of (${Brown}$(string_join ', ' "${candidates[@]}")${Red})"; exit 1;;
+    esac
+  fi
+}

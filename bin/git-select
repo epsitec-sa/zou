@@ -34,38 +34,12 @@ select_run()
 select_main()
 {
   local ec=0
-  select_set_sku
+  branch_set_bestmatch_sku $sku
   if [[ "$moduleRoot" == "$bundleRoot" || $sku == $bundleBranch ]]; then
     select_tree
   else
     module_visit "$bundleRoot" "${selectScopes[@]}" select_tree
   fi
-}
-select_set_sku()
-{
-  if [[ -z $sku ]]; then
-    sku=$bundleBranch
-  elif [[ "$moduleRoot" == "$bundleRoot" ]]; then
-    select_set_sku_core
-  else
-    cd "$bundleRoot"
-    select_set_sku_core
-    cd "$moduleRoot"
-  fi
-}
-select_set_sku_core()
-{
-  branch_exists "$sku" && return 0
-  local candidates=() resku="^(.*/)?$(wildcard_to_regex "$sku")(/.*)?$"
-  for branch in $(branch_list_all_flatten); do
-    [[ $branch =~ /[0-9]+\.[0-9]+.*$ ]] && continue   # skip prod branches
-    [[ $branch =~ $resku ]] && candidates+=( "$branch" )
-  done
-  case ${#candidates[@]} in
-    0) io_error "SKU ${Brown}$sku${Red} does not exist." "fatal"; exit 1;;
-    1) sku=${candidates[0]};;
-    *) io_error "SKU ${Brown}$sku${Red} is ambiguous, use one of (${Brown}$(string_join ', ' "${candidates[@]}")${Red})"; exit 1;;
-  esac
 }
 select_tree()
 {
