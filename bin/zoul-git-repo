@@ -444,42 +444,42 @@ repo_require_clean_work_tree()
 
     # Update the index
     if ! git update-index -q --ignore-submodules --refresh &>/dev/null; then
-        io_error "${prefix}You have unmerged paths." "$moduleTracePrefix"
-        for b in $(repo_list_unmerged); do
-          io_error "  $b" "$moduleTracePrefix"
-        done
-        io_info  "  Run 'git sync' again or resolve conflicts and run 'git commit'." "$moduleTracePrefix"
-        return 1
+      io_error "${prefix}You have unmerged paths." "$moduleTracePrefix"
+      for b in $(repo_list_unmerged); do
+        io_error "  $b" "$moduleTracePrefix"
+      done
+      io_info  "  Run 'git sync' again or resolve conflicts and run 'git commit'." "$moduleTracePrefix"
+      return 1
     fi
 
     # Disallow untracked changes in the working tree
     if ! test -z "$(repo_list_untracked)"; then
-        io_error "${prefix}Your work tree contains untracked changes." "$moduleTracePrefix"
-        for b in $(repo_list_untracked); do
-          io_error "  $b" "$moduleTracePrefix"
-        done
-        io_info  "  Run 'git add'" "$moduleTracePrefix"
-        err=1
+      io_error "${prefix}Your work tree contains untracked changes." "$moduleTracePrefix"
+      for b in $(repo_list_untracked); do
+        io_error "  $b" "$moduleTracePrefix"
+      done
+      io_info  "  Run 'git add'" "$moduleTracePrefix"
+      err=1
     fi
 
     # Disallow unstaged changes in the working tree
     if ! test -z "$(repo_list_unstaged)"; then
-        io_error "${prefix}You have unstaged changes." "$moduleTracePrefix"
-        for b in $(repo_list_unstaged); do
-          io_error "  $b" "$moduleTracePrefix"
-        done
-        io_info  "  Run 'git stash' or 'git add' and 'git commit'." "$moduleTracePrefix"
-        err=1
+      io_error "${prefix}You have unstaged changes." "$moduleTracePrefix"
+      for b in $(repo_list_unstaged); do
+        io_error "  $b" "$moduleTracePrefix"
+      done
+      io_info  "  Run 'git stash' or 'git add' and 'git commit'." "$moduleTracePrefix"
+      err=1
     fi
 
     # Disallow uncommitted changes in the index
     if ! git diff-index --cached --quiet HEAD --ignore-submodules --; then
-        io_error "${prefix}Your index contains uncommitted changes." "$moduleTracePrefix"
-        for b in $(repo_list_uncommited); do
-          io_error "  $b" "$moduleTracePrefix"
-        done
-        io_info  "  Run 'git commit'." "$moduleTracePrefix"
-        err=1
+      io_error "${prefix}Your index contains uncommitted changes." "$moduleTracePrefix"
+      for b in $(repo_list_uncommited); do
+        io_error "  $b" "$moduleTracePrefix"
+      done
+      io_info  "  Run 'git commit'." "$moduleTracePrefix"
+      err=1
     fi
 
     return $err
