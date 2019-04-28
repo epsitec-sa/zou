@@ -132,11 +132,15 @@ io_message_unsafe()
   fi
   printf "%b\n" "$message" 1>&2
 }
-io_info()     { io_message "$1" "${2:-info}"; }
-io_success()  { io_message "$1" "${2:-info}" Green; }
-io_warning()  { io_message "$1" "${2:-warning}" Brown; }
-io_error()    { io_message "$1" "${2:-error}" Red; }
-io_debug()    { [[ $debug == 'true' ]] && io_message "$1 = ${!1}" "${2:-debug}" ${3:-Purple}; }
+io_info_unsafe()     { io_message_unsafe "$1" "${2:-info}"; }
+io_success_unsafe()  { io_message_unsafe "$1" "${2:-info}" Green; }
+io_warning_unsafe()  { io_message_unsafe "$1" "${2:-warning}" Brown; }
+io_error_unsafe()    { io_message_unsafe "$1" "${2:-error}" Red; }
+io_info()            { io_message "$1" "${2:-info}"; }
+io_success()         { io_message "$1" "${2:-info}" Green; }
+io_warning()         { io_message "$1" "${2:-warning}" Brown; }
+io_error()           { io_message "$1" "${2:-error}" Red; }
+io_debug()           { [[ $debug == 'true' ]] && io_message "$1 = ${!1}" "${2:-debug}" ${3:-Purple}; }
 
 io_pause()
 {
