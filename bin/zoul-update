@@ -22,10 +22,10 @@ zou_parse()
 zou_update()
 {
   local resetConfig zouOnly noPruneTags actualVersion selectArgs=()
-  unset 
   zou_parse "$@"
   
   config_setup
+  config_migrate_registered_bundles
 
   if [[ $zouOnly == true || "$bundleRoot" == "$PWD" ]]; then
     # zou repo alone, fetch has already been done
@@ -34,18 +34,23 @@ zou_update()
     # zou repo inside zou-dev bundle
     module_visit "$bundleRoot" zou_update_bundle "${selectArgs[@]}"
   fi
-  zou_update_prune_tags
+  zou_register_bundles
+  zou_prune_tags
   zou_update_epilog
+}
+zou_register_bundles()
+{
+  git-bundler --scan
+}
+zou_prune_tags()
+{
+  [[ $noPruneTags == true ]] && return 0
+  git-prunetags --global
 }
 zou_update_bundle()
 {
   git-sync --pull --clean
   git-select "$@"
-}
-zou_update_prune_tags()
-{
-  [[ $noPruneTags == true ]] && return 0
-  git-prunetags -g
 }
 zou_update_epilog()
 {
@@ -66,6 +71,7 @@ zou_update_epilog()
   fi
   traceMessage="Update finished ($traceVersion)."
   io_warning "$traceMessage" "$tracePrefix"
+  io_warning "Press [Enter] to continue..." "$tracePrefix"
 }
 
 module_run zou_update "$@"

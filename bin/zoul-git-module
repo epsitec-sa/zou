@@ -16,6 +16,7 @@ startupMessage=''
 # global options
 useLongModuleTracePrefix=true
 showVisitModuleMessage=false
+doNotRegisterBundle=false
 
 # events registration
 branchChangedEvent+=( _module_reset_scope )
@@ -76,6 +77,7 @@ _module_scope_startup()
   local startupDir=$PWD startupRoot \
         bundleId bundleRoot bundleBranch \
         bundleUrl bundleUrlName \
+        bundleTracePrefix \
         principalModuleId \
         submodulePathMaxLength
 
@@ -92,6 +94,7 @@ _module_scope_startup()
   bundleBranch=$(branch_current_root_branch)
 
   repo_set_bundle_url_info "$bundleRoot"  # -> bundleUrl bundleUrlName
+  _module_set_bundle_trace_prefix
   _module_set_principal_module_id
 
   _module_startup_message
@@ -106,18 +109,15 @@ _module_scope_startup()
 _module_startup_message()
 {
   if [[ -n $startupMessage ]]; then
-    local bundleTracePrefix
-    _module_set_bundle_trace_prefix
     io_message "$startupMessage" "$bundleTracePrefix" White
   fi
 }
 _module_register_bundle()
 {
-  # cach bundle registration: avoid blocking call to bundle_register
-  if [[ $startupRoot == $bundleRoot ]] && ! git config --local --get zou.bundle.registered >/dev/null; then
-    git config --local zou.bundle.registered true
+  [[ $doNotRegisterBundle == true ]] && return 0
+  if [[ $startupRoot == $bundleRoot ]]; then
     bundle_register "$bundleUrl" "$bundleRoot"
-    # io_trace "_module_scope_startup ${*@Q} -- $(print_vars bundleUrl bundleRoot)"
+    # io_trace "_module_register_bundle ${*@Q} -- $(print_vars bundleUrl bundleRoot)"
   fi
 }
 # run a function in the module root folder with module scope defined

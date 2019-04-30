@@ -3,7 +3,6 @@
 [[ -z $ZOUL_CORE ]]       && . zoul-core
 [[ -z $ZOUL_GIT_REPO ]]   && . zoul-git-repo
 [[ -z $ZOUL_GIT_BUNDLE ]] && . zoul-git-bundle
-[[ -z $ZOUL_GIT_MODULE ]] && . zoul-git-module
 
 bundle_parse()
 {
@@ -11,16 +10,26 @@ bundle_parse()
     --) shift; bundlePaths+=("$@"); break;;
     -h|--help) zou-help $0; exit 0;;
     -u|--unregister) unregister=true;;
+    -s|--scan)       scan=true;;
     -*) io_error "unknown option '$1'"; return 1;;
     *)  bundlePaths+=( "$(realpath $1)" )
   esac; shift; done
 }
 bundle_run()
 {
-  local unregister bundlePaths=()
+  # avoid default registration
+  doNotRegisterBundle=true
+
+  local unregister scan bundlePaths=()
   bundle_parse "$@"
+
+  if [[ $scan == true ]]; then
+    _bundle_scan
+  fi
   
   [ ${#bundlePaths[@]} -eq 0 ] && bundlePaths+=("$(repo_bundle_root)")
+  # io_trace "bundle_run 1 -- $(print_vars bundlePaths[@])"
+
   if [[ $unregister == true ]]; then
     bundle_visit_async 'bundlePaths[@]' _bundle_unregister
   else
@@ -29,11 +38,21 @@ bundle_run()
 
   local bundleRegisteredPaths
   bundle_set_registered_paths
+  # io_trace "bundle_run 2 -- $(print_vars bundleRegisteredPaths[@])"
   if [ ${#bundleRegisteredPaths[@]} -eq 0 ]; then
     io_warning "No bundle registered."
   else
     bundle_visit_async 'bundleRegisteredPaths[@]' _bundle_status
   fi
+}
+_bundle_scan()
+{
+  io_message "Scanning bundles, please wait..."
+  local IFS=$'\n' root="$(realpath $(repo_bundle_root)/..)"
+  for dir in $(ls -d $root/*); do
+    [[ -d "$dir/.git" ]] || continue
+    bundlePaths+=( "$dir" )
+  done
 }
 _bundle_register()
 {
@@ -47,7 +66,7 @@ _bundle_unregister()
 }
 _bundle_status()
 {
-  io_info "${LightBlue}$bundleUrl${Cyan} -> ${Brown}$bundleRoot${Cyan}" "$bundleTracePrefix"
+  io_message "${LightBlue}$bundleUrl${White} -> ${Brown}$bundleRoot${White}" "$bundleTracePrefix" White
 }
 
 bundle_run "$@"

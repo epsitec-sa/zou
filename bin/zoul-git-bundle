@@ -4,23 +4,28 @@
 #   [[ -z $ZOUL_GIT_BUNDLE ]] && . zoul-git-bundle
 ZOUL_GIT_BUNDLE=true
 
-[[ -z $ZOUL_LOCK ]] && . zoul-lock
-[[ -z $ZOUL_CORE ]] && . zoul-core
+[[ -z $ZOUL_LOCK ]]       && . zoul-lock
+[[ -z $ZOUL_CORE ]]       && . zoul-core
+[[ -z $ZOUL_GIT_MODULE ]] && . zoul-git-module
 
-gitConfigGate=$(lock_init $(realpath ~/.gitconfig.lock))
+gitConfigGate=$(lock_init "${zou_configFile}_lock")
 
 bundle_register()
 {
   local url=$1 path=$2
+  # io_trace "bundle_register -- $(print_vars url path)"
   lock_enter "$gitConfigGate"
-  git config --global --unset "zou.$url.path" "$path" 2>/dev/null
-  git config --global --add "zou.$url.path" "$path" 2>/dev/null
+  if ! git config --file "$zou_configFile" --get-regexp "zou.$url.path" "$path" >/dev/null; then
+    git config --file "$zou_configFile" --add "zou.$url.path" "$path"
+  fi
   lock_exit "$gitConfigGate"
 }
 bundle_unregister()
 {
   local url=$1 path=$2
-  git config --global --unset "zou.$url.path" "$path" 2>/dev/null
+  lock_enter "$gitConfigGate"
+  git config --file "$zou_configFile" --unset "zou.$url.path" "$path" 2>/dev/null
+  lock_exit "$gitConfigGate"
 }
 # out:
 #   bundleRegisteredPaths
@@ -30,7 +35,7 @@ bundle_set_registered_paths()
   
   lock_enter "$gitConfigGate"
   local IFS=$'\n' kv
-  for kv in $(git config --global --get-regexp '^zou\..*\.path$' 2>/dev/null); do
+  for kv in $(git config --file "$zou_configFile" --get-regexp '^zou\..*\.path$' 2>/dev/null); do
     # zou.https://git.epsitec.ch/Build/zou-dev.git.path C:/devel/zou-dev
     # zou.https://git.epsitec.ch/cresus-suite/cresus-dev.git.path C:/devel/cresus-dev
     [[ $kv =~ ^[^[:blank:]]+[[:blank:]]+(.*)$ ]]
@@ -49,11 +54,10 @@ bundle_visit_async()
 }
 _bundle_visitor()
 {
-  local bundleRoot=$1
-  # io_trace "bundle_visitor ${*@Q} -- $(print_vars bundleRoot)"
-  cd "$bundleRoot" &>/dev/null || {
-    io_error "No such bundle directory '$bundleRoot'" "$moduleTracePrefix"
+  # io_trace "bundle_visitor ${*@Q}"
+  cd "$1" &>/dev/null || {
+    io_error "No such bundle directory '$1'" "$moduleTracePrefix"
     return 1
   }
-  "$2" "${@:3}" || return $?
+  _module_scope_startup "${@:2}"
 }
