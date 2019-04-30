@@ -57,23 +57,22 @@ _cosm_reset_scope()
 _cosm_update_submodules_excluded_from_select()
 {
   [[ $commitExcludedSubmodules == true ]] && return 0
-  local needUpdate=( $(array_remove_array 'configSelectExclude[@]' 'configSkuExclude[@]') ) ec=0
+  local needUpdate=( $(array_remove_array 'configSelectExclude[@]' 'configSkuExclude[@]') )
   # io_trace "_cosm_update_submodules_excluded_from_select $(print_vars configSelectExclude[@] configSkuExclude[@] needUpdate[@])"
   if [ ${#needUpdate[@]} -ne 0 ]; then
-    visit_async 'needUpdate[@]' 'repo_update_submodule' || ec=$?
-    [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
+    visit_async 'needUpdate[@]' 'repo_update_submodule'
   fi
 }
 _cosm_discard_submodules_excluded_from_sku()
 {
   # discard unstaged clean submodules which are excluded from SKU
-  local discard=( $(array_intersect_array 'unstagedCleanSubmodules[@]' 'configSkuExclude[@]') )
+  local discard=( $(array_intersect_array 'unstagedCleanSubmodules[@]' 'configSkuExclude[@]') ) ec=0
   # io_trace "_cosm_discard_submodules_excluded_from_sku -- $(print_vars unstagedCleanSubmodules[@] discard[@])"
   if [ ${#discard[@]} -ne 0 ]; then
     visit_async 'discard[@]' 'repo_discard_submodule' || ec=$?
     unstagedCleanSubmodules=( $(array_remove_array 'unstagedCleanSubmodules[@]' 'discard[@]') )
-    [[ $ec -ne 0 && $stopOnError == true ]] && return $ec
   fi
+  return $ec
 }
 # Process unstaged submodules
 #   - update unselected submodules

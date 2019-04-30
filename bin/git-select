@@ -22,7 +22,7 @@ select_parse()
 select_run()
 {
   # parse command line
-  local jobsCount stopOnError noSkuFilter selectDev commitSubmodules sku recursive=true
+  local jobsCount noSkuFilter selectDev commitSubmodules sku recursive=true
   select_parse "$@" || return $?
 
   local selectScopes=( config_scope cosm_scope )
@@ -33,7 +33,6 @@ select_run()
 }
 select_main()
 {
-  local ec=0
   branch_set_bestmatch_sku $sku
   if [[ "$moduleRoot" == "$bundleRoot" || $sku == $bundleBranch ]]; then
     select_tree
