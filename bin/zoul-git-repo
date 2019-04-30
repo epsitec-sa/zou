@@ -436,6 +436,23 @@ repo_check_submodule()
   io_error "Not a git submodule '$1'" "$moduleTracePrefix"
   return 1
 }
+repo_prune_tags()
+{
+  local verbose=$1 showMessage=$2
+  [[ $showMessage == true ]] && io_warning "Pruning tags..." "$moduleTracePrefix"
+
+  if [[ $verbose == true ]]; then
+    git tag -d $(git tag -l) &>/dev/null
+    io_buffered_eval 'git fetch --tags 2>&1' _repo_prune_tags_line_selector
+  else
+    git tag -d $(git tag -l) &>/dev/null
+    git fetch --tags &>/dev/null
+  fi
+}
+_repo_prune_tags_line_selector()
+{
+  [[ $line =~ ^.*\[new\ tag\][[:blank:]]+(.*)$ ]] && line="${BASH_REMATCH[1]}"
+}
 repo_require_clean_work_tree()
 {
     local prefix="$*"

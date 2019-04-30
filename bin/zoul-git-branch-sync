@@ -56,12 +56,6 @@ _branch_oreset_visitor()
   [[ $i =~ ^\< ]] && { _branch_sync_merge "$r" "$l" || return 1; }
   # reset to upstream
   if [[ $l == $current ]]; then
-    # prune tags asynchronously
-    (
-      io_warning "Pruning tags..." "$moduleTracePrefix"
-      git tag -d $(git tag -l) &>/dev/null
-      git fetch --tags &>/dev/null
-    ) &
     git reset --hard @{u} >/dev/null
     _branch_raise_branch_sync_event "$r" "$l" "$i"
   else
@@ -144,6 +138,9 @@ branch_oreset_all()
   else
    repo_require_clean_work_tree 'Cannot reset' || return 1
   fi
+
+  # prune tags asynchronously
+  ( repo_prune_tags false true ) &
 
   syncNoPush=true _branch_sync_visit _branch_oreset_visitor false "$@"
 }
