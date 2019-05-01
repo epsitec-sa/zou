@@ -4,6 +4,8 @@
 #   [[ -z $ZOUL_GIT_REF ]] && . zoul-git-ref
 ZOUL_GIT_REF=true
 
+[[ -z $ZOUL_CORE ]] && . zoul-core
+
 # Use the following functions to generate fallbacks for zou-flow refs (branches and vtags).
 # Fallbacks can be generated to:
 # - find submodule dev branch that match bundle branch
@@ -41,7 +43,7 @@ ref_join() { local IFS='/'; echo "$*"; }
 ref_scan_shift_left_0()
 {
   local IFS=' ' i
-  # echo ref_scan_shift_left_0 "[$#] ${*@Q}" >&2
+  # io_trace "ref_scan_shift_left_0 -- ${*@Q}"
   for (( i=1; i<=$#; i++ )); do
     echo "${@:$i}"
   done
@@ -119,42 +121,44 @@ ref_scan_insert_count()
     # convert to array to compute word count (faster than using wc -w)
     IFS=' '; a=( $i )
     # insert count in front 
+    # io_trace "ref_scan_insert_count -- ${#a[@]} $i"
     echo ${#a[@]} $i
   done
 }
 # scan ref atoms sort by count and join:
-# sku compta mch dev ->
+# ref_scan_sort_join sku compta mch dev ->
 #   sku/compta/mch/dev
 #   sku/compta/dev
 #   sku/mch/dev
 #   sku/dev
 ref_scan_sort_join()
 {
-  # echo ref_scan_sort_join "[$#] ${*@Q}" >&2
+  # io_trace "ref_scan_sort_join ${*@Q}"
   if (( $# <= 1 )); then
     ref_join $@
   else
     local IFS=$'\n' a
     for a in $(ref_scan_insert_count "$@" | sort -n -s -r | cut -d' ' -f2-); do
       IFS=' '; ref_join $a
+      # io_trace "ref_scan_sort_join -- $(ref_join $a)"
     done
   fi
 }
 # scan ref and sort by atoms count:
-# sku/compta/mch/dev ->
+# ref_split_scan_join sku/compta/mch/dev ->
 #   sku/compta/mch/dev
 #   sku/compta/dev
 #   sku/mch/dev
 #   sku/dev
 ref_split_scan_join()
 {
-  # echo ref_scan "[$#] ${*@Q}" >&2
-  local IFS=' ';
-  local atoms=( ${1//\// } )
+  # io_trace "ref_split_scan_join ${*@Q}"
+  local IFS='/' atoms
+  atoms=( $1 )
   ref_scan_sort_join ${atoms[@]}
 }
 # split ref, convert prod branch to dev and adjust master:
-# ref_dev_fallback sku/compta/mch/13.2 ->
+# ref_dev_fallback sku/compta/mch/(dev|13.2) ->
 #   sku/compta/mch/dev
 #   sku/compta/dev
 #   sku/mch/dev
@@ -162,17 +166,31 @@ ref_split_scan_join()
 #   master
 ref_dev_fallback()
 {
-  local IFS=' ';
-  local atoms=( ${1//\// } ) a b
-  [[ ${atoms[-1]} =~ ^[0-9]+\.[0-9]+$ ]] && atoms[-1]='dev'
-
-  a=( $(ref_scan_sort_join "${atoms[@]}") )
-  if [[ ${a[-1]} == 'dev' ]]; then
-    a[-1]='master'
-  elif [[ ${a[-1]} != 'master' ]]; then
-    a+=( 'master' )
+  local IFS='/' atoms fallback b
+  atoms=( $1 )
+  # io_trace "ref_dev_fallback 1 -- $(print_vars atoms[@])"
+  [[ ${#atoms[@]} -gt 0 && ${atoms[-1]} =~ ^[0-9]+\.[0-9]+$ ]] && atoms[-1]='dev'
+  IFS=$'\n'
+  fallback=( $(ref_scan_sort_join "${atoms[@]}") )
+  # io_trace "ref_dev_fallback 2 -- $(print_vars fallback[@])"
+  if [[ ${#fallback[@]} -eq 0 || ${fallback[-1]} == 'dev' ]]; then
+    fallback=( 'master' )
+  elif [[ ${atoms[0]} != 'sku' ]]; then
+    # add sku fallback
+    atoms[0]='sku'
+    if [ ${#atoms[@]} -gt 1 ]; then
+      atoms[-1]='dev'
+    else
+      atoms+=( 'dev' )
+    fi
+    fallback+=( $(ref_scan_sort_join "${atoms[@]}") )
   fi
-  for b in ${a[@]}; do
+  
+  if [[ ${fallback[-1]} != 'master' ]]; then
+    fallback+=( 'master' )
+  fi
+  # io_trace "ref_dev_fallback 3 -- $(print_vars fallback[@])"
+  for b in ${fallback[@]}; do
     echo $b
   done
 }
@@ -186,12 +204,12 @@ ref_dev_fallback()
 #   v[0-9]*
 ref_tag_fallback()
 {
-  local IFS=' ';
-  local atoms=( ${1//\// } ) tag=$2
-  # echo ref_tag_fallback ${atoms[@]@Q} >&2
+  local IFS='/' tag=${2:-v[0-9]*} atoms
+  atoms=( $1 )
   # accept vtags, dev and prod branches
-  if [[ ${atoms[-1]} == 'dev' || ${atoms[-1]} =~ ^v?[0-9]+\.[0-9]+ ]]; then
+  if [ ${#atoms[@]} -gt 0 ] && [[ ${atoms[-1]} == 'dev' || ${atoms[-1]} =~ ^v?[0-9]+\.[0-9]+ ]]; then
     atoms[-1]="$tag"
+    # io_trace "ref_tag_fallback -- $(print_vars tag atoms[@])"
     ref_scan_sort_join "${atoms[@]}"
   fi
   echo "$tag"
