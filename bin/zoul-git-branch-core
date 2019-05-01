@@ -289,6 +289,25 @@ branch_set_realize()
     return 1
   fi
 }
+branch_head_symbol()
+{
+  local ref=$(git rev-parse --abbrev-ref HEAD)
+  if [[ $ref == HEAD ]]; then
+    local refs=( $(git tag --points-at HEAD) )
+    if [ ${#refs[@]} -eq 0 ]; then
+      ref="$(git rev-parse --short HEAD)"
+    else
+      ref=${refs[-1]}
+    fi
+    echo "$ref"
+    # io_trace "branch_head_symbol ${*@Q} -> $(print_vars moduleBranch ref refs[@])"
+    return 1
+  else
+    echo "$ref"
+    # io_trace "branch_head_symbol ${*@Q} -> $(print_vars moduleBranch ref)"
+    branch_is_prod "$ref" && return 1 || return 0
+  fi
+}
 
 branch_without_remote_prefix() { branch_is_remote $1 && echo ${1#*/} || echo $1; }
 
