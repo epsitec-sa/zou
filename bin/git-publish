@@ -124,6 +124,11 @@ publish_prolog()
     branch_set_select_auto "$sku" "$forceDev" false "$allowDuplicateTags" || return $?
   fi
 
+  if ! [[ $lbranch =~ ^(sku/|master) ]]; then
+    io_error "Branch '$lbranch' cannot be published (only sku and master branches can be published)" "$moduleTracePrefix"
+    return 1
+  fi
+
   if [[ $publishStatus == 'unpublishable' ]]; then
     io_error "Branch '$lbranch' cannot be published (no vbranch associated)" "$moduleTracePrefix"
     return 1
