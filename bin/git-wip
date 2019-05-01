@@ -1,0 +1,60 @@
+#!/bin/bash
+
+[[ -z $ZOUL_GIT_MODULE ]]        && . zoul-git-module
+[[ -z $ZOUL_GIT_CONFIG ]]        && . zoul-git-config
+[[ -z $ZOUL_GIT_COSM ]]          && . zoul-git-cosm
+[[ -z $ZOUL_GIT_BRANCH_SELECT ]] && . zoul-git-branch-select
+
+wip_parse()
+{
+  while [[ "$#" > 0 ]]; do case "$1" in
+    --) shift; args+=("$@"); break;;
+    -h|--help) zou-help $0; exit 0;;
+    -j*)                jobsCount=${1#-j};;
+    -*) io_error "unknown option '$1'"; return 1;;
+    *) wip=$1;;
+  esac; shift; done
+}
+wip_run()
+{
+  # parse command line
+  local jobsCount noSkuFilter selectDev commitSubmodules wip
+  wip_parse "$@" || return $?
+
+  startupMessage="Creating WIP, please wait..."
+
+  module_run wip_main
+}
+wip_main()
+{
+  if [[ "$moduleRoot" != "$bundleRoot" ]]; then
+    module_visit "$bundleRoot" wip_create
+  fi
+  wip_create
+}
+wip_create()
+{
+  # io_trace "wip_create $(print_vars wip)"
+  repo_discard_internal_ignore_list
+
+  local sku=$bundleBranch
+  
+}
+wip_prolog()
+{
+  local forceDev=${selectDev:-false} allowDuplicateTags=false
+  if [[ $moduleRoot == $bundleRoot ]]; then
+    forceDev=true
+    allowDuplicateTags=true
+  fi
+
+  # io_trace "wip_prolog -- $(print_vars recursive noSkuFilter commitSubmodules sku hint forceCheckout skipVNodes allowDuplicateTags)"
+  local lbranch vbranch vtag htag publishStatus
+  branch_set_wip_auto "$sku" "$forceDev" true "$allowDuplicateTags"
+}
+wip_submodules()
+{
+  module_visit_submodules_async 'configSelectInclude[@]' "${selectScopes[@]}" 'wip_tree'
+}
+
+wip_run  "$@"
