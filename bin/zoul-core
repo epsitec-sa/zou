@@ -381,12 +381,15 @@ ised()
   # io_trace "ised $(print_vars file fEncoding)"
 
   if [[ $fEncoding == $zou_lencoding || $fEncoding == 'us-ascii' || $fEncoding == 'utf-8' || $fEncoding == 'iso-8859-1' ]]; then
-    sed -b -E -i "$script" "$file"
+    sed -b -E -i "$script" "$file" || ec=$?
   else
-    iconv -f "$fEncoding" -t "$zou_lencoding" "$file" 2>/dev/null \
-    | sed -b -E "$script" \
-    | iconv -f "$zou_lencoding" -t "$fEncoding" >"$file"
-    ec=${PIPESTATUS[0]}
+    local tmp="$file.zou"
+    if iconv -f "$fEncoding" -t "$zou_lencoding" "$file" >"$tmp"; then
+      { sed -b -E -i "$script" "$tmp" && iconv -f "$zou_lencoding" -t "$fEncoding" "$tmp" >"$file"; } || ec=$?
+    else
+      sed -b -E -i "$script" "$file" || ec=$?
+    fi
+    rm --force "$tmp"
   fi
   
   realpath "$file"
