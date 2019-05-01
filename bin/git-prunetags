@@ -3,6 +3,8 @@
 [[ -z $ZOUL_GIT_BUNDLE ]] && . zoul-git-bundle
 [[ -z $ZOUL_GIT_MODULE ]] && . zoul-git-module
 
+doNotRegisterBundle=true
+
 ptags_parse()
 {
   while [[ "$#" > 0 ]]; do case "$1" in
@@ -21,6 +23,7 @@ ptags_run()
   startupMessage="Pruning tags, please wait..."
 
   if [[ $global == true ]]; then
+    unset startupMessage
     ptags_prune_registered_bundles_tags
   elif [[ $recursive = true ]]; then
     . git-for -a "${forOpts[@]}" -- 'ptags_node'
