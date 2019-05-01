@@ -55,7 +55,7 @@ branch_set_best_match_dev()
 # - if checkout succeeds, push branch
 #
 # usage:
-#  local branch vbranch vtag htag publishStatus
+#  local branch lbranch vbranch vtag htag publishStatus
 #  branch_set_select_auto $sku $forceDev $forceCheckout $allowDuplicateTags
 #
 # in:
@@ -135,6 +135,7 @@ branch_set_sku_info()
   # io_trace "branch_set_sku_info 1 -- $(print_vars sku forceDev skipVNodes allowDuplicateTags)"
   branch_set_select_info "$sku" "$skipVNodes" "$allowDuplicateTags" \
   && branch_set_publish_info "$lbranch" "$vtag" "$delta" "$status" "$forceDev"
+  [[ $lbranch =~ ^(sku/|master) ]] || nextHead=$lbranch
   # io_trace "branch_set_sku_info 2 -- $(print_vars forceDev lbranch vbranch vtag htag delta alias status nextHead publishStatus)"
 }
 # Create SKU selection information
