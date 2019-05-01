@@ -263,18 +263,20 @@ branch_set_realize()
   unset branch lbranch bref
   local ref=${1:-HEAD}
   if [[ $ref == 'HEAD' ]]; then
-    ref=$(git symbolic-ref --short HEAD 2>/dev/null)
-    [ $? -ne 0 ] && return 2
+    ref=$(branch_list_all_at 'HEAD' | cut -f 1 -d ' ')
+    [[ -z $ref ]] && return 2
   fi
   if branch_is_local "$ref"; then
     branch=$ref
     lbranch=$branch
     bref="refs/heads/$branch"
+    # io_trace "branch_set_realize 1 -- $(print_vars ref branch lbranch bref)"
     return 0
   elif branch_is_remote "$ref"; then
     branch=$ref
     lbranch=${branch#*/}
     bref="refs/remotes/$branch"
+    # io_trace "branch_set_realize 2 -- $(print_vars ref branch lbranch bref)"
     return 1
   else
     local rbranch
@@ -283,6 +285,7 @@ branch_set_realize()
     branch=$rbranch
     lbranch=${branch#*/}
     bref="refs/remotes/$branch"
+    # io_trace "branch_set_realize 2 -- $(print_vars ref branch lbranch bref)"
     return 1
   fi
 }
