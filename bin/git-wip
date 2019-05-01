@@ -12,49 +12,37 @@ wip_parse()
     -h|--help) zou-help $0; exit 0;;
     -j*)                jobsCount=${1#-j};;
     -*) io_error "unknown option '$1'"; return 1;;
-    *) wip=$1;;
+    *) wipSuffix=$1;;
   esac; shift; done
 }
 wip_run()
 {
   # parse command line
-  local jobsCount noSkuFilter selectDev commitSubmodules wip
+  local jobsCount noSkuFilter selectDev commitSubmodules wipSuffix
   wip_parse "$@" || return $?
 
-  startupMessage="Creating WIP, please wait..."
+  startupMessage="Creating wip branch '$wipSuffix', please wait..."
 
   module_run wip_main
 }
 wip_main()
 {
+  wip_create
   if [[ "$moduleRoot" != "$bundleRoot" ]]; then
     module_visit "$bundleRoot" wip_create
   fi
-  wip_create
 }
 wip_create()
 {
-  # io_trace "wip_create $(print_vars wip)"
-  repo_discard_internal_ignore_list
-
-  local sku=$bundleBranch
-  
-}
-wip_prolog()
-{
-  local forceDev=${selectDev:-false} allowDuplicateTags=false
-  if [[ $moduleRoot == $bundleRoot ]]; then
-    forceDev=true
-    allowDuplicateTags=true
+  local skuBranch=$(ref_wip_to_sku $moduleBranch)
+  local wipBranch=$(ref_sku_to_wip $skuBranch $wipSuffix)
+  if [[ $moduleBranch != $wipBranch ]]; then
+    git branch "$wipBranch"
+    # io_trace "wip_create $(print_vars wipSuffix moduleBranch skuBranch wipBranch)"
+    if [[ "$moduleRoot" == "$bundleRoot" ]]; then
+      git-select "$wipBranch"
+    fi
   fi
-
-  # io_trace "wip_prolog -- $(print_vars recursive noSkuFilter commitSubmodules sku hint forceCheckout skipVNodes allowDuplicateTags)"
-  local lbranch vbranch vtag htag publishStatus
-  branch_set_wip_auto "$sku" "$forceDev" true "$allowDuplicateTags"
-}
-wip_submodules()
-{
-  module_visit_submodules_async 'configSelectInclude[@]' "${selectScopes[@]}" 'wip_tree'
 }
 
 wip_run  "$@"
