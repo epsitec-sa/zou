@@ -21,12 +21,12 @@ vbranch_prev_vtag()
   # io_trace "vbranch_prev_vtag -- $(print_vars branch prerelPrefix vtag delta alias)"
 
   [[ -z $vtag ]] && {
-    io_error "vbranch_prev_vtag: $branch has no vtag ancestor" "$moduleTracePrefix"
+    mio_error "vbranch_prev_vtag: $branch has no vtag ancestor"
     return 1
   }
 
   [ $delta -eq 0 ] && ! vtag_is_vnode $vtag && {
-    io_message "Already published at ${Brown}$vtag" "$moduleTracePrefix" LightBlue
+    mio_message "Already published at ${Brown}$vtag" '' LightBlue
     echo $vtag
     return 3
   }

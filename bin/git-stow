@@ -48,31 +48,31 @@ stow_node()
   local noTagPush=true stowArchiveDelay
 
   if [[ $archive == true ]]; then
-    io_message "Computing archive delay..." "$moduleTracePrefix" LightGray
+    mio_message "Computing archive delay..." '' LightGray
     stow_set_archive_delay $(branch_list_all_flatten)
-    io_info "Archive delay = ${Brown}$stowArchiveDelay${Cyan} days" "$moduleTracePrefix"
+    mio_info "Archive delay = ${Brown}$stowArchiveDelay${Cyan} days"
   fi
 
   if [[ $stowBranches == true ]]; then
-    io_message "Removing redondant branches..." "$moduleTracePrefix" LightGray
+    mio_message "Removing redondant branches..." '' LightGray
     stow_remove_classified_branches $(branch_list_all_flatten)
     stow_remove_promoted_vbranches $(branch_list_all_flatten)
     
-    io_message "Classifying branches..." "$moduleTracePrefix" LightGray
+    mio_message "Classifying branches..." '' LightGray
     stow_classify_branches $(branch_list_all_flatten)
   fi
 
   if [[ $stowTags == true ]]; then
-    io_message "Removing redondant tags..." "$moduleTracePrefix" LightGray
+    mio_message "Removing redondant tags..." '' LightGray
     stow_remove_classified_tags $(git tag -l)
     stow_remove_promoted_vtags $(git tag -l --sort=-v:refname)
     
-    io_message "Classifying tags..." "$moduleTracePrefix" LightGray
+    mio_message "Classifying tags..." '' LightGray
     stow_classify_tags $(git tag -l)
   fi
   
   local vbranches=( $(branch_list_all_flatten) )
-  io_message "Promoting vtags..." "$moduleTracePrefix" LightGray
+  mio_message "Promoting vtags..." '' LightGray
   stow_promote_vtags 'vbranches[@]' $(git tag -l --sort=-v:refname)
   stow_orphans 'vbranches[@]' $(git tag -l)
 

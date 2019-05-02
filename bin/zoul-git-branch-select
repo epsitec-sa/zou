@@ -174,7 +174,7 @@ branch_set_select_info()
     htag=$(vtag_highest $vbranch true)
     if [[ $htag != $vtag ]]; then
       if ! git merge-base --is-ancestor "$branch" "$htag" >&2; then
-        branch_io_message "Branch ${Brown}$lbranch${LightPurple} was never published as ${Brown}$htag${LightPurple}" "$alias" LightPurple
+        mio_message "Branch ${Brown}$lbranch${LightPurple} was never published as ${Brown}$htag${LightPurple}" "$alias" LightPurple
       fi
       delta=$(( -$(git rev-list --count $vtag..$htag) ))
       # io_trace "branch_set_select_info 2 -- $(print_vars sku skipVNodes allowDuplicateTags branch lbranch vbranch vtag htag delta alias status)"
@@ -254,7 +254,7 @@ branch_set_publish_info()
     # never published on this vbranch, stay in dev mode
     publishStatus='notPublished'
   else
-    io_error "_branch_set_select_auto_core: status '$status' not implemented" "$moduleTracePrefix"
+    mio_error "_branch_set_select_auto_core: status '$status' not implemented"
     return 1
   fi
   # io_trace "branch_set_publish_info -> $(print_vars nextHead publishStatus)"

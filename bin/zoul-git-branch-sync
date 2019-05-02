@@ -87,7 +87,7 @@ _branch_sync_visit()
     local linfo=$(string_pad_right 18 $l)
     [[ $l == $current ]] && linfo="* $linfo" || linfo="  $linfo"
     [[ $syncNoPush == true && $i =~ '>' ]] && color=DarkGray
-    io_message "$linfo $(string_pad_right 2 $i) $r" "$moduleTracePrefix" $color
+    mio_message "$linfo $(string_pad_right 2 $i) $r" '' $color
   done < <(branch_sync_info "$@")
   return 0
 }
@@ -100,7 +100,7 @@ _branch_sync_fix_tracking()
       git checkout "$l^{}" &>/dev/null
     fi
     if git branch -d "$l" &>/dev/null; then
-      io_message "  Deleted obsolete branch '$l'" "$moduleTracePrefix" DarkGray
+      mio_message "  Deleted obsolete branch '$l'" '' DarkGray
     else
       git branch --unset-upstream "$l"
     fi

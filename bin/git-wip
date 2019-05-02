@@ -45,19 +45,19 @@ wip_start_node()
 {
   local skuBranch=$(ref_wip_to_sku $moduleBranch)
   local wipBranch=$(ref_sku_to_wip $skuBranch $wipSuffix)
-  # io_trace "wip_start_node 1 -- $(print_vars moduleBranch skuBranch wipBranch)"
+  io_trace "wip_start_node 1 -- $(print_vars moduleBranch skuBranch wipBranch)"
   if [[ $moduleBranch != $wipBranch && $moduleRoot != $bundleRoot ]]; then
     # switch to dev mode
     local lbranch vbranch vtag htag publishStatus
     branch_set_select_auto "$bundleBranch" true false
     skuBranch=$(ref_wip_to_sku $moduleBranch)
     wipBranch=$(ref_sku_to_wip $skuBranch $wipSuffix)
-    # io_trace "wip_start_node 2 -- $(print_vars moduleBranch skuBranch wipBranch)"
+    io_trace "wip_start_node 2 -- $(print_vars moduleBranch skuBranch wipBranch)"
   fi
   if [[ $moduleBranch != $wipBranch ]]; then
     git branch "$wipBranch"
     branch_checkout "$wipBranch"
-    # io_trace "wip_start_node 3 -- $(print_vars wipSuffix moduleBranch skuBranch wipBranch)"
+    io_trace "wip_start_node 3 -- $(print_vars wipSuffix moduleBranch skuBranch wipBranch)"
   fi
 }
 
@@ -82,7 +82,7 @@ wip_finish_epilog()
   if [[ $wipBranch != $skuBranch ]]; then
     # io_trace "wip_finish_epilog -- $(print_vars moduleBranch skuBranch)"
     branch_merge "$wipBranch" "$skuBranch" \
-    && io_success "Merged branch '$wipBranch' into '$skuBranch'" "$moduleTracePrefix" \
+    && mio_success "Merged branch '$wipBranch' into '$skuBranch'" \
     && branch_checkout "$skuBranch" \
     && branch_delete "$wipBranch"
   fi

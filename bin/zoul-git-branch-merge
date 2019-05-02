@@ -70,7 +70,7 @@ _branch_merge_ff()
   local hashToMerge hashMergeInto intoRef branch lbranch bref ec=0
   branch_set_realize "$intoBranch" || ec=$?
   if [ $ec -eq 2 ]; then
-    io_error "Invalid branch name '$intoBranch' (error code = $ec)" "$moduleTracePrefix"
+    mio_error "Invalid branch name '$intoBranch' (error code = $ec)"
     return 128
   else
     intoBranch=$branch
@@ -83,18 +83,18 @@ _branch_merge_ff()
   if [ $? -ne 0 ]; then
     toMerge=$(branch_realize "$toMerge")
     if [ $? -gt 1 ]; then
-      io_error "Invalid commish '$toMerge'" "$moduleTracePrefix"
+      mio_error "Invalid commish '$toMerge'"
       return 128
     fi
     hashToMerge="$(git rev-parse --verify "$toMerge" 2>/dev/null)"
     if [ $? -ne 0 ]; then
-      io_error "Invalid commish '$toMerge'" "$moduleTracePrefix"
+      mio_error "Invalid commish '$toMerge'"
       return 128
     fi
   fi
   hashMergeInto=$(git show-ref -s --verify "$intoRef" 2>/dev/null)
   if [ $? -ne 0 ]; then
-    io_error "Invalid reference '$intoRef'" "$moduleTracePrefix"
+    mio_error "Invalid reference '$intoRef'"
     return 128
   fi
 

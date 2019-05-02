@@ -27,7 +27,7 @@ ZOUL_GIT_BRANCH_PUBLISH=true
 #   vnext    -- the vtag at which the dev branch has been published
 branch_publish()
 {
-  io_warning "branch_publish is deprecated, use branch_set_publish instead" "$moduleTracePrefix"
+  mio_warning "branch_publish is deprecated, use branch_set_publish instead"
   
   local sku=$1 forceDev=${2:-false} allowDuplicateTags=${3:-false} prerelPrefix=$4
   local lbranch vtag htag publishStatus
@@ -36,20 +36,20 @@ branch_publish()
   local vnext=$vtag
   case $publishStatus in
   unpublishable)
-    io_error   "Branch '$lbranch' cannot be published (no vbranch associated)" "$moduleTracePrefix"
+    mio_error   "Branch '$lbranch' cannot be published (no vbranch associated)"
     return 1;;
   published)
-    io_message "Already published at ${Brown}$vtag" "$moduleTracePrefix" LightBlue;;
+    mio_message "Already published at ${Brown}$vtag" '' LightBlue;;
   ffPublish)
     branch_merge "$vtag" "$moduleBranch" \
-      && io_message "Already published at ${Brown}$vnext${LightBlue} (${Brown}fast-forward${LightBlue})" "$moduleTracePrefix" LightBlue \
-      || { io_error "Fast-forward publish of branch '$lbranch' failed" "$moduleTracePrefix"; return 1; };;
+      && mio_message "Already published at ${Brown}$vnext${LightBlue} (${Brown}fast-forward${LightBlue})" '' LightBlue \
+      || { mio_error "Fast-forward publish of branch '$lbranch' failed"; return 1; };;
   notPublished)
     branch_set_publish "$lbranch" "$vbranch" "$vtag" "$htag" "$prerelPrefix" \
-      && io_success "Published branch '$lbranch' at ${Brown}$vnext" "$moduleTracePrefix" \
-      || { io_error "Publish of branch '$lbranch' failed" "$moduleTracePrefix"; return 1; };;
+      && mio_success "Published branch '$lbranch' at ${Brown}$vnext" \
+      || { mio_error "Publish of branch '$lbranch' failed"; return 1; };;
   *)
-    io_error "Fatal: publishStatus '$publishStatus' not implemented" "$moduleTracePrefix"
+    mio_error "Fatal: publishStatus '$publishStatus' not implemented"
     exit 1;;
   esac
 }
@@ -116,9 +116,9 @@ branch_set_publish()
 
   local lbranch=$1 vbranch=$2 vtag=$3 htag=$4 prerelPrefix=$5 noIncrement=$6
   
-  [[ -z $lbranch ]] && { io_error "Argument 'lbranch' not specified." "$moduleTracePrefix"; return 1; }
-  [[ -z $vbranch ]] && { io_error "Argument 'vbranch' not specified." "$moduleTracePrefix"; return 1; }
-  ! branch_ensure_local $lbranch && { io_error "Branch '$lbranch' does not exist." "$moduleTracePrefix"; return 1; }
+  [[ -z $lbranch ]] && { mio_error "Argument 'lbranch' not specified."; return 1; }
+  [[ -z $vbranch ]] && { mio_error "Argument 'vbranch' not specified."; return 1; }
+  ! branch_ensure_local $lbranch && { mio_error "Branch '$lbranch' does not exist."; return 1; }
 
   # restore deleted vbranch
   branch_ensure_local_vbranch "$vbranch" "$vtag"

@@ -112,7 +112,7 @@ stow_remove_promoted_vbranches()
       for version in ${!vbranchMap[@]}; do
         vbranches=( ${vbranchMap[$version]} )
         if [ ${#vbranches[@]} -gt 1 ]; then
-          # io_info "Branches (${Brown}$(string_join ', ' ${vbranches[@]})${Cyan}) are pointing at the same commit (${Brown}${hash:0:7}${Cyan})" "$moduleTracePrefix"
+          # mio_info "Branches (${Brown}$(string_join ', ' ${vbranches[@]})${Cyan}) are pointing at the same commit (${Brown}${hash:0:7}${Cyan})"
           # group vbranches branches by folder
           unset fbranchMap
           declare -A fbranchMap
@@ -253,7 +253,7 @@ stow_remove_promoted_vtags()
       for version in ${!vtagMap[@]}; do
         vtags=( ${vtagMap[$version]} )
         if [ ${#vtags[@]} -gt 1 ]; then
-          # io_info "Tags (${Brown}$(string_join ', ' ${vtags[@]})${Cyan}) are pointing at the same commit (${Brown}${hash:0:7}${Cyan})" "$moduleTracePrefix"
+          # mio_info "Tags (${Brown}$(string_join ', ' ${vtags[@]})${Cyan}) are pointing at the same commit (${Brown}${hash:0:7}${Cyan})"
           # group vtags tags by folder
           unset ftagMap
           declare -A ftagMap
@@ -438,13 +438,13 @@ _stow_show_ancestry_warnings()
   # vtag is not an ancestor of vbranch
   if git merge-base --is-ancestor "${rvbranchMap[$vbranch]}" "$vtag"; then
     if _stow_promoted_versions_equals; then
-      io_info "Branch ${Brown}$vbranch${Cyan} could be fast forwarded to tag ${Brown}$vtag${Cyan}" "$moduleTracePrefix"
+      mio_info "Branch ${Brown}$vbranch${Cyan} could be fast forwarded to tag ${Brown}$vtag${Cyan}"
     # else
-    #   io_info "Tag ${Brown}$vtag${Cyan} is not on vbranch ${Brown}$vbranch${Cyan}" "$moduleTracePrefix"
+    #   mio_info "Tag ${Brown}$vtag${Cyan} is not on vbranch ${Brown}$vbranch${Cyan}"
     fi
   else
-    io_info "Tag ${Brown}$vtag${Cyan} is not on vbranch ${Brown}$vbranch${Cyan}" "$moduleTracePrefix"
-    # io_info "Tag ${Brown}$vtag${Cyan} is not on any vbranch" "$moduleTracePrefix"
+    mio_info "Tag ${Brown}$vtag${Cyan} is not on vbranch ${Brown}$vbranch${Cyan}"
+    # mio_info "Tag ${Brown}$vtag${Cyan} is not on any vbranch"
   fi
 }
 # in-scope:
