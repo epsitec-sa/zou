@@ -3,6 +3,7 @@
 [[ -z $ZOUL_GIT_MODULE ]]        && . zoul-git-module
 [[ -z $ZOUL_GIT_CONFIG ]]        && . zoul-git-config
 [[ -z $ZOUL_GIT_COSM ]]          && . zoul-git-cosm
+[[ -z $ZOUL_GIT_BRANCH_MERGE ]]  && . zoul-git-branch-merge
 [[ -z $ZOUL_GIT_BRANCH_SELECT ]] && . zoul-git-branch-select
 
 wip_parse()
@@ -10,7 +11,8 @@ wip_parse()
   while [[ "$#" > 0 ]]; do case "$1" in
     --) shift; args+=("$@"); break;;
     -h|--help) zou-help $0; exit 0;;
-    -j*)                jobsCount=${1#-j};;
+    -j*) jobsCount=${1#-j};;
+    --finish) wipFinish=true;;
     -*) io_error "unknown option '$1'"; return 1;;
     *) wipSuffix=$1;;
   esac; shift; done
@@ -18,31 +20,78 @@ wip_parse()
 wip_run()
 {
   # parse command line
-  local jobsCount noSkuFilter selectDev commitSubmodules wipSuffix
+  local jobsCount noSkuFilter selectDev commitSubmodules wipSuffix wipFinish
   wip_parse "$@" || return $?
 
-  startupMessage="Creating wip branch '$wipSuffix', please wait..."
-
-  module_run wip_main
-}
-wip_main()
-{
-  wip_create
-  if [[ "$moduleRoot" != "$bundleRoot" ]]; then
-    module_visit "$bundleRoot" wip_create
+  local wipScopes=( config_scope cosm_scope )
+  
+  if [[ $wipFinish == true ]]; then
+    startupMessage="Finishing WIP, please wait..."
+    module_run "${wipScopes[@]}" wip_finish
+  else
+    wipSuffix=${wipSuffix:-work}
+    startupMessage="Starting WIP '$wipSuffix', please wait..."
+    module_run wip_start
   fi
 }
-wip_create()
+wip_start()
+{
+  wip_start_node
+  if [[ "$moduleRoot" != "$bundleRoot" ]]; then
+    module_visit "$bundleRoot" wip_start_node
+  fi
+}
+wip_start_node()
 {
   local skuBranch=$(ref_wip_to_sku $moduleBranch)
   local wipBranch=$(ref_sku_to_wip $skuBranch $wipSuffix)
+  # io_trace "wip_start_node 1 -- $(print_vars moduleBranch skuBranch wipBranch)"
+  if [[ $moduleBranch != $wipBranch && $moduleRoot != $bundleRoot ]]; then
+    # switch to dev mode
+    local lbranch vbranch vtag htag publishStatus
+    branch_set_select_auto "$bundleBranch" true false
+    skuBranch=$(ref_wip_to_sku $moduleBranch)
+    wipBranch=$(ref_sku_to_wip $skuBranch $wipSuffix)
+    # io_trace "wip_start_node 2 -- $(print_vars moduleBranch skuBranch wipBranch)"
+  fi
   if [[ $moduleBranch != $wipBranch ]]; then
     git branch "$wipBranch"
-    # io_trace "wip_create $(print_vars wipSuffix moduleBranch skuBranch wipBranch)"
-    if [[ "$moduleRoot" == "$bundleRoot" ]]; then
-      git-select "$wipBranch"
-    fi
+    branch_checkout "$wipBranch"
+    # io_trace "wip_start_node 3 -- $(print_vars wipSuffix moduleBranch skuBranch wipBranch)"
   fi
+}
+
+wip_finish()
+{
+  # io_trace "wip_finish -- $(print_vars moduleRoot bundleRoot)"
+  if [[ "$moduleRoot" == "$bundleRoot" ]]; then
+    wip_finish_tree
+  else
+    module_visit "$bundleRoot" "${wipScopes[@]}" wip_finish_tree
+  fi
+}
+wip_finish_tree()
+{
+  wip_finish_submodules || return $?
+  wip_finish_epilog
+}
+wip_finish_epilog()
+{
+  local skuBranch=$(ref_wip_to_sku $moduleBranch)
+  local wipBranch=$moduleBranch
+  if [[ $wipBranch != $skuBranch ]]; then
+    # io_trace "wip_finish_epilog -- $(print_vars moduleBranch skuBranch)"
+    branch_merge "$wipBranch" "$skuBranch" \
+    && io_success "Merged branch '$wipBranch' into '$skuBranch'" "$moduleTracePrefix" \
+    && branch_checkout "$skuBranch" \
+    && branch_delete "$wipBranch"
+  fi
+}
+wip_finish_submodules()
+{
+  local unstaged=( "${unstagedCleanSubmodules[@]}" "${unstagedDirtySubmodules[@]}" )
+  # io_trace "wip_finish_submodules -- $(print_vars unstaged[@])"
+  module_visit_submodules_async 'unstaged[@]' "${wipScopes[@]}" 'wip_finish_tree'
 }
 
 wip_run  "$@"
