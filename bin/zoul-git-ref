@@ -4,6 +4,8 @@
 #   [[ -z $ZOUL_GIT_REF ]] && . zoul-git-ref
 ZOUL_GIT_REF=true
 
+[[ -z $ZOUL_CORE ]] && . zoul-core
+
 # Use the following functions to generate fallbacks for zou-flow refs (branches and vtags).
 # Fallbacks can be generated to:
 # - find submodule dev branch that match bundle branch
@@ -41,7 +43,7 @@ ref_join() { local IFS='/'; echo "$*"; }
 ref_scan_shift_left_0()
 {
   local IFS=' ' i
-  # echo ref_scan_shift_left_0 "[$#] ${*@Q}" >&2
+  # io_trace "ref_scan_shift_left_0 -- ${*@Q}"
   for (( i=1; i<=$#; i++ )); do
     echo "${@:$i}"
   done
@@ -119,42 +121,44 @@ ref_scan_insert_count()
     # convert to array to compute word count (faster than using wc -w)
     IFS=' '; a=( $i )
     # insert count in front 
+    # io_trace "ref_scan_insert_count -- ${#a[@]} $i"
     echo ${#a[@]} $i
   done
 }
 # scan ref atoms sort by count and join:
-# sku compta mch dev ->
+# ref_scan_sort_join sku compta mch dev ->
 #   sku/compta/mch/dev
 #   sku/compta/dev
 #   sku/mch/dev
 #   sku/dev
 ref_scan_sort_join()
 {
-  # echo ref_scan_sort_join "[$#] ${*@Q}" >&2
+  # io_trace "ref_scan_sort_join ${*@Q}"
   if (( $# <= 1 )); then
     ref_join $@
   else
     local IFS=$'\n' a
     for a in $(ref_scan_insert_count "$@" | sort -n -s -r | cut -d' ' -f2-); do
       IFS=' '; ref_join $a
+      # io_trace "ref_scan_sort_join -- $(ref_join $a)"
     done
   fi
 }
 # scan ref and sort by atoms count:
-# sku/compta/mch/dev ->
+# ref_split_scan_join sku/compta/mch/dev ->
 #   sku/compta/mch/dev
 #   sku/compta/dev
 #   sku/mch/dev
 #   sku/dev
 ref_split_scan_join()
 {
-  # echo ref_scan "[$#] ${*@Q}" >&2
-  local IFS=' ';
-  local atoms=( ${1//\// } )
+  # io_trace "ref_split_scan_join ${*@Q}"
+  local IFS='/' atoms
+  atoms=( $1 )
   ref_scan_sort_join ${atoms[@]}
 }
 # split ref, convert prod branch to dev and adjust master:
-# ref_dev_fallback sku/compta/mch/13.2 ->
+# ref_dev_fallback sku/compta/mch/(dev|13.2) ->
 #   sku/compta/mch/dev
 #   sku/compta/dev
 #   sku/mch/dev
@@ -162,19 +166,48 @@ ref_split_scan_join()
 #   master
 ref_dev_fallback()
 {
-  local IFS=' ';
-  local atoms=( ${1//\// } ) a b
+  local IFS='/' atoms fallback b
+  atoms=( $1 ); IFS=$'\n'
+  # io_trace "ref_dev_fallback 1 -- $(print_vars atoms[@])"
+
+  if [ ${#atoms[@]} -eq 0 ]; then
+    echo 'master'
+    return 0
+  fi
+  # ignore prod branches
   [[ ${atoms[-1]} =~ ^[0-9]+\.[0-9]+$ ]] && atoms[-1]='dev'
 
-  a=( $(ref_scan_sort_join "${atoms[@]}") )
-  if [[ ${a[-1]} == 'dev' ]]; then
-    a[-1]='master'
-  elif [[ ${a[-1]} != 'master' ]]; then
-    a+=( 'master' )
+  if [ ${#atoms[@]} -eq 1 ]; then
+    case ${atoms[0]} in
+    dev|master) echo 'master'; return 0;;
+    sku) echo 'sku/dev';;
+    *) echo ${atoms[0]};;
+    esac
+    echo 'master'
+  elif [[ ${atoms[0]} == 'sku' ]]; then
+    # SKU
+    fallback=( $(ref_scan_sort_join "${atoms[@]}") )
+    [[ ${fallback[-1]} != 'master' ]] && fallback+=( 'master' )
+    # io_trace "ref_dev_fallback 2 -- $(print_vars fallback[@])"
+    printf '%s\n' "${fallback[@]}"
+  else
+    # WIP
+    if [[ ${#atoms[@]} -ge 4 && ${atoms[1]} == 'sku' ]]; then
+      # remove atom[1] = sku
+      IFS=' ' atoms=( ${atoms[0]} ${atoms[@]:2} ); IFS=$'\n'
+      # io_trace "ref_dev_fallback 3.1 -- $(print_vars atoms[@])"
+    fi
+    
+    fallback=( $(ref_scan_sort_join "${atoms[@]}") )
+    # io_trace "ref_dev_fallback 3 -- $(print_vars fallback[@])"
+
+    # append sku fallback
+    local sku=$(ref_wip_to_sku "${fallback[0]}")
+    IFS=$'\n' fallback+=( $(ref_dev_fallback "$sku") )
+    
+    # io_trace "ref_dev_fallback 4 -- $(print_vars fallback[@])"
+    printf '%s\n' "${fallback[@]}"
   fi
-  for b in ${a[@]}; do
-    echo $b
-  done
 }
 # scan ref and return tag fallback patterns
 # Exemple for git describe:
@@ -186,15 +219,31 @@ ref_dev_fallback()
 #   v[0-9]*
 ref_tag_fallback()
 {
-  local IFS=' ';
-  local atoms=( ${1//\// } ) tag=$2
-  # echo ref_tag_fallback ${atoms[@]@Q} >&2
-  # accept vtags, dev and prod branches
-  if [[ ${atoms[-1]} == 'dev' || ${atoms[-1]} =~ ^v?[0-9]+\.[0-9]+ ]]; then
-    atoms[-1]="$tag"
-    ref_scan_sort_join "${atoms[@]}"
+  local IFS='/' tag="${2:-v[0-9]*}" atoms fallback
+  atoms=( $1 ); IFS=$'\n'
+  # io_trace "ref_tag_fallback 1 -- $(print_vars tag atoms[@])"
+
+  if [[ ${#atoms[@]} -eq 0 || ${atoms[0]} == 'master' ]]; then
+    echo "$tag"
+    return 0
   fi
-  echo "$tag"
+  # ignore prod branches
+  [[ ${atoms[-1]} =~ ^[0-9]+\.[0-9]+$ ]] && atoms[-1]='dev'
+
+  if [ ${#atoms[@]} -eq 1 ]; then
+    case ${atoms[0]} in
+    dev|master|sku) echo "$tag"; return 0;;
+    *) return 1;;
+    esac
+  elif [[ ${atoms[-1]} == 'dev' ]]; then
+    atoms[-1]="$tag"
+    IFS=$'\n'
+    fallback=( $(ref_scan_sort_join "${atoms[@]}") )
+    # io_trace "ref_tag_fallback 1 -- $(print_vars tag atoms[@] fallback[@])"
+    [[ ${#fallback[@]} -eq 0 || ${fallback[-1]} != "$tag" ]] && fallback+=( $tag )
+    # io_trace "ref_tag_fallback 2 -- $(print_vars tag atoms[@] fallback[@])"
+    printf '%s\n' "${fallback[@]}"
+  fi
 }
 ref_vtag_describe_fallback()
 {
@@ -220,4 +269,42 @@ ref_prod_fallback()
     return 1
   fi
   echo 'prod'
+}
+ref_sku_to_wip()
+{
+  [[ -z $1 || -z $2 ]] && return 1
+  
+  local sku=$1 wipSuffix=${2//\//-} IFS='/' atoms
+  atoms=( $1 ); IFS=' '
+  if [[ $sku == 'master' ]]; then
+    echo "wip/$wipSuffix"
+  elif [[ ${atoms[0]} == 'sku' ]]; then
+    [ ${#atoms[@]} -gt 1 ] && atoms[-1]=$wipSuffix || atoms+=( "$wipSuffix" )
+    # io_trace "ref_sku_to_wip 1 -- $(print_vars atoms[@])"
+    [ ${#atoms[@]} -gt 2 ] && atoms=( ${atoms[@]:1} )
+    # io_trace "ref_sku_to_wip 2 -- $(print_vars atoms[@])"
+    echo "wip/$(ref_join ${atoms[@]})"
+  else
+    echo "$sku-$wipSuffix"
+  fi
+}
+ref_wip_to_sku()
+{
+  [[ -z $1 ]] && return 1
+
+  local wip=$1 IFS='/' sku atoms
+  atoms=( $1 ); IFS=$'\n'
+  if [[ ${#atoms[@]} -le 2 ]]; then
+    # io_trace "ref_wip_to_sku 1 -- $(print_vars atoms[@])"
+    [[ ${atoms[1]} == 'sku' ]] && echo 'sku/dev' || echo 'master'
+  elif [[ ${atoms[1]} == 'sku' ]]; then
+    # io_trace "ref_wip_to_sku 2 -- $(print_vars atoms[@])"
+    echo "sku/dev"
+  else
+    # io_trace "ref_wip_to_sku 4 -- $(print_vars atoms[@])"
+    atoms[0]='sku'
+    atoms[-1]='dev'
+    # io_trace "ref_wip_to_sku 5 -- $(print_vars atoms[@])"
+    echo "$(ref_join ${atoms[@]})"
+  fi
 }

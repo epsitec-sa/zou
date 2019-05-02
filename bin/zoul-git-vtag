@@ -93,7 +93,7 @@ vtag_highest()
     done
     vtag_highest_of "${tags[@]}"
   else
-    io_error "vbranch invalid format : '$1'" "$moduleTracePrefix"
+    mio_error "vbranch invalid format : '$1'"
     return 1
   fi
 }
@@ -261,10 +261,10 @@ vtag_compare()
       
       return 0
     else
-      io_error "vtag_compare: invalid vtag format: $1" "$moduleTracePrefix"
+      mio_error "vtag_compare: invalid vtag format: $1"
     fi
   else
-    io_error "vtag_compare: invalid vtag format: $1" "$moduleTracePrefix"
+    mio_error "vtag_compare: invalid vtag format: $1"
   fi
 }
 vtag_increment()
@@ -319,7 +319,7 @@ vtag_set_increment()
     fi
   fi
   if [[ -z $vnext ]]; then
-    io_error "vtag_increment: wrong vtag format: $vtag" "$moduleTracePrefix"
+    mio_error "vtag_increment: wrong vtag format: $vtag"
     return 1
   fi
 }

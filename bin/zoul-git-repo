@@ -373,7 +373,7 @@ repo_commit_submodules()
   cd "$mroot"
   local branch=$(branch_current)
   git commit -m "zou-flow: update submodules '$cslist' on branch '$branch'" -- "$@" >/dev/null \
-  && [[ $showSubmoduleMessage == true ]] && io_message "  Commited submodules '$cslist' on branch '$branch'" "$moduleTracePrefix" DarkGray
+  && [[ $showSubmoduleMessage == true ]] && mio_message "  Commited submodules '$cslist' on branch '$branch'" '' DarkGray
   repo_raise_submodule_changed_event "$@"
   cd "$opwd"
 }
@@ -381,7 +381,7 @@ repo_discard_submodule()
 {
   local smpath=$1
   git submodule update --recursive "$smpath" &>/dev/null
-  [[ $showSubmoduleMessage == true ]] && io_message "  Discarded submodule '$smpath' from branch '$moduleBranch'" "$moduleTracePrefix" DarkGray
+  [[ $showSubmoduleMessage == true ]] && mio_message "  Discarded submodule '$smpath' from branch '$moduleBranch'" '' DarkGray
   repo_raise_submodule_changed_event "$smpath"
 }
 repo_discard_clean_submodules_async()
@@ -398,7 +398,7 @@ repo_remove_dangling_submodule()
   # echo "git submodule deinit $smid + git rm --cached $smid"
   git submodule deinit $smid 2>/dev/null && git rm --cached $smid 2>/dev/null
   rm -rf "$smpath"
-  io_warning "Removed dangling submodule '${smpath%/}'" "$moduleTracePrefix"
+  mio_warning "Removed dangling submodule '${smpath%/}'"
   repo_raise_submodule_changed_event "$smpath"
 }
 repo_remove_dangling_submodules_async()
@@ -408,10 +408,10 @@ repo_remove_dangling_submodules_async()
 repo_update_submodules()
 {
   [ ${#moduleSubmodulePaths[@]} -eq 0 ] && return 0
-  io_info 'Updating submodules...' "$moduleTracePrefix"
+  mio_info 'Updating submodules...'
   (git submodule update --init --recursive 2>&1) | \
   while read -r line; do
-    [[ -n $line ]] && io_message "  $line" "$moduleTracePrefix" DarkGray
+    [[ -n $line ]] && mio_message "  $line" '' DarkGray
   done
   repo_raise_submodule_changed_event
 }
@@ -419,10 +419,10 @@ repo_update_submodule()
 {
   # io_trace "repo_update_submodule ${*@Q}"
   local path=$1 line
-  io_info 'Updating submodule '$path'' "$moduleTracePrefix"
+  mio_info "Updating submodule '$path'"
   (git submodule update --init --recursive "$path" 2>&1) | \
   while read -r line; do
-    [[ -n $line ]] && io_message "  $line" "$moduleTracePrefix" DarkGray
+    [[ -n $line ]] && mio_message "  $line" '' DarkGray
   done
   repo_raise_submodule_changed_event "$path"
 }
@@ -433,13 +433,13 @@ repo_check_submodule()
   repo_update_submodule "$1"
   cd "$1"
   [[ -f .git || -d .git ]] && return 0
-  io_error "Not a git submodule '$1'" "$moduleTracePrefix"
+  mio_error "Not a git submodule '$1'"
   return 1
 }
 repo_prune_tags()
 {
   local verbose=$1 showMessage=$2
-  [[ $showMessage == true ]] && io_warning "Pruning tags..." "$moduleTracePrefix"
+  [[ $showMessage == true ]] && mio_warning "Pruning tags..."
 
   if [[ $verbose == true ]]; then
     git tag -d $(git tag -l) &>/dev/null
@@ -462,11 +462,11 @@ repo_require_clean_work_tree()
     # Update the index
     if ! git update-index -q --ignore-submodules --refresh &>/dev/null; then
       io_lock_enter
-      io_error_unsafe "${prefix}You have unmerged paths." "$moduleTracePrefix"
+      mio_error_unsafe "${prefix}You have unmerged paths."
       for b in $(repo_list_unmerged); do
-        io_error_unsafe "  $b" "$moduleTracePrefix"
+        mio_error_unsafe "  $b"
       done
-      io_info_unsafe  "  Run 'git sync' again or resolve conflicts and run 'git commit'." "$moduleTracePrefix"
+      mio_info_unsafe  "  Run 'git sync' again or resolve conflicts and run 'git commit'."
       io_lock_exit
       return 1
     fi
@@ -474,11 +474,11 @@ repo_require_clean_work_tree()
     # Disallow untracked changes in the working tree
     if ! test -z "$(repo_list_untracked)"; then
       io_lock_enter
-      io_error_unsafe "${prefix}Your work tree contains untracked changes." "$moduleTracePrefix"
+      mio_error_unsafe "${prefix}Your work tree contains untracked changes."
       for b in $(repo_list_untracked); do
-        io_error_unsafe "  $b" "$moduleTracePrefix"
+        mio_error_unsafe "  $b"
       done
-      io_info_unsafe  "  Run 'git add'" "$moduleTracePrefix"
+      mio_info_unsafe  "  Run 'git add'"
       io_lock_exit
       err=1
     fi
@@ -486,11 +486,11 @@ repo_require_clean_work_tree()
     # Disallow unstaged changes in the working tree
     if ! test -z "$(repo_list_unstaged)"; then
       io_lock_enter
-      io_error_unsafe "${prefix}You have unstaged changes." "$moduleTracePrefix"
+      mio_error_unsafe "${prefix}You have unstaged changes."
       for b in $(repo_list_unstaged); do
-        io_error_unsafe "  $b" "$moduleTracePrefix"
+        mio_error_unsafe "  $b"
       done
-      io_info_unsafe  "  Run 'git stash' or 'git add' and 'git commit'." "$moduleTracePrefix"
+      mio_info_unsafe  "  Run 'git stash' or 'git add' and 'git commit'."
       io_lock_exit
       err=1
     fi
@@ -498,11 +498,11 @@ repo_require_clean_work_tree()
     # Disallow uncommitted changes in the index
     if ! git diff-index --cached --quiet HEAD --ignore-submodules --; then
       io_lock_enter
-      io_error_unsafe "${prefix}Your index contains uncommitted changes." "$moduleTracePrefix"
+      mio_error_unsafe "${prefix}Your index contains uncommitted changes."
       for b in $(repo_list_uncommited); do
-        io_error_unsafe "  $b" "$moduleTracePrefix"
+        mio_error_unsafe "  $b"
       done
-      io_info_unsafe  "  Run 'git commit'." "$moduleTracePrefix"
+      mio_info_unsafe  "  Run 'git commit'."
       io_lock_exit
       err=1
     fi

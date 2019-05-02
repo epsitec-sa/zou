@@ -78,8 +78,8 @@ cver_main()
       if [[ -n $customFile ]]; then
         local command=$(git config core.editor)
         if [[ $noEdit == true ]]; then
-          io_info    "Modify the version updater script with the following command" "$moduleTracePrefix"
-          io_message "  $command '$customFile'" "$moduleTracePrefix" Gray
+          mio_info    "Modify the version updater script with the following command"
+          mio_message "  $command '$customFile'" '' Gray
         else
           eval "$command '$customFile'"
         fi
@@ -99,11 +99,11 @@ cver_list()
     value=${spec#* }
     key=$(string_pad_left 13 $key)
     message="${LightCyan}${key}${NC} = ${Green}$value${NC}"
-    io_message_unsafe "$message" "$moduleTracePrefix"
+    mio_info_unsafe "$message"
   done
   if [ -f update-version ]; then
     message="${LightCyan}$(string_pad_left 13 custom)${NC} = ${Brown}update-version${NC}"
-    io_message_unsafe "$message" "$moduleTracePrefix"
+    mio_info_unsafe "$message"
   fi
   io_lock_exit
 }

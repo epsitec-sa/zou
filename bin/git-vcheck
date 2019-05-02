@@ -27,19 +27,19 @@ vcheck_node()
 {
   local ec=0 lookup vtag pvtag vbranch
 
-  io_info "Grouping vtags ordered by version..." "$moduleTracePrefix"
+  mio_info "Grouping vtags ordered by version..."
   lookup=$(vtag_group_by_version)
   declare -A byVersion="${lookup#*=}"
   
   local vbranches=( ${!byVersion[@]} )
   [ ${#vbranches[@]} -eq 0 ] && {
-    io_success "  There are no vtag in this repository" "$moduleTracePrefix"
+    mio_success "  There are no vtag in this repository"
     return 0
   }
   vbranches=$(array_sort vbranches[@])
   # io_trace "vcheck_node $(print_vars vbranches)"
 
-  io_info "Grouping vtags ordered by date..." "$moduleTracePrefix"
+  mio_info "Grouping vtags ordered by date..."
   lookup=$(vtag_group_by_date)
   declare -A byDate="${lookup#*=}"
 
@@ -54,12 +54,12 @@ vcheck_node()
     if [ $? -le 1 ]; then
       for vtag in ${byVersion[$vbranch]}; do
         if ! git merge-base --is-ancestor "$vtag" "$branch"; then
-          io_message "  vtag '$vtag' is not inside vbranch '$vbranch'" "$moduleTracePrefix" LightPurple
+          mio_message "  vtag '$vtag' is not inside vbranch '$vbranch'" '' LightPurple
           (( ec = $ec + 1 ))
         fi
         if [[ -n $pvtag ]]; then
           if ! git merge-base --is-ancestor "$vtag" "$pvtag"; then
-            io_message "  vtag '$vtag' is not an ancestor of '$pvtag'" "$moduleTracePrefix" LightPurple
+            mio_message "  vtag '$vtag' is not an ancestor of '$pvtag'" '' LightPurple
             (( ec = $ec + 1 ))
           fi
         fi
@@ -67,20 +67,20 @@ vcheck_node()
       done
       unset pvtag
     else
-      io_message "  Branch not found '$vbranch' - vtags (${byVersion[$vbranch]}) are orphans" "$moduleTracePrefix" LightPurple
+      mio_message "  Branch not found '$vbranch' - vtags (${byVersion[$vbranch]}) are orphans" '' LightPurple
       (( ec += 1 ))
     fi
     if [ $ec -eq 0 ]; then
-      io_success "  Checked vtag appartenance and history on vbranch '$vbranch' - OK" "$moduleTracePrefix"
+      mio_success "  Checked vtag appartenance and history on vbranch '$vbranch' - OK"
     else
-      io_warning "  Checked vtag appartenance and history on vbranch '$vbranch' - $ec warning[s]" "$moduleTracePrefix"
+      mio_warning "  Checked vtag appartenance and history on vbranch '$vbranch' - $ec warning[s]"
     fi
   done
 
   # check by date and by version coherence : order should match
   for vbranch in $vbranches; do
     if [[ ${byVersion[$vbranch]} == ${byDate[$vbranch]} ]]; then
-      io_success "  Checked vtag ordering on vbranch '$vbranch' - OK" "$moduleTracePrefix"
+      mio_success "  Checked vtag ordering on vbranch '$vbranch' - OK"
     else
       # check item by item
       local a1 a2 ai2 i1=0 i2=0 j2 e2 ec=0
@@ -94,11 +94,11 @@ vcheck_node()
         if [ ${#ai2[@]} -eq 1 ]; then
           if [[ ${a1[$i1]} != ${a2[$i2]} ]]; then
             if [ $ec -eq 0 ]; then
-              io_message "  vtags order differ for vbranch '$vbranch'" "$moduleTracePrefix" LightPurple
-              # io_message "    ${byVersion[$vbranch]}" "$moduleTracePrefix" Gray
-              # io_message "    ${byDate[$vbranch]}" "$moduleTracePrefix" Gray
+              mio_message "  vtags order differ for vbranch '$vbranch'" '' LightPurple
+              # mio_message "    ${byVersion[$vbranch]}" '' Gray
+              # mio_message "    ${byDate[$vbranch]}" '' Gray
             fi
-            io_message "    ${a1[$i1]} <> ${a2[$i2]}" "$moduleTracePrefix" Gray
+            mio_message "    ${a1[$i1]} <> ${a2[$i2]}" '' Gray
             (( ec = $ec + 1 ))
           fi
           (( i1 = $i1 + 1 ))
@@ -106,11 +106,11 @@ vcheck_node()
           for j2 in ${!ai2[@]}; do
             if ! array_contains_element "${a1[$i1]}" "${ai2[@]}"; then
               if [ $ec -eq 0 ]; then
-                io_message "  vtags order differ for vbranch '$vbranch'" "$moduleTracePrefix" LightPurple
-                # io_message "  ${byVersion[$vbranch]}" "$moduleTracePrefix" Gray
-                # io_message "  ${byDate[$vbranch]}" "$moduleTracePrefix" Gray
+                mio_message "  vtags order differ for vbranch '$vbranch'" '' LightPurple
+                # mio_message "  ${byVersion[$vbranch]}" '' Gray
+                # mio_message "  ${byDate[$vbranch]}" '' Gray
               fi
-              io_message "    ${a1[$i1]} not in (${ai2[*]})" "$moduleTracePrefix" Gray
+              mio_message "    ${a1[$i1]} not in (${ai2[*]})" '' Gray
               (( ec = $ec + 1 ))
             fi
             (( i1 = $i1 + 1 ))

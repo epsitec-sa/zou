@@ -54,7 +54,7 @@ tags_node()
     fi
   done
   for tag in $(array_sort_descending 'lrTags[@]'); do
-    io_message "$tag" "$moduleTracePrefix" Green
+    mio_success "$tag"
   done
 
   # process local only tags
@@ -75,14 +75,14 @@ tags_node()
 
   for tag in $(array_sort_descending 'syTags[@]'); do
     tag_push_not_followed $tag $tag^{} || localOnlyTags+=( $tag )
-    # io_info "Skipped local only tag '$tag' (underlying commit has not yet been pushed)." "$moduleTracePrefix"
+    # mio_info "Skipped local only tag '$tag' (underlying commit has not yet been pushed)."
   done
   for tag in $(array_sort_descending 'prTags[@]'); do
     git tag --delete $tag &>/dev/null
-    io_warning "Deleted local tag '$tag'." "$moduleTracePrefix"
+    mio_warning "Deleted local tag '$tag'."
   done
   for tag in $(array_sort_descending 'loTags[@]'); do
-    io_message "$tag" "$moduleTracePrefix" LightBlue
+    mio_message "$tag" '' LightBlue
   done
 
   # process remote only tags
@@ -103,14 +103,14 @@ tags_node()
 
   for tag in $(array_sort_descending 'miTags[@]'); do
     git push --delete origin $tag &>/dev/null
-    io_info "Deleted remote tag '$tag'." "$moduleTracePrefix"
+    mio_info "Deleted remote tag '$tag'."
   done
   for rtag in $(array_sort_descending 'syTags[@]'); do
     git fetch origin +$rtag:$rtag &>/dev/null
-    io_info "Fetched remote tag '${rtag#refs/tags/}'." "$moduleTracePrefix"
+    mio_info "Fetched remote tag '${rtag#refs/tags/}'."
   done
   for tag in $(array_sort_descending 'roTags[@]'); do
-    io_message "$tag" "$moduleTracePrefix" Purple
+    mio_message "$tag" '' Purple
   done
 }
 tags_fill_map()

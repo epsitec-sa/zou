@@ -32,16 +32,16 @@ vbranch_main()
     version=${BASH_REMATCH[2]}
     vnode="${prefix}v${version}-@"
     if ref_exists $branch; then
-      io_warning "Branch '$branch' already exists" "$moduleTracePrefix"
+      mio_warning "Branch '$branch' already exists"
     else
       git branch "$branch" "$commit"
-      io_info "Branch created '$branch'" "$moduleTracePrefix"
+      mio_info "Branch created '$branch'"
     fi
     [[ $checkout == true ]] && branch_checkout "$branch" true >/dev/null
     # create vnode
     tag_new "$vnode" "$branch" "$message"
   else
-    io_error "Branch '$branch' is not a vbranch" "$moduleTracePrefix"
+    mio_error "Branch '$branch' is not a vbranch"
   fi
 }
 

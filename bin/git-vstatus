@@ -44,14 +44,14 @@ vstatus_node()
   if ! ref_exists "$ref"; then
     ref=$(branch_realize $ref)
     if [ $? -gt 1 ]; then
-      io_error "Branch '$1' does not exist" "$moduleTracePrefix"
+      mio_error "Branch '$1' does not exist"
       return 1
     fi
   fi
   local vbranch vtag delta alias ntag tags
   vtag_set_describe "$ref"
   if [[ -z $vtag ]]; then
-    io_error "Version tag not found" "$moduleTracePrefix"
+    mio_error "Version tag not found"
     return 1
   fi
 
@@ -62,10 +62,10 @@ vstatus_node()
   # 123 commit[s] ahead of v12.1.1 -- next version = v12.1.2
   ntag=$(vtag_increment "$vtag" "$prerelPrefix")
   if [ $delta -eq 0 ]; then
-    io_message "Already published   at ${Brown}$(string_pad_right 8 $vtag)${LightBlue} -- next version = ${Brown}$(string_pad_right 8 $ntag)" "$moduleTracePrefix" LightBlue
+    mio_message "Already published   at ${Brown}$(string_pad_right 8 $vtag)${LightBlue} -- next version = ${Brown}$(string_pad_right 8 $ntag)" '' LightBlue
   else
-    # io_info "Active branch is ${Brown}$(string_pad_left 3 $delta)${Cyan} commit[s] ahead of tag ${Brown}$(string_pad_right 8 $vtag)${Cyan} -- next version = ${Brown}$(string_pad_right 8 $ntag)" "$moduleTracePrefix"
-    io_info "${Brown}$(string_pad_left 3 $delta)${Cyan} commit[s] ahead of ${Brown}$(string_pad_right 8 $vtag)${Cyan} -- next version = ${Brown}$(string_pad_right 8 $ntag)" "$moduleTracePrefix"
+    # mio_info "Active branch is ${Brown}$(string_pad_left 3 $delta)${Cyan} commit[s] ahead of tag ${Brown}$(string_pad_right 8 $vtag)${Cyan} -- next version = ${Brown}$(string_pad_right 8 $ntag)"
+    mio_info "${Brown}$(string_pad_left 3 $delta)${Cyan} commit[s] ahead of ${Brown}$(string_pad_right 8 $vtag)${Cyan} -- next version = ${Brown}$(string_pad_right 8 $ntag)"
   fi
   return 0
 }
