@@ -114,7 +114,7 @@ publish_prolog()
 {
   local forceDev=false allowDuplicateTags=false
   [[ $publishDev == true || "$PWD" == "$startupRoot" ]] && forceDev=true
-  [[ $moduleRoot == $bundleRoot ]] && allowDuplicateTags=true
+  module_is_bundle && allowDuplicateTags=true
 
   if [[ $dryRun == true ]]; then
     # io_trace "publish_prolog -- $(print_vars moduleId)"
@@ -238,7 +238,7 @@ publish_try_attach()
 #  noIncrement
 publish_set_bundle_version()
 {
-  [[ $moduleRoot == $bundleRoot && -n $principalModuleId ]] || return 0
+  [[ -n $principalModuleId ]] && module_is_bundle  || return 0
 
   local pinfo pstatus ptag pver hver
 
