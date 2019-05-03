@@ -46,7 +46,7 @@ branch_merge()
     _branch_merge "$message" "$toMerge" "$@" || ec=$?
   fi
   if [ $ec -eq 0 ]; then
-    mio_success "Merged branch ${VC}$toMerge${Green} to ${VC}$intoBranchName${Green}"
+    mio_success "Merged ${VC}$toMerge${Green} into ${VC}$intoBranchName${Green}"
   else
     repo_require_clean_work_tree "Cannot merge '$toMerge' into '$intoBranch'"
   fi
@@ -105,7 +105,7 @@ _branch_merge_ff()
 
   if [[ "$(git symbolic-ref HEAD 2>/dev/null)" == "$intoRef" ]]; then
     if git merge --ff-only "$toMerge" &>/dev/null; then
-      mio_success "Forwarded branch ${VC}$toMerge${Green} to ${VC}$intoBranchName${Green}"
+      mio_success "Moved ${VC}$intoBranchName${Green} to ${VC}$toMerge${Green}"
     else
       return 1
     fi
@@ -115,7 +115,7 @@ _branch_merge_ff()
       return 1
     fi
     if git update-ref -m "merge $toMerge into $intoBranch (fast forward)" "$intoRef" "$hashToMerge" "$hashMergeInto"; then
-      mio_success "Forwarded branch ${VC}$toMerge${Green} to ${VC}$intoBranchName${Green}"
+      mio_success "Moved ${VC}$intoBranchName${Green} to ${VC}$toMerge${Green}"
     else
       return 1
     fi
