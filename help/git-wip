@@ -1,12 +1,17 @@
-usage: git wip <wip-suffix>
-   or: git wip --finish
+usage: git wip [<options>] <wip-suffix> -- <module-paths>
+   or: git wip [<options>] --finish     -- <module-paths>
 
 Start or finish WIP mode.
 
     -h|--help               display help
+    -r|--recursive)         visit modules recursively
+                            true if --finish option is specified and current module is a bundle
     --finish                finish WIP mode
     <wip-suffix>            WIP suffix
+    <module-paths>          list of specific modules to visit
     
 example:
-    git wip 'work'          # start WIP "work'
-    git wip --finish        # finish actual WIP
+    git wip 'work'              # start WIP mode "work' in current module and bundle
+    git wip 'work' -- sm1 sm2   # start WIP mode "work' in modules sm1 and sm2 and bundle
+    git wip --finish            # finish WIP mode of current module or all
+                                # submodules if current module is a bundle 

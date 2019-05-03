@@ -9,18 +9,21 @@
 wip_parse()
 {
   while [[ "$#" > 0 ]]; do case "$1" in
-    --) shift; args+=("$@"); break;;
     -h|--help) zou-help $0; exit 0;;
-    -j*) jobsCount=${1#-j};;
-    --finish) wipFinish=true;;
+    -j*)            jobsCount=${1#-j};;
+    -r|--recursive) recursive=true;;
+    --finish)       wipFinish=true;;
+    --)             shift; wipModulePaths+=("$@"); break;;
     -*) io_error "unknown option '$1'"; return 1;;
     *) wipSuffix=$1;;
   esac; shift; done
+
+  wipSuffix=${wipSuffix:-work}
 }
 wip_run()
 {
   # parse command line
-  local jobsCount noSkuFilter selectDev commitSubmodules wipSuffix wipFinish
+  local jobsCount recursive wipSuffix wipFinish wipModulePaths=()
   wip_parse "$@" || return $?
 
   local wipScopes=( config_scope cosm_scope )
@@ -29,23 +32,43 @@ wip_run()
     startupMessage="Finishing wip, please wait..."
     module_run "${wipScopes[@]}" wip_finish
   else
-    wipSuffix=${wipSuffix:-work}
     startupMessage="Starting wip '$wipSuffix', please wait..."
-    module_run wip_start
+    module_run "${wipScopes[@]}" wip_start
   fi
 }
 wip_start()
 {
-  wip_start_node
-  if [[ "$moduleRoot" != "$bundleRoot" ]]; then
-    module_visit "$bundleRoot" wip_start_node
+  # io_trace "wip_start -- $(print_vars wipSuffix moduleRoot bundleRoot wipModulePaths[@])"
+
+  if [ ${#wipModulePaths[@]} -gt 0 ]; then
+    module_visit_submodules_async 'wipModulePaths[@]' "${wipScopes[@]}" 'wip_start_tree'
+  else
+    wip_start_tree
   fi
+
+  # always create wip SKU
+  if ! module_is_bundle; then
+    module_visit "$bundleRoot" "${wipScopes[@]}" wip_start_node
+  fi
+}
+wip_start_tree()
+{
+  # io_trace "wip_start_tree -- $(print_vars wipSuffix moduleRoot bundleRoot wipModulePaths[@])"
+  wip_start_submodules || return $?
+  wip_start_node
+}
+wip_start_submodules()
+{
+  [[ $recursive == true ]] || return 0
+  module_visit_submodules_async 'configSelectInclude[@]' "${wipScopes[@]}" 'wip_start_tree'
 }
 wip_start_node()
 {
   local skuBranch=$(ref_wip_to_sku $moduleBranch)
   local wipBranch=$(ref_sku_to_wip $skuBranch $wipSuffix)
-  # io_trace "wip_start_node 1 -- $(print_vars moduleBranch skuBranch wipBranch)"
+  # io_trace "wip_start_node 1 -- $(prints_vars moduleBranch skuBranch wipBranch)"
+
+  # ensure we are in dev mode in submodules
   if [[ $moduleBranch != $wipBranch && $moduleRoot != $bundleRoot ]]; then
     # switch to dev mode
     local lbranch vbranch vtag htag publishStatus
@@ -54,8 +77,10 @@ wip_start_node()
     wipBranch=$(ref_sku_to_wip $skuBranch $wipSuffix)
     # io_trace "wip_start_node 2 -- $(print_vars moduleBranch skuBranch wipBranch)"
   fi
+
+  # create and checkout wip branch
   if [[ $moduleBranch != $wipBranch ]]; then
-    git branch "$wipBranch"
+    git branch "$wipBranch" &>/dev/null
     branch_checkout "$wipBranch"
     # io_trace "wip_start_node 3 -- $(print_vars wipSuffix moduleBranch skuBranch wipBranch)"
   fi
@@ -64,35 +89,35 @@ wip_start_node()
 wip_finish()
 {
   # io_trace "wip_finish -- $(print_vars moduleRoot bundleRoot)"
-  if [[ "$moduleRoot" == "$bundleRoot" ]]; then
-    wip_finish_tree
+
+  if [ ${#wipModulePaths[@]} -gt 0 ]; then
+    module_visit_submodules_async 'wipModulePaths[@]' "${wipScopes[@]}" 'wip_finish_tree'
   else
-    module_visit "$bundleRoot" "${wipScopes[@]}" wip_finish_tree
+    wip_finish_tree
   fi
 }
 wip_finish_tree()
 {
+  module_is_bundle && recursive=true
+
   wip_finish_submodules || return $?
-  wip_finish_epilog
+  wip_finish_node
 }
-wip_finish_epilog()
+wip_finish_node()
 {
   local skuBranch=$(ref_wip_to_sku $moduleBranch)
   local wipBranch=$moduleBranch
   if [[ $wipBranch != $skuBranch ]]; then
     # repo_require_clean_work_tree 'Cannot finish wip' || return $?
-    # io_trace "wip_finish_epilog -- $(print_vars moduleBranch skuBranch)"
+    # io_trace "wip_finish_node -- $(print_vars moduleBranch skuBranch)"
     branch_merge "$wipBranch" "$skuBranch" \
-    && mio_success "Merged branch '$wipBranch' into '$skuBranch'" \
-    && branch_checkout "$skuBranch" \
+    && branch_checkout "$skuBranch" true \
     && branch_delete "$wipBranch"
   fi
 }
 wip_finish_submodules()
 {
-  local unstaged=( "${unstagedCleanSubmodules[@]}" "${unstagedDirtySubmodules[@]}" )
-  # io_trace "wip_finish_submodules -- $(print_vars unstaged[@])"
-  module_visit_submodules_async 'unstaged[@]' "${wipScopes[@]}" 'wip_finish_tree'
+  [[ $recursive == true ]] || return 0
+  module_visit_submodules_async 'configSelectInclude[@]' "${wipScopes[@]}" 'wip_finish_tree'
 }
-
 wip_run  "$@"
