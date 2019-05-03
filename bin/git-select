@@ -8,13 +8,13 @@
 select_parse()
 {
   while [[ "$#" > 0 ]]; do case "$1" in
-    --) shift; args+=("$@"); break;;
     -h|--help) zou-help $0; exit 0;;
     -j*)                jobsCount=${1#-j};;
-    .)                  unset recursive;;
     -a|--all)           noSkuFilter=true;;
     --dev)              selectDev=true;;
+    --prod)             selectDev=false;;
     --cosm)             commitSubmodules=true;;
+    --)                 shift; selectModulePaths+=("$@"); break;;
     -*) io_error "unknown option '$1'"; return 1;;
     *) sku=$1;;
   esac; shift; done
@@ -22,7 +22,7 @@ select_parse()
 select_run()
 {
   # parse command line
-  local jobsCount noSkuFilter selectDev commitSubmodules sku recursive=true
+  local jobsCount noSkuFilter selectDev commitSubmodules sku selectModulePaths=()
   select_parse "$@" || return $?
 
   local selectScopes=( config_scope cosm_scope )
@@ -34,10 +34,25 @@ select_run()
 select_main()
 {
   branch_set_bestmatch_sku $sku
-  if [[ "$moduleRoot" == "$bundleRoot" || $sku == $bundleBranch ]]; then
-    select_tree
+  # io_trace "select_main 1 -- $(print_vars sku bundleBranch selectModulePaths[@])"
+  if [[ $sku == $bundleBranch ]]; then
+    # no SKU change
+    if [ ${#selectModulePaths[@]} -gt 0 ]; then
+      module_visit_submodules_async 'selectModulePaths[@]' "${selectScopes[@]}" 'select_tree'
+    else
+      select_tree
+    fi
   else
-    module_visit "$bundleRoot" "${selectScopes[@]}" select_tree
+    # change SKU 
+    if [ ${#selectModulePaths[@]} -gt 0 ]; then
+      mio_error "Switching SKU from '$bundleBranch' to '$sku' on specific modules is forbidden"
+      exit 1
+    fi
+    if [[ "$moduleRoot" == "$bundleRoot" ]]; then
+      select_tree
+    else
+      module_visit "$bundleRoot" "${selectScopes[@]}" select_tree
+    fi
   fi
 }
 select_tree()
@@ -46,7 +61,7 @@ select_tree()
   repo_discard_internal_ignore_list
 
   select_prolog || return $?
-  [[ $recursive == true ]] && select_submodules || return $?
+  select_submodules || return $?
   cosm_process_unstaged_submodules
 }
 select_prolog()
@@ -57,7 +72,7 @@ select_prolog()
     allowDuplicateTags=true
   fi
 
-  # io_trace "select_prolog -- $(print_vars recursive noSkuFilter commitSubmodules sku hint forceCheckout skipVNodes allowDuplicateTags)"
+  # io_trace "select_prolog -- $(print_vars noSkuFilter commitSubmodules sku hint forceCheckout skipVNodes allowDuplicateTags)"
   local lbranch vbranch vtag htag publishStatus
   branch_set_select_auto "$sku" "$forceDev" true "$allowDuplicateTags"
 }
