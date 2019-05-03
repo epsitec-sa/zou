@@ -133,10 +133,13 @@ _module_scope()
     moduleBranch=$(branch_current) \
     moduleConfigFile="$PWD/.zou-flow" \
     moduleSubmodulePaths=( $(repo_list_submodule_paths $PWD) ) \
-    modulePath moduleTracePrefix \
+    modulePath moduleBundlePath \
+    moduleTracePrefix \
     moduleScopeInitialized=true
   
   [[ -n $moduleParent ]] && modulePath=${moduleRoot#$moduleParent/}
+  moduleBundlePath=${moduleRoot#$bundleRoot}
+  moduleBundlePath=${moduleBundlePath#/}
 
   if [[ $moduleRoot == $startupRoot ]]; then
     # initialize startup module context
@@ -149,6 +152,8 @@ _module_scope()
     local startupRelativeDir=$(path_make_relative '.' "$startupDir")
     mio_message "Entering '$startupRelativeDir'" '' Gray
   fi
+
+  # io_trace "_module_scope -- $(print_vars moduleId modulePath moduleBundlePath)"
 
   # execute next russian doll
   $1 "${@:2}"

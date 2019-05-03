@@ -23,7 +23,7 @@ oreset_run()
   oreset_parse "$@" || return $?
   
   local showSubmoduleMessage=true \
-        oresetSelectExcludeIds=()
+        oresetSelectExcludeBundlePaths=()
         oresetScopes=( config_scope cosm_scope )
 
   startupMessage="Resetting and pruning tags, please wait..."
@@ -43,8 +43,8 @@ oreset_prolog()
 }
 oreset_ensure_attached()
 {
-  ! array_contains_element "$moduleId" "${oresetSelectExcludeIds[@]}" && branch_ensure_attached
-  oresetSelectExcludeIds+=( "${configSelectExcludeIds[@]}" )
+  ! array_contains_element "$moduleId" "${oresetSelectExcludeBundlePaths[@]}" && branch_ensure_attached
+  oresetSelectExcludeBundlePaths+=( "${configSelectExcludeBundlePaths[@]}" )
 }
 oreset_submodules()
 {

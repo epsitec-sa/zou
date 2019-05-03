@@ -22,7 +22,8 @@ config_scope()
 {
   # setup config context
   local configSkuInclude configSkuExclude \
-        configSelectInclude configSelectExclude configSelectExcludeIds \
+        configSelectInclude configSelectExclude \
+        configSelectIncludeBundlePaths configSelectExcludeBundlePaths \
         configScopeInitialized=true
   
   _config_reset_scope
@@ -65,12 +66,16 @@ _config_reset_scope()
       configSelectExclude=( $(array_remove_array exclude[@] configSkuExclude[@]) )
       configSelectInclude=( $(array_remove_array include[@] configSkuExclude[@]) )
     fi
-    configSelectExcludeIds=( "${configSelectExclude[@]/#/$moduleId\/}" )
+    configSelectIncludeBundlePaths=( "${configSelectInclude[@]/#/$moduleBundlePath\/}" )
+    configSelectExcludeBundlePaths=( "${configSelectExclude[@]/#/$moduleBundlePath\/}" )
+    configSelectIncludeBundlePaths=( "${configSelectIncludeBundlePaths[@]#/}" )
+    configSelectExcludeBundlePaths=( "${configSelectExcludeBundlePaths[@]#/}" )
 
     # io_trace "_config_reset_scope -- $(print_vars configSkuInclude[@])"
     # io_trace "_config_reset_scope -- $(print_vars configSkuExclude[@])"
     # io_trace "_config_reset_scope -- $(print_vars configSelectInclude[@])"
     # io_trace "_config_reset_scope -- $(print_vars configSelectExclude[@])"
-    # io_trace "_config_reset_scope -- $(print_vars configSelectExcludeIds[@])"
+    # io_trace "_config_reset_scope -- $(print_vars configSelectIncludeBundlePaths[@])"
+    # io_trace "_config_reset_scope -- $(print_vars configSelectExcludeBundlePaths[@])"
   fi
 }

@@ -52,7 +52,7 @@ publish_run()
   publish_parse "$@" || return $?
 
   local commitSubmodules=true \
-        publishSelectExcludeIds=() \
+        publishSelectExcludeBundlePaths=() \
         publishScopes=( config_scope cosm_scope )
 
   [[ $dryRun == true ]] \
@@ -98,8 +98,8 @@ publish_require_clean_repo()
 publish_process_excluded()
 {
   # feed exclude list with moduleIds (modulePaths by default)
-  publishSelectExcludeIds+=( "${configSelectExcludeIds[@]}" )
-  if array_contains_element "$moduleId" "${publishSelectExcludeIds[@]}"; then
+  publishSelectExcludeBundlePaths+=( "${configSelectExcludeBundlePaths[@]}" )
+  if array_contains_element "$moduleId" "${publishSelectExcludeBundlePaths[@]}"; then
     publish_update_vtable
     return 0
   fi
