@@ -174,7 +174,7 @@ branch_set_select_info()
     htag=$(vtag_highest $vbranch true)
     if [[ $htag != $vtag ]]; then
       if ! git merge-base --is-ancestor "$branch" "$htag" >&2; then
-        mio_message "Branch ${Brown}$lbranch${LightPurple} was never published as ${Brown}$htag${LightPurple}" "$alias" LightPurple
+        mio_message "Branch ${VC}$lbranch${LightPurple} was never published as ${VC}$htag${LightPurple}" "$alias" ${LightPurple}
       fi
       delta=$(( -$(git rev-list --count $vtag..$htag) ))
       # io_trace "branch_set_select_info 2 -- $(print_vars sku skipVNodes allowDuplicateTags branch lbranch vbranch vtag htag delta alias status)"
@@ -291,9 +291,9 @@ _branch_set_bestmatch_sku_core()
       [[ $branch =~ $resku ]] && candidates+=( "$branch" )
     done
     case ${#candidates[@]} in
-      0) io_error "SKU ${Brown}$skuSpec${Red} does not exist." "fatal"; exit 1;;
+      0) io_error "SKU ${VC}$skuSpec${Red} does not exist." "fatal"; exit 1;;
       1) sku=${candidates[0]};;
-      *) io_error "SKU ${Brown}$skuSpec${Red} is ambiguous, use one of (${Brown}$(string_join ', ' "${candidates[@]}")${Red})"; exit 1;;
+      *) io_error "SKU ${VC}$skuSpec${Red} is ambiguous, use one of (${VC}$(string_join ', ' "${candidates[@]}")${Red})"; exit 1;;
     esac
   fi
 }

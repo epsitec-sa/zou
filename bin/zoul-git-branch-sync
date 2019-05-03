@@ -77,16 +77,16 @@ _branch_sync_visit()
   while read l r i; do
     [[ $l == $current ]] && linfo="* $l"
     case $i in
-      '>')  [[ $l == $current ]] && color=Yellow      || color=Brown;;   # ahead
-      '<')  [[ $l == $current ]] && color=Yellow      || color=Brown;;   # behind
-      '<>') [[ $l == $current ]] && color=LightPurple || color=Purple;;  # ahead and behind
-      '=')  [[ $l == $current ]] && color=LightGreen  || color=Green;;
-      *)    color=LightBlue;;
+      '>')  [[ $l == $current ]] && color=${Yellow}      || color=${Brown};;   # ahead
+      '<')  [[ $l == $current ]] && color=${Yellow}      || color=${Brown};;   # behind
+      '<>') [[ $l == $current ]] && color=${LightPurple} || color=${Purple};;  # ahead and behind
+      '=')  [[ $l == $current ]] && color=${LightGreen}  || color=${Green};;
+      *)    color=${LightBlue};;
     esac
     $visitor "$r" "$l" "$i" "$current" || return $?
     local linfo=$(string_pad_right 18 $l)
     [[ $l == $current ]] && linfo="* $linfo" || linfo="  $linfo"
-    [[ $syncNoPush == true && $i =~ '>' ]] && color=DarkGray
+    [[ $syncNoPush == true && $i =~ '>' ]] && color=${DarkGray}
     mio_message "$linfo $(string_pad_right 2 $i) $r" '' $color
   done < <(branch_sync_info "$@")
   return 0
@@ -100,7 +100,7 @@ _branch_sync_fix_tracking()
       git checkout "$l^{}" &>/dev/null
     fi
     if git branch -d "$l" &>/dev/null; then
-      mio_message "  Deleted obsolete branch '$l'" '' DarkGray
+      mio_message "  Deleted obsolete branch '$l'" '' ${DarkGray}
     else
       git branch --unset-upstream "$l"
     fi

@@ -181,17 +181,15 @@ publish_publish()
 publish_already_published()
 {
   # head will not change
-  mio_message "Already published" "$alias" LightBlue
+  mio_message "Already published" "$alias" ${LightBlue}
 }
 publish_ff_publish()
 {
   # head will not change
   if [[ $dryRun == true ]]; then
-    mio_success "Branch ${Brown}$lbranch${Green} will be fast-forwarded at ${Brown}$vtag${Green} (${Brown}not synchronized${LightBlue})" "$alias"
+    mio_success "Branch ${VC}$lbranch${Green} will be forwarded to ${VC}$vtag${Green}" "$alias"
   else
-    branch_merge "$vtag" "$moduleBranch" \
-    && mio_success "Fast-forwarded branch ${Brown}$lbranch${Green} at ${Brown}$vtag${LightBlue}" "$alias" \
-    || { mio_error "Fast-forward of branch ${Brown}$lbranch${Red} failed" "$alias"; return 1; }
+    branch_merge "$vtag" "$moduleBranch" || { mio_error "Merge of branch ${VC}$lbranch${Red} failed" "$alias"; return 1; }
     publish_try_attach
   fi
 }
@@ -207,11 +205,11 @@ publish_not_published()
 
   if [[ $dryRun == true ]]; then
     branch_set_vnext "$vtag" "$htag" "$noIncrement" # -> prerelPrefix vnext
-    mio_success "Branch ${Brown}$lbranch${Green} will be published at ${Brown}$vnext" "$alias"
+    mio_success "Branch ${VC}$lbranch${Green} will be published at ${VC}$vnext" "$alias"
     # io_trace "$(print_vars lbranch vbranch vtag htag delta status nextHead publishStatus vnext prerelPrefix)"
   else
     branch_set_publish "$lbranch" "$vbranch" "$vtag" "$htag" "$prerelPrefix" "$noIncrement" \
-    && mio_success "Published branch '$lbranch' at ${Brown}$vnext" "$alias" \
+    && mio_success "Published branch ${VC}$lbranch${Green} at ${VC}$vnext" "$alias" \
     || { mio_error "Publish of branch '$lbranch' failed" "$alias"; return 1; }
     publish_try_attach
   fi
@@ -251,7 +249,7 @@ publish_set_bundle_version()
   hver=${htag##*/}
   # io_trace "publish_set_bundle_version 1 -- $(print_vars principalModuleId ptag pstatus htag noIncrement)"
   if [[ $pstatus == 'published' && $hver == $pver ]]; then
-    mio_message "Bundle ${Brown}$bundleId${LightPurple} and module ${Brown}$principalModuleId${LightPurple} have same version" "$alias" LightPurple
+    mio_message "Bundle ${VC}$bundleId${LightPurple} and module ${VC}$principalModuleId${LightPurple} have same version" "$alias" ${LightPurple}
   else
     noIncrement=true
   fi
@@ -313,11 +311,11 @@ publish_commit_vtable()
   [[ $dryRun == true ]] && commit=false
   if vtable_update "$startupRoot" "$moduleId" "$vtableLookupPath" "$vtableGate" $commit; then
     if [[ $dryRun == true ]]; then
-      mio_message "Created version table for ${Brown}$lbranch${DarkGray} at ${Brown}$vnext" '' DarkGray
+      mio_message "Created version table for ${VC}$lbranch${DarkGray} at ${VC}$vnext" '' ${DarkGray}
     else
-      branch_merge_sync $lbranch $vbranch
+      branch_merge_sync $lbranch $vbranch &>/dev/null
       tag_move "$vnext" "$lbranch" &>/dev/null
-      mio_success "Created version table for ${Brown}$lbranch${Green} at ${Brown}$vnext"
+      mio_success "Created version table for ${VC}$lbranch${Green} at ${VC}$vnext"
     fi
   fi
 }

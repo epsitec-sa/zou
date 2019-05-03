@@ -39,14 +39,14 @@ branch_publish()
     mio_error   "Branch '$lbranch' cannot be published (no vbranch associated)"
     return 1;;
   published)
-    mio_message "Already published at ${Brown}$vtag" '' LightBlue;;
+    mio_message "Already published at ${VC}$vtag" '' ${LightBlue};;
   ffPublish)
-    branch_merge "$vtag" "$moduleBranch" \
-      && mio_message "Already published at ${Brown}$vnext${LightBlue} (${Brown}fast-forward${LightBlue})" '' LightBlue \
+    branch_merge "$vtag" "$moduleBranch" &>/dev/null \
+      && mio_message "Already published at ${VC}$vnext${LightBlue} (${Brown}fast-forward${LightBlue})" '' ${LightBlue} \
       || { mio_error "Fast-forward publish of branch '$lbranch' failed"; return 1; };;
   notPublished)
     branch_set_publish "$lbranch" "$vbranch" "$vtag" "$htag" "$prerelPrefix" \
-      && mio_success "Published branch '$lbranch' at ${Brown}$vnext" \
+      && mio_success "Published branch ${VC}$lbranch${Green} at ${VC}$vnext" \
       || { mio_error "Publish of branch '$lbranch' failed"; return 1; };;
   *)
     mio_error "Fatal: publishStatus '$publishStatus' not implemented"
@@ -150,5 +150,5 @@ _branch_set_publish_epilog()
   # io_trace "_branch_set_publish_epilog -- $(print_vars updater vresources[@])"
   # commit resources and clean submodules in dev branch
   version_commit_files "$vnext" "${vresources[@]}" $(repo_list_unstaged_clean_submodules)
-  branch_merge_sync $lbranch $vbranch '-Xtheirs'
+  branch_merge_sync $lbranch $vbranch '-Xtheirs' &>/dev/null
 }

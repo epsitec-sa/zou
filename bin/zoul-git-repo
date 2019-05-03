@@ -373,7 +373,7 @@ repo_commit_submodules()
   cd "$mroot"
   local branch=$(branch_current)
   git commit -m "zou-flow: update submodules '$cslist' on branch '$branch'" -- "$@" >/dev/null \
-  && [[ $showSubmoduleMessage == true ]] && mio_message "  Commited submodules '$cslist' on branch '$branch'" '' DarkGray
+  && [[ $showSubmoduleMessage == true ]] && mio_message "  Commited submodules '$cslist' on branch '$branch'" '' ${DarkGray}
   repo_raise_submodule_changed_event "$@"
   cd "$opwd"
 }
@@ -381,7 +381,7 @@ repo_discard_submodule()
 {
   local smpath=$1
   git submodule update --recursive "$smpath" &>/dev/null
-  [[ $showSubmoduleMessage == true ]] && mio_message "  Discarded submodule '$smpath' from branch '$moduleBranch'" '' DarkGray
+  [[ $showSubmoduleMessage == true ]] && mio_message "  Discarded submodule '$smpath' from branch '$moduleBranch'" '' ${DarkGray}
   repo_raise_submodule_changed_event "$smpath"
 }
 repo_discard_clean_submodules_async()
@@ -411,7 +411,7 @@ repo_update_submodules()
   mio_info 'Updating submodules...'
   (git submodule update --init --recursive 2>&1) | \
   while read -r line; do
-    [[ -n $line ]] && mio_message "  $line" '' DarkGray
+    [[ -n $line ]] && mio_message "  $line" '' ${DarkGray}
   done
   repo_raise_submodule_changed_event
 }
@@ -419,10 +419,10 @@ repo_update_submodule()
 {
   # io_trace "repo_update_submodule ${*@Q}"
   local path=$1 line
-  mio_info "Updating submodule '$path'"
+  mio_info "Updating submodule ${VC}$path"
   (git submodule update --init --recursive "$path" 2>&1) | \
   while read -r line; do
-    [[ -n $line ]] && mio_message "  $line" '' DarkGray
+    [[ -n $line ]] && mio_message "  $line" '' ${DarkGray}
   done
   repo_raise_submodule_changed_event "$path"
 }

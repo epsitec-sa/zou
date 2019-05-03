@@ -48,31 +48,31 @@ stow_node()
   local noTagPush=true stowArchiveDelay
 
   if [[ $archive == true ]]; then
-    mio_message "Computing archive delay..." '' LightGray
+    mio_message "Computing archive delay..." '' ${Gray}
     stow_set_archive_delay $(branch_list_all_flatten)
-    mio_info "Archive delay = ${Brown}$stowArchiveDelay${Cyan} days"
+    mio_info "Archive delay = ${VC}$stowArchiveDelay${Cyan} days"
   fi
 
   if [[ $stowBranches == true ]]; then
-    mio_message "Removing redondant branches..." '' LightGray
+    mio_message "Removing redondant branches..." '' ${Gray}
     stow_remove_classified_branches $(branch_list_all_flatten)
     stow_remove_promoted_vbranches $(branch_list_all_flatten)
     
-    mio_message "Classifying branches..." '' LightGray
+    mio_message "Classifying branches..." '' ${Gray}
     stow_classify_branches $(branch_list_all_flatten)
   fi
 
   if [[ $stowTags == true ]]; then
-    mio_message "Removing redondant tags..." '' LightGray
+    mio_message "Removing redondant tags..." '' ${Gray}
     stow_remove_classified_tags $(git tag -l)
     stow_remove_promoted_vtags $(git tag -l --sort=-v:refname)
     
-    mio_message "Classifying tags..." '' LightGray
+    mio_message "Classifying tags..." '' ${Gray}
     stow_classify_tags $(git tag -l)
   fi
   
   local vbranches=( $(branch_list_all_flatten) )
-  mio_message "Promoting vtags..." '' LightGray
+  mio_message "Promoting vtags..." '' ${Gray}
   stow_promote_vtags 'vbranches[@]' $(git tag -l --sort=-v:refname)
   stow_orphans 'vbranches[@]' $(git tag -l)
 

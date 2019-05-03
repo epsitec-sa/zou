@@ -327,7 +327,7 @@ branch_ensure_local_vbranch()
      (git branch "$vbranch" "$rvbranch" 2>/dev/null) | \
      while read -r line; do
        [[ -z $line ]] && continue
-       mio_message "  $line" '' DarkGray
+       mio_message "  $line" '' ${DarkGray}
      done;;
   *) git branch "$vbranch" "$vtag";;
   esac
@@ -372,8 +372,8 @@ branch_checkout()
     # compute symbols
     local symType symRef
     case $refType in
-      0) symType='branch'; symRef="'$ref'";;
-      1|2) symType='new branch'; symRef="'$ref'";;
+      0) symType='branch'; symRef="$ref";;
+      1|2) symType='new branch'; symRef="$ref";;
       3) symType='version'; symRef="($ref)";;
       4) symType='commit'; symRef="($(git rev-parse --short $ref^{})";;
     esac
@@ -395,29 +395,30 @@ branch_checkout()
     while read -r line; do
       # [[ -z $line ]] && continue
       if [[ $line =~ ^Switched ]]; then
-        color=Green
+        line="Switched to $symType ${VC}$symRef${Green}"
+        color=${Green}
       elif [[ $line =~ ^([wW]arning:)(.*) ]]; then
-        line="  ${Brown}${BASH_REMATCH[1]}${NC}${LightGray}${BASH_REMATCH[2]}"
+        line="  ${VC}${BASH_REMATCH[1]}${NC}${Gray}${BASH_REMATCH[2]}"
         unset alias
-        color=LightGray
+        color=${Gray}
       elif [[ $line =~ ^Note:\ checking\ out ]]; then
-        line="Switched to $symType $symRef"
-        color=Green
+        line="Switched to $symType ${VC}$symRef${Green}"
+        color=${Green}
         breakLoop=true
       elif [[ -z $color ]]; then
         if [[ $line =~ ^Already ]]; then
-          color=LightBlue
+          line="Already on ${VC}$symRef"
+          color=${LightBlue}
         elif [[ $line =~ ^HEAD\ is\ now\ at\ ([0-9a-f]+) ]]; then
-          commit=${BASH_REMATCH[1]}
-          line="Already at '$ref'"
-          color=LightBlue
+          line="Already at ${VC}$symRef"
+          color=${LightBlue}
           [[ -z $alias ]] && alias=$ref
         elif [[ $line =~ ^error ]]; then
-          color=Red
+          color=${Red}
         elif [[ $line =~ ^Previous\ HEAD ]]; then
           continue
         else
-          color=Gray
+          color=${Gray}
         fi
       fi
       mio_message_unsafe "$indent$line" "$alias" "$color"
@@ -433,7 +434,7 @@ branch_ensure_remote()
 {
   local branch=$1 remote=${2:-origin}
   branch_upstream "$branch" >/dev/null && return 0
-  io_eval "git push "$remote" --set-upstream "$branch" 2>/dev/null" : DarkGray
+  io_eval "git push "$remote" --set-upstream "$branch" 2>/dev/null" : ${DarkGray}
 }
 branch_force_delete()
 {
@@ -543,7 +544,7 @@ branch_delete()
     mio_error "branch_delete: branch '$branch' does not exist"
     return 1
   fi
-  mio_warning "Deleted branch '$branch'"
+  mio_success "Deleted branch ${VC}$branch"
 }
 # in:
 #   $1:branchOrTag

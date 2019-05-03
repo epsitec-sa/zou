@@ -54,12 +54,12 @@ vcheck_node()
     if [ $? -le 1 ]; then
       for vtag in ${byVersion[$vbranch]}; do
         if ! git merge-base --is-ancestor "$vtag" "$branch"; then
-          mio_message "  vtag '$vtag' is not inside vbranch '$vbranch'" '' LightPurple
+          mio_message "  vtag '$vtag' is not inside vbranch '$vbranch'" '' ${LightPurple}
           (( ec = $ec + 1 ))
         fi
         if [[ -n $pvtag ]]; then
           if ! git merge-base --is-ancestor "$vtag" "$pvtag"; then
-            mio_message "  vtag '$vtag' is not an ancestor of '$pvtag'" '' LightPurple
+            mio_message "  vtag '$vtag' is not an ancestor of '$pvtag'" '' ${LightPurple}
             (( ec = $ec + 1 ))
           fi
         fi
@@ -67,7 +67,7 @@ vcheck_node()
       done
       unset pvtag
     else
-      mio_message "  Branch not found '$vbranch' - vtags (${byVersion[$vbranch]}) are orphans" '' LightPurple
+      mio_message "  Branch not found '$vbranch' - vtags (${byVersion[$vbranch]}) are orphans" '' ${LightPurple}
       (( ec += 1 ))
     fi
     if [ $ec -eq 0 ]; then
@@ -94,11 +94,11 @@ vcheck_node()
         if [ ${#ai2[@]} -eq 1 ]; then
           if [[ ${a1[$i1]} != ${a2[$i2]} ]]; then
             if [ $ec -eq 0 ]; then
-              mio_message "  vtags order differ for vbranch '$vbranch'" '' LightPurple
-              # mio_message "    ${byVersion[$vbranch]}" '' Gray
-              # mio_message "    ${byDate[$vbranch]}" '' Gray
+              mio_message "  vtags order differ for vbranch '$vbranch'" '' ${LightPurple}
+              # mio_message "    ${byVersion[$vbranch]}" '' ${Gray}
+              # mio_message "    ${byDate[$vbranch]}" '' ${Gray}
             fi
-            mio_message "    ${a1[$i1]} <> ${a2[$i2]}" '' Gray
+            mio_message "    ${a1[$i1]} <> ${a2[$i2]}" '' ${Gray}
             (( ec = $ec + 1 ))
           fi
           (( i1 = $i1 + 1 ))
@@ -106,11 +106,11 @@ vcheck_node()
           for j2 in ${!ai2[@]}; do
             if ! array_contains_element "${a1[$i1]}" "${ai2[@]}"; then
               if [ $ec -eq 0 ]; then
-                mio_message "  vtags order differ for vbranch '$vbranch'" '' LightPurple
-                # mio_message "  ${byVersion[$vbranch]}" '' Gray
-                # mio_message "  ${byDate[$vbranch]}" '' Gray
+                mio_message "  vtags order differ for vbranch '$vbranch'" '' ${LightPurple}
+                # mio_message "  ${byVersion[$vbranch]}" '' ${Gray}
+                # mio_message "  ${byDate[$vbranch]}" '' ${Gray}
               fi
-              mio_message "    ${a1[$i1]} not in (${ai2[*]})" '' Gray
+              mio_message "    ${a1[$i1]} not in (${ai2[*]})" '' ${Gray}
               (( ec = $ec + 1 ))
             fi
             (( i1 = $i1 + 1 ))

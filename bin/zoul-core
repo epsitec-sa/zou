@@ -24,22 +24,25 @@ zou_configFile="$(realpath ~)/.zou-flow"
 #   colors="${Red}Red ${Green}Green${NC}"
 #   printf '%b\n' "$colors"
 NC='\e[0m'  # No Color
-Black='\e[0;30m'     DarkGray='\e[1;30m'
-Red='\e[0;31m'       LightRed='\e[1;31m'
-Green='\e[0;32m'     LightGreen='\e[1;32m'
-Brown='\e[0;33m'     Yellow='\e[1;33m'
-Blue='\e[0;34m'      LightBlue='\e[1;34m'
-Purple='\e[0;35m'    LightPurple='\e[1;35m'
-Cyan='\e[0;36m'      LightCyan='\e[1;36m'
-LightGray='\e[0;37m' White='\e[1;37m'
+Black='\e[0;30m'  DarkGray='\e[1;30m'
+Red='\e[0;31m'    LightRed='\e[1;31m'
+Green='\e[0;32m'  LightGreen='\e[1;32m'
+Brown='\e[0;33m'  Yellow='\e[1;33m'
+Blue='\e[0;34m'   LightBlue='\e[1;34m'
+Purple='\e[0;35m' LightPurple='\e[1;35m'
+Cyan='\e[0;36m'   LightCyan='\e[1;36m'
+Gray='\e[0;37m'   White='\e[1;37m'
+
+# variable color
+VC=${Gray}
 
 io_print_colors()
 {
   local color colors=()
-  for color in Black DarkGray Red LightRed Green LightGreen Brown Yellow Blue LightBlue Purple LightPurple Cyan LightCyan LightGray White; do
+  for color in Black DarkGray Red LightRed Green LightGreen Brown Yellow Blue LightBlue Purple LightPurple Cyan LightCyan Gray White; do
     colors+=( ${!color}$color )
   done
-  printf '%20b%20b\n' "${colors[@]}"
+  printf '%15b%20b\n' "${colors[@]}"
 }
 # out:
 #   version
@@ -83,7 +86,7 @@ io_help()
 
   "
       help=$(cat "$htpl")
-      io_message "$help" '' Gray
+      io_message "$help" '' ${Gray}
     else
       io_error "help file not found - $hpath"
     fi
@@ -92,7 +95,7 @@ io_help()
 
 io_trace()
 {
-  mio_message "  $1" '' ${2:-Gray}
+  mio_message "  $1" '' ${2:-$Gray}
 }
 
 #########
@@ -107,49 +110,54 @@ io_lock()       { lock "$ioGate" 0 "$@"; }
 io_lock_enter() { lock_enter "$ioGate"; }
 io_lock_exit()  { lock_exit "$ioGate"; }
 
-# usage: io_message <message> [<label> [<color=LightCyan>]]
+# usage: io_message <message> [<label> [<color=${LightCyan}>]]
 # example:
-#   $ io_message 'message' 'info' Cyan
+#   $ io_message 'message' 'info' ${Cyan}
 #   -> info: message
-#   $ io_message 'message' '' Gray
+#   $ io_message 'message' '' ${Gray}
 #   -> message
 io_info()    { io_message "$1" "${2:-info}"; }
-io_success() { io_message "$1" "${2:-info}" Green; }
-io_warning() { io_message "$1" "${2:-warning}" Brown; }
-io_error()   { io_message "$1" "${2:-error}" Red; }
+io_success() { io_message "$1" "${2:-info}"    ${Green}; }
+io_warning() { io_message "$1" "${2:-warning}" ${Brown}; }
+io_error()   { io_message "$1" "${2:-error}"   ${Red}; }
 io_message() { io_lock io_message_unsafe "$@"; }
 
 io_info_unsafe()     { io_message_unsafe "$1" "${2:-info}"; }
-io_success_unsafe()  { io_message_unsafe "$1" "${2:-info}" Green; }
-io_warning_unsafe()  { io_message_unsafe "$1" "${2:-warning}" Brown; }
-io_error_unsafe()    { io_message_unsafe "$1" "${2:-error}" Red; }
+io_success_unsafe()  { io_message_unsafe "$1" "${2:-info}"    ${Green}; }
+io_warning_unsafe()  { io_message_unsafe "$1" "${2:-warning}" ${Brown}; }
+io_error_unsafe()    { io_message_unsafe "$1" "${2:-error}"   ${Red}; }
 io_message_unsafe()
 {
-  local message=$1 label=$2 color=${3:-Cyan}
+  local message=$1 label=$2 color=${3:-${Cyan}}
+  # if [[ -z $color ]]; then
+  #   color=${Cyan}
+  # elif ! [[ $color =~ ^\\ ]]; then
+  #   color=${!color}
+  # fi
   if [[ -n $label ]]; then
-    if [[ $label =~ ^\\e\[[0-9] ]]; then
+    if [[ $label =~ ^\\e\[ ]]; then
       # colored label 
-      message="$label : ${!color}$message${NC}"
+      message="$label : ${color}$message${NC}"
     else
       # no label color
-      message="${!color}$label${NC} : ${!color}$message${NC}"
+      message="${color}$label${NC} : ${color}$message${NC}"
     fi
   else
-    message="${!color}$message${NC}"
+    message="${color}$message${NC}"
   fi
   printf "%b\n" "$message" 1>&2
 }
 
 mio_info()    { mio_message "$1" "$2"; }
-mio_success() { mio_message "$1" "$2" Green; }
-mio_warning() { mio_message "$1" "$2" Brown; }
-mio_error()   { mio_message "$1" "$2" Red; }
+mio_success() { mio_message "$1" "$2" ${Green}; }
+mio_warning() { mio_message "$1" "$2" ${Brown}; }
+mio_error()   { mio_message "$1" "$2" ${Red}; }
 mio_message() { io_lock mio_message_unsafe "$@"; }
 
 mio_info_unsafe()    { mio_message_unsafe "$1" "$2"; }
-mio_success_unsafe() { mio_message_unsafe "$1" "$2" Green; }
-mio_warning_unsafe() { mio_message_unsafe "$1" "$2" Brown; }
-mio_error_unsafe()   { mio_message_unsafe "$1" "$2" Red; }
+mio_success_unsafe() { mio_message_unsafe "$1" "$2" ${Green}; }
+mio_warning_unsafe() { mio_message_unsafe "$1" "$2" ${Brown}; }
+mio_error_unsafe()   { mio_message_unsafe "$1" "$2" ${Red}; }
 mio_message_unsafe()
 {
   local message=$1 alias=$2 color=$3 tracePrefix=$moduleTracePrefix
@@ -538,8 +546,8 @@ error()
 }
 # Execute a command and transform stdout
 #
-#  io_eval 'git fetch --tags 2>&1' _ptags_line_selector LightGray
-#  io_eval 'git fetch --tags 2>&1' : LightGray
+#  io_eval 'git fetch --tags 2>&1' _ptags_line_selector ${Gray}
+#  io_eval 'git fetch --tags 2>&1' : ${Gray}
 #
 # in:
 #   command=$1  -- command to evaluate
@@ -547,7 +555,7 @@ error()
 #   color=$3    -- default color
 io_eval()
 {
-  local selector=${2:-:} color=${3:-NC}
+  local selector=${2:-:} color=${3:-$NC}
   # io_trace "io_eval ${*@Q} -- $(print_vars selector color)"
   ( eval "$1" ) | \
   while read -r line; do

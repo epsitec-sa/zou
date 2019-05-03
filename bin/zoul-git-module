@@ -110,7 +110,7 @@ _module_scope_startup()
 _module_startup_message()
 {
   if [[ -n $startupMessage ]]; then
-    io_message "$startupMessage" "$bundleTracePrefix" White
+    io_message "$startupMessage" "$bundleTracePrefix" ${White}
   fi
 }
 _module_register_bundle()
@@ -150,7 +150,7 @@ _module_scope()
 
   if [[ $showVisitModuleMessage == true ]]; then
     local startupRelativeDir=$(path_make_relative '.' "$startupDir")
-    mio_message "Entering '$startupRelativeDir'" '' Gray
+    mio_message "Entering '$startupRelativeDir'" '' ${Gray}
   fi
 
   # io_trace "_module_scope -- $(print_vars moduleId modulePath moduleBundlePath)"
@@ -239,7 +239,7 @@ _module_set_smart_id()
   local len=$1 id=$2 color=$3
   rlen=$len
   if (( ${#id} <= $len )); then
-    sid="${!color}$id"
+    sid="${color}$id"
   else
     local atoms=( ${id//\// } ) ratoms
     if (( ${#atoms[@]} > 1 )); then
@@ -258,11 +258,11 @@ _module_set_smart_id()
       (( ${#ratoms[@]} == 0 )) && ratoms=( ${atoms[-1]} )
       id=${ratoms[*]}
       id=${id// /\/}
-      sid="${Purple}\u2026/${!color}${id}"
+      sid="${Purple}\u2026/${color}${id}"
       id="./${id}"
     else
       id=${atoms[0]}
-      sid="${!color}${id}"
+      sid="${color}${id}"
     fi
   fi
   (( rlen = len - ${#id} ))
@@ -289,26 +289,26 @@ _module_set_smart_id2()
     mid=$sid
     # io_trace "_module_set_smart_id2 -- $(print_vars spaces grlen mrlen brlen rlen sid)"
     printf -v sep '%0.s-' $(seq 1 $spaces)
-    sid="${!mcolor}[$mid]${DarkGray}${sep}${!bcolor}($bid)${NC}"
+    sid="${mcolor}[$mid]${DarkGray}${sep}${bcolor}($bid)${NC}"
     (( spaces = rlen + 1 ))
   fi
   printf -v sep '%0.s-' $(seq 1 $spaces)
-  sid="${!mcolor}[$mid]${DarkGray}${sep}${!bcolor}($bid)${NC}"
+  sid="${mcolor}[$mid]${DarkGray}${sep}${bcolor}($bid)${NC}"
   # io_trace "_module_set_smart_id2 -- $(print_vars spaces sid)"
 }
 _module_set_trace_prefix()
 {
-  local mcolor=LightCyan
+  local mcolor=${LightCyan}
   if [[ $useLongModuleTracePrefix == true ]]; then
     local sid bcolor bid mid=$moduleId
     bid=$(branch_head_symbol)
-    [ $? -eq 0 ] && bcolor=Cyan || bcolor=Brown
+    [ $? -eq 0 ] && bcolor=${Cyan} || bcolor=${Brown}
     _module_set_smart_id2 42 "$mid" "$mcolor" "$bid" "$bcolor"
     moduleTracePrefix=$sid
   else
     local len; (( len = ${submodulePathMaxLength} + 2 ))
     printf -v moduleTracePrefix "%-${len}s" "[$moduleId]"
-    moduleTracePrefix="${!mcolor}$moduleTracePrefix${NC}"
+    moduleTracePrefix="${mcolor}$moduleTracePrefix${NC}"
   fi
 }
 _module_set_bundle_trace_prefix()
@@ -319,7 +319,7 @@ _module_set_bundle_trace_prefix()
     
     bid=$(branch_head_symbol)
     # [ $? -eq 0 ] && bcolor=Cyan || bcolor=Brown
-    _module_set_smart_id2 42 "$mid" White "$bid" White
+    _module_set_smart_id2 42 "$mid" ${White} "$bid" ${White}
     bundleTracePrefix=$sid
     
     cd - &>/dev/null

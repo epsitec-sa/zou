@@ -28,11 +28,11 @@ tag_push_not_followed()
   # 'git push --follow-tags' push only tags associated with commits that are not pushed
   if [[ $1 == '--delete' ]]; then
     if git push --delete "$remote" "$tag" &>/dev/null; then
-      mio_warning "Deleted tag '$tag' from '$remote'"
+      mio_warning "Deleted tag ${VC}$tag${Brown} from '$remote'"
     fi
   elif commit_is_pushed "$commit"; then
     if git push "$@" "$remote" "$tag" &>/dev/null; then
-      mio_info "Pushed tag '$tag' to '$remote'"
+      mio_success "Pushed tag ${VC}$tag${Green} to ${VC}$remote${Green}"
     fi
   fi
 }
@@ -46,16 +46,16 @@ tag_rename()
 
   local tagger=$(tagger_name $tag1)
   if [[ -z "$tagger" ]]; then
-    io_buffered_eval "git tag ${tagOpts[@]} "$tag2" "$tag1^{}"" : DarkGray \
-    && mio_info "Renamed lightweight tag '$tag1' to '$tag2'" \
+    io_buffered_eval "git tag ${tagOpts[@]} "$tag2" "$tag1^{}"" : ${DarkGray} \
+    && mio_info "Renamed lightweight tag ${VC}$tag1${Cyan} to ${VC}$tag2" \
     || return $?
   else
     local message=$(tag_comment "$tag1")
     GIT_COMMITTER_NAME="$tagger" \
     GIT_COMMITTER_EMAIL=$(tagger_email "$tag1") \
     GIT_COMMITTER_DATE=$(tag_date "$tag1") \
-    io_buffered_eval "git tag -m '$message' ${tagOpts[@]} "$tag2" "$tag1^{}"" : DarkGray \
-    && mio_info "Renamed annotated tag '$tag1' to '$tag2'" \
+    io_buffered_eval "git tag -m '$message' ${tagOpts[@]} "$tag2" "$tag1^{}"" : ${DarkGray} \
+    && mio_info "Renamed annotated tag ${VC}$tag1${Cyan} to ${VC}$tag2" \
     || return $?
   fi
   tag_push_not_followed $tag2 $tag1
@@ -92,7 +92,7 @@ tag_new()
     mio_error "Tag '$tag' already exists"
     return 1
   elif git tag -a -m "'$message'" "$tag" "$commit"; then
-    mio_info "Created tag '$tag' on '$commit'"
+    mio_success "Created tag ${VC}$tag${Green} on ${VC}$commit${Green}"
   fi
   tag_push_not_followed $tag $commit
 }
@@ -100,11 +100,11 @@ tag_delete()
 {
   if tag_exists "$1"; then
     tag_push_not_followed $1 $1^{} '--delete'
-    io_buffered_eval "git tag --delete "$1"" : Cyan
+    io_buffered_eval "git tag --delete "$1"" : ${Cyan}
   else
     mio_error "Tag '$tag' does not exist"
     if git push --delete origin "$tag" &>/dev/null; then
-      mio_warning "Deleted tag '$tag' from 'origin'"
+      mio_warning "Deleted tag ${VC}$tag${Brown} from ${VC}origin"
     fi
   fi
 }
@@ -125,7 +125,7 @@ tag_move()
         tag_rename "$@"
       else
         local hash1=$(git rev-parse --short $tag1^{}) hash2=$(git rev-parse --short $tag2^{})
-        mio_warning "Cannot move '$tag1 ($hash1)' to '$tag2 ($hash2)'"
+        mio_warning "Cannot move ${VC}$tag1 ($hash1)${Brown} to ${VC}$tag2 ($hash2)"
         local refPath stowFolder stowType refType refStowType stowPath
         stow_set_info "$tag1" # -> refPath stowFolder stowType
         stow_set_tag_info
@@ -147,7 +147,7 @@ tag_move()
 }
 tag_mirror()
 {
-  local verbose=$1 dryRun=$2 color=LightGray
+  local verbose=$1 dryRun=$2 color=Gray
   [[ $dryRun == true ]] && color=DarkGray
   mio_message "Mirroring tags..." '' $color
   [[ $dryRun == true ]] && return 0
