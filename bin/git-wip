@@ -77,25 +77,26 @@ wip_start_submodules()
 }
 wip_start_node()
 {
-  local skuBranch=$(ref_wip_to_sku "$moduleBranch")
-  local wipBranch=$(ref_sku_to_wip "$skuBranch" "$wipSuffix" "$wipPrefix")
-  # io_trace "wip_start_node 1 -- $(prints_vars moduleBranch skuBranch wipBranch)"
+  # check if we are in WIP mode
+  local devBranch=$(ref_wip_to_dev "$moduleBranch")
+  local wipBranch=$(ref_dev_to_wip "$devBranch" "$wipSuffix" "$wipPrefix")
+  # io_trace "wip_start_node 1 -- $(print_vars moduleBranch devBranch wipBranch)"
 
-  # ensure we are in dev mode in submodules
+  # if we are not in WIP mode, enter DEV mode in submodules (bundle is already in DEV mode)
   if [[ $moduleBranch != $wipBranch && $moduleRoot != $bundleRoot ]]; then
-    # switch to dev mode
     local lbranch vbranch vtag htag publishStatus
     branch_set_select_auto "$bundleBranch" true false
-    skuBranch=$(ref_wip_to_sku "$moduleBranch")
-    wipBranch=$(ref_sku_to_wip "$skuBranch" "$wipSuffix" "$wipPrefix")
-    # io_trace "wip_start_node 2 -- $(print_vars moduleBranch skuBranch wipBranch)"
+    devBranch=$(ref_wip_to_dev "$moduleBranch")
+    wipBranch=$(ref_dev_to_wip "$devBranch" "$wipSuffix" "$wipPrefix")
+    # io_trace "wip_start_node 2 -- $(print_vars moduleBranch devBranch wipBranch)"
   fi
 
-  # create and checkout wip branch
+  # here, we can be in DEV or WIP mode
   if [[ $moduleBranch != $wipBranch ]]; then
+    # create and checkout wip branch
     git branch "$wipBranch" &>/dev/null
     branch_checkout "$wipBranch"
-    # io_trace "wip_start_node 3 -- $(print_vars wipSuffix moduleBranch skuBranch wipBranch)"
+    # io_trace "wip_start_node 3 -- $(print_vars wipSuffix moduleBranch devBranch wipBranch)"
   fi
 }
 
@@ -118,13 +119,13 @@ wip_finish_tree()
 }
 wip_finish_node()
 {
-  local skuBranch=$(ref_wip_to_sku $moduleBranch)
+  local devBranch=$(ref_wip_to_dev $moduleBranch)
   local wipBranch=$moduleBranch
-  if [[ $wipBranch != $skuBranch ]]; then
+  if [[ $wipBranch != $devBranch ]]; then
     # repo_require_clean_work_tree 'Cannot finish wip' || return $?
-    # io_trace "wip_finish_node -- $(print_vars moduleBranch skuBranch)"
-    branch_merge "$wipBranch" "$skuBranch" \
-    && branch_checkout "$skuBranch" true \
+    # io_trace "wip_finish_node -- $(print_vars moduleBranch devBranch)"
+    branch_merge "$wipBranch" "$devBranch" \
+    && branch_checkout "$devBranch" true \
     && branch_delete "$wipBranch"
   fi
 }

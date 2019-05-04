@@ -202,7 +202,7 @@ ref_dev_fallback()
     # io_trace "ref_dev_fallback 3 -- $(print_vars fallback[@])"
 
     # append sku fallback
-    local sku=$(ref_wip_to_sku "${fallback[0]}")
+    local sku=$(ref_wip_to_dev "${fallback[0]}")
     IFS=$'\n' fallback+=( $(ref_dev_fallback "$sku") )
     
     # io_trace "ref_dev_fallback 4 -- $(print_vars fallback[@])"
@@ -270,7 +270,7 @@ ref_prod_fallback()
   fi
   echo 'prod'
 }
-ref_sku_to_wip()
+ref_dev_to_wip()
 {
   [[ -z $1 || -z $2 ]] && return 1
   
@@ -282,31 +282,31 @@ ref_sku_to_wip()
     echo "$wipPrefix/$wipSuffix"
   elif [[ ${atoms[0]} == 'sku' ]]; then
     [ ${#atoms[@]} -gt 1 ] && atoms[-1]=$wipSuffix || atoms+=( "$wipSuffix" )
-    # io_trace "ref_sku_to_wip 1 -- $(print_vars atoms[@])"
+    # io_trace "ref_dev_to_wip 1 -- $(print_vars atoms[@])"
     [ ${#atoms[@]} -gt 2 ] && atoms=( ${atoms[@]:1} )
-    # io_trace "ref_sku_to_wip 2 -- $(print_vars atoms[@])"
+    # io_trace "ref_dev_to_wip 2 -- $(print_vars atoms[@])"
     echo "$wipPrefix/$(ref_join ${atoms[@]})"
   else
     echo "$sku-$wipSuffix"
   fi
 }
-ref_wip_to_sku()
+ref_wip_to_dev()
 {
   [[ -z $1 ]] && return 1
 
   local wip=$1 IFS='/' sku atoms
   atoms=( $1 ); IFS=$'\n'
   if [[ ${#atoms[@]} -le 2 ]]; then
-    # io_trace "ref_wip_to_sku 1 -- $(print_vars atoms[@])"
+    # io_trace "ref_wip_to_dev 1 -- $(print_vars atoms[@])"
     [[ ${atoms[1]} == 'sku' ]] && echo 'sku/dev' || echo 'master'
   elif [[ ${atoms[1]} == 'sku' ]]; then
-    # io_trace "ref_wip_to_sku 2 -- $(print_vars atoms[@])"
+    # io_trace "ref_wip_to_dev 2 -- $(print_vars atoms[@])"
     echo "sku/dev"
   else
-    # io_trace "ref_wip_to_sku 4 -- $(print_vars atoms[@])"
+    # io_trace "ref_wip_to_dev 4 -- $(print_vars atoms[@])"
     atoms[0]='sku'
     atoms[-1]='dev'
-    # io_trace "ref_wip_to_sku 5 -- $(print_vars atoms[@])"
+    # io_trace "ref_wip_to_dev 5 -- $(print_vars atoms[@])"
     echo "$(ref_join ${atoms[@]})"
   fi
 }
