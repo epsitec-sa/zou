@@ -20,7 +20,7 @@ wip_parse()
   esac; shift; done
 
   wipPrefix=${wipPrefix:-wip}
-  wipSuffix=${wipSuffix:-work}
+  wipSuffix=$(user_abbrev)-${wipSuffix:-work}
   # io_trace "wip_parse -- $(print_vars recursive wipPrefix wipSuffix wipFinish wipModulePaths[@])"
   if [[ -z $wipCommand ]]; then
     io_error "missing ${VC}--start${Red} or ${VC}--finish${Red} option\n"
@@ -30,7 +30,8 @@ wip_parse()
 }
 wip_parse_start()
 {
-  [[ $1 =~ ^([^-][^:]+:)?([^-]*) ]] || return 1
+  # skip options
+  [[ ${1:0:1} != '-' && $1 =~ ^([^:]+:)?([^-]*) ]] || return 1
   wipPrefix=${BASH_REMATCH[1]%:}
   wipSuffix=${BASH_REMATCH[2]}
 }
@@ -44,11 +45,16 @@ wip_run()
   
   case $wipCommand in
     start)  startupMessage="Starting ${Brown}$wipPrefix:$wipSuffix${White}, please wait...";;
-    finish) startupMessage="Finishing wip, please wait..."
+    finish) startupMessage="Finishing wip, please wait...";;
   esac
 
   module_run "${wipScopes[@]}" wip_$wipCommand
 }
+
+###############
+# START COMMAND
+###############
+
 wip_start()
 {
   # io_trace "wip_start -- $(print_vars wipPrefix wipSuffix moduleRoot bundleRoot wipModulePaths[@])"
@@ -92,13 +98,14 @@ wip_start_node()
   fi
 
   # here, we can be in DEV or WIP mode
-  if [[ $moduleBranch != $wipBranch ]]; then
-    # create and checkout wip branch
-    git branch "$wipBranch" &>/dev/null
-    branch_checkout "$wipBranch"
-    # io_trace "wip_start_node 3 -- $(print_vars wipSuffix moduleBranch devBranch wipBranch)"
-  fi
+  # create and checkout wip branch
+  [[ $moduleBranch != $wipBranch ]] && git branch "$wipBranch" &>/dev/null
+  branch_checkout "$wipBranch" true
+  # io_trace "wip_start_node 3 -- $(print_vars wipSuffix moduleBranch devBranch wipBranch)"
 }
+################
+# FINISH COMMAND
+################
 
 wip_finish()
 {
