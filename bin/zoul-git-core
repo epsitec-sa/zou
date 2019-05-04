@@ -50,3 +50,12 @@ git_symbolic_ref()
 }
 git_object_exists() { git cat-file -e "$1" &>/dev/null; }
 git_object_type()   { git cat-file -t "$1" 2>/dev/null; }
+
+user_abbrev()
+{
+  local user=${1:-$(git config user.name)} atom abbrev
+  for atom in ${user//-/ }; do 
+    abbrev="${abbrev}${atom:0:1}"
+  done
+  echo ${abbrev,,}
+}
