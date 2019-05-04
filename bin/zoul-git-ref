@@ -274,16 +274,18 @@ ref_sku_to_wip()
 {
   [[ -z $1 || -z $2 ]] && return 1
   
-  local sku=$1 wipSuffix=${2//\//-} IFS='/' atoms
+  local sku=$1 wipSuffix=${2//\//-} wipPrefix=${3//\//-} IFS='/' atoms
+  wipPrefix=${wipPrefix:-wip}
+  wipSuffix=${wipSuffix:-work}
   atoms=( $1 ); IFS=' '
   if [[ $sku == 'master' ]]; then
-    echo "wip/$wipSuffix"
+    echo "$wipPrefix/$wipSuffix"
   elif [[ ${atoms[0]} == 'sku' ]]; then
     [ ${#atoms[@]} -gt 1 ] && atoms[-1]=$wipSuffix || atoms+=( "$wipSuffix" )
     # io_trace "ref_sku_to_wip 1 -- $(print_vars atoms[@])"
     [ ${#atoms[@]} -gt 2 ] && atoms=( ${atoms[@]:1} )
     # io_trace "ref_sku_to_wip 2 -- $(print_vars atoms[@])"
-    echo "wip/$(ref_join ${atoms[@]})"
+    echo "$wipPrefix/$(ref_join ${atoms[@]})"
   else
     echo "$sku-$wipSuffix"
   fi
