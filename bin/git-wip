@@ -12,33 +12,46 @@ wip_parse()
     -h|--help) zou-help $0; exit 0;;
     -j*)            jobsCount=${1#-j};;
     -r|--recursive) recursive=true;;
-    --finish)       wipFinish=true;;
+    --start)        wipCommand='start'; wip_parse_start $2 && shift;;
+    --finish)       wipCommand='finish';;
     --)             shift; wipModulePaths+=("$@"); break;;
-    -*) io_error "unknown option '$1'"; return 1;;
-    *) wipSuffix=$1;;
+    -*) io_error "unknown option ${VC}$1${Red}\n"; io_help $0; return 1;;
+    *)  io_error "invalid argument ${VC}$1${Red}, use ${VC}--${Red} to specify modules paths\n"; io_help $0; return 1;;
   esac; shift; done
 
+  wipPrefix=${wipPrefix:-wip}
   wipSuffix=${wipSuffix:-work}
+  # io_trace "wip_parse -- $(print_vars recursive wipPrefix wipSuffix wipFinish wipModulePaths[@])"
+  if [[ -z $wipCommand ]]; then
+    io_error "missing ${VC}--start${Red} or ${VC}--finish${Red} option\n"
+    io_help $0
+    exit 0
+  fi
+}
+wip_parse_start()
+{
+  [[ $1 =~ ^([^-][^:]+:)?([^-]*) ]] || return 1
+  wipPrefix=${BASH_REMATCH[1]%:}
+  wipSuffix=${BASH_REMATCH[2]}
 }
 wip_run()
 {
   # parse command line
-  local jobsCount recursive wipSuffix wipFinish wipModulePaths=()
+  local jobsCount recursive wipCommand wipPrefix wipSuffix wipModulePaths=()
   wip_parse "$@" || return $?
 
   local wipScopes=( config_scope cosm_scope )
   
-  if [[ $wipFinish == true ]]; then
-    startupMessage="Finishing wip, please wait..."
-    module_run "${wipScopes[@]}" wip_finish
-  else
-    startupMessage="Starting wip '$wipSuffix', please wait..."
-    module_run "${wipScopes[@]}" wip_start
-  fi
+  case $wipCommand in
+    start)  startupMessage="Starting wip '$wipSuffix', please wait...";;
+    finish) startupMessage="Finishing wip, please wait..."
+  esac
+
+  module_run "${wipScopes[@]}" wip_$wipCommand
 }
 wip_start()
 {
-  # io_trace "wip_start -- $(print_vars wipSuffix moduleRoot bundleRoot wipModulePaths[@])"
+  # io_trace "wip_start -- $(print_vars wipPrefix wipSuffix moduleRoot bundleRoot wipModulePaths[@])"
 
   if [ ${#wipModulePaths[@]} -gt 0 ]; then
     module_visit_submodules_async 'wipModulePaths[@]' "${wipScopes[@]}" 'wip_start_tree'
@@ -53,7 +66,7 @@ wip_start()
 }
 wip_start_tree()
 {
-  # io_trace "wip_start_tree -- $(print_vars wipSuffix moduleRoot bundleRoot wipModulePaths[@])"
+  # io_trace "wip_start_tree -- $(print_vars wipPrefix wipSuffix moduleRoot bundleRoot wipModulePaths[@])"
   wip_start_submodules || return $?
   wip_start_node
 }
@@ -64,8 +77,8 @@ wip_start_submodules()
 }
 wip_start_node()
 {
-  local skuBranch=$(ref_wip_to_sku $moduleBranch)
-  local wipBranch=$(ref_sku_to_wip $skuBranch $wipSuffix)
+  local skuBranch=$(ref_wip_to_sku "$moduleBranch")
+  local wipBranch=$(ref_sku_to_wip "$skuBranch" "$wipSuffix" "$wipPrefix")
   # io_trace "wip_start_node 1 -- $(prints_vars moduleBranch skuBranch wipBranch)"
 
   # ensure we are in dev mode in submodules
@@ -73,8 +86,8 @@ wip_start_node()
     # switch to dev mode
     local lbranch vbranch vtag htag publishStatus
     branch_set_select_auto "$bundleBranch" true false
-    skuBranch=$(ref_wip_to_sku $moduleBranch)
-    wipBranch=$(ref_sku_to_wip $skuBranch $wipSuffix)
+    skuBranch=$(ref_wip_to_sku "$moduleBranch")
+    wipBranch=$(ref_sku_to_wip "$skuBranch" "$wipSuffix" "$wipPrefix")
     # io_trace "wip_start_node 2 -- $(print_vars moduleBranch skuBranch wipBranch)"
   fi
 
