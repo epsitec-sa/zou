@@ -1,17 +1,16 @@
 usage: git wip [<options>] --start [<prefix>:][<suffix>] -- <module-paths>
+   or: git wip [<options>] --exit                        -- <module-paths>
    or: git wip [<options>] --finish                      -- <module-paths>
 
-Start or finish WIP mode.
+Manage WIP mode.
 
     -h|--help               display help
     -r|--recursive)         visit specified modules recursively
                                 always true with --finish, if specified module is a bundle
-    --start                 start new WIP
-                                enter DEV mode and create WIP branches in bundle and specified modules
-    --finish                finish active WIP
-                                merge WIP branches into DEV branches and
-                                optionally finish all bundle submodules recursively
-                                if specified or current module is a bundle
+    --start                 enter DEV mode, create and checkout WIP branches in bundle and specified modules
+    --exit                  return to DEV mode
+    --finish                merge WIP branches into DEV branches, delete WIP branches and return to DEV mode
+                                if module is a bundle finish all submodules recursively
     <prefix>                WIP prefix (default to 'wip')
     <suffix>                WIP suffix (default to 'work')
     <module-paths>          specific modules to visit (can be relative)

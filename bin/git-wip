@@ -14,6 +14,7 @@ wip_parse()
     -r|--recursive) recursive=true;;
     --start)        wipCommand='start'; wip_parse_start $2 && shift;;
     --finish)       wipCommand='finish';;
+    --exit)         wipCommand='exit';;
     --)             shift; wipModulePaths+=("$@"); break;;
     -*) io_error "unknown option ${VC}$1${Red}\n"; io_help $0; return 1;;
     *)  io_error "invalid argument ${VC}$1${Red}, use ${VC}--${Red} to specify modules paths\n"; io_help $0; return 1;;
@@ -46,6 +47,7 @@ wip_run()
   case $wipCommand in
     start)  startupMessage="Starting ${Brown}$wipPrefix:$wipSuffix${White}, please wait...";;
     finish) startupMessage="Finishing wip, please wait...";;
+    exit)   startupMessage="Exiting wip, please wait...";;
   esac
 
   module_run "${wipScopes[@]}" wip_$wipCommand
@@ -103,6 +105,47 @@ wip_start_node()
   branch_checkout "$wipBranch" true
   # io_trace "wip_start_node 3 -- $(print_vars wipSuffix moduleBranch devBranch wipBranch)"
 }
+
+##############
+# EXIT COMMAND
+##############
+
+wip_exit()
+{
+  # io_trace "wip_exit -- $(print_vars moduleRoot bundleRoot wipModulePaths[@])"
+
+  if [ ${#wipModulePaths[@]} -gt 0 ]; then
+    module_visit_submodules_async 'wipModulePaths[@]' "${wipScopes[@]}" 'wip_exit_tree'
+  else
+    wip_exit_tree
+  fi
+}
+wip_exit_tree()
+{
+  module_is_bundle && recursive=true
+
+  wip_exit_submodules || return $?
+  wip_exit_node
+}
+wip_exit_submodules()
+{
+  [[ $recursive == true ]] || return 0
+  module_visit_submodules_async 'configSelectInclude[@]' "${wipScopes[@]}" 'wip_exit_tree'
+}
+wip_exit_node()
+{
+  # check if we are in WIP mode
+  local devBranch=$(ref_wip_to_dev "$moduleBranch")
+  local wipBranch=$(ref_dev_to_wip "$devBranch" "$wipSuffix" "$wipPrefix")
+  # io_trace "wip_exit_node 1 -- $(print_vars moduleBranch devBranch wipBranch)"
+
+  if [[ $moduleBranch == $wipBranch ]]; then
+    # back to DEV mode
+    local lbranch vbranch vtag htag publishStatus
+    branch_set_select_auto "$devBranch" true false
+  fi
+}
+
 ################
 # FINISH COMMAND
 ################
