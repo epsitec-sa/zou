@@ -12,24 +12,28 @@ wip_parse()
     -h|--help) zou-help $0; exit 0;;
     -j*)            jobsCount=${1#-j};;
     -r|--recursive) recursive=true;;
-    --start)        wipCommand='start'; wip_parse_start $2 && shift;;
-    --finish)       wipCommand='finish';;
+    --start)        wipCommand='start'; wip_parse_wip $2 && shift;;
+    --enter)        wipCommand='enter'; wip_parse_wip $2 && shift;;
     --exit)         wipCommand='exit';;
-    --)             shift; wipModulePaths+=("$@"); break;;
+    --finish)       wipCommand='finish';;
+    --)             shift; break;;
     -*) io_error "unknown option ${VC}$1${Red}\n"; io_help $0; return 1;;
     *)  io_error "invalid argument ${VC}$1${Red}, use ${VC}--${Red} to specify modules paths\n"; io_help $0; return 1;;
   esac; shift; done
 
-  wipPrefix=${wipPrefix:-wip}
-  wipSuffix=$(git_user_abbrev)-${wipSuffix:-work}
-  # io_trace "wip_parse -- $(print_vars recursive wipPrefix wipSuffix wipFinish wipModulePaths[@])"
+  for path; do
+    wipModulePaths+=( "$(realpath "$path")" )
+  done
   if [[ -z $wipCommand ]]; then
-    io_error "missing ${VC}--start${Red} or ${VC}--finish${Red} option\n"
+    io_error "missing command option ${VC}--(start|enter|exit|finish)${Red}\n"
     io_help $0
     exit 0
   fi
+  wipPrefix=${wipPrefix:-wip}
+  wipSuffix=${wipSuffix:-work}
+  # io_trace "wip_parse -- $(print_vars recursive wipPrefix wipSuffix wipCommand wipModulePaths[@])"
 }
-wip_parse_start()
+wip_parse_wip()
 {
   # skip options
   [[ ${1:0:1} != '-' && $1 =~ ^([^:]+:)?([^-]*) ]] || return 1
@@ -46,43 +50,14 @@ wip_run()
   
   case $wipCommand in
     start)  startupMessage="Starting ${Brown}$wipPrefix:$wipSuffix${White}, please wait...";;
-    finish) startupMessage="Finishing wip, please wait...";;
-    exit)   startupMessage="Exiting wip, please wait...";;
+    enter)  startupMessage="Entering ${Brown}$wipPrefix:$wipSuffix${White}, please wait...";;
+    exit)   startupMessage="Exiting WIP mode, please wait...";;
+    finish) startupMessage="Finishing WIP, please wait...";;
   esac
 
-  module_run "${wipScopes[@]}" wip_$wipCommand
+  module_run "${wipScopes[@]}" wip_command
 }
 
-###############
-# START COMMAND
-###############
-
-wip_start()
-{
-  # io_trace "wip_start -- $(print_vars wipPrefix wipSuffix moduleRoot bundleRoot wipModulePaths[@])"
-
-  if [ ${#wipModulePaths[@]} -gt 0 ]; then
-    module_visit_submodules_async 'wipModulePaths[@]' "${wipScopes[@]}" 'wip_start_tree'
-  else
-    wip_start_tree
-  fi
-
-  # always create wip SKU
-  if ! module_is_bundle; then
-    module_visit "$bundleRoot" "${wipScopes[@]}" wip_start_node
-  fi
-}
-wip_start_tree()
-{
-  # io_trace "wip_start_tree -- $(print_vars wipPrefix wipSuffix moduleRoot bundleRoot wipModulePaths[@])"
-  wip_start_submodules || return $?
-  wip_start_node
-}
-wip_start_submodules()
-{
-  [[ $recursive == true ]] || return 0
-  module_visit_submodules_async 'configSelectInclude[@]' "${wipScopes[@]}" 'wip_start_tree'
-}
 wip_start_node()
 {
   # check if we are in WIP mode
@@ -105,32 +80,17 @@ wip_start_node()
   branch_checkout "$wipBranch" true
   # io_trace "wip_start_node 3 -- $(print_vars wipSuffix moduleBranch devBranch wipBranch)"
 }
-
-##############
-# EXIT COMMAND
-##############
-
-wip_exit()
+wip_enter_node()
 {
-  # io_trace "wip_exit -- $(print_vars moduleRoot bundleRoot wipModulePaths[@])"
+  # check if we are in WIP mode
+  local devBranch=$(ref_wip_to_dev "$moduleBranch")
+  local wipBranch=$(ref_dev_to_wip "$devBranch" "$wipSuffix" "$wipPrefix")
+  io_trace "wip_enter_node -- $(print_vars moduleBranch devBranch wipBranch)"
 
-  if [ ${#wipModulePaths[@]} -gt 0 ]; then
-    module_visit_submodules_async 'wipModulePaths[@]' "${wipScopes[@]}" 'wip_exit_tree'
-  else
-    wip_exit_tree
+  # if we are not in WIP mode
+  if [[ $moduleBranch != $wipBranch ]] && branch_exists "$wipBranch"; then
+    branch_checkout "$wipBranch" true
   fi
-}
-wip_exit_tree()
-{
-  module_is_bundle && recursive=true
-
-  wip_exit_submodules || return $?
-  wip_exit_node
-}
-wip_exit_submodules()
-{
-  [[ $recursive == true ]] || return 0
-  module_visit_submodules_async 'configSelectInclude[@]' "${wipScopes[@]}" 'wip_exit_tree'
 }
 wip_exit_node()
 {
@@ -140,32 +100,10 @@ wip_exit_node()
   # io_trace "wip_exit_node 1 -- $(print_vars moduleBranch devBranch wipBranch)"
 
   if [[ $moduleBranch == $wipBranch ]]; then
-    # back to DEV mode
+    # back to VTAG mode
     local lbranch vbranch vtag htag publishStatus
-    branch_set_select_auto "$devBranch" true false
+    branch_set_select_auto "$devBranch" false false
   fi
-}
-
-################
-# FINISH COMMAND
-################
-
-wip_finish()
-{
-  # io_trace "wip_finish -- $(print_vars moduleRoot bundleRoot)"
-
-  if [ ${#wipModulePaths[@]} -gt 0 ]; then
-    module_visit_submodules_async 'wipModulePaths[@]' "${wipScopes[@]}" 'wip_finish_tree'
-  else
-    wip_finish_tree
-  fi
-}
-wip_finish_tree()
-{
-  module_is_bundle && recursive=true
-
-  wip_finish_submodules || return $?
-  wip_finish_node
 }
 wip_finish_node()
 {
@@ -179,9 +117,57 @@ wip_finish_node()
     && branch_delete "$wipBranch"
   fi
 }
-wip_finish_submodules()
+
+#########
+# HELPERS
+#########
+
+wip_command()
+{
+  # io_trace "wip_command -- $(print_vars wipCommand wipPrefix wipSuffix wipModulePaths[@])"
+  if [[ $wipCommand =~ (exit|finish) ]] && wip_bundle_visited; then
+    recursive=true
+  fi
+
+  if [ ${#wipModulePaths[@]} -gt 0 ]; then
+    wip_visit_modules wip_tree
+  else
+    wip_tree
+  fi
+
+  if [[ $wipCommand =~ (start|enter) ]] && ! wip_bundle_visited; then
+    wip_visit_bundle wip_node
+  fi
+}
+wip_tree()
+{
+  # io_trace "wip_tree -- $(print_vars wipCommand wipPrefix wipSuffix wipModulePaths[@])"
+  wip_visit_tree || return $?
+  wip_node
+}
+wip_node()
+{
+  # io_trace "wip_node -- $(print_vars wipCommand wipPrefix wipSuffix wipModulePaths[@])"
+  wip_${wipCommand}_node
+}
+wip_visit_tree()
 {
   [[ $recursive == true ]] || return 0
-  module_visit_submodules_async 'configSelectInclude[@]' "${wipScopes[@]}" 'wip_finish_tree'
+  module_visit_submodules_async 'configSelectInclude[@]' "${wipScopes[@]}" wip_tree
 }
+wip_visit_modules()
+{
+  # io_trace "wip_visit_modules -- ${*@Q} -- $(print_vars wipModulePaths[@])"
+  module_visit_submodules_async 'wipModulePaths[@]' "${wipScopes[@]}" "$@"
+}
+wip_visit_bundle()
+{
+  # io_trace "wip_visit_bundle -- ${*@Q}"
+  module_visit "$bundleRoot" "${wipScopes[@]}" "$@"
+}
+wip_bundle_visited()
+{
+  module_is_bundle || array_contains_element "$bundleRoot" "${wipModulePaths[@]}"
+}
+
 wip_run  "$@"
