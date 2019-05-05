@@ -21,6 +21,7 @@ wip_parse()
     *)  io_error "invalid argument ${VC}$1${Red}, use ${VC}--${Red} to specify modules paths\n"; io_help $0; return 1;;
   esac; shift; done
 
+  local path
   for path; do
     wipModulePaths+=( "$(realpath "$path")" )
   done
@@ -58,46 +59,27 @@ wip_run()
   module_run "${wipScopes[@]}" wip_command
 }
 
-wip_start_node()
+wip_start()
 {
-  # check if we are in WIP mode
-  local devBranch=$(ref_wip_to_dev "$moduleBranch")
-  local wipBranch=$(ref_dev_to_wip "$devBranch" "$wipSuffix" "$wipPrefix")
-  # io_trace "wip_start_node 1 -- $(print_vars moduleBranch devBranch wipBranch)"
-
-  # if we are not in WIP mode, enter DEV mode in submodules (bundle is already in DEV mode)
-  if [[ $moduleBranch != $wipBranch && $moduleRoot != $bundleRoot ]]; then
-    local lbranch vbranch vtag htag publishStatus
-    branch_set_select_auto "$bundleBranch" true false
-    devBranch=$(ref_wip_to_dev "$moduleBranch")
-    wipBranch=$(ref_dev_to_wip "$devBranch" "$wipSuffix" "$wipPrefix")
-    # io_trace "wip_start_node 2 -- $(print_vars moduleBranch devBranch wipBranch)"
-  fi
-
-  # here, we can be in DEV or WIP mode
+  local wipBranch; wip_set_wip_branch
   # create and checkout wip branch
   [[ $moduleBranch != $wipBranch ]] && git branch "$wipBranch" &>/dev/null
   branch_checkout "$wipBranch" true
-  # io_trace "wip_start_node 3 -- $(print_vars wipSuffix moduleBranch devBranch wipBranch)"
 }
-wip_enter_node()
+wip_enter()
 {
-  # check if we are in WIP mode
-  local devBranch=$(ref_wip_to_dev "$moduleBranch")
-  local wipBranch=$(ref_dev_to_wip "$devBranch" "$wipSuffix" "$wipPrefix")
-  io_trace "wip_enter_node -- $(print_vars moduleBranch devBranch wipBranch)"
-
-  # if we are not in WIP mode
+  local wipBranch; wip_set_wip_branch
+  # checkout wip branch if it exists
   if [[ $moduleBranch != $wipBranch ]] && branch_exists "$wipBranch"; then
     branch_checkout "$wipBranch" true
   fi
 }
-wip_exit_node()
+wip_exit()
 {
   # check if we are in WIP mode
   local devBranch=$(ref_wip_to_dev "$moduleBranch")
   local wipBranch=$(ref_dev_to_wip "$devBranch" "$wipSuffix" "$wipPrefix")
-  # io_trace "wip_exit_node 1 -- $(print_vars moduleBranch devBranch wipBranch)"
+  # io_trace "wip_exit -- $(print_vars moduleBranch devBranch wipBranch)"
 
   if [[ $moduleBranch == $wipBranch ]]; then
     # back to VTAG mode
@@ -105,22 +87,43 @@ wip_exit_node()
     branch_set_select_auto "$devBranch" false false
   fi
 }
-wip_finish_node()
+wip_finish()
 {
   local devBranch=$(ref_wip_to_dev $moduleBranch)
   local wipBranch=$moduleBranch
   if [[ $wipBranch != $devBranch ]]; then
     # repo_require_clean_work_tree 'Cannot finish wip' || return $?
-    # io_trace "wip_finish_node -- $(print_vars moduleBranch devBranch)"
+    # io_trace "wip_finish -- $(print_vars moduleBranch devBranch)"
+    # back to VTAG mode
+    local lbranch vbranch vtag htag publishStatus
     branch_merge "$wipBranch" "$devBranch" \
-    && branch_checkout "$devBranch" true \
+    && branch_set_select_auto "$devBranch" false false \
     && branch_delete "$wipBranch"
   fi
 }
+# out:
+#   wipBranch
+wip_set_wip_branch()
+{
+  # check if we are in WIP mode
+  local devBranch
+  devBranch=$(ref_wip_to_dev "$moduleBranch")
+  wipBranch=$(ref_dev_to_wip "$devBranch" "$wipSuffix" "$wipPrefix")
+  # io_trace "wip_set_wip_branch 1 -- $(print_vars bundleBranch moduleBranch devBranch wipBranch)"
 
-#########
-# HELPERS
-#########
+  # if we are not in WIP mode, compute dev branch (bundle is already in DEV mode)
+  if [[ $moduleBranch != $wipBranch ]] && ! module_is_bundle; then
+    local branch lbranch
+    branch_set_best_match_dev "$bundleBranch"
+    devBranch=$(ref_wip_to_dev "$lbranch")
+    wipBranch=$(ref_dev_to_wip "$devBranch" "$wipSuffix" "$wipPrefix")
+    # io_trace "wip_set_wip_branch 2 -- $(print_vars bundleBranch moduleBranch lbranch devBranch wipBranch)"
+  fi
+}
+
+####################
+# COMMAND MANAGEMENT
+####################
 
 wip_command()
 {
@@ -148,7 +151,7 @@ wip_tree()
 wip_node()
 {
   # io_trace "wip_node -- $(print_vars wipCommand wipPrefix wipSuffix wipModulePaths[@])"
-  wip_${wipCommand}_node
+  wip_${wipCommand}
 }
 wip_visit_tree()
 {
