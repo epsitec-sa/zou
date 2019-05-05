@@ -328,7 +328,7 @@ repo_list_untracked()
   for path in $(git ls-files --exclude-standard --others); do
     if [[ -f $path ]]; then
       # skip internal ignore list
-      array_contains_element "$path" "${internalIgnoreList}" || echo $path
+      array_contains_element "$path" "${internalIgnoreList[@]}" || echo $path
     else
       # skip dangling submodules
       repo_is_module_root "$path" || echo $path
@@ -340,7 +340,7 @@ repo_list_unstaged()
   for path in $(git diff-files --name-only -r --ignore-submodules); do
     if [[ -f $path ]]; then
       # skip internal ignore list
-      array_contains_element "$path" "${internalIgnoreList}" || echo $path
+      array_contains_element "$path" "${internalIgnoreList[@]}" || echo $path
     fi
   done
 }

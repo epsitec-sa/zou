@@ -238,12 +238,12 @@ version_list_files_of_type()
 }
 version_add_file_spec()
 {
-  local type=$1 files=$(version_list_files_of_type $1) spec file
+  local type=$1 files=( $(version_list_files_of_type $1) ) spec file
   shift
   git config --file "$moduleConfigFile" update-version.freezed true
   for spec in "$@"; do
     for file in $(version_list_resources "$spec"); do
-      if ! array_contains_element "$file" $files; then
+      if ! array_contains_element "$file" "${files[@]}"; then
         if ieval "grep -qE '${versionFilters[$type]}'" "$file"; then
           git config --file "$moduleConfigFile" --add update-version.$type "$file"
         fi
