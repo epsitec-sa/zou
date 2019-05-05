@@ -21,7 +21,7 @@ wip_parse()
   esac; shift; done
 
   wipPrefix=${wipPrefix:-wip}
-  wipSuffix=$(user_abbrev)-${wipSuffix:-work}
+  wipSuffix=$(git_user_abbrev)-${wipSuffix:-work}
   # io_trace "wip_parse -- $(print_vars recursive wipPrefix wipSuffix wipFinish wipModulePaths[@])"
   if [[ -z $wipCommand ]]; then
     io_error "missing ${VC}--start${Red} or ${VC}--finish${Red} option\n"
