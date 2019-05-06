@@ -22,9 +22,9 @@ branch_ensure_attached()
 #
 # usage:
 #   local branch lbranch
-#   branch_set_best_match_dev $bundleBranch
+#   branch_set_best_match_dev $bundleDevBranch
 # in:
-#   $1: sku
+#   $1:sku=bundleDevBranch
 # out:
 #   branch   -- local or remote
 #   lbranch  -- local branch
@@ -62,7 +62,7 @@ branch_set_best_match_dev()
 #  branch_set_select_auto $sku $forceDev $forceCheckout $allowDuplicateTags
 #
 # in:
-#   $1:sku=bundleBranch
+#   $1:sku=bundleDevBranch
 #   $2:forceDev=false     -- force checkout of dev branch
 #   $3:forceCheckout=true -- checkout even if already checked out (display already checked out message)
 #   $4:allowDuplicateTags -- influence highest tag computation (false in submodule, true in bundle)
@@ -105,7 +105,7 @@ branch_set_select_auto()
 #   local lbranch vbranch vtag htag delta alias status nextHead publishStatus
 #   branch_set_sku_info $sku $forceDev $allowDuplicateTags
 # in:
-#   $1:sku=bundleBranch
+#   $1:sku=bundleDevBranch
 #   $2:forceDev=false     -- favour dev branch instead of vtag
 #   $4:allowDuplicateTags -- influence htag computation (false in submodule, true in bundle)
 # out:
@@ -128,7 +128,7 @@ branch_set_sku_info()
 {
   unset branch lbranch vbranch vtag htag delta alias status
 
-  local sku=${1:-$bundleBranch} forceDev=${2:-false} allowDuplicateTags=$3 \
+  local sku=${1:-$bundleDevBranch} forceDev=${2:-false} allowDuplicateTags=$3 \
         skipVNodes branch
 
   [[ -z $sku ]] && sku=$(branch_current_root_branch)
@@ -148,7 +148,7 @@ branch_set_sku_info()
 #   branch_set_select_info $sku $skipVNodes $allowDuplicateTags
 #
 # in:
-#   $1:sku=bundleBranch
+#   $1:sku=bundleDevBranch
 #   $2:skipVNodes=auto    -- (auto | true | *)
 #                         -- auto - match vtag  then match vnode then fallback
 #                         -- true - match vtag  then fallback
@@ -168,7 +168,7 @@ branch_set_sku_info()
 branch_set_select_info()
 {
   unset branch lbranch vbranch vtag htag delta alias status
-  local sku=${1:-$bundleBranch} skipVNodes=${2:-auto} allowDuplicateTags=$3
+  local sku=${1:-$bundleDevBranch} skipVNodes=${2:-auto} allowDuplicateTags=$3
   # io_trace "branch_set_select_info ${*@Q}"
   branch_set_best_match_dev "$sku"                     # -> branch lbranch
   vtag_set_describe "$branch" "$lbranch" "$skipVNodes" # -> vbranch vtag delta alias
@@ -274,7 +274,7 @@ branch_set_bestmatch_sku()
 {
   local skuSpec=$1
   if [[ -z $skuSpec ]]; then
-    sku=$bundleBranch
+    sku=$bundleDevBranch
   elif [[ "$moduleRoot" == "$bundleRoot" ]]; then
     _branch_set_bestmatch_sku_core
   else

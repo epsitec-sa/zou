@@ -77,6 +77,7 @@ _module_scope_startup()
   # setup startup context
   local startupDir=$PWD startupRoot \
         bundleId bundleRoot bundleBranch \
+        bundleDevBranch \
         bundleUrl bundleUrlName \
         bundleTracePrefix \
         principalModuleId \
@@ -93,16 +94,19 @@ _module_scope_startup()
   bundleId=$(repo_bundle_id)
   bundleRoot=$(repo_bundle_root)
   bundleBranch=$(branch_current_root_branch)
-
+  
   repo_set_bundle_url_info "$bundleRoot"  # -> bundleUrl bundleUrlName
   _module_set_bundle_trace_prefix
+  _module_startup_message
+
+  _module_set_bundle_dev_branch
   _module_set_principal_module_id
 
-  _module_startup_message
   _module_register_bundle
 
-  # io_trace "_module_scope_startup -- $(print_vars startupDir startupRoot bundleId bundleRoot bundleBranch)"
-  # io_trace "_module_scope_startup -- $(print_vars bundleUrl bundleUrlName principalModuleId)"
+  # io_trace "_module_scope_startup -- $(print_vars bundleId bundleBranch bundleDevBranch)"
+  # io_trace "_module_scope_startup -- $(print_vars principalModuleId bundleUrl bundleUrlName)"
+  # io_trace "_module_scope_startup -- $(print_vars startupDir startupRoot bundleRoot)"
 
   # execute next russian doll
   $1 "${@:2}"
@@ -120,6 +124,27 @@ _module_register_bundle()
     bundle_register "$bundleUrl" "$bundleRoot"
     # io_trace "_module_register_bundle ${*@Q} -- $(print_vars bundleUrl bundleRoot)"
   fi
+}
+_module_set_bundle_dev_branch()
+{
+  if [[ $bundleBranch == 'HEAD' ]]; then
+    # we are in detached HEAD
+    # infer dev branch from vtag name
+    local ltag stag
+    ltag=$(git describe --tags --match '*v[0-9]*' | head -n1)
+    stag=${ltag%-*-g*}
+    if [[ $stag =~ (.*/)?v[0-9]+\.[0-9]+ ]]; then
+      bundleDevBranch="${BASH_REMATCH[1]}dev"
+    else
+      bundleDevBranch='master'
+    fi
+  elif [[ $bundleBranch =~ ^(.*/)?[0-9]+\.[0-9]+ ]]; then
+    # infer dev branch from prod branch
+    bundleDevBranch="${BASH_REMATCH[1]}dev"
+  else
+    bundleDevBranch=$bundleBranch
+  fi
+  # io_trace "_module_set_bundle_dev_branch -- $(print_vars vtag bundleDevBranch)"
 }
 # run a function in the module root folder with module scope defined
 _module_scope()
@@ -186,14 +211,15 @@ _module_reset_scope()
   
   if [[ "$PWD" == "$bundleRoot" ]]; then
     bundleBranch=$1
-    _module_set_principal_module_id
     _module_set_bundle_trace_prefix
+    _module_set_bundle_dev_branch
+    _module_set_principal_module_id
   fi
 
   moduleBranch=$1
   _module_set_trace_prefix
   
-  # io_trace "_module_reset_scope ${*@Q} -> $(print_vars bundleBranch moduleBranch principalModuleId)"
+  # io_trace "_module_reset_scope ${*@Q} -> $(print_vars moduleBranch principalModuleId)"
   # io_trace "_module_reset_scope ${*@Q} -> $(print_vars moduleBranchPrefix)"
 }
 
@@ -206,7 +232,7 @@ _module_set_principal_module_id()
   # if the bundle branch name starts with 'sku/', use the following part as the principal module ID
   # else use the bundle name without '-dev' suffix
 
-  if [[ $bundleBranch =~ ^sku/([^/]+) ]]; then
+  if [[ $bundleDevBranch =~ ^sku/([^/]+) ]]; then
     principalModuleId=${BASH_REMATCH[1]}
     [ -d "$bundleRoot/$principalModuleId" ] && return 0
   fi

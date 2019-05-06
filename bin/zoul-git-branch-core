@@ -609,7 +609,7 @@ branch_list_attach_candidates()
 # try to attach a detached head to a branch that's pointing at it.
 # in:
 #   $1:ref
-#   $2:sku = bundleBranch
+#   $2:sku = bundleDevBranch
 #   $3:forceCheckout = true
 #   $4:alias = ref
 # out:
@@ -618,7 +618,7 @@ branch_try_attach()
 {
 
   local ref=$1 sku=$2 forceCheckout=${3:-true} alias=$4
-  [[ -z $sku ]] && sku=$bundleBranch
+  [[ -z $sku ]] && sku=$bundleDevBranch
   [[ -z $sku ]] && sku=$(branch_current_root_branch)
   [[ -z $alias ]] && alias=$ref
 
