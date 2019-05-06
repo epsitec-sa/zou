@@ -61,14 +61,19 @@ wip_run()
 
 wip_start()
 {
-  local wipBranch; wip_set_wip_branch
-  # create and checkout wip branch
-  [[ $moduleBranch != $wipBranch ]] && git branch "$wipBranch" &>/dev/null
+  local devBranch wipBranch
+  wip_set_branches
+  if [[ $moduleBranch != $wipBranch ]]; then
+    # create wip branch on dev branch
+    [[ $moduleBranch != $devBranch ]] && branch_checkout "$devBranch"
+    git branch "$wipBranch" &>/dev/null
+  fi
   branch_checkout "$wipBranch" true
 }
 wip_enter()
 {
-  local wipBranch; wip_set_wip_branch
+  local devBranch wipBranch
+  wip_set_branches
   # checkout wip branch if it exists
   if [[ $moduleBranch != $wipBranch ]] && branch_exists "$wipBranch"; then
     branch_checkout "$wipBranch" true
@@ -76,12 +81,15 @@ wip_enter()
 }
 wip_exit()
 {
-  # check if we are in WIP mode
-  local devBranch=$(ref_wip_to_dev "$moduleBranch")
-  local wipBranch=$(ref_dev_to_wip "$devBranch" "$wipSuffix" "$wipPrefix")
-  # io_trace "wip_exit -- $(print_vars moduleBranch devBranch wipBranch)"
+  [[ $moduleBranch == 'HEAD' ]] && return 0
 
-  if [[ $moduleBranch == $wipBranch ]]; then
+  # check if we are in WIP mode
+  local devBranch=$(ref_wip_to_dev $moduleBranch)
+  local wipBranch=$moduleBranch
+  # io_trace "wip_exit 1 -- $(print_vars moduleBranch devBranch)"
+
+  if [[ $wipBranch != $devBranch ]]; then
+    # io_trace "wip_exit 2 -- $(print_vars moduleBranch devBranch wipBranch)"
     # back to VTAG mode
     local lbranch vbranch vtag htag publishStatus
     branch_set_select_auto "$devBranch" false false
@@ -89,11 +97,14 @@ wip_exit()
 }
 wip_finish()
 {
+  [[ $moduleBranch == 'HEAD' ]] && return 0
+
   local devBranch=$(ref_wip_to_dev $moduleBranch)
   local wipBranch=$moduleBranch
+  # io_trace "wip_finish 1 -- $(print_vars moduleBranch devBranch wipBranch)"
   if [[ $wipBranch != $devBranch ]]; then
     # repo_require_clean_work_tree 'Cannot finish wip' || return $?
-    # io_trace "wip_finish -- $(print_vars moduleBranch devBranch)"
+    # io_trace "wip_finish 2 -- $(print_vars moduleBranch devBranch wipBranch)"
     # back to VTAG mode
     local lbranch vbranch vtag htag publishStatus
     branch_merge "$wipBranch" "$devBranch" \
@@ -101,23 +112,29 @@ wip_finish()
     && branch_delete "$wipBranch"
   fi
 }
+# Infer dev and wip branches
+#
+# usage:
+#   local devBranch wipBranch
+#   wip_set_branches
 # out:
+#   devBranch
 #   wipBranch
-wip_set_wip_branch()
+wip_set_branches()
 {
   # check if we are in WIP mode
-  local devBranch
   devBranch=$(ref_wip_to_dev "$moduleBranch")
   wipBranch=$(ref_dev_to_wip "$devBranch" "$wipSuffix" "$wipPrefix")
-  # io_trace "wip_set_wip_branch 1 -- $(print_vars bundleBranch moduleBranch devBranch wipBranch)"
+  # io_trace "wip_set_branches 1 -- $(print_vars bundleDevBranch moduleBranch devBranch wipBranch)"
 
-  # if we are not in WIP mode, compute dev branch (bundle is already in DEV mode)
-  if [[ $moduleBranch != $wipBranch ]] && ! module_is_bundle; then
+  # if we are not in WIP mode, infer dev branch from bundle dev branch
+  if [[ $moduleBranch != $wipBranch ]]; then
     local branch lbranch
-    branch_set_best_match_dev "$bundleBranch"
-    devBranch=$(ref_wip_to_dev "$lbranch")
+    devBranch=$(ref_wip_to_dev "$bundleDevBranch")
+    branch_set_best_match_dev "$devBranch"  # -> branch lbranch
+    devBranch=$lbranch
     wipBranch=$(ref_dev_to_wip "$devBranch" "$wipSuffix" "$wipPrefix")
-    # io_trace "wip_set_wip_branch 2 -- $(print_vars bundleBranch moduleBranch lbranch devBranch wipBranch)"
+    # io_trace "wip_set_branches 2 -- $(print_vars bundleDevBranch moduleBranch devBranch wipBranch)"
   fi
 }
 
@@ -145,6 +162,8 @@ wip_command()
 wip_tree()
 {
   # io_trace "wip_tree -- $(print_vars wipCommand wipPrefix wipSuffix wipModulePaths[@])"
+  repo_discard_internal_ignore_list
+
   wip_visit_tree || return $?
   wip_node
 }
