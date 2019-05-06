@@ -356,10 +356,9 @@ branch_ref_type()
 }
 branch_checkout()
 {
+  # io_trace "branch_checkout ${*@Q}"
   local ref=$1 always=$2 alias=$3 refType isCurrent
 
-  # io_trace "branch_checkout 1 -- $(print_vars ref always alias)"
-  
   [[ $alias == 'HEAD' ]] && unset alias
   branch_ref_type $ref; refType=$?
   case $refType in
@@ -368,6 +367,7 @@ branch_checkout()
     2) isCurrent=1;; # remote branch without remote prefix
     3|4) ref_is_head $ref; isCurrent=$?;; # tag | commit
   esac
+  # io_trace "branch_checkout 1 -- $(print_vars ref always alias refType isCurrent)"
   if [[ $isCurrent -ne 0 || $always == true ]]; then
     # compute symbols
     local symType symRef
@@ -375,7 +375,7 @@ branch_checkout()
       0) symType='branch'; symRef="$ref";;
       1|2) symType='new branch'; symRef="$ref";;
       3) symType='version'; symRef="($ref)";;
-      4) symType='commit'; symRef="($(git rev-parse --short $ref^{})";;
+      4) symType='commit'; symRef="($(git rev-parse --short $ref^{}))";;
     esac
 
     # switching message
@@ -384,8 +384,10 @@ branch_checkout()
     # io_trace "branch_checkout 2 -- $(print_vars ref always alias refType isCurrent symType symRef)"
 
     # checkout
-    local line color info breakLoop deferIndent indent ec=0
+    local line color info breakLoop indent ioAlias ec=0
     info=$(git checkout "$ref" 2>&1 >/dev/null); ec=$?
+
+    # io_trace "$info\n----"
 
     if [[ $ec -eq 0 && $isCurrent -ne 0 ]]; then
       branch_raise_branch_changed_event $ref
@@ -396,34 +398,38 @@ branch_checkout()
       # [[ -z $line ]] && continue
       if [[ $line =~ ^Switched ]]; then
         line="Switched to $symType ${VC}$symRef${Green}"
+        ioAlias=$alias
+        unset indent
         color=${Green}
-      elif [[ $line =~ ^([wW]arning:)(.*) ]]; then
-        line="  ${VC}${BASH_REMATCH[1]}${NC}${Gray}${BASH_REMATCH[2]}"
-        unset alias
-        color=${Gray}
       elif [[ $line =~ ^Note:\ checking\ out ]]; then
         line="Switched to $symType ${VC}$symRef${Green}"
-        color=${Green}
+        ioAlias=$alias
         breakLoop=true
+        color=${Green}
+      elif [[ $line =~ ^([wW]arning:)(.*) ]]; then
+        line="${Brown}${BASH_REMATCH[1]}${NC}${DarkGray}${BASH_REMATCH[2]}"
+        indent='  '
+        color=${DarkGray}
       elif [[ -z $color ]]; then
         if [[ $line =~ ^Already ]]; then
           line="Already on ${VC}$symRef"
+          ioAlias=$alias
           color=${LightBlue}
-        elif [[ $line =~ ^HEAD\ is\ now\ at\ ([0-9a-f]+) ]]; then
-          line="Already at ${VC}$symRef"
-          color=${LightBlue}
-          [[ -z $alias ]] && alias=$ref
+        # elif [[ $line =~ ^HEAD\ is\ now\ at\ ([0-9a-f]+) ]]; then
+        #   line="Already at ${VC}$symRef"
+        #   color=${LightBlue}
+        #   [[ -z $alias ]] && alias=$ref
         elif [[ $line =~ ^error ]]; then
           color=${Red}
         elif [[ $line =~ ^Previous\ HEAD ]]; then
-          continue
+          indent='  '
+          color=${DarkGray}
         else
-          color=${Gray}
+          color=${DarkGray}
         fi
       fi
-      mio_message_unsafe "$indent$line" "$alias" "$color"
-      [[ $deferIndent == true ]] && indent='  '
-      unset alias deferIndent
+      mio_message_unsafe "$indent$line" "$ioAlias" "$color"
+      unset ioAlias
       [[ $breakLoop == true ]] && break
     done <<< "$info"
     io_lock_exit
