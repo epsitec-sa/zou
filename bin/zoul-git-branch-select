@@ -33,14 +33,15 @@ branch_ensure_attached()
 branch_set_best_match_dev()
 {
   unset branch
-  local patterns=$(ref_dev_fallback $1) \
-        branches=( $(branch_list_local) ) \
-        remoteIndex=${#branches[@]} \
-        pattern b i
-        
+  local sku=${1:-$bundleDevBranch} patterns branches remoteIndex pattern b i
+  patterns=( $(ref_dev_fallback $sku) )
+  branches=( $(branch_list_local) )
+  remoteIndex=${#branches[@]}
   branches+=( $(branch_list_remote_untracked) )
+
+  # io_trace "branch_set_best_match_dev -- ${*@Q} -- $(print_vars patterns[@] branches[@])"
   # try to find a branch matching bundle branch name
-  for pattern in $patterns; do
+  for pattern in "${patterns[@]}"; do
     for i in ${!branches[@]}; do
       b=${branches[i]}
       (( $i < $remoteIndex )) && lbranch=$b || lbranch=${b#*/}
@@ -82,12 +83,12 @@ branch_set_select_auto()
   unset lbranch vbranch vtag htag publishStatus
 
   local sku=$1 forceDev=$2 forceCheckout=$3 allowDuplicateTags=$4 \
-        delta alias status ec=0
+        nextHead delta alias status ec=0
 
   # io_trace "branch_set_select_auto 1 -- $(print_vars sku forceDev forceCheckout allowDuplicateTags mroot broot)"
   branch_set_sku_info "$sku" "$forceDev" "$allowDuplicateTags" \
   && branch_checkout "$nextHead" "$forceCheckout" "$alias" || ec=$?
-  # io_trace "branch_set_select_auto 2 -- $(print_vars branch vbranch vtag htag alias status publishStatus ec)"
+  # io_trace "branch_set_select_auto 2 -- $(print_vars branch vbranch vtag htag nextHead alias status publishStatus ec)"
 
   if [ $ec -ne 0 ]; then
     repo_require_clean_work_tree "Cannot switch to '$lbranch'"
