@@ -65,6 +65,7 @@ vtag_is_vnode()  { [[ $1 =~ ^(.*/)?v([0-9]+)\.([0-9]+)(-@) ]]; }
 vtag_highest()
 {
   local vbranch=$1 allowDuplicates=$2 skipVNodes=$3
+  # io_trace "vtag_highest -- $(print_vars vbranch allowDuplicateTags skipVNodes)"
 
   if [[ $vbranch =~ ^(.*/)?([0-9]+\.[0-9]+) ]]; then
     local folder=${BASH_REMATCH[1]}
@@ -77,7 +78,6 @@ vtag_highest()
     else
       regex="^(.*/)?v$(wildcard_to_regex $version)"
     fi
-    # io_trace "vtag_highest $(print_vars vbranch allowDuplicates skipVNodes regex)"
     local tags=() tag
     for tag in $(git tag -l "*v${version}*"); do
       [[ $tag =~ ^other/ ]] && continue
@@ -91,6 +91,7 @@ vtag_highest()
         fi
       fi
     done
+    # io_trace "vtag_highest $(print_vars vbranch tags[@])"
     vtag_highest_of "${tags[@]}"
   else
     mio_error "vbranch invalid format : '$1'"
@@ -121,10 +122,11 @@ vtag_set_describe()
   unset vbranch vtag alias; delta=0
 
   local branch=$1 lbranch=${2:-$1} skipVNodes=$3 \
-        ltag stag match
+        ltag stag match \
+        fallback=( $(ref_tag_fallback $lbranch 'v[0-9]*') )
 
   # io_trace "vtag_set_describe 1 -- $(print_vars branch lbranch skipVNodes)"
-  for match in $(ref_tag_fallback $lbranch 'v[0-9]*'); do
+  for match in "${fallback[@]}"; do
     case $SkipVNodes in
     auto) ltag=$(_vtag_describe '*-@') || ltag=$(_vtag_describe);;
     true) ltag=$(_vtag_describe '*-@');;
