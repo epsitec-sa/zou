@@ -109,7 +109,9 @@ _branch_sync_fix_tracking()
     if [[ $l =~ (^|/)sku/ ]] || branch_is_prod "$l"; then
       # automatically push sku vbranches
       local remote=$(git_remote)
-      [[ -n $remote ]] && ! branch_is_archived "$l" "$remote" && branch_ensure_remote "$l" "$remote"
+      if [[ -n $remote ]] && ! branch_is_archived "$l" "$remote"; then
+        branch_ensure_remote "$l" "$remote"
+      fi
     fi
   fi
   # io_trace "_branch_sync_fix_tracking -- $(print_vars l r i color)"

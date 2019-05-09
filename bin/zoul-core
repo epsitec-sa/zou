@@ -163,28 +163,36 @@ mio_warning_unsafe() { mio_message_unsafe "$1" "$2" ${Brown}; }
 mio_error_unsafe()   { mio_message_unsafe "$1" "$2" ${Red}; }
 mio_message_unsafe()
 {
-  local message=$1 alias=$2 color=$3 tracePrefix=$moduleTracePrefix
-  [[ -n $moduleRoot && $moduleRoot == $bundleRoot ]] && tracePrefix=$bundleTracePrefix \
-
-  if [[ -n $alias ]]; then
-    local acolor
-    if [[ $alias =~ \< ]]; then
-      # delta < 0
-      acolor=Purple
-    elif [[ $alias =~ \> ]]; then
-      # delta > 0
-      if [[ -n $moduleRoot && $moduleRoot == $bundleRoot ]]; then
-        acolor=Cyan
-      else
-        [[ $alias =~ -@ ]] && acolor=Purple || acolor=Brown
-      fi
-    else
-      # delta == 0
-      [[ $alias =~ -@ ]] && acolor=Purple || acolor=Green
-    fi
-    message="$message ${!acolor}($alias)"
+  local message=$1 alias=$2 color=${3:-$Cyan} tracePrefix=$moduleTracePrefix
+  [[ -n $moduleRoot && $moduleRoot == $bundleRoot ]] && tracePrefix=$bundleTracePrefix
+  if [[ -z $alias ]]; then
+    alias=$prodAlias
+  else
+    [[ $alias != $prodAlias ]] && io_create_alias_color "$alias"
   fi
+  [[ -n $alias ]] && message="$message ${color}(${AC}$alias${color})"
   io_message_unsafe "$message" "$tracePrefix" "$color"
+}
+# create alias color
+# out:
+#   AC -- alias color
+io_create_alias_color()
+{
+  [[ -z $1 ]] && return 0
+  if [[ $1 =~ \< ]]; then
+    # delta < 0
+    AC=${Purple}
+  elif [[ $1 =~ \> ]]; then
+    # delta > 0
+    if module_is_bundle; then
+      AC=${Cyan}
+    else
+      [[ $1 =~ -@ ]] && AC=${Purple} || AC=${Brown}
+    fi
+  else
+    # delta == 0
+    [[ $1 =~ -@ ]] && AC=${Purple} || AC=${Green}
+  fi
 }
 
 io_debug()           { [[ $debug == 'true' ]] && io_message "$1 = ${!1}" "${2:-debug}" ${3:-Purple}; }
