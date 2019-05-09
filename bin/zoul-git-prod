@@ -1,0 +1,81 @@
+#!/bin/bash
+
+# Use the following statement to include current lib only once
+#   [[ -z $ZOUL_GIT_PROD ]] && . zoul-git-prod
+ZOUL_GIT_CONFIG=true
+
+[[ -z $ZOUL_GIT_BRANCH_SELECT ]] && . zoul-git-branch-select
+
+# io_trace "branchChangedEvent+=( prod_reset_scope )"
+branchChangedEvent+=( _prod_on_branch_changed )
+branchCreatedEvent+=( _prod_on_branch_created )
+branchDeletedEvent+=( _prod_on_branch_deleted )
+
+# usage:
+#   module_run prod_scope $*
+prod_scope()
+{
+  # setup prod context
+  local prodBranch prodBranchPath \
+        prodVTag prodHTag \
+        prodDelta prodStatus \
+        prodAlias \
+        prodScopeInitialized=true
+  
+  prod_reset_scope
+
+  # execute next russian doll
+  $1 "${@:2}"
+}
+prod_reset_scope()
+{
+  # io_trace "_prod_reset_scope"
+
+  [[ $prodScopeInitialized == true ]] || return 0
+
+  local vbranch vtag htag delta alias status
+  branch_set_vtag_info "$moduleDevBranchPath" "$moduleDevBranch" 'auto'
+  io_create_alias_color "$alias"
+
+  prodVTag=$vtag
+  prodHTag=$htag
+  prodDelta=$delta
+  prodAlias=$alias
+  prodStatus=$status
+  if [[ -z $vbranch ]]; then
+    prodBranchPath=''; prodBranch=''
+  else
+    local branch lbranch bref
+    branch_set_realize "$vbranch"
+    prodBranchPath=$branch
+    prodBranch=$lbranch
+  fi
+
+  # io_lock_enter
+  # io_trace_unsafe "_prod_reset_scope -- $(print_vars vbranch prodBranch prodBranchPath)"
+  # io_trace_unsafe "_prod_reset_scope -- $(print_vars prodVTag prodHTag)"
+  # io_trace_unsafe "_prod_reset_scope -- $(print_vars prodDelta prodStatus prodAlias)"
+  # io_lock_exit
+}
+prod_checkout_vtag()
+{
+  local fallbackBranch=$1 forceCheckout=${2:-true}
+  # io_trace_unsafe "prod_checkout_vtag -- $(print_vars prodVTag fallbackBranch forceCheckout)"
+  if [[ $prodStatus == 'vtag' ]]; then
+    branch_checkout "$prodVTag" "$forceCheckout"
+  elif [[ -n $fallbackBranch ]]; then
+    branch_checkout "$fallbackBranch" "$forceCheckout"
+  fi
+}
+_prod_on_branch_changed()
+{
+  prod_reset_scope
+}
+_prod_on_branch_created()
+{
+  [[ $1 =~ ^(.*/)?[0-9]+\.[0-9]+ ]] && prod_reset_scope
+}
+_prod_on_branch_deleted()
+{
+  [[ $1 =~ ^(.*/)?[0-9]+\.[0-9]+ ]] && prod_reset_scope
+}
