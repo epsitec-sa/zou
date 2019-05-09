@@ -28,11 +28,11 @@ tag_push_not_followed()
   # 'git push --follow-tags' push only tags associated with commits that are not pushed
   if [[ $1 == '--delete' ]]; then
     if git push --delete "$remote" "$tag" &>/dev/null; then
-      mio_warning "Deleted tag ${VC}$tag${Brown} from '$remote'"
+      mio_success "Deleted tag ${VC}$tag${Brown} from ${VC}$remote"
     fi
   elif commit_is_pushed "$commit"; then
     if git push "$@" "$remote" "$tag" &>/dev/null; then
-      mio_success "Pushed tag ${VC}$tag${Green} to ${VC}$remote${Green}"
+      mio_success "Pushed tag ${VC}$tag${Green} to ${VC}$remote"
     fi
   fi
 }
@@ -87,7 +87,7 @@ tag_move_to_commit()
 }
 tag_new()
 {
-  local tag=$1 commit=$2 message=$3
+  local tag=$1 commit=${2:-HEAD} message=$3
   if tag_exists "$tag"; then
     mio_error "Tag '$tag' already exists"
     return 1
@@ -100,11 +100,11 @@ tag_delete()
 {
   if tag_exists "$1"; then
     tag_push_not_followed $1 $1^{} '--delete'
-    io_buffered_eval "git tag --delete "$1"" : ${Cyan}
+    io_buffered_eval "git tag --delete "$1"" : ${Green}
   else
     mio_error "Tag '$tag' does not exist"
     if git push --delete origin "$tag" &>/dev/null; then
-      mio_warning "Deleted tag ${VC}$tag${Brown} from ${VC}origin"
+      mio_success "Deleted tag ${VC}$tag${Brown} from ${VC}origin"
     fi
   fi
 }
@@ -149,7 +149,7 @@ tag_mirror()
 {
   local verbose=$1 dryRun=$2 color=Gray
   [[ $dryRun == true ]] && color=DarkGray
-  mio_message "Mirroring tags..." '' $color
+  mio_message "Mirroring tags..." $color
   [[ $dryRun == true ]] && return 0
   if [[ $verbose == true ]]; then
     local line

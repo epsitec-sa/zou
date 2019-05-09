@@ -39,10 +39,10 @@ branch_publish()
     mio_error   "Branch '$lbranch' cannot be published (no vbranch associated)"
     return 1;;
   published)
-    mio_message "Already published at ${VC}$vtag" '' ${LightBlue};;
+    mio_message "Already published at ${VC}$vtag" ${LightBlue};;
   ffPublish)
     branch_merge "$vtag" "$moduleHead" &>/dev/null \
-      && mio_message "Already published at ${VC}$vnext${LightBlue} (${Brown}fast-forward${LightBlue})" '' ${LightBlue} \
+      && mio_message "Already published at ${VC}$vnext${LightBlue} (${Brown}fast-forward${LightBlue})" ${LightBlue} \
       || { mio_error "Fast-forward publish of branch '$lbranch' failed"; return 1; };;
   notPublished)
     branch_set_publish "$lbranch" "$vbranch" "$vtag" "$htag" "$prerelPrefix" \

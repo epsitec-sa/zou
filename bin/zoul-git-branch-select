@@ -85,7 +85,7 @@ branch_set_select_auto()
   # io_trace "branch_set_select_auto 1 -- $(print_vars sku forceDev forceCheckout allowDuplicateTags)"
   if branch_set_sku_info "$sku" "$forceDev" "$allowDuplicateTags"; then # -> lbranch vbranch vtag htag delta alias status nextHead publishStatus
     # io_trace "branch_set_select_auto 2 -- $(print_vars branch lbranch vbranch vtag htag nextHead alias status publishStatus ec)"
-    branch_checkout "$nextHead" "$forceCheckout" "$alias" || ec=$?
+    branch_checkout "$nextHead" "$forceCheckout" || ec=$?
   fi
 
   if [ $ec -ne 0 ]; then
@@ -204,7 +204,7 @@ branch_set_vtag_info()
     htag=$(vtag_highest $vbranch true)
     if [[ $htag != $vtag ]]; then
       if ! git merge-base --is-ancestor "$branch" "$htag" >&2; then
-        mio_message "Branch ${VC}$lbranch${LightPurple} was never published as ${VC}$htag${LightPurple}" "$alias" ${LightPurple}
+        mio_message "Branch ${VC}$lbranch${LightPurple} was never published as ${VC}$htag${LightPurple}" ${LightPurple}
       fi
       delta=$(( -$(git rev-list --count $vtag..$htag) ))
       vtag=$htag

@@ -98,11 +98,11 @@ io_help()
 
 io_trace()
 {
-  mio_message "  $1" '' ${2:-$Gray}
+  mio_message "  $1" ${2:-$Gray}
 }
 io_trace_unsafe()
 {
-  mio_message_unsafe "  $1" '' ${2:-$Gray}
+  mio_message_unsafe "  $1" ${2:-$Gray}
 }
 
 #########
@@ -155,26 +155,21 @@ io_message_unsafe()
   printf "%b\n" "$message" 1>&2
 }
 
-mio_info()    { mio_message "$1" "$2"; }
-mio_success() { mio_message "$1" "$2" ${Green}; }
-mio_warning() { mio_message "$1" "$2" ${Brown}; }
-mio_error()   { mio_message "$1" "$2" ${Red}; }
+mio_info()    { mio_message "$1"; }
+mio_success() { mio_message "$1" ${Green}; }
+mio_warning() { mio_message "$1" ${Brown}; }
+mio_error()   { mio_message "$1" ${Red}; }
 mio_message() { io_lock mio_message_unsafe "$@"; }
 
-mio_info_unsafe()    { mio_message_unsafe "$1" "$2"; }
-mio_success_unsafe() { mio_message_unsafe "$1" "$2" ${Green}; }
-mio_warning_unsafe() { mio_message_unsafe "$1" "$2" ${Brown}; }
-mio_error_unsafe()   { mio_message_unsafe "$1" "$2" ${Red}; }
+mio_info_unsafe()    { mio_message_unsafe "$1"; }
+mio_success_unsafe() { mio_message_unsafe "$1" ${Green}; }
+mio_warning_unsafe() { mio_message_unsafe "$1" ${Brown}; }
+mio_error_unsafe()   { mio_message_unsafe "$1" ${Red}; }
 mio_message_unsafe()
 {
-  local message=$1 alias=$2 color=${3:-$Cyan} tracePrefix=$moduleTracePrefix
+  local message=$1 color=${2:-$Cyan} tracePrefix=$moduleTracePrefix
   [[ -n $moduleRoot && $moduleRoot == $bundleRoot ]] && tracePrefix=$bundleTracePrefix
-  if [[ -z $alias ]]; then
-    alias=$prodAlias
-  else
-    [[ $alias != $prodAlias ]] && io_create_alias_color "$alias"
-  fi
-  [[ -n $alias ]] && message="$message ${color}(${AC}$alias${color})"
+  [[ -n $prodAlias ]] && message="$message ${color}(${AC}$prodAlias${color})"
   io_message_unsafe "$message" "$tracePrefix" "$color"
 }
 # create alias color
@@ -575,7 +570,7 @@ io_eval()
   ( eval "$1" ) | \
   while read -r line; do
     $selector "$line" "$color"
-    mio_message "  $line" '' "$color"
+    mio_message "  $line" "$color"
   done
   return ${PIPESTATUS[0]}
 }
@@ -586,7 +581,7 @@ io_locked_eval()
   ( eval "$1" ) | \
   while read -r line; do
     $selector "$line" "$color"
-    mio_message_unsafe "  $line" '' "$color"
+    mio_message_unsafe "  $line" "$color"
   done
   io_lock_exit
   return ${PIPESTATUS[0]}
@@ -601,7 +596,7 @@ io_buffered_eval()
   io_lock_enter
   for line in ${lines[@]}; do
     $selector "$line" "$color"
-    mio_message_unsafe "  $line" '' "$color"
+    mio_message_unsafe "  $line" "$color"
   done
   io_lock_exit
   return $ec

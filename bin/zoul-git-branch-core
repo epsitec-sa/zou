@@ -331,7 +331,7 @@ branch_ensure_local_vbranch()
      (git branch "$vbranch" "$rvbranch" 2>/dev/null) | \
      while read -r line; do
        [[ -z $line ]] && continue
-       mio_message "  $line" '' ${DarkGray}
+       mio_message "  $line" ${DarkGray}
      done;;
   *) git branch "$vbranch" "$vtag";;
   esac
@@ -361,11 +361,10 @@ branch_ref_type()
 branch_checkout()
 {
   # io_trace "branch_checkout ${*@Q}"
-  local ref=$1 forceCheckout=$2 alias=$3 refType isCurrent
+  local ref=$1 forceCheckout=$2 refType isCurrent output ec=0
   local ref0=$(git rev-parse --abbrev-ref HEAD)
   [[ $forceCheckout != true && $ref != $ref0 ]] && forceCheckout=true
   # io_trace "branch_checkout 0 -- $(print_vars ref0 ref forceCheckout alias)"
-  [[ $alias == 'HEAD' ]] && alias=''
   branch_ref_type $ref; refType=$?
   case $refType in
     0) branch_is_current $ref; isCurrent=$?;; # local branch
@@ -390,59 +389,62 @@ branch_checkout()
     # io_trace "branch_checkout 2 -- $(print_vars ref forceCheckout alias refType isCurrent symType symRef)"
 
     # checkout
-    local line color info breakLoop indent ioAlias ec=0
-    info=$(git checkout "$ref" 2>&1 >/dev/null); ec=$?
-
-    # io_trace "$info\n----"
+    output=$(git checkout "$ref" 2>&1 >/dev/null); ec=$?
 
     if [[ $forceCheckout == true || ($ec -eq 0 && $isCurrent -ne 0) ]]; then
       # io_trace "branch_raise_branch_changed_event $ref"
       branch_raise_branch_changed_event "$ref"
     fi
     
-    io_lock_enter
-    while read -r line; do
-      # [[ -z $line ]] && continue
-      if [[ $line =~ ^Switched ]]; then
-        line="Switched to $symType ${VC}$symRef${Green}"
-        ioAlias=$alias
-        indent=''
-        color=${Green}
-      elif [[ $line =~ ^Note:\ checking\ out ]]; then
-        line="Switched to $symType ${VC}$symRef${Green}"
-        ioAlias=$alias
-        breakLoop=true
-        color=${Green}
-      elif [[ $line =~ ^([wW]arning:)(.*) ]]; then
-        line="${Brown}${BASH_REMATCH[1]}${NC}${DarkGray}${BASH_REMATCH[2]}"
-        indent='  '
-        color=${DarkGray}
-      elif [[ -z $color ]]; then
-        if [[ $line =~ ^Already ]]; then
-          line="Already on ${VC}$symRef"
-          ioAlias=$alias
-          color=${LightBlue}
-        elif [[ $line =~ ^HEAD\ is\ now\ at\ ([0-9a-f]+) && $isCurrent -eq 0 ]]; then
-          line="Already at ${VC}$symRef"
-          color=${LightBlue}
-          [[ -z $alias ]] && alias=$ref
-        elif [[ $line =~ ^error ]]; then
-          color=${Red}
-        elif [[ $line =~ ^Previous\ HEAD ]]; then
-          indent='  '
-          color=${DarkGray}
-        else
-          indent='  '
-          color=${DarkGray}
-        fi
-      fi
-      mio_message_unsafe "$indent$line" "$ioAlias" "$color"
-      ioAlias=''
-      [[ $breakLoop == true ]] && break
-    done <<< "$info"
-    io_lock_exit
+    _branch_checkout_format_output "$output"
     return $ec
   fi
+}
+_branch_checkout_format_output()
+{
+  local output=$1 alias=$prodAlias line indent color breakLoop
+  local prodAlias
+  io_lock_enter
+  while read -r line; do
+    # [[ -z $line ]] && continue
+    if [[ $line =~ ^Switched ]]; then
+      line="Switched to $symType ${VC}$symRef${Green}"
+      prodAlias=$alias
+      indent=''
+      color=${Green}
+    elif [[ $line =~ ^Note:\ checking\ out ]]; then
+      line="Switched to $symType ${VC}$symRef${Green}"
+      prodAlias=$alias
+      breakLoop=true
+      color=${Green}
+    elif [[ $line =~ ^([wW]arning:)(.*) ]]; then
+      line="${Brown}${BASH_REMATCH[1]}${NC}${DarkGray}${BASH_REMATCH[2]}"
+      indent='  '
+      color=${DarkGray}
+    elif [[ -z $color ]]; then
+      if [[ $line =~ ^Already ]]; then
+        line="Already on ${VC}$symRef"
+        prodAlias=$alias
+        color=${LightBlue}
+      elif [[ $line =~ ^HEAD\ is\ now\ at\ ([0-9a-f]+) && $isCurrent -eq 0 ]]; then
+        line="Already at ${VC}$symRef"
+        color=${LightBlue}
+        [[ -z $alias ]] && alias=$ref
+      elif [[ $line =~ ^error ]]; then
+        color=${Red}
+      elif [[ $line =~ ^Previous\ HEAD ]]; then
+        indent='  '
+        color=${DarkGray}
+      else
+        indent='  '
+        color=${DarkGray}
+      fi
+    fi
+    mio_message_unsafe "$indent$line" "$color"
+    prodAlias=''
+    [[ $breakLoop == true ]] && break
+  done <<< "$output"
+  io_lock_exit
 }
 branch_ensure_remote()
 {
