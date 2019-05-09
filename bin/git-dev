@@ -1,0 +1,177 @@
+#!/bin/bash
+
+[[ -z $ZOUL_GIT_MODULE ]]        && . zoul-git-module
+[[ -z $ZOUL_GIT_CONFIG ]]        && . zoul-git-config
+[[ -z $ZOUL_GIT_COSM ]]          && . zoul-git-cosm
+[[ -z $ZOUL_GIT_PROD ]]          && . zoul-git-prod
+[[ -z $ZOUL_GIT_BRANCH_MERGE ]]  && . zoul-git-branch-merge
+[[ -z $ZOUL_GIT_BRANCH_SELECT ]] && . zoul-git-branch-select
+
+dev_parse()
+{
+  while [[ "$#" > 0 ]]; do case "$1" in
+    -h|--help) zou-help $0; exit 0;;
+    -j*)            jobsCount=${1#-j};;
+    -r|--recursive) recursive=true;;
+    enter)          devCommand=$1; dev_parse_sku $2 && shift;;
+    exit|finish)    devCommand=$1;;
+    --)             shift; break;;
+    -*) io_error "unknown option ${VC}$1${Red}\n"; io_help $0; return 1;;
+    *)  io_error "invalid argument ${VC}$1${Red}, use ${VC}--${Red} to specify modules paths\n"; io_help $0; return 1;;
+  esac; shift; done
+
+  local path
+  for path; do
+    devModulePaths+=( "$(realpath "$path")" )
+  done
+  if [[ -z $devCommand ]]; then
+    io_error "missing subcommand: use one of ${VC}(enter|exit|finish)${Red}\n"
+    io_help $0
+    exit 1
+  fi
+  # io_trace "dev_parse -- $(print_vars recursive devCommand devModulePaths[@])"
+}
+dev_parse_sku()
+{
+  # skip options
+  [[ ${1:0:1} != '-' ]] || return 1
+  branch_set_bestmatch_sku $1
+}
+dev_run()
+{
+  # parse command line
+  local jobsCount recursive sku devCommand devModulePaths=()
+  dev_parse "$@" || return $?
+
+  local devScopes=( prod_scope config_scope cosm_scope )
+  
+  case $devCommand in
+    enter)  startupMessage="Entering DEV mode, please wait...";;
+    exit)   startupMessage="Exiting DEV mode, please wait...";;
+    finish) startupMessage="Finishing DEV, please wait...";;
+  esac
+
+  module_run "${devScopes[@]}" dev_command
+}
+
+dev_enter_prolog()
+{
+  true
+}
+dev_enter_epilog()
+{
+  repo_discard_internal_ignore_list
+
+  local devBranch=$(ref_wip_to_dev "$moduleDevBranch")
+  # io_trace "dev_enter -- $(print_vars moduleBranch bundleDevBranch devBranch)"
+
+  branch_checkout "$devBranch" true
+}
+dev_exit_prolog()
+{
+  true
+}
+dev_exit_epilog()
+{
+  # [[ $moduleBranch == 'HEAD' ]] && return 0
+  repo_discard_internal_ignore_list
+
+  local devBranch=$(ref_wip_to_dev "$moduleDevBranch")
+  # io_trace "dev_exit -- $(print_vars moduleBranch bundleDevBranch devBranch)"
+
+  # checkout vtag || dev branch
+  prod_checkout_vtag $devBranch true
+}
+
+dev_finish_prolog()
+{
+  # [[ $moduleBranch == 'HEAD' ]] && return 0
+  repo_discard_internal_ignore_list
+
+  # exit WIP mode if necessary
+  local devBranch=$(ref_wip_to_dev "$moduleDevBranch")
+  # io_trace "dev_finish_prolog -- $(print_vars moduleBranch bundleDevBranch devBranch)"
+
+  # local branch lbranch vbranch vtag delta alias
+  # branch_set_prod_info "$devBranch"; devBranch=$lbranch
+  # io_trace "dev_finish_prolog -- $(print_vars moduleBranch devBranch vbranch)"
+
+  if [[ -z $prodBranchh ]]; then
+    mio_error "No vbranch found ${DarkGray}-${Cyan} create a vbranch with: ${VC}git vbranch $(ref_rename $devBranch ${DarkGray}'MAJOR.MINOR'${VC}) $devBranch"
+    return 1
+  fi
+
+  branch_checkout "$devBranch" true
+  # io_trace "dev_finish_prolog -- $(print_vars lbranch vbranch vtag htag publishStatus)"
+}
+dev_finish_epilog()
+{
+  local commitSubmodules=true showSubmoduleMessage=true
+  cosm_process_unstaged_submodules
+
+  local vtag htag delta alias status
+  branch_merge $moduleBranch $prodBranchPath \
+  prod_checkout_vtag $moduleBranch true
+}
+
+#########
+# HELPERS
+#########
+
+dev_command()
+{
+  # io_trace "dev_command -- $(print_vars devCommand devModulePaths[@])"
+  if [[ $devCommand =~ (exit|finish) ]] && dev_bundle_visited; then
+    recursive=true
+  fi
+
+  if [ ${#devModulePaths[@]} -gt 0 ]; then
+    dev_visit_modules dev_tree || return $?
+  else
+    dev_tree || return $?
+  fi
+
+  # always visit bundle for enter command
+  if [[ $devCommand =~ enter ]] && ! dev_bundle_visited; then
+    recursive=''
+    dev_visit_bundle dev_tree
+  fi
+}
+dev_tree()
+{
+  # io_trace "dev_tree -- $(print_vars devCommand devModulePaths[@])"
+  dev_prolog || return $?
+  dev_visit_tree || return $?
+  dev_epilog
+}
+dev_prolog()
+{
+  # io_trace "dev_prolog -- $(print_vars devCommand devModulePaths[@])"
+  dev_${devCommand}_prolog
+}
+dev_epilog()
+{
+  # io_trace "dev_epilog -- $(print_vars devCommand devModulePaths[@])"
+  dev_${devCommand}_epilog
+}
+dev_visit_tree()
+{
+  [[ $recursive == true ]] || return 0
+  module_visit_submodules_async 'configSelectInclude[@]' "${devScopes[@]}" dev_tree
+}
+dev_visit_modules()
+{
+  # io_trace "dev_visit_modules -- ${*@Q} -- $(print_vars devModulePaths[@])"
+  module_visit_submodules_async 'devModulePaths[@]' "${devScopes[@]}" "$@"
+}
+dev_visit_bundle()
+{
+  # io_trace "dev_visit_bundle -- ${*@Q}"
+  module_visit "$bundleRoot" "${devScopes[@]}" "$@"
+}
+dev_bundle_visited()
+{
+  module_is_bundle || array_contains_element "$bundleRoot" "${devModulePaths[@]}"
+}
+
+dev_run  "$@"
