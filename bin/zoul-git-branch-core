@@ -119,21 +119,21 @@ branch_sync_info()
 }
 branch_list_local_tracked()
 {
-  local l r i
+  local l r i IFS=' '
   while read l r i; do
     [[ -n $l && -n $r ]] && echo $l
   done < <(branch_sync_info)
 }
 branch_list_remote_tracked()
 {
-  local l r i
+  local l r i IFS=' '
   while read l r i; do
     [[ -n $r ]] && echo $r
   done < <(branch_sync_info)
 }
 branch_list_all_tracked()
 {
-  local l r i
+  local l r i IFS=' '
   while read l r i; do
     [[ -n $r ]] && {
       [[ -n $l ]] && echo $l
@@ -144,7 +144,7 @@ branch_list_all_tracked()
 branch_list_local_can_delete()
 {
   # list local branches that can be removed safely
-  local l r i c remote=$(git_remote)
+  local l r i c IFS=' ' remote=$(git_remote)
   while read l r i; do
     # exclude branch 'master' and current branch
     [[ -z $c ]] && c=$(wildcard_to_regex ${moduleBranch:-$(branch_current)})
