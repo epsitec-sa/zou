@@ -3,6 +3,7 @@
 [[ -z $ZOUL_GIT_MODULE ]]        && . zoul-git-module
 [[ -z $ZOUL_GIT_CONFIG ]]        && . zoul-git-config
 [[ -z $ZOUL_GIT_COSM ]]          && . zoul-git-cosm
+[[ -z $ZOUL_GIT_PROD ]]          && . zoul-git-prod
 [[ -z $ZOUL_GIT_BRANCH_MERGE ]]  && . zoul-git-branch-merge
 [[ -z $ZOUL_GIT_BRANCH_SELECT ]] && . zoul-git-branch-select
 
@@ -12,10 +13,8 @@ wip_parse()
     -h|--help) zou-help $0; exit 0;;
     -j*)            jobsCount=${1#-j};;
     -r|--recursive) recursive=true;;
-    --start)        wipCommand='start'; wip_parse_wip $2 && shift;;
-    --enter)        wipCommand='enter'; wip_parse_wip $2 && shift;;
-    --exit)         wipCommand='exit';;
-    --finish)       wipCommand='finish';;
+    start|enter)    wipCommand=$1; wip_parse_wip $2 && shift;;
+    exit|finish)    wipCommand=$1;;
     --)             shift; break;;
     -*) io_error "unknown option ${VC}$1${Red}\n"; io_help $0; return 1;;
     *)  io_error "invalid argument ${VC}$1${Red}, use ${VC}--${Red} to specify modules paths\n"; io_help $0; return 1;;
@@ -26,9 +25,9 @@ wip_parse()
     wipModulePaths+=( "$(realpath "$path")" )
   done
   if [[ -z $wipCommand ]]; then
-    io_error "missing command option ${VC}--(start|enter|exit|finish)${Red}\n"
+    io_error "missing subcommand: use one of ${VC}(start|enter|exit|finish)${Red}\n"
     io_help $0
-    exit 0
+    exit 1
   fi
   wipPrefix=${wipPrefix:-wip}
   wipSuffix=${wipSuffix:-work}
@@ -47,7 +46,7 @@ wip_run()
   local jobsCount recursive wipCommand wipPrefix wipSuffix wipModulePaths=()
   wip_parse "$@" || return $?
 
-  local wipScopes=( config_scope cosm_scope )
+  local wipScopes=( prod_scope config_scope cosm_scope )
   
   case $wipCommand in
     start)  startupMessage="Starting ${Brown}$wipPrefix:$wipSuffix${White}, please wait...";;
@@ -64,6 +63,7 @@ wip_start()
   local devBranch wipBranch
   wip_set_branches
   if [[ $moduleBranch != $wipBranch ]]; then
+    repo_discard_internal_ignore_list
     # create wip branch on dev branch
     [[ $moduleBranch != $devBranch ]] && branch_checkout "$devBranch"
     git branch "$wipBranch" &>/dev/null
@@ -76,39 +76,40 @@ wip_enter()
   wip_set_branches
   # checkout wip branch if it exists
   if [[ $moduleBranch != $wipBranch ]] && branch_exists "$wipBranch"; then
+    repo_discard_internal_ignore_list
     branch_checkout "$wipBranch" true
   fi
 }
 wip_exit()
 {
+  # already exited
   [[ $moduleBranch == 'HEAD' ]] && return 0
 
   # check if we are in WIP mode
-  local devBranch=$(ref_wip_to_dev $moduleBranch)
-  local wipBranch=$moduleBranch
+  local devBranch=$(ref_wip_to_dev $moduleDevBranch)
   # io_trace "wip_exit 1 -- $(print_vars moduleBranch devBranch)"
 
-  if [[ $wipBranch != $devBranch ]]; then
-    # io_trace "wip_exit 2 -- $(print_vars moduleBranch devBranch wipBranch)"
-    # back to VTAG mode
-    local lbranch vbranch vtag htag publishStatus
-    branch_set_select_auto "$devBranch" false false
+  if [[ $moduleBranch != $devBranch ]]; then
+    # io_trace "wip_exit 2 -- $(print_vars moduleBranch devBranch)"
+    repo_discard_internal_ignore_list
+    # checkout vtag || dev branch
+    prod_checkout_vtag $devBranch true
   fi
 }
 wip_finish()
 {
   [[ $moduleBranch == 'HEAD' ]] && return 0
 
-  local devBranch=$(ref_wip_to_dev $moduleBranch)
+  local devBranch=$(ref_wip_to_dev $moduleDevBranch)
   local wipBranch=$moduleBranch
-  # io_trace "wip_finish 1 -- $(print_vars moduleBranch devBranch wipBranch)"
+  # io_trace "wip_finish 1 -- $(print_vars moduleBranch devBranch)"
   if [[ $wipBranch != $devBranch ]]; then
+    repo_discard_internal_ignore_list
     # repo_require_clean_work_tree 'Cannot finish wip' || return $?
-    # io_trace "wip_finish 2 -- $(print_vars moduleBranch devBranch wipBranch)"
-    # back to VTAG mode
-    local lbranch vbranch vtag htag publishStatus
+    # io_trace "wip_finish 2 -- $(print_vars moduleBranch devBranch)"
+    # merge then checkout vtag || dev branch
     branch_merge "$wipBranch" "$devBranch" \
-    && branch_set_select_auto "$devBranch" false false \
+    && prod_checkout_vtag $devBranch true \
     && branch_delete "$wipBranch"
   fi
 }
@@ -122,20 +123,9 @@ wip_finish()
 #   wipBranch
 wip_set_branches()
 {
-  # check if we are in WIP mode
-  devBranch=$(ref_wip_to_dev "$moduleBranch")
+  devBranch=$(ref_wip_to_dev "$moduleDevBranch")
   wipBranch=$(ref_dev_to_wip "$devBranch" "$wipSuffix" "$wipPrefix")
-  # io_trace "wip_set_branches 1 -- $(print_vars bundleDevBranch moduleBranch devBranch wipBranch)"
-
-  # if we are not in WIP mode, infer dev branch from bundle dev branch
-  if [[ $moduleBranch != $wipBranch ]]; then
-    local branch lbranch
-    devBranch=$(ref_wip_to_dev "$bundleDevBranch")
-    branch_set_best_match_dev "$devBranch"  # -> branch lbranch
-    devBranch=$lbranch
-    wipBranch=$(ref_dev_to_wip "$devBranch" "$wipSuffix" "$wipPrefix")
-    # io_trace "wip_set_branches 2 -- $(print_vars bundleDevBranch moduleBranch devBranch wipBranch)"
-  fi
+  # io_trace "wip_set_branches 1 -- $(print_vars bundleBranch bundleDevBranch moduleBranch moduleDevBranch devBranch wipBranch)"
 }
 
 ####################
@@ -150,9 +140,9 @@ wip_command()
   fi
 
   if [ ${#wipModulePaths[@]} -gt 0 ]; then
-    wip_visit_modules wip_tree
+    wip_visit_modules wip_tree || return $?
   else
-    wip_tree
+    wip_tree || return $?
   fi
 
   if [[ $wipCommand =~ (start|enter) ]] && ! wip_bundle_visited; then
@@ -162,8 +152,6 @@ wip_command()
 wip_tree()
 {
   # io_trace "wip_tree -- $(print_vars wipCommand wipPrefix wipSuffix wipModulePaths[@])"
-  repo_discard_internal_ignore_list
-
   wip_visit_tree || return $?
   wip_node
 }

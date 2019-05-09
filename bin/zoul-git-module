@@ -69,6 +69,10 @@ module_visit_submodules_async_fast()
 module_has_submodules() { [ ${#moduleSubmodulePaths[@]} -gt 0 ]; }
 module_is_bundle()      { [[ -n "$moduleRoot" && "$moduleRoot" == "$bundleRoot" ]]; }
 
+########
+# SCOPES
+########
+
 # run a function in the startup module root folder with startup and bundle scopes defined
 _module_scope_startup()
 {
@@ -104,47 +108,8 @@ _module_scope_startup()
 
   _module_register_bundle
 
-  # io_trace "_module_scope_startup -- $(print_vars bundleId bundleBranch bundleDevBranch)"
-  # io_trace "_module_scope_startup -- $(print_vars principalModuleId bundleUrl bundleUrlName)"
-  # io_trace "_module_scope_startup -- $(print_vars startupDir startupRoot bundleRoot)"
-
   # execute next russian doll
   $1 "${@:2}"
-}
-_module_startup_message()
-{
-  if [[ -n $startupMessage ]]; then
-    io_message "$startupMessage" "$bundleTracePrefix" ${White}
-  fi
-}
-_module_register_bundle()
-{
-  [[ $doNotRegisterBundle == true ]] && return 0
-  if [[ $startupRoot == $bundleRoot ]]; then
-    bundle_register "$bundleUrl" "$bundleRoot"
-    # io_trace "_module_register_bundle ${*@Q} -- $(print_vars bundleUrl bundleRoot)"
-  fi
-}
-_module_set_bundle_dev_branch()
-{
-  if [[ $bundleBranch == 'HEAD' ]]; then
-    # we are in detached HEAD
-    # infer dev branch from vtag name
-    local ltag stag
-    ltag=$(git describe --tags --match '*v[0-9]*' | head -n1)
-    stag=${ltag%-*-g*}
-    if [[ $stag =~ (.*/)?v[0-9]+\.[0-9]+ ]]; then
-      bundleDevBranch="${BASH_REMATCH[1]}dev"
-    else
-      bundleDevBranch='master'
-    fi
-  elif [[ $bundleBranch =~ ^(.*/)?[0-9]+\.[0-9]+ ]]; then
-    # infer dev branch from prod branch
-    bundleDevBranch="${BASH_REMATCH[1]}dev"
-  else
-    bundleDevBranch=$bundleBranch
-  fi
-  # io_trace "_module_set_bundle_dev_branch -- $(print_vars vtag bundleDevBranch)"
 }
 # run a function in the module root folder with module scope defined
 _module_scope()
@@ -159,6 +124,7 @@ _module_scope()
     moduleConfigFile="$PWD/.zou-flow" \
     moduleSubmodulePaths=( $(repo_list_submodule_paths $PWD) ) \
     modulePath moduleBundlePath \
+    moduleDevBranch moduleDevBranchPath \
     moduleTracePrefix \
     moduleScopeInitialized=true
   
@@ -178,11 +144,97 @@ _module_scope()
     mio_message "Entering '$startupRelativeDir'" '' ${Gray}
   fi
 
-  # io_trace "_module_scope -- $(print_vars moduleId modulePath moduleBundlePath)"
+  _module_set_module_dev_branch
+
+  # io_lock_enter
+  # io_trace_unsafe "_module_scope -- $(print_vars bundleId bundleBranch bundleDevBranch)"
+  # io_trace_unsafe "_module_scope -- $(print_vars principalModuleId bundleUrl bundleUrlName)"
+  # io_trace_unsafe "_module_scope -- $(print_vars startupDir startupRoot bundleRoot)"
+  # io_trace_unsafe "_module_scope -- $(print_vars moduleId modulePath moduleBundlePath)"
+  # io_trace_unsafe "_module_scope -- $(print_vars moduleBranch moduleDevBranch moduleDevBranchPath)"
+  # io_trace_unsafe "_module_scope -- $(print_vars moduleSubmodulePaths[@])"
+  # io_lock_exit
 
   # execute next russian doll
   $1 "${@:2}"
+
 }
+_module_reset_scope()
+{
+  [[ $moduleScopeInitialized == true ]] || return 0
+
+  moduleSubmodulePaths=( $(repo_list_submodule_paths $PWD) )
+  
+  if [[ "$PWD" == "$bundleRoot" ]]; then
+    bundleBranch=$1
+    _module_set_bundle_trace_prefix
+    _module_set_bundle_dev_branch
+    _module_set_principal_module_id
+  fi
+
+  moduleBranch=$1
+  _module_set_module_dev_branch
+  _module_set_trace_prefix
+  
+  # io_lock_enter
+  # io_trace_unsafe "_module_reset_scope -- $(print_vars bundleId bundleBranch bundleDevBranch)"
+  # io_trace_unsafe "_module_reset_scope -- $(print_vars moduleBranch moduleDevBranch moduleDevBranchPath)"
+  # io_trace_unsafe "_module_reset_scope -- $(print_vars moduleSubmodulePaths[@])"
+  # io_lock_exit
+}
+
+##############
+# DEV BRANCHES
+##############
+
+_module_set_bundle_dev_branch()
+{
+  if [[ $bundleBranch == 'HEAD' ]]; then
+    # we are in detached HEAD
+    # infer dev branch from vtag name
+    local ltag stag folder
+    ltag=$(git describe --tags --match '*v[0-9]*' | head -n1)
+    stag=${ltag%-*-g*}
+    if [[ $stag =~ (.*/)?v[0-9]+\.[0-9]+ ]]; then
+      folder=${BASH_REMATCH[1]}
+      [[ -z $folder ]] && bundleDevBranch='master' || bundleDevBranch="${folder}dev"
+    else
+      bundleDevBranch='master'
+    fi
+  elif [[ $bundleBranch =~ ^(.*/)?v?[0-9]+\.[0-9]+ ]]; then
+    # infer dev branch from vtag/prod branch
+    local folder=${BASH_REMATCH[1]}
+    [[ -z $folder ]] && bundleDevBranch='master' || bundleDevBranch="${folder}dev"
+  else
+    bundleDevBranch=$bundleBranch
+  fi
+  # io_trace "_module_set_bundle_dev_branch -- $(print_vars bundleId bundleBranch bundleDevBranch)"
+}
+_module_set_module_dev_branch()
+{
+  if module_is_bundle; then
+    local branch lbranch bref
+    branch_set_realize "$bundleDevBranch"
+    moduleDevBranchPath=$branch
+    moduleDevBranch=$lbranch
+  # we are in detached HEAD or on vtag/prod branch 
+  elif [[ $moduleBranch == 'HEAD' || $moduleBranch =~ ^(.*/)?v?[0-9]+\.[0-9]+ ]]; then
+    # infer dev branch from bundle
+    local branch lbranch
+    branch_set_best_match_dev "$bundleDevBranch"
+    moduleDevBranchPath=$branch
+    moduleDevBranch=$lbranch
+  else
+    moduleDevBranchPath=$moduleBranch
+    moduleDevBranch=$moduleBranch
+  fi
+  # io_trace "_module_set_module_dev_branch -- $(print_vars moduleId bundleDevBranch moduleBranch moduleDevBranch moduleDevBranchPath)"
+}
+
+##########
+# VISITORS
+##########
+
 # usage:
 #   _module_submodule_visitor path next ...
 # in:
@@ -203,24 +255,24 @@ _module_enter()
     return 1
   }
 }
-_module_reset_scope()
+
+#########
+# STARTUP
+#########
+
+_module_startup_message()
 {
-  [[ $moduleScopeInitialized == true ]] || return 0
-
-  moduleSubmodulePaths=( $(repo_list_submodule_paths $PWD) )
-  
-  if [[ "$PWD" == "$bundleRoot" ]]; then
-    bundleBranch=$1
-    _module_set_bundle_trace_prefix
-    _module_set_bundle_dev_branch
-    _module_set_principal_module_id
+  if [[ -n $startupMessage ]]; then
+    io_message "$startupMessage" "$bundleTracePrefix" ${White}
   fi
-
-  moduleBranch=$1
-  _module_set_trace_prefix
-  
-  # io_trace "_module_reset_scope ${*@Q} -> $(print_vars moduleBranch principalModuleId)"
-  # io_trace "_module_reset_scope ${*@Q} -> $(print_vars moduleBranchPrefix)"
+}
+_module_register_bundle()
+{
+  [[ $doNotRegisterBundle == true ]] && return 0
+  if [[ $startupRoot == $bundleRoot ]]; then
+    bundle_register "$bundleUrl" "$bundleRoot"
+    # io_trace "_module_register_bundle ${*@Q} -- $(print_vars bundleUrl bundleRoot)"
+  fi
 }
 
 ##################
@@ -238,7 +290,7 @@ _module_set_principal_module_id()
   fi
   principalModuleId=${bundleUrlName%-dev}
   [ -d "$bundleRoot/$principalModuleId" ] && return 0
-  unset principalModuleId
+  principalModuleId=''
   return 1
 }
 

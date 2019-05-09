@@ -3,6 +3,7 @@
 [[ -z $ZOUL_GIT_MODULE ]]        && . zoul-git-module
 [[ -z $ZOUL_GIT_CONFIG ]]        && . zoul-git-config
 [[ -z $ZOUL_GIT_COSM ]]          && . zoul-git-cosm
+[[ -z $ZOUL_GIT_PROD ]]          && . zoul-git-prod
 [[ -z $ZOUL_GIT_BRANCH_SELECT ]] && . zoul-git-branch-select
 
 select_parse()
@@ -25,7 +26,7 @@ select_run()
   local jobsCount noSkuFilter selectDev commitSubmodules sku selectModulePaths=()
   select_parse "$@" || return $?
 
-  local selectScopes=( config_scope cosm_scope )
+  local selectScopes=( prod_scope config_scope cosm_scope )
   
   startupMessage="Selecting, please wait..."
 

@@ -20,6 +20,7 @@
 [[ -z $ZOUL_GIT_MODULE ]]         && . zoul-git-module
 [[ -z $ZOUL_GIT_CONFIG ]]         && . zoul-git-config
 [[ -z $ZOUL_GIT_COSM ]]           && . zoul-git-cosm
+[[ -z $ZOUL_GIT_PROD ]]           && . zoul-git-prod
 [[ -z $ZOUL_GIT_VTABLE ]]         && . zoul-git-vtable
 [[ -z $ZOUL_GIT_BRANCH_CORE ]]    && . zoul-git-branch-core
 [[ -z $ZOUL_GIT_CONFIG_SKU ]]     && . zoul-git-config-sku
@@ -53,7 +54,7 @@ publish_run()
 
   local commitSubmodules=true \
         publishSelectExcludeBundlePaths=() \
-        publishScopes=( config_scope cosm_scope )
+        publishScopes=( prod_scope config_scope cosm_scope )
 
   [[ $dryRun == true ]] \
   && startupMessage="${DarkGray}Publishing, please wait..." \
@@ -71,20 +72,19 @@ publish_main()
 
   local pstatusParentGate pstatusLookupPath pstatusParentLookupPath principalPublishStatus
 
-  publish_node
+  publish_tree
 }
 
 ##############
-# Publish node
+# Publish tree
 ##############
 
-publish_node()
+publish_tree()
 {
-
   publish_require_clean_repo || return $?
   publish_process_excluded && return 0
 
-  local lbranch vbranch vtag htag delta alias status nextHead publishStatus vnext
+  local branch lbranch vbranch vtag htag delta alias status nextHead publishStatus vnext
 
   publish_prolog || return $?
   [[ $recursive == true ]] && { publish_submodules || return $?; }
@@ -99,7 +99,7 @@ publish_process_excluded()
 {
   # feed exclude list with moduleIds (modulePaths by default)
   publishSelectExcludeBundlePaths+=( "${configSelectExcludeBundlePaths[@]}" )
-  if array_contains_element "$moduleId" "${publishSelectExcludeBundlePaths[@]}"; then
+  if array_contains_element "$moduleBundlePath" "${publishSelectExcludeBundlePaths[@]}"; then
     publish_update_vtable
     return 0
   fi
@@ -143,7 +143,7 @@ publish_prolog()
 publish_submodules()
 {
   local publishSubmodules=( $(array_sort configSkuInclude[@]) )
-  module_visit_submodules_async 'publishSubmodules[@]' "${publishScopes[@]}" 'publish_node'
+  module_visit_submodules_async 'publishSubmodules[@]' "${publishScopes[@]}" 'publish_tree'
 }
 
 ################
