@@ -15,7 +15,9 @@ ZOUL_GIT_BRANCH_CORE=true
 #   showSwitchingMessage
 
 branchChangedEvent=()
+branchDeletedEvent=()
 branch_raise_branch_changed_event() { local handler; for handler in "${branchChangedEvent[@]}"; do $handler "$@"; done; }
+branch_raise_branch_deleted_event() { local handler; for handler in "${branchDeletedEvent[@]}"; do $handler "$@"; done; }
 # in:
 #  lbranch=$1 -- local branch name
 # std-out:
@@ -535,17 +537,20 @@ branch_delete()
       git push --delete --force "$remote" "$branch" >/dev/null 2>&1
       # delete local branch
       git branch -D "$branch" >/dev/null 2>&1
+      branch_raise_branch_deleted_event "$branch" "$rbranch"
     else
       # remote branch does not exist : delete local only
       # io_trace "branch_delete (DELETE LOCAL ONLY) -- $(print_vars branch branch2)"
       git branch -D "$branch" >/dev/null 2>&1
-    fi 
+      branch_raise_branch_deleted_event "$branch"
+    fi
   elif [ $ec -eq 1 ]; then
     # local branch does not exist : delete remote only
     remote=${branch%%/*}
     # io_trace "branch_delete (DELETE REMOTE ONLY) -- $(print_vars branch branch2 remote)"
     # delete remote branch
     git push --delete --force "$remote" "${branch#*/}" >/dev/null 2>&1
+    branch_raise_branch_deleted_event "$branch"
   else
     mio_error "branch_delete: branch '$branch' does not exist"
     return 1
