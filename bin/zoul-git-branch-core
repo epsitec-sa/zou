@@ -15,8 +15,10 @@ ZOUL_GIT_BRANCH_CORE=true
 #   showSwitchingMessage
 
 branchChangedEvent=()
+branchCreatedEvent=()
 branchDeletedEvent=()
 branch_raise_branch_changed_event() { local handler; for handler in "${branchChangedEvent[@]}"; do $handler "$@"; done; }
+branch_raise_branch_created_event() { local handler; for handler in "${branchCreatedEvent[@]}"; do $handler "$@"; done; }
 branch_raise_branch_deleted_event() { local handler; for handler in "${branchDeletedEvent[@]}"; do $handler "$@"; done; }
 # in:
 #  lbranch=$1 -- local branch name
@@ -556,6 +558,17 @@ branch_delete()
     return 1
   fi
   mio_success "Deleted branch ${VC}$branch"
+}
+branch_create()
+{
+  local branch=$1 commit=${2:-HEAD}
+  if ref_exists $branch; then
+    mio_warning "Branch '$branch' already exists"
+  else
+    git branch "$branch" "$commit"
+    mio_success "Created branch ${VC}$branch"
+    branch_raise_branch_created_event "$branch"
+  fi
 }
 # in:
 #   $1:branchOrTag
