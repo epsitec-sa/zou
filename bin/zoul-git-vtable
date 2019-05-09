@@ -36,7 +36,7 @@ vtable_row()
   # io_trace "vtable_row 1 -- $(print_vars branch lbranch)"
   vtag_set_describe "$branch"
   # io_trace "vtable_row 2 -- $(print_vars branch lbranch vtag delta alias)"
-  [ $delta -eq 0 ] && unset delta
+  [ $delta -eq 0 ] && delta=''
 
   local IFS=' '
   local tags=$(git tag -l --sort=-v:refname)
@@ -54,9 +54,9 @@ vtable_row()
   local md_vtag=$vtag
   [[ $vtag =~ ^.*-@$ || -z $vtag || -n $delta ]] && md_moduleId="##$moduleId##"
   [[ $vtag =~ ^.*-@$ ]] && md_vtag="##$vtag##"
-  [[ $vtag == $vminor ]] && unset vminor || vminor="#$vminor#"
-  [[ $vtag == $vmajor ]] && unset vmajor || vmajor="#$vmajor#"
-  [[ $vtag == $vnext ]] && unset vnext || vnext="#$vnext#"
+  [[ $vtag == $vminor ]] && vminor='' || vminor="#$vminor#"
+  [[ $vtag == $vmajor ]] && vmajor='' || vmajor="#$vmajor#"
+  [[ $vtag == $vnext ]] && vnext='' || vnext="#$vnext#"
   # io_trace "vtable_row -- $(print_vars moduleId head hash vtag delta folder major minor vmajor vminor vnext)"
   local module_content=$(print_row "$md_moduleId" "$head" "$hash" "$delta" "$md_vtag" "$vminor" "$vmajor" "$vnext")
   echo "$module_content"

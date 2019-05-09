@@ -9,7 +9,7 @@ vstatus_parse()
 {
   while [[ "$#" > 0 ]]; do case "$1" in
     -h|--help) zou-help $0; exit 0;;
-    .)              unset recursive;;
+    .)              recursive='';;
     --alpha)        prerelPrefix='alpha';;
     --beta)         prerelPrefix='beta';;
     --rc)           prerelPrefix='rc';;
@@ -28,7 +28,7 @@ vstatus_run()
 }
 vstatus_main()
 {
-  [ ${#moduleSubmodulePaths[@]} -eq 0 ] && unset recursive
+  [ ${#moduleSubmodulePaths[@]} -eq 0 ] && recursive=''
 
   if [[ $recursive == true ]]; then
     . git-for "${forOpts[@]}" -- vstatus_node "$@"

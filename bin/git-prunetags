@@ -11,7 +11,7 @@ ptags_parse()
     -h|--help)    zou-help $0; exit 0;;
     -v|--verbose) verbose=true;;
     -g|--global)  global=true;;
-    .)            unset recursive;;
+    .)            recursive='';;
     -*)           forOpts+=($1);;
   esac; shift; done
 }
@@ -23,7 +23,7 @@ ptags_run()
   startupMessage="Pruning tags, please wait..."
 
   if [[ $global == true ]]; then
-    unset startupMessage
+    startupMessage=''
     ptags_prune_registered_bundles_tags
   elif [[ $recursive = true ]]; then
     . git-for -a "${forOpts[@]}" -- 'ptags_node'

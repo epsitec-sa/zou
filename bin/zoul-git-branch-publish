@@ -73,7 +73,7 @@ branch_set_vnext()
   if [[ $prerelPrefix == 'reuse' ]]; then
     # reuse previous vtag if it's not a vnode
     if vtag_is_vnode $vtag; then
-      unset prerelPrefix
+      prerelPrefix=''
       _branch_set_vnext_core
     else
       vnext=$vtag
@@ -112,7 +112,7 @@ _branch_set_vnext_core()
 #  vnext
 branch_set_publish()
 {
-  unset vnext
+  vnext=''
 
   local lbranch=$1 vbranch=$2 vtag=$3 htag=$4 prerelPrefix=$5 noIncrement=$6
   

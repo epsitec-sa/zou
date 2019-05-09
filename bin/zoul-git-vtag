@@ -50,10 +50,10 @@ vtag_is_vnode()  { [[ $1 =~ ^(.*/)?v([0-9]+)\.([0-9]+)(-@) ]]; }
 #   $2 -- allowDuplicates (default to true in bundle, false in submodule)
 #         true  : limit to vtags with same vbranch version and folder
 #         false : take in account all vtags with same vbranch version
-#         unset : true in bundle, false in submodule
+#         empty : true in bundle, false in submodule
 #   $3 -- vnodes
 #         true  : include vnodes
-#         unset : skip vnodes
+#         empty : skip vnodes
 # stdout:
 #   htag -- highest version tag
 # exemple:
@@ -119,8 +119,6 @@ vtag_highest()
 #   alias   -- condensed vtag info - (> v1.0.0 (8)) means branch is ahead of v1.0.0 by 8 commits
 vtag_set_describe()
 {
-  unset vbranch vtag alias; delta=0
-
   local branch=$1 lbranch=${2:-$1} skipVNodes=$3 \
         ltag stag match \
         fallback=( $(ref_tag_fallback $lbranch 'v[0-9]*') )
@@ -141,7 +139,7 @@ vtag_set_describe()
       fi
     fi
   done
-  unset vbranch vtag alias; delta=0
+  vbranch=''; vtag=''; alias=''; delta=0
   return 1
 }
 _vtag_describe()
@@ -281,9 +279,9 @@ vtag_increment()
 #   vnext
 vtag_set_increment()
 {
-  unset vnext
+  vnext=''
   local vtag=$1 prerelPrefix=$2 prerelDefault rtm
-  [[ $prerelPrefix == 'rtm' ]] && { unset prerelPrefix; rtm=true; }
+  [[ $prerelPrefix == 'rtm' ]] && { prerelPrefix=''; rtm=true; }
   [[ -n $prerelPrefix ]] && prerelDefault=-${prerelPrefix}1
   #  <major>.<minor>-@
   #  <major>.<minor>.<patch>[-<pre-release>][+<meta>]-<delta>-g<sha1>

@@ -49,7 +49,7 @@ branch_set_upstream()
       return 0
     fi
   done
-  unset rbranch
+  rbranch=''
   return 1
 }
 branch_exists()
@@ -260,7 +260,7 @@ branch_realize()
 #   2 -- branch does not exists
 branch_set_realize()
 {
-  unset branch lbranch bref
+  branch=''; lbranch=''; bref=''
   local ref=${1:-HEAD}
   if [[ $ref == 'HEAD' ]]; then
     ref=$(branch_list_all_at 'HEAD' | cut -f 1 -d ' ')
@@ -399,7 +399,7 @@ branch_checkout()
       if [[ $line =~ ^Switched ]]; then
         line="Switched to $symType ${VC}$symRef${Green}"
         ioAlias=$alias
-        unset indent
+        indent=''
         color=${Green}
       elif [[ $line =~ ^Note:\ checking\ out ]]; then
         line="Switched to $symType ${VC}$symRef${Green}"
@@ -429,7 +429,7 @@ branch_checkout()
         fi
       fi
       mio_message_unsafe "$indent$line" "$ioAlias" "$color"
-      unset ioAlias
+      ioAlias=''
       [[ $breakLoop == true ]] && break
     done <<< "$info"
     io_lock_exit

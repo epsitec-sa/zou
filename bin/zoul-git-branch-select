@@ -32,7 +32,7 @@ branch_ensure_attached()
 #   1 -- not found
 branch_set_best_match_dev()
 {
-  unset branch
+  branch=''; lbranch=''
   local sku=${1:-$bundleDevBranch} patterns branches remoteIndex pattern b i
   patterns=( $(ref_dev_fallback $sku) )
   branches=( $(branch_list_local) )
@@ -51,7 +51,6 @@ branch_set_best_match_dev()
       }
     done
   done
-  unset lbranch
   return 1
 }
 # Select branch or vtag and return publish status
@@ -80,8 +79,6 @@ branch_set_best_match_dev()
 #                    ffPublish
 branch_set_select_auto()
 {
-  unset lbranch vbranch vtag htag publishStatus
-
   local sku=$1 forceDev=$2 forceCheckout=$3 allowDuplicateTags=$4 \
         nextHead delta alias status ec=0
 
@@ -127,8 +124,6 @@ branch_set_select_auto()
 #                    ffPublish
 branch_set_sku_info()
 {
-  unset branch lbranch vbranch vtag htag delta alias status
-
   local sku=${1:-$bundleDevBranch} forceDev=${2:-false} allowDuplicateTags=$3 \
         skipVNodes branch
 
@@ -168,7 +163,6 @@ branch_set_sku_info()
 #                vtagMissing -- no vtag found (branch was never published)
 branch_set_select_info()
 {
-  unset branch lbranch vbranch vtag htag delta alias status
   local sku=${1:-$bundleDevBranch} skipVNodes=${2:-auto} allowDuplicateTags=$3
   # io_trace "branch_set_select_info ${*@Q}"
   branch_set_best_match_dev "$sku"                     # -> branch lbranch
@@ -194,14 +188,13 @@ branch_set_select_info()
     vtag_is_vnode $vtag && status='vnode' || status='vtag'
     # io_trace "branch_set_select_info 3 -- $(print_vars sku skipVNodes allowDuplicateTags branch lbranch vbranch vtag htag delta alias status)"
   else
+    htag=''; status='vtagMissing'
     # compute alias without skipping vnodes
     if [[ $skipVNodes == true ]] && vtag_set_describe "$branch" "$lbranch" false; then
       [ $delta -ne 0 ] && alias="$branch $alias" # (master > v2.0.0 (8))
     else
       alias='<>'
     fi
-    unset vbranch vtag htag delta
-    status='vtagMissing'
     # io_trace "branch_set_select_info 4 -- $(print_vars sku skipVNodes allowDuplicateTags branch lbranch vbranch vtag htag delta alias status)"
   fi
 }
@@ -289,7 +282,7 @@ _branch_set_bestmatch_sku_core()
   if branch_exists "$skuSpec"; then
     sku=$skuSpec
   else
-    local candidates=() resku="^(.*/)?$(wildcard_to_regex "$skuSpec")(/.*)?$"
+    local branch candidates=() resku="^(.*/)?$(wildcard_to_regex "$skuSpec")(/.*)?$"
     for branch in $(branch_list_all_flatten); do
       [[ $branch =~ /[0-9]+\.[0-9]+.*$ ]] && continue   # skip prod branches
       [[ $branch =~ $resku ]] && candidates+=( "$branch" )
