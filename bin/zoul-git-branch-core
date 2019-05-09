@@ -361,9 +361,11 @@ branch_ref_type()
 branch_checkout()
 {
   # io_trace "branch_checkout ${*@Q}"
-  local ref=$1 always=$2 alias=$3 refType isCurrent
-
-  [[ $alias == 'HEAD' ]] && unset alias
+  local ref=$1 forceCheckout=$2 alias=$3 refType isCurrent
+  local ref0=$(git rev-parse --abbrev-ref HEAD)
+  [[ $forceCheckout != true && $ref != $ref0 ]] && forceCheckout=true
+  # io_trace "branch_checkout 0 -- $(print_vars ref0 ref forceCheckout alias)"
+  [[ $alias == 'HEAD' ]] && alias=''
   branch_ref_type $ref; refType=$?
   case $refType in
     0) branch_is_current $ref; isCurrent=$?;; # local branch
@@ -371,8 +373,8 @@ branch_checkout()
     2) isCurrent=1;; # remote branch without remote prefix
     3|4) ref_is_head $ref; isCurrent=$?;; # tag | commit
   esac
-  # io_trace "branch_checkout 1 -- $(print_vars ref always alias refType isCurrent)"
-  if [[ $isCurrent -ne 0 || $always == true ]]; then
+  # io_trace "branch_checkout 1 -- $(print_vars ref forceCheckout alias refType isCurrent)"
+  if [[ $isCurrent -ne 0 || $forceCheckout == true ]]; then
     # compute symbols
     local symType symRef
     case $refType in
@@ -385,7 +387,7 @@ branch_checkout()
     # switching message
     [[ $isCurrent -ne 0 && $showSwitchingMessage == true ]] && mio_info "Switching to $symType $symRef"
 
-    # io_trace "branch_checkout 2 -- $(print_vars ref always alias refType isCurrent symType symRef)"
+    # io_trace "branch_checkout 2 -- $(print_vars ref forceCheckout alias refType isCurrent symType symRef)"
 
     # checkout
     local line color info breakLoop indent ioAlias ec=0
@@ -393,8 +395,9 @@ branch_checkout()
 
     # io_trace "$info\n----"
 
-    if [[ $ec -eq 0 && $isCurrent -ne 0 ]]; then
-      branch_raise_branch_changed_event $ref
+    if [[ $forceCheckout == true || ($ec -eq 0 && $isCurrent -ne 0) ]]; then
+      # io_trace "branch_raise_branch_changed_event $ref"
+      branch_raise_branch_changed_event "$ref"
     fi
     
     io_lock_enter
@@ -419,16 +422,17 @@ branch_checkout()
           line="Already on ${VC}$symRef"
           ioAlias=$alias
           color=${LightBlue}
-        # elif [[ $line =~ ^HEAD\ is\ now\ at\ ([0-9a-f]+) ]]; then
-        #   line="Already at ${VC}$symRef"
-        #   color=${LightBlue}
-        #   [[ -z $alias ]] && alias=$ref
+        elif [[ $line =~ ^HEAD\ is\ now\ at\ ([0-9a-f]+) && $isCurrent -eq 0 ]]; then
+          line="Already at ${VC}$symRef"
+          color=${LightBlue}
+          [[ -z $alias ]] && alias=$ref
         elif [[ $line =~ ^error ]]; then
           color=${Red}
         elif [[ $line =~ ^Previous\ HEAD ]]; then
           indent='  '
           color=${DarkGray}
         else
+          indent='  '
           color=${DarkGray}
         fi
       fi
