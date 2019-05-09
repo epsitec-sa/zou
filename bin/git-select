@@ -35,8 +35,8 @@ select_run()
 select_main()
 {
   branch_set_bestmatch_sku $sku
-  # io_trace "select_main 1 -- $(print_vars sku bundleBranch bundleDevBranch selectModulePaths[@])"
-  if [[ $sku == $bundleBranch ]]; then
+  # io_trace "select_main 1 -- $(print_vars sku bundleHead bundleDevBranch selectModulePaths[@])"
+  if [[ $sku == $bundleHead ]]; then
     # no SKU change
     if [ ${#selectModulePaths[@]} -gt 0 ]; then
       module_visit_submodules_async 'selectModulePaths[@]' "${selectScopes[@]}" 'select_tree'
@@ -46,7 +46,7 @@ select_main()
   else
     # change SKU 
     if [ ${#selectModulePaths[@]} -gt 0 ]; then
-      mio_error "Switching SKU from '$bundleBranch' to '$sku' on specific modules is forbidden"
+      mio_error "Switching SKU from '$bundleHead' to '$sku' on specific modules is forbidden"
       exit 1
     fi
     if [[ "$moduleRoot" == "$bundleRoot" ]]; then

@@ -42,7 +42,7 @@ config_select_include()
   fi
 
   git update-index --add -- "$moduleConfigFile" &>/dev/null \
-  && git commit -m "zou-flow: enable select for submodule '$path' on branch '$moduleBranch'" -- "$moduleConfigFile" &>/dev/null
+  && git commit -m "zou-flow: enable select for submodule '$path' on branch '$moduleHead'" -- "$moduleConfigFile" &>/dev/null
 }
 config_select_include_all()
 {
@@ -51,7 +51,7 @@ config_select_include_all()
     git config --file "$moduleConfigFile" --remove-section "select" &>/dev/null
 
     git update-index --add -- "$moduleConfigFile" &>/dev/null \
-    && git commit -m "zou-flow: enable select for all submodules on branch '$moduleBranch'" -- "$moduleConfigFile" &>/dev/null
+    && git commit -m "zou-flow: enable select for all submodules on branch '$moduleHead'" -- "$moduleConfigFile" &>/dev/null
   else
     config_select_include_many $(repo_list_submodule_paths)
   fi
@@ -70,7 +70,7 @@ config_select_include_many()
   done
 
   git update-index --add -- "$moduleConfigFile" &>/dev/null && \
-  git commit -m "zou-flow: enable select for submodules '$(string_join ', ' $@)' on branch '$moduleBranch'" -- "$moduleConfigFile" &>/dev/null
+  git commit -m "zou-flow: enable select for submodules '$(string_join ', ' $@)' on branch '$moduleHead'" -- "$moduleConfigFile" &>/dev/null
 }
 config_select_exclude()
 {
@@ -86,7 +86,7 @@ config_select_exclude()
   fi
 
   git update-index --add -- "$moduleConfigFile" &>/dev/null \
-  && git commit -m "zou-flow: disable select for submodule '$path' on moduleBranch '$moduleBranch'" -- "$moduleConfigFile" &>/dev/null
+  && git commit -m "zou-flow: disable select for submodule '$path' on moduleHead '$moduleHead'" -- "$moduleConfigFile" &>/dev/null
 }
 config_select_exclude_all()
 {
@@ -95,7 +95,7 @@ config_select_exclude_all()
     git config --file "$moduleConfigFile" --remove-section "select" &>/dev/null
 
     git update-index --add -- "$moduleConfigFile" &>/dev/null \
-    && git commit -m "zou-flow: disable select for all submodules on moduleBranch '$moduleBranch'" -- "$moduleConfigFile" &>/dev/null
+    && git commit -m "zou-flow: disable select for all submodules on moduleHead '$moduleHead'" -- "$moduleConfigFile" &>/dev/null
   else
     config_select_exclude_many $(repo_list_submodule_paths)
   fi
@@ -114,7 +114,7 @@ config_select_exclude_many()
   done
 
   git update-index --add -- "$moduleConfigFile" &>/dev/null \
-  && git commit -m "zou-flow: disable select for submodules '$(string_join ', ' $@)' on moduleBranch '$moduleBranch'" -- "$moduleConfigFile" &>/dev/null
+  && git commit -m "zou-flow: disable select for submodules '$(string_join ', ' $@)' on moduleHead '$moduleHead'" -- "$moduleConfigFile" &>/dev/null
 }
 config_select_is_excluded() { ! config_select_is_included "$@"; }
 config_select_is_included()

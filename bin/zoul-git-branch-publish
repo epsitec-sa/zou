@@ -41,7 +41,7 @@ branch_publish()
   published)
     mio_message "Already published at ${VC}$vtag" '' ${LightBlue};;
   ffPublish)
-    branch_merge "$vtag" "$moduleBranch" &>/dev/null \
+    branch_merge "$vtag" "$moduleHead" &>/dev/null \
       && mio_message "Already published at ${VC}$vnext${LightBlue} (${Brown}fast-forward${LightBlue})" '' ${LightBlue} \
       || { mio_error "Fast-forward publish of branch '$lbranch' failed"; return 1; };;
   notPublished)

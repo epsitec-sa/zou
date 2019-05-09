@@ -80,7 +80,7 @@ _module_scope_startup()
 
   # setup startup context
   local startupDir=$PWD startupRoot \
-        bundleId bundleRoot bundleBranch \
+        bundleId bundleRoot bundleHead \
         bundleDevBranch \
         bundleUrl bundleUrlName \
         bundleTracePrefix \
@@ -97,7 +97,7 @@ _module_scope_startup()
 
   bundleId=$(repo_bundle_id)
   bundleRoot=$(repo_bundle_root)
-  bundleBranch=$(branch_current_root_branch)
+  bundleHead=$(branch_current_root_branch)
   
   repo_set_bundle_url_info "$bundleRoot"  # -> bundleUrl bundleUrlName
   _module_set_bundle_trace_prefix
@@ -120,7 +120,7 @@ _module_scope()
     moduleRoot="$PWD" \
     moduleParent=$(repo_module_parent) \
     moduleId=$(repo_module_id) \
-    moduleBranch=$(branch_current) \
+    moduleHead=$(branch_current) \
     moduleConfigFile="$PWD/.zou-flow" \
     moduleSubmodulePaths=( $(repo_list_submodule_paths $PWD) ) \
     modulePath moduleBundlePath \
@@ -147,11 +147,11 @@ _module_scope()
   _module_set_module_dev_branch
 
   # io_lock_enter
-  # io_trace_unsafe "_module_scope -- $(print_vars bundleId bundleBranch bundleDevBranch)"
+  # io_trace_unsafe "_module_scope -- $(print_vars bundleId bundleHead bundleDevBranch)"
   # io_trace_unsafe "_module_scope -- $(print_vars principalModuleId bundleUrl bundleUrlName)"
   # io_trace_unsafe "_module_scope -- $(print_vars startupDir startupRoot bundleRoot)"
   # io_trace_unsafe "_module_scope -- $(print_vars moduleId modulePath moduleBundlePath)"
-  # io_trace_unsafe "_module_scope -- $(print_vars moduleBranch moduleDevBranch moduleDevBranchPath)"
+  # io_trace_unsafe "_module_scope -- $(print_vars moduleHead moduleDevBranch moduleDevBranchPath)"
   # io_trace_unsafe "_module_scope -- $(print_vars moduleSubmodulePaths[@])"
   # io_lock_exit
 
@@ -166,19 +166,19 @@ _module_reset_scope()
   moduleSubmodulePaths=( $(repo_list_submodule_paths $PWD) )
   
   if [[ "$PWD" == "$bundleRoot" ]]; then
-    bundleBranch=$1
+    bundleHead=$1
     _module_set_bundle_trace_prefix
     _module_set_bundle_dev_branch
     _module_set_principal_module_id
   fi
 
-  moduleBranch=$1
+  moduleHead=$1
   _module_set_module_dev_branch
   _module_set_trace_prefix
   
   # io_lock_enter
-  # io_trace_unsafe "_module_reset_scope -- $(print_vars bundleId bundleBranch bundleDevBranch)"
-  # io_trace_unsafe "_module_reset_scope -- $(print_vars moduleBranch moduleDevBranch moduleDevBranchPath)"
+  # io_trace_unsafe "_module_reset_scope -- $(print_vars bundleId bundleHead bundleDevBranch)"
+  # io_trace_unsafe "_module_reset_scope -- $(print_vars moduleHead moduleDevBranch moduleDevBranchPath)"
   # io_trace_unsafe "_module_reset_scope -- $(print_vars moduleSubmodulePaths[@])"
   # io_lock_exit
 }
@@ -189,7 +189,7 @@ _module_reset_scope()
 
 _module_set_bundle_dev_branch()
 {
-  if [[ $bundleBranch == 'HEAD' ]]; then
+  if [[ $bundleHead == 'HEAD' ]]; then
     # we are in detached HEAD
     # infer dev branch from vtag name
     local ltag stag folder
@@ -201,14 +201,14 @@ _module_set_bundle_dev_branch()
     else
       bundleDevBranch='master'
     fi
-  elif [[ $bundleBranch =~ ^(.*/)?v?[0-9]+\.[0-9]+ ]]; then
+  elif [[ $bundleHead =~ ^(.*/)?v?[0-9]+\.[0-9]+ ]]; then
     # infer dev branch from vtag/prod branch
     local folder=${BASH_REMATCH[1]}
     [[ -z $folder ]] && bundleDevBranch='master' || bundleDevBranch="${folder}dev"
   else
-    bundleDevBranch=$bundleBranch
+    bundleDevBranch=$bundleHead
   fi
-  # io_trace "_module_set_bundle_dev_branch -- $(print_vars bundleId bundleBranch bundleDevBranch)"
+  # io_trace "_module_set_bundle_dev_branch -- $(print_vars bundleId bundleHead bundleDevBranch)"
 }
 _module_set_module_dev_branch()
 {
@@ -218,17 +218,17 @@ _module_set_module_dev_branch()
     moduleDevBranchPath=$branch
     moduleDevBranch=$lbranch
   # we are in detached HEAD or on vtag/prod branch 
-  elif [[ $moduleBranch == 'HEAD' || $moduleBranch =~ ^(.*/)?v?[0-9]+\.[0-9]+ ]]; then
+  elif [[ $moduleHead == 'HEAD' || $moduleHead =~ ^(.*/)?v?[0-9]+\.[0-9]+ ]]; then
     # infer dev branch from bundle
     local branch lbranch
     branch_set_best_match_dev "$bundleDevBranch"
     moduleDevBranchPath=$branch
     moduleDevBranch=$lbranch
   else
-    moduleDevBranchPath=$moduleBranch
-    moduleDevBranch=$moduleBranch
+    moduleDevBranchPath=$moduleHead
+    moduleDevBranch=$moduleHead
   fi
-  # io_trace "_module_set_module_dev_branch -- $(print_vars moduleId bundleDevBranch moduleBranch moduleDevBranch moduleDevBranchPath)"
+  # io_trace "_module_set_module_dev_branch -- $(print_vars moduleId bundleDevBranch moduleHead moduleDevBranch moduleDevBranchPath)"
 }
 
 ##########

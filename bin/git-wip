@@ -62,10 +62,10 @@ wip_start()
 {
   local devBranch wipBranch
   wip_set_branches
-  if [[ $moduleBranch != $wipBranch ]]; then
+  if [[ $moduleHead != $wipBranch ]]; then
     repo_discard_internal_ignore_list
     # create wip branch on dev branch
-    [[ $moduleBranch != $devBranch ]] && branch_checkout "$devBranch"
+    [[ $moduleHead != $devBranch ]] && branch_checkout "$devBranch"
     git branch "$wipBranch" &>/dev/null
   fi
   branch_checkout "$wipBranch" true
@@ -75,7 +75,7 @@ wip_enter()
   local devBranch wipBranch
   wip_set_branches
   # checkout wip branch if it exists
-  if [[ $moduleBranch != $wipBranch ]] && branch_exists "$wipBranch"; then
+  if [[ $moduleHead != $wipBranch ]] && branch_exists "$wipBranch"; then
     repo_discard_internal_ignore_list
     branch_checkout "$wipBranch" true
   fi
@@ -83,14 +83,14 @@ wip_enter()
 wip_exit()
 {
   # already exited
-  [[ $moduleBranch == 'HEAD' ]] && return 0
+  [[ $moduleHead == 'HEAD' ]] && return 0
 
   # check if we are in WIP mode
   local devBranch=$(ref_wip_to_dev $moduleDevBranch)
-  # io_trace "wip_exit 1 -- $(print_vars moduleBranch devBranch)"
+  # io_trace "wip_exit 1 -- $(print_vars moduleHead devBranch)"
 
-  if [[ $moduleBranch != $devBranch ]]; then
-    # io_trace "wip_exit 2 -- $(print_vars moduleBranch devBranch)"
+  if [[ $moduleHead != $devBranch ]]; then
+    # io_trace "wip_exit 2 -- $(print_vars moduleHead devBranch)"
     repo_discard_internal_ignore_list
     # checkout vtag || dev branch
     prod_checkout_vtag $devBranch true
@@ -98,15 +98,15 @@ wip_exit()
 }
 wip_finish()
 {
-  [[ $moduleBranch == 'HEAD' ]] && return 0
+  [[ $moduleHead == 'HEAD' ]] && return 0
 
   local devBranch=$(ref_wip_to_dev $moduleDevBranch)
-  local wipBranch=$moduleBranch
-  # io_trace "wip_finish 1 -- $(print_vars moduleBranch devBranch)"
+  local wipBranch=$moduleHead
+  # io_trace "wip_finish 1 -- $(print_vars moduleHead devBranch)"
   if [[ $wipBranch != $devBranch ]]; then
     repo_discard_internal_ignore_list
     # repo_require_clean_work_tree 'Cannot finish wip' || return $?
-    # io_trace "wip_finish 2 -- $(print_vars moduleBranch devBranch)"
+    # io_trace "wip_finish 2 -- $(print_vars moduleHead devBranch)"
     # merge then checkout vtag || dev branch
     branch_merge "$wipBranch" "$devBranch" \
     && prod_checkout_vtag $devBranch true \
@@ -125,7 +125,7 @@ wip_set_branches()
 {
   devBranch=$(ref_wip_to_dev "$moduleDevBranch")
   wipBranch=$(ref_dev_to_wip "$devBranch" "$wipSuffix" "$wipPrefix")
-  # io_trace "wip_set_branches 1 -- $(print_vars bundleBranch bundleDevBranch moduleBranch moduleDevBranch devBranch wipBranch)"
+  # io_trace "wip_set_branches 1 -- $(print_vars bundleHead bundleDevBranch moduleHead moduleDevBranch devBranch wipBranch)"
 }
 
 ####################

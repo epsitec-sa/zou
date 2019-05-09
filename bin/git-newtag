@@ -23,7 +23,7 @@ newtag_run()
 }
 newtag_main()
 {
-  local tag=$1 commit=${2:-$moduleBranch}
+  local tag=$1 commit=${2:-$moduleHead}
   [[ -z $message ]] && message=$(git log -1 --pretty=%B "$commit")
 
   tag_new "$tag" "$commit" "$message"

@@ -189,7 +189,7 @@ publish_ff_publish()
   if [[ $dryRun == true ]]; then
     mio_success "Branch ${VC}$lbranch${Green} will be forwarded to ${VC}$vtag${Green}" "$alias"
   else
-    branch_merge "$vtag" "$moduleBranch" || { mio_error "Merge of branch ${VC}$lbranch${Red} failed" "$alias"; return 1; }
+    branch_merge "$vtag" "$moduleHead" || { mio_error "Merge of branch ${VC}$lbranch${Red} failed" "$alias"; return 1; }
     publish_try_attach
   fi
 }

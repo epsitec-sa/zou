@@ -151,7 +151,7 @@ branch_list_local_can_delete()
   local l r i c IFS=' ' remote=$(git_remote)
   while read l r i; do
     # exclude branch 'master' and current branch
-    [[ -z $c ]] && c=$(wildcard_to_regex ${moduleBranch:-$(branch_current)})
+    [[ -z $c ]] && c=$(wildcard_to_regex ${moduleHead:-$(branch_current)})
     [[ $l =~ (master|$c) ]] && continue
     # tracking branches
     #   that are merged into tracked branches...
@@ -304,11 +304,11 @@ branch_head_symbol()
       ref=${refs[-1]}
     fi
     echo "$ref"
-    # io_trace "branch_head_symbol ${*@Q} -> $(print_vars moduleBranch ref refs[@])"
+    # io_trace "branch_head_symbol ${*@Q} -> $(print_vars moduleHead ref refs[@])"
     return 1
   else
     echo "$ref"
-    # io_trace "branch_head_symbol ${*@Q} -> $(print_vars moduleBranch ref)"
+    # io_trace "branch_head_symbol ${*@Q} -> $(print_vars moduleHead ref)"
     branch_is_prod "$ref" && return 1 || return 0
   fi
 }

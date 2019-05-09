@@ -371,7 +371,7 @@ repo_commit_submodules()
 
   local opwd=$PWD cslist=$(string_join ', ' "$@")
   cd "$mroot"
-  local branch=${moduleBranch:-$(branch_current)}
+  local branch=${moduleHead:-$(branch_current)}
   # io_trace "repo_commit_submodules 2 -- $(print_vars branch cslist)"
   git commit -m 'zou-flow: update submodules' -- "$@" >/dev/null \
   && [[ $showSubmoduleMessage == true ]] && mio_message "  Commited submodules '$cslist' on branch '$branch'" '' ${DarkGray}
@@ -382,7 +382,7 @@ repo_discard_submodule()
 {
   local smpath=$1
   git submodule update --recursive "$smpath" &>/dev/null
-  [[ $showSubmoduleMessage == true ]] && mio_message "  Discarded submodule '$smpath' from branch '$moduleBranch'" '' ${DarkGray}
+  [[ $showSubmoduleMessage == true ]] && mio_message "  Discarded submodule '$smpath' from branch '$moduleHead'" '' ${DarkGray}
   repo_raise_submodule_changed_event "$smpath"
 }
 repo_discard_clean_submodules_async()

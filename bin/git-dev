@@ -63,7 +63,7 @@ dev_enter_epilog()
   repo_discard_internal_ignore_list
 
   local devBranch=$(ref_wip_to_dev "$moduleDevBranch")
-  # io_trace "dev_enter -- $(print_vars moduleBranch bundleDevBranch devBranch)"
+  # io_trace "dev_enter -- $(print_vars moduleHead bundleDevBranch devBranch)"
 
   branch_checkout "$devBranch" true
 }
@@ -73,11 +73,11 @@ dev_exit_prolog()
 }
 dev_exit_epilog()
 {
-  # [[ $moduleBranch == 'HEAD' ]] && return 0
+  # [[ $moduleHead == 'HEAD' ]] && return 0
   repo_discard_internal_ignore_list
 
   local devBranch=$(ref_wip_to_dev "$moduleDevBranch")
-  # io_trace "dev_exit -- $(print_vars moduleBranch bundleDevBranch devBranch)"
+  # io_trace "dev_exit -- $(print_vars moduleHead bundleDevBranch devBranch)"
 
   # checkout vtag || dev branch
   prod_checkout_vtag $devBranch true
@@ -85,16 +85,16 @@ dev_exit_epilog()
 
 dev_finish_prolog()
 {
-  # [[ $moduleBranch == 'HEAD' ]] && return 0
+  # [[ $moduleHead == 'HEAD' ]] && return 0
   repo_discard_internal_ignore_list
 
   # exit WIP mode if necessary
   local devBranch=$(ref_wip_to_dev "$moduleDevBranch")
-  # io_trace "dev_finish_prolog -- $(print_vars moduleBranch bundleDevBranch devBranch)"
+  # io_trace "dev_finish_prolog -- $(print_vars moduleHead bundleDevBranch devBranch)"
 
   # local branch lbranch vbranch vtag delta alias
   # branch_set_prod_info "$devBranch"; devBranch=$lbranch
-  # io_trace "dev_finish_prolog -- $(print_vars moduleBranch devBranch vbranch)"
+  # io_trace "dev_finish_prolog -- $(print_vars moduleHead devBranch vbranch)"
 
   if [[ -z $prodBranchh ]]; then
     mio_error "No vbranch found ${DarkGray}-${Cyan} create a vbranch with: ${VC}git vbranch $(ref_rename $devBranch ${DarkGray}'MAJOR.MINOR'${VC}) $devBranch"
@@ -110,8 +110,8 @@ dev_finish_epilog()
   cosm_process_unstaged_submodules
 
   local vtag htag delta alias status
-  branch_merge $moduleBranch $prodBranchPath \
-  prod_checkout_vtag $moduleBranch true
+  branch_merge $moduleHead $prodBranchPath \
+  prod_checkout_vtag $moduleHead true
 }
 
 #########
