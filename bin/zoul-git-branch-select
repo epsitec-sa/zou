@@ -337,7 +337,7 @@ _branch_set_bestmatch_sku_core()
   else
     local branch candidates=() resku="^(.*/)?$(wildcard_to_regex "$skuSpec")(/.*)?$"
     for branch in $(branch_list_all_flatten); do
-      [[ $branch =~ /[0-9]+\.[0-9]+.*$ ]] && continue   # skip prod branches
+      [[ $branch =~ ^(.*/)?[0-9]+\.[0-9]+ ]] && continue   # skip prod branches
       [[ $branch =~ $resku ]] && candidates+=( "$branch" )
       io_trace "_branch_set_bestmatch_sku_core -- $(print_vars branch candidates[@])"
     done
