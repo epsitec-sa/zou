@@ -420,12 +420,8 @@ repo_update_submodule()
 {
   # io_trace "repo_update_submodule ${*@Q}"
   local path=$1 line
-  mio_info "Updating submodule ${VC}$path"
-  (git submodule update --init --recursive "$path" 2>&1) | \
-  while read -r line; do
-    [[ -n $line ]] && mio_message "  $line" '' ${DarkGray}
-  done
-  repo_raise_submodule_changed_event "$path"
+  io_buffered_eval "git submodule update --init --recursive "$path" 2>&1" : ${DarkGray} \
+  && repo_raise_submodule_changed_event "$path"
 }
 repo_check_submodule()
 {
