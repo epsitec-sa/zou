@@ -52,7 +52,7 @@ vtable_row()
   local vnext=$(echo $tags | grep -m1 "^${refolder}v[0-9]")
   local md_moduleId=$moduleId
   local md_vtag=$vtag
-  [[ $vtag =~ ^.*-@$ || -z $vtag || -n $delta ]] && md_moduleId="##$moduleId##"
+  [[ $vtag =~ ^.*-@$ || -z $vtag || (( delta > 0 )) ]] && md_moduleId="##$moduleId##"
   [[ $vtag =~ ^.*-@$ ]] && md_vtag="##$vtag##"
   [[ $vtag == $vminor ]] && vminor='' || vminor="#$vminor#"
   [[ $vtag == $vmajor ]] && vmajor='' || vmajor="#$vmajor#"
