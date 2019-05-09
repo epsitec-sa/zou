@@ -22,6 +22,7 @@ ref_is_oldver()  { [[ $1 =~ ^other/oldver/(.*)$ ]]; }     # non semver version t
 ref_exists()     { git rev-parse --quiet --verify $1 >/dev/null; }
 ref_equals()     { [[ $(git rev-parse $1^{}) == $(git rev-parse $2^{}) ]]; }
 ref_is_head()    { [[ $(git rev-parse $1^{}) == $(git rev-parse HEAD) ]]; }
+ref_rename()     { [[ $1 =~ ^(.*/)? ]] && echo "${BASH_REMATCH[1]}$2"; }
 
 ref_timespan()
 {
