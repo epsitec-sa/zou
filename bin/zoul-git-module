@@ -81,7 +81,7 @@ _module_scope_startup()
   # setup startup context
   local startupDir=$PWD startupRoot \
         bundleId bundleRoot bundleHead \
-        bundleDevBranch \
+        bundleDevBranch bundleDevBranchPath\
         bundleUrl bundleUrlName \
         bundleTracePrefix \
         principalModuleId \
@@ -190,45 +190,57 @@ _module_reset_scope()
 _module_set_bundle_dev_branch()
 {
   if [[ $bundleHead == 'HEAD' ]]; then
-    # we are in detached HEAD
-    # infer dev branch from vtag name
+    # we are in detached HEAD : infer dev branch from vtag name
     local ltag stag folder
     ltag=$(git describe --tags --match '*v[0-9]*' | head -n1)
     stag=${ltag%-*-g*}
-    if [[ $stag =~ (.*/)?v[0-9]+\.[0-9]+ ]]; then
-      folder=${BASH_REMATCH[1]}
-      [[ -z $folder ]] && bundleDevBranch='master' || bundleDevBranch="${folder}dev"
-    else
-      bundleDevBranch='master'
-    fi
-  elif [[ $bundleHead =~ ^(.*/)?v?[0-9]+\.[0-9]+ ]]; then
-    # infer dev branch from vtag/prod branch
-    local folder=${BASH_REMATCH[1]}
+    _bundle_vref_to_dev "$stag" || bundleDevBranch='master'
+    # io_trace "_module_set_dev_branch 1 -- $(print_vars bundleHead bundleDevBranch)"
+  elif [[ $bundleHead == $(git rev-parse --abbrev-ref "$bundleHead" 2>/dev/null) ]]; then
+    _bundle_vref_to_dev "$bundleHead" || bundleDevBranch=$bundleHead
+    # io_trace "_module_set_dev_branch 2 -- $(print_vars bundleHead bundleDevBranch)"
+  elif ! _bundle_vref_to_dev "$bundleHead"; then
+    bundleDevBranch='master'
+  fi
+  # io_trace "_module_set_dev_branch 3 -- $(print_vars bundleHead bundleDevBranch)"
+  local branch lbranch bref
+  branch_set_realize "$bundleDevBranch"
+  bundleDevBranchPath=$branch
+  # io_trace "_module_set_dev_branch 4 -- $(print_vars bundleHead bundleDevBranch devBranchPath)"
+}
+_bundle_vref_to_dev()
+{
+  local vref=$1
+  if [[ $vref =~ (.*/)?v[0-9]+\.[0-9]+ ]]; then
+    folder=${BASH_REMATCH[1]}
     [[ -z $folder ]] && bundleDevBranch='master' || bundleDevBranch="${folder}dev"
   else
-    bundleDevBranch=$bundleHead
+    return 1
   fi
-  # io_trace "_module_set_bundle_dev_branch -- $(print_vars bundleId bundleHead bundleDevBranch)"
 }
 _module_set_module_dev_branch()
 {
   if module_is_bundle; then
-    local branch lbranch bref
-    branch_set_realize "$bundleDevBranch"
-    moduleDevBranchPath=$branch
-    moduleDevBranch=$lbranch
+    moduleDevBranchPath=$bundleDevBranchPath
+    moduleDevBranch=$bundleDevBranch
   # we are in detached HEAD or on vtag/prod branch 
   elif [[ $moduleHead == 'HEAD' || $moduleHead =~ ^(.*/)?v?[0-9]+\.[0-9]+ ]]; then
-    # infer dev branch from bundle
-    local branch lbranch
-    branch_set_best_match_dev "$bundleDevBranch"
-    moduleDevBranchPath=$branch
-    moduleDevBranch=$lbranch
-  else
+    _module_infer_dev_from_bundle
+  elif [[ $moduleHead == $(git rev-parse --abbrev-ref "$moduleHead" 2>/dev/null) ]]; then
     moduleDevBranchPath=$moduleHead
     moduleDevBranch=$moduleHead
+  else
+    _module_infer_dev_from_bundle
   fi
   # io_trace "_module_set_module_dev_branch -- $(print_vars moduleId bundleDevBranch moduleHead moduleDevBranch moduleDevBranchPath)"
+}
+_module_infer_dev_from_bundle()
+{
+  local branch lbranch
+  branch_set_best_match_dev "$bundleDevBranch"
+  moduleDevBranchPath=$branch
+  moduleDevBranch=$lbranch
+
 }
 
 ##########
