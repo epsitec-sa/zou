@@ -378,17 +378,42 @@ repo_commit_submodules()
   repo_raise_submodule_changed_event "$@"
   cd "$opwd"
 }
+
+repo_update_submodule()
+{
+  # io_trace "repo_update_submodule ${*@Q}"
+  local smPaths=()
+  io_buffered_eval "git submodule update --init --recursive "$1" 2>&1" _repo_submodule_selector ${DarkGray}
+  [ ${#smPaths[@]} -ne 0 ] && repo_raise_submodule_changed_event "${smPaths[@]}"
+}
 repo_discard_submodule()
 {
-  local smpath=$1
-  git submodule update --recursive "$smpath" &>/dev/null
-  [[ $showSubmoduleMessage == true ]] && mio_message "  Discarded submodule '$smpath' from branch '$moduleHead'" ${DarkGray}
-  repo_raise_submodule_changed_event "$smpath"
+  # io_trace "repo_discard_submodule ${*@Q}"
+  local smPaths=()
+  io_eval "git submodule update --recursive "$1" 2>&1" _repo_submodule_selector ${DarkGray}
+  [ ${#smPaths[@]} -ne 0 ] && repo_raise_submodule_changed_event "${smPaths[@]}"
 }
-repo_discard_clean_submodules_async()
+
+repo_update_submodules()
 {
-  visit_async repo_list_unstaged_clean_submodules repo_discard_submodule
+  [ ${#moduleSubmodulePaths[@]} -eq 0 ] && return 0
+  mio_info 'Updating submodules...'
+  local smPaths=()
+  io_buffered_eval "git submodule update --init --recursive 2>&1" _repo_submodule_selector ${DarkGray}
+  [ ${#smPaths[@]} -ne 0 ] && repo_raise_submodule_changed_event "${smPaths[@]}"
 }
+repo_discard_submodules()
+{
+  local sms smPaths=() IFS=' '
+  sms=( "$@" ); IFS=$'\n'
+  io_eval "git submodule update --recursive -- ${sms[*]} 2>&1" _repo_submodule_selector ${DarkGray}
+  [ ${#smPaths[@]} -ne 0 ] && repo_raise_submodule_changed_event "${smPaths[@]}"
+}
+_repo_submodule_selector()
+{
+  [[ $line =~ ^Submodule\ path\ \'([^\']+)\' ]] && smPaths+=( "${BASH_REMATCH[1]}" )
+}
+
 repo_discard_internal_ignore_list()
 {
   git checkout -- "${internalIgnoreList[@]}" &>/dev/null
@@ -405,23 +430,6 @@ repo_remove_dangling_submodule()
 repo_remove_dangling_submodules_async()
 {
   visit_async repo_list_dangling_submodules repo_remove_dangling_submodule
-}
-repo_update_submodules()
-{
-  [ ${#moduleSubmodulePaths[@]} -eq 0 ] && return 0
-  mio_info 'Updating submodules...'
-  (git submodule update --init --recursive 2>&1) | \
-  while read -r line; do
-    [[ -n $line ]] && mio_message "  $line" ${DarkGray}
-  done
-  repo_raise_submodule_changed_event
-}
-repo_update_submodule()
-{
-  # io_trace "repo_update_submodule ${*@Q}"
-  local path=$1 line
-  io_buffered_eval "git submodule update --init --recursive "$path" 2>&1" : ${DarkGray} \
-  && repo_raise_submodule_changed_event "$path"
 }
 repo_check_submodule()
 {
