@@ -17,9 +17,9 @@ ZOUL_GIT_BRANCH_CORE=true
 branchChangedEvent=()
 branchCreatedEvent=()
 branchDeletedEvent=()
-branch_raise_branch_changed_event() { local handler; for handler in "${branchChangedEvent[@]}"; do $handler "$@"; done; }
-branch_raise_branch_created_event() { local handler; for handler in "${branchCreatedEvent[@]}"; do $handler "$@"; done; }
-branch_raise_branch_deleted_event() { local handler; for handler in "${branchDeletedEvent[@]}"; do $handler "$@"; done; }
+branch_raise_branch_changed_event() { raise_event 'branchChangedEvent[@]' "$@"; }
+branch_raise_branch_created_event() { raise_event 'branchCreatedEvent[@]' "$@"; }
+branch_raise_branch_deleted_event() { raise_event 'branchDeletedEvent[@]' "$@"; }
 # in:
 #  lbranch=$1 -- local branch name
 # std-out:

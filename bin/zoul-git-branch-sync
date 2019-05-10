@@ -14,7 +14,7 @@ ZOUL_GIT_BRANCH_SYNC=true
 #   syncNoPush
 
 branchSyncEvent=()
-_branch_raise_branch_sync_event() { local handler; for handler in "${branchSyncEvent[@]}"; do $handler "$@"; done; }
+_branch_raise_branch_sync_event() { raise_event 'branchSyncEvent[@]' "$@"; }
 
 _branch_sync_push()
 {

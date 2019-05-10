@@ -40,7 +40,7 @@ ZOUL_GIT_REPO=true
 internalIgnoreList=( 'versions.md' )
 
 submoduleChangedEvent=()
-repo_raise_submodule_changed_event() { local handler; for handler in "${submoduleChangedEvent[@]}"; do $handler "$@"; done; }
+repo_raise_submodule_changed_event() { raise_event 'submoduleChangedEvent[@]' "$@"; }
 
 ######################
 # Bundle
