@@ -167,10 +167,9 @@ mio_warning_unsafe() { mio_message_unsafe "$1" ${Brown}; }
 mio_error_unsafe()   { mio_message_unsafe "$1" ${Red}; }
 mio_message_unsafe()
 {
-  local message=$1 color=${2:-$Cyan} tracePrefix=$moduleTracePrefix
-  [[ -n $moduleRoot && $moduleRoot == $bundleRoot ]] && tracePrefix=$bundleTracePrefix
+  local message=$1 color=${2:-$Cyan}
   [[ -n $prodAlias ]] && message="$message ${color}(${AC}$prodAlias${color})"
-  io_message_unsafe "$message" "$tracePrefix" "$color"
+  io_message_unsafe "$message" "$moduleTracePrefix" "$color"
 }
 # create alias color
 # out:
