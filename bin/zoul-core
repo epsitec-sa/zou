@@ -612,6 +612,19 @@ faketty()
 {
   script -eqc "$*" /dev/null
 }
+# usage:
+#   myEvent=()
+#   myEvent+=( handler )
+#   raise_event 'myEvent[@]' $param1...
+raise_event()
+{
+  local handlers=( ${!1} ) handler; shift
+  for handler in "${handlers[@]}"; do
+    # io_trace "$handler $* >>"
+    $handler "$@"
+    # io_trace "$handler $* <<"
+  done
+}
 
 # trace constants (if debug == true)
 # io_debug zou_startupPath
