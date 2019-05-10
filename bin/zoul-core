@@ -593,24 +593,19 @@ io_locked_eval()
 }
 io_buffered_eval()
 {
-  local selector=${2:-:} color=${3:-$NC} indent=${4:-  } isLastLine=0 line lines=() ec=0 IFS=$'\n'
+  local selector=${2:-:} color=$3 indent=${4:-  } isLastLine=0 line lines ec IFS=$'\n'
   # io_trace "io_buffered_eval 1 -- $(print_vars selector color indent)"
-  lines=( $(eval "$1") ) || ec=$?
+  lines=( $(eval "$1") ); ec=$?
   if [[ -z $color ]]; then
-    [ $ec -eq 0 ] && color=NC || color=Red
+    [ $ec -eq 0 ] && color=${NC} || color=${Red}
   fi
   io_lock_enter
   for line in "${lines[@]}"; do
-    # io_trace_unsafe "-- $line" ${DarkGray}
-    if [ $isLastLine -eq 0 ]; then
-      $selector "$line" "$color"; isLastLine=$?
-      io_message_unsafe "${indent}$line" "$moduleTracePrefix" "$color"
-    # else
-    #   break
-    fi
+    $selector "$line" "$color"; isLastLine=$?
+    io_message_unsafe "${indent}$line" "$moduleTracePrefix" "$color"
+    [ $isLastLine -ne 0 ] && break
   done
   io_lock_exit
-  # io_trace "io_buffered_eval 2 -- $(print_vars ec)"
   return $ec
 }
 faketty()
