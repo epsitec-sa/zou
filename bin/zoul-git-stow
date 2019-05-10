@@ -225,7 +225,7 @@ stow_remove_classified_tags()
 stow_remove_promoted_vtags()
 {
   local stowType stowFolder refPath refType refStowType stowPath \
-        version tag tags vtag vtags hash folder ec=0
+        version tag tags vtag vtags hash folder ec=0 IFS=' '
 
   declare -A hashMap
   for tag; do
@@ -301,7 +301,7 @@ stow_promote_vtags()
   local branches=(${!1}) stowType stowFolder refPath refType refStowType \
         version vtag vtag2 vtagFolder \
         vbranch vbranchFolder vbranchFolders \
-        vbranchPair vbranchPairs ec=0
+        vbranchPair vbranchPairs ec=0 IFS=' '
   shift
 
   # group vbranchFolder:vbranch pair by version
@@ -469,7 +469,7 @@ _stow_promoted_versions_equals()
 }
 stow_orphans()
 {
-  local branches=(${!1}) vbranch version vtag vbranches
+  local branches=(${!1}) vbranch version vtag vbranches IFS=' '
   shift
 
   # group vbranch by version

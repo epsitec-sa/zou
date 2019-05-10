@@ -20,8 +20,9 @@ ref_is_orphan()  { [[ $1 =~ ^other/orphan(.*)$ ]]; }
 ref_is_marker()  { [[ $1 =~ ^other/marker/(.*)$ ]]; }
 ref_is_oldver()  { [[ $1 =~ ^other/oldver/(.*)$ ]]; }     # non semver version tag + big patch (more than 3 digits)
 ref_exists()     { git rev-parse --quiet --verify $1 >/dev/null; }
-ref_equals()     { [[ $(git rev-parse $1^{}) == $(git rev-parse $2^{}) ]]; }
-ref_is_head()    { [[ $(git rev-parse $1^{}) == $(git rev-parse HEAD) ]]; }
+ref_equals()     { [[ $(git rev-parse $1^{} 2>/dev/null) == $(git rev-parse $2^{} 2>/dev/null) ]]; }
+ref_is_head()    { [[ $(git rev-parse $1^{} 2>/dev/null) == $(git rev-parse HEAD) ]]; }
+ref_is_current() { [[ $1 == $(git rev-parse --abbrev-ref HEAD) ]]; }
 ref_rename()     { [[ $1 =~ ^(.*/)? ]] && echo "${BASH_REMATCH[1]}$2"; }
 
 ref_timespan()
