@@ -97,7 +97,9 @@ _module_scope_startup()
 
   bundleId=$(repo_bundle_id)
   bundleRoot=$(repo_bundle_root)
-  bundleHead=$(branch_current_root_branch)
+  cd "$bundleRoot"
+  bundleHead=$(ref_symbol)
+  cd - >/dev/null
   
   repo_set_bundle_url_info "$bundleRoot"  # -> bundleUrl bundleUrlName
   _module_set_bundle_trace_prefix
@@ -109,7 +111,9 @@ _module_scope_startup()
   _module_register_bundle
 
   # execute next russian doll
+  # io_trace "_module_scope_startup >>"
   $1 "${@:2}"
+  # io_trace "_module_scope_startup <<"
 }
 # run a function in the module root folder with module scope defined
 _module_scope()
@@ -120,7 +124,7 @@ _module_scope()
     moduleRoot="$PWD" \
     moduleParent=$(repo_module_parent) \
     moduleId=$(repo_module_id) \
-    moduleHead=$(branch_current) \
+    moduleHead=$(ref_symbol) \
     moduleConfigFile="$PWD/.zou-flow" \
     moduleSubmodulePaths=( $(repo_list_submodule_paths $PWD) ) \
     modulePath moduleBundlePath \
@@ -147,21 +151,26 @@ _module_scope()
   _module_set_module_dev_branch
 
   # io_lock_enter
-  # io_trace_unsafe "_module_scope -- $(print_vars bundleId bundleHead bundleDevBranch)"
-  # io_trace_unsafe "_module_scope -- $(print_vars principalModuleId bundleUrl bundleUrlName)"
   # io_trace_unsafe "_module_scope -- $(print_vars startupDir startupRoot bundleRoot)"
-  # io_trace_unsafe "_module_scope -- $(print_vars moduleId modulePath moduleBundlePath)"
-  # io_trace_unsafe "_module_scope -- $(print_vars moduleHead moduleDevBranch moduleDevBranchPath)"
+  # io_trace_unsafe "_module_scope -- $(print_vars bundleUrl bundleUrlName)"
+  # io_trace_unsafe "_module_scope -- $(print_vars modulePath moduleBundlePath)"
   # io_trace_unsafe "_module_scope -- $(print_vars moduleSubmodulePaths[@])"
+  # io_trace_unsafe "_module_scope -- $(print_vars bundleId moduleId principalModuleId)"
+  # io_trace_unsafe "_module_scope -- $(print_vars bundleHead bundleDevBranch bundleDevBranchPath)"
+  # io_trace_unsafe "_module_scope -- $(print_vars moduleHead moduleDevBranch moduleDevBranchPath)"
+  # io_trace_unsafe "_module_scope -- $(print_vars bundleTracePrefix)"
+  # io_trace_unsafe "_module_scope -- $(print_vars moduleTracePrefix)"
   # io_lock_exit
 
   # execute next russian doll
+  # io_trace "_module_scope >>"
   $1 "${@:2}"
-
+  # io_trace "_module_scope <<"
 }
 _module_reset_scope()
 {
   [[ $moduleScopeInitialized == true ]] || return 0
+  # io_trace_unsafe "_module_reset_scope -- ${*@Q}"
 
   moduleSubmodulePaths=( $(repo_list_submodule_paths $PWD) )
   
@@ -177,9 +186,12 @@ _module_reset_scope()
   _module_set_trace_prefix
   
   # io_lock_enter
-  # io_trace_unsafe "_module_reset_scope -- $(print_vars bundleId bundleHead bundleDevBranch)"
+  # io_trace_unsafe "_module_reset_scope -- $(print_vars bundleId moduleId)"
+  # io_trace_unsafe "_module_reset_scope -- $(print_vars bundleHead bundleDevBranch bundleDevBranchPath)"
   # io_trace_unsafe "_module_reset_scope -- $(print_vars moduleHead moduleDevBranch moduleDevBranchPath)"
   # io_trace_unsafe "_module_reset_scope -- $(print_vars moduleSubmodulePaths[@])"
+  # io_trace_unsafe "_module_reset_scope -- $(print_vars bundleTracePrefix)"
+  # io_trace_unsafe "_module_reset_scope -- $(print_vars moduleTracePrefix)"
   # io_lock_exit
 }
 
