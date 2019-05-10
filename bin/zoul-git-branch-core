@@ -319,19 +319,19 @@ branch_ensure_local_vbranch()
 # out:
 #   return code
 #   0 local branch
-#   1 remote branch
-#   2 remote branch without prefix
-#   3 tag
+#   1 remote branch without prefix
+#   2 tag
+#   3 remote branch
 #   4 other
 branch_ref_type()
 {
   if git show-ref -s --verify "refs/heads/$1" &>/dev/null; then
     return 0
-  elif git show-ref -s --verify "refs/remotes/$1" &>/dev/null; then
-    return 1
   elif git show-ref -s --verify "refs/remotes/origin/$1" &>/dev/null; then
-    return 2
+    return 1
   elif git show-ref -s --verify "refs/tags/$1" &>/dev/null; then
+    return 2
+  elif git show-ref -s --verify "refs/remotes/$1" &>/dev/null; then
     return 3
   else
     return 4
@@ -339,91 +339,130 @@ branch_ref_type()
 }
 branch_checkout()
 {
-  # io_trace "branch_checkout ${*@Q}"
-  local ref=$1 forceCheckout=$2 refType isCurrent output ec=0
-  local ref0=$(git rev-parse --abbrev-ref HEAD)
-  [[ $forceCheckout != true && $ref != $ref0 ]] && forceCheckout=true
-  # io_trace "branch_checkout 0 -- $(print_vars ref0 ref forceCheckout alias)"
-  branch_ref_type $ref; refType=$?
-  case $refType in
-    0) branch_is_current $ref; isCurrent=$?;; # local branch
-    1) isCurrent=1; ref=$(branch_without_remote_prefix $ref);; # remote branch
-    2) isCurrent=1;; # remote branch without remote prefix
-    3|4) ref_is_head $ref; isCurrent=$?;; # tag | commit
-  esac
-  # io_trace "branch_checkout 1 -- $(print_vars ref forceCheckout alias refType isCurrent)"
-  if [[ $isCurrent -ne 0 || $forceCheckout == true ]]; then
+  # io_trace "branch_checkout -- ${*@Q}"
+  local ref=$1 forceCheckout=$2 refType refSym checkout raiseEvent isCurrent=0
+  # io_trace "branch_checkout 1 -- $(print_vars ref forceCheckout)"
+
+  # checkout = force || !current
+  # raise = !current || symChanged
+  if [[ $ref == $(ref_symbol) ]]; then
+    # no sym change
+    [[ $forceCheckout == true ]]; checkout=$?
+    raiseEvent=1
+    refSym=$ref
+    # io_trace "branch_checkout 2.1 -- $(print_vars ref refSym forceCheckout checkout raiseEvent isCurrent)"
+  elif ref_is_head "$ref"; then
+    # no hash change
+    checkout=0
+    raiseEvent=0
+    refSym=$(ref_symbol $ref)
+    # io_trace "branch_checkout 2.2 -- $(print_vars ref refSym forceCheckout checkout raiseEvent isCurrent)"
+  else
+    checkout=0
+    raiseEvent=0
+    isCurrent=1
+    refSym=$(ref_symbol $ref)
+    # io_trace "branch_checkout 2.3 -- $(print_vars ref refSym forceCheckout checkout raiseEvent isCurrent)"
+  fi
+  if [ $checkout -eq 0 ]; then
+    branch_ref_type $refSym; refType=$?
+    # io_trace "branch_checkout 2 -- $(print_vars ref forceCheckout refType)"
     # compute symbols
-    local symType symRef
+    local ioType ioRef ec=0
     case $refType in
-      0) symType='branch'; symRef="$ref";;
-      1|2) symType='new branch'; symRef="$ref";;
-      3) symType='version'; symRef="($ref)";;
-      4) symType='commit'; symRef="($(git rev-parse --short $ref^{}))";;
+      0) ioType='branch';     ioRef="$refSym";;
+      1) ioType='new branch'; ioRef="$refSym";;
+      2) ioType='tag';        ioRef="($refSym)";;
+      3) ioType='new branch'; refSym=${refSym#*/}; ioRef="$refSym";;
+      4) ioType='commit';
+         ioRef="($(git rev-parse --short $ref^{} 2>/dev/null))";;
     esac
+    # io_trace "branch_checkout 3 -- $(print_vars ref forceCheckout checkout raiseEvent isCurrent refType refSym ioType ioRef)"
 
     # switching message
-    [[ $isCurrent -ne 0 && $showSwitchingMessage == true ]] && mio_info "Switching to $symType $symRef"
-
-    # io_trace "branch_checkout 2 -- $(print_vars ref forceCheckout alias refType isCurrent symType symRef)"
-
+    [[ $showSwitchingMessage == true ]] && mio_info "Switching to $ioType $ioRef"
     # checkout
-    output=$(git checkout "$ref" 2>&1 >/dev/null); ec=$?
-
-    if [[ $forceCheckout == true || ($ec -eq 0 && $isCurrent -ne 0) ]]; then
-      # io_trace "branch_raise_branch_changed_event $ref"
-      branch_raise_branch_changed_event "$ref"
-    fi
-    
-    _branch_checkout_format_output "$output"
-    return $ec
-  fi
-}
-_branch_checkout_format_output()
-{
-  local output=$1 alias=$prodAlias line indent color breakLoop
-  local prodAlias
-  io_lock_enter
-  while read -r line; do
-    # [[ -z $line ]] && continue
-    if [[ $line =~ ^Switched ]]; then
-      line="Switched to $symType ${VC}$symRef${Green}"
-      prodAlias=$alias
-      indent=''
-      color=${Green}
-    elif [[ $line =~ ^Note:\ checking\ out ]]; then
-      line="Switched to $symType ${VC}$symRef${Green}"
-      prodAlias=$alias
-      breakLoop=true
-      color=${Green}
-    elif [[ $line =~ ^([wW]arning:)(.*) ]]; then
-      line="${Brown}${BASH_REMATCH[1]}${NC}${DarkGray}${BASH_REMATCH[2]}"
-      indent='  '
-      color=${DarkGray}
-    elif [[ -z $color ]]; then
-      if [[ $line =~ ^Already ]]; then
-        line="Already on ${VC}$symRef"
-        prodAlias=$alias
-        color=${LightBlue}
-      elif [[ $line =~ ^HEAD\ is\ now\ at\ ([0-9a-f]+) && $isCurrent -eq 0 ]]; then
-        line="Already at ${VC}$symRef"
-        color=${LightBlue}
-        [[ -z $alias ]] && alias=$ref
-      elif [[ $line =~ ^error ]]; then
-        color=${Red}
-      elif [[ $line =~ ^Previous\ HEAD ]]; then
-        indent='  '
-        color=${DarkGray}
-      else
-        indent='  '
-        color=${DarkGray}
+    _branch_checkout_core; ec=$?
+    if [ $ec -ne 0 ]; then
+      repo_discard_internal_ignore_list
+      _branch_checkout_core; ec=$?
+      if [ $ec -ne 0 ]; then
+        repo_require_clean_work_tree "Cannot checkout"
       fi
     fi
-    mio_message_unsafe "$indent$line" "$color"
-    prodAlias=''
-    [[ $breakLoop == true ]] && break
-  done <<< "$output"
+    return $ec
+  elif [ $raiseEvent -eq 0 ]; then
+    branch_raise_branch_changed_event "$refSym"
+  fi
+}
+_branch_checkout_core()
+{
+  # io_trace "_branch_checkout_core >>"
+  local breakLoop skipLine ec line lines IFS=$'\n'
+  lines=( $(git checkout "$ref" 2>&1) ); ec=$?
+  if [[ $raiseEvent -eq 0 && $ec -eq 0 ]]; then
+    branch_raise_branch_changed_event "$refSym"
+  fi
+  io_lock_enter
+  for line in "${lines[@]}"; do
+    if false; then
+      io_trace_unsafe "-- $line" ${DarkGray}
+      if [[ $breakLoop != true ]]; then
+        _branch_checkout_selector
+         [[ $skipLine == true ]] && continue
+         io_message_unsafe "${indent}$line" "$moduleTracePrefix" "$color"
+      fi
+    else
+      _branch_checkout_selector
+      [[ $skipLine == true ]] && continue
+      io_message_unsafe "${indent}$line" "$moduleTracePrefix" "$color"
+      [[ $breakLoop == true ]] && break
+    fi
+  done
   io_lock_exit
+  # io_trace "_branch_checkout_core <<"
+  return $ec
+}
+_branch_checkout_selector()
+{
+  local color alias=$prodAlias
+  # io_trace_unsafe "_branch_checkout_selector 1 -- $(print_vars ioType ioRef alias line)"
+  breakLoop=''; skipLine=''; indent=''
+  # [[ -z $line ]] && continue
+  if [[ $line =~ ^Switched ]]; then
+    line="Switched to $ioType ${VC}$ioRef"
+    color=${Green}
+  elif [[ $line =~ ^(Note:\ checking\ out|Previous\ HEAD) ]]; then
+    line="Switched to $ioType ${VC}$ioRef"
+    color=${Green}
+    breakLoop=true
+  elif [[ $line =~ ^Already ]]; then
+    line="Already on ${VC}$ioRef"
+    color=${LightBlue}
+    breakLoop=true
+  elif [[ $line =~ ^HEAD\ is\ now\ at\ ([0-9a-f]+) && $isCurrent -eq 0 ]]; then
+    line="Already at ${VC}$ioRef"
+    color=${LightBlue}
+    breakLoop=true
+  elif [[ $line =~ ^Your\ branch\ is\ up ]]; then
+    skipLine=true
+    return
+  else
+    if [[ $line =~ ^([wW]arning:)(.*) ]]; then
+      line="${Brown}${BASH_REMATCH[1]}${DarkGray}${BASH_REMATCH[2]}"
+    elif [[ $line =~ ^(error:|fatal:)(.*) ]]; then
+      line="${Red}${BASH_REMATCH[1]}${BASH_REMATCH[2]}"
+    fi
+    color=${DarkGray}
+    indent='  '
+    alias=''
+  fi
+  if [[ -n $alias ]]; then
+    line="${color}$line ${color}(${AC}$alias${color})"
+    alias=''
+  else
+    line="${color}$line"
+  fi
 }
 branch_ensure_remote()
 {
