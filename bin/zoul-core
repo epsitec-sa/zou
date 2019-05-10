@@ -218,16 +218,19 @@ trace_vars()
 }
 print_vars()
 {
-  local params=() param array
+  local param array
   for param in "$@"; do
+    # array
     if [[ $param =~ \[@\]$ ]]; then
       array=( "${!param}" )
-      params+=( "${param%\[@\]}=(${array[@]@Q})" )
+      printf '%b ' "${param%\[@\]}=(${array[@]@Q})"
+    # color
+    elif [[ ${!param} =~ ^\\e\[[0-9\;]+m$ ]]; then
+      printf '%b ' "$param='${!param}$param${NC}'"
     else
-      params+=( "$param='${!param}'" )
+      printf '%b ' "$param='${!param}'"
     fi
   done
-  printf '%s ' "${params[@]}"
 }
 
 string_is_folded() { [[ $1 =~ ^[^/]+/.+$ ]]; }
