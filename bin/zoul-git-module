@@ -189,10 +189,10 @@ _module_reset_scope()
 
 _module_set_bundle_dev_branch()
 {
-  if [[ $bundleHead == 'HEAD' ]]; then
+  if [[ $bundleHead == 'HEAD' || ( $(git_object_type $bundleHead) == 'tag' && ! $bundleHead =~ (.*/)?v[0-9]+\.[0-9]+ ) ]]; then
     # we are in detached HEAD : infer dev branch from vtag name
     local ltag stag folder
-    ltag=$(git describe --tags --match '*v[0-9]*' | head -n1)
+    ltag=$(git describe --tags --match '*v[0-9]*' 2>/dev/null | head -n1)
     stag=${ltag%-*-g*}
     _bundle_vref_to_dev "$stag" || bundleDevBranch='master'
     # io_trace "_module_set_dev_branch 1 -- $(print_vars bundleHead bundleDevBranch)"
@@ -220,19 +220,23 @@ _bundle_vref_to_dev()
 }
 _module_set_module_dev_branch()
 {
+  # io_trace "_module_set_module_dev_branch 0 -- $(print_vars moduleId bundleDevBranch moduleHead moduleDevBranch)"
   if module_is_bundle; then
     moduleDevBranchPath=$bundleDevBranchPath
     moduleDevBranch=$bundleDevBranch
+    # io_trace "_module_set_module_dev_branch 1 -- $(print_vars moduleId bundleDevBranch moduleHead moduleDevBranch)"
   # we are in detached HEAD or on vtag/prod branch 
   elif [[ $moduleHead == 'HEAD' || $moduleHead =~ ^(.*/)?v?[0-9]+\.[0-9]+ ]]; then
     _module_infer_dev_from_bundle
+    # io_trace "_module_set_module_dev_branch 2 -- $(print_vars moduleId bundleDevBranch moduleHead moduleDevBranch)"
   elif [[ $moduleHead == $(git rev-parse --abbrev-ref "$moduleHead" 2>/dev/null) ]]; then
     moduleDevBranchPath=$moduleHead
     moduleDevBranch=$moduleHead
+    # io_trace "_module_set_module_dev_branch 3 -- $(print_vars moduleId bundleDevBranch moduleHead moduleDevBranch)"
   else
     _module_infer_dev_from_bundle
+    # io_trace "_module_set_module_dev_branch 4 -- $(print_vars moduleId bundleDevBranch moduleHead moduleDevBranch)"
   fi
-  # io_trace "_module_set_module_dev_branch -- $(print_vars moduleId bundleDevBranch moduleHead moduleDevBranch moduleDevBranchPath)"
 }
 _module_infer_dev_from_bundle()
 {
@@ -240,6 +244,7 @@ _module_infer_dev_from_bundle()
   branch_set_best_match_dev "$bundleDevBranch"
   moduleDevBranchPath=$branch
   moduleDevBranch=$lbranch
+  # io_trace "_module_infer_dev_from_bundle -- $(print_vars moduleId bundleDevBranch moduleHead moduleDevBranch)"
 
 }
 
@@ -325,21 +330,23 @@ _module_set_submodule_path_max_length()
 #   rlen -- remaining length
 _module_set_smart_id()
 {
-  # io_trace "_module_set_smart_id0 <- ${*@Q}"
+  # io_trace "_module_set_smart_id 1 -- ${*@Q}"
   local len=$1 id=$2 color=$3
   rlen=$len
   if (( ${#id} <= $len )); then
     sid="${color}$id"
   else
-    local atoms=( ${id//\// } ) ratoms
+    local atoms ratoms IFS='/'
+    atoms=( $id ); IFS=$'\n'
+    # io_trace "_module_set_smart_id 2 -- $(print_vars i j rlen atoms[@])"
     if (( ${#atoms[@]} > 1 )); then
       local i j
       (( rlen -= 1 ))
-      for i in $(seq 1 ${#atoms[@]}); do
+      for i in $(seq 1 "${#atoms[@]}"); do
         # start from the end
         j=$(( ${#atoms[@]} - $i ))
         (( rlen -= ${#atoms[$j]} ))
-        # io_trace "_module_set_smart_id0 -> $(print_vars i j rlen)"
+        # io_trace "_module_set_smart_id 2 -- $(print_vars i j rlen)"
         (( rlen <= 0 )) && break
         (( rlen -= 1 ))
       done
@@ -356,7 +363,7 @@ _module_set_smart_id()
     fi
   fi
   (( rlen = len - ${#id} ))
-  # io_trace "_module_set_smart_id0 -> $(print_vars rlen sid)"
+  # io_trace "_module_set_smart_id 3 -- $(print_vars rlen sid)"
 }
 _module_set_smart_id2()
 {
@@ -388,17 +395,21 @@ _module_set_smart_id2()
 }
 _module_set_trace_prefix()
 {
-  local mcolor=${LightCyan}
-  if [[ $useLongModuleTracePrefix == true ]]; then
-    local sid bcolor bid mid=$moduleId
-    bid=$(branch_head_symbol)
-    [ $? -eq 0 ] && bcolor=${Cyan} || bcolor=${Brown}
-    _module_set_smart_id2 42 "$mid" "$mcolor" "$bid" "$bcolor"
-    moduleTracePrefix=$sid
+  if module_is_bundle; then
+    moduleTracePrefix=$bundleTracePrefix;
   else
-    local len; (( len = ${submodulePathMaxLength} + 2 ))
-    printf -v moduleTracePrefix "%-${len}s" "[$moduleId]"
-    moduleTracePrefix="${mcolor}$moduleTracePrefix${NC}"
+    local mcolor=${LightCyan}
+    if [[ $useLongModuleTracePrefix == true ]]; then
+      local sid bcolor bid mid=$moduleId
+      bid=$(ref_symbol $moduleHead)
+      [ $? -eq 0 ] && bcolor=${Cyan} || bcolor=${Brown}
+      _module_set_smart_id2 42 "$mid" "$mcolor" "$bid" "$bcolor"
+      moduleTracePrefix=$sid
+    else
+      local len; (( len = ${submodulePathMaxLength} + 2 ))
+      printf -v moduleTracePrefix "%-${len}s" "[$moduleId]"
+      moduleTracePrefix="${mcolor}$moduleTracePrefix${NC}"
+    fi
   fi
 }
 _module_set_bundle_trace_prefix()
@@ -407,8 +418,8 @@ _module_set_bundle_trace_prefix()
     local sid bid mid=$bundleId
     cd "$bundleRoot"
     
-    bid=$(branch_head_symbol)
-    # [ $? -eq 0 ] && bcolor=Cyan || bcolor=Brown
+    bid=$(ref_symbol $bundleHead)
+    # [ $? -eq 0 ] && bcolor=${Cyan} || bcolor=${Brown}
     _module_set_smart_id2 42 "$mid" ${White} "$bid" ${White}
     bundleTracePrefix=$sid
     
