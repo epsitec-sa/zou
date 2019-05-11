@@ -4,6 +4,7 @@
 #   [[ -z $ZOUL_GIT_PROD ]] && . zoul-git-prod
 ZOUL_GIT_CONFIG=true
 
+[[ -z $ZOUL_GIT_REF ]]           && . zoul-git-ref
 [[ -z $ZOUL_GIT_BRANCH_SELECT ]] && . zoul-git-branch-select
 
 # io_trace "branchChangedEvent+=( prod_reset_scope )"
@@ -58,6 +59,21 @@ prod_reset_scope()
   # io_trace_unsafe "_prod_reset_scope -- $(print_vars prodVTag prodHTag)"
   # io_trace_unsafe "_prod_reset_scope -- $(print_vars prodDelta prodStatus prodAlias)"
   # io_lock_exit
+}
+prod_checkout()
+{
+  local vnext=$1 forceCheckout=${2:-true}
+  # io_trace_unsafe "prod_checkout -- $(print_vars prodVTag forceCheckout)"
+  if [[ $prodStatus == 'vtag' ]]; then
+    if [[ $vnext == true ]]; then
+      branch_checkout "$prodBranch" "$forceCheckout"
+    else
+      branch_checkout "$prodVTag" "$forceCheckout"
+    fi
+  else
+    local devBranch=${3:-$(ref_wip_to_dev $moduleDevBranch)}
+    branch_checkout "$devBranch" "$forceCheckout"
+  fi
 }
 prod_checkout_vtag()
 {
