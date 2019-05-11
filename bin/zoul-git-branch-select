@@ -195,17 +195,18 @@ branch_set_select_info()
 #                vtagMissing -- no vtag found (branch was never published)
 branch_set_vtag_info()
 {
-  if [[ -n $prodBranch ]]; then
-    # use prod scope
-    vbranch=$prodBranch
-    vtag=$prodVTag
-    htag=$prodHTag
-    delta=$prodDelta
-    alias=$prodAlias
-    status=$prodStatus
-    # io_trace "branch_set_vtag_info 0 -- $(print_vars branch lbranch vbranch vtag htag delta status alias)"
-    return 0
-  fi
+  # TODO: do not enable cache until all events are implemented (merge, commit...)
+  # if [[ -n $prodBranch ]]; then
+  #   # use prod scope
+  #   vbranch=$prodBranch
+  #   vtag=$prodVTag
+  #   htag=$prodHTag
+  #   delta=$prodDelta
+  #   alias=$prodAlias
+  #   status=$prodStatus
+  #   # io_trace "branch_set_vtag_info 0 -- $(print_vars branch lbranch vbranch vtag htag delta status alias)"
+  #   return 0
+  # fi
   local branch=$1 lbranch=${2:-$1} skipVNodes=${3:-auto} allowDuplicateTags=$4
   [[ -z $allowDuplicateTags && -n $moduleRoot && $moduleRoot == $bundleRoot ]] && allowDuplicateTags=true
   # io_trace "branch_set_vtag_info -- ${*@Q}"
