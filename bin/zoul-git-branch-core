@@ -382,14 +382,8 @@ branch_checkout()
     # switching message
     [[ $showSwitchingMessage == true ]] && mio_info "Switching to $ioType $ioRef"
     # checkout
+    [ $isCurrent -ne 0 ] && repo_discard_internal_ignore_list
     _branch_checkout_core; ec=$?
-    if [ $ec -ne 0 ]; then
-      repo_discard_internal_ignore_list
-      _branch_checkout_core; ec=$?
-      if [ $ec -ne 0 ]; then
-        repo_require_clean_work_tree "Cannot checkout"
-      fi
-    fi
     return $ec
   elif [ $raiseEvent -eq 0 ]; then
     branch_raise_branch_changed_event "$refSym"
@@ -398,7 +392,7 @@ branch_checkout()
 _branch_checkout_core()
 {
   # io_trace "_branch_checkout_core >>"
-  local breakLoop skipLine ec line lines IFS=$'\n'
+  local breakLoop skipLine ec line lines color IFS=$'\n'
   lines=( $(git checkout "$ref" 2>&1) ); ec=$?
   if [[ $raiseEvent -eq 0 && $ec -eq 0 ]]; then
     branch_raise_branch_changed_event "$refSym"
@@ -409,8 +403,8 @@ _branch_checkout_core()
       io_trace_unsafe "-- $line" ${DarkGray}
       if [[ $breakLoop != true ]]; then
         _branch_checkout_selector
-         [[ $skipLine == true ]] && continue
-         io_message_unsafe "${indent}$line" "$moduleTracePrefix" "$color"
+        [[ $skipLine == true ]] && continue
+        io_message_unsafe "${indent}$line" "$moduleTracePrefix" "$color"
       fi
     else
       _branch_checkout_selector
@@ -425,13 +419,14 @@ _branch_checkout_core()
 }
 _branch_checkout_selector()
 {
-  local color alias=$prodAlias
+  local alias=$prodAlias
   # io_trace_unsafe "_branch_checkout_selector 1 -- $(print_vars ioType ioRef alias line)"
   breakLoop=''; skipLine=''; indent=''
   # [[ -z $line ]] && continue
   if [[ $line =~ ^Switched ]]; then
     line="Switched to $ioType ${VC}$ioRef"
     color=${Green}
+    breakLoop=true
   elif [[ $line =~ ^(Note:\ checking\ out|Previous\ HEAD) ]]; then
     line="Switched to $ioType ${VC}$ioRef"
     color=${Green}
@@ -447,13 +442,20 @@ _branch_checkout_selector()
   elif [[ $line =~ ^Your\ branch\ is\ up ]]; then
     skipLine=true
     return
-  else
+  elif [[ $line =~ ^Aborting ]]; then
+    skipLine=true
+    return
+  elif [[ -z $color ]]; then
     if [[ $line =~ ^([wW]arning:)(.*) ]]; then
       line="${Brown}${BASH_REMATCH[1]}${DarkGray}${BASH_REMATCH[2]}"
-    elif [[ $line =~ ^(error:|fatal:)(.*) ]]; then
-      line="${Red}${BASH_REMATCH[1]}${BASH_REMATCH[2]}"
+      color=${DarkGray}
+    elif [[ $line =~ ^(error|fatal)(:[[:blank:]]*)(.*) ]]; then
+      line="${Red}${BASH_REMATCH[1]}${BASH_REMATCH[2]}${BASH_REMATCH[3],}"
+      color=${Cyan}
     fi
-    color=${DarkGray}
+    indent='  '
+    alias=''
+  else
     indent='  '
     alias=''
   fi
