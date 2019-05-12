@@ -27,20 +27,21 @@ ref_rename()     { [[ $1 =~ ^(.*/)? ]] && echo "${BASH_REMATCH[1]}$2"; }
 ref_symbol()
 {
   local commit=${1:-HEAD} ref
+  # io_trace "ref_symbol 1 -- $(print_vars commit)"
   ref=$(git rev-parse --abbrev-ref "$commit" 2>/dev/null)
   if [ $? -ne 0 ] || [[ -z $ref || $ref == 'HEAD' ]]; then
-    local refs=( $(git tag --points-at "$commit" 2>/dev/null) )
-    if [ ${#refs[@]} -eq 0 ]; then
+    local tags=( $(git tag --points-at "$commit" 2>/dev/null) )
+    if [ ${#tags[@]} -eq 0 ]; then
       ref="$(git rev-parse --short "$commit" 2>/dev/null)"
     else
-      ref=${refs[-1]}
+      ref=${tags[-1]}
     fi
     echo "$ref"
-    # io_trace "ref_symbol ${*@Q} -> $(print_vars ref refs[@])"
+    # io_trace "ref_symbol 2 -- $(print_vars commit ref tags[@])"
     return 1
   else
     echo "$ref"
-    # io_trace "ref_symbol ${*@Q} -> $(print_vars ref)"
+    # io_trace "ref_symbol 3 -- $(print_vars commit ref)"
   fi
 }
 
