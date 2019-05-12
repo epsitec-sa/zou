@@ -68,6 +68,7 @@ module_visit_submodules_async_fast()
 }
 module_has_submodules() { [ ${#moduleSubmodulePaths[@]} -gt 0 ]; }
 module_is_bundle()      { [[ -n "$moduleRoot" && "$moduleRoot" == "$bundleRoot" ]]; }
+module_in_wip_mode()    { [[ $moduleHead != $(wip_to_ref $moduleHead) ]]; }
 
 ########
 # SCOPES
