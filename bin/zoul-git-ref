@@ -202,7 +202,7 @@ ref_dev_fallback()
     # io_trace "ref_dev_fallback 3 -- $(print_vars fallback[@])"
 
     # append sku fallback
-    local sku=$(ref_wip_to_dev "${fallback[0]}")
+    local sku=$(wip_to_ref "${fallback[0]}")
     IFS=$'\n' fallback+=( $(ref_dev_fallback "$sku") )
     
     # io_trace "ref_dev_fallback 4 -- $(print_vars fallback[@])"
@@ -241,7 +241,7 @@ ref_tag_fallback()
     # io_trace "ref_tag_fallback 2 -- $(print_vars tag atoms[@] fallback[@])"
     printf '%s\n' "${fallback[@]}"
   else
-    local sku=$(ref_wip_to_dev $1)
+    local sku=$(wip_to_ref $1)
     ref_tag_fallback $sku
   fi
 }
@@ -270,7 +270,7 @@ ref_prod_fallback()
   fi
   echo 'prod'
 }
-ref_dev_to_wip()
+ref_to_wip()
 {
   [[ -z $1 || -z $2 ]] && return 1
   
@@ -278,35 +278,38 @@ ref_dev_to_wip()
   wipPrefix=${wipPrefix:-wip}
   wipSuffix=${wipSuffix:-work}
   atoms=( $1 ); IFS=' '
-  if [[ $sku == 'master' ]]; then
+  if [[ $sku == 'master' || $sku =~ ^v?[0-9]+\.[0-9]+ ]]; then
     echo "$wipPrefix/$wipSuffix"
   elif [[ ${atoms[0]} == 'sku' ]]; then
     [ ${#atoms[@]} -gt 1 ] && atoms[-1]=$wipSuffix || atoms+=( "$wipSuffix" )
-    # io_trace "ref_dev_to_wip 1 -- $(print_vars atoms[@])"
+    # io_trace "ref_to_wip 1 -- $(print_vars atoms[@])"
     [ ${#atoms[@]} -gt 2 ] && atoms=( ${atoms[@]:1} )
-    # io_trace "ref_dev_to_wip 2 -- $(print_vars atoms[@])"
+    # io_trace "ref_to_wip 2 -- $(print_vars atoms[@])"
     echo "$wipPrefix/$(ref_join ${atoms[@]})"
   else
     echo "$sku-$wipSuffix"
   fi
 }
-ref_wip_to_dev()
+wip_to_ref()
 {
   [[ -z $1 ]] && return 1
 
   local wip=$1 IFS='/' sku atoms
   atoms=( $1 ); IFS=$'\n'
-  if [[ ${#atoms[@]} -le 2 ]]; then
-    # io_trace "ref_wip_to_dev 1 -- $(print_vars atoms[@])"
+  if [[ ${atoms[-1]} =~ ^(.*/)?v?[0-9]+\.[0-9]+ ]]; then
+    # io_trace "wip_to_ref 1 -- $(print_vars atoms[@])"
+    echo "$1" # prod or vtag
+  elif [[ ${#atoms[@]} -le 2 ]]; then
+    # io_trace "wip_to_ref 2 -- $(print_vars atoms[@])"
     [[ ${atoms[0]} == 'sku' || ${atoms[1]} == 'sku' ]] && echo 'sku/dev' || echo 'master'
   elif [[ ${atoms[1]} == 'sku' ]]; then
-    # io_trace "ref_wip_to_dev 2 -- $(print_vars atoms[@])"
+    # io_trace "wip_to_ref 3 -- $(print_vars atoms[@])"
     echo "sku/dev"
   else
-    # io_trace "ref_wip_to_dev 4 -- $(print_vars atoms[@])"
+    # io_trace "wip_to_ref 4 -- $(print_vars atoms[@])"
     atoms[0]='sku'
     atoms[-1]='dev'
-    # io_trace "ref_wip_to_dev 5 -- $(print_vars atoms[@])"
+    # io_trace "wip_to_ref 5 -- $(print_vars atoms[@])"
     echo "$(ref_join ${atoms[@]})"
   fi
 }
