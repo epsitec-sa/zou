@@ -21,6 +21,7 @@ prod_scope()
         prodVTag prodHTag \
         prodDelta prodStatus \
         prodAlias \
+        prodBranchChangedDisabled \
         prodScopeInitialized=true
   
   prod_reset_scope
@@ -30,14 +31,57 @@ prod_scope()
 }
 prod_reset_scope()
 {
-  # io_trace "_prod_reset_scope"
+  _prod_init_scope "$moduleDevBranchPath" "$moduleDevBranch"
+}
 
+sku_checkout()
+{
+  local sku=$1 vnext=$2 forceCheckout=$3 branch lbranch ec=0
+  branch_set_best_match_dev "$sku"                 # -> branch lbranch
+  _prod_init_scope $branch $lbranch
+
+  local prodBranchChangedDisabled=true
+  prod_checkout "$vnext" "$forceCheckout" "$lbranch" || ec=$?
+  prodBranchChangedDisabled=''
+  return $ec
+}
+prod_checkout()
+{
+  local vnext=$1 forceCheckout=$2 devBranch=$3
+  # io_trace "prod_checkout -- $(print_vars prodVTag forceCheckout)"
+  if [[ $prodStatus == 'vtag' ]]; then
+    if [[ $vnext == true ]]; then
+      branch_checkout "$prodBranch" "$forceCheckout"
+    else
+      branch_checkout "$prodVTag" "$forceCheckout"
+    fi
+  else
+    dev_checkout "$forceCheckout" "$devBranch"
+  fi
+}
+dev_checkout()
+{
+  # io_trace "dev_checkout -- ${*@Q}"
+  local forceCheckout=$1 devBranch=$2
+  if [[ -z $devBranch ]]; then
+    local branch lbranch
+    branch_set_best_match_dev "$bundleDevBranch" # -> branch lbranch
+    devBranch=$lbranch
+    # io_trace "dev_checkout 1 -- $(print_vars bundleDevBranch branch lbranch devBranch)"
+  fi
+  devBranch=$(wip_to_ref $devBranch)
+  # io_trace "dev_checkout 2 -- $(print_vars bundleDevBranch branch lbranch devBranch)"
+  branch_checkout "$devBranch" "$forceCheckout"
+}
+
+_prod_init_scope()
+{
   [[ $prodScopeInitialized == true ]] || return 0
 
-  prodBranch='' # force branch_set_vtag_info
-
-  local vbranch vtag htag delta alias status
-  branch_set_vtag_info "$moduleDevBranchPath" "$moduleDevBranch" 'auto'
+  local branch=$1 lbranch=$2 vbranch vtag htag delta alias status
+  # TODO: uncomment when cache is enabled (see branch_set_vtag_info)
+  # prodBranch=''
+  branch_set_vtag_info "$branch" "$lbranch" 'auto'
   io_create_alias_color "$alias"
 
   prodVTag=$vtag
@@ -55,39 +99,14 @@ prod_reset_scope()
   fi
 
   # io_lock_enter
-  # io_trace_unsafe "_prod_reset_scope -- $(print_vars vbranch prodBranch prodBranchPath)"
-  # io_trace_unsafe "_prod_reset_scope -- $(print_vars prodVTag prodHTag)"
-  # io_trace_unsafe "_prod_reset_scope -- $(print_vars prodDelta prodStatus prodAlias)"
+  # io_trace_unsafe "_prod_init_scope -- $(print_vars prodBranch prodBranchPath)"
+  # io_trace_unsafe "_prod_init_scope -- $(print_vars prodVTag prodHTag)"
+  # io_trace_unsafe "_prod_init_scope -- $(print_vars prodDelta prodStatus prodAlias)"
   # io_lock_exit
-}
-prod_checkout()
-{
-  local vnext=$1 forceCheckout=${2:-true}
-  # io_trace_unsafe "prod_checkout -- $(print_vars prodVTag forceCheckout)"
-  if [[ $prodStatus == 'vtag' ]]; then
-    if [[ $vnext == true ]]; then
-      branch_checkout "$prodBranch" "$forceCheckout"
-    else
-      branch_checkout "$prodVTag" "$forceCheckout"
-    fi
-  else
-    local devBranch=${3:-$(ref_wip_to_dev $moduleDevBranch)}
-    branch_checkout "$devBranch" "$forceCheckout"
-  fi
-}
-prod_checkout_vtag()
-{
-  local fallbackBranch=$1 forceCheckout=${2:-true}
-  # io_trace_unsafe "prod_checkout_vtag -- $(print_vars prodVTag fallbackBranch forceCheckout)"
-  if [[ $prodStatus == 'vtag' ]]; then
-    branch_checkout "$prodVTag" "$forceCheckout"
-  elif [[ -n $fallbackBranch ]]; then
-    branch_checkout "$fallbackBranch" "$forceCheckout"
-  fi
 }
 _prod_on_branch_changed()
 {
-  prod_reset_scope
+  [[ $prodBranchChangedDisabled == true ]] || prod_reset_scope
 }
 _prod_on_branch_created()
 {
