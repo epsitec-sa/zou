@@ -298,7 +298,7 @@ ref_wip_to_dev()
   atoms=( $1 ); IFS=$'\n'
   if [[ ${#atoms[@]} -le 2 ]]; then
     # io_trace "ref_wip_to_dev 1 -- $(print_vars atoms[@])"
-    [[ ${atoms[1]} == 'sku' ]] && echo 'sku/dev' || echo 'master'
+    [[ ${atoms[0]} == 'sku' || ${atoms[1]} == 'sku' ]] && echo 'sku/dev' || echo 'master'
   elif [[ ${atoms[1]} == 'sku' ]]; then
     # io_trace "ref_wip_to_dev 2 -- $(print_vars atoms[@])"
     echo "sku/dev"
