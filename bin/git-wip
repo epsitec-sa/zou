@@ -83,7 +83,7 @@ wip_exit()
 {
   ! module_in_wip_mode && return 0
 
-  prod_checkout $vnext true
+  prod_checkout "$vnext" true
 }
 wip_finish()
 {
@@ -96,7 +96,7 @@ wip_finish()
     # io_trace "wip_finish 2 -- $(print_vars moduleHead devBranch)"
     # merge, checkout prod || vtag || dev and del wip
     branch_merge "$wipBranch" "$devBranch" \
-    && prod_checkout $vnext true $devBranch \
+    && prod_checkout "$vnext" true "$devBranch" \
     && branch_delete "$wipBranch"
   fi
 }
