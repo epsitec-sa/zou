@@ -13,7 +13,8 @@ dev_parse()
     -h|--help) zou-help $0; exit 0;;
     -j*)            jobsCount=${1#-j};;
     -r|--recursive) recursive=true;;
-    enter)          devCommand=$1; dev_parse_sku $2 && shift;;
+    --vnext)        vnext=true;;
+    enter)          devCommand=$1;;
     exit|finish)    devCommand=$1;;
     --)             shift; break;;
     -*) io_error "unknown option ${VC}$1${Red}\n"; io_help $0; return 1;;
@@ -31,16 +32,10 @@ dev_parse()
   fi
   # io_trace "dev_parse -- $(print_vars recursive devCommand devModulePaths[@])"
 }
-dev_parse_sku()
-{
-  # skip options
-  [[ ${1:0:1} != '-' ]] || return 1
-  branch_set_bestmatch_sku $1
-}
 dev_run()
 {
   # parse command line
-  local jobsCount recursive sku devCommand devModulePaths=()
+  local jobsCount recursive vnext devCommand devModulePaths=()
   dev_parse "$@" || return $?
 
   local devScopes=( prod_scope config_scope cosm_scope )
@@ -54,54 +49,18 @@ dev_run()
   module_run "${devScopes[@]}" dev_command
 }
 
-dev_enter_prolog()
-{
-  true
-}
-dev_enter_epilog()
-{
-  repo_discard_internal_ignore_list
-
-  local devBranch=$(ref_wip_to_dev "$moduleDevBranch")
-  # io_trace "dev_enter -- $(print_vars moduleHead bundleDevBranch devBranch)"
-
-  branch_checkout "$devBranch" true
-}
-dev_exit_prolog()
-{
-  true
-}
-dev_exit_epilog()
-{
-  # [[ $moduleHead == 'HEAD' ]] && return 0
-  repo_discard_internal_ignore_list
-
-  local devBranch=$(ref_wip_to_dev "$moduleDevBranch")
-  # io_trace "dev_exit -- $(print_vars moduleHead bundleDevBranch devBranch)"
-
-  # checkout vtag || dev branch
-  prod_checkout_vtag $devBranch true
-}
+dev_enter_prolog() { true; }
+dev_enter_epilog() { dev_checkout true; }
+dev_exit_prolog()  { true; }
+dev_exit_epilog()  { prod_checkout $vnext true; }
 
 dev_finish_prolog()
 {
-  # [[ $moduleHead == 'HEAD' ]] && return 0
-  repo_discard_internal_ignore_list
-
-  # exit WIP mode if necessary
-  local devBranch=$(ref_wip_to_dev "$moduleDevBranch")
-  # io_trace "dev_finish_prolog -- $(print_vars moduleHead bundleDevBranch devBranch)"
-
-  # local branch lbranch vbranch vtag delta alias
-  # branch_set_prod_info "$devBranch"; devBranch=$lbranch
-  # io_trace "dev_finish_prolog -- $(print_vars moduleHead devBranch vbranch)"
-
-  if [[ -z $prodBranchh ]]; then
+  if [[ -z $prodBranch ]]; then
     mio_error "No vbranch found ${DarkGray}-${Cyan} create a vbranch with: ${VC}git vbranch $(ref_rename $devBranch ${DarkGray}'MAJOR.MINOR'${VC}) $devBranch"
     return 1
   fi
-
-  branch_checkout "$devBranch" true
+  dev_checkout true
   # io_trace "dev_finish_prolog -- $(print_vars lbranch vbranch vtag htag publishStatus)"
 }
 dev_finish_epilog()
@@ -109,9 +68,8 @@ dev_finish_epilog()
   local commitSubmodules=true showSubmoduleMessage=true
   cosm_process_unstaged_submodules
 
-  local vtag htag delta alias status
   branch_merge $moduleHead $prodBranchPath \
-  prod_checkout_vtag $moduleHead true
+  && prod_checkout $vnext true
 }
 
 #########

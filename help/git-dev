@@ -1,0 +1,30 @@
+usage: git dev [<options>] enter  -- <module-paths>
+   or: git dev [<options>] exit   -- <module-paths>
+   or: git dev [<options>] finish -- <module-paths>
+
+Manage dev mode.
+
+commands:
+    enter                   checkout DEV branches in bundle and specified modules
+    exit                    return to PROD mode
+                                checkout actual version or next version if --vnext is specified
+                                fallback to DEV mode
+    finish                  merge DEV branches into PROD branches and return to PROD mode
+                                if module is a bundle finish all submodules recursively
+options:
+    -h|--help               display help
+    -r|--recursive)         visit specified modules recursively
+                                always true with (exit|finish), if bundle is visited
+    --vnext                 return to next version (default to actual version)
+    <module-paths>          specific modules to visit (can be relative)
+    
+example:
+    git wip enter                 # enter DEV mode in bundle and current module
+    git wip enter                 # enter DEV mode  in bundle and current module
+    git wip enter -r              # enter DEV mode  in bundle and current module recursively
+    git wip enter -- m1 m2        # enter DEV mode  in bundle and child modules 'm1' and 'm2'
+    git wip exit                  # exit WIP mode from current module
+                                  # exit from all modules recursively if current module is a bundle
+    git wip finish                # finish DEV mode in current module
+                                  # finish all modules recursively if current module is a bundle
+    git wip finish -r -- ../m1    # finish DEV mode in sibling module 'm1' recursively

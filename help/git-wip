@@ -1,32 +1,38 @@
-usage: git wip [<options>] --start [<prefix>:][<suffix>] -- <module-paths>
-   or: git wip [<options>] --enter [<prefix>:][<suffix>] -- <module-paths>
-   or: git wip [<options>] --exit   -- <module-paths>
-   or: git wip [<options>] --finish -- <module-paths>
+usage: git wip [<options>] start [<prefix>:][<suffix>] -- <module-paths>
+   or: git wip [<options>] enter [<prefix>:][<suffix>] -- <module-paths>
+   or: git wip [<options>] exit   -- <module-paths>
+   or: git wip [<options>] finish -- <module-paths>
 
 Manage WIP mode.
 
+commands:
+    start                   create and checkout WIP branches in bundle and specified modules
+    enter                   checkout WIP branches in bundle and specified modules
+    exit                    return to PROD mode (do not delete WIP branches)
+                                checkout actual version or next version if --vnext is specified
+                                fallback to DEV mode
+    finish                  merge WIP branches into DEV branches, delete WIP branches and return to PROD mode
+                                if a bundle is visited, finish all submodules recursively
+options:
     -h|--help               display help
     -r|--recursive)         visit specified modules recursively
                                 always true with (exit|finish), if bundle is visited
-    --start                 create and checkout WIP branches in bundle and specified modules
-    --enter                 checkout WIP branches in bundle and specified modules
-    --exit                  return to DEV mode (keep WIP branches)
-    --finish                merge WIP branches into DEV branches, delete WIP branches and return to DEV mode
-                                if module is a bundle finish all submodules recursively
+    --vnext                 return to next version (default to actual version)
     <prefix>                WIP prefix (default to 'wip')
     <suffix>                WIP suffix (default to 'work')
     <module-paths>          specific modules to visit (can be relative)
     
 example:
-    git wip --start                 # start 'wip:work' in bundle and current module
-    git wip --start my              # start 'wip:my'   in bundle and current module
-    git wip --start my -r           # start 'wip:my'   in bundle and current module recursively
-    git wip --start issue:7         # start 'issue:7'  in bundle and current module
-    git wip --start -- m1 m2        # start 'wip:work' in bundle and child modules 'm1' and 'm2'
-    git wip --start -r              # start 'wip:work' in bundle and current module recursively
-    git wip --enter my              # enter 'wip:my'   in bundle and current module
-    git wip --exit                  # exit WIP mode from current module
-                                    # exit from all modules recursively if current module is a bundle
-    git wip --finish                # finish actual WIP in current module
-                                    # finish all modules recursively if current module is a bundle
-    git wip --finish -r -- ../m1    # finish actual WIP in sibling module 'm1' recursively
+    git wip start                 # start 'wip:work' in bundle and current module
+    git wip start my              # start 'wip:my'   in bundle and current module
+    git wip start my -r           # start 'wip:my'   in bundle and current module recursively
+    git wip start issue:7         # start 'issue:7'  in bundle and current module
+    git wip start -- m1 m2        # start 'wip:work' in bundle and child modules 'm1' and 'm2'
+    git wip start -r              # start 'wip:work' in bundle and current module recursively
+    git wip enter my              # enter 'wip:my'   in bundle and current module
+    git wip exit                  # exit WIP mode from current module
+                                  # exit from all modules recursively if current module is a bundle
+    git wip exit --vnext          # exit WIP mode and checkout next version (PROD branch)
+    git wip finish                # finish WIP mode in current module
+                                  # finish all modules recursively if current module is a bundle
+    git wip finish -r -- ../m1    # finish WIP mode in sibling module 'm1' recursively
