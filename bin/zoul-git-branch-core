@@ -315,9 +315,12 @@ branch_ensure_local_vbranch()
   *) git branch "$vbranch" "$vtag";;
   esac
 }
-
+# usage:
+#   local refSym
+#   branch_ref_type REF
 # out:
-#   return code
+#   refSym  -- ref symbol
+# return code
 #   0 local branch
 #   1 remote branch without prefix
 #   2 tag
@@ -326,15 +329,26 @@ branch_ensure_local_vbranch()
 branch_ref_type()
 {
   if git show-ref -s --verify "refs/heads/$1" &>/dev/null; then
+    refSym=$1
     return 0
   elif git show-ref -s --verify "refs/remotes/origin/$1" &>/dev/null; then
+    refSym=$1
     return 1
   elif git show-ref -s --verify "refs/tags/$1" &>/dev/null; then
+    refSym=$1
     return 2
   elif git show-ref -s --verify "refs/remotes/$1" &>/dev/null; then
+    refSym=${1#*/}
     return 3
   else
-    return 4
+    local tags=( $(git tag --points-at "$1^{}" 2>/dev/null) )
+    if [ ${#tags[@]} -eq 0 ]; then
+      refSym="$(git rev-parse --short "$1^{}" 2>/dev/null)"
+      return 4
+    else
+      refSym=${tags[-1]}
+      return 2
+    fi
   fi
 }
 branch_checkout()
@@ -345,37 +359,33 @@ branch_checkout()
 
   # checkout = force || !current
   # raise = !current || symChanged
-  if [[ $ref == $(ref_symbol) ]]; then
+  if [[ $ref == $(git rev-parse --abbrev-ref HEAD 2>/dev/null) ]]; then
     # no sym change
     [[ $forceCheckout == true ]]; checkout=$?
     raiseEvent=1
-    refSym=$ref
     # io_trace "branch_checkout 2.1 -- $(print_vars ref refSym forceCheckout checkout raiseEvent isCurrent)"
   elif ref_is_head "$ref"; then
     # no hash change
     checkout=0
     raiseEvent=0
-    refSym=$(ref_symbol $ref)
     # io_trace "branch_checkout 2.2 -- $(print_vars ref refSym forceCheckout checkout raiseEvent isCurrent)"
   else
     checkout=0
     raiseEvent=0
     isCurrent=1
-    refSym=$(ref_symbol $ref)
     # io_trace "branch_checkout 2.3 -- $(print_vars ref refSym forceCheckout checkout raiseEvent isCurrent)"
   fi
   if [ $checkout -eq 0 ]; then
-    branch_ref_type $refSym; refType=$?
-    # io_trace "branch_checkout 2 -- $(print_vars ref forceCheckout refType)"
+    branch_ref_type $ref; refType=$?
+    # io_trace "branch_checkout 2 -- $(print_vars ref forceCheckout refSym refType)"
     # compute symbols
-    local ioType ioRef ec=0
+    local ioType ioRef=$refSym ec=0
     case $refType in
-      0) ioType='branch';     ioRef="$refSym";;
-      1) ioType='new branch'; ioRef="$refSym";;
-      2) ioType='tag';        ioRef="($refSym)";;
-      3) ioType='new branch'; refSym=${refSym#*/}; ioRef="$refSym";;
-      4) ioType='commit';
-         ioRef="($(git rev-parse --short $ref^{} 2>/dev/null))";;
+      0) ioType='branch';;
+      1) ioType='new branch';;
+      2) ioType='tag'; ioRef="($ioRef)";;
+      3) ioType='new branch';;
+      4) ioType='commit'; ioRef="($ioRef)";;
     esac
     # io_trace "branch_checkout 3 -- $(print_vars ref forceCheckout checkout raiseEvent isCurrent refType refSym ioType ioRef)"
 
@@ -452,10 +462,9 @@ _branch_checkout_selector()
     elif [[ $line =~ ^(error|fatal)(:[[:blank:]]*)(.*) ]]; then
       line="${Red}${BASH_REMATCH[1]}${BASH_REMATCH[2]}${BASH_REMATCH[3],}"
       color=${Cyan}
+    else
+      color=${DarkGray}
     fi
-    indent='  '
-    alias=''
-  else
     indent='  '
     alias=''
   fi
