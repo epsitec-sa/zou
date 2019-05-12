@@ -1,0 +1,58 @@
+#!/bin/bash
+
+[[ -z $ZOUL_GIT_MODULE ]]        && . zoul-git-module
+[[ -z $ZOUL_GIT_CONFIG ]]        && . zoul-git-config
+[[ -z $ZOUL_GIT_COSM ]]          && . zoul-git-cosm
+[[ -z $ZOUL_GIT_PROD ]]          && . zoul-git-prod
+[[ -z $ZOUL_GIT_BRANCH_SELECT ]] && . zoul-git-branch-select
+
+sku_parse()
+{
+  while [[ "$#" > 0 ]]; do case "$1" in
+    -h|--help) zou-help $0; exit 0;;
+    -j*)      jobsCount=${1#-j};;
+    -a|--all) noSkuFilter=true;;
+    --vnext)  vnext=true;;
+    -*)       io_error "unknown option '$1'"; return 1;;
+    *)        branch_set_bestmatch_sku $1;;
+  esac; shift; done
+}
+sku_run()
+{
+  # parse command line
+  local jobsCount vnext noSkuFilter sku
+  sku_parse "$@" || return $?
+
+  local skuScopes=( prod_scope config_scope cosm_scope )
+  
+  startupMessage="Entering SKU, please wait..."
+
+  module_run "${skuScopes[@]}" sku_main
+}
+sku_main()
+{
+  # io_trace "sku_main 1 -- $(print_vars sku bundleHead bundleDevBranch selectModulePaths[@])"
+  # [[ $sku == $bundleHead ]] && return 0
+
+  if [[ "$moduleRoot" == "$bundleRoot" ]]; then
+    sku_tree
+  else
+    module_visit "$bundleRoot" "${skuScopes[@]}" sku_tree
+  fi
+}
+sku_tree()
+{
+  # io_trace "sku_tree $(print_vars sku selectDev)"
+  sku_prolog || return $?
+  sku_submodules || return $?
+  sku_epilog
+}
+sku_prolog() { sku_checkout "$sku" "$vnext" true; }
+sku_epilog() { cosm_process_unstaged_submodules; }
+
+sku_submodules()
+{
+  module_visit_submodules_async 'configSelectInclude[@]' "${skuScopes[@]}" 'sku_tree'
+}
+
+sku_run  "$@"
