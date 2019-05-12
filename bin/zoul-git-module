@@ -414,7 +414,7 @@ _module_set_trace_prefix()
     local mcolor=${LightCyan}
     if [[ $useLongModuleTracePrefix == true ]]; then
       local sid bcolor bid mid=$moduleId
-      bid=$(ref_symbol $moduleHead)
+      bid=$moduleHead
       [ $? -eq 0 ] && bcolor=${Cyan} || bcolor=${Brown}
       _module_set_smart_id2 42 "$mid" "$mcolor" "$bid" "$bcolor"
       moduleTracePrefix=$sid
@@ -431,7 +431,7 @@ _module_set_bundle_trace_prefix()
     local sid bid mid=$bundleId
     cd "$bundleRoot"
     
-    bid=$(ref_symbol $bundleHead)
+    bid=$bundleHead
     # [ $? -eq 0 ] && bcolor=${Cyan} || bcolor=${Brown}
     _module_set_smart_id2 42 "$mid" ${White} "$bid" ${White}
     bundleTracePrefix=$sid

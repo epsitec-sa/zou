@@ -29,8 +29,8 @@ vtable_row()
         vtag delta alias head \
         branch lbranch bref
 
-  branch_set_realize $(branch_current)
-  head=$(ref_symbol HEAD)
+  branch_set_realize ${moduleHead:-$(branch_current)}
+  head=${moduleHead:-$(ref_symbol HEAD)}
 
   [[ $setHash == true ]] && hash=$(git rev-parse --short HEAD 2>/dev/null)
   # io_trace "vtable_row 1 -- $(print_vars branch lbranch)"
