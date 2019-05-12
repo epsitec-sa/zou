@@ -106,8 +106,8 @@ _branch_sync_fix_tracking()
     fi
   else
     # no tracking info
-    if [[ $l =~ (^|/)sku/ ]] || branch_is_prod "$l"; then
-      # automatically push sku vbranches
+    if [[ $l =~ ^sku/ ]] || branch_is_prod "$l"; then
+      # automatically push sku and prod branches
       local remote=$(git_remote)
       if [[ -n $remote ]] && ! branch_is_archived "$l" "$remote"; then
         branch_ensure_remote "$l" "$remote"
