@@ -37,7 +37,7 @@ wip_parse()
 wip_parse_wip()
 {
   # skip options
-  [[ ${1:0:1} != '-' && $1 =~ ^([^:]+:)?([^-]*) ]] || return 1
+  [[ ${1:0:1} != '-' && $1 =~ ^([^:]+:)?([^[:blank:]]*) ]] || return 1
   wipPrefix=${BASH_REMATCH[1]%:}
   wipSuffix=${BASH_REMATCH[2]}
 }
