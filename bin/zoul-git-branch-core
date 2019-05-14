@@ -402,7 +402,7 @@ branch_checkout()
 _branch_checkout_core()
 {
   # io_trace "_branch_checkout_core >>"
-  local breakLoop skipLine ec line lines color IFS=$'\n'
+  local breakLoop skipLine ec line lines color alias IFS=$'\n'
   lines=( $(git checkout "$ref" 2>&1) ); ec=$?
   if [[ $raiseEvent -eq 0 && $ec -eq 0 ]]; then
     branch_raise_branch_changed_event "$refSym"
@@ -410,7 +410,7 @@ _branch_checkout_core()
   io_lock_enter
   for line in "${lines[@]}"; do
     if false; then
-      io_trace_unsafe "-- $line" ${DarkGray}
+      prodAlias='' io_trace_unsafe "-- $line" ${DarkGray}
       if [[ $breakLoop != true ]]; then
         _branch_checkout_selector
         [[ $skipLine == true ]] && continue
@@ -429,25 +429,28 @@ _branch_checkout_core()
 }
 _branch_checkout_selector()
 {
-  local alias=$prodAlias
   # io_trace_unsafe "_branch_checkout_selector 1 -- $(print_vars ioType ioRef alias line)"
-  breakLoop=''; skipLine=''; indent=''
+  breakLoop=''; skipLine=''; indent=''; alias=''
   # [[ -z $line ]] && continue
   if [[ $line =~ ^Switched ]]; then
     line="Switched to $ioType ${VC}$ioRef"
     color=${Green}
+    alias=$prodAlias
     breakLoop=true
   elif [[ $line =~ ^(Note:\ checking\ out|Previous\ HEAD) ]]; then
     line="Switched to $ioType ${VC}$ioRef"
     color=${Green}
+    alias=$prodAlias
     breakLoop=true
   elif [[ $line =~ ^Already ]]; then
     line="Already on ${VC}$ioRef"
     color=${LightBlue}
+    alias=$prodAlias
     breakLoop=true
   elif [[ $line =~ ^HEAD\ is\ now\ at\ ([0-9a-f]+) && $isCurrent -eq 0 ]]; then
     line="Already at ${VC}$ioRef"
     color=${LightBlue}
+    alias=$prodAlias
     breakLoop=true
   elif [[ $line =~ ^Your\ branch\ is\ up ]]; then
     skipLine=true
@@ -466,11 +469,11 @@ _branch_checkout_selector()
       color=${DarkGray}
     fi
     indent='  '
-    alias=''
+  else
+    indent='  '
   fi
   if [[ -n $alias ]]; then
     line="${color}$line ${color}(${AC}$alias${color})"
-    alias=''
   else
     line="${color}$line"
   fi
