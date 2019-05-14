@@ -265,18 +265,6 @@ string_set_max_length()
     (( $len > $maxLength )) && maxLength=$len
   done
 }
-array_sort()
-{
-  local array=( ${!1} )
-  local IFS=$'\n'
-  sort <<<"${array[*]}"
-}
-array_sort_descending()
-{
-  local array=( ${!1} )
-  local IFS=$'\n'
-  sort -r <<<"${array[*]}"
-}
 
 assert_equals()
 {
@@ -344,6 +332,22 @@ wildcard_set_regex()
   # io_trace "wildcard_set_regex ${*@Q} -> $(print_vars regex)"
 }
 
+########
+# ARRAYS
+########
+
+array_sort()
+{
+  local array=( ${!1} )
+  local IFS=$'\n'
+  sort <<<"${array[*]}"
+}
+array_sort_descending()
+{
+  local array=( ${!1} )
+  local IFS=$'\n'
+  sort -r <<<"${array[*]}"
+}
 array_remove_array()
 {
   # usage:
