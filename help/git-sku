@@ -1,0 +1,24 @@
+usage: git sku [<options>] enter [<sku-spec>]
+   or: git sku [<options>] status -- <module-paths>
+
+Manage SKUs.
+
+commands:
+    enter                   enter SKU
+    status                  display SKU status
+
+options:
+    -h|--help               display help
+    --vnext                 enter next version (default to actual version)
+    <sku-spec>              SKU specification
+    <module-paths>          specific modules to visit (can be relative)
+    
+example:
+    git sku enter sal             # enter actual version of 'sal' SKU
+                                  # checkout vtag 'sku/sal/<version>' of bundle and fallback vtags of submodules
+    git sku enter                 # enter actual version of current SKU 
+    git sku enter sal --vnext     # enter next version of 'sal' SKU
+                                  # checkout vbranch 'sku/sal/<version>' of bundle and fallback vbranches of submodules
+    git sku enter --vnext         # enter next version of current SKU
+    git sku status                # display SKU status of bundle and all submodules
+    git sku status -- ../m1       # display SKU status of bundle and sibling module 'm1'
