@@ -1,8 +1,6 @@
 #!/bin/bash
 
-[[ -z $ZOUL_GIT_MODULE ]]        && . zoul-git-module
-[[ -z $ZOUL_GIT_CONFIG ]]        && . zoul-git-config
-[[ -z $ZOUL_GIT_COSM ]]          && . zoul-git-cosm
+[[ -z $ZOUL_GIT_CMD ]]           && . zoul-git-cmd
 [[ -z $ZOUL_GIT_PROD ]]          && . zoul-git-prod
 [[ -z $ZOUL_GIT_BRANCH_SELECT ]] && . zoul-git-branch-select
 
@@ -13,46 +11,69 @@ sku_parse()
     -j*)      jobsCount=${1#-j};;
     -a|--all) noSkuFilter=true;;
     --vnext)  vnext=true;;
-    -*)       io_error "unknown option '$1'"; return 1;;
-    *)        branch_set_bestmatch_sku $1;;
+    enter)    subcommand=$1; sku_parse_sku $2 && shift;;
+    status)   subcommand=$1;;
+    --)       shift; break;;
+    -*) io_error "unknown option '$1'"; return 1;;
+    *)  io_error "invalid argument ${VC}$1${Red}, use ${VC}--${Red} to specify modules paths\n"; io_help $0; return 1;;
   esac; shift; done
+
+  cmd_check_subcommand 'enter' 'status'
+  cmd_register_module_paths "$@"
+  # io_trace "sku_parse -- $(print_vars sku subcommand cmdModulePaths[@])"
+}
+sku_parse_sku()
+{
+  # skip options
+  [[ ${1:0:1} == '-' ]] && return 1
+  skuSpec=$1
 }
 sku_run()
 {
   # parse command line
-  local jobsCount vnext noSkuFilter sku
+  local jobsCount recursive command='sku' subcommand cmdModulePaths=() \
+        cmdScopes=( prod_scope config_scope ) \
+        vnext noSkuFilter skuSpec
+
   sku_parse "$@" || return $?
-
-  local skuScopes=( prod_scope config_scope cosm_scope )
   
-  startupMessage="Entering SKU, please wait..."
+  case $subcommand in
+    enter)  startupMessage="Entering ${Brown}$sku${White}, please wait...";;
+    status) startupMessage="Getting SKU status, please wait...";;
+  esac
 
-  module_run "${skuScopes[@]}" sku_main
+  module_run "${cmdScopes[@]}" sku_command
 }
-sku_main()
-{
-  # io_trace "sku_main 1 -- $(print_vars sku bundleHead bundleDevBranch selectModulePaths[@])"
-  # [[ $sku == $bundleHead ]] && return 0
 
-  if [[ "$moduleRoot" == "$bundleRoot" ]]; then
-    sku_tree
-  else
-    module_visit "$bundleRoot" "${skuScopes[@]}" sku_tree
-  fi
-}
-sku_tree()
+sku_command()
 {
-  # io_trace "sku_tree $(print_vars sku selectDev)"
-  sku_prolog || return $?
-  sku_submodules || return $?
-  sku_epilog
-}
-sku_prolog() { sku_checkout "$sku" "$vnext" true; }
-sku_epilog() { cosm_process_unstaged_submodules; }
+  # io_trace "sku_command -- $(print_vars sku subcommand cmdModulePaths[@])"
+  local sku
+  branch_set_bestmatch_sku "$skuSpec"
 
-sku_submodules()
+  case "$subcommand" in
+    enter)
+      recursive=true cmd_visit_bundle;;
+    status)
+      cmd_visit_bundle || return $?
+      recursive=true cmd_visit_modules || return $?
+  esac
+}
+
+sku_enter_prolog() { sku_checkout "$sku" "$vnext" true; }
+sku_enter_epilog() { cosm_process_unstaged_submodules; }
+
+sku_status_prolog()
 {
-  module_visit_submodules_async 'configSelectInclude[@]' "${skuScopes[@]}" 'sku_tree'
+  local sku skus=()
+  for sku in $(branch_list_all_flatten); do
+    if [[ $sku == 'sku/dev' ]]; then
+      skus+=( 'sku' )
+    elif [[ $sku =~ ^sku/(.+)/dev$ ]]; then
+      skus+=( "${BASH_REMATCH[1]}" )
+    fi
+  done 
+  mio_info "Available SKUs (${VC}$(string_join ', ' $(array_sort skus[@]))${Cyan})"
 }
 
 sku_run  "$@"

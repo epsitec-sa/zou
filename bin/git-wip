@@ -1,8 +1,6 @@
 #!/bin/bash
 
-[[ -z $ZOUL_GIT_MODULE ]]        && . zoul-git-module
-[[ -z $ZOUL_GIT_CONFIG ]]        && . zoul-git-config
-[[ -z $ZOUL_GIT_COSM ]]          && . zoul-git-cosm
+[[ -z $ZOUL_GIT_CMD ]]           && . zoul-git-cmd
 [[ -z $ZOUL_GIT_PROD ]]          && . zoul-git-prod
 [[ -z $ZOUL_GIT_BRANCH_MERGE ]]  && . zoul-git-branch-merge
 [[ -z $ZOUL_GIT_BRANCH_SELECT ]] && . zoul-git-branch-select
@@ -14,25 +12,19 @@ wip_parse()
     -j*)            jobsCount=${1#-j};;
     -r|--recursive) recursive=true;;
     --vnext)        vnext=true;;
-    start|enter)    wipCommand=$1; wip_parse_wip $2 && shift;;
-    exit|finish)    wipCommand=$1;;
+    start|enter)    subcommand=$1; wip_parse_wip $2 && shift;;
+    exit|finish)    subcommand=$1;;
     --)             shift; break;;
     -*) io_error "unknown option ${VC}$1${Red}\n"; io_help $0; return 1;;
     *)  io_error "invalid argument ${VC}$1${Red}, use ${VC}--${Red} to specify modules paths\n"; io_help $0; return 1;;
   esac; shift; done
 
-  local path
-  for path; do
-    wipModulePaths+=( "$(realpath "$path")" )
-  done
-  if [[ -z $wipCommand ]]; then
-    io_error "missing subcommand: use one of ${VC}(start|enter|exit|finish)${Red}\n"
-    io_help $0
-    exit 1
-  fi
+  cmd_check_subcommand 'start' 'enter' 'exit' 'finish'
+  cmd_register_module_paths "$@"
+
   wipPrefix=${wipPrefix:-wip}
   wipSuffix=${wipSuffix:-work}
-  # io_trace "wip_parse -- $(print_vars recursive wipPrefix wipSuffix wipCommand wipModulePaths[@])"
+  # io_trace "wip_parse -- $(print_vars recursive wipPrefix wipSuffix subcommand cmdModulePaths[@])"
 }
 wip_parse_wip()
 {
@@ -44,48 +36,63 @@ wip_parse_wip()
 wip_run()
 {
   # parse command line
-  local jobsCount recursive vnext wipCommand wipPrefix wipSuffix wipModulePaths=()
+  local jobsCount recursive command='wip' subcommand cmdModulePaths=() \
+        cmdScopes=( prod_scope config_scope ) \
+        vnext wipPrefix wipSuffix
+        
   wip_parse "$@" || return $?
 
-  local wipScopes=( prod_scope config_scope cosm_scope )
-  
-  case $wipCommand in
+  case $subcommand in
     start)  startupMessage="Starting ${Brown}$wipPrefix:$wipSuffix${White}, please wait...";;
     enter)  startupMessage="Entering ${Brown}$wipPrefix:$wipSuffix${White}, please wait...";;
     exit)   startupMessage="Exiting WIP mode, please wait...";;
     finish) startupMessage="Finishing WIP, please wait...";;
   esac
 
-  module_run "${wipScopes[@]}" wip_command
+  module_run "${cmdScopes[@]}" wip_command
 }
+wip_command()
+{
+  # io_trace "wip_command -- $(print_vars subcommand wipPrefix wipSuffix cmdModulePaths[@])"
+  cmd_visit_modules || return $?
 
-wip_start()
+  if [[ $subcommand =~ (start|enter) ]]; then
+    cmd_visit_bundle false
+  fi
+}
+wip_start_epilog()
 {
   local devBranch=$(wip_to_ref "$moduleDevBranch")
   local wipBranch=$(ref_to_wip "$devBranch" "$wipSuffix" "$wipPrefix")
   if [[ $moduleHead != $wipBranch ]]; then
     # create wip branch on dev branch
-    [[ $moduleHead != $devBranch ]] && branch_checkout "$devBranch"
+    [[ $moduleHead != $devBranch ]] && branch_checkout "$devBranch" &>/dev/null
     git branch "$wipBranch" &>/dev/null
   fi
   branch_checkout "$wipBranch" true
 }
-wip_enter()
+wip_enter_epilog()
 {
   local devBranch=$(wip_to_ref "$moduleDevBranch")
   local wipBranch=$(ref_to_wip "$devBranch" "$wipSuffix" "$wipPrefix")
   # checkout wip branch if it exists
-  if [[ $moduleHead != $wipBranch ]] && branch_exists "$wipBranch"; then
+  if [[ $moduleHead == $wipBranch ]]; then
     branch_checkout "$wipBranch" true
+  elif branch_exists "$wipBranch"; then
+    branch_checkout "$wipBranch" true
+  elif module_is_bundle; then
+    mio_error "SKU ${VC}$wipPrefix:$wipSuffix${Red} not found"
   fi
 }
-wip_exit()
+wip_exit_prolog() { recursive=true; }
+wip_exit_epilog()
 {
   ! module_in_wip_mode && return 0
 
   prod_checkout "$vnext" true
 }
-wip_finish()
+wip_finish_prolog() { recursive=true; }
+wip_finish_epilog()
 {
   ! module_in_wip_mode && return 0
 
@@ -99,58 +106,6 @@ wip_finish()
     && prod_checkout "$vnext" true "$devBranch" \
     && branch_delete "$wipBranch"
   fi
-}
-
-####################
-# COMMAND MANAGEMENT
-####################
-
-wip_command()
-{
-  # io_trace "wip_command -- $(print_vars wipCommand wipPrefix wipSuffix wipModulePaths[@])"
-  if [[ $wipCommand =~ (exit|finish) ]] && wip_bundle_visited; then
-    recursive=true
-  fi
-
-  if [ ${#wipModulePaths[@]} -gt 0 ]; then
-    wip_visit_modules wip_tree || return $?
-  else
-    wip_tree || return $?
-  fi
-
-  if [[ $wipCommand =~ (start|enter) ]] && ! wip_bundle_visited; then
-    wip_visit_bundle wip_node
-  fi
-}
-wip_tree()
-{
-  # io_trace "wip_tree -- $(print_vars wipCommand wipPrefix wipSuffix wipModulePaths[@])"
-  wip_visit_tree || return $?
-  wip_node
-}
-wip_node()
-{
-  # io_trace "wip_node -- $(print_vars wipCommand wipPrefix wipSuffix wipModulePaths[@])"
-  wip_${wipCommand}
-}
-wip_visit_tree()
-{
-  [[ $recursive == true ]] || return 0
-  module_visit_submodules_async 'configSelectInclude[@]' "${wipScopes[@]}" wip_tree
-}
-wip_visit_modules()
-{
-  # io_trace "wip_visit_modules -- ${*@Q} -- $(print_vars wipModulePaths[@])"
-  module_visit_submodules_async 'wipModulePaths[@]' "${wipScopes[@]}" "$@"
-}
-wip_visit_bundle()
-{
-  # io_trace "wip_visit_bundle -- ${*@Q}"
-  module_visit "$bundleRoot" "${wipScopes[@]}" "$@"
-}
-wip_bundle_visited()
-{
-  module_is_bundle || array_contains_element "$bundleRoot" "${wipModulePaths[@]}"
 }
 
 wip_run  "$@"
