@@ -8,6 +8,7 @@
 
 dev_parse()
 {
+  local args=()
   while [[ "$#" > 0 ]]; do case "$1" in
     -h|--help) zou-help $0; exit 0;;
     -j*)            jobsCount=${1#-j};;
@@ -17,12 +18,13 @@ dev_parse()
     exit|finish)    subcommand=$1;;
     --)             shift; break;;
     -*) io_error "unknown option ${VC}$1${Red}\n"; io_help $0; return 1;;
-    *)  io_error "invalid argument ${VC}$1${Red}, use ${VC}--${Red} to specify modules paths\n"; io_help $0; return 1;;
+    *)  args+=( "$1" );;
   esac; shift; done
 
   cmd_check_subcommand 'enter' 'exit' 'finish'
+  cmd_check_args "${args[@]}"
   cmd_register_module_paths "$@"
-  # io_trace "dev_parse -- $(print_vars recursive subcommand cmdModulePaths[@])"
+  # io_trace "dev_parse -- $(print_vars recursive vnext subcommand cmdModulePaths[@])"
 }
 dev_run()
 {
@@ -44,11 +46,11 @@ dev_run()
 dev_command()
 {
   # io_trace "dev_command -- $(print_vars subcommand cmdModulePaths[@])"
-  cmd_visit_modules || return $?
-
-  # always visit bundle for enter command
   if [[ $subcommand =~ enter ]]; then
-    cmd_visit_bundle false
+    # always visit bundle for enter command
+    cmd_visit_modules_level1  && cmd_visit_bundle false
+  else
+    cmd_visit_modules
   fi
 }
 dev_enter_epilog() { dev_checkout true; }

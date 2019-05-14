@@ -21,6 +21,13 @@ cmd_check_subcommand()
   io_help $0
   exit 1
 }
+cmd_check_args()
+{
+  [[ $# -eq 0 ]] && return 0
+  io_error "invalid argument ${VC}$1${Red}, use ${VC}--${Red} to specify modules paths\n"
+  io_help $0
+  return 1
+}
 # usage:
 #   local recursive=true command=wip subcommand=enter \
 #         cmdModulePaths=(sm1 sm2) \
@@ -29,23 +36,36 @@ cmd_check_subcommand()
 #   cmd_visit_submodules
 cmd_visit_modules()
 {
-  # io_trace "cmd_visit_modules -- ${*@Q} -- $(print_vars cmdModulePaths[@])"
+  # io_trace "cmd_visit_modules -- $(print_vars recursive cmdModulePaths[@])"
+  local recursive=${1:-$recursive}
   if [ ${#cmdModulePaths[@]} -gt 0 ]; then
     module_visit_submodules_async 'cmdModulePaths[@]' "${cmdScopes[@]}" _cmd_tree
   else
     _cmd_tree
   fi
 }
+cmd_visit_modules_level1()
+{
+  local recursive=${1:-$recursive}
+  cmdModulePaths=( $(array_remove_element cmdModulePaths[@] "$bundleRoot") )
+  # io_trace "cmd_visit_modules_level1 -- $(print_vars recursive cmdModulePaths[@])"
+  if [ ${#cmdModulePaths[@]} -gt 0 ]; then
+    module_visit_submodules_async 'cmdModulePaths[@]' "${cmdScopes[@]}" _cmd_tree
+  elif ! module_is_bundle; then
+    _cmd_tree
+  fi
+}
 cmd_visit_bundle()
 {
-  if ! _cmd_bundle_visited; then
-    recursive=${1:-$recursive} module_visit "$bundleRoot" "${cmdScopes[@]}" _cmd_tree
-  fi
+  local recursive=${1:-$recursive}
+  cmdModulePaths=( $(array_remove_element cmdModulePaths[@] "$bundleRoot") )
+  # io_trace "cmd_visit_bundle -- $(print_vars recursive cmdModulePaths[@])"
+  module_visit "$bundleRoot" "${cmdScopes[@]}" _cmd_tree
 }
 
 _cmd_tree()
 {
-  # io_trace "_cmd_tree -- $(print_vars subcommand cmdModulePaths[@])"
+  # io_trace "_cmd_tree -- $(print_vars recursive subcommand cmdModulePaths[@])"
   _cmd_prolog || return $?
   _cmd_visit_tree || return $?
   _cmd_epilog
@@ -68,12 +88,4 @@ _cmd_visit_tree()
 {
   [[ $recursive == true ]] || return 0
   module_visit_submodules_async 'configSelectInclude[@]' "${cmdScopes[@]}" _cmd_tree
-}
-_cmd_bundle_visited()
-{
-  if [ ${#cmdModulePaths[@]} -gt 0 ]; then
-    array_contains_element "$bundleRoot" "${cmdModulePaths[@]}"
-  else
-    module_is_bundle
-  fi
 }

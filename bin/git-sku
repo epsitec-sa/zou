@@ -6,6 +6,7 @@
 
 sku_parse()
 {
+  local args=()
   while [[ "$#" > 0 ]]; do case "$1" in
     -h|--help) zou-help $0; exit 0;;
     -j*)      jobsCount=${1#-j};;
@@ -15,12 +16,13 @@ sku_parse()
     status)   subcommand=$1;;
     --)       shift; break;;
     -*) io_error "unknown option '$1'"; return 1;;
-    *)  io_error "invalid argument ${VC}$1${Red}, use ${VC}--${Red} to specify modules paths\n"; io_help $0; return 1;;
+    *)  args+=( "$1" );;
   esac; shift; done
 
   cmd_check_subcommand 'enter' 'status'
+  cmd_check_args "${args[@]}"
   cmd_register_module_paths "$@"
-  # io_trace "sku_parse -- $(print_vars sku subcommand cmdModulePaths[@])"
+  # io_trace "sku_parse -- $(print_vars skuSpec vnext subcommand cmdModulePaths[@])"
 }
 sku_parse_sku()
 {
@@ -47,22 +49,17 @@ sku_run()
 
 sku_command()
 {
-  # io_trace "sku_command -- $(print_vars sku subcommand cmdModulePaths[@])"
   local sku
   branch_set_bestmatch_sku "$skuSpec"
+  # io_trace "sku_command -- $(print_vars skuSpec sku subcommand cmdModulePaths[@])"
 
   case "$subcommand" in
-    enter)
-      recursive=true cmd_visit_bundle;;
-    status)
-      cmd_visit_bundle || return $?
-      recursive=true cmd_visit_modules || return $?
+    enter)  cmd_visit_bundle true;;
+    status) cmd_visit_bundle && cmd_visit_modules_level1 true;;
   esac
 }
 
 sku_enter_prolog() { sku_checkout "$sku" "$vnext" true; }
-sku_enter_epilog() { cosm_process_unstaged_submodules; }
-
 sku_status_prolog()
 {
   local sku skus=()

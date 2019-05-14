@@ -7,6 +7,7 @@
 
 wip_parse()
 {
+  local args=()
   while [[ "$#" > 0 ]]; do case "$1" in
     -h|--help) zou-help $0; exit 0;;
     -j*)            jobsCount=${1#-j};;
@@ -16,10 +17,11 @@ wip_parse()
     exit|finish)    subcommand=$1;;
     --)             shift; break;;
     -*) io_error "unknown option ${VC}$1${Red}\n"; io_help $0; return 1;;
-    *)  io_error "invalid argument ${VC}$1${Red}, use ${VC}--${Red} to specify modules paths\n"; io_help $0; return 1;;
+    *)  args+=( "$1" );;
   esac; shift; done
 
   cmd_check_subcommand 'start' 'enter' 'exit' 'finish'
+  cmd_check_args "${args[@]}"
   cmd_register_module_paths "$@"
 
   wipPrefix=${wipPrefix:-wip}
@@ -54,10 +56,10 @@ wip_run()
 wip_command()
 {
   # io_trace "wip_command -- $(print_vars subcommand wipPrefix wipSuffix cmdModulePaths[@])"
-  cmd_visit_modules || return $?
-
   if [[ $subcommand =~ (start|enter) ]]; then
-    cmd_visit_bundle false
+    cmd_visit_modules_level1 && cmd_visit_bundle
+  else
+    cmd_visit_modules
   fi
 }
 wip_start_epilog()
