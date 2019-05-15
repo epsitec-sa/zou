@@ -17,12 +17,9 @@ branchDeletedEvent+=( _prod_on_branch_deleted )
 prod_scope()
 {
   # setup prod context
-  local prodBranch prodBranchPath \
-        prodVTag prodHTag \
-        prodDelta prodStatus \
-        prodAlias \
-        prodBranchChangedDisabled \
-        prodScopeInitialized=true
+  local prodScopeInitialized=true prodBranchChangedDisabled \
+        prodBranch prodBranchPath prodVTag prodHTag \
+        prodDelta prodStatus prodAlias
   
   prod_reset_scope
 
@@ -79,8 +76,6 @@ _prod_init_scope()
   [[ $prodScopeInitialized == true ]] || return 0
 
   local branch=$1 lbranch=$2 vbranch vtag htag delta alias status
-  # TODO: uncomment when cache is enabled (see branch_set_vtag_info)
-  # prodBranch=''
   branch_set_vtag_info "$branch" "$lbranch" 'auto'
   io_create_alias_color "$alias"
 
