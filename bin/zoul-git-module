@@ -119,49 +119,52 @@ _module_scope_startup()
 # run a function in the module root folder with module scope defined
 _module_scope()
 {
-  # io_trace "_module_scope ${*@Q}"
-  # setup module context
-  local \
-    moduleRoot="$PWD" \
-    moduleParent=$(repo_module_parent) \
-    moduleId=$(repo_module_id) \
-    moduleHead=$(ref_symbol) \
-    moduleConfigFile="$PWD/.zou-flow" \
-    moduleSubmodulePaths=( $(repo_list_submodule_paths $PWD) ) \
-    modulePath moduleBundlePath \
-    moduleDevBranch moduleDevBranchPath \
-    moduleTracePrefix \
-    moduleScopeInitialized=true
+  if [[ $moduleRoot != $PWD ]]; then
+    # io_trace "_module_scope ${*@Q}"
   
-  [[ -n $moduleParent ]] && modulePath=${moduleRoot#$moduleParent/}
-  moduleBundlePath=${moduleRoot#$bundleRoot}
-  moduleBundlePath=${moduleBundlePath#/}
+    # setup module context
+    local \
+      moduleRoot="$PWD" \
+      moduleParent=$(repo_module_parent) \
+      moduleId=$(repo_module_id) \
+      moduleHead=$(ref_symbol) \
+      moduleConfigFile="$PWD/.zou-flow" \
+      moduleSubmodulePaths=( $(repo_list_submodule_paths $PWD) ) \
+      modulePath moduleBundlePath \
+      moduleDevBranch moduleDevBranchPath \
+      moduleTracePrefix \
+      moduleScopeInitialized=true
+    
+    [[ -n $moduleParent ]] && modulePath=${moduleRoot#$moduleParent/}
+    moduleBundlePath=${moduleRoot#$bundleRoot}
+    moduleBundlePath=${moduleBundlePath#/}
 
-  if [[ $moduleRoot == $startupRoot ]]; then
-    # initialize startup module context
-    _module_set_submodule_path_max_length
+    if [[ $moduleRoot == $startupRoot ]]; then
+      # initialize startup module context
+      _module_set_submodule_path_max_length
+    fi
+
+    _module_set_trace_prefix
+
+    if [[ $showVisitModuleMessage == true ]]; then
+      local startupRelativeDir=$(path_make_relative '.' "$startupDir")
+      mio_message "Entering '$startupRelativeDir'" ${Gray}
+    fi
+
+    _module_set_module_dev_branch
+
+    # io_lock_enter
+    # io_trace_unsafe "_module_scope -- $(print_vars startupDir startupRoot bundleRoot)"
+    # io_trace_unsafe "_module_scope -- $(print_vars bundleUrl bundleUrlName)"
+    # io_trace_unsafe "_module_scope -- $(print_vars modulePath moduleBundlePath)"
+    # io_trace_unsafe "_module_scope -- $(print_vars moduleSubmodulePaths[@])"
+    # io_trace_unsafe "_module_scope -- $(print_vars bundleId moduleId principalModuleId)"
+    # io_trace_unsafe "_module_scope -- $(print_vars bundleHead bundleDevBranch bundleDevBranchPath)"
+    # io_trace_unsafe "_module_scope -- $(print_vars moduleHead moduleDevBranch moduleDevBranchPath)"
+    # io_trace_unsafe "_module_scope -- $(print_vars bundleTracePrefix)"
+    # io_trace_unsafe "_module_scope -- $(print_vars moduleTracePrefix)"
+    # io_lock_exit
   fi
-
-  _module_set_trace_prefix
-
-  if [[ $showVisitModuleMessage == true ]]; then
-    local startupRelativeDir=$(path_make_relative '.' "$startupDir")
-    mio_message "Entering '$startupRelativeDir'" ${Gray}
-  fi
-
-  _module_set_module_dev_branch
-
-  # io_lock_enter
-  # io_trace_unsafe "_module_scope -- $(print_vars startupDir startupRoot bundleRoot)"
-  # io_trace_unsafe "_module_scope -- $(print_vars bundleUrl bundleUrlName)"
-  # io_trace_unsafe "_module_scope -- $(print_vars modulePath moduleBundlePath)"
-  # io_trace_unsafe "_module_scope -- $(print_vars moduleSubmodulePaths[@])"
-  # io_trace_unsafe "_module_scope -- $(print_vars bundleId moduleId principalModuleId)"
-  # io_trace_unsafe "_module_scope -- $(print_vars bundleHead bundleDevBranch bundleDevBranchPath)"
-  # io_trace_unsafe "_module_scope -- $(print_vars moduleHead moduleDevBranch moduleDevBranchPath)"
-  # io_trace_unsafe "_module_scope -- $(print_vars bundleTracePrefix)"
-  # io_trace_unsafe "_module_scope -- $(print_vars moduleTracePrefix)"
-  # io_lock_exit
 
   # execute next russian doll
   # io_trace "_module_scope >>"
