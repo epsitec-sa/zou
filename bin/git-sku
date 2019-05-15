@@ -9,20 +9,23 @@ sku_parse()
   local args=()
   while [[ "$#" > 0 ]]; do case "$1" in
     -h|--help) zou-help $0; exit 0;;
-    -j*)      jobsCount=${1#-j};;
-    -a|--all) noSkuFilter=true;;
-    --vnext)  vnext=true;;
-    enter)    subcommand=$1; sku_parse_sku $2 && shift;;
-    status)   subcommand=$1;;
-    --)       shift; break;;
+    -j*)            jobsCount=${1#-j};;
+    -r|--recursive) recursive=true;;
+    -a|--all)       noSkuFilter=true;;
+    --so)           specializedOnly=true;;
+    --vnext)        vnext=true;;
+    enter)          subcommand=$1; sku_parse_sku $2 && shift;;
+    status)         subcommand=$1;;
+    --)             shift; break;;
     -*) io_error "unknown option '$1'"; return 1;;
     *)  args+=( "$1" );;
   esac; shift; done
 
   cmd_check_subcommand 'enter' 'status'
   cmd_check_args "${args[@]}"
-  cmd_register_module_paths "$@"
-  # io_trace "sku_parse -- $(print_vars skuSpec vnext subcommand cmdModulePaths[@])"
+  
+  skuModulePaths=( "$@" )
+  # io_trace "sku_parse -- $(print_vars skuSpec vnext subcommand skuModulePaths[@])"
 }
 sku_parse_sku()
 {
@@ -33,9 +36,9 @@ sku_parse_sku()
 sku_run()
 {
   # parse command line
-  local jobsCount recursive command='sku' subcommand cmdModulePaths=() \
+  local jobsCount recursive=false command='sku' subcommand \
         cmdScopes=( prod_scope config_scope ) \
-        vnext noSkuFilter skuSpec
+        vnext specializedOnly noSkuFilter skuSpec skuModulePaths=()
 
   sku_parse "$@" || return $?
   
@@ -51,26 +54,58 @@ sku_command()
 {
   local sku
   branch_set_bestmatch_sku "$skuSpec"
-  # io_trace "sku_command -- $(print_vars skuSpec sku subcommand cmdModulePaths[@])"
+  # io_trace "sku_command -- $(print_vars skuSpec sku subcommand skuModulePaths[@])"
 
   case "$subcommand" in
-    enter)  cmd_visit_bundle true;;
-    status) cmd_visit_bundle && cmd_visit_modules_level1 true;;
+    enter)
+      cmd_register_module_paths true  "$bundleRoot";;
+    status)
+      [ ${#skuModulePaths[@]} -eq 0 ] && skuModulePaths+=( './' )
+      cmd_register_module_paths false "$bundleRoot"
+      cmd_register_module_paths "$recursive" "${skuModulePaths[@]}"
+      ;;
   esac
+
+  cmd_visit_modules
 }
 
 sku_enter_prolog() { sku_checkout "$sku" "$vnext" true; }
 sku_status_prolog()
 {
-  local sku skus=()
+  local label sku skus=()
+  # for sku in $(branch_list_all_flatten); do
+  #   if [[ $sku == 'sku/dev' ]]; then
+  #     skus+=( 'sku' )
+  #   elif [[ $sku =~ ^sku/(.+)/dev$ ]]; then
+  #     skus+=( "${BASH_REMATCH[1]}" )
+  #   fi
+  # done
   for sku in $(branch_list_all_flatten); do
-    if [[ $sku == 'sku/dev' ]]; then
-      skus+=( 'sku' )
-    elif [[ $sku =~ ^sku/(.+)/dev$ ]]; then
-      skus+=( "${BASH_REMATCH[1]}" )
-    fi
-  done 
-  mio_info "Available SKUs (${VC}$(string_join ', ' $(array_sort skus[@]))${Cyan})"
+    [[ $sku =~ ^(master|sku/.*dev)$ ]] || continue
+    skus+=( "$sku" )
+  done
+  if [ ${#skus[@]} -gt 0 ]; then
+    local i skuList skuName
+    for i in "${!skus[@]}"; do
+      sku=${skus[$i]}
+      skuName=${sku%/dev}
+      skuName=${skuName#sku/}
+      # io_trace "sku_status_prolog -- $(print_vars sku skuName moduleDevBranch)"
+      if [[ $sku == $moduleDevBranch ]]; then
+        skus[$i]=${LightGreen}$skuName${VC}
+      else
+        skus[$i]=$skuName
+      fi
+    done
+    skuList=$(string_join ', ' $(array_sort skus[@]))
+  fi
+
+  if module_is_bundle; then
+    [ ${#skus[@]} -eq 0 ] && skus+=( 'master' )
+    mio_info "Available SKUs (${VC}${skuList}${Cyan})"
+  elif ! [[ ${#skus[@]} -eq 0 && $specializedOnly == true ]]; then
+    mio_info "Specialization (${VC}${skuList}${Cyan})"
+  fi
 }
 
 sku_run  "$@"

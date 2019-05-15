@@ -10,8 +10,10 @@ commands:
 options:
     -h|--help               display help
     --vnext                 enter next version (default to actual version)
+    --so                    display status for modules with specialized SKU only
+    -r|--recursive)         visit specified modules recursively
     <sku-spec>              SKU specification
-    <module-paths>          specific modules to visit (can be relative)
+    <module-paths>          specific modules to visit (default to current module)
     
 example:
     git sku enter sal             # enter actual version of 'sal' SKU
@@ -20,5 +22,6 @@ example:
     git sku enter sal --vnext     # enter next version of 'sal' SKU
                                   # checkout vbranch 'sku/sal/<version>' of bundle and fallback vbranches of submodules
     git sku enter --vnext         # enter next version of current SKU
-    git sku status                # display SKU status of bundle and all submodules
+    git sku status                # display SKU status of bundle and current module
     git sku status -- ../m1       # display SKU status of bundle and sibling module 'm1'
+    git sku status -r --so        # display SKU status of modules with specialized SKUs

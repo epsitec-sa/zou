@@ -12,15 +12,14 @@ commands:
                                 checkout actual version or next version if --vnext is specified
                                 fallback to DEV mode
     finish                  merge WIP branches into DEV branches, delete WIP branches and return to PROD mode
-                                if a bundle is visited, finish all submodules recursively
+
 options:
     -h|--help               display help
     -r|--recursive)         visit specified modules recursively
-                                always true with (exit|finish), if bundle is visited
     --vnext                 return to next version (default to actual version)
     <prefix>                WIP prefix (default to 'wip')
     <suffix>                WIP suffix (default to 'work')
-    <module-paths>          specific modules to visit (can be relative)
+    <module-paths>          specific modules to visit (default to current module)
     
 example:
     git wip start                 # start 'wip:work' in bundle and current module
@@ -31,8 +30,6 @@ example:
     git wip start -r              # start 'wip:work' in bundle and current module recursively
     git wip enter my              # enter 'wip:my'   in bundle and current module
     git wip exit                  # exit WIP mode from current module
-                                  # exit from all modules recursively if current module is a bundle
     git wip exit --vnext          # exit WIP mode and checkout next version (PROD branch)
     git wip finish                # finish WIP mode in current module
-                                  # finish all modules recursively if current module is a bundle
     git wip finish -r -- ../m1    # finish WIP mode in sibling module 'm1' recursively

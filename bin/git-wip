@@ -22,11 +22,11 @@ wip_parse()
 
   cmd_check_subcommand 'start' 'enter' 'exit' 'finish'
   cmd_check_args "${args[@]}"
-  cmd_register_module_paths "$@"
 
+  wipModulePaths=( "$@" )
   wipPrefix=${wipPrefix:-wip}
   wipSuffix=${wipSuffix:-work}
-  # io_trace "wip_parse -- $(print_vars recursive wipPrefix wipSuffix subcommand cmdModulePaths[@])"
+  # io_trace "wip_parse -- $(print_vars recursive wipPrefix wipSuffix subcommand wipModulePaths[@])"
 }
 wip_parse_wip()
 {
@@ -38,9 +38,9 @@ wip_parse_wip()
 wip_run()
 {
   # parse command line
-  local jobsCount recursive command='wip' subcommand cmdModulePaths=() \
+  local jobsCount recursive command='wip' subcommand \
         cmdScopes=( prod_scope config_scope ) \
-        vnext wipPrefix wipSuffix
+        vnext wipPrefix wipSuffix wipModulePaths=()
         
   wip_parse "$@" || return $?
 
@@ -55,12 +55,15 @@ wip_run()
 }
 wip_command()
 {
-  # io_trace "wip_command -- $(print_vars subcommand wipPrefix wipSuffix cmdModulePaths[@])"
-  if [[ $subcommand =~ (start|enter) ]]; then
-    cmd_visit_modules_level1 && cmd_visit_bundle
-  else
-    cmd_visit_modules
-  fi
+  # io_trace "wip_command -- $(print_vars subcommand wipPrefix wipSuffix wipModulePaths[@])"
+  [ ${#wipModulePaths[@]} -eq 0 ] && wipModulePaths+=( './' )
+  cmd_register_module_paths "$recursive" "${wipModulePaths[@]}"
+
+  case $subcommand in
+    start|enter) cmd_register_module_paths false "$bundleRoot";;
+  esac
+
+  cmd_visit_modules
 }
 wip_start_epilog()
 {
