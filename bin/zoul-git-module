@@ -362,14 +362,15 @@ _module_set_smart_id()
         # start from the end
         j=$(( ${#atoms[@]} - $i ))
         (( rlen -= ${#atoms[$j]} ))
-        # io_trace "_module_set_smart_id 2 -- $(print_vars i j rlen)"
+        # io_trace "_module_set_smart_id 3 -- $(print_vars i j rlen)"
         (( rlen <= 0 )) && break
         (( rlen -= 1 ))
       done
       (( j += 1 ))
       ratoms=( "${atoms[@]:$j}" )
       (( ${#ratoms[@]} == 0 )) && ratoms=( ${atoms[-1]} )
-      id=${ratoms[*]}
+      IFS=' ' id=${ratoms[*]}
+      # io_trace "_module_set_smart_id 4 -- $(print_vars ratoms[@] id)"
       id=${id// /\/}
       sid="${Purple}\u2026/${color}${id}"
       id="./${id}"
@@ -379,7 +380,7 @@ _module_set_smart_id()
     fi
   fi
   (( rlen = len - ${#id} ))
-  # io_trace "_module_set_smart_id 3 -- $(print_vars rlen sid)"
+  # io_trace "_module_set_smart_id 5 -- $(print_vars rlen sid)"
 }
 _module_set_smart_id2()
 {
