@@ -7,12 +7,67 @@ ZOUL_GIT_CMD=true
 [[ -z $ZOUL_GIT_MODULE ]] && . zoul-git-module
 [[ -z $ZOUL_GIT_CONFIG ]] && . zoul-git-config
 
+# usage:
+#   cmd_register_module_paths true sm1 sm2
+# in:
+#   recursive=${1:-false}
+#   paths=${@:2}
+
+declare -A cmdRecursiveMap
+cmdModulePaths=()
+
 cmd_register_module_paths()
 {
-  local path
+  # io_trace "cmd_register_module_paths -- ${*@Q}"
+  local recursive=${1:-false} path rpath; shift
+  [ $# -eq 0 ] && return 0
+
   for path; do
-    cmdModulePaths+=( "$(realpath "$path")" )
+    path=$(realpath "$path")
+    # io_trace "cmd_register_module_paths 1 -- $(print_vars path)"
+    if [[ ${cmdRecursiveMap["$path"]:-false} == false ]]; then
+      cmdRecursiveMap["$path"]=$recursive
+    fi
+    if ! array_contains_element "$path" "${cmdModulePaths[@]}"; then
+      cmdModulePaths+=( "$path" )
+    fi
   done
+
+  # io_trace "cmd_register_module_paths 2 -- $(print_vars cmdModulePaths[@])"
+  local rpaths=()
+  for path in "${cmdModulePaths[@]}"; do
+    if [[ ${cmdRecursiveMap["$path"]} == true ]]; then
+      for rpath in "${cmdModulePaths[@]}"; do
+        [[ $rpath == $path ]] && continue
+        if [[ ${rpath#$path} != $rpath ]] ; then
+          rpaths+=( "$rpath" )
+        fi
+      done
+    fi
+  done
+  cmdModulePaths=( $(array_remove_array 'cmdModulePaths[@]' 'rpaths[@]') )
+  # io_trace "cmd_register_module_paths 3 -- $(print_vars cmdModulePaths[@] rpaths[@])"
+
+  for rpath in "${rpaths[@]}"; do
+    unset cmdRecursiveMap["$rpath"]
+  done
+  # declare -p cmdRecursiveMap
+}
+
+# usage:
+#   local recursive=true command=wip subcommand=enter \
+#         cmdScopes=( prod_scope config_scope cosm_scope)
+#
+#   cmd_register_module_paths true sm1 sm2
+#   cmd_visit_modules
+cmd_visit_modules()
+{
+  # io_trace "cmd_visit_modules -- $(print_vars cmdModulePaths[@])"
+  if [ ${#cmdModulePaths[@]} -eq 0 ]; then
+    _cmd_tree
+  else
+    module_visit_submodules_async 'cmdModulePaths[@]' "${cmdScopes[@]}" _cmd_tree
+  fi
 }
 cmd_check_subcommand()
 {
@@ -28,44 +83,9 @@ cmd_check_args()
   io_help $0
   return 1
 }
-# usage:
-#   local recursive=true command=wip subcommand=enter \
-#         cmdModulePaths=(sm1 sm2) \
-#         cmdScopes=( prod_scope config_scope cosm_scope)
-#
-#   cmd_visit_submodules
-cmd_visit_modules()
-{
-  # io_trace "cmd_visit_modules -- $(print_vars recursive cmdModulePaths[@])"
-  local recursive=${1:-$recursive}
-  if [ ${#cmdModulePaths[@]} -gt 0 ]; then
-    module_visit_submodules_async 'cmdModulePaths[@]' "${cmdScopes[@]}" _cmd_tree
-  else
-    _cmd_tree
-  fi
-}
-cmd_visit_modules_level1()
-{
-  local recursive=${1:-$recursive}
-  cmdModulePaths=( $(array_remove_element cmdModulePaths[@] "$bundleRoot") )
-  # io_trace "cmd_visit_modules_level1 -- $(print_vars recursive cmdModulePaths[@])"
-  if [ ${#cmdModulePaths[@]} -gt 0 ]; then
-    module_visit_submodules_async 'cmdModulePaths[@]' "${cmdScopes[@]}" _cmd_tree
-  elif ! module_is_bundle; then
-    _cmd_tree
-  fi
-}
-cmd_visit_bundle()
-{
-  local recursive=${1:-$recursive}
-  cmdModulePaths=( $(array_remove_element cmdModulePaths[@] "$bundleRoot") )
-  # io_trace "cmd_visit_bundle -- $(print_vars recursive cmdModulePaths[@])"
-  module_visit "$bundleRoot" "${cmdScopes[@]}" _cmd_tree
-}
 
 _cmd_tree()
 {
-  # io_trace "_cmd_tree -- $(print_vars recursive subcommand cmdModulePaths[@])"
   _cmd_prolog || return $?
   _cmd_visit_tree || return $?
   _cmd_epilog
@@ -86,6 +106,6 @@ _cmd_epilog()
 }
 _cmd_visit_tree()
 {
-  [[ $recursive == true ]] || return 0
+  [[ ${cmdRecursiveMap[$moduleRoot]} == true ]] || return 0
   module_visit_submodules_async 'configSelectInclude[@]' "${cmdScopes[@]}" _cmd_tree
 }
