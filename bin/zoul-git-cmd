@@ -106,6 +106,15 @@ _cmd_epilog()
 }
 _cmd_visit_tree()
 {
-  [[ ${cmdRecursiveMap[$moduleRoot]} == true ]] || return 0
+  _cmd_is_recursive || return 0
   module_visit_submodules_async 'configSelectInclude[@]' "${cmdScopes[@]}" _cmd_tree
+}
+_cmd_is_recursive()
+{
+  local path
+  for path in "${!cmdRecursiveMap[@]}"; do
+    [[ ${cmdRecursiveMap["$path"]} == true ]] || continue
+    [[ ${moduleRoot#$path} == $moduleRoot ]] || return 0
+  done
+  return 1
 }
