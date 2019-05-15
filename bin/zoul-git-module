@@ -224,7 +224,7 @@ _module_set_bundle_dev_branch()
 _bundle_vref_to_dev()
 {
   local vref=$1
-  if [[ $vref =~ (.*/)?v[0-9]+\.[0-9]+ ]]; then
+  if [[ $vref =~ (.*/)?v?[0-9]+\.[0-9]+ ]]; then
     folder=${BASH_REMATCH[1]}
     [[ -z $folder ]] && bundleDevBranch='master' || bundleDevBranch="${folder}dev"
   else
