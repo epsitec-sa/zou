@@ -106,8 +106,9 @@ _cmd_epilog()
 }
 _cmd_visit_tree()
 {
-  _cmd_is_recursive || return 0
-  module_visit_submodules_async 'configSelectInclude[@]' "${cmdScopes[@]}" _cmd_tree
+  if _cmd_is_recursive; then
+    module_visit_submodules_async 'configSelectInclude[@]' "${cmdScopes[@]}" _cmd_tree
+  fi
 }
 _cmd_is_recursive()
 {
