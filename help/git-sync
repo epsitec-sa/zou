@@ -1,16 +1,18 @@
-usage: git sync [<options>]
+usage: git sync [<options>] -- <module-paths>
 
-Synchronize changes and update submodules
+Synchronize changes.
 
     -h|--help               display help
     -j<n>                   number of submodules synchronized in parallel (default to 32)
     -a|--all                visit all submodules (ignore SKU filter)
-    .                       visit startup module only (do not visit submodules)
+    -r|--recursive)         visit specified modules recursively
 
     -c|--clean              clean local branches (delete redondant ones)
     -p|--pull               pull only - do not push local modifications
+    <module-paths>          specific modules to visit (default to current module)
     
 example:
-    git sync                # synchronize working dir and submodules recursively
-    git sync .              # synchronize working dir only
+    git sync                # synchronize current module
+    git sync -r             # synchronize current module and submodules recursively
+    git sync -r -- ../m1    # synchronize sibling module 'm1' recursively
     git sync --pull         # pull only - do not push

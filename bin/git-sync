@@ -1,54 +1,57 @@
 #!/bin/bash
 
-[[ -z $ZOUL_GIT_MODULE ]]      && . zoul-git-module
-[[ -z $ZOUL_GIT_CONFIG ]]      && . zoul-git-config
-[[ -z $ZOUL_GIT_COSM ]]        && . zoul-git-cosm
+[[ -z $ZOUL_GIT_CMD ]]         && . zoul-git-cmd
 [[ -z $ZOUL_GIT_BRANCH_SYNC ]] && . zoul-git-branch-sync
 
 sync_parse()
 {
+  local args=()
   while [[ "$#" > 0 ]]; do case "$1" in
     -h|--help) zou-help $0; exit 0;;
-    -a|--all)           noSkuFilter=true;;
-    .)                  recursive='';;
-    -c|--clean)         cleanLocalBranches=true;;
-    -p|--pull)          syncNoPush=true;;
-    -j*)                jobsCount=${1#-j};;
+    -j*)            jobsCount=${1#-j};;
+    -r|--recursive) recursive=true;;
+    -a|--all)       noSkuFilter=true;;
+    -c|--clean)     cleanLocalBranches=true;;
+    -p|--pull)      syncNoPush=true;;
+    --)             shift; break;;
     -*) io_error "unknown option '$1'"; return 1;;
+    *)  args+=( "$1" );;
   esac; shift; done
+
+  cmd_check_args "${args[@]}"
+  
+  syncModulePaths=( "$@" )
+  # io_trace "sync_parse -- $(print_vars noSkuFilter cleanLocalBranches syncNoPush syncModulePaths[@])"
 }
 sync_run()
 {
   # parse command line
-  local jobsCount noSkuFilter cleanLocalBranches syncNoPush recursive=true
+  local jobsCount recursive command='sync' subcommand='do' \
+        cmdScopes=( config_scope ) syncModulePaths=() \
+        noSkuFilter noSelectFilter=true cleanLocalBranches syncNoPush
+
   sync_parse "$@" || return $?
   
-  local showSubmoduleMessage=true \
-        syncSelectExcludeBundlePaths=()
-        syncScopes=( config_scope cosm_scope )
-
   startupMessage="Synchronizing, please wait..."
 
-  module_run "${syncScopes[@]}" sync_tree
+  module_run "${cmdScopes[@]}" sync_command
 }
-sync_tree()
+sync_command()
 {
-  sync_prolog
-  [[ $recursive == true ]] && sync_submodules
-  cosm_process_unstaged_submodules
+  # io_trace "sync_command -- $(print_vars syncModulePaths[@])"
+
+  [ ${#syncModulePaths[@]} -eq 0 ] && syncModulePaths+=( './' )
+  cmd_register_module_paths "$recursive" "${syncModulePaths[@]}"
+
+  cmd_visit_modules
 }
-sync_prolog()
+
+sync_do_prolog()
 {
   branch_sync_all
-  sync_ensure_attached
-  sync_clean_local_branches
+  _sync_clean
 }
-sync_ensure_attached()
-{
-  ! array_contains_element "$moduleId" "${syncSelectExcludeBundlePaths[@]}" && branch_ensure_attached
-  syncSelectExcludeBundlePaths+=( "${configSelectExcludeBundlePaths[@]}" )
-}
-sync_clean_local_branches()
+_sync_clean()
 {
   [[ $cleanLocalBranches == true ]] || return 0
   local branch
@@ -56,10 +59,6 @@ sync_clean_local_branches()
     local info=$(git branch -D "$branch" 2>/dev/null)
     [[ -n $info ]] && mio_warning "$info"
   done
-}
-sync_submodules()
-{
-  module_visit_submodules_async 'configSkuInclude[@]' "${syncScopes[@]}" 'sync_tree'
 }
 
 sync_run "$@"
