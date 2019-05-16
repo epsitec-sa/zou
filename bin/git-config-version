@@ -91,9 +91,10 @@ cver_main()
 }
 cver_list()
 {
-  local spec key value message IFS=$'\n'
+  local spec key value message specs
+  IFS=$'\n' specs=( $(version_list_all_files) ); IFS=$OIFS
   io_lock_enter
-  for spec in $(version_list_all_files); do
+  for spec in "${specs[@]}"; do
     key=${spec%% *}
     key=${key#update-version.}
     value=${spec#* }

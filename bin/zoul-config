@@ -36,8 +36,9 @@ config_setup()
 }
 config_migrate_registered_bundles()
 {
-  local IFS=$'\n' kv key value
-  for kv in $(git config --global --get-regexp '^zou\..*\.path$' 2>/dev/null); do
+  local kv kvs key value
+  IFS=$'\n' kvs=( $(git config --global --get-regexp '^zou\..*\.path$' 2>/dev/null) ); IFS=$OIFS
+  for kv in "${kvs[@]}"; do
     [[ $kv =~ ^([^\ ]+)[[:blank:]]+(.*)$ ]]
     key=${BASH_REMATCH[1]}
     value=${BASH_REMATCH[2]}

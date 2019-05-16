@@ -122,21 +122,21 @@ branch_sync_info()
 }
 branch_list_local_tracked()
 {
-  local l r i IFS=' '
+  local l r i
   while read l r i; do
     [[ -n $l && -n $r ]] && echo $l
   done < <(branch_sync_info)
 }
 branch_list_remote_tracked()
 {
-  local l r i IFS=' '
+  local l r i
   while read l r i; do
     [[ -n $r ]] && echo $r
   done < <(branch_sync_info)
 }
 branch_list_all_tracked()
 {
-  local l r i IFS=' '
+  local l r i
   while read l r i; do
     [[ -n $r ]] && {
       [[ -n $l ]] && echo $l
@@ -147,7 +147,7 @@ branch_list_all_tracked()
 branch_list_local_can_delete()
 {
   # list local branches that can be removed safely
-  local l r i c IFS=' ' remote=$(git_remote)
+  local l r i c remote=$(git_remote)
   while read l r i; do
     # exclude branch 'master' and current branch
     [[ -z $c ]] && c=$(wildcard_to_regex ${moduleHead:-$(branch_current)})
@@ -402,8 +402,8 @@ branch_checkout()
 _branch_checkout_core()
 {
   # io_trace "_branch_checkout_core >>"
-  local breakLoop skipLine ec line lines color alias IFS=$'\n'
-  lines=( $(git checkout "$ref" 2>&1) ); ec=$?
+  local breakLoop skipLine ec line lines color alias
+  IFS=$'\n' lines=( $(git checkout "$ref" 2>&1) ); ec=$?; IFS=$OIFS
   if [[ $raiseEvent -eq 0 && $ec -eq 0 ]]; then
     branch_raise_branch_changed_event "$refSym"
   fi

@@ -145,7 +145,7 @@ _branch_set_publish_epilog()
   local updater=$1 vresources=()
   # update technical version - modify resources files
   if [[ -n $updater ]]; then
-    IFS=$'\n' vresources=( $($updater $vnext) )
+    IFS=$'\n' vresources=( $($updater $vnext) ); IFS=$OIFS
   fi
   # io_trace "_branch_set_publish_epilog -- $(print_vars updater vresources[@])"
   # commit resources and clean submodules in dev branch

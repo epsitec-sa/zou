@@ -88,9 +88,7 @@ vcheck_node()
       a2=( ${byDate[$vbranch]} )
       for i2 in ${!a2[@]}; do
         e2=${a2[$i2]}
-        local IFS='='
-        ai2=( ${a2[$i2]} )
-        IFS=' '
+        IFS='=' ai2=( ${a2[$i2]} ); IFS=$OIFS
         if [ ${#ai2[@]} -eq 1 ]; then
           if [[ ${a1[$i1]} != ${a2[$i2]} ]]; then
             if [ $ec -eq 0 ]; then

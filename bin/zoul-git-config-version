@@ -275,17 +275,17 @@ version_verify_context()
 version_update()
 {
   version_verify_context 'version_update'
-  local version=$1 varray techver stechver kv key value IFS=' '
+  local version=$1 varray techver stechver kv kvs key value
   varray=( $(version_parse "$1") ) || return 1
   techver=$(version_technical "${varray[@]}")
   stechver=$(version_technical_short "${varray[@]}")
-  IFS=$'\n'
-  for kv in $(version_list_all_files); do
+  IFS=$'\n' kvs=( $(version_list_all_files) ); IFS=$OIFS
+  for kv in "${kvs[@]}"; do
     kv=${kv#update-version.}
     key=${kv%% *}; key=${key//-/_}
     value=${kv#* }
     # io_trace "version_update -- $(print_vars key value varray[@] techver stechver)"
-    IFS=' ' "version_update_$key" "$value" 'varray[@]' "$techver" "$stechver"
+    "version_update_$key" "$value" 'varray[@]' "$techver" "$stechver"
   done
   # execute custom updater (use git config-version --custom to create one)
   version_update_custom "$techver" 'varray[@]' './update-version'
@@ -320,12 +320,12 @@ version_config_auto()
   version_verify_context 'version_config_auto'
   git config --file "$moduleConfigFile" update-version.freezed &>/dev/null && return 0
 
-  local type specs file files=() freezed IFS=$'\n'
+  local type specs file files=() resources freezed
   for type in "${!versionAutoSpecs[@]}"; do
-    IFS=':' specs=( ${versionAutoSpecs[$type]} )
+    IFS=':' specs=( ${versionAutoSpecs[$type]} ); IFS=$OIFS
     # io_trace "version_config_auto -- $(print_vars specs[@])"
-    IFS=$'\n'
-    for file in $(version_list_resources "${specs[@]}"); do
+    IFS=$'\n' resources=( $(version_list_resources "${specs[@]}") ); IFS=$OIFS
+    for file in "${resources[@]}"; do
       # io_trace "version_config_auto -- $(print_vars file)"
       if ieval "grep -qE '${versionFilters[$type]}'" "$file"; then
         if [[ -z $freezed ]]; then

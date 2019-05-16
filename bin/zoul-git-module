@@ -60,6 +60,7 @@ module_visit_submodules()
 #   ${@:2} -- next ...
 module_visit_submodules_async()
 {
+  # io_trace "module_visit_submodules_async ${*@Q}"
   visit_async $1 _module_submodule_visitor "${@:2}"
 }
 module_visit_submodules_async_fast()
@@ -346,17 +347,16 @@ _module_set_submodule_path_max_length()
 #   rlen -- remaining length
 _module_set_smart_id()
 {
-  # io_trace "_module_set_smart_id 1 -- ${*@Q}"
   local len=$1 id=$2 color=$3
+  # io_trace "_module_set_smart_id 1 -- $(print_vars len id color)"
   rlen=$len
   if (( ${#id} <= $len )); then
     sid="${color}$id"
   else
-    local atoms ratoms IFS='/'
-    atoms=( $id ); IFS=$'\n'
-    # io_trace "_module_set_smart_id 2 -- $(print_vars i j rlen atoms[@])"
+    local atoms ratoms
+    IFS='/' atoms=( $id ); IFS=$OIFS
     if (( ${#atoms[@]} > 1 )); then
-      local i j
+      local i j seq
       (( rlen -= 1 ))
       for i in $(seq 1 "${#atoms[@]}"); do
         # start from the end
@@ -369,7 +369,7 @@ _module_set_smart_id()
       (( j += 1 ))
       ratoms=( "${atoms[@]:$j}" )
       (( ${#ratoms[@]} == 0 )) && ratoms=( ${atoms[-1]} )
-      IFS=' ' id=${ratoms[*]}
+      id=${ratoms[*]}
       # io_trace "_module_set_smart_id 4 -- $(print_vars ratoms[@] id)"
       id=${id// /\/}
       sid="${Purple}\u2026/${color}${id}"
@@ -385,6 +385,7 @@ _module_set_smart_id()
 _module_set_smart_id2()
 {
   local len=$1 mid=$2 mcolor=$3 bid=$4 bcolor=$5 spaces sep
+  # io_trace "_module_set_smart_id2 0 -- $(print_vars len mid mcolor bid bcolor)"
   (( spaces = $len - ${#mid} - ${#bid} - 4 ))
   if (( spaces <= 0 )); then
     # no enough space
@@ -394,21 +395,21 @@ _module_set_smart_id2()
     (( grlen = -spaces + 1 ))
     (( brlen = ( grlen * ${#bid} ) / ( ${#bid} + ${#mid} ) + 4 ))
     (( mrlen = grlen - brlen ))
-    # io_trace "_module_set_smart_id2 -- $(print_vars spaces grlen mrlen brlen)"
-    _module_set_smart_id $(( ${#bid} - brlen )) $bid ${bcolor}
+    # io_trace "_module_set_smart_id2 1 -- $(print_vars mid spaces grlen mrlen brlen)"
+    _module_set_smart_id $(( ${#bid} - brlen )) "$bid" "${bcolor}"
     bid=$sid
     (( mrlen -= rlen ))
-    # io_trace "_module_set_smart_id2 -- $(print_vars spaces grlen mrlen brlen)"
-    _module_set_smart_id $(( ${#mid} - mrlen )) $mid ${mcolor}
+    # io_trace "_module_set_smart_id2 2 -- $(print_vars mid spaces grlen mrlen brlen)"
+    _module_set_smart_id $(( ${#mid} - mrlen )) "$mid" "${mcolor}"
     mid=$sid
-    # io_trace "_module_set_smart_id2 -- $(print_vars spaces grlen mrlen brlen rlen sid)"
+    # io_trace "_module_set_smart_id2 3 -- $(print_vars mid spaces grlen mrlen brlen rlen sid)"
     printf -v sep '%0.s-' $(seq 1 $spaces)
     sid="${mcolor}[$mid]${DarkGray}${sep}${bcolor}($bid)${NC}"
     (( spaces = rlen + 1 ))
   fi
   printf -v sep '%0.s-' $(seq 1 $spaces)
   sid="${mcolor}[$mid]${DarkGray}${sep}${bcolor}($bid)${NC}"
-  # io_trace "_module_set_smart_id2 -- $(print_vars spaces sid)"
+  # io_trace "_module_set_smart_id2 4 -- $(print_vars spaces sid)"
 }
 _module_set_trace_prefix()
 {
@@ -417,8 +418,7 @@ _module_set_trace_prefix()
   else
     local mcolor=${LightCyan}
     if [[ $useLongModuleTracePrefix == true ]]; then
-      local sid bcolor bid mid=$moduleId
-      bid=$moduleHead
+      local sid bcolor bid mid=$moduleId bid=$moduleHead
       [ $? -eq 0 ] && bcolor=${Cyan} || bcolor=${Brown}
       _module_set_smart_id2 42 "$mid" "$mcolor" "$bid" "$bcolor"
       moduleTracePrefix=$sid

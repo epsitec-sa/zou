@@ -404,8 +404,8 @@ repo_update_submodules()
 }
 repo_discard_submodules()
 {
-  local sms smPaths=() IFS=' '
-  sms=( "$@" ); IFS=$'\n'
+  local sms smPaths=()
+  IFS=' ' sms=( "$@" ); IFS=$OIFS
   io_eval "git submodule update --recursive -- ${sms[*]} 2>&1" _repo_submodule_selector ${DarkGray}
   [ ${#smPaths[@]} -ne 0 ] && repo_raise_submodule_changed_event "${smPaths[@]}"
 }

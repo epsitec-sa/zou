@@ -34,8 +34,9 @@ bundle_set_registered_paths()
   bundleRegisteredPaths=()
   
   lock_enter "$gitConfigGate"
-  local IFS=$'\n' kv
-  for kv in $(git config --file "$zou_configFile" --get-regexp '^zou\..*\.path$' 2>/dev/null); do
+  local kv kvs
+  IFS=$'\n' kvs=( $(git config --file "$zou_configFile" --get-regexp '^zou\..*\.path$' 2>/dev/null) ); IFS=$OIFS
+  for kv in "${kvs[@]}"; do
     # zou.https://git.epsitec.ch/Build/zou-dev.git.path C:/devel/zou-dev
     # zou.https://git.epsitec.ch/cresus-suite/cresus-dev.git.path C:/devel/cresus-dev
     [[ $kv =~ ^[^[:blank:]]+[[:blank:]]+(.*)$ ]]

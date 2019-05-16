@@ -8,7 +8,8 @@ ZOUL_CORE=true
 [[ -z $ZOUL_PROCESS ]] && . zoul-process
 
 # work with default IFS
-IFS=$'\n'
+IFS=$' \t\n'
+OIFS=$IFS
 
 # declare startup constants
 zou_startupPath=$(realpath "${BASH_SOURCE[-1]}")
@@ -237,16 +238,10 @@ string_pad_left()  { printf "%*s" "$1" "$2"; }
 string_pad_right() { printf "%-*s" "$1" "$2"; }
 string_join()      { local d=$1; shift; echo -n "$1"; shift; printf "%s" "${@/#/$d}"; }
 string_indent()    { local n=$1; shift; printf "%${n}s%s" '' "$*"; }
-string_sort()   
-{
-  local IFS=$'\n'
-  sort <<<"$*"
-}
-string_sort_descending()   
-{
-  local IFS=$'\n'
-  sort -r <<<"$*"
-}
+
+string_sort()            { IFS=$'\n' sort <<<"$*"; IFS=$OIFS; }
+string_sort_descending() { IFS=$'\n' sort -r <<<"$*"; IFS=$OIFS; }
+
 string_max_length()
 {
   local maxLength
@@ -339,14 +334,12 @@ wildcard_set_regex()
 array_sort()
 {
   local array=( ${!1} )
-  local IFS=$'\n'
-  sort <<<"${array[*]}"
+  IFS=$'\n' sort <<<"${array[*]}"; IFS=$OIFS
 }
 array_sort_descending()
 {
   local array=( ${!1} )
-  local IFS=$'\n'
-  sort -r <<<"${array[*]}"
+  IFS=$'\n' sort -r <<<"${array[*]}"; IFS=$OIFS
 }
 array_remove_array()
 {
@@ -573,33 +566,33 @@ io_eval()
 {
   local selector=${2:-:} color=${3:-$NC} indent=${4:-  } isLastLine
   # io_trace "io_eval ${*@Q} -- $(print_vars selector color)"
-  ( eval "$1" ) | \
+  IFS=$'\n' eval "$1" | \
   while read -r line; do
     $selector "$line" "$color"; isLastLine=$?
     io_message "${indent}$line" "$moduleTracePrefix" "$color"
     [ $isLastLine -ne 0 ] && break
-  done
+  done; IFS=$OIFS
   return ${PIPESTATUS[0]}
 }
 io_locked_eval()
 {
-  local selector=${2:-:} color=${3:-$NC} indent=${4:-  } isLastLine IFS=$'\n'
+  local selector=${2:-:} color=${3:-$NC} indent=${4:-  } isLastLine
   # io_trace "io_locked_eval ${*@Q} -- $(print_vars selector color)"
   io_lock_enter
-  ( eval "$1" ) | \
+  IFS=$'\n' eval "$1" | \
   while read -r line; do
     $selector "$line" "$color"; isLastLine=$?
     io_message_unsafe "${indent}$line" "$moduleTracePrefix" "$color"
     [ $isLastLine -ne 0 ] && break
-  done
+  done; IFS=$OIFS
   io_lock_exit
   return ${PIPESTATUS[0]}
 }
 io_buffered_eval()
 {
-  local selector=${2:-:} color=$3 indent=${4:-  } isLastLine=0 line lines ec IFS=$'\n'
+  local selector=${2:-:} color=$3 indent=${4:-  } isLastLine=0 line lines ec
   # io_trace "io_buffered_eval 1 -- $(print_vars selector color indent)"
-  lines=( $(eval "$1") ); ec=$?
+  IFS=$'\n' lines=( $(eval "$1") ); ec=$?
   if [[ -z $color ]]; then
     [ $ec -eq 0 ] && color=${NC} || color=${Red}
   fi

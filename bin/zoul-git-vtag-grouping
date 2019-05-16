@@ -44,12 +44,9 @@ _vtag_list_by_date_visitor()
 }
 _vtag_visit_by_date()
 {
-  local visitor=$1
-  local filter=$2
-  local line atoms vtags item
-  local IFS=$'\n'
-  for line in $(git log --date-order --tags --simplify-by-decoration --pretty=format:'%d'); do
-    local IFS=' '
+  local visitor=$1 filter=$2 line atoms vtags item lines
+  IFS=$'\n' lines=( $(git log --date-order --tags --simplify-by-decoration --pretty=format:'%d') ); IFS=$OIFS
+  for line in "${lines[@]}"; do
     # look only for lines with a tag label
     [[ $line =~ tag: ]] || continue
     # remove parentheses
