@@ -2,6 +2,7 @@
 
 [[ -z $ZOUL_GIT_CMD ]]           && . zoul-git-cmd
 [[ -z $ZOUL_GIT_PROD ]]          && . zoul-git-prod
+[[ -z $ZOUL_GIT_COSM ]]          && . zoul-git-cosm
 [[ -z $ZOUL_GIT_BRANCH_SELECT ]] && . zoul-git-branch-select
 
 sku_parse()
@@ -37,7 +38,7 @@ sku_run()
 {
   # parse command line
   local jobsCount recursive=false command='sku' subcommand \
-        cmdScopes=( prod_scope config_scope ) \
+        cmdScopes=( prod_scope config_scope cosm_scope ) \
         vnext specializedOnly noSkuFilter skuSpec skuModulePaths=()
 
   sku_parse "$@" || return $?
