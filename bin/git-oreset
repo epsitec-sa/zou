@@ -19,11 +19,10 @@ oreset_parse()
 oreset_run()
 {
   # parse command line
-  local jobsCount noSkuFilter recursive
+  local jobsCount noSkuFilter recursive forceReset
   oreset_parse "$@" || return $?
   
   local showSubmoduleMessage=true \
-        oresetSelectExcludeBundlePaths=()
         oresetScopes=( config_scope cosm_scope )
 
   startupMessage="Resetting and pruning tags, please wait..."
@@ -39,12 +38,6 @@ oreset_tree()
 oreset_prolog()
 {
   branch_oreset_all "$forceReset"
-  oreset_ensure_attached
-}
-oreset_ensure_attached()
-{
-  ! array_contains_element "$moduleId" "${oresetSelectExcludeBundlePaths[@]}" && branch_ensure_attached
-  oresetSelectExcludeBundlePaths+=( "${configSelectExcludeBundlePaths[@]}" )
 }
 oreset_submodules()
 {
