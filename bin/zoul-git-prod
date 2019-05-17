@@ -5,6 +5,7 @@
 ZOUL_GIT_PROD=true
 
 [[ -z $ZOUL_GIT_REF ]]           && . zoul-git-ref
+[[ -z $ZOUL_GIT_VBRANCH ]]       && . zoul-git-vbranch
 [[ -z $ZOUL_GIT_BRANCH_SELECT ]] && . zoul-git-branch-select
 
 # io_trace "headChangedEvent+=( prod_reset_scope )"
@@ -71,6 +72,15 @@ dev_checkout()
   devBranch=$(wip_to_ref $devBranch)
   # io_trace "dev_checkout 2 -- $(print_vars bundleDevBranch branch lbranch devBranch)"
   branch_checkout "$devBranch" "$forceCheckout"
+}
+prod_ensure_vbranch()
+{
+  [[ -n $prodBranch ]] && return 0
+  local version=${1:-0.1} branch lbranch bref
+  branch_set_realize $(wip_to_ref $moduleDevBranch)
+
+  [[ $lbranch =~ (.*/)?(.+)$ ]] || return 1
+  vbranch_create "${BASH_REMATCH[1]}$version" "$branch"
 }
 
 _prod_init_scope()
