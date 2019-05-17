@@ -619,11 +619,10 @@ faketty()
 #   raise_event 'myEvent[@]' $param1...
 raise_event()
 {
-  local handlers=( ${!1} ) handler; shift
+  local event=${1%'[@]'} handlers=( ${!1} ) handler; shift
   for handler in "${handlers[@]}"; do
-    # io_trace "$handler $* >>"
+    # io_trace "raise_event $event -- $handler $*"
     $handler "$@"
-    # io_trace "$handler $* <<"
   done
 }
 

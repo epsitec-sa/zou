@@ -78,8 +78,6 @@ module_in_wip_mode()    { [[ $moduleHead != $(wip_to_ref $moduleHead) ]]; }
 # run a function in the startup module root folder with startup and bundle scopes defined
 _module_scope_startup()
 {
-  # io_trace "_module_scope_startup ${*@Q}"
-
   # setup startup context
   local startupDir=$PWD startupRoot \
         bundleId bundleRoot bundleHead \
@@ -112,11 +110,20 @@ _module_scope_startup()
 
   _module_register_bundle
 
+  # io_lock_enter
+  # io_trace_unsafe "_module_scope_startup -- $(print_vars startupDir startupRoot)"
+  # io_trace_unsafe "_module_scope_startup -- $(print_vars bundleId principalModuleId)"
+  # io_trace_unsafe "_module_scope_startup -- $(print_vars bundleHead bundleDevBranch bundleDevBranchPath)"
+  # io_trace_unsafe "_module_scope_startup -- $(print_vars bundleUrl bundleUrlName bundleRoot)"
+  # io_trace_unsafe "_module_scope_startup -- $(print_vars bundleTracePrefix)"
+  # io_lock_exit
+
+  # io_trace "_module_scope_startup >> $*"
   # execute next russian doll
-  # io_trace "_module_scope_startup >>"
   $1 "${@:2}"
-  # io_trace "_module_scope_startup <<"
+  # io_trace "_module_scope_startup << $*"
 }
+
 # run a function in the module root folder with module scope defined
 _module_scope()
 {
@@ -167,10 +174,10 @@ _module_scope()
     # io_lock_exit
   fi
 
+  # io_trace "_module_scope >> $*"
   # execute next russian doll
-  # io_trace "_module_scope >>"
   $1 "${@:2}"
-  # io_trace "_module_scope <<"
+  # io_trace "_module_scope << $*"
 }
 _module_reset_scope()
 {
@@ -276,9 +283,12 @@ _module_infer_dev_from_bundle()
 #   ${@:2} -- next ...
 _module_submodule_visitor()
 {
-  _module_enter "$1" || return $?
-  repo_check_submodule "$1" || return $?
-  _module_scope "${@:2}" || return $?
+  local smPath=$1; shift
+  _module_enter "$smPath" || return $?
+  repo_check_submodule "$smPath" || return $?
+  # io_trace "_module_submodule_visitor $smPath >> $*"
+  _module_scope $* || return $?
+  # io_trace "_module_submodule_visitor $smPath << $*"
 }
 # usage:
 #   _module_enter "$moduleDir" || return $?
@@ -413,6 +423,7 @@ _module_set_smart_id2()
 }
 _module_set_trace_prefix()
 {
+
   if module_is_bundle; then
     moduleTracePrefix=$bundleTracePrefix;
   else

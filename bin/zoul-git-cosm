@@ -47,10 +47,14 @@ _cosm_reset_scope()
   [[ $cosmScopeInitialized == true ]] || return 0
   unstagedCleanSubmodules=()
   unstagedDirtySubmodules=()
-  if [ ${#moduleSubmodulePaths[@]} -ne 0 ]; then
-    repo_split_unstaged_submodules "$moduleRoot"
-    # io_trace "_cosm_reset_scope -- $(print_vars unstagedCleanSubmodules[@])"
-    # io_trace "_cosm_reset_scope -- $(print_vars unstagedDirtySubmodules[@])"
+  [ ${#moduleSubmodulePaths[@]} -eq 0 ] && return 0
+  repo_split_unstaged_submodules "$moduleRoot"
+
+  # io_lock_enter
+  # io_trace_unsafe "_cosm_reset_scope -- $(print_vars unstagedCleanSubmodules[@])"
+  # io_trace_unsafe "_cosm_reset_scope -- $(print_vars unstagedDirtySubmodules[@])"
+  # io_lock_exit
+}
   fi
 }
 # Update active submodules that are excluded from select
@@ -86,6 +90,8 @@ cosm_process_unstaged_submodules()
 {
   [ ${#moduleSubmodulePaths[@]} -eq 0 ] && return 0
   [[ $commitSubmodules == true ]] || return 0
+
+  # io_trace "cosm_process_unstaged_submodules -- $(print_vars unstagedCleanSubmodules[@] unstagedDirtySubmodules[@])"
 
   if [[ $commitDirtySubmodules == true ]]; then
     local unstaged=( "${unstagedCleanSubmodules[@]}" "${unstagedDirtySubmodules[@]}" )
