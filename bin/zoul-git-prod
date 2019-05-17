@@ -19,7 +19,7 @@ prod_scope()
   # setup prod context
   local prodScopeInitialized=true prodHeadChangedDisabled \
         prodBranch prodBranchPath prodVTag prodHTag \
-        prodDelta prodStatus prodAlias
+        prodDelta prodVTagStatus prodAlias
   
   prod_reset_scope
 
@@ -47,8 +47,8 @@ sku_checkout()
 prod_checkout()
 {
   local vnext=$1 forceCheckout=$2 devBranch=$3
-  # io_trace "prod_checkout -- $(print_vars vnext forceCheckout devBranch prodStatus prodBranch prodVTag)"
-  if [[ $prodStatus == 'vtag' ]]; then
+  # io_trace "prod_checkout -- $(print_vars vnext forceCheckout devBranch prodVTagStatus prodBranch prodVTag)"
+  if [[ $prodVTagStatus == 'vtag' ]]; then
     if [[ $vnext == true ]]; then
       branch_checkout "$prodBranch" "$forceCheckout"
     else
@@ -85,7 +85,7 @@ _prod_init_scope()
   prodHTag=$htag
   prodDelta=$delta
   prodAlias=$alias
-  prodStatus=$status
+  prodVTagStatus=$status
   if [[ -z $vbranch ]]; then
     prodBranchPath=''; prodBranch=''
   else
@@ -98,7 +98,7 @@ _prod_init_scope()
   # io_lock_enter
   # io_trace_unsafe "_prod_init_scope -- $(print_vars prodBranch prodBranchPath)"
   # io_trace_unsafe "_prod_init_scope -- $(print_vars prodVTag prodHTag)"
-  # io_trace_unsafe "_prod_init_scope -- $(print_vars prodDelta prodStatus prodAlias)"
+  # io_trace_unsafe "_prod_init_scope -- $(print_vars prodDelta prodVTagStatus prodAlias)"
   # io_lock_exit
 }
 
