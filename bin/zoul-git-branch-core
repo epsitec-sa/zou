@@ -381,9 +381,9 @@ branch_checkout()
     isCurrent=1
     # io_trace "branch_checkout 2.3 -- $(print_vars ref refSym forceCheckout checkout raiseEvent isCurrent)"
   fi
+  branch_ref_type $ref; refType=$?
+  # io_trace "branch_checkout 2 -- $(print_vars ref forceCheckout refSym refType)"
   if [ $checkout -eq 0 ]; then
-    branch_ref_type $ref; refType=$?
-    # io_trace "branch_checkout 2 -- $(print_vars ref forceCheckout refSym refType)"
     # compute symbols
     local ioType ioRef=$refSym ec=0
     case $refType in
