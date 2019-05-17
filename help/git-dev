@@ -10,10 +10,12 @@ commands:
                                 checkout actual version or next version if --vnext is specified
                                 fallback to DEV mode
     finish                  merge DEV branches into PROD branches and return to PROD mode
+                                create a PROD branch is necessary (use -v option)
 
 options:
     -h|--help               display help
     -r|--recursive)         visit specified modules recursively
+    -v<MAJ.MIN>             specify default version if vbranch does not exist (default to 0.1)
     --vnext                 return to next version (default to actual version)
     <module-paths>          specific modules to visit (default to current module)
     
@@ -25,3 +27,4 @@ example:
     git dev exit                  # exit DEV mode from current module
     git dev finish                # finish DEV mode in current module
     git dev finish -r -- ../m1    # finish DEV mode in sibling module 'm1' recursively
+    git dev finish -v1.0          # finish DEV mode in current module
