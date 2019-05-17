@@ -14,12 +14,18 @@ ZOUL_GIT_BRANCH_CORE=true
 # global options
 #   showSwitchingMessage
 
-branchChangedEvent=()
+headChangedEvent=()
 branchCreatedEvent=()
 branchDeletedEvent=()
-branch_raise_branch_changed_event() { raise_event 'branchChangedEvent[@]' "$@"; }
+branch_raise_head_changed_event()   { raise_event 'headChangedEvent[@]' "$@"; }
 branch_raise_branch_created_event() { raise_event 'branchCreatedEvent[@]' "$@"; }
 branch_raise_branch_deleted_event() { raise_event 'branchDeletedEvent[@]' "$@"; }
+
+headNameChangedEvent=()
+branchCheckoutEvent=()
+branch_raise_head_name_changed_event () { raise_event 'headNameChangedEvent[@]' "$@"; }
+branch_raise_branch_checkout_event()    { raise_event 'branchCheckoutEvent[@]' "$@"; }
+
 # in:
 #  lbranch=$1 -- local branch name
 # std-out:
@@ -367,7 +373,7 @@ branch_checkout()
   elif ref_is_head "$ref"; then
     # no hash change
     checkout=0
-    raiseEvent=0
+    raiseEvent=1
     # io_trace "branch_checkout 2.2 -- $(print_vars ref refSym forceCheckout checkout raiseEvent isCurrent)"
   else
     checkout=0
@@ -395,8 +401,17 @@ branch_checkout()
     [ $isCurrent -ne 0 ] && repo_discard_internal_ignore_list
     _branch_checkout_core; ec=$?
     return $ec
-  elif [ $raiseEvent -eq 0 ]; then
-    branch_raise_branch_changed_event "$refSym"
+  else
+    _branch_checkout_raiseEvents
+  fi
+}
+_branch_checkout_raiseEvents()
+{
+  branch_raise_branch_checkout_event "$refSym"
+  if [[ $raiseEvent -eq 0 ]]; then
+    branch_raise_head_changed_event "$refSym"
+  elif [[ $moduleHead != $refSym ]]; then
+    branch_raise_head_name_changed_event "$refSym"
   fi
 }
 _branch_checkout_core()
@@ -404,8 +419,8 @@ _branch_checkout_core()
   # io_trace "_branch_checkout_core >>"
   local breakLoop skipLine ec line lines color alias
   IFS=$'\n' lines=( $(git checkout "$ref" 2>&1) ); ec=$?; IFS=$OIFS
-  if [[ $raiseEvent -eq 0 && $ec -eq 0 ]]; then
-    branch_raise_branch_changed_event "$refSym"
+  if [[ $ec -eq 0 ]]; then
+    _branch_checkout_raiseEvents
   fi
   io_lock_enter
   for line in "${lines[@]}"; do

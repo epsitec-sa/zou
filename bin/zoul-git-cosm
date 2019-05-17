@@ -13,7 +13,7 @@ ZOUL_GIT_COSM=true
 #   commitSubmodules
 #   commitDirtySubmodules
 
-branchChangedEvent+=( _cosm_on_branch_changed )
+headChangedEvent+=( _cosm_on_head_changed )
 submoduleChangedEvent+=( _cosm_reset_scope )
 
 # usage:
@@ -34,7 +34,7 @@ cosm_has_unstaged_submodules()
   [ ${#unstagedCleanSubmodules[@]} -gt 0 ] || [ ${#unstagedDirtySubmodules[@]} -gt 0 ]
 }
 
-_cosm_on_branch_changed()
+_cosm_on_head_changed()
 {
   _cosm_reset_scope
 

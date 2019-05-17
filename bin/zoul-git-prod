@@ -7,8 +7,8 @@ ZOUL_GIT_PROD=true
 [[ -z $ZOUL_GIT_REF ]]           && . zoul-git-ref
 [[ -z $ZOUL_GIT_BRANCH_SELECT ]] && . zoul-git-branch-select
 
-# io_trace "branchChangedEvent+=( prod_reset_scope )"
-branchChangedEvent+=( _prod_on_branch_changed )
+# io_trace "headChangedEvent+=( prod_reset_scope )"
+headChangedEvent+=( _prod_on_head_changed )
 branchCreatedEvent+=( _prod_on_branch_created )
 branchDeletedEvent+=( _prod_on_branch_deleted )
 
@@ -17,7 +17,7 @@ branchDeletedEvent+=( _prod_on_branch_deleted )
 prod_scope()
 {
   # setup prod context
-  local prodScopeInitialized=true prodBranchChangedDisabled \
+  local prodScopeInitialized=true prodHeadChangedDisabled \
         prodBranch prodBranchPath prodVTag prodHTag \
         prodDelta prodStatus prodAlias
   
@@ -39,9 +39,9 @@ sku_checkout()
   branch_set_best_match_dev "$sku"                 # -> branch lbranch
   _prod_init_scope $branch $lbranch
 
-  local prodBranchChangedDisabled=true
+  local prodHeadChangedDisabled=true
   prod_checkout "$vnext" "$forceCheckout" "$lbranch" || ec=$?
-  prodBranchChangedDisabled=''
+  prodHeadChangedDisabled=''
   return $ec
 }
 prod_checkout()
@@ -101,9 +101,10 @@ _prod_init_scope()
   # io_trace_unsafe "_prod_init_scope -- $(print_vars prodDelta prodStatus prodAlias)"
   # io_lock_exit
 }
-_prod_on_branch_changed()
+
+_prod_on_head_changed()
 {
-  [[ $prodBranchChangedDisabled == true ]] || prod_reset_scope
+  [[ $prodHeadChangedDisabled == true ]] || prod_reset_scope
 }
 _prod_on_branch_created()
 {
