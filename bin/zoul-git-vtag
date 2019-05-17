@@ -161,7 +161,7 @@ _vtag_describe()
 #   alias   -- condensed vtag info - (> v1.0.0 (8)) means branch is ahead of v1.0.0 by 8 commits
 _vtag_set_info()
 {
-  local ltag=$1 stag=$2 regex=$(wildcard_to_regex $3) lsuf
+  local ltag=$1 stag=$2 regex=$(wildcard_to_regex_match_whole $3) lsuf
   # io_trace "_vtag_set_info 1 -- $(print_vars ltag stag regex)"
 
   lsuf=${ltag#$stag}
@@ -274,8 +274,8 @@ vtag_increment()
   vtag_set_increment "$@" && echo $vnext
 }
 # in:
-#   vtag
-#   prerelPrefix
+#   vtag=$1
+#   prerelPrefix=$2
 # out:
 #   vnext
 vtag_set_increment()
