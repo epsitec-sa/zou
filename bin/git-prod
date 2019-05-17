@@ -1,0 +1,165 @@
+#!/bin/bash
+
+[[ -z $ZOUL_LOCK ]]              && . zoul-lock
+[[ -z $ZOUL_GIT_CMD ]]           && . zoul-git-cmd
+[[ -z $ZOUL_GIT_PROD ]]          && . zoul-git-prod
+[[ -z $ZOUL_GIT_PUBLISH ]]       && . zoul-git-publish
+[[ -z $ZOUL_GIT_COSM ]]          && . zoul-git-cosm
+[[ -z $ZOUL_GIT_VTABLE ]]        && . zoul-git-vtable
+[[ -z $ZOUL_GIT_BRANCH_MERGE ]]  && . zoul-git-branch-merge
+[[ -z $ZOUL_GIT_BRANCH_SELECT ]] && . zoul-git-branch-select
+
+prod_parse()
+{
+  local args=()
+  while [[ "$#" > 0 ]]; do case "$1" in
+    -h|--help) zou-help $0; exit 0;;
+    -j*)            jobsCount=${1#-j};;
+    -r|--recursive) recursive=true;;
+    --vnext)        vnext=true;;
+    -t|--vtable)    vtable=true;;
+    -n|--dry-run)   dryRun=true;;
+    -u|--reuse)     prerelPrefix='reuse';;
+    --alpha)        prerelPrefix='alpha';;
+    --beta)         prerelPrefix='beta';;
+    --rc)           prerelPrefix='rc';;
+    --rtm)          prerelPrefix='rtm';;
+    enter)          subcommand=$1;;
+    publish)        subcommand=$1;;
+    --)             shift; break;;
+    -*) io_error "unknown option ${VC}$1${Red}\n"; io_help $0; return 1;;
+    *)  args+=( "$1" );;
+  esac; shift; done
+
+  cmd_check_subcommand 'enter' 'publish'
+  cmd_check_args "${args[@]}"
+  
+  prodModulePaths=( "$@" )
+  # io_trace "prod_parse -- $(print_vars recursive vnext subcommand prodModulePaths[@])"
+}
+prod_run()
+{
+  # parse command line
+  local jobsCount recursive command='prod' subcommand \
+        cmdScopes=( prod_scope config_scope cosm_scope ) \
+        commitSubmodules=true \
+        vnext vtable prerelPrefix dryRun prodModulePaths=()
+
+  prod_parse "$@" || return $?
+  
+  case $subcommand in
+    enter)
+      startupMessage="Entering PROD mode, please wait...";;
+    publish)
+      startupMessage="Publishing, please wait..."
+      [[ $dryRun == true ]] && startupMessage="${DarkGray}$startupMessage"
+      cmdScopes+=( publish_scope )
+      recursive=true;;
+  esac
+
+  module_run "${cmdScopes[@]}" prod_command
+}
+prod_command()
+{
+  [ ${#prodModulePaths[@]} -eq 0 ] && prodModulePaths+=( './' )
+  cmd_register_module_paths "$recursive" "${prodModulePaths[@]}"
+  prod_${subcommand}_run
+}
+prod_enter_run()    { cmd_visit_modules; }
+prod_enter_epilog() { prod_checkout "$vnext" true; }
+
+prod_publish_run()
+{
+  # version table
+  local vtableCreate vtableGate vtableLookupPath
+  publish_set_vtable_info
+  # dry run
+  local pstatusParentGate pstatusLookupPath pstatusParentLookupPath principalPublishStatus
+
+  cmd_visit_modules
+}
+prod_publish_scope()
+{
+  local branch lbranch vbranch vtag htag delta alias status nextHead publishStatus vnext
+
+  $1 "${@:2}"
+}
+prod_publish_prolog()
+{
+  io_trace "prod_publish_prolog -- $(print_vars prodBranch)"
+  branch_checkout "$prodBranch" true
+
+  # local forceDev=false allowDuplicateTags=false
+  # [[ $publishDev == true || "$PWD" == "$startupRoot" ]] && forceDev=true
+  # module_is_bundle && allowDuplicateTags=true
+
+  # if [[ $dryRun == true ]]; then
+  #   # io_trace "publish_prolog -- $(print_vars moduleId)"
+  #   branch_set_sku_info "$sku" "$forceDev" "$allowDuplicateTags"
+  #   publish_init_pstatus
+  # else
+  #   branch_set_select_auto "$sku" "$forceDev" false "$allowDuplicateTags" || return $?
+  # fi
+
+  # if ! [[ $lbranch =~ ^(sku/|master) ]]; then
+  #   mio_error "Branch '$lbranch' cannot be published (only sku and master branches can be published)"
+  #   return 1
+  # fi
+
+  # if [[ $publishStatus == 'unpublishable' ]]; then
+  #   mio_error "Branch '$lbranch' cannot be published (no vbranch associated)"
+  #   return 1
+  # fi
+  # io_trace "publish_prolog -- $(print_vars lbranch vbranch vtag htag publishStatus)"
+}
+prod_publish_epilog()
+{
+  io_trace "prod_publish_epilog"
+}
+
+###############
+# Version table
+###############
+
+publish_set_vtable_info()
+{
+  # [[ $dryRun == true ]] && return 0
+  if [[ $vtable == true ]]; then
+    vtableCreate=true
+  elif [[ $startupRoot == $bundleRoot ]] && module_has_submodules; then
+    vtableCreate=true
+  fi
+  if [[ $vtableCreate == true ]]; then
+    vtableGate=$(lock_init)
+    vtableLookupPath="$(mktemp)"
+    vtable_init "$startupRoot" "$vtableLookupPath"
+  fi
+}
+publish_update_vtable()
+{
+  # io_trace "publish_update_vtable -- $(print_vars vtable vtableCreate)"
+  [[ $vtableCreate == true ]] || return 0
+  if [[ "$PWD" == "$startupRoot" ]]; then
+    publish_commit_vtable
+  else
+    vtable_update "$startupRoot" "$moduleId" "$vtableLookupPath" "$vtableGate"
+  fi
+}
+publish_commit_vtable()
+{
+  # io_trace "publish_commit_vtable -- $(print_vars lbranch vbranch vnext)"
+  local commit=true
+  [[ $dryRun == true ]] && commit=false
+  if vtable_update "$startupRoot" "$moduleId" "$vtableLookupPath" "$vtableGate" $commit; then
+    if [[ $dryRun == true ]]; then
+      mio_message "Created version table for ${VC}$lbranch${DarkGray} at ${VC}$vnext" ${DarkGray}
+    else
+      branch_merge_sync $lbranch $vbranch &>/dev/null
+      tag_move "$vnext" "$lbranch" &>/dev/null
+      mio_success "Created version table for ${VC}$lbranch${Green} at ${VC}$vnext"
+    fi
+  fi
+}
+
+
+prod_run  "$@"

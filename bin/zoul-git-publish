@@ -1,0 +1,112 @@
+#!/bin/bash
+
+# Use the following statement to include current lib only once
+#   [[ -z $ZOUL_GIT_PUBLISH ]] && . zoul-git-publish
+ZOUL_GIT_PUBLISH=true
+
+[[ -z $ZOUL_GIT_PROD ]] && . zoul-git-prod
+
+# io_trace "headChangedEvent+=( publish_reset_scope )"
+headChangedEvent+=( _publish_on_head_changed )
+branchCreatedEvent+=( _publish_on_branch_created )
+branchDeletedEvent+=( _publish_on_branch_deleted )
+
+# usage:
+#   module_run prod_scope publish_scope $*
+publish_scope()
+{
+  # setup publish context
+  local publishScopeInitialized=true \
+        publishBranch publishBranchPath publishVTag publishHTag \
+        publishDelta publishVTagStatus publishAlias \
+        publishStatus
+  
+  publish_reset_scope
+
+  # execute next russian doll
+  $1 "${@:2}"
+}
+publish_reset_scope()
+{
+  [[ $publishScopeInitialized == true ]] || return 0
+  [[ -n $prodBranch ]] || return 0
+
+  local branch=$1 lbranch=$2 vbranch vtag htag delta alias status
+  branch_set_vtag_info "$prodBranchPath" "$prodBranch" 'auto'
+  io_create_alias_color "$alias"
+
+  publishVTag=$vtag
+  publishHTag=$htag
+  publishDelta=$delta
+  publishAlias=$alias
+  publishVTagStatus=$status
+  if [[ -z $vbranch ]]; then
+    publishBranchPath=''; publishBranch=''
+  else
+    local branch lbranch bref
+    branch_set_realize "$vbranch"
+    publishBranchPath=$branch
+    publishBranch=$lbranch
+  fi
+
+  io_lock_enter
+  io_trace_unsafe "publish_reset_scope -- $(print_vars publishBranch publishBranchPath)"
+  io_trace_unsafe "publish_reset_scope -- $(print_vars publishVTag publishHTag)"
+  io_trace_unsafe "publish_reset_scope -- $(print_vars publishDelta publishStatus publishAlias)"
+  io_lock_exit
+}
+# in:
+#   vtagStatus=$1
+# out:
+#   publishStatus -- error
+#                    unpublishable
+#                    published
+#                    notPublished
+#                    ffPublish
+_publish_init_status()
+{
+  local vtagStatus=$1
+  # local lbranch=$1 vtag=$2 delta=$3 vtagStatus=$4 forceDev=$5
+  # # io_trace "branch_set_publish_info -- $(print_vars lbranch vtag vtagStatus)"
+  # nextHead=$lbranch   # default branch to checkout
+  publishStatus='error'
+  if [[ $vtagStatus == 'vtagMissing' ]]; then
+    # no vtag, stay in dev mode
+    publishStatus='unpublishable'
+  elif [[ $vtagStatus == 'vtag' ]]; then
+    # published at least once on this vbrnach
+    if [ $delta -eq 0 ]; then
+      # head has not been moved since last publish, stay in dev mode
+      publishStatus='published'
+    else
+      # head has been moved since last publish
+      # move to last vtag unless dev mode is forced
+      if [[ $forceDev == true ]]; then
+        [ $delta -gt 0 ] && publishStatus='notPublished' || publishStatus='ffPublish'
+      else
+        [ $delta -gt 0 ] && publishStatus='published' || publishStatus='ffPublish'
+        nextHead=$vtag
+      fi
+    fi
+  elif [[ $vtagStatus == 'vnode' ]]; then
+    # never published on this vbranch, stay in dev mode
+    publishStatus='notPublished'
+  else
+    mio_error "_branch_set_select_auto_core: vtagStatus '$vtagStatus' not implemented"
+    return 1
+  fi
+  # io_trace "branch_set_publish_info -> $(print_vars nextHead publishStatus)"
+}
+
+_publish_on_head_changed()
+{
+  publish_reset_scope
+}
+_publish_on_branch_created()
+{
+  [[ $1 =~ ^(.*/)?[0-9]+\.[0-9]+ ]] && publish_reset_scope
+}
+_publish_on_branch_deleted()
+{
+  [[ $1 =~ ^(.*/)?[0-9]+\.[0-9]+ ]] && publish_reset_scope
+}
