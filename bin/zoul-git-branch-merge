@@ -30,25 +30,31 @@ branch_merge()
 {
   branch_merge_abort
 
-  local toMerge=$1 intoBranch=$2 intoBranchName needCheckout ec=0; shift 2
+  local toMerge=$1 intoBranch=$2 toMergeAlias intoBranchName needCheckout mergeOpts=() ec=0; shift 2
+  while [[ "$#" > 0 ]]; do case "$1" in
+    -*) mergeOpts+=($1);;
+    *)  toMergeAlias=$1;;
+  esac; shift; done
+  toMergeAlias=${toMergeAlias:-$toMerge}
+
   _branch_merge_ff || ec=$?
   case $ec in
     0|128) return $ec;;
     *) ec=0;;
   esac
 
-  local message="zou-flow: merge '$toMerge' into '$intoBranch'"
+  local message="zou-flow: merge '$toMergeAlias' into '$intoBranch'"
 
   if [[ $needCheckout == true ]] && git checkout $intoBranchName &>/dev/null; then
-    _branch_merge "$message" "$toMerge" "$@" || ec=$?
+    _branch_merge "$message" "$toMerge" "${mergeOpts[@]}" || ec=$?
     git checkout - &>/dev/null
   else
-    _branch_merge "$message" "$toMerge" "$@" || ec=$?
+    _branch_merge "$message" "$toMerge" "${mergeOpts[@]}" || ec=$?
   fi
   if [ $ec -eq 0 ]; then
-    mio_success "Merged ${VC}$toMerge${Green} into ${VC}$intoBranchName${Green}"
+    mio_success "Merged ${VC}$toMergeAlias${Green} into ${VC}$intoBranchName${Green}"
   else
-    repo_require_clean_work_tree "Cannot merge '$toMerge' into '$intoBranch'"
+    repo_require_clean_work_tree "Cannot merge '$toMergeAlias' into '$intoBranch'"
   fi
   return $ec
 }
