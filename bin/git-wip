@@ -71,8 +71,7 @@ wip_start_epilog()
   local wipBranch=$(ref_to_wip "$devBranch" "$wipSuffix" "$wipPrefix")
   if [[ $moduleHead != $wipBranch ]]; then
     # create wip branch on dev branch
-    [[ $moduleHead != $devBranch ]] && branch_checkout "$devBranch" &>/dev/null
-    git branch "$wipBranch" &>/dev/null
+    git branch "$wipBranch" "$moduleDevBranchPath" &>/dev/null
   fi
   branch_checkout "$wipBranch" true
 }
