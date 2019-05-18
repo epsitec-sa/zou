@@ -161,15 +161,15 @@ io_message_unsafe()
 }
 
 mio_info()    { mio_message "$1"; }
-mio_success() { mio_message "$1" ${Green}; }
-mio_warning() { mio_message "$1" ${Brown}; }
-mio_error()   { mio_message "$1" ${Red}; }
+mio_success() { mio_message "$1" "${Green}"; }
+mio_warning() { mio_message "$1" "${Brown}"; }
+mio_error()   { mio_message "$1" "${Red}"; }
 mio_message() { io_lock mio_message_unsafe "$@"; }
 
 mio_info_unsafe()    { mio_message_unsafe "$1"; }
-mio_success_unsafe() { mio_message_unsafe "$1" ${Green}; }
-mio_warning_unsafe() { mio_message_unsafe "$1" ${Brown}; }
-mio_error_unsafe()   { mio_message_unsafe "$1" ${Red}; }
+mio_success_unsafe() { mio_message_unsafe "$1" "${Green}"; }
+mio_warning_unsafe() { mio_message_unsafe "$1" "${Brown}"; }
+mio_error_unsafe()   { mio_message_unsafe "$1" "${Red}"; }
 mio_message_unsafe()
 {
   local message=$1 color=${2:-$Cyan}
@@ -187,11 +187,7 @@ io_create_alias_color()
     AC=${Purple}
   elif [[ $1 =~ \> ]]; then
     # delta > 0
-    if module_is_bundle; then
-      AC=${Cyan}
-    else
-      [[ $1 =~ -@ ]] && AC=${Purple} || AC=${Brown}
-    fi
+    [[ $1 =~ -@ ]] && AC=${Purple} || AC=${Brown}
   else
     # delta == 0
     [[ $1 =~ -@ ]] && AC=${Purple} || AC=${Green}
