@@ -116,8 +116,10 @@ _cmd_epilog()
 }
 _cmd_visit_tree()
 {
-  if _cmd_is_recursive; then
-    module_visit_submodules_async 'configSelectInclude[@]' "${cmdScopes[@]}" _cmd_tree
+  _cmd_is_recursive || return 0
+  module_visit_submodules_async 'configSelectInclude[@]' "${cmdScopes[@]}" _cmd_tree
+  if [[ $(type -t cosm_reset_scope) == 'function' ]]; then
+    cosm_reset_scope
   fi
 }
 _cmd_is_recursive()
