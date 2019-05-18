@@ -94,6 +94,18 @@ _cosm_discard_submodules_excluded_from_sku()
   fi
   return $ec
 }
+cosm_commit_unstaged_clean_submodules()
+{
+  [ ${#moduleSubmodulePaths[@]} -eq 0 ] && return 0
+  repo_commit_submodules "$moduleRoot" $(array_remove_array 'unstagedCleanSubmodules[@]' 'configSkuExclude[@]')
+  _cosm_dirty_warning
+}
+cosm_commit_unstaged_submodules()
+{
+  [ ${#moduleSubmodulePaths[@]} -eq 0 ] && return 0
+  local unstaged=( "${unstagedCleanSubmodules[@]}" "${unstagedDirtySubmodules[@]}" )
+  repo_commit_submodules "$moduleRoot" $(array_remove_array 'unstaged[@]' 'configSkuExclude[@]')
+}
 # Process unstaged submodules
 #   - update unselected submodules
 #   - discard excluded submodules
@@ -110,11 +122,9 @@ cosm_process_unstaged_submodules()
   # io_trace "cosm_process_unstaged_submodules -- $(print_vars unstagedCleanSubmodules[@] unstagedDirtySubmodules[@])"
 
   if [[ $commitDirtySubmodules == true ]]; then
-    local unstaged=( "${unstagedCleanSubmodules[@]}" "${unstagedDirtySubmodules[@]}" )
-    repo_commit_submodules "$moduleRoot" $(array_remove_array 'unstaged[@]' 'configSkuExclude[@]')
+    cosm_commit_unstaged_submodules
   else
-    repo_commit_submodules "$moduleRoot" $(array_remove_array 'unstagedCleanSubmodules[@]' 'configSkuExclude[@]')
-    _cosm_dirty_warning
+    cosm_commit_unstaged_clean_submodules
   fi
 }
 _cosm_dirty_warning()
