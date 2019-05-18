@@ -71,7 +71,8 @@ dev_finish_prolog()
 }
 dev_finish_epilog()
 {
-  branch_merge "$moduleDevBranch" "$prodBranchPath"
+  cosm_commit_unstaged_clean_submodules
+  branch_merge "$moduleDevBranch" "$prodBranchPath" '-Xtheirs'
   prod_checkout "$vnext" true
 }
 
