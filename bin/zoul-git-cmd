@@ -62,15 +62,12 @@ cmd_register_module_paths()
 #   cmd_visit_modules
 cmd_visit_modules()
 {
-  if [ ${#cmdModulePaths[@]} -eq 0 ]; then
-    # io_trace "cmd_visit_modules[1] $(print_vars cmdModulePaths[@])"
-    _cmd_tree
-  elif [[ $moduleRoot == $startupRoot ]]; then
-    # io_trace "cmd_visit_modules[2] $(print_vars cmdModulePaths[@])"
+  if [[ $moduleRoot == $startupRoot ]]; then
+    # io_trace "cmd_visit_modules 1 -- $(print_vars cmdModulePaths[@])"
     # startup module scopes are already initialized
-    visit_async 'cmdModulePaths[@]' _cmd_tree
+    module_visit_submodules_async 'cmdModulePaths[@]' _cmd_tree
   else
-    # io_trace "cmd_visit_modules[3] $(print_vars cmdModulePaths[@])"
+    io_trace "cmd_visit_modules 2 -- $(print_vars cmdModulePaths[@])"
     module_visit_submodules_async 'cmdModulePaths[@]' "${cmdScopes[@]}" _cmd_tree
   fi
 }

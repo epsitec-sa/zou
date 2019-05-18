@@ -294,7 +294,12 @@ _module_submodule_visitor()
   _module_enter "$smPath" || return $?
   repo_check_submodule "$smPath" || return $?
   # io_trace "_module_submodule_visitor $smPath >> $*"
-  _module_scope $* || return $?
+  if [[ $PWD == $startupRoot ]]; then
+    # startup module scope is already initialized
+    $1 "${@:2}"
+  else
+    _module_scope $* || return $?
+  fi
   # io_trace "_module_submodule_visitor $smPath << $*"
 }
 # usage:
