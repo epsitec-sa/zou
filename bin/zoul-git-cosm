@@ -15,7 +15,7 @@ ZOUL_GIT_COSM=true
 
 headChangedEvent+=( _cosm_on_head_changed )
 branchCheckoutEvent+=( _cosm_on_checkout )
-submoduleChangedEvent+=( _cosm_reset_scope )
+submoduleChangedEvent+=( cosm_reset_scope )
 
 # usage:
 #   module_run config_scope cosm_scope $*
@@ -25,7 +25,7 @@ cosm_scope()
   local unstagedCleanSubmodules unstagedDirtySubmodules \
         showSubmoduleMessage=true cosmScopeInitialized=true
   
-  _cosm_reset_scope
+  cosm_reset_scope
 
   # execute next russian doll
   $1 "${@:2}"
@@ -34,10 +34,23 @@ cosm_has_unstaged_submodules()
 {
   [ ${#unstagedCleanSubmodules[@]} -gt 0 ] || [ ${#unstagedDirtySubmodules[@]} -gt 0 ]
 }
+cosm_reset_scope()
+{
+  [[ $cosmScopeInitialized == true ]] || return 0
+  unstagedCleanSubmodules=()
+  unstagedDirtySubmodules=()
+  [ ${#moduleSubmodulePaths[@]} -eq 0 ] && return 0
+  repo_split_unstaged_submodules "$moduleRoot"
+
+  # io_lock_enter
+  # io_trace_unsafe "cosm_reset_scope -- $(print_vars unstagedCleanSubmodules[@])"
+  # io_trace_unsafe "cosm_reset_scope -- $(print_vars unstagedDirtySubmodules[@])"
+  # io_lock_exit
+}
 
 _cosm_on_head_changed()
 {
-  _cosm_reset_scope
+  cosm_reset_scope
 
   [ ${#moduleSubmodulePaths[@]} -eq 0 ] && return 0
   _cosm_update_submodules_excluded_from_select
@@ -49,19 +62,6 @@ _cosm_on_checkout()
   _cosm_update_clean_submodules_in_prod_mode "$@"
 }
 
-_cosm_reset_scope()
-{
-  [[ $cosmScopeInitialized == true ]] || return 0
-  unstagedCleanSubmodules=()
-  unstagedDirtySubmodules=()
-  [ ${#moduleSubmodulePaths[@]} -eq 0 ] && return 0
-  repo_split_unstaged_submodules "$moduleRoot"
-
-  # io_lock_enter
-  # io_trace_unsafe "_cosm_reset_scope -- $(print_vars unstagedCleanSubmodules[@])"
-  # io_trace_unsafe "_cosm_reset_scope -- $(print_vars unstagedDirtySubmodules[@])"
-  # io_lock_exit
-}
 # update unstaged clean submodules when switching to prod
 _cosm_update_clean_submodules_in_prod_mode()
 {
