@@ -202,14 +202,21 @@ branch_set_vtag_info()
   # io_trace "branch_set_vtag_info 1 -- $(print_vars branch lbranch vbranch skipVNodes allowDuplicateTags vtag delta alias)"
   if [[ -n $vtag ]]; then
     htag=$(vtag_highest $vbranch true)
+    # io_trace "branch_set_vtag_info 2.1 -- $(print_vars branch vbranch vtag htag delta alias)"
     if [[ $htag != $vtag ]]; then
-      if ! git merge-base --is-ancestor "$branch" "$htag" >&2; then
-        mio_message "Branch ${VC}$lbranch${LightPurple} was never published as ${VC}$htag${LightPurple}" ${LightPurple}
-      fi
-      delta=$(( -$(git rev-list --count $vtag..$htag) ))
+      # if ! git merge-base --is-ancestor "$branch" "$htag" >&2; then
+      #   mio_message "Branch ${VC}$lbranch${LightPurple} was never published as ${VC}$htag${LightPurple}" ${LightPurple}
+      # fi
       vtag=$htag
-      alias="< $vtag ($delta)" # (master < v2.0.0 (8))
-      # io_trace "branch_set_vtag_info 2 -- $(print_vars vbranch vtag htag delta alias)"
+      delta=$(( $(git rev-list --count $vtag..$branch) ))
+      if [ $delta -eq 0 ]; then
+        alias="$vtag" # (v2.0.0)
+      elif [ $delta -gt 0 ]; then
+        alias="> $vtag ($delta)" # (> v2.0.0 (8))
+      else
+        alias="< $vtag ($delta)" # (< v2.0.0 (8))
+      fi
+      # io_trace "branch_set_vtag_info 2.2 -- $(print_vars branch vbranch vtag htag delta alias)"
     fi
     [ $delta -ne 0 ] && alias="$lbranch $alias" # (master > v2.0.0 (8))
 

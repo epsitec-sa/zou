@@ -24,24 +24,16 @@ print_head()
 }
 vtable_row()
 {
-  local moduleId=$1 setHash=${2:-true} \
-        vminor vmajor hash \
-        vtag delta alias head \
-        branch lbranch bref
+  local moduleId=$1 setHash=${2:-true} vminor vmajor hash
 
-  branch_set_realize ${moduleHead:-$(branch_current)}
-  head=${moduleHead:-$(ref_symbol HEAD)}
-
-  [[ $setHash == true ]] && hash=$(git rev-parse --short HEAD 2>/dev/null)
-  # io_trace "vtable_row 1 -- $(print_vars branch lbranch)"
-  vtag_set_describe "$branch"
-  # io_trace "vtable_row 2 -- $(print_vars branch lbranch vtag delta alias)"
-  [ $delta -eq 0 ] && delta=''
+  [[ $setHash == true ]] && hash=$(git rev-parse --short "$publishBranch" 2>/dev/null)
+  # io_trace "vtable_row 1 -- $(print_vars publishBranchPath publishBranch)"
+  # [ $publishDelta -eq 0 ] && publishDelta=''
 
   local IFS=' '
   local tags=$(git tag -l --sort=-v:refname)
   local folder major minor refolder
-  if [[ $vtag =~ ^(.*/)?v([0-9]+)\.([0-9]+) ]]; then
+  if [[ $publishVTag =~ ^(.*/)?v([0-9]+)\.([0-9]+) ]]; then
     folder=${BASH_REMATCH[1]}
     major=${BASH_REMATCH[2]}
     minor=${BASH_REMATCH[3]}
@@ -51,14 +43,15 @@ vtable_row()
   fi
   local vnext=$(echo $tags | grep -m1 "^${refolder}v[0-9]")
   local md_moduleId=$moduleId
-  local md_vtag=$vtag
-  [[ $vtag =~ ^.*-@$ || -z $vtag || (( delta > 0 )) ]] && md_moduleId="##$moduleId##"
-  [[ $vtag =~ ^.*-@$ ]] && md_vtag="##$vtag##"
-  [[ $vtag == $vminor ]] && vminor='' || vminor="#$vminor#"
-  [[ $vtag == $vmajor ]] && vmajor='' || vmajor="#$vmajor#"
-  [[ $vtag == $vnext ]] && vnext='' || vnext="#$vnext#"
-  # io_trace "vtable_row -- $(print_vars moduleId head hash vtag delta folder major minor vmajor vminor vnext)"
-  local module_content=$(print_row "$md_moduleId" "$head" "$hash" "$delta" "$md_vtag" "$vminor" "$vmajor" "$vnext")
+  local md_vtag=$publishVTag
+  # io_trace "vtable_row 2 -- $(print_vars publishVTagStatus publishDelta)"
+  [[ $publishVTagStatus != 'vtag' || $publishDelta -ne 0 ]] && md_moduleId="##$moduleId##"
+  [[ $publishVTagStatus != 'vtag' ]] && md_vtag="##$publishVTag##"
+  [[ $publishVTag == $vminor ]] && vminor='' || vminor="#$vminor#"
+  [[ $publishVTag == $vmajor ]] && vmajor='' || vmajor="#$vmajor#"
+  [[ $publishVTag == $vnext  ]] && vnext=''  || vnext="#$vnext#"
+  # io_trace "vtable_row -- $(print_vars moduleId moduleHead hash publishVTag publishDelta folder major minor vmajor vminor vnext)"
+  local module_content=$(print_row "$md_moduleId" "$moduleHead" "$hash" "$publishDelta" "$md_vtag" "$vminor" "$vmajor" "$vnext")
   echo "$module_content"
 }
 vtable_init()
