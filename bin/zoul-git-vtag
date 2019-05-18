@@ -167,6 +167,7 @@ _vtag_set_info()
   lsuf=${ltag#$stag}
   delta=${lsuf%-g*}
   delta=${delta#-}
+  delta=${delta:-0}
 
   # infer vbranch name
   [[ $stag =~ ^(.*/)?v([0-9]+\.[0-9]+)(\.|-) ]]
@@ -176,13 +177,32 @@ _vtag_set_info()
   vtag=$(vtag_highest_of $(vtag_match_vtags_at "$stag^{}" "$regex"))
 
   # compute alias
-  if [[ -z $delta ]]; then
-    alias="$vtag"
-    delta=0
-  else
-    alias="> $vtag ($delta)"
-  fi
+  vtag_format_alias "$vtag" "$delta"
   # io_trace "_vtag_set_info 2 -> $(print_vars vtag delta alias)"
+}
+# out:
+#   alias
+vtag_format_alias()
+{
+  local vtag=$1 delta=${2:-0}
+  if [[ -z $vtag ]]; then
+    alias="${Purple}<>"
+  else
+    local prefix color
+    if [ $delta -gt 0 ]; then
+      prefix="${Brown}>($delta) "
+    elif [ $delta -lt 0 ]; then
+      prefix="${Brown}<($((-delta))) "
+    fi
+    if [[ $vtag =~ -@$ ]]; then
+      color=${LightPurple}
+    elif [ $delta -eq 0 ]; then
+      color=${LightGreen}
+    else
+      color=${Green}
+    fi
+    alias="${prefix}${color}$vtag"
+  fi
 }
 # list all vtags pointing at given commit that match a regex
 # input:
