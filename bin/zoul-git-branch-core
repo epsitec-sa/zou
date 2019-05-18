@@ -425,7 +425,7 @@ _branch_checkout_core()
   io_lock_enter
   for line in "${lines[@]}"; do
     if false; then
-      prodAlias='' io_trace_unsafe "-- $line" ${DarkGray}
+      moduleAlias='' io_trace_unsafe "-- $line" ${DarkGray}
       if [[ $breakLoop != true ]]; then
         _branch_checkout_selector
         [[ $skipLine == true ]] && continue
@@ -450,22 +450,22 @@ _branch_checkout_selector()
   if [[ $line =~ ^Switched ]]; then
     line="Switched to $ioType ${VC}$ioRef"
     color=${Green}
-    alias=$prodAlias
+    alias=$moduleAlias
     breakLoop=true
   elif [[ $line =~ ^(Note:\ checking\ out|Previous\ HEAD) ]]; then
     line="Switched to $ioType ${VC}$ioRef"
     color=${Green}
-    alias=$prodAlias
+    alias=$moduleAlias
     breakLoop=true
   elif [[ $line =~ ^Already ]]; then
     line="Already on ${VC}$ioRef"
     color=${LightBlue}
-    alias=$prodAlias
+    alias=$moduleAlias
     breakLoop=true
   elif [[ $line =~ ^HEAD\ is\ now\ at\ ([0-9a-f]+) && $isCurrent -eq 0 ]]; then
     line="Already at ${VC}$ioRef"
     color=${LightBlue}
-    alias=$prodAlias
+    alias=$moduleAlias
     breakLoop=true
   elif [[ $line =~ ^Your\ branch\ is\ up ]]; then
     skipLine=true
