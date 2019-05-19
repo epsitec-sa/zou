@@ -1,0 +1,22 @@
+usage: git prod [<options>] enter   -- <module-paths>
+   or: git prod [<options>] release -- <module-paths>
+
+Manage production mode.
+
+commands:
+    enter                   checkout actual or next version in specified modules
+    release                 release production branches (always recursively)
+
+options:
+    -h|--help               display help
+    -r|--recursive)         visit specified modules recursively
+    --vnext                 checkout next version (default to actual version)
+    <module-paths>          specific modules to visit (default to current module)
+    
+example:
+    git prod enter                 # checkout actual version in current module
+    git prod enter --vnext         # checkout next   version in current module
+    git prod enter -r              # checkout actual version in current module recursively
+    git prod enter -- m1 m2        # checkout actual version in child modules 'm1' and 'm2'
+    git prod release               # release production branches in current module recursively
+    git prod release -- ../m1      # release production branches in sibling module 'm1' recursively
