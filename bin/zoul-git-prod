@@ -12,6 +12,7 @@ ZOUL_GIT_PROD=true
 
 # io_trace "headChangedEvent+=( prod_reset_scope )"
 headChangedEvent+=( _prod_on_head_changed )
+headNameChangedEvent+=( _prod_on_head_name_changed )
 branchCreatedEvent+=( _prod_on_branch_created )
 branchDeletedEvent+=( _prod_on_branch_deleted )
 
@@ -45,6 +46,10 @@ prod_reset_scope()
   else
     _prod_init_scope "$moduleDevBranchPath" "$moduleDevBranch"
   fi
+}
+_prod_reset_alias()
+{
+  module_in_prod_mode && moduleAlias=$prodAlias
 }
 _prod_trace()
 {
@@ -141,7 +146,8 @@ _prod_init_prod()
   vtagStatus=$status
   publishVTag=$vtag
   vtag_is_semver "$vtag" && publishPrerelPrefix=${BASH_REMATCH[7]#-}
-  module_in_prod_mode && moduleAlias=$prodAlias
+
+  _prod_reset_alias
 }
 # usage:
 #   local vbranch vtag htag delta alias status
@@ -444,7 +450,11 @@ _publish_increment_version_core()
 
 _prod_on_head_changed()
 {
-  [[ $prodHeadChangedDisabled == true ]] || prod_reset_scope
+  [[ $prodHeadChangedDisabled == true ]] && _prod_reset_alias || prod_reset_scope
+}
+_prod_on_head_name_changed()
+{
+  _prod_reset_alias
 }
 _prod_on_branch_created()
 {
