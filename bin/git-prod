@@ -3,7 +3,6 @@
 [[ -z $ZOUL_LOCK ]]              && . zoul-lock
 [[ -z $ZOUL_GIT_CMD ]]           && . zoul-git-cmd
 [[ -z $ZOUL_GIT_PROD ]]          && . zoul-git-prod
-[[ -z $ZOUL_GIT_PUBLISH ]]       && . zoul-git-publish
 [[ -z $ZOUL_GIT_COSM ]]          && . zoul-git-cosm
 [[ -z $ZOUL_GIT_VTABLE ]]        && . zoul-git-vtable
 [[ -z $ZOUL_GIT_BRANCH_MERGE ]]  && . zoul-git-branch-merge
@@ -53,7 +52,6 @@ prod_run()
     publish)
       startupMessage="Publishing, please wait..."
       [[ $dryRun == true ]] && startupMessage="${DarkGray}$startupMessage"
-      cmdScopes+=( publish_scope )
       recursive=true;;
   esac
 
@@ -65,8 +63,17 @@ prod_command()
   cmd_register_module_paths "$recursive" "${prodModulePaths[@]}"
   prod_${subcommand}_run
 }
+
+#######
+# ENTER
+#######
+
 prod_enter_run()    { cmd_visit_modules; }
 prod_enter_epilog() { prod_checkout "$vnext" true; }
+
+#########
+# PUBLISH
+#########
 
 prod_publish_run()
 {
@@ -78,12 +85,6 @@ prod_publish_run()
 
   cmd_visit_modules
 }
-# prod_publish_scope()
-# {
-#   local branch lbranch vbranch vtag htag delta alias status nextHead publishStatus vnext
-
-#   $1 "${@:2}"
-# }
 
 ################
 # Publish prolog
@@ -92,17 +93,15 @@ prod_publish_run()
 prod_publish_prolog()
 {
   # io_trace "prod_publish_prolog -- $(print_vars prodBranch)"
-
   if [[ $publishStatus == 'unpublishable' ]]; then
     mio_error "Branch ${VC}$moduleDevBranch${Red} cannot be published."
     mio_info "  use ${VC}git dev finish${Cyan} to validate development code for publish."
     return 1
   fi
-  
   if [[ $dryRun == true ]]; then
     publish_init_pstatus
   else
-    branch_checkout "$publishBranch"
+    branch_checkout "$prodBranch"
   fi
 }
 
@@ -112,9 +111,12 @@ prod_publish_prolog()
 
 prod_publish_epilog()
 {
-  cosm_reset_scope
   publish_fix_status
   publish_publish || return $?
+  publish_update_vtable
+}
+prod_publish_xepilog()
+{
   publish_update_vtable
 }
 publish_fix_status()
@@ -147,11 +149,11 @@ publish_already_published()
 publish_ff_publish()
 {
   if [[ $dryRun == true ]]; then
-    mio_success "Branch ${VC}$publishBranch${Green} will be forwarded to ${VC}$publishVTag${Green}"
+    mio_success "Branch ${VC}$prodBranch${Green} will be forwarded to ${VC}$prodVTag${Green}"
   else
-    branch_merge "$publishVTag" "$publishBranchPath" \
-    && branch_raise_head_changed_event "$publishBranch" \
-    || { mio_error "Merge of branch ${VC}$publishBranch${Red} failed"; return 1; }
+    branch_merge "$prodVTag" "$prodBranchPath" \
+    && branch_raise_head_changed_event "$prodBranch" \
+    || { mio_error "Merge of branch ${VC}$prodBranch${Red} failed"; return 1; }
   fi
 }
 publish_not_published()
@@ -160,12 +162,12 @@ publish_not_published()
   publish_init_next_version "$prerelPrefix"
 
   if [[ $dryRun == true ]]; then
-    mio_success "Branch ${VC}$publishBranch${Green} will be published at ${VC}$publishNTag" "$alias"
+    mio_success "Branch ${VC}$prodBranch${Green} will be published at ${VC}$publishVTag" "$alias"
   else
     publish_commit \
-    && branch_raise_head_changed_event "$publishBranch" \
-    && mio_success "Published branch ${VC}$publishBranch${Green} at ${VC}$publishNTag" \
-    || { mio_error "Publish of branch '$publishBranch' failed"; return 1; }
+    && branch_raise_head_changed_event "$prodBranch" \
+    && mio_success "Published branch ${VC}$prodBranch${Green} at ${VC}$publishVTag" \
+    || { mio_error "Publish of branch '$prodBranch' failed"; return 1; }
   fi
 }
 publish_not_implemented()
@@ -200,19 +202,25 @@ publish_update_vtable()
     publish_commit_vtable
   else
     vtable_update "$startupRoot" "$moduleId" "$vtableLookupPath" "$vtableGate"
+    if [[ $dryRun != true ]]; then
+      branch_merge "$prodBranch" "$moduleDevBranchPath" '-Xours' &>/dev/null
+    fi
   fi
 }
 publish_commit_vtable()
 {
   # io_trace "publish_commit_vtable -- $(print_vars lbranch vbranch vnext)"
-  local commit=true color
-  [[ $dryRun == true ]] && commit=false
-  if vtable_update "$startupRoot" "$moduleId" "$vtableLookupPath" "$vtableGate" $commit; then
-    [[ $dryRun == true ]] && color=${DarkGray} || color=${Green}
-    mio_message "Created version table for ${VC}$publishBranch${color} at ${VC}$publishNTag" $color
-    branch_merge "$publishBranch" "$moduleDevBranchPath"
-    tag_move "$publishNTag" "$publishBranch" &>/dev/null
-
+  if [[ $dryRun == true ]]; then
+    vtable_update "$startupRoot" "$moduleId" "$vtableLookupPath" "$vtableGate"
+    mio_message "Created version table for ${VC}$prodBranch${DarkGray} at ${VC}$publishVTag" ${DarkGray}
+  else
+    local tmpBranch="_zou_$(date +%y%V)"
+    git checkout -b "$tmpBranch" &>/dev/null
+    vtable_update "$startupRoot" "$moduleId" "$vtableLookupPath" "$vtableGate" true
+    mio_message "Created version table for ${VC}$prodBranch${Green} at ${VC}$publishVTag" ${Green}
+    branch_merge "$tmpBranch" "$moduleDevBranchPath" "$prodBranch" '-Xours' &>/dev/null
+    git checkout "$prodBranch" &>/dev/null
+    git branch -D "$tmpBranch" &>/dev/null
   fi
 }
 
