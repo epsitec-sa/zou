@@ -93,11 +93,13 @@ prod_release_run()
 prod_release_prolog()
 {
   # io_trace "prod_release_prolog -- $(print_vars prodBranch)"
-  if [[ $publishStatus == 'unpublishable' ]]; then
-    mio_error "Branch ${VC}$moduleDevBranch${Red} cannot be released."
-    mio_info "  use ${VC}git dev finish${Cyan} to validate development code for release."
-    return 1
-  fi
+  case "$publishStatus" in
+    error|unpublishable)
+      mio_error "Branch ${VC}$moduleDevBranch${Red} cannot be released."
+      mio_info "  use ${VC}git dev finish${Cyan} to release some development code."
+      return 1;;
+  esac
+  
   if [[ $dryRun == true ]]; then
     prod_release_init_pstatus
   else
@@ -122,7 +124,7 @@ prod_release_xepilog()
 prod_release_fix_status()
 {
   [[ $dryRun == true ]] && prod_release_update_pstatus
-  [[ $publishStatus == 'published' ]] && cosm_has_unstaged_submodules && publishStatus='notPublished'
+  publish_fix_publish_status "$prerelPrefix"
 }
 
 #################

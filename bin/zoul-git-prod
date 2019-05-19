@@ -140,6 +140,7 @@ _prod_init_prod()
   vtag2prod=$delta
   vtagStatus=$status
   publishVTag=$vtag
+  vtag_is_semver "$vtag" && publishPrerelPrefix=${BASH_REMATCH[7]#-}
   module_in_prod_mode && moduleAlias=$prodAlias
 }
 # usage:
@@ -297,6 +298,18 @@ prod_ensure_vbranch()
 
 ########################################################
 # PUBLISH
+
+publish_fix_publish_status()
+{
+  _publish_should_publish "$1" && publishStatus='notPublished'
+}
+_publish_should_publish()
+{
+  local prerelPrefix=$1
+  [[ $publishStatus != 'published' ]] && return 1
+  cosm_has_unstaged_submodules && return 0
+  [[ -n $publishPrerelPrefix && $prerelPrefix != $publishPrerelPrefix ]]
+}
 
 publish_init_next_version()
 {
