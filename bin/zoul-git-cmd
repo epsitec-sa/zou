@@ -87,9 +87,13 @@ _cmd_visit_tree()
 {
   _cmd_is_recursive || return 0
 
-  module_visit_submodules_async "configSelectInclude[@]" "${cmdScopes[@]}" _cmd_tree "$@"
-  module_visit_submodules_async "configSelectExclude[@]" _cmd_xscope "${cmdScopes[@]}" _cmd_xtree "$@"
+  local ec=0
+  # io_trace "_cmd_visit_tree 1 ${*@Q} -- $(print_vars configSelectInclude[@] cmdScopes[@])"
+  module_visit_submodules_async "configSelectInclude[@]" "${cmdScopes[@]}" _cmd_tree "$@" || ec=$?
+  # io_trace "_cmd_visit_tree 2 ${*@Q} -- $(print_vars configSelectInclude[@] cmdScopes[@])"
+  module_visit_submodules_async "configSelectExclude[@]" _cmd_xscope "${cmdScopes[@]}" _cmd_xtree "$@" || ec=$?
   [[ $(type -t cosm_reset_scope) == 'function' ]] && cosm_reset_scope
+  return $ec
 }
 _cmd_is_recursive()
 {
