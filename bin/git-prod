@@ -197,29 +197,35 @@ prod_release_set_vtable_info()
 prod_release_update_vtable()
 {
   # io_trace "prod_release_update_vtable -- $(print_vars vtable vtableCreate configSelectIsExcluded)"
-  [[ $vtableCreate == true ]] || return 0
   if [[ "$PWD" == "$startupRoot" ]]; then
     prod_release_commit_vtable
   else
-    vtable_update "$startupRoot" "$moduleId" "$vtableLookupPath" "$vtableGate"
-    [[ $configSelectIsExcluded == true || $dryRun == true ]] && return 0
-    branch_merge "$prodBranch" "$moduleDevBranchPath" '-Xours' &>/dev/null || io_trace_error "prod_release_update_vtable merge"
+    prod_release_update_vtable_core
   fi
+}
+prod_release_update_vtable_core()
+{
+  [[ $vtableCreate == true ]] && vtable_update "$startupRoot" "$moduleId" "$vtableLookupPath" "$vtableGate"
+  [[ $configSelectIsExcluded == true || $dryRun == true ]] && return 0
+  branch_merge "$prodBranch" "$moduleDevBranchPath" '-Xours' || io_trace_error "prod_release_update_vtable_core merge"
 }
 prod_release_commit_vtable()
 {
-  # io_trace "prod_release_commit_vtable -- $(print_vars lbranch vbranch vnext)"
   if [[ $dryRun == true ]]; then
+    [[ $vtableCreate == true ]] || return 0
     vtable_update "$startupRoot" "$moduleId" "$vtableLookupPath" "$vtableGate"
     mio_message "Created version table for ${VC}$prodBranch${DarkGray} at ${VC}$publishVTag" ${DarkGray}
-  else
+  elif [[ $vtableCreate == true ]]; then
+    # io_trace "prod_release_commit_vtable -- $(print_vars lbranch vbranch vnext)"
     local tmpBranch="_zou_$(date +%y%V)"
     git checkout -b "$tmpBranch" &>/dev/null
     vtable_update "$startupRoot" "$moduleId" "$vtableLookupPath" "$vtableGate" true
     mio_message "Created version table for ${VC}$prodBranch${Green} at ${VC}$publishVTag" ${Green}
-    branch_merge "$tmpBranch" "$moduleDevBranchPath" "$prodBranch" '-Xours' &>/dev/null
+    branch_merge "$tmpBranch" "$moduleDevBranchPath" "$prodBranch" '-Xours'
     git checkout "$prodBranch" &>/dev/null
     git branch -D "$tmpBranch" &>/dev/null
+  else
+    branch_merge "$prodBranch" "$moduleDevBranchPath" '-Xours'
   fi
 }
 
