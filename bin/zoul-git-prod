@@ -118,8 +118,13 @@ _prod_init_dev()
   if [[ -n $vbranch ]]; then
     local branch lbranch bref
     branch_set_realize "$vbranch"
+    if [[ -z $branch ]]; then
+      branch_create "$vbranch" "$vtag"
+      branch_set_realize "$vbranch"
+    fi
     prodBranchPath=$branch
     prodBranch=$lbranch
+    # io_trace "_prod_init_dev -- $(print_vars prodBranch prodBranchPath vbranch)"
   fi
   prodVTag=$vtag
   vtag2dev=$delta
