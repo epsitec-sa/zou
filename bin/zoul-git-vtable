@@ -15,25 +15,27 @@ print_row()
   # TODO: improve by computing the best width according to the longest string.
   # It needs to have two passes; the first one for computing, and the second
   # one for printing.
-  printf "_ %-40s _ %-20s _ %-20s _ %-20s _ %-20s _ %-20s _ %-20s _ %-20s _\n" "$@"
+  printf "_ %-40s _ %-20s _ %-10s _ %-20s _ %-20s _ %-20s _ %-20s _ %-20s _\n" "$@"
 }
 print_head()
 {
-  print_row Module Head Hash Delta Version vminor vmajor vnext
-  print_row :$(pad 39) :$(pad 19) :$(pad 19) :$(pad 19) :$(pad 19) :$(pad 19) :$(pad 19) :$(pad 19)
+  print_row Module Version Hash Dev Prod vminor vmajor vnext
+  print_row :$(pad 39) :$(pad 19) :$(pad 9) :$(pad 19) :$(pad 19) :$(pad 19) :$(pad 19) :$(pad 19)
 }
 vtable_row()
 {
-  local moduleId=$1 setHash=${2:-true} vminor vmajor hash
-
-  [[ $setHash == true ]] && hash=$(git rev-parse --short "$publishBranch" 2>/dev/null)
-  # io_trace "vtable_row 1 -- $(print_vars publishBranchPath publishBranch)"
-  # [ $publishDelta -eq 0 ] && publishDelta=''
-
-  local IFS=' '
-  local tags=$(git tag -l --sort=-v:refname)
-  local folder major minor refolder
-  if [[ $publishVTag =~ ^(.*/)?v([0-9]+)\.([0-9]+) ]]; then
+  local moduleId=$1 vminor vmajor hash \
+        dev prod deltaDev deltaProd \
+        folder major minor refolder tags vnext \
+        md_moduleId md_vtag IFS=' '
+  # io_trace "vtable_row -- $(print_vars vtag2dev vtag2prod)"
+  [ $vtag2dev  -ne 0 ] && deltaDev="($vtag2dev)"
+  [ $vtag2prod -ne 0 ] && deltaProd="($vtag2prod)"
+  dev=${moduleDevBranch}${deltaDev}
+  prod=${prodBranch}${deltaProd}
+  hash=$(git rev-parse --short "${prodVTag:-$moduleHead}" 2>/dev/null)
+  tags=$(git tag -l --sort=-v:refname)
+  if [[ $prodVTag =~ ^(.*/)?v([0-9]+)\.([0-9]+) ]]; then
     folder=${BASH_REMATCH[1]}
     major=${BASH_REMATCH[2]}
     minor=${BASH_REMATCH[3]}
@@ -41,18 +43,18 @@ vtable_row()
     vminor=$(echo $tags | grep -m1 "^${refolder}v$major\.$minor")
     vmajor=$(echo $tags | grep -m1 "^${refolder}v$major\.")
   fi
-  local vnext=$(echo $tags | grep -m1 "^${refolder}v[0-9]")
-  local md_moduleId=$moduleId
-  local md_vtag=$publishVTag
-  # io_trace "vtable_row 2 -- $(print_vars publishVTagStatus publishDelta)"
-  [[ $publishVTagStatus != 'vtag' || $publishDelta -ne 0 ]] && md_moduleId="##$moduleId##"
-  [[ $publishVTagStatus != 'vtag' ]] && md_vtag="##$publishVTag##"
-  [[ $publishVTag == $vminor ]] && vminor='' || vminor="#$vminor#"
-  [[ $publishVTag == $vmajor ]] && vmajor='' || vmajor="#$vmajor#"
-  [[ $publishVTag == $vnext  ]] && vnext=''  || vnext="#$vnext#"
-  # io_trace "vtable_row -- $(print_vars moduleId moduleHead hash publishVTag publishDelta folder major minor vmajor vminor vnext)"
-  local module_content=$(print_row "$md_moduleId" "$moduleHead" "$hash" "$publishDelta" "$md_vtag" "$vminor" "$vmajor" "$vnext")
-  echo "$module_content"
+  vnext=$(echo $tags | grep -m1 "^${refolder}v[0-9]")
+  md_moduleId=$moduleId
+  md_vtag=${publishVTag:-$prodVTag}
+  if [[ -n $md_vtag ]]; then
+    [[ $vtagStatus != 'vtag' || $vtag2prod -ne 0 ]] && md_moduleId="##$moduleId##"
+    [[ $vtagStatus != 'vtag' ]] && md_vtag="##$prodVTag##"
+    [[ $prodVTag == $vminor ]] && vminor='' || vminor="#$vminor#"
+    [[ $prodVTag == $vmajor ]] && vmajor='' || vmajor="#$vmajor#"
+    [[ $prodVTag == $vnext  ]] && vnext=''  || vnext="#$vnext#"
+  fi
+  # io_trace "vtable_row -- $(print_vars moduleId prodVTag hash dev prod vminor vmajor vnext)"
+  print_row "$md_moduleId" "$md_vtag" "$hash" "$dev" "$prod" "$vminor" "$vmajor" "$vnext"
 }
 vtable_init()
 {

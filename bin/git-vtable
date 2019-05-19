@@ -3,6 +3,7 @@
 [[ -z $ZOUL_LOCK ]]               && . zoul-lock
 [[ -z $ZOUL_GIT_VTABLE ]]         && . zoul-git-vtable
 [[ -z $ZOUL_GIT_MODULE ]]         && . zoul-git-module
+[[ -z $ZOUL_GIT_PROD ]]           && . zoul-git-prod
 [[ -z $ZOUL_GIT_CONFIG_SKU ]]     && . zoul-git-config-sku
 [[ -z $ZOUL_GIT_CONFIG_SELECT ]]  && . zoul-git-config-select
 
@@ -23,7 +24,7 @@ vtable_run()
   
   startupMessage="Creating version table, please wait..."
 
-  module_run vtable_main
+  module_run prod_scope vtable_main
 }
 vtable_main()
 {
@@ -57,7 +58,7 @@ vtable_submodules()
 {
   local vtableSkuInclude
   [[ $all == true ]] && vtableSkuInclude="${moduleSubmodulePaths[@]}" || vtableSkuInclude=$(config_sku_list_included)
-  module_visit_submodules_async 'vtableSkuInclude[@]' vtable_tree
+  module_visit_submodules_async 'vtableSkuInclude[@]' prod_scope vtable_tree
 }
 
 vtable_run "$@"
