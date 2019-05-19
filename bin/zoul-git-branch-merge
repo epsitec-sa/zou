@@ -12,7 +12,7 @@ ZOUL_GIT_BRANCH_MERGE=true
 
 branch_merge_ff()
 {
-  local toMerge=$1 intoBranch=$2 intoBranchName needCheckout
+  local toMerge=$1 intoBranch=$2 toMergeAlias=${3:-$1} intoBranchName needCheckout
   _branch_merge_ff
 }
 branch_merge_sync()
@@ -111,7 +111,7 @@ _branch_merge_ff()
 
   if [[ "$(git symbolic-ref HEAD 2>/dev/null)" == "$intoRef" ]]; then
     if git merge --ff-only "$toMerge" &>/dev/null; then
-      mio_success "Merged ${VC}$toMerge${Green} into ${VC}$intoBranchName${Green} (fast-forward)"
+      mio_success "Merged ${VC}$toMergeAlias${Green} into ${VC}$intoBranchName${Green} (fast-forward)"
     else
       return 1
     fi
@@ -121,7 +121,7 @@ _branch_merge_ff()
       return 1
     fi
     if git update-ref -m "merge $toMerge into $intoBranch (fast forward)" "$intoRef" "$hashToMerge" "$hashMergeInto"; then
-      mio_success "Merged ${VC}$toMerge${Green} into ${VC}$intoBranchName${Green} (fast-forward)"
+      mio_success "Merged ${VC}$toMergeAlias${Green} into ${VC}$intoBranchName${Green} (fast-forward)"
     else
       return 1
     fi
