@@ -73,14 +73,7 @@ sku_command()
 sku_enter_prolog() { sku_checkout "$sku" "$vnext" true; }
 sku_status_prolog()
 {
-  local label sku skus=()
-  # for sku in $(branch_list_all_flatten); do
-  #   if [[ $sku == 'sku/dev' ]]; then
-  #     skus+=( 'sku' )
-  #   elif [[ $sku =~ ^sku/(.+)/dev$ ]]; then
-  #     skus+=( "${BASH_REMATCH[1]}" )
-  #   fi
-  # done
+  local label sku skus=() acolor=${LightGreen} icolor=${DarkGray} bcolor=${Cyan}
   for sku in $(branch_list_all_flatten); do
     [[ $sku =~ ^(master|sku/.*dev)$ ]] || continue
     skus+=( "$sku" )
@@ -93,20 +86,15 @@ sku_status_prolog()
       skuName=${skuName#sku/}
       # io_trace "sku_status_prolog -- $(print_vars sku skuName moduleDevBranch)"
       if [[ $sku == $moduleDevBranch ]]; then
-        skus[$i]=${LightGreen}$skuName${VC}
+        skus[$i]=${acolor}$skuName${bcolor}
       else
-        skus[$i]=$skuName
+        skus[$i]=${icolor}$skuName${bcolor}
       fi
     done
     skuList=$(string_join ', ' $(array_sort skus[@]))
   fi
 
-  if module_is_bundle; then
-    [ ${#skus[@]} -eq 0 ] && skus+=( 'master' )
-    mio_info "Available SKUs (${VC}${skuList}${Cyan})"
-  elif ! [[ ${#skus[@]} -eq 0 && $specializedOnly == true ]]; then
-    mio_info "Specialization (${VC}${skuList}${Cyan})"
-  fi
+  mio_message "[${skuList}]" "${bcolor}"
 }
 
 sku_run  "$@"
