@@ -62,7 +62,7 @@ cmd_register_module_paths()
 ############################
 
 # usage:
-#   local recursive=true command=wip subcommand=enter \
+#   local command=wip subcommand=enter \
 #         cmdScopes=( prod_scope config_scope cosm_scope)
 #
 #   cmd_register_module_paths true sm1 sm2
@@ -70,8 +70,8 @@ cmd_register_module_paths()
 cmd_visit_modules()
 {
   if [[ $moduleRoot == $startupRoot ]]; then
-    # io_trace "cmd_visit_modules 1 ${*@Q} -- $(print_vars cmdModulePaths[@])"
     # startup module scopes are already initialized
+    # io_trace "cmd_visit_modules 1 ${*@Q} -- $(print_vars cmdModulePaths[@])"
     module_visit_submodules_async 'cmdModulePaths[@]' _cmd_tree "$@"
   else
     # io_trace "cmd_visit_modules 2 ${*@Q} -- $(print_vars cmdModulePaths[@])"
@@ -102,6 +102,7 @@ _cmd_is_recursive()
 }
 _cmd_xscope()
 {
+  # io_trace "_cmd_xscope ${*@Q}"
   local configSelectIsExcluded=true
   $1 "${@:2}"
 }
@@ -128,14 +129,14 @@ _cmd_tree_core()
 }
 _cmd_prolog()
 {
-  # io_trace "_cmd_prolog -- $(print_vars subcommand cmdModulePaths[@])"
+  # io_trace "_cmd_prolog -- $(print_vars command subcommand cmdModulePaths[@])"
   if [[ $(type -t "${command}_${subcommand}_prolog") == 'function' ]]; then
     ${command}_${subcommand}_prolog "$@"
   fi
 }
 _cmd_epilog()
 {
-  # io_trace "_cmd_epilog -- $(print_vars subcommand cmdModulePaths[@])"
+  # io_trace "_cmd_epilog -- $(print_vars command subcommand cmdModulePaths[@])"
   if [[ $(type -t "${command}_${subcommand}_epilog") == 'function' ]]; then
     ${command}_${subcommand}_epilog "$@"
   fi
@@ -163,14 +164,14 @@ _cmd_xtree_core()
 }
 _cmd_xprolog()
 {
-  # io_trace "_cmd_xprolog -- $(print_vars subcommand cmdModulePaths[@])"
+  # io_trace "_cmd_xprolog -- $(print_vars command subcommand cmdModulePaths[@])"
   if [[ $(type -t "${command}_${subcommand}_xprolog") == 'function' ]]; then
     ${command}_${subcommand}_xprolog "$@"
   fi
 }
 _cmd_xepilog()
 {
-  # io_trace "_cmd_xepilog -- $(print_vars subcommand cmdModulePaths[@])"
+  # io_trace "_cmd_xepilog -- $(print_vars command subcommand cmdModulePaths[@])"
   if [[ $(type -t "${command}_${subcommand}_xepilog") == 'function' ]]; then
     ${command}_${subcommand}_xepilog "$@"
   fi
