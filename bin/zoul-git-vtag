@@ -136,11 +136,13 @@ vtag_set_describe()
       stag=${ltag%-*-g*}
       if git merge-base --is-ancestor $stag^{} $branch; then
         _vtag_set_info "$ltag" "$stag" "$match" # -> vbranch vtag delta alias
+        # io_trace "vtag_set_describe 3 -- $(print_vars vbranch vtag delta alias)"
         return 0
       fi
     fi
   done
-  vbranch=''; vtag=''; alias=''; delta=0
+  vbranch=''; vtag=''; alias='<>'; delta=0
+  # io_trace "vtag_set_describe 2 -- $(print_vars vbranch vtag delta alias)"
   return 1
 }
 _vtag_describe()
