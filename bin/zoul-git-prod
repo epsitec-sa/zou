@@ -24,7 +24,7 @@ prod_scope()
         prodBranch prodBranchPath \
         prodVTag prodHTag prodAlias devAlias moduleAlias \
         vtagStatus vtag2dev vtag2prod \
-        publishVTag publishPrerelPrefix publishStatus \
+        publishVTag publishPrerelPrefix publishStatus
   
   prod_reset_scope
 
@@ -35,67 +35,110 @@ prod_scope()
 }
 prod_reset_scope()
 {
-  _prod_init_scope "$moduleDevBranchPath" "$moduleDevBranch"
-}
+  # avoid prematured event processing
+  [[ $prodScopeInitialized == true ]] || return 0
 
+  _prod_init_vars
+
+  if [[ $configSelectIsExcluded == true ]]; then
+    _prod_init_xscope
+  else
+    _prod_init_scope "$moduleDevBranchPath" "$moduleDevBranch"
+  fi
+}
+_prod_trace()
+{
+  :
+  # io_lock_enter
+  # io_trace_unsafe "$1 -- $(print_vars prodBranch prodBranchPath)"
+  # io_trace_unsafe "$1 -- $(print_vars vtagStatus prodVTag prodHTag)"
+  # io_trace_unsafe "$1 -- $(print_vars vtag2dev vtag2prod prodAlias)"
+  # io_trace_unsafe "$1 -- $(print_vars publishStatus publishVTag publishPrerelPrefix)"
+  # io_lock_exit
+}
 
 ########################################################
 # SCOPE INITIALIZATION
 
+_prod_init_vars()
+{
+  prodBranch=''; prodBranchPath=''; prodVTag=''; prodHTag=''
+  prodAlias='<>'; devAlias='<>'; vtagStatus='vtagMissing'; vtag2dev=0; vtag2prod=0
+  publishVTag=''; publishPrerelPrefix=''; publishStatus='error'
+}
+_prod_init_xscope()
+{
+  local vbranch vtag htag delta=0 alias status
+
+  vtag_set_describe "$moduleHead" "$moduleHead" 'false' # -> vbranch vtag delta alias
+  if [[ -n $vtag ]]; then
+    _prod_init_dev
+
+    # 2. Retrieve vtag and vbranch info starting from prod branch
+    if [[ -z $prodBranchPath ]]; then
+      _prod_set_no_prod_info "$vtag"
+    else
+      _prod_set_xprod_info "$prodBranchPath" "$prodBranch"
+    fi
+    _prod_init_prod
+    publishStatus='published'
+  fi
+
+  _prod_trace '_prod_init_xscope'
+}
 _prod_init_scope()
 {
-  # avoid prematured event processing
-  [[ $prodScopeInitialized == true ]] || return 0
-  
   local devBranchPath=$1 devBranch=$2 \
-        vbranch vtag htag delta alias status \
-        branch lbranch bref
+        vbranch vtag htag delta=0 alias status
 
   # 1. Retrieve vtag and vbranch info starting from dev branch
   vtag_set_describe "$devBranchPath" "$devBranch" 'auto' # -> vbranch vtag delta alias
-  if [[ -z $vtag ]]; then
-    # reset scope variables
-    prodBranch=''; prodBranchPath=''; prodVTag=''; prodHTag=''
-    prodAlias='<>'; devAlias='<>'; vtagStatus='vtagMissing'; vtag2dev=''; vtag2prod=''
-    publishVTag=''; publishPrerelPrefix=''; publishStatus='unpublishable'
-    return 0
+  if [[ -n $vtag ]]; then
+    _prod_init_dev
+
+    # 2. Retrieve vtag and vbranch info starting from prod branch
+    if [[ -z $prodBranchPath ]]; then
+      _prod_set_no_prod_info "$vtag"
+    else
+      _prod_set_prod_info "$prodBranchPath" "$prodBranch"
+      if [[ $vbranch != $prodBranch ]]; then
+        mio_error "Branches ${VC}$prodBranch${LightPurple} and ${VC}$vbranch${LightPurple} are intermixed" ${LightPurple}
+        return 1
+      fi
+    fi
+    
+    _prod_init_prod
+    _prod_init_publish_status "$delta" "$status"
   fi
-  local branch lbranch bref
-  branch_set_realize "$vbranch"
-  prodBranchPath=$branch
-  prodBranch=$lbranch
+
+  _prod_trace '_prod_init_scope'
+}
+_prod_init_dev()
+{
+  if [[ -n $vbranch ]]; then
+    local branch lbranch bref
+    branch_set_realize "$vbranch"
+    prodBranchPath=$branch
+    prodBranch=$lbranch
+  fi
   prodVTag=$vtag
-  devAlias=$alias
   vtag2dev=$delta
-  vtagStatus=$status
+  devAlias=$alias
+  moduleAlias=$alias
 
-  # 2. Retrieve vtag and vbranch info starting from prod branch
-  _prod_set_vtag_info "$prodBranchPath" "$prodBranch"
-  if [[ $vbranch != $prodBranch ]]; then
-    mio_error "Branches ${VC}$prodBranch${LightPurple} and ${VC}$vbranch${LightPurple} are intermixed" ${LightPurple}
-    return 1
-  fi
-
+}
+_prod_init_prod()
+{
   prodVTag=$vtag
   prodHTag=$htag
   prodAlias=$alias
   vtag2prod=$delta
   vtagStatus=$status
-
-  module_in_dev_mode && moduleAlias=$devAlias || moduleAlias=$prodAlias
-
-  _prod_init_publish_status "$delta" "$status"
-
-  # io_lock_enter
-  # io_trace_unsafe "_prod_init_scope -- $(print_vars prodBranch prodBranchPath)"
-  # io_trace_unsafe "_prod_init_scope -- $(print_vars vtagStatus prodVTag prodHTag)"
-  # io_trace_unsafe "_prod_init_scope -- $(print_vars vtag2dev vtag2prod prodAlias)"
-  # io_trace_unsafe "_prod_init_scope -- $(print_vars publishStatus publishVTag publishPrerelPrefix)"
-  # io_lock_exit
+  module_in_prod_mode && moduleAlias=$prodAlias
 }
 # usage:
 #   local vbranch vtag htag delta alias status
-#   _prod_set_vtag_info $branch $lbranch $skipVNodes $allowDuplicateTags
+#   _prod_set_prod_info $branch $lbranch
 # in:
 #   $1:branch             -- local or remote branch name
 #   $2:lbranch            -- local branch name
@@ -108,18 +151,18 @@ _prod_init_scope()
 #   status    -- vnode       -- nearest vtag is a vnode (branch was never published on this vbranch)
 #                vtag        -- nearest vtag is a vtag
 #                vtagMissing -- no vtag found (branch was never published)
-_prod_set_vtag_info()
+_prod_set_prod_info()
 {
   local branch=$1 lbranch=${2:-$1}
   vtag_set_describe "$branch" "$lbranch" 'auto' # -> vbranch vtag delta alias
   # allow duplicate tags in bundle
   htag=$(vtag_highest $vbranch true)
-  # io_trace "_prod_set_vtag_info 1 -- $(print_vars branch vbranch vtag htag delta alias)"
+  # io_trace "_prod_set_prod_info 1 -- $(print_vars branch vbranch vtag htag delta alias)"
   if [[ $htag != $vtag ]]; then
     vtag=$htag
     delta=$(( $(git rev-list --count $vtag..$vbranch) ))
     vtag_format_alias "$vtag" "$delta"
-    # io_trace "_prod_set_vtag_info 2 -- $(print_vars branch vbranch vtag htag delta alias)"
+    # io_trace "_prod_set_prod_info 2 -- $(print_vars branch vbranch vtag htag delta alias)"
   fi
   # [ $delta -ne 0 ] && alias="$lbranch $alias" # (master > v2.0.0 (8))
   # disallow duplicate tags in bundle
@@ -128,17 +171,40 @@ _prod_set_vtag_info()
   fi
   # vnode or vtag
   vtag_is_vnode $vtag && status='vnode' || status='vtag'
-  # io_trace "_prod_set_vtag_info 3 -- $(print_vars htag status alias)"
+  # io_trace "_prod_set_prod_info 3 -- $(print_vars htag status alias)"
 }
-# in:
-#   delta=$1
-#   status=$2
-# out:
-#   publishStatus -- error
-#                    unpublishable
-#                    published
-#                    notPublished
-#                    ffPublish
+_prod_set_xprod_info()
+{
+  local branch=$1 lbranch=${2:-$1}
+  vtag_set_describe "$branch" "$lbranch" 'auto' # -> vbranch vtag delta alias
+  # io_trace "_prod_set_xprod_info 1 -- $(print_vars branch vbranch vtag htag delta alias)"
+  if module_is_bundle; then
+    htag=$(vtag_highest $vbranch true)
+  else
+    htag=$(vtag_highest $vbranch false)
+  fi
+  # vnode or vtag
+  vtag_is_vnode $vtag && status='vnode' || status='vtag'
+  # io_trace "_prod_set_xprod_info 2 -- $(print_vars htag status alias)"
+}
+# in:  vtag
+# out: htag delta alias status
+_prod_set_no_prod_info()
+{
+  local vtag=$1
+  htag=$vtag
+  delta=0
+  if [[ -z $vtag ]]; then
+    status='vtagMissing'
+    alias='<>'
+  else
+    vtag_is_vnode $vtag && status='vnode' || status='vtag'
+    vtag_format_alias "$vtag" "$delta"
+  fi
+
+}
+# in:  delta status
+# out: publishStatus -- (error, unpublishable, published, notPublished, ffPublish)
 _prod_init_publish_status()
 {
   local delta=$1 status=$2
