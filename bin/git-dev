@@ -14,15 +14,13 @@ dev_parse()
     -j*)            jobsCount=${1#-j};;
     -v*)            dev_parse_default_version "$1";;
     -r|--recursive) recursive=true;;
-    --vnext)        vnext=true;;
-    enter)          subcommand=$1;;
-    exit|finish)    subcommand=$1;;
+    enter|finish)   subcommand=$1;;
     --)             shift; break;;
     -*) io_error "unknown option ${VC}$1${Red}\n"; io_help $0; return 1;;
     *)  args+=( "$1" );;
   esac; shift; done
 
-  cmd_check_subcommand 'enter' 'exit' 'finish'
+  cmd_check_subcommand 'enter' 'finish'
   cmd_check_args "${args[@]}"
   
   devModulePaths=( "$@" )
@@ -43,14 +41,13 @@ dev_run()
   # parse command line
   local jobsCount recursive command='dev' subcommand \
         cmdScopes=( prod_scope config_scope cosm_scope ) \
-        vnext defaultVersion='0.1' devModulePaths=()
+        defaultVersion='0.1' devModulePaths=()
 
   dev_parse "$@" || return $?
   
   case $subcommand in
-    enter)  startupMessage="Entering DEV mode, please wait...";;
-    exit)   startupMessage="Exiting DEV mode, please wait...";;
-    finish) startupMessage="Finishing DEV, please wait...";;
+    enter)  startupMessage="Entering development mode, please wait...";;
+    finish) startupMessage="Merging development into production branches, please wait...";;
   esac
 
   module_run "${cmdScopes[@]}" dev_command
@@ -63,17 +60,16 @@ dev_command()
   cmd_visit_modules
 }
 dev_enter_epilog() { dev_checkout true; }
-dev_exit_prolog()  { prod_checkout "$vnext" true; }
 
 dev_finish_prolog()
 {
+  dev_checkout false "$moduleDevBranch"
   prod_ensure_vbranch "$defaultVersion"
 }
 dev_finish_epilog()
 {
   cosm_commit_unstaged_clean_submodules
   branch_merge "$moduleDevBranch" "$prodBranchPath" '-Xtheirs'
-  prod_checkout "$vnext" true
 }
 
 dev_run  "$@"

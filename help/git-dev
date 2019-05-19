@@ -1,22 +1,16 @@
 usage: git dev [<options>] enter  -- <module-paths>
-   or: git dev [<options>] exit   -- <module-paths>
    or: git dev [<options>] finish -- <module-paths>
 
 Manage dev mode.
 
 commands:
     enter                   checkout DEV branches in bundle and specified modules
-    exit                    return to PROD mode
-                                checkout actual version or next version if --vnext is specified
-                                fallback to DEV mode
-    finish                  merge DEV branches into PROD branches and return to PROD mode
+    finish                  merge DEV branches into PROD branches
                                 create a PROD branch is necessary (use -v option)
-
 options:
     -h|--help               display help
     -r|--recursive)         visit specified modules recursively
     -v<MAJ.MIN>             specify default version if vbranch does not exist (default to 0.1)
-    --vnext                 return to next version (default to actual version)
     <module-paths>          specific modules to visit (default to current module)
     
 example:
@@ -24,7 +18,6 @@ example:
     git dev enter                 # enter DEV mode in bundle and current module
     git dev enter -r              # enter DEV mode in bundle and current module recursively
     git dev enter -- m1 m2        # enter DEV mode in bundle and child modules 'm1' and 'm2'
-    git dev exit                  # exit DEV mode from current module
     git dev finish                # finish DEV mode in current module
     git dev finish -r -- ../m1    # finish DEV mode in sibling module 'm1' recursively
     git dev finish -v1.0          # finish DEV mode in current module
