@@ -1,6 +1,5 @@
 usage: git wip [<options>] start [<prefix>:][<suffix>] -- <module-paths>
    or: git wip [<options>] enter [<prefix>:][<suffix>] -- <module-paths>
-   or: git wip [<options>] exit   -- <module-paths>
    or: git wip [<options>] finish -- <module-paths>
 
 Manage WIP mode.
@@ -8,15 +7,11 @@ Manage WIP mode.
 commands:
     start                   create and checkout WIP branches in bundle and specified modules
     enter                   checkout WIP branches in bundle and specified modules
-    exit                    return to PROD mode (do not delete WIP branches)
-                                checkout actual version or next version if --vnext is specified
-                                fallback to DEV mode
-    finish                  merge WIP branches into DEV branches, delete WIP branches and return to PROD mode
+    finish                  merge WIP branches into DEV branches, delete WIP branches and return to DEV mode
 
 options:
     -h|--help               display help
     -r|--recursive)         visit specified modules recursively
-    --vnext                 return to next version (default to actual version)
     <prefix>                WIP prefix (default to 'wip')
     <suffix>                WIP suffix (default to 'work')
     <module-paths>          specific modules to visit (default to current module)
@@ -29,7 +24,5 @@ example:
     git wip start -- m1 m2        # start 'wip:work' in bundle and child modules 'm1' and 'm2'
     git wip start -r              # start 'wip:work' in bundle and current module recursively
     git wip enter my              # enter 'wip:my'   in bundle and current module
-    git wip exit                  # exit WIP mode from current module
-    git wip exit --vnext          # exit WIP mode and checkout next version (PROD branch)
     git wip finish                # finish WIP mode in current module
     git wip finish -r -- ../m1    # finish WIP mode in sibling module 'm1' recursively

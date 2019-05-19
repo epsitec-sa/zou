@@ -12,15 +12,14 @@ wip_parse()
     -h|--help) zou-help $0; exit 0;;
     -j*)            jobsCount=${1#-j};;
     -r|--recursive) recursive=true;;
-    --vnext)        vnext=true;;
     start|enter)    subcommand=$1; wip_parse_wip $2 && shift;;
-    exit|finish)    subcommand=$1;;
+    finish)         subcommand=$1;;
     --)             shift; break;;
     -*) io_error "unknown option ${VC}$1${Red}\n"; io_help $0; return 1;;
     *)  args+=( "$1" );;
   esac; shift; done
 
-  cmd_check_subcommand 'start' 'enter' 'exit' 'finish'
+  cmd_check_subcommand 'start' 'enter' 'finish'
   cmd_check_args "${args[@]}"
 
   wipModulePaths=( "$@" )
@@ -40,7 +39,7 @@ wip_run()
   # parse command line
   local jobsCount recursive command='wip' subcommand \
         cmdScopes=( prod_scope config_scope ) \
-        vnext wipPrefix wipSuffix wipModulePaths=()
+        wipPrefix wipSuffix wipModulePaths=()
         
   wip_parse "$@" || return $?
 
@@ -88,24 +87,18 @@ wip_enter_epilog()
     mio_error "SKU ${VC}$wipPrefix:$wipSuffix${Red} not found"
   fi
 }
-wip_exit_epilog()
-{
-  ! module_in_wip_mode && return 0
-
-  prod_checkout "$vnext" true
-}
 wip_finish_epilog()
 {
   ! module_in_wip_mode && return 0
 
   local devBranch=$(wip_to_ref $moduleDevBranch)
   local wipBranch=$moduleHead
-  # io_trace "wip_finish 1 -- $(print_vars moduleHead devBranch)"
+  # io_trace "wip_finish 1 -- $(print_vars wipBranch devBranch)"
   if [[ $wipBranch != $devBranch ]]; then
-    # io_trace "wip_finish 2 -- $(print_vars moduleHead devBranch)"
+    # io_trace "wip_finish 2 -- $(print_vars wipBranch devBranch)"
     # merge, checkout prod || vtag || dev and del wip
     branch_merge "$wipBranch" "$devBranch" \
-    && prod_checkout "$vnext" true "$devBranch" \
+    && dev_checkout true "$devBranch" \
     && branch_delete "$wipBranch"
   fi
 }
