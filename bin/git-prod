@@ -202,9 +202,8 @@ prod_release_update_vtable()
     prod_release_commit_vtable
   else
     vtable_update "$startupRoot" "$moduleId" "$vtableLookupPath" "$vtableGate"
-    if [[ $dryRun != true ]]; then
-      branch_merge "$prodBranch" "$moduleDevBranchPath" '-Xours' &>/dev/null
-    fi
+    [[ $configSelectIsExcluded == true || $dryRun == true ]] && return 0
+    branch_merge "$prodBranch" "$moduleDevBranchPath" '-Xours' &>/dev/null || io_trace_error "prod_release_update_vtable merge"
   fi
 }
 prod_release_commit_vtable()
