@@ -7,6 +7,8 @@ ZOUL_CORE=true
 [[ -z $ZOUL_LOCK ]]    && . zoul-lock
 [[ -z $ZOUL_PROCESS ]] && . zoul-process
 
+zouTraceError=false
+
 # work with default IFS
 IFS=$' \t\n'
 OIFS=$IFS
@@ -108,6 +110,14 @@ io_trace_unsafe()
   local message=${1//$'\n'/'\\n'}
   message=${message//$'\t'/'\\t'}
   mio_message_unsafe "  $message" ${2:-$Gray}
+}
+io_trace_error()
+{
+  local ec=$?
+  [[ $zouTraceError != true ]] && return $ec
+  [ $ec -eq 0 ] && return 0
+  io_trace "$1 (error code=$ec)"
+  return $ec
 }
 
 #########

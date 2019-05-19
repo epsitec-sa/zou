@@ -88,10 +88,10 @@ _cmd_visit_tree()
   _cmd_is_recursive || return 0
 
   local ec=0
-  # io_trace "_cmd_visit_tree 1 ${*@Q} -- $(print_vars configSelectInclude[@] cmdScopes[@])"
-  module_visit_submodules_async "configSelectInclude[@]" "${cmdScopes[@]}" _cmd_tree "$@" || ec=$?
-  # io_trace "_cmd_visit_tree 2 ${*@Q} -- $(print_vars configSelectInclude[@] cmdScopes[@])"
-  module_visit_submodules_async "configSelectExclude[@]" _cmd_xscope "${cmdScopes[@]}" _cmd_xtree "$@" || ec=$?
+  module_visit_submodules_async "configSelectInclude[@]" "${cmdScopes[@]}" _cmd_tree "$@" || io_trace_error "_cmd_visit_tree 1" || ec=$?
+  # io_trace "_cmd_visit_tree 1 ${*@Q} -- $(print_vars configSelectInclude[@] cmdScopes[@] ec)"
+  module_visit_submodules_async "configSelectExclude[@]" _cmd_xscope "${cmdScopes[@]}" _cmd_xtree "$@" || io_trace_error "_cmd_visit_tree 2" || ec=$?
+  # io_trace "_cmd_visit_tree 2 ${*@Q} -- $(print_vars configSelectInclude[@] cmdScopes[@] ec)"
   [[ $(type -t cosm_reset_scope) == 'function' ]] && cosm_reset_scope
   return $ec
 }
@@ -135,14 +135,14 @@ _cmd_prolog()
 {
   # io_trace "_cmd_prolog -- $(print_vars command subcommand cmdModulePaths[@])"
   if [[ $(type -t "${command}_${subcommand}_prolog") == 'function' ]]; then
-    ${command}_${subcommand}_prolog "$@"
+    ${command}_${subcommand}_prolog "$@" || io_trace_error "${command}_${subcommand}_prolog"
   fi
 }
 _cmd_epilog()
 {
   # io_trace "_cmd_epilog -- $(print_vars command subcommand cmdModulePaths[@])"
   if [[ $(type -t "${command}_${subcommand}_epilog") == 'function' ]]; then
-    ${command}_${subcommand}_epilog "$@"
+    ${command}_${subcommand}_epilog "$@" || io_trace_error "${command}_${subcommand}_epilog"
   fi
 }
 
@@ -154,7 +154,7 @@ _cmd_xtree()
 {
   # io_trace "_cmd_xtree ${*@Q}"
   if [[ $(type -t "${command}_${subcommand}_xscope") == 'function' ]]; then
-    ${command}_${subcommand}_xscope _cmd_xtree_core "$@"
+    ${command}_${subcommand}_xscope _cmd_xtree_core "$@" || io_trace_error "${command}_${subcommand}_xscope"
   else
     _cmd_xtree_core "$@"
   fi
@@ -170,14 +170,14 @@ _cmd_xprolog()
 {
   # io_trace "_cmd_xprolog -- $(print_vars command subcommand cmdModulePaths[@])"
   if [[ $(type -t "${command}_${subcommand}_xprolog") == 'function' ]]; then
-    ${command}_${subcommand}_xprolog "$@"
+    ${command}_${subcommand}_xprolog "$@" || io_trace_error "${command}_${subcommand}_xprolog"
   fi
 }
 _cmd_xepilog()
 {
   # io_trace "_cmd_xepilog -- $(print_vars command subcommand cmdModulePaths[@])"
   if [[ $(type -t "${command}_${subcommand}_xepilog") == 'function' ]]; then
-    ${command}_${subcommand}_xepilog "$@"
+    ${command}_${subcommand}_xepilog "$@" || io_trace_error "${command}_${subcommand}_xepilog"
   fi
 }
 
