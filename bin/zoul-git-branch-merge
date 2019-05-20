@@ -58,6 +58,20 @@ branch_merge()
   fi
   return $ec
 }
+branch_is_merged()
+{
+  local toMerge=$1 mergeInto=$2 \
+        hashToMerge hashMergeInto hashMergeBase
+
+  # io_trace "_branch_merge_ff -- $(print_vars toMerge intoBranch intoRef intoBranchName)"
+
+  hashToMerge=$(git rev-parse --verify "$toMerge^{}" 2>/dev/null) || return 128
+  hashMergeInto=$(git rev-parse --verify "$mergeInto^{}" 2>/dev/null) || return 128
+
+  [[ $hashToMerge == $hashMergeInto ]] && return 0
+  hashMergeBase=$(git merge-base "$hashMergeInto" "$hashToMerge")
+  [[ $hashToMerge == $hashMergeBase ]]
+}
 # usage
 #  local toMerge=$1 intoBranch=$2 needCheckout
 #  _branch_merge_ff
@@ -76,7 +90,7 @@ _branch_merge_ff()
 {
   # merge 'toMerge' (invariant) into 'intoBranch' < 'toMerge'
   # 'intoBranch' should be a local branch with a symbolic name
-  local hashToMerge hashMergeInto intoRef branch lbranch bref ec=0
+  local hashToMerge hashMergeInto hashMergeBase intoRef branch lbranch bref ec=0
   branch_set_realize "$intoBranch" || ec=$?
   if [ $ec -eq 2 ]; then
     mio_error "Invalid branch name '$intoBranch' (error code = $ec)"
@@ -108,6 +122,8 @@ _branch_merge_ff()
   fi
 
   [[ $hashToMerge == $hashMergeInto ]] && return 0
+  hashMergeBase=$(git merge-base $hashMergeInto $hashToMerge)
+  [[ $hashToMerge == $hashMergeBase ]] && return 0
 
   if [[ "$(git symbolic-ref HEAD 2>/dev/null)" == "$intoRef" ]]; then
     if git merge --ff-only "$toMerge" &>/dev/null; then
@@ -117,7 +133,7 @@ _branch_merge_ff()
     fi
   else
     needCheckout=true
-    if [[ "$(git merge-base $hashMergeInto $hashToMerge)" != "$hashMergeInto" ]]; then
+    if [[ $hashMergeBase != "$hashMergeInto" ]]; then
       return 1
     fi
     if git update-ref -m "merge $toMerge into $intoBranch (fast forward)" "$intoRef" "$hashToMerge" "$hashMergeInto"; then
