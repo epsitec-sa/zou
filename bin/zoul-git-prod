@@ -25,7 +25,7 @@ prod_scope()
         prodBranch prodBranchPath \
         prodVTag prodHTag prodAlias devAlias moduleAlias \
         vtagStatus vtag2dev vtag2prod \
-        publishVTag publishPrerelPrefix publishStatus
+        releaseVTag releasePrerelPrefix releaseStatus
   
   prod_reset_scope
 
@@ -58,7 +58,7 @@ _prod_trace()
   # io_trace_unsafe "$1 -- $(print_vars prodBranch prodBranchPath)"
   # io_trace_unsafe "$1 -- $(print_vars vtagStatus prodVTag prodHTag)"
   # io_trace_unsafe "$1 -- $(print_vars vtag2dev vtag2prod prodAlias)"
-  # io_trace_unsafe "$1 -- $(print_vars publishStatus publishVTag publishPrerelPrefix)"
+  # io_trace_unsafe "$1 -- $(print_vars releaseStatus releaseVTag releasePrerelPrefix)"
   # io_lock_exit
 }
 
@@ -69,7 +69,7 @@ _prod_init_vars()
 {
   prodBranch=''; prodBranchPath=''; prodVTag=''; prodHTag=''
   prodAlias='<>'; devAlias='<>'; vtagStatus='vtagMissing'; vtag2dev=0; vtag2prod=0
-  publishVTag=''; publishPrerelPrefix=''; publishStatus='error'
+  releaseVTag=''; releasePrerelPrefix=''; releaseStatus='error'
 }
 _prod_init_xscope()
 {
@@ -86,7 +86,7 @@ _prod_init_xscope()
       _prod_set_xprod_info "$prodBranchPath" "$prodBranch"
     fi
     _prod_init_prod
-    publishStatus='published'
+    releaseStatus='released'
   fi
 
   _prod_trace '_prod_init_xscope'
@@ -113,7 +113,7 @@ _prod_init_scope()
     fi
     
     _prod_init_prod
-    _prod_init_publish_status "$delta" "$status"
+    _prod_init_release_status "$delta" "$status"
   fi
 
   _prod_trace '_prod_init_scope'
@@ -144,8 +144,8 @@ _prod_init_prod()
   prodAlias=$alias
   vtag2prod=$delta
   vtagStatus=$status
-  publishVTag=$vtag
-  vtag_is_semver "$vtag" && publishPrerelPrefix=${BASH_REMATCH[7]#-}
+  releaseVTag=$vtag
+  vtag_is_semver "$vtag" && releasePrerelPrefix=${BASH_REMATCH[7]#-}
 
   _prod_reset_alias
 }
@@ -161,9 +161,9 @@ _prod_init_prod()
 #   htag      -- highest vtag on vbranch (depends on allowDuplicateTags value)
 #   delta     -- number of commits between branch and vtag (can be negative if branch is behind vtag)
 #   alias     -- condensed vtag info - (> v1.0.0 (8)) means branch is ahead of v1.0.0 by 8 commits
-#   status    -- vnode       -- nearest vtag is a vnode (branch was never published on this vbranch)
+#   status    -- vnode       -- nearest vtag is a vnode (branch was never released on this vbranch)
 #                vtag        -- nearest vtag is a vtag
-#                vtagMissing -- no vtag found (branch was never published)
+#                vtagMissing -- no vtag found (branch was never released)
 _prod_set_prod_info()
 {
   local branch=$1 lbranch=${2:-$1}
@@ -217,33 +217,33 @@ _prod_set_no_prod_info()
 
 }
 # in:  delta status
-# out: publishStatus -- (error, unpublishable, published, notPublished, ffPublish)
-_prod_init_publish_status()
+# out: releaseStatus -- (error, unreleasable, released, unreleased, ffRelease)
+_prod_init_release_status()
 {
   local delta=$1 status=$2
-  # io_trace "_prod_init_publish_status -- $(print_vars delta status)"
-  publishStatus='error'
+  # io_trace "_prod_init_release_status -- $(print_vars delta status)"
+  releaseStatus='error'
   if [[ $status == 'vtagMissing' ]]; then
-    publishStatus='unpublishable'
+    releaseStatus='unreleasable'
   elif [[ $status == 'vtag' ]]; then
-    # published at least once on this vbranch
+    # released at least once on this vbranch
     if [ $delta -eq 0 ]; then
       # head has not been moved since last publish
-      publishStatus='published'
+      releaseStatus='released'
     elif [ $delta -gt 0 ]; then
-      publishStatus='notPublished'
+      releaseStatus='unreleased'
     else
       # prod branch is behind vtag
-      publishStatus='ffPublish'
+      releaseStatus='ffRelease'
     fi
   elif [[ $status == 'vnode' ]]; then
-    # never published on this vbranch
-    publishStatus='notPublished'
+    # never released on this vbranch
+    releaseStatus='unreleased'
   else
-    mio_error "_prod_init_publish_status: status '$status' not implemented"
+    mio_error "_prod_init_release_status: status '$status' not implemented"
     return 1
   fi
-  # io_trace "_prod_init_publish_status -> $(print_vars publishStatus)"
+  # io_trace "_prod_init_release_status -> $(print_vars releaseStatus)"
 }
 
 ########################################################
@@ -303,78 +303,77 @@ prod_ensure_vbranch()
 }
 
 ########################################################
-# PUBLISH
+# RELEASE
 
 prod_fix_release_status()
 {
-  _publish_should_publish "$1" && publishStatus='notPublished'
+  _prod_should_release "$1" && releaseStatus='unreleased'
 }
-_publish_should_publish()
+_prod_should_release()
 {
   local prerelPrefix=$1
-  [[ $publishStatus != 'published' ]] && return 1
+  [[ $releaseStatus != 'released' ]] && return 1
   cosm_has_unstaged_submodules && return 0
-  [[ -n $publishPrerelPrefix && $prerelPrefix != $publishPrerelPrefix ]]
+  [[ -n $releasePrerelPrefix && $prerelPrefix != $releasePrerelPrefix ]]
 }
 
-publish_init_next_version()
+prod_increment_release_version()
 {
   local prerelPrefix=$1 noIncrement
   # get principal module version
-  _publish_refresh_bundle_htag # update prodHTag and noIncrement
-  _publish_increment_version "$prerelPrefix" "$noIncrement" # -> publishVTag publishPrerelPrefix
+  _prod_refresh_bundle_htag # update prodHTag and noIncrement
+  _prod_increment_release_version "$prerelPrefix" "$noIncrement" # -> releaseVTag releasePrerelPrefix
 
   # io_lock_enter
-  # io_trace_unsafe "publish_init_next_version -- $(print_vars publishStatus publishPrerelPrefix)"
-  # io_trace_unsafe "publish_init_next_version -- $(print_vars prodVTag prodHTag publishVTag)"
+  # io_trace_unsafe "prod_increment_release_version -- $(print_vars releaseStatus releasePrerelPrefix)"
+  # io_trace_unsafe "prod_increment_release_version -- $(print_vars prodVTag prodHTag releaseVTag)"
   # io_lock_exit
 }
-publish_commit()
+prod_commit_release()
 {
-  if [[ $publishPrerelPrefix == 'reuse' ]]; then
-    _publish_commit_core
-    tag_move "$publishVTag" "$prodBranch"
-    # io_trace "publish_commit 1 -- $(print_vars publishPrerelPrefix publishVTag prodBranch)"
+  if [[ $releasePrerelPrefix == 'reuse' ]]; then
+    _prod_commit_release_core
+    tag_move "$releaseVTag" "$prodBranch"
+    # io_trace "prod_commit_release 1 -- $(print_vars releasePrerelPrefix releaseVTag prodBranch)"
   else
     # update technical version
-    _publish_commit_core 'version_update'
-    local comment="publish branch '$prodBranch' as '$publishVTag'"
-    git tag -a -m "zou-flow: $comment" "$publishVTag" "$prodBranch"
-    # io_trace "publish_commit 2 -- $(print_vars publishPrerelPrefix publishVTag prodBranch)"
+    _prod_commit_release_core 'version_update'
+    local comment="publish branch '$prodBranch' as '$releaseVTag'"
+    git tag -a -m "zou-flow: $comment" "$releaseVTag" "$prodBranch"
+    # io_trace "prod_commit_release 2 -- $(print_vars releasePrerelPrefix releaseVTag prodBranch)"
   fi
 }
-_publish_commit_core()
+_prod_commit_release_core()
 {
-  # io_trace "_publish_commit_core ${*@Q}"
+  # io_trace "_prod_commit_release_core ${*@Q}"
   local updater=$1 vresources=()
   # update technical version - modify resources files
   if [[ -n $updater ]]; then
-    # IFS=$'\n' vresources=( $($updater $publishVTag) ); IFS=$OIFS
-    vresources=( $($updater $publishVTag) )
+    # IFS=$'\n' vresources=( $($updater $releaseVTag) ); IFS=$OIFS
+    vresources=( $($updater $releaseVTag) )
   fi
-  # io_trace "_publish_commit_core -- $(print_vars updater vresources[@])"
+  # io_trace "_prod_commit_release_core -- $(print_vars updater vresources[@])"
   # commit resources and clean submodules in dev branch
-  version_commit_files "$publishVTag" "${vresources[@]}" ${unstagedCleanSubmodules[@]}
+  version_commit_files "$releaseVTag" "${vresources[@]}" ${unstagedCleanSubmodules[@]}
   # branch_merge "$prodBranch" "$moduleDevBranchPath" &>/dev/null
 }
-
-_publish_refresh_bundle_htag()
+_prod_refresh_bundle_htag()
 {
-  # io_trace "_publish_refresh_bundle_htag 1 -- $(print_vars principalModuleId prodHTag noIncrement)"
+  # io_trace "_prod_refresh_bundle_htag 1 -- $(print_vars principalModuleId prodHTag noIncrement)"
   [[ -n $principalModuleId ]] && module_is_bundle  || return 0
 
   local pinfo pstatus ptag pver hver \
         principalScopes=( prod_scope )
 
-  pinfo=$(module_visit "$principalModuleId" "${principalScopes[@]}" _publish_principal_info)
+  pinfo=$(module_visit "$principalModuleId" "${principalScopes[@]}" _prod_get_principal_module_release_info)
   pstatus=${pinfo%;*}
   ptag=${pinfo#*;}
   [ -z $ptag ] && return 0
 
   pver=${ptag##*/}
   hver=${prodHTag##*/}
-  # io_trace "_publish_refresh_bundle_htag 1 -- $(print_vars principalModuleId ptag pstatus prodHTag pinfo pstatus ptag hver pver)"
-  if [[ $pstatus == 'published' && $hver == $pver ]]; then
+  # io_trace "_prod_refresh_bundle_htag 1 -- $(print_vars principalModuleId ptag pstatus prodHTag pinfo pstatus ptag hver pver)"
+  if [[ $pstatus == 'released' && $hver == $pver ]]; then
     mio_message "Bundle ${VC}$bundleId${LightPurple} and module ${VC}$principalModuleId${LightPurple} have same version" ${LightPurple}
   else
     noIncrement=true
@@ -383,18 +382,18 @@ _publish_refresh_bundle_htag()
   # restore folder
   [[ $prodHTag =~ ^.*/ ]]
   prodHTag=${BASH_REMATCH[0]}$hver
-  # io_trace "_publish_refresh_bundle_htag 2 -- $(print_vars principalModuleId ptag pstatus prodHTag noIncrement)"
+  # io_trace "_prod_refresh_bundle_htag 2 -- $(print_vars principalModuleId ptag pstatus prodHTag noIncrement)"
 }
 # run in principal module context
-_publish_principal_info()
+_prod_get_principal_module_release_info()
 {
-  # io_trace "_publish_principal_info 1 -- $(print_vars publishStatus prodVTag prodHTag publishVTag)"
-  # [[ $dryRun == true && -n $principalPublishStatus ]] && publishStatus=$principalPublishStatus
-  # io_trace "_publish_principal_info 2 -- $(print_vars lbranch vbranch vtag htag delta status nextHead publishStatus)"
+  # io_trace "_prod_get_principal_module_release_info 1 -- $(print_vars releaseStatus prodVTag prodHTag releaseVTag)"
+  # [[ $dryRun == true && -n $principalReleaseStatus ]] && releaseStatus=$principalReleaseStatus
+  # io_trace "_prod_get_principal_module_release_info 2 -- $(print_vars lbranch vbranch vtag htag delta status nextHead releaseStatus)"
   local prerelPrefix noIncrement
-  _publish_increment_version
-  # io_trace "_publish_principal_info 2 -- $(print_vars publishStatus prodVTag prodHTag publishVTag)"
-  echo "$publishStatus;$publishVTag"
+  _prod_increment_release_version
+  # io_trace "_prod_get_principal_module_release_info 2 -- $(print_vars releaseStatus prodVTag prodHTag releaseVTag)"
+  echo "$releaseStatus;$releaseVTag"
 }
 
 # Compute next version
@@ -407,41 +406,41 @@ _publish_principal_info()
 #  $1:noIncrement   -- do not increment 
 # out:
 #  prerelPrefix=     -- prerelease prefix (alpha, beta, rc, rtm, reuse)
-_publish_increment_version()
+_prod_increment_release_version()
 {
-  if [[ $publishStatus == 'published' ]]; then
-    publishVTag=$prodHTag
+  if [[ $releaseStatus == 'released' ]]; then
+    releaseVTag=$prodHTag
   else
     local prerelPrefix=$1 noIncrement=$2 vnext
-    publishPrerelPrefix=$prerelPrefix
+    releasePrerelPrefix=$prerelPrefix
     if [[ $prerelPrefix == 'reuse' ]]; then
       # reuse previous vtag if it's not a vnode
       if vtag_is_vnode $prodVTag; then
-        publishPrerelPrefix=''
-        _publish_increment_version_core || return 1
+        releasePrerelPrefix=''
+        _prod_increment_release_version_core || return 1
       else
-        publishVTag=$prodVTag
+        releaseVTag=$prodVTag
       fi
     else
-      _publish_increment_version_core || return 1
+      _prod_increment_release_version_core || return 1
     fi
   fi
 }
 # out:
 #  vnext
-_publish_increment_version_core()
+_prod_increment_release_version_core()
 {
   local vnext
   if [[ $noIncrement == true ]]; then
     if vtag_is_vnode $prodHTag; then
-      vtag_set_increment "$prodHTag" "$publishPrerelPrefix" || return 1
-      publishVTag=$vnext
+      vtag_set_increment "$prodHTag" "$releasePrerelPrefix" || return 1
+      releaseVTag=$vnext
     else
-      publishVTag=$prodHTag
+      releaseVTag=$prodHTag
     fi
   else
-    vtag_set_increment "$prodHTag" "$publishPrerelPrefix" || return 1
-    publishVTag=$vnext
+    vtag_set_increment "$prodHTag" "$releasePrerelPrefix" || return 1
+    releaseVTag=$vnext
   fi
 }
 

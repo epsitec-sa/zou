@@ -84,7 +84,7 @@ publish_tree()
   publish_require_clean_repo || return $?
   publish_process_excluded && return 0
 
-  local branch lbranch vbranch vtag htag delta alias status nextHead publishStatus vnext
+  local branch lbranch vbranch vtag htag delta alias status nextHead releaseStatus vnext
 
   publish_prolog || return $?
   [[ $recursive == true ]] && { publish_submodules || return $?; }
@@ -125,15 +125,15 @@ publish_prolog()
   fi
 
   if ! [[ $lbranch =~ ^(sku/|master) ]]; then
-    mio_error "Branch '$lbranch' cannot be published (only sku and master branches can be published)"
+    mio_error "Branch '$lbranch' cannot be released (only sku and master branches can be released)"
     return 1
   fi
 
-  if [[ $publishStatus == 'unpublishable' ]]; then
-    mio_error "Branch '$lbranch' cannot be published (no vbranch associated)"
+  if [[ $releaseStatus == 'unreleasable' ]]; then
+    mio_error "Branch '$lbranch' cannot be released (no vbranch associated)"
     return 1
   fi
-  # io_trace "publish_prolog -- $(print_vars lbranch vbranch vtag htag publishStatus)"
+  # io_trace "publish_prolog -- $(print_vars lbranch vbranch vtag htag releaseStatus)"
 }
 
 ####################
@@ -159,7 +159,7 @@ publish_epilog()
 publish_fix_status()
 {
   [[ $dryRun == true ]] && publish_update_pstatus
-  [[ $publishStatus == 'published' ]] && cosm_has_unstaged_submodules && publishStatus='notPublished'
+  [[ $releaseStatus == 'released' ]] && cosm_has_unstaged_submodules && releaseStatus='unreleased'
 }
 
 #################
@@ -168,20 +168,20 @@ publish_fix_status()
 
 publish_publish()
 {
-  # io_trace "publish_publish 1 -- $(print_vars lbranch vbranch vtag htag prerelPrefix publishStatus)"
+  # io_trace "publish_publish 1 -- $(print_vars lbranch vbranch vtag htag prerelPrefix releaseStatus)"
   
-  case $publishStatus in
-    published)    publish_already_published;;
-    ffPublish)    publish_ff_publish;;
-    notPublished) publish_not_published;;
+  case $releaseStatus in
+    released)    publish_already_published;;
+    ffRelease)    publish_ff_publish;;
+    unreleased) publish_not_published;;
     *)            publish_not_implemented;;
   esac
-  # io_trace "publish_publish 1 -- $(print_vars lbranch vbranch vtag htag prerelPrefix publishStatus)"
+  # io_trace "publish_publish 1 -- $(print_vars lbranch vbranch vtag htag prerelPrefix releaseStatus)"
 }
 publish_already_published()
 {
   # head will not change
-  mio_message "Already published" ${LightBlue}
+  mio_message "Already released" ${LightBlue}
 }
 publish_ff_publish()
 {
@@ -205,8 +205,8 @@ publish_not_published()
 
   if [[ $dryRun == true ]]; then
     branch_set_vnext "$vtag" "$htag" "$noIncrement" # -> prerelPrefix vnext
-    mio_success "Branch ${VC}$lbranch${Green} will be published at ${VC}$vnext" "$alias"
-    # io_trace "$(print_vars lbranch vbranch vtag htag delta status nextHead publishStatus vnext prerelPrefix)"
+    mio_success "Branch ${VC}$lbranch${Green} will be released at ${VC}$vnext" "$alias"
+    # io_trace "$(print_vars lbranch vbranch vtag htag delta status nextHead releaseStatus vnext prerelPrefix)"
   else
     branch_set_publish "$lbranch" "$vbranch" "$vtag" "$htag" "$prerelPrefix" "$noIncrement" \
     && mio_success "Published branch ${VC}$lbranch${Green} at ${VC}$vnext" \
@@ -216,7 +216,7 @@ publish_not_published()
 }
 publish_not_implemented()
 {
-  mio_error "Fatal: publishStatus '$publishStatus' not implemented"
+  mio_error "Fatal: releaseStatus '$releaseStatus' not implemented"
   exit 1
 }
 publish_try_attach()
@@ -248,7 +248,7 @@ publish_set_bundle_version()
   pver=${ptag##*/}
   hver=${htag##*/}
   # io_trace "publish_set_bundle_version 1 -- $(print_vars principalModuleId ptag pstatus htag noIncrement)"
-  if [[ $pstatus == 'published' && $hver == $pver ]]; then
+  if [[ $pstatus == 'released' && $hver == $pver ]]; then
     mio_message "Bundle ${VC}$bundleId${LightPurple} and module ${VC}$principalModuleId${LightPurple} have same version" ${LightPurple}
   else
     noIncrement=true
@@ -262,18 +262,18 @@ publish_set_bundle_version()
 # run in principal module context
 publish_principal_info()
 {
-  local lbranch vbranch vtag htag delta alias status nextHead publishStatus vnext
+  local lbranch vbranch vtag htag delta alias status nextHead releaseStatus vnext
   branch_set_sku_info "$bundleDevBranch" "$publishDev" false
-  # io_trace "publish_principal_info 1 -- $(print_vars lbranch vbranch vtag htag delta status nextHead publishStatus)"
-  [[ $dryRun == true && -n $principalPublishStatus ]] && publishStatus=$principalPublishStatus
-  # io_trace "publish_principal_info 2 -- $(print_vars lbranch vbranch vtag htag delta status nextHead publishStatus)"
-  if [[ $publishStatus == 'published' ]]; then
+  # io_trace "publish_principal_info 1 -- $(print_vars lbranch vbranch vtag htag delta status nextHead releaseStatus)"
+  [[ $dryRun == true && -n $principalPublishStatus ]] && releaseStatus=$principalPublishStatus
+  # io_trace "publish_principal_info 2 -- $(print_vars lbranch vbranch vtag htag delta status nextHead releaseStatus)"
+  if [[ $releaseStatus == 'released' ]]; then
     vnext=$htag
   else
     branch_set_vnext "$vtag" "$htag"
   fi
-  # io_trace "publish_principal_version << $(print_vars lbranch vbranch vtag htag delta status nextHead publishStatus vnext)"
-  echo "$publishStatus;$vnext"
+  # io_trace "publish_principal_version << $(print_vars lbranch vbranch vtag htag delta status nextHead releaseStatus vnext)"
+  echo "$releaseStatus;$vnext"
 }
 
 ###############
@@ -344,7 +344,7 @@ publish_update_pstatus()
     rm "$pstatusLookupPath"
   fi
   if [[ -n $pstatusParentLookupPath ]]; then
-    pstatus_update "$pstatusParentLookupPath" "$pstatusParentGate" "$moduleId" "$publishStatus"
+    pstatus_update "$pstatusParentLookupPath" "$pstatusParentGate" "$moduleId" "$releaseStatus"
   fi
 }
 pstatus_init()
@@ -357,18 +357,18 @@ pstatus_init()
 }
 pstatus_update()
 {
-  local lookupPath=$1 gate=$2 moduleId=$3 publishStatus=$4
+  local lookupPath=$1 gate=$2 moduleId=$3 releaseStatus=$4
   
   lock_enter "$gate"
   . "$lookupPath"                     # deserialize lookup
-  lookup[$moduleId]="$publishStatus"  # save publish status
+  lookup[$moduleId]="$releaseStatus"  # save publish status
   declare -p lookup >"$lookupPath"    # serialize lookup
   lock_exit "$gate"
-  # io_trace "pstatus_update -- $(print_vars lookupPath publishStatus)"
+  # io_trace "pstatus_update -- $(print_vars lookupPath releaseStatus)"
 }
 # 
 # out:
-#   publishStatus
+#   releaseStatus
 #   principalPublishStatus
 pstatus_commit()
 {
@@ -376,7 +376,7 @@ pstatus_commit()
   . "$lookupPath"
   for mid in ${!lookup[@]}; do
     status=${lookup[$mid]}
-    [[ $status == 'notPublished' ]] && publishStatus=$status
+    [[ $status == 'unreleased' ]] && releaseStatus=$status
     [[ $mid == $principalModuleId ]] && principalPublishStatus=$status
   done
   return 0

@@ -24,32 +24,32 @@ ZOUL_GIT_BRANCH_PUBLISH=true
 #  $4:prerelPrefix   -- prerelease prefix (alpha, beta, rc, rtm, reuse)
 #                    -- if prerelease prefix == 'reuse' then move previous vtag
 # out:
-#   vnext    -- the vtag at which the dev branch has been published
+#   vnext    -- the vtag at which the dev branch has been released
 branch_publish()
 {
   mio_warning "branch_publish is deprecated, use branch_set_publish instead"
   
   local sku=$1 forceDev=${2:-false} allowDuplicateTags=${3:-false} prerelPrefix=$4
-  local lbranch vtag htag publishStatus
+  local lbranch vtag htag releaseStatus
   branch_set_select_auto "$sku" "$forceDev" false "$allowDuplicateTags"
 
   local vnext=$vtag
-  case $publishStatus in
-  unpublishable)
-    mio_error   "Branch '$lbranch' cannot be published (no vbranch associated)"
+  case $releaseStatus in
+  unreleasable)
+    mio_error   "Branch '$lbranch' cannot be released (no vbranch associated)"
     return 1;;
-  published)
-    mio_message "Already published at ${VC}$vtag" ${LightBlue};;
-  ffPublish)
+  released)
+    mio_message "Already released at ${VC}$vtag" ${LightBlue};;
+  ffRelease)
     branch_merge "$vtag" "$moduleHead" &>/dev/null \
-      && mio_message "Already published at ${VC}$vnext${LightBlue} (${Brown}fast-forward${LightBlue})" ${LightBlue} \
+      && mio_message "Already released at ${VC}$vnext${LightBlue} (${Brown}fast-forward${LightBlue})" ${LightBlue} \
       || { mio_error "Fast-forward publish of branch '$lbranch' failed"; return 1; };;
-  notPublished)
+  unreleased)
     branch_set_publish "$lbranch" "$vbranch" "$vtag" "$htag" "$prerelPrefix" \
       && mio_success "Published branch ${VC}$lbranch${Green} at ${VC}$vnext" \
       || { mio_error "Publish of branch '$lbranch' failed"; return 1; };;
   *)
-    mio_error "Fatal: publishStatus '$publishStatus' not implemented"
+    mio_error "Fatal: releaseStatus '$releaseStatus' not implemented"
     exit 1;;
   esac
 }
@@ -97,7 +97,7 @@ _branch_set_vnext_core()
 # Publish a development branch
 #
 # usage:
-#  local lbranch vbranch vtag htag publishStatus vnext
+#  local lbranch vbranch vtag htag releaseStatus vnext
 #  branch_set_select_auto $sku $forceDev false $allowDuplicateTags
 #  branch_set_publish $lbranch $vbranch $vtag $htag $prerelPrefix"
 # in:

@@ -14,7 +14,7 @@ ZOUL_GIT_BRANCH_SELECT=true
 
 branch_ensure_attached()
 {
-  local sku=$1 lbranch vbranch vtag htag publishStatus
+  local sku=$1 lbranch vbranch vtag htag releaseStatus
   ! branch_is_attached && branch_set_select_auto "$sku" false false
 }
 
@@ -58,7 +58,7 @@ branch_set_best_match_dev()
 # - if checkout succeeds, push branch
 #
 # usage:
-#  local branch lbranch vbranch vtag htag publishStatus
+#  local branch lbranch vbranch vtag htag releaseStatus
 #  branch_set_select_auto $sku $forceDev $forceCheckout $allowDuplicateTags
 #
 # in:
@@ -71,20 +71,20 @@ branch_set_best_match_dev()
 #   vbranch       -- associated version branch
 #   vtag          -- nearest vtag (depends on skipVNodes value)
 #   htag          -- highest vtag on vbranch (depends on allowDuplicateTags value)
-#   publishStatus -- publish status
+#   releaseStatus -- publish status
 #                    error
-#                    unpublishable
-#                    published
-#                    notPublished
-#                    ffPublish
+#                    unreleasable
+#                    released
+#                    unreleased
+#                    ffRelease
 branch_set_select_auto()
 {
   local sku=$1 forceDev=$2 forceCheckout=$3 allowDuplicateTags=$4 \
         delta alias status nextHead ec=0
 
   # io_trace "branch_set_select_auto 1 -- $(print_vars sku forceDev forceCheckout allowDuplicateTags)"
-  if branch_set_sku_info "$sku" "$forceDev" "$allowDuplicateTags"; then # -> lbranch vbranch vtag htag delta alias status nextHead publishStatus
-    # io_trace "branch_set_select_auto 2 -- $(print_vars branch lbranch vbranch vtag htag nextHead alias status publishStatus ec)"
+  if branch_set_sku_info "$sku" "$forceDev" "$allowDuplicateTags"; then # -> lbranch vbranch vtag htag delta alias status nextHead releaseStatus
+    # io_trace "branch_set_select_auto 2 -- $(print_vars branch lbranch vbranch vtag htag nextHead alias status releaseStatus ec)"
     branch_checkout "$nextHead" "$forceCheckout" || ec=$?
   fi
 
@@ -101,7 +101,7 @@ branch_set_select_auto()
 # usage:
 #   local sku forceDev allowDuplicateTags
 #   ...
-#   local lbranch vbranch vtag htag delta alias status nextHead publishStatus
+#   local lbranch vbranch vtag htag delta alias status nextHead releaseStatus
 #   branch_set_sku_info $sku $forceDev $allowDuplicateTags
 # in:
 #   $1:sku=bundleDevBranch
@@ -114,15 +114,15 @@ branch_set_select_auto()
 #   htag          -- highest vtag on vbranch (depends on allowDuplicateTags value)
 #   delta         -- number of commits between branch and vtag (can be negative if branch is behind vtag)
 #   alias         -- condensed vtag info - (> v1.0.0 (8)) means branch is ahead of v1.0.0 by 8 commits
-#   status        -- vnode       -- nearest vtag is a vnode (branch was never published on this vbranch)
+#   status        -- vnode       -- nearest vtag is a vnode (branch was never released on this vbranch)
 #                    vtag        -- nearest vtag is a vtag
-#                    vtagMissing -- no vtag found (branch was never published)
+#                    vtagMissing -- no vtag found (branch was never released)
 #   nextHead      -- next ref to checkout (branch or tag if status == vtag && delta != 0)
-#   publishStatus -- error
-#                    unpublishable
-#                    published
-#                    notPublished
-#                    ffPublish
+#   releaseStatus -- error
+#                    unreleasable
+#                    released
+#                    unreleased
+#                    ffRelease
 branch_set_sku_info()
 {
   local sku=${1:-$bundleDevBranch} forceDev=${2:-false} allowDuplicateTags=$3 \
@@ -133,10 +133,10 @@ branch_set_sku_info()
 
   # io_trace "branch_set_sku_info 1 -- $(print_vars sku forceDev skipVNodes allowDuplicateTags)"
   if branch_set_select_info "$sku" "$skipVNodes" "$allowDuplicateTags"; then  # -> branch lbranch vbranch vtag htag delta alias status
-    branch_set_publish_info "$lbranch" "$vtag" "$delta" "$status" "$forceDev" # -> nextHead publishStatus
+    branch_set_publish_info "$lbranch" "$vtag" "$delta" "$status" "$forceDev" # -> nextHead releaseStatus
   fi
   [[ $lbranch =~ ^(sku/|master) ]] || nextHead=$lbranch
-  # io_trace "branch_set_sku_info 2 -- $(print_vars forceDev branch lbranch vbranch vtag htag delta alias status nextHead publishStatus)"
+  # io_trace "branch_set_sku_info 2 -- $(print_vars forceDev branch lbranch vbranch vtag htag delta alias status nextHead releaseStatus)"
 }
 # Create selection information
 #
@@ -159,9 +159,9 @@ branch_set_sku_info()
 #   htag      -- highest vtag on vbranch (depends on allowDuplicateTags value)
 #   delta     -- number of commits between branch and vtag (can be negative if branch is behind vtag)
 #   alias     -- condensed vtag info - (> v1.0.0 (8)) means branch is ahead of v1.0.0 by 8 commits
-#   status    -- vnode       -- nearest vtag is a vnode (branch was never published on this vbranch)
+#   status    -- vnode       -- nearest vtag is a vnode (branch was never released on this vbranch)
 #                vtag        -- nearest vtag is a vtag
-#                vtagMissing -- no vtag found (branch was never published)
+#                vtagMissing -- no vtag found (branch was never released)
 branch_set_select_info()
 {
   # io_trace "branch_set_select_info -- ${*@Q}"
@@ -190,9 +190,9 @@ branch_set_select_info()
 #   htag      -- highest vtag on vbranch (depends on allowDuplicateTags value)
 #   delta     -- number of commits between branch and vtag (can be negative if branch is behind vtag)
 #   alias     -- condensed vtag info - (> v1.0.0 (8)) means branch is ahead of v1.0.0 by 8 commits
-#   status    -- vnode       -- nearest vtag is a vnode (branch was never published on this vbranch)
+#   status    -- vnode       -- nearest vtag is a vnode (branch was never released on this vbranch)
 #                vtag        -- nearest vtag is a vtag
-#                vtagMissing -- no vtag found (branch was never published)
+#                vtagMissing -- no vtag found (branch was never released)
 branch_set_vtag_info()
 {
   local branch=$1 lbranch=${2:-$1} skipVNodes=${3:-auto} allowDuplicateTags=$4
@@ -205,7 +205,7 @@ branch_set_vtag_info()
     # io_trace "branch_set_vtag_info 2.1 -- $(print_vars branch vbranch vtag htag delta alias)"
     if [[ $htag != $vtag ]]; then
       # if ! git merge-base --is-ancestor "$branch" "$htag" >&2; then
-      #   mio_message "Branch ${VC}$lbranch${LightPurple} was never published as ${VC}$htag${LightPurple}" ${LightPurple}
+      #   mio_message "Branch ${VC}$lbranch${LightPurple} was never released as ${VC}$htag${LightPurple}" ${LightPurple}
       # fi
       vtag=$htag
       delta=$(( $(git rev-list --count $vtag..$branch) ))
@@ -267,55 +267,55 @@ branch_set_prod_info()
 #   local branch lbranch vbranch vtag htag delta alias status
 #   branch_set_select_info $sku $skipVNodes $allowDuplicateTags
 #
-#   local nextHead publishStatus
+#   local nextHead releaseStatus
 #   branch_set_publish_info $lbranch $vtag $delta $status $forceDev
 # in:
 #   $1:lbranch   -- local branch name
 #   $2:vtag      -- nearest vtag
 #   $3:delta     -- number of commits between branch and vtag (can be negative if branch is behind vtag)
-#   $4:status    -- vnode       -- nearest vtag is a vnode (branch was never published on this vbranch)
+#   $4:status    -- vnode       -- nearest vtag is a vnode (branch was never released on this vbranch)
 #                   vtag        -- nearest vtag is a vtag
-#                   vtagMissing -- no vtag found (branch was never published)
+#                   vtagMissing -- no vtag found (branch was never released)
 #   $5:forceDev -- force checkout of dev branch
 # out:
 #   nextHead      -- next head to checkout (branch or tag)
-#   publishStatus -- error
-#                    unpublishable
-#                    published
-#                    notPublished
-#                    ffPublish
+#   releaseStatus -- error
+#                    unreleasable
+#                    released
+#                    unreleased
+#                    ffRelease
 branch_set_publish_info()
 {
   local lbranch=$1 vtag=$2 delta=$3 status=$4 forceDev=$5
   # io_trace "branch_set_publish_info -- $(print_vars lbranch vtag status)"
   nextHead=$lbranch   # default branch to checkout
-  publishStatus='error'
+  releaseStatus='error'
   if [[ $status == 'vtagMissing' ]]; then
     # no vtag, stay in dev mode
-    publishStatus='unpublishable'
+    releaseStatus='unreleasable'
   elif [[ $status == 'vtag' ]]; then
-    # published at least once on this vbrnach
+    # released at least once on this vbrnach
     if [ $delta -eq 0 ]; then
       # head has not been moved since last publish, stay in dev mode
-      publishStatus='published'
+      releaseStatus='released'
     else
       # head has been moved since last publish
       # move to last vtag unless dev mode is forced
       if [[ $forceDev == true ]]; then
-        [ $delta -gt 0 ] && publishStatus='notPublished' || publishStatus='ffPublish'
+        [ $delta -gt 0 ] && releaseStatus='unreleased' || releaseStatus='ffRelease'
       else
-        [ $delta -gt 0 ] && publishStatus='published' || publishStatus='ffPublish'
+        [ $delta -gt 0 ] && releaseStatus='released' || releaseStatus='ffRelease'
         nextHead=$vtag
       fi
     fi
   elif [[ $status == 'vnode' ]]; then
-    # never published on this vbranch, stay in dev mode
-    publishStatus='notPublished'
+    # never released on this vbranch, stay in dev mode
+    releaseStatus='unreleased'
   else
     mio_error "_branch_set_select_auto_core: status '$status' not implemented"
     return 1
   fi
-  # io_trace "branch_set_publish_info -> $(print_vars nextHead publishStatus)"
+  # io_trace "branch_set_publish_info -> $(print_vars nextHead releaseStatus)"
 }
 # usage:
 #   local sku

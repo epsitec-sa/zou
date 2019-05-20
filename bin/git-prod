@@ -81,7 +81,7 @@ prod_release_run()
   local vtableCreate vtableGate vtableLookupPath
   _vtable_init
   # dry run
-  local rstatusParentGate rstatusLookupPath rstatusParentLookupPath principalPublishStatus
+  local rstatusParentGate rstatusLookupPath rstatusParentLookupPath principalReleaseStatus
 
   cmd_visit_modules
 }
@@ -93,8 +93,8 @@ prod_release_run()
 prod_release_prolog()
 {
   # io_trace "prod_release_prolog -- $(print_vars prodBranch)"
-  case "$publishStatus" in
-    error|unpublishable)
+  case "$releaseStatus" in
+    error|unreleasable)
       mio_error "Branch ${VC}$moduleDevBranch${Red} cannot be released."
       mio_info "  use ${VC}git dev finish${Cyan} to release some development code."
       return 1;;
@@ -133,19 +133,14 @@ _prod_fix_release_status()
 }
 _prod_release()
 {
-  # io_trace "_prod_release 1 -- $(print_vars lbranch vbranch vtag htag prerelPrefix publishStatus)"
-  case $publishStatus in
-    published)    _prod_release_already_released;;
-    ffPublish)    _prod_release_ff;;
-    notPublished) _prod_release_not_released;;
-    *)            _prod_release_not_implemented;;
+  # io_trace "_prod_release 1 -- $(print_vars lbranch vbranch vtag htag prerelPrefix releaseStatus)"
+  case $releaseStatus in
+    unreleased) _prod_release_unreleased;;
+    ffRelease)  _prod_release_ff;;
+    released)   mio_message "Already released" ${LightBlue};;
+    *)          mio_error "Fatal: releaseStatus '$releaseStatus' not implemented"; exit 1;;
   esac
-  # io_trace "_prod_release 1 -- $(print_vars lbranch vbranch vtag htag prerelPrefix publishStatus)"
-}
-_prod_release_already_released()
-{
-  # head will not change
-  mio_message "Already published" ${LightBlue}
+  # io_trace "_prod_release 1 -- $(print_vars lbranch vbranch vtag htag prerelPrefix releaseStatus)"
 }
 _prod_release_ff()
 {
@@ -157,23 +152,23 @@ _prod_release_ff()
     || { mio_error "Merge of branch ${VC}$prodBranch${Red} failed"; return 1; }
   fi
 }
-_prod_release_not_released()
+_prod_release_unreleased()
 {
   # head will change
-  publish_init_next_version "$prerelPrefix"
+  prod_increment_release_version "$prerelPrefix"
 
   if [[ $dryRun == true ]]; then
-    mio_success "Branch ${VC}$prodBranch${Green} will be released at ${VC}$publishVTag" "$alias"
+    mio_success "Branch ${VC}$prodBranch${Green} will be released at ${VC}$releaseVTag" "$alias"
   else
-    publish_commit \
+    prod_commit_release \
     && branch_raise_head_changed_event "$prodBranch" \
-    && mio_success "Released branch ${VC}$prodBranch${Green} at ${VC}$publishVTag" \
+    && mio_success "Released branch ${VC}$prodBranch${Green} at ${VC}$releaseVTag" \
     || { mio_error "Release of branch '$prodBranch' failed"; return 1; }
   fi
 }
-_prod_release_not_implemented()
+_prod_release_unimplemented()
 {
-  mio_error "Fatal: publishStatus '$publishStatus' not implemented"
+  mio_error "Fatal: releaseStatus '$releaseStatus' not implemented"
   exit 1
 }
 
@@ -215,14 +210,14 @@ _vtable_commit()
   if [[ $dryRun == true ]]; then
     [[ $vtableCreate == true ]] || return 0
     vtable_update "$startupRoot" "$moduleId" "$vtableLookupPath" "$vtableGate"
-    mio_message "Created version table for ${VC}$prodBranch${DarkGray} at ${VC}$publishVTag" ${DarkGray}
+    mio_message "Created version table for ${VC}$prodBranch${DarkGray} at ${VC}$releaseVTag" ${DarkGray}
   elif [[ $vtableCreate == true ]]; then
     # io_trace "_vtable_commit -- $(print_vars lbranch vbranch vnext)"
     branch_is_merged "$prodBranch" "$moduleDevBranch" && return 0
     local tmpBranch="_zou_$(date +%y%V)"
     git checkout -b "$tmpBranch" &>/dev/null
     vtable_update "$startupRoot" "$moduleId" "$vtableLookupPath" "$vtableGate" true
-    mio_message "Created version table for ${VC}$prodBranch${Green} at ${VC}$publishVTag" ${Green}
+    mio_message "Created version table for ${VC}$prodBranch${Green} at ${VC}$releaseVTag" ${Green}
     branch_merge "$tmpBranch" "$moduleDevBranchPath" "$prodBranch" '-Xours'
     git checkout "$prodBranch" &>/dev/null
     git branch -D "$tmpBranch" &>/dev/null
@@ -255,9 +250,9 @@ _rstatus_update()
     rm "$rstatusLookupPath"
   fi
   if [[ -n $rstatusParentLookupPath ]]; then
-    _rstatus_update_core "$rstatusParentLookupPath" "$rstatusParentGate" "$moduleId" "$publishStatus"
+    _rstatus_update_core "$rstatusParentLookupPath" "$rstatusParentGate" "$moduleId" "$releaseStatus"
   fi
-  # io_trace "_rstatus_update -- $(print_vars moduleId publishStatus)"
+  # io_trace "_rstatus_update -- $(print_vars moduleId releaseStatus)"
 }
 _rstatus_init_core()
 {
@@ -269,27 +264,27 @@ _rstatus_init_core()
 }
 _rstatus_update_core()
 {
-  local lookupPath=$1 gate=$2 moduleId=$3 publishStatus=$4
+  local lookupPath=$1 gate=$2 moduleId=$3 releaseStatus=$4
   
   lock_enter "$gate"
   . "$lookupPath"                     # deserialize lookup
-  lookup[$moduleId]="$publishStatus"  # save publish status
+  lookup[$moduleId]="$releaseStatus"  # save publish status
   declare -p lookup >"$lookupPath"    # serialize lookup
   lock_exit "$gate"
-  # io_trace "_rstatus_update_core -- $(print_vars lookupPath publishStatus)"
+  # io_trace "_rstatus_update_core -- $(print_vars lookupPath releaseStatus)"
 }
 # 
 # out:
-#   publishStatus
-#   principalPublishStatus
+#   releaseStatus
+#   principalReleaseStatus
 _rstatus_commit_core()
 {
   local lookupPath=$1 mid status
   . "$lookupPath"
   for mid in ${!lookup[@]}; do
     status=${lookup[$mid]}
-    [[ $status == 'notPublished' ]] && publishStatus=$status
-    [[ $mid == $principalModuleId ]] && principalPublishStatus=$status
+    [[ $status == 'unreleased' ]] && releaseStatus=$status
+    [[ $mid == $principalModuleId ]] && principalReleaseStatus=$status
   done
   return 0
 }
