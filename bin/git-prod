@@ -218,6 +218,7 @@ _vtable_commit()
     mio_message "Created version table for ${VC}$prodBranch${DarkGray} at ${VC}$publishVTag" ${DarkGray}
   elif [[ $vtableCreate == true ]]; then
     # io_trace "_vtable_commit -- $(print_vars lbranch vbranch vnext)"
+    branch_is_merged "$prodBranch" "$moduleDevBranch" && return 0
     local tmpBranch="_zou_$(date +%y%V)"
     git checkout -b "$tmpBranch" &>/dev/null
     vtable_update "$startupRoot" "$moduleId" "$vtableLookupPath" "$vtableGate" true
