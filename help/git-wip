@@ -1,13 +1,15 @@
 usage: git wip [<options>] start [<prefix>:][<suffix>] -- <module-paths>
    or: git wip [<options>] enter [<prefix>:][<suffix>] -- <module-paths>
-   or: git wip [<options>] finish -- <module-paths>
+   or: git wip [<options>] release -- <module-paths>
+   or: git wip [<options>] finish  -- <module-paths>
 
 Manage WIP mode.
 
 commands:
     start                   create and checkout WIP branches in bundle and specified modules
     enter                   checkout WIP branches in bundle and specified modules
-    finish                  merge WIP branches into DEV branches, delete WIP branches and return to DEV mode
+    release                 merge WIP branches into DEV branches
+    finish                  release, delete WIP branches and switch to DEV mode
 
 options:
     -h|--help               display help
@@ -23,6 +25,11 @@ example:
     git wip start issue:7         # start 'issue:7'  in bundle and current module
     git wip start -- m1 m2        # start 'wip:work' in bundle and child modules 'm1' and 'm2'
     git wip start -r              # start 'wip:work' in bundle and current module recursively
+
     git wip enter my              # enter 'wip:my'   in bundle and current module
+
+    git wip release               # release WIP code to DEV in current module
+    git wip release -r            # release WIP code to DEV in current module recursively
+
     git wip finish                # finish WIP mode in current module
     git wip finish -r -- ../m1    # finish WIP mode in sibling module 'm1' recursively
