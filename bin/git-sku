@@ -16,13 +16,13 @@ sku_parse()
     --so)           specializedOnly=true;;
     --vnext)        vnext=true;;
     enter)          subcommand=$1; sku_parse_sku $2 && shift;;
-    status)         subcommand=$1;;
+    info)           subcommand=$1;;
     --)             shift; break;;
     -*) io_error "unknown option '$1'"; return 1;;
     *)  args+=( "$1" );;
   esac; shift; done
 
-  cmd_check_subcommand 'enter' 'status'
+  cmd_check_subcommand 'enter' 'info'
   cmd_check_args "${args[@]}"
   
   skuModulePaths=( "$@" )
@@ -45,7 +45,7 @@ sku_run()
   
   case $subcommand in
     enter)  startupMessage="Entering ${Brown}${skuSpec:-current SKU}${White}, please wait...";;
-    status) startupMessage="Getting SKU status, please wait...";;
+    info) startupMessage="Getting SKU info, please wait...";;
   esac
 
   module_run "${cmdScopes[@]}" sku_command
@@ -60,7 +60,7 @@ sku_command()
   case "$subcommand" in
     enter)
       cmd_register_module_paths true  "$bundleRoot";;
-    status)
+    info)
       [ ${#skuModulePaths[@]} -eq 0 ] && skuModulePaths+=( './' )
       cmd_register_module_paths false "$bundleRoot"
       cmd_register_module_paths "$recursive" "${skuModulePaths[@]}"
@@ -71,7 +71,7 @@ sku_command()
 }
 
 sku_enter_prolog() { sku_checkout "$sku" "$vnext" true; }
-sku_status_prolog()
+sku_info_prolog()
 {
   local label sku skus=() acolor=${LightGreen} icolor=${DarkGray} bcolor=${Cyan}
   for sku in $(branch_list_all_flatten); do
@@ -84,7 +84,7 @@ sku_status_prolog()
       sku=${skus[$i]}
       skuName=${sku%/dev}
       skuName=${skuName#sku/}
-      # io_trace "sku_status_prolog -- $(print_vars sku skuName moduleDevBranch)"
+      # io_trace "sku_info_prolog -- $(print_vars sku skuName moduleDevBranch)"
       if [[ $sku == $moduleDevBranch ]]; then
         skus[$i]=${acolor}$skuName${bcolor}
       else
