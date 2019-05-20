@@ -14,7 +14,8 @@ commands:
 options:
     -h|--help               display help
     -r|--recursive)         visit specified modules recursively
-    <prefix>                WIP prefix (default to 'wip')
+    --prod                  create WIP on PROD branch (default to DEV branch) - can be used for hotfixes
+    <prefix>                WIP prefix (default to 'wip' on DEV branch and to 'hotfix' on PROD branch)
     <suffix>                WIP suffix (default to 'work')
     <module-paths>          specific modules to visit (default to current module)
     
@@ -25,8 +26,10 @@ example:
     git wip start issue:7         # start 'issue:7'  in bundle and current module
     git wip start -- m1 m2        # start 'wip:work' in bundle and child modules 'm1' and 'm2'
     git wip start -r              # start 'wip:work' in bundle and current module recursively
+    git wip start --prod my       # start 'hotfix:my' on PROD branch in bundle and current module
 
-    git wip enter my              # enter 'wip:my'   in bundle and current module
+    git wip enter my              # enter 'wip:my'    in bundle and current module
+    git wip enter hotfix:my       # enter 'hotfix:my' in bundle and current module
 
     git wip release               # release WIP code to DEV in current module
     git wip release -r            # release WIP code to DEV in current module recursively

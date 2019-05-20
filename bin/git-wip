@@ -14,6 +14,7 @@ wip_parse()
     -r|--recursive) recursive=true;;
     start|enter)    subcommand=$1; wip_parse_wip $2 && shift;;
     release|finish) subcommand=$1;;
+    --prod)         wipOnProd=true;;
     --)             shift; break;;
     -*) io_error "unknown option ${VC}$1${Red}\n"; io_help $0; return 1;;
     *)  args+=( "$1" );;
@@ -23,7 +24,7 @@ wip_parse()
   cmd_check_args "${args[@]}"
 
   wipModulePaths=( "$@" )
-  wipPrefix=${wipPrefix:-wip}
+  [[ $wipOnProd == true ]] && wipPrefix=${wipPrefix:-hotfix} || wipPrefix=${wipPrefix:-wip}
   wipSuffix=${wipSuffix:-work}
   # io_trace "wip_parse -- $(print_vars recursive wipPrefix wipSuffix subcommand wipModulePaths[@])"
 }
@@ -39,7 +40,7 @@ wip_run()
   # parse command line
   local jobsCount recursive command='wip' subcommand \
         cmdScopes=( prod_scope config_scope ) \
-        wipPrefix wipSuffix wipModulePaths=()
+        wipOnProd wipPrefix wipSuffix wipModulePaths=()
         
   wip_parse "$@" || return $?
 
@@ -69,8 +70,11 @@ wip_start_epilog()
   local devBranch=$(wip_to_ref "$moduleDevBranch")
   local wipBranch=$(ref_to_wip "$devBranch" "$wipSuffix" "$wipPrefix")
   if [[ $moduleHead != $wipBranch ]]; then
-    # create wip branch on dev branch
-    git branch "$wipBranch" "$moduleDevBranchPath" &>/dev/null
+    if [[ $wipOnProd == true && -n $prodBranchPath ]]; then
+      git branch "$wipBranch" "$prodBranchPath" &>/dev/null
+    else
+      git branch "$wipBranch" "$moduleDevBranchPath" &>/dev/null
+    fi
   fi
   branch_checkout "$wipBranch" true
 }
@@ -97,7 +101,11 @@ wip_release_epilog()
   if [[ $wipBranch != $devBranch ]]; then
     # io_trace "wip_release_epilog 2 -- $(print_vars wipBranch devBranch)"
     # merge, checkout prod || vtag || dev and del wip
-    branch_merge "$wipBranch" "$devBranch"
+    if [[ $wipOnProd == true && -n $prodBranchPath ]]; then
+      branch_merge "$wipBranch" "$prodBranchPath"
+    else
+      branch_merge "$wipBranch" "$devBranch"
+    fi
   fi
 }
 wip_finish_epilog()
@@ -110,9 +118,16 @@ wip_finish_epilog()
   if [[ $wipBranch != $devBranch ]]; then
     # io_trace "wip_finish 2 -- $(print_vars wipBranch devBranch)"
     # merge, checkout prod || vtag || dev and del wip
-    branch_merge "$wipBranch" "$devBranch" \
-    && dev_checkout true "$devBranch" \
-    && branch_delete "$wipBranch"
+    if [[ $wipOnProd == true && -n $prodBranchPath ]]; then
+      branch_merge "$wipBranch" "$prodBranchPath" \
+      && prod_checkout true true "$devBranch" \
+      && branch_delete "$wipBranch"
+    else
+      branch_merge "$wipBranch" "$devBranch" \
+      && dev_checkout true "$devBranch" \
+      && branch_delete "$wipBranch"
+    fi
+
   fi
 }
 
