@@ -79,9 +79,9 @@ prod_release_run()
 {
   # version table
   local vtableCreate vtableGate vtableLookupPath
-  prod_release_set_vtable_info
+  _vtable_init
   # dry run
-  local pstatusParentGate pstatusLookupPath pstatusParentLookupPath principalPublishStatus
+  local rstatusParentGate rstatusLookupPath rstatusParentLookupPath principalPublishStatus
 
   cmd_visit_modules
 }
@@ -101,7 +101,7 @@ prod_release_prolog()
   esac
   
   if [[ $dryRun == true ]]; then
-    prod_release_init_pstatus
+    _rstatus_init
   else
     branch_checkout "$prodBranch"
   fi
@@ -113,42 +113,41 @@ prod_release_prolog()
 
 prod_release_epilog()
 {
-  prod_release_fix_status
-  prod_release_publish || return $?
-  prod_release_update_vtable
+  _prod_fix_release_status
+  _prod_release || return $?
+  _vtable_update
 }
 prod_release_xepilog()
 {
-  prod_release_update_vtable
-}
-prod_release_fix_status()
-{
-  [[ $dryRun == true ]] && prod_release_update_pstatus
-  publish_fix_publish_status "$prerelPrefix"
+  _vtable_update
 }
 
 #################
-# Publish helpers
+# Release helpers
 #################
 
-prod_release_publish()
+_prod_fix_release_status()
 {
-  # io_trace "prod_release_publish 1 -- $(print_vars lbranch vbranch vtag htag prerelPrefix publishStatus)"
-  
+  [[ $dryRun == true ]] && _rstatus_update
+  prod_fix_release_status "$prerelPrefix"
+}
+_prod_release()
+{
+  # io_trace "_prod_release 1 -- $(print_vars lbranch vbranch vtag htag prerelPrefix publishStatus)"
   case $publishStatus in
-    published)    prod_release_already_published;;
-    ffPublish)    prod_release_ff_publish;;
-    notPublished) prod_release_not_published;;
-    *)            prod_release_not_implemented;;
+    published)    _prod_release_already_released;;
+    ffPublish)    _prod_release_ff;;
+    notPublished) _prod_release_not_released;;
+    *)            _prod_release_not_implemented;;
   esac
-  # io_trace "prod_release_publish 1 -- $(print_vars lbranch vbranch vtag htag prerelPrefix publishStatus)"
+  # io_trace "_prod_release 1 -- $(print_vars lbranch vbranch vtag htag prerelPrefix publishStatus)"
 }
-prod_release_already_published()
+_prod_release_already_released()
 {
   # head will not change
   mio_message "Already published" ${LightBlue}
 }
-prod_release_ff_publish()
+_prod_release_ff()
 {
   if [[ $dryRun == true ]]; then
     mio_success "Branch ${VC}$prodBranch${Green} will be forwarded to ${VC}$prodVTag${Green}"
@@ -158,7 +157,7 @@ prod_release_ff_publish()
     || { mio_error "Merge of branch ${VC}$prodBranch${Red} failed"; return 1; }
   fi
 }
-prod_release_not_published()
+_prod_release_not_released()
 {
   # head will change
   publish_init_next_version "$prerelPrefix"
@@ -172,7 +171,7 @@ prod_release_not_published()
     || { mio_error "Release of branch '$prodBranch' failed"; return 1; }
   fi
 }
-prod_release_not_implemented()
+_prod_release_not_implemented()
 {
   mio_error "Fatal: publishStatus '$publishStatus' not implemented"
   exit 1
@@ -182,7 +181,7 @@ prod_release_not_implemented()
 # Version table
 ###############
 
-prod_release_set_vtable_info()
+_vtable_init()
 {
   # [[ $dryRun == true ]] && return 0
   if [[ $vtable == true ]]; then
@@ -196,29 +195,29 @@ prod_release_set_vtable_info()
     vtable_init "$startupRoot" "$vtableLookupPath"
   fi
 }
-prod_release_update_vtable()
+_vtable_update()
 {
-  # io_trace "prod_release_update_vtable -- $(print_vars vtable vtableCreate configSelectIsExcluded)"
+  # io_trace "_vtable_update -- $(print_vars vtable vtableCreate configSelectIsExcluded)"
   if [[ "$PWD" == "$startupRoot" ]]; then
-    prod_release_commit_vtable
+    _vtable_commit
   else
-    prod_release_update_vtable_core
+    _vtable_update_core
   fi
 }
-prod_release_update_vtable_core()
+_vtable_update_core()
 {
   [[ $vtableCreate == true ]] && vtable_update "$startupRoot" "$moduleId" "$vtableLookupPath" "$vtableGate"
   [[ $configSelectIsExcluded == true || $dryRun == true ]] && return 0
-  branch_merge "$prodBranch" "$moduleDevBranchPath" '-Xours' || io_trace_error "prod_release_update_vtable_core merge"
+  branch_merge "$prodBranch" "$moduleDevBranchPath" '-Xours' || io_trace_error "_vtable_update_core merge"
 }
-prod_release_commit_vtable()
+_vtable_commit()
 {
   if [[ $dryRun == true ]]; then
     [[ $vtableCreate == true ]] || return 0
     vtable_update "$startupRoot" "$moduleId" "$vtableLookupPath" "$vtableGate"
     mio_message "Created version table for ${VC}$prodBranch${DarkGray} at ${VC}$publishVTag" ${DarkGray}
   elif [[ $vtableCreate == true ]]; then
-    # io_trace "prod_release_commit_vtable -- $(print_vars lbranch vbranch vnext)"
+    # io_trace "_vtable_commit -- $(print_vars lbranch vbranch vnext)"
     local tmpBranch="_zou_$(date +%y%V)"
     git checkout -b "$tmpBranch" &>/dev/null
     vtable_update "$startupRoot" "$moduleId" "$vtableLookupPath" "$vtableGate" true
@@ -232,42 +231,42 @@ prod_release_commit_vtable()
 }
 
 ################################
-# Publish status in dry run mode
+# Release status in dry run mode
 ################################
 
-prod_release_init_pstatus()
+_rstatus_init()
 {
-  pstatusParentGate=$(lock_init)
-  pstatusParentLookupPath=$pstatusLookupPath
-  pstatusLookupPath=''
-  # io_trace "prod_release_init_pstatus 1 -- $(print_vars moduleId pstatusParentLookupPath pstatusLookupPath)"
+  rstatusParentGate=$(lock_init)
+  rstatusParentLookupPath=$rstatusLookupPath
+  rstatusLookupPath=''
+  # io_trace "_rstatus_init 1 -- $(print_vars moduleId rstatusParentLookupPath rstatusLookupPath)"
   if config_has_submodules; then
-    pstatusLookupPath="$(mktemp)"
-    pstatus_init "$pstatusLookupPath"
-    # io_trace "prod_release_init_pstatus 2 -- $(print_vars moduleId pstatusParentLookupPath pstatusLookupPath)"
+    rstatusLookupPath="$(mktemp)"
+    _rstatus_init_core "$rstatusLookupPath"
+    # io_trace "_rstatus_init 2 -- $(print_vars moduleId rstatusParentLookupPath rstatusLookupPath)"
   fi
 }
-prod_release_update_pstatus()
+_rstatus_update()
 {
-  # io_trace "prod_release_update_pstatus -- $(print_vars moduleId pstatusParentLookupPath pstatusLookupPath)"
-  if [[ -n $pstatusLookupPath ]]; then
-    pstatus_commit "$pstatusLookupPath"
-    rm "$pstatusLookupPath"
+  # io_trace "_rstatus_update -- $(print_vars moduleId rstatusParentLookupPath rstatusLookupPath)"
+  if [[ -n $rstatusLookupPath ]]; then
+    _rstatus_commit_core "$rstatusLookupPath"
+    rm "$rstatusLookupPath"
   fi
-  if [[ -n $pstatusParentLookupPath ]]; then
-    pstatus_update "$pstatusParentLookupPath" "$pstatusParentGate" "$moduleId" "$publishStatus"
+  if [[ -n $rstatusParentLookupPath ]]; then
+    _rstatus_update_core "$rstatusParentLookupPath" "$rstatusParentGate" "$moduleId" "$publishStatus"
   fi
-  # io_trace "prod_release_update_pstatus -- $(print_vars moduleId publishStatus)"
+  # io_trace "_rstatus_update -- $(print_vars moduleId publishStatus)"
 }
-pstatus_init()
+_rstatus_init_core()
 {
   local lookupPath=$1
   
   declare -A lookup                 # create lookup
   declare -p lookup >"$lookupPath"  # serialize lookup
-  # io_trace "pstatus_init -- $(print_vars lookupPath)"
+  # io_trace "_rstatus_init_core -- $(print_vars lookupPath)"
 }
-pstatus_update()
+_rstatus_update_core()
 {
   local lookupPath=$1 gate=$2 moduleId=$3 publishStatus=$4
   
@@ -276,13 +275,13 @@ pstatus_update()
   lookup[$moduleId]="$publishStatus"  # save publish status
   declare -p lookup >"$lookupPath"    # serialize lookup
   lock_exit "$gate"
-  # io_trace "pstatus_update -- $(print_vars lookupPath publishStatus)"
+  # io_trace "_rstatus_update_core -- $(print_vars lookupPath publishStatus)"
 }
 # 
 # out:
 #   publishStatus
 #   principalPublishStatus
-pstatus_commit()
+_rstatus_commit_core()
 {
   local lookupPath=$1 mid status
   . "$lookupPath"
