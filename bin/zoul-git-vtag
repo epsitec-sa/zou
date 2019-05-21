@@ -216,7 +216,7 @@ vtag_match_vtags_at()
 {
   local ref=$1 regex=$2 tag
   for tag in $(git tag --sort=-v:refname --points-at "$ref"); do
-    [[ $tag =~ $regex ]] && echo $tag
+    [[ $tag =~ $regex ]] && echo "$tag"
   done
 }
 vtag_highest_of()
@@ -227,7 +227,7 @@ vtag_highest_of()
   else
     local highest=$1 cc=0; shift
     while [[ -n $1 ]]; do
-      vtag_compare $1 $highest
+      vtag_compare $1 $highest 2>/dev/null
       [ $? -eq 1 ] && highest=$1
       shift
     done
@@ -284,7 +284,7 @@ vtag_compare()
       
       return 0
     else
-      mio_error "vtag_compare: invalid vtag format: $1"
+      mio_error "vtag_compare: invalid vtag format: $2"
     fi
   else
     mio_error "vtag_compare: invalid vtag format: $1"
