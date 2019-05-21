@@ -13,7 +13,6 @@ sku_parse()
     -j*)            jobsCount=${1#-j};;
     -r|--recursive) recursive=true;;
     -a|--all)       noSkuFilter=true;;
-    --so)           specializedOnly=true;;
     --vnext)        vnext=true;;
     enter)          subcommand=$1; sku_parse_sku $2 && shift;;
     info)           subcommand=$1;;
@@ -39,7 +38,7 @@ sku_run()
   # parse command line
   local jobsCount recursive=false command='sku' subcommand \
         cmdScopes=( prod_scope config_scope cosm_scope ) \
-        vnext specializedOnly noSkuFilter skuSpec skuModulePaths=()
+        vnext noSkuFilter skuSpec skuModulePaths=()
 
   sku_parse "$@" || return $?
   
@@ -79,13 +78,13 @@ sku_info_prolog()
     skus+=( "$sku" )
   done
   if [ ${#skus[@]} -gt 0 ]; then
-    local i skuList skuName
+    local i skuList skuName devBranch=$(wip_to_ref $moduleDevBranch)
     for i in "${!skus[@]}"; do
       sku=${skus[$i]}
       skuName=${sku%/dev}
       skuName=${skuName#sku/}
       # io_trace "sku_info_prolog -- $(print_vars sku skuName moduleDevBranch)"
-      if [[ $sku == $moduleDevBranch ]]; then
+      if [[ $sku == $devBranch ]]; then
         skus[$i]=${acolor}$skuName${bcolor}
       else
         skus[$i]=${icolor}$skuName${bcolor}
