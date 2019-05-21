@@ -69,7 +69,7 @@ cmd_register_module_paths()
 #   cmd_visit_modules
 cmd_visit_modules()
 {
-  if array_contains_element "$startupRoot" "$cmdModulePaths[@]"; then
+  if array_contains_element "$startupRoot" "${cmdModulePaths[@]}"; then
     # startup module scope is already initialized
     # io_trace "cmd_visit_modules 1 ${*@Q} -- $(print_vars cmdModulePaths[@])"
     module_visit_submodules_async 'cmdModulePaths[@]' _cmd_tree "$@"
