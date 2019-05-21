@@ -108,7 +108,9 @@ _cmd_xscope()
 {
   # io_trace "_cmd_xscope ${*@Q}"
   local configSelectIsExcluded=true
-  $1 "${@:2}"
+  if [[ $(type -t "${command}_${subcommand}_xprolog") == 'function' || $(type -t "${command}_${subcommand}_xepilog") == 'function' ]]; then
+    $1 "${@:2}"
+  fi
 }
 
 ############################
