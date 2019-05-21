@@ -102,7 +102,7 @@ _prod_init_xscope()
 {
   local vbranch vtag htag delta=0 alias status
 
-  io_trace "_prod_init_xscope 1 -- $(print_vars moduleHead)"
+  # io_trace "_prod_init_xscope 1 -- $(print_vars moduleHead)"
   vtag_set_describe "$moduleHead" "$moduleHead" 'false' # -> vbranch vtag delta alias
   if [[ -n $vtag ]]; then
     _prod_init_dev false
@@ -293,14 +293,32 @@ dev_checkout()
 ########################################################
 # BRANCH CREATION
 
+# in:
+#   version=${1:-0.1}   -- default version if no vbranch exists
+#   incrementKind=${2}  -- (minor|major)
+#                       -- increment minor or major version if vbranch exists
+# exemple:
+#   prod_ensure_vbranch 0.1 'minor'
 prod_ensure_vbranch()
 {
-  [[ -n $prodBranch ]] && return 0
-  local version=${1:-0.1} branch lbranch bref
-  branch_set_realize $(wip_to_ref $moduleDevBranch)
+  if [[ -n $prodBranch ]]; then
+    local incrementKind=$2
+    if [ ${vtag2dev:-0} -gt 0 ] && [[ -n $incrementKind && $prodBranch =~ ^(.*/)?([0-9]+)\.([0-9]+)(.*)$ ]]; then
+      local prefix=${BASH_REMATCH[1]} major=${BASH_REMATCH[2]} minor=${BASH_REMATCH[3]} suffix=${BASH_REMATCH[4]}
+      case $incrementKind in
+        minor) (( minor += 1 ));;
+        major) (( major += 1 )); minor=0;;
+        *) mio_error "prod_ensure_vbranch: bad increment type ${VC}$incrementKind${Red}"; exit 1;;
+      esac
+      vbranch_create "${prefix}${major}.${minor}${suffix}" "$branch"
+    fi
+  else
+    local version=${1:-0.1} branch lbranch bref
+    branch_set_realize $(wip_to_ref $moduleDevBranch)
 
-  [[ $lbranch =~ (.*/)?(.+)$ ]] || return 1
-  vbranch_create "${BASH_REMATCH[1]}$version" "$branch"
+    [[ $lbranch =~ (.*/)?(.+)$ ]] || return 1
+    vbranch_create "${BASH_REMATCH[1]}$version" "$branch"
+  fi
 }
 
 ########################################################

@@ -14,7 +14,9 @@ dev_parse()
     -j*)            jobsCount=${1#-j};;
     -v*)            dev_parse_default_version "$1";;
     -r|--recursive) recursive=true;;
-    enter|release)   subcommand=$1;;
+    --minor)        incrementKind='minor';;
+    --major)        incrementKind='major';;
+    enter|release)  subcommand=$1;;
     --)             shift; break;;
     -*) io_error "unknown option ${VC}$1${Red}\n"; io_help $0; return 1;;
     *)  args+=( "$1" );;
@@ -41,7 +43,7 @@ dev_run()
   # parse command line
   local jobsCount recursive command='dev' subcommand \
         cmdScopes=( prod_scope config_scope cosm_scope ) \
-        defaultVersion='0.1' devModulePaths=()
+        incrementKind defaultVersion='0.1' devModulePaths=()
 
   dev_parse "$@" || return $?
   
@@ -64,7 +66,7 @@ dev_enter_epilog() { dev_checkout true; }
 dev_release_prolog()
 {
   dev_checkout false "$moduleDevBranch"
-  prod_ensure_vbranch "$defaultVersion"
+  prod_ensure_vbranch "$defaultVersion" "$incrementKind"
 }
 dev_release_epilog()
 {

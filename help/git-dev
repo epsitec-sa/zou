@@ -10,7 +10,9 @@ commands:
 options:
     -h|--help               display help
     -r|--recursive)         visit specified modules recursively
-    -v<MAJ.MIN>             specify default version if vbranch does not exist (default to 0.1)
+    -v<MAJ.MIN>             specify default PROD branch version if it does not exist (default to 0.1)
+    --minor                 merge DEV branch into new minor PROD branch (increment PROD branch minor version)
+    --major                 merge DEV branch into new major PROD branch (increment PROD branch major version)
     <module-paths>          specific modules to visit (default to current module)
     
 example:
@@ -18,6 +20,8 @@ example:
     git dev enter                 # enter DEV mode in bundle and current module
     git dev enter -r              # enter DEV mode in bundle and current module recursively
     git dev enter -- m1 m2        # enter DEV mode in bundle and child modules 'm1' and 'm2'
-    git dev release               # release DEV mode in current module
-    git dev release -r -- ../m1   # release DEV mode in sibling module 'm1' recursively
-    git dev release -v1.0         # release DEV mode in current module
+    git dev release               # merge DEV branch into current PROD branch (create version 0.1 if necessary)
+    git dev release -v1.0         # merge DEV branch into current PROD branch (create version 1.0 if necessary)
+    git dev release --minor       # merge DEV branch into new minor PROD branch
+    git dev release --major       # merge DEV branch into new major PROD branch
+    git dev release -r -- ../m1   # merge DEV branch into PROD branch in sibling module 'm1' recursively
