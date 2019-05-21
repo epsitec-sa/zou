@@ -51,8 +51,7 @@ prod_run()
       startupMessage="Entering production mode, please wait...";;
     release)
       startupMessage="Releasing production branches, please wait..."
-      [[ $dryRun == true ]] && startupMessage="${DarkGray}$startupMessage"
-      recursive=true;;
+      [[ $dryRun == true ]] && startupMessage="${DarkGray}$startupMessage";;
   esac
 
   module_run "${cmdScopes[@]}" prod_command
@@ -60,6 +59,9 @@ prod_run()
 prod_command()
 {
   [ ${#prodModulePaths[@]} -eq 0 ] && prodModulePaths+=( './' )
+  case $subcommand in
+    release) recursive=true;;
+  esac
   cmd_register_module_paths "$recursive" "${prodModulePaths[@]}"
   prod_${subcommand}_run
 }
@@ -77,10 +79,11 @@ prod_enter_epilog() { prod_checkout "$vnext" true; }
 
 prod_release_run()
 {
-  # version table
+  # version table scope
   local vtableCreate vtableGate vtableLookupPath
   _vtable_init
-  # dry run
+
+  # dry run scope
   local rstatusParentGate rstatusLookupPath rstatusParentLookupPath principalReleaseStatus
 
   cmd_visit_modules
