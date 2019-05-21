@@ -14,13 +14,14 @@ wip_parse()
     -r|--recursive) recursive=true;;
     start|enter)    subcommand=$1; wip_parse_wip $2 && shift;;
     release|finish) subcommand=$1;;
+    share)          subcommand=$1;;
     --prod)         wipOnProd=true;;
     --)             shift; break;;
     -*) io_error "unknown option ${VC}$1${Red}\n"; io_help $0; return 1;;
     *)  args+=( "$1" );;
   esac; shift; done
 
-  cmd_check_subcommand 'start' 'enter' 'release' 'finish'
+  cmd_check_subcommand 'start' 'enter' 'share' 'release' 'finish'
   cmd_check_args "${args[@]}"
 
   wipModulePaths=( "$@" )
@@ -47,6 +48,7 @@ wip_run()
   case $subcommand in
     start)   startupMessage="Starting ${Brown}$wipPrefix:$wipSuffix${White}, please wait...";;
     enter)   startupMessage="Entering ${Brown}$wipPrefix:$wipSuffix${White}, please wait...";;
+    share)   startupMessage="Sharing ${Brown}current WIP${White}, please wait...";;
     release) startupMessage="Releasing WIP to development, please wait...";;
     finish)  startupMessage="Finishing WIP, please wait...";;
   esac
@@ -61,6 +63,7 @@ wip_command()
 
   case $subcommand in
     start|enter) cmd_register_module_paths false "$bundleRoot";;
+    share)       cmd_register_module_paths true  "$bundleRoot";;
   esac
 
   cmd_visit_modules
@@ -90,6 +93,11 @@ wip_enter_epilog()
   elif module_is_bundle; then
     mio_error "SKU ${VC}$wipPrefix:$wipSuffix${Red} not found"
   fi
+}
+wip_share_epilog()
+{
+  ! module_in_wip_mode && return 0
+  branch_ensure_remote "$moduleDevBranch"
 }
 wip_release_epilog()
 {
