@@ -71,26 +71,6 @@ _prod_init_vars()
   prodAlias='<>'; devAlias='<>'; vtagStatus='vtagMissing'; vtag2dev=0; vtag2prod=0
   releaseVTag=''; releasePrerelPrefix=''; releaseStatus='error'
 }
-_prod_init_xscope()
-{
-  local vbranch vtag htag delta=0 alias status
-
-  vtag_set_describe "$moduleHead" "$moduleHead" 'false' # -> vbranch vtag delta alias
-  if [[ -n $vtag ]]; then
-    _prod_init_dev
-
-    # 2. Retrieve vtag and vbranch info starting from prod branch
-    if [[ -z $prodBranchPath ]]; then
-      _prod_set_no_prod_info "$vtag"
-    else
-      _prod_set_xprod_info "$prodBranchPath" "$prodBranch"
-    fi
-    _prod_init_prod
-    releaseStatus='released'
-  fi
-
-  _prod_trace '_prod_init_xscope'
-}
 _prod_init_scope()
 {
   local devBranchPath=$1 devBranch=$2 \
@@ -99,7 +79,7 @@ _prod_init_scope()
   # 1. Retrieve vtag and vbranch info starting from dev branch
   vtag_set_describe "$devBranchPath" "$devBranch" 'auto' # -> vbranch vtag delta alias
   if [[ -n $vtag ]]; then
-    _prod_init_dev
+    _prod_init_dev true
 
     # 2. Retrieve vtag and vbranch info starting from prod branch
     if [[ -z $prodBranchPath ]]; then
@@ -118,12 +98,34 @@ _prod_init_scope()
 
   _prod_trace '_prod_init_scope'
 }
+_prod_init_xscope()
+{
+  local vbranch vtag htag delta=0 alias status
+
+  io_trace "_prod_init_xscope 1 -- $(print_vars moduleHead)"
+  vtag_set_describe "$moduleHead" "$moduleHead" 'false' # -> vbranch vtag delta alias
+  if [[ -n $vtag ]]; then
+    _prod_init_dev false
+
+    # 2. Retrieve vtag and vbranch info starting from prod branch
+    if [[ -z $prodBranchPath ]]; then
+      _prod_set_no_prod_info "$vtag"
+    else
+      _prod_set_xprod_info "$prodBranchPath" "$prodBranch"
+    fi
+    _prod_init_prod
+    releaseStatus='released'
+  fi
+
+  _prod_trace '_prod_init_xscope'
+}
 _prod_init_dev()
 {
+  local vbranchCreate=$1
   if [[ -n $vbranch ]]; then
     local branch lbranch bref
     branch_set_realize "$vbranch"
-    if [[ -z $branch ]]; then
+    if [[ -z $branch && $vbranchCreate == true ]]; then
       branch_create "$vbranch" "$vtag"
       branch_set_realize "$vbranch"
     fi
@@ -135,7 +137,6 @@ _prod_init_dev()
   vtag2dev=$delta
   devAlias=$alias
   moduleAlias=$alias
-
 }
 _prod_init_prod()
 {
