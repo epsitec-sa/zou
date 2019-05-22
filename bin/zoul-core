@@ -14,16 +14,16 @@ IFS=$' \t\n'
 OIFS=$IFS
 
 # declare startup constants
-zou_startupPath=$(realpath "${BASH_SOURCE[-1]}")
-zou_startupFileName="${zou_startupPath##*/}"
-if [[ "$zou_startupFileName" == bashdb ]]; then
-  zou_startupPath=$(realpath "${BASH_SOURCE[-2]}")
-  zou_startupFileName="${zou_startupPath##*/}"
+zouStartupPath=$(realpath "${BASH_SOURCE[-1]}")
+zouStartupFileName="${zouStartupPath##*/}"
+if [[ "$zouStartupFileName" == bashdb ]]; then
+  zouStartupPath=$(realpath "${BASH_SOURCE[-2]}")
+  zouStartupFileName="${zouStartupPath##*/}"
 fi
-zou_startupDir="${zou_startupPath%/*}"
-zou_binDir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
-zou_command="${zou_startupFileName##git-}"
-zou_configFile="$(realpath ~)/.zou-flow"
+zouStartupDir="${zouStartupPath%/*}"
+zouBinDir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+zouCommand="${zouStartupFileName##git-}"
+zouConfigFile="$(realpath ~)/.zou-flow"
 
 
 # colors usage
@@ -62,7 +62,7 @@ io_set_version()
       version=${BASH_REMATCH[1]}
       break
     }
-  done < "$zou_binDir/../Version.props"
+  done < "$zouBinDir/../Version.props"
 }
 io_banner()
 {
@@ -73,7 +73,7 @@ Copyright © 2019, EPSITEC SA, CH-1400 Yverdon-les-Bains, Switzerland${NC}"
 }
 io_help()
 {
-  local hdir=$(realpath "$zou_binDir/../help") \
+  local hdir=$(realpath "$zouBinDir/../help") \
         hname=$(basename "$1") \
         hpath help
 
@@ -417,19 +417,19 @@ _locale_encoding()
   echo "${info,,}"
 }
 
-zou_lencoding="$(_locale_encoding)"
+zouEncoding="$(_locale_encoding)"
 
 ised()
 {
   local file=$1 script=$2 fEncoding=$(get_file_encoding "$1") ec=0
   # io_trace "ised $(print_vars file fEncoding)"
 
-  if [[ $fEncoding == $zou_lencoding || $fEncoding == 'us-ascii' || $fEncoding == 'utf-8' || $fEncoding == 'iso-8859-1' ]]; then
+  if [[ $fEncoding == $zouEncoding || $fEncoding == 'us-ascii' || $fEncoding == 'utf-8' || $fEncoding == 'iso-8859-1' ]]; then
     sed -b -E -i "$script" "$file" || ec=$?
   else
     local tmp="$file.zou"
-    if iconv -f "$fEncoding" -t "$zou_lencoding" "$file" >"$tmp"; then
-      { sed -b -E -i "$script" "$tmp" && iconv -f "$zou_lencoding" -t "$fEncoding" "$tmp" >"$file"; } || ec=$?
+    if iconv -f "$fEncoding" -t "$zouEncoding" "$file" >"$tmp"; then
+      { sed -b -E -i "$script" "$tmp" && iconv -f "$zouEncoding" -t "$fEncoding" "$tmp" >"$file"; } || ec=$?
     else
       sed -b -E -i "$script" "$file" || ec=$?
     fi
@@ -460,12 +460,12 @@ ieval()
   local command=$1 file=$2 fEncoding=$(get_file_encoding "$2")
   # io_trace "ieval $(print_vars command file fEncoding)"
 
-  if [[ $fEncoding == $zou_lencoding || $fEncoding == 'us-ascii' || $fEncoding == 'utf-8' || $fEncoding == 'iso-8859-1' ]]; then
+  if [[ $fEncoding == $zouEncoding || $fEncoding == 'us-ascii' || $fEncoding == 'utf-8' || $fEncoding == 'iso-8859-1' ]]; then
     eval "$command "$(cl_escape "$file")""
   else
-    iconv -f "$fEncoding" -t "$zou_lencoding" "$file" 2>/dev/null \
+    iconv -f "$fEncoding" -t "$zouEncoding" "$file" 2>/dev/null \
     | eval "$command" \
-    | iconv -f "$zou_lencoding" -t "$fEncoding"
+    | iconv -f "$zouEncoding" -t "$fEncoding"
     return ${PIPESTATUS[1]}
   fi
 }
@@ -616,9 +616,9 @@ raise_event()
 }
 
 # trace constants (if debug == true)
-# io_debug zou_startupPath
-# io_debug zou_startupDir
-# io_debug zou_startupFileName
-# io_debug zou_binDir
-# io_debug zou_command
-# io_debug zou_lencoding
+# io_debug zouStartupPath
+# io_debug zouStartupDir
+# io_debug zouStartupFileName
+# io_debug zouBinDir
+# io_debug zouCommand
+# io_debug zouEncoding

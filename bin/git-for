@@ -24,7 +24,7 @@ for_parse()
     *) forCommand+=("$1");;
   esac; shift; done
 
-  zou_command="${forCommand[@]}"
+  zouCommand="${forCommand[@]}"
 }
 for_run()
 {
@@ -32,7 +32,7 @@ for_run()
   local jobsCount stopOnError \
         noSkuFilter noSelectFilter \
         smOnly bottomUp visitAncestors \
-        zou_command \
+        zouCommand \
         forScopes=( config_scope )
 
   for_parse "$@" || return $?
@@ -76,7 +76,7 @@ for_tree()
 }
 for_submodules() { module_visit_submodules_async for_submodules_enumerator "${forScopes[@]}" for_tree; }
 for_ancestors()  { module_visit_submodules repo_ancestor_roots "${forScopes[@]}" for_command; }
-for_command()    { eval "$zou_command"; }
+for_command()    { eval "$zouCommand"; }
 
 for_submodules_enumerator()
 {

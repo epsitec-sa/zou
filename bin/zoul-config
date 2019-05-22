@@ -44,8 +44,8 @@ config_migrate_registered_bundles()
     value=${BASH_REMATCH[2]}
     # io_trace "config_upgrade_registered_bundles -- $(print_vars key value)"
     if git config --global --unset "$key" "$value" &>/dev/null; then
-      if ! git config --file "$zou_configFile" --get-regexp "$key" "$value" >/dev/null; then
-        git config --file "$zou_configFile" --add "$key" "$value"
+      if ! git config --file "$zouConfigFile" --get-regexp "$key" "$value" >/dev/null; then
+        git config --file "$zouConfigFile" --add "$key" "$value"
         cd "$value"
         git config --local --unset zou.bundle.registered &>/dev/null
         cd - >/dev/null
