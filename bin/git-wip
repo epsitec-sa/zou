@@ -12,7 +12,7 @@ wip_parse()
     -h|--help) zou-help $0; exit 0;;
     -j*)            jobsCount=${1#-j};;
     -r|--recursive) recursive=true;;
-    start|enter)    subcommand=$1; wip_parse_wip $2 && shift;;
+    start|enter)    subcommand=$1;;
     release|finish) subcommand=$1;;
     share)          subcommand=$1;;
     --prod)         wipOnProd=true;;
@@ -22,9 +22,11 @@ wip_parse()
   esac; shift; done
 
   cmd_check_subcommand 'start' 'enter' 'share' 'release' 'finish'
-  cmd_check_args "${args[@]}"
 
   wipModulePaths=( "$@" )
+  wip_parse_wip "${args[@]}"
+  cmd_check_args "${args[@]:1}"
+
   [[ $wipOnProd == true ]] && wipPrefix=${wipPrefix:-hotfix} || wipPrefix=${wipPrefix:-wip}
   wipSuffix=${wipSuffix:-work}
   # io_trace "wip_parse -- $(print_vars recursive wipPrefix wipSuffix subcommand wipModulePaths[@])"
