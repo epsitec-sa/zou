@@ -219,7 +219,7 @@ ref_dev_fallback()
 #   v[0-9]*
 ref_tag_fallback()
 {
-  local IFS='/' tag="${2:-v[0-9]*}" atoms fallback
+  local IFS='/' tag="${2:-v[0-9]*}" strict=$3 atoms fallback
   atoms=( $1 ); IFS=$'\n'
   # io_trace "ref_tag_fallback 1 -- $(print_vars tag atoms[@])"
 
@@ -234,16 +234,25 @@ ref_tag_fallback()
     echo "$tag"
   elif [[ ${atoms[-1]} == 'dev' ]]; then
     atoms[-1]="$tag"
-    IFS=$'\n'
-    fallback=( $(ref_scan_sort_join "${atoms[@]}") )
-    # io_trace "ref_tag_fallback 1 -- $(print_vars tag atoms[@] fallback[@])"
-    [[ ${#fallback[@]} -eq 0 || ${fallback[-1]} != "$tag" ]] && fallback+=( $tag )
-    # io_trace "ref_tag_fallback 2 -- $(print_vars tag atoms[@] fallback[@])"
-    printf '%s\n' "${fallback[@]}"
+    if [[ $strict == true ]]; then
+      ref_join "${atoms[@]}"
+    else
+      IFS=$'\n'
+      fallback=( $(ref_scan_sort_join "${atoms[@]}") )
+      # io_trace "ref_tag_fallback 1 -- $(print_vars tag atoms[@] fallback[@])"
+      [[ ${#fallback[@]} -eq 0 || ${fallback[-1]} != "$tag" ]] && fallback+=( $tag )
+      # io_trace "ref_tag_fallback 2 -- $(print_vars tag atoms[@] fallback[@])"
+      printf '%s\n' "${fallback[@]}"
+    fi
   else
     local sku=$(wip_to_ref $1)
-    ref_tag_fallback $sku
+    ref_tag_fallback "$sku" "$tag" "$strict"
   fi
+}
+# ref_tag sku/compta/mch/dev 'v[0-9]*' -> sku/compta/mch/v[0-9]*
+ref_tag()
+{
+  ref_tag_fallback "$1" "$2" true
 }
 # scan ref and return prod fallback
 # ref_prod_fallback sku/compta/mch/(prod|13.2)

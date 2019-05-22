@@ -119,10 +119,10 @@ vtag_highest()
 #   alias   -- condensed vtag info - (> v1.0.0 (8)) means branch is ahead of v1.0.0 by 8 commits
 vtag_set_describe()
 {
-  local branch=$1 lbranch=${2:-$1} skipVNodes=$3 \
+  local branch=$1 lbranch=${2:-$1} skipVNodes=$3 strict=$4 \
         ltag stag match fallback
   
-  fallback=( $(ref_tag_fallback "$lbranch" 'v[0-9]*') )
+  fallback=( $(ref_tag_fallback "$lbranch" 'v[0-9]*' "$strict") )
 
   # io_trace "vtag_set_describe 1 -- $(print_vars branch lbranch skipVNodes fallback[@])"
   for match in "${fallback[@]}"; do
@@ -142,7 +142,7 @@ vtag_set_describe()
     fi
   done
   vbranch=''; vtag=''; alias='<>'; delta=0
-  # io_trace "vtag_set_describe 2 -- $(print_vars vbranch vtag delta alias)"
+  # io_trace "vtag_set_describe 4 -- $(print_vars vbranch vtag delta alias)"
   return 1
 }
 _vtag_describe()
