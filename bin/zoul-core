@@ -585,7 +585,7 @@ io_buffered_eval()
 {
   local selector=${2:-:} color=$3 indent=${4:-  } isLastLine=0 line lines ec
   # io_trace "io_buffered_eval 1 -- $(print_vars selector color indent)"
-  IFS=$'\n' lines=( $(eval "$1") ); ec=$?
+  IFS=$'\n' lines=( $(eval "$1") ); ec=$?; IFS=$OIFS
   if [[ -z $color ]]; then
     [ $ec -eq 0 ] && color=${NC} || color=${Red}
   fi
