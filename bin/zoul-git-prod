@@ -313,7 +313,8 @@ prod_ensure_vbranch()
       vbranch_create "${prefix}${major}.${minor}${suffix}" "$branch"
     fi
   else
-    local version=${1:-0.1} branch lbranch bref
+    local version=$1 branch lbranch bref
+    [[ $incrementKind == 'major' ]] && version=${version:-1.0} || version=${version:-0.1}
     branch_set_realize $(wip_to_ref $moduleDevBranch)
 
     [[ $lbranch =~ (.*/)?(.+)$ ]] || return 1
