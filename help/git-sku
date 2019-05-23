@@ -5,13 +5,13 @@ Manage SKUs.
 
 commands:
     enter                   enter SKU
-    info                  display SKU info
+    info                    display SKU info
 
 options:
     -h|--help               display help
-    --vnext                 enter next version (default to actual version)
-    --so                    display info for modules with specialized SKU only
     -r|--recursive)         visit specified modules recursively
+    --vnext                 enter next version (default to actual version)
+    --dev                   enter developement mode (default to actual version)
     <sku-spec>              SKU specification
     <module-paths>          specific modules to visit (default to current module)
     
@@ -22,6 +22,6 @@ example:
     git sku enter sal --vnext     # enter next version of 'sal' SKU
                                   # checkout vbranch 'sku/sal/<version>' of bundle and fallback vbranches of submodules
     git sku enter --vnext         # enter next version of current SKU
+    git sku enter --dev           # enter development mode in current SKU
     git sku info                  # display SKU info of bundle and current module
     git sku info -- ../m1         # display SKU info of bundle and sibling module 'm1'
-    git sku info -r --so          # display SKU info of modules with specialized SKUs
