@@ -13,8 +13,9 @@ sku_parse()
     -j*)            jobsCount=${1#-j};;
     -r|--recursive) recursive=true;;
     -a|--all)       noSkuFilter=true;;
-    --vnext)        vnext=true;;
-    enter)          subcommand=$1; sku_parse_sku $2 && shift;;
+    --vnext)        checkoutType='vnext';;
+    --dev)          checkoutType='dev';;
+    enter)          subcommand=$1;;
     info)           subcommand=$1;;
     --)             shift; break;;
     -*) io_error "unknown option '$1'"; return 1;;
@@ -22,9 +23,10 @@ sku_parse()
   esac; shift; done
 
   cmd_check_subcommand 'enter' 'info'
-  cmd_check_args "${args[@]}"
   
   skuModulePaths=( "$@" )
+  sku_parse_sku "${args[@]}"
+  cmd_check_args "${args[@]:1}"
   # io_trace "sku_parse -- $(print_vars skuSpec vnext subcommand skuModulePaths[@])"
 }
 sku_parse_sku()
@@ -38,7 +40,7 @@ sku_run()
   # parse command line
   local jobsCount recursive=false command='sku' subcommand \
         cmdScopes=( prod_scope config_scope cosm_scope ) \
-        vnext noSkuFilter skuSpec skuModulePaths=()
+        checkoutType='vtag' noSkuFilter skuSpec skuModulePaths=()
 
   sku_parse "$@" || return $?
   
@@ -69,7 +71,7 @@ sku_command()
   cmd_visit_modules
 }
 
-sku_enter_prolog() { sku_checkout "$sku" "$vnext" true; }
+sku_enter_prolog() { sku_checkout "$sku" "$checkoutType" true; }
 sku_info_prolog()
 {
   local label sku skus=() acolor=${LightGreen} icolor=${DarkGray} bcolor=${Cyan}

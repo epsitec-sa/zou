@@ -254,14 +254,23 @@ _prod_init_release_status()
 ########################################################
 # CHECKOUT
 
+# in:
+#   $1:sku
+#   $2:checkoutType -- (vtag|vnext|dev) default to vtag
 sku_checkout()
 {
-  local sku=$1 vnext=$2 forceCheckout=$3 branch lbranch ec=0
-  branch_set_best_match_dev "$sku"                 # -> branch lbranch
+  local sku=$1 checkoutType=${2:-vtag} forceCheckout=$3 branch lbranch ec=0
+  branch_set_best_match_dev "$sku"  # -> branch lbranch
   _prod_init_scope $branch $lbranch
 
   local prodHeadChangedDisabled=true
-  prod_checkout "$vnext" "$forceCheckout" "$lbranch" || ec=$?
+
+  case $checkoutType in
+    vtag)   prod_checkout false "$forceCheckout" "$lbranch" || ec=$?;;
+    vnext)  prod_checkout true  "$forceCheckout" "$lbranch" || ec=$?;;
+    dev)    dev_checkout        "$forceCheckout" "$lbranch" || ec=$?;;
+  esac
+  
   prodHeadChangedDisabled=''
   return $ec
 }
