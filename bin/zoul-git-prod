@@ -314,7 +314,8 @@ prod_ensure_vbranch()
         major) (( major += 1 )); minor=0;;
         *) mio_error "prod_ensure_vbranch: bad increment type ${VC}$incrementKind${Red}"; exit 1;;
       esac
-      vbranch_create "${prefix}${major}.${minor}${suffix}" "$branch"
+      vbranch_create "${prefix}${major}.${minor}${suffix}" "$branch" \
+      && _prod_ensure_bundle_vbranch
     fi
   else
     local version=$1 branch lbranch bref
@@ -322,8 +323,33 @@ prod_ensure_vbranch()
     branch_set_realize $(wip_to_ref $moduleDevBranch)
 
     [[ $lbranch =~ (.*/)?(.+)$ ]] || return 1
-    vbranch_create "${BASH_REMATCH[1]}$version" "$branch"
+    vbranch_create "${BASH_REMATCH[1]}$version" "$branch" \
+    && _prod_ensure_bundle_vbranch
   fi
+}
+_prod_ensure_bundle_vbranch()
+{
+  module_is_principal || return 0
+  # io_trace "_prod_ensure_bundle_vbranch -- $(print_vars moduleId principalModuleId)"
+  local bundleScopes=( prod_scope )
+  module_visit "$bundleRoot" "${bundleScopes[@]}" _prod_ensure_bundle_vbranch_core "$prodBranch"
+}
+_prod_ensure_bundle_vbranch_core()
+{
+  local principalBranch=$1 principalVersion \
+        prefix version vbranch
+
+  [[ $principalBranch =~ ^(.*/)?([0-9]+\.[0-9]+) ]]
+  principalVersion=${BASH_REMATCH[2]}
+  [[ $prodBranch =~ ^(.*/)?([0-9]+\.[0-9]+)(.*)$ ]]
+  prefix=${BASH_REMATCH[1]}
+  version=${BASH_REMATCH[2]}
+  suffix=${BASH_REMATCH[3]}
+  [[ $version == $principalVersion ]] && return 0
+
+  vbranch=${prefix}${principalVersion}${suffix}
+  # io_trace "_prod_ensure_bundle_vbranch_core ${*@Q} -- $(print_vars principalBranch principalVersion prodBranch version vbranch)"
+  vbranch_create "$vbranch" "$moduleDevBranchPath"
 }
 
 ########################################################
