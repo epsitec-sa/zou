@@ -12,6 +12,7 @@ ZOUL_GIT_COSM=true
 #   showSubmoduleMessage
 #   commitSubmodules
 #   commitDirtySubmodules
+#   disableUpdateSubmodulesInProdMode
 
 headChangedEvent+=( _cosm_on_head_changed )
 branchCheckoutEvent+=( _cosm_on_checkout )
@@ -58,6 +59,7 @@ _cosm_on_head_changed()
 }
 _cosm_on_checkout()
 {
+  [[ $disableUpdateSubmodulesInProdMode == true ]] && return 0
   [ ${#moduleSubmodulePaths[@]} -eq 0 ] && return 0
   _cosm_update_clean_submodules_in_prod_mode "$@"
 }
