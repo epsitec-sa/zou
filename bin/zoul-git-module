@@ -65,10 +65,13 @@ module_visit_submodules_async_fast()
 }
 module_has_submodules() { [ ${#moduleSubmodulePaths[@]} -gt 0 ]; }
 module_is_bundle()      { [[ -n "$moduleRoot" && "$moduleRoot" == "$bundleRoot" ]]; }
-module_in_wip_mode()    { [[ $moduleHead != $(wip_to_ref $moduleHead) ]]; }
-module_in_dev_mode()    { [[ $moduleHead == $moduleDevBranch ]]; }
-module_in_prod_mode()   { [[ $moduleHead =~ ^(.*/)?v?[0-9]+\.[0-9] ]]; }
 module_is_principal()   { [[ $moduleId == $principalModuleId ]]; }
+module_in_wip_mode()    { [[ $moduleHead != $(wip_to_ref $moduleHead) ]]; }
+bundle_in_wip_mode()    { [[ $bundleHead != $(wip_to_ref $bundleHead) ]]; }
+module_in_dev_mode()    { [[ $moduleHead == $moduleDevBranch ]]; }
+bundle_in_dev_mode()    { [[ $bundleHead == $bundleDevBranch ]]; }
+module_in_prod_mode()   { [[ $moduleHead =~ ^(.*/)?v?[0-9]+\.[0-9] ]]; }
+bundle_in_prod_mode()   { [[ $bundleHead =~ ^(.*/)?v?[0-9]+\.[0-9] ]]; }
 
 ########
 # SCOPES
