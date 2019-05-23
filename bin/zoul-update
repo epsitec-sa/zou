@@ -29,7 +29,7 @@ zou_update()
 
   if [[ $zouOnly == true || "$bundleRoot" == "$PWD" ]]; then
     # zou repo alone, fetch has already been done
-    git-select "${selectArgs[@]}"
+    git-sku enter "${selectArgs[@]}"
   else
     # zou repo inside zou-dev bundle
     module_visit "$bundleRoot" zou_update_bundle "${selectArgs[@]}"
@@ -50,7 +50,7 @@ zou_prune_tags()
 zou_update_bundle()
 {
   git-sync --pull --clean
-  git-select "$@"
+  git-sku enter "$@"
 }
 zou_update_epilog()
 {
