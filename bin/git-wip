@@ -51,7 +51,7 @@ wip_run()
     start)   startupMessage="Starting ${Brown}$wipPrefix:$wipSuffix${White}, please wait...";;
     enter)   startupMessage="Entering ${Brown}$wipPrefix:$wipSuffix${White}, please wait...";;
     share)   startupMessage="Sharing ${Brown}current WIP${White}, please wait...";;
-    release) startupMessage="Releasing WIP to development, please wait...";;
+    release) startupMessage="Releasing WIP, please wait...";;
     finish)  startupMessage="Finishing WIP, please wait...";;
   esac
 
@@ -98,12 +98,18 @@ wip_enter_epilog()
 }
 wip_share_epilog()
 {
-  ! module_in_wip_mode && return 0
+  _wip_check_wip_mode || return 0
+
   branch_ensure_remote "$moduleDevBranch"
 }
+
+#########
+# RELEASE
+#########
+
 wip_release_epilog()
 {
-  ! module_in_wip_mode && return 0
+  _wip_check_wip_mode || return 0
 
   local devBranch=$(wip_to_ref $moduleDevBranch)
   local wipBranch=$moduleHead
@@ -111,16 +117,30 @@ wip_release_epilog()
   if [[ $wipBranch != $devBranch ]]; then
     # io_trace "wip_release_epilog 2 -- $(print_vars wipBranch devBranch)"
     # merge, checkout prod || vtag || dev and del wip
-    if [[ $wipOnProd == true && -n $prodBranchPath ]]; then
-      branch_merge "$wipBranch" "$prodBranchPath"
-    else
-      branch_merge "$wipBranch" "$devBranch"
-    fi
+    _wip_merge _wip_release_merge_dev _wip_release_merge_prod
   fi
 }
+# scope: devBranch
+_wip_release_merge_dev()
+{
+  local wipBranch=$1 mergeTarget=$2
+  branch_merge "$wipBranch" "$mergeTarget"
+}
+# scope: devBranch
+_wip_release_merge_prod()
+{
+  local wipBranch=$1 mergeTarget=$2
+  branch_merge "$wipBranch" "$mergeTarget" \
+  && branch_merge "$wipBranch" "$devBranch"
+}
+
+########
+# FINISH
+########
+
 wip_finish_epilog()
 {
-  ! module_in_wip_mode && return 0
+  _wip_check_wip_mode || return 0
 
   local devBranch=$(wip_to_ref $moduleDevBranch)
   local wipBranch=$moduleHead
@@ -128,17 +148,61 @@ wip_finish_epilog()
   if [[ $wipBranch != $devBranch ]]; then
     # io_trace "wip_finish 2 -- $(print_vars wipBranch devBranch)"
     # merge, checkout prod || vtag || dev and del wip
-    if [[ $wipOnProd == true && -n $prodBranchPath ]]; then
-      branch_merge "$wipBranch" "$prodBranchPath" \
-      && prod_checkout true true "$devBranch" \
-      && branch_delete "$wipBranch"
-    else
-      branch_merge "$wipBranch" "$devBranch" \
-      && dev_checkout true "$devBranch" \
-      && branch_delete "$wipBranch"
-    fi
-
+    _wip_merge _wip_finish_merge_dev _wip_finish_merge_prod
   fi
+}
+# scope: devBranch
+_wip_finish_merge_dev()
+{
+  local wipBranch=$1 mergeTarget=$2
+  branch_merge "$wipBranch" "$mergeTarget" \
+  && dev_checkout true "$devBranch" \
+  && branch_delete "$wipBranch"
+}
+# scope: devBranch
+_wip_finish_merge_prod()
+{
+  local wipBranch=$1 mergeTarget=$2
+  branch_merge "$wipBranch" "$mergeTarget" \
+  && branch_merge "$wipBranch" "$devBranch" \
+  && branch_checkout "$prodBranch" true \
+  && branch_delete "$wipBranch"
+}
+
+#########
+# HELPERS
+#########
+
+_wip_check_wip_mode()
+{
+  module_in_wip_mode && return 0
+  mio_warning "Use ${VC}git wip enter${Brown} to switch to WIP mode"
+  return 1
+}
+# scope: wipBranch devBranch
+# in:
+#   $1:devAction  wipBranch mergeTarget
+#   $2:prodAction wipBranch mergeTarget
+_wip_merge()
+{
+  local devAction=$1 prodAction=$2 mergeTarget action
+  if branch_is_merged "$wipBranch" "$devBranch"; then
+    if [[ $wipOnProd == true && -n $prodBranchPath ]]; then
+      mergeTarget=$prodBranchPath
+      action=$prodAction
+    else
+      mergeTarget=$devBranch
+      action=$devAction
+    fi
+  elif [[ -n $prodBranchPath ]]; then
+    mergeTarget=$prodBranchPath
+    action=$prodAction
+  else
+    mergeTarget=$devBranch
+    action=$devAction
+  fi
+  # io_trace "$action $wipBranch $mergeTarget"
+  $action "$wipBranch" "$mergeTarget"
 }
 
 wip_run  "$@"
