@@ -78,7 +78,7 @@ _prod_init_scope()
         vbranch vtag htag delta=0 alias status
 
   # 1. Retrieve vtag and vbranch info starting from dev branch
-  vtag_set_describe "$devBranchPath" "$devBranch" 'auto' true # -> vbranch vtag delta alias
+  vtag_set_describe "$devBranchPath" "$devBranch" 'auto' # -> vbranch vtag delta alias
   if [[ -n $vtag ]]; then
     _prod_init_dev true
 
@@ -86,7 +86,7 @@ _prod_init_scope()
     if [[ -z $prodBranchPath ]]; then
       _prod_set_no_prod_info "$vtag"
     else
-      _prod_set_prod_info "$prodBranchPath" "$prodBranch"
+      _prod_set_prod_info
       if [[ $vbranch != $prodBranch ]]; then
         mio_error "Branches ${VC}$prodBranch${LightPurple} and ${VC}$vbranch${LightPurple} are intermixed" ${LightPurple}
         return 1
@@ -107,7 +107,7 @@ _prod_init_xscope()
   local vbranch vtag htag delta=0 alias status
 
   # io_trace "_prod_init_xscope 1 -- $(print_vars moduleHead)"
-  vtag_set_describe "$moduleHead" "$moduleHead" false true # -> vbranch vtag delta alias
+  vtag_set_describe "$moduleHead" "$moduleHead" false # -> vbranch vtag delta alias
   if [[ -n $vtag ]]; then
     _prod_init_dev false
 
@@ -115,7 +115,7 @@ _prod_init_xscope()
     if [[ -z $prodBranchPath ]]; then
       _prod_set_no_prod_info "$vtag"
     else
-      _prod_set_xprod_info "$prodBranchPath" "$prodBranch"
+      _prod_set_xprod_info
     fi
     _prod_init_prod
     releaseStatus='released'
@@ -156,10 +156,9 @@ _prod_init_prod()
 }
 # usage:
 #   local vbranch vtag htag delta alias status
-#   _prod_set_prod_info $branch $lbranch
-# in:
-#   $1:branch             -- local or remote branch name
-#   $2:lbranch            -- local branch name
+#   _prod_set_prod_info
+# scope:
+#   devBranch devBranchPath prodBranch prodBranchPath
 # out:
 #   vbranch   -- associated version branch
 #   vtag      -- nearest vtag (depends on skipVNodes value)
@@ -171,16 +170,15 @@ _prod_init_prod()
 #                vtagMissing -- no vtag found (branch was never released)
 _prod_set_prod_info()
 {
-  local branch=$1 lbranch=${2:-$1}
-  vtag_set_describe "$branch" "$lbranch" 'auto' true # -> vbranch vtag delta alias
+  vtag_set_describe "$prodBranchPath" "$prodBranch" 'auto' # -> vbranch vtag delta alias
   # allow duplicate tags in bundle
   htag=$(vtag_highest $vbranch true)
-  # io_trace "_prod_set_prod_info 1 -- $(print_vars branch vbranch vtag htag delta alias)"
+  # io_trace "_prod_set_prod_info 1 -- $(print_vars prodBranch vbranch vtag htag delta alias)"
   if [[ $htag != $vtag ]]; then
     vtag=$htag
     delta=$(( $(git rev-list --count $vtag..$vbranch) ))
     vtag_format_alias "$vtag" "$delta"
-    # io_trace "_prod_set_prod_info 2 -- $(print_vars branch vbranch vtag htag delta alias)"
+    # io_trace "_prod_set_prod_info 2 -- $(print_vars prodBranch vbranch vtag htag delta alias)"
   fi
   # [ $delta -ne 0 ] && alias="$lbranch $alias" # (master > v2.0.0 (8))
   # disallow duplicate tags in bundle
@@ -189,13 +187,12 @@ _prod_set_prod_info()
   fi
   # vnode or vtag
   vtag_is_vnode $vtag && status='vnode' || status='vtag'
-  # io_trace "_prod_set_prod_info 3 -- $(print_vars branch vbranch vtag htag status alias)"
+  # io_trace "_prod_set_prod_info 3 -- $(print_vars prodBranch vbranch vtag htag status alias)"
 }
 _prod_set_xprod_info()
 {
-  local branch=$1 lbranch=${2:-$1}
-  vtag_set_describe "$branch" "$lbranch" 'auto' true # -> vbranch vtag delta alias
-  # io_trace "_prod_set_xprod_info 1 -- $(print_vars branch vbranch vtag htag delta alias)"
+  vtag_set_describe "$prodBranchPath" "$prodBranch" 'auto' # -> vbranch vtag delta alias
+  # io_trace "_prod_set_xprod_info 1 -- $(print_vars prodBranch vbranch vtag htag delta alias)"
   if module_is_bundle; then
     htag=$(vtag_highest $vbranch true)
   else
@@ -203,7 +200,7 @@ _prod_set_xprod_info()
   fi
   # vnode or vtag
   vtag_is_vnode $vtag && status='vnode' || status='vtag'
-  # io_trace "_prod_set_xprod_info 2 -- $(print_vars branch vbranch vtag htag status alias)"
+  # io_trace "_prod_set_xprod_info 2 -- $(print_vars prodBranch vbranch vtag htag status alias)"
 }
 # in:  vtag
 # out: htag delta alias status
@@ -259,6 +256,7 @@ _prod_init_release_status()
 #   $2:checkoutType -- (vtag|vnext|dev) default to vtag
 sku_checkout()
 {
+  # io_trace "sku_checkout ${*@Q}"
   local sku=$1 checkoutType=${2:-vtag} forceCheckout=$3 branch lbranch ec=0
   branch_set_best_match_dev "$sku"  # -> branch lbranch
   _prod_init_scope $branch $lbranch
