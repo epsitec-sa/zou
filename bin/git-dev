@@ -58,6 +58,9 @@ dev_command()
 {
   [ ${#devModulePaths[@]} -eq 0 ] && devModulePaths+=( './' )
   cmd_register_module_paths "$recursive" "${devModulePaths[@]}"
+  case $subcommand in
+    enter) cmd_register_module_paths false "$bundleRoot";;
+  esac
 
   cmd_visit_modules
 }
