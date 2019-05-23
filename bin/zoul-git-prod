@@ -312,6 +312,7 @@ dev_checkout()
 #   prod_ensure_vbranch 0.1 'minor'
 prod_ensure_vbranch()
 {
+  _prod_check_dev_htag_ancestry
   if [[ -n $prodBranch ]]; then
     local incrementKind=$2
     if [ ${vtag2dev:-0} -gt 0 ] && [[ -n $incrementKind && $prodBranch =~ ^(.*/)?([0-9]+)\.([0-9]+)(.*)$ ]]; then
@@ -333,6 +334,17 @@ prod_ensure_vbranch()
     vbranch_create "${BASH_REMATCH[1]}$version" "$branch" \
     && _prod_ensure_bundle_vbranch
   fi
+}
+_prod_check_dev_htag_ancestry()
+{
+  # verify that dev branch and htag are on same branch
+  [[ -z $prodHTag ]] && return 0
+  branch_is_merged "$moduleDevBranchPath" "$prodHTag" && return 0
+  branch_is_merged "$prodHTag" "$moduleDevBranchPath" && return 0
+  
+  mio_warning "Tag ${VC}$prodHTag${Brown} is not on the same branch as ${VC}$moduleDevBranch"
+  _prod_init_vars
+  return 1
 }
 _prod_ensure_bundle_vbranch()
 {
