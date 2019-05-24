@@ -12,10 +12,10 @@ ZOUL_GIT_COSM=true
 #   showSubmoduleMessage
 #   commitSubmodules
 #   commitDirtySubmodules
-#   disableUpdateSubmodulesInProdMode
 
 headChangedEvent+=( _cosm_on_head_changed )
-branchCheckoutEvent+=( _cosm_on_checkout )
+headNameChangedEvent+=( _cosm_on_head_name_changed )
+checkoutNoChangeEvent+=( _cosm_on_checkout_no_change )
 submoduleChangedEvent+=( cosm_reset_scope )
 
 # usage:
@@ -54,33 +54,26 @@ _cosm_on_head_changed()
   cosm_reset_scope
 
   [ ${#moduleSubmodulePaths[@]} -eq 0 ] && return 0
-  _cosm_update_submodules_excluded_from_select
+  module_in_dev_mode || _cosm_update_submodules_excluded_from_select
+
   _cosm_discard_submodules_excluded_from_sku
 }
-_cosm_on_checkout()
+_cosm_on_head_name_changed()
 {
-  [[ $disableUpdateSubmodulesInProdMode == true ]] && return 0
   [ ${#moduleSubmodulePaths[@]} -eq 0 ] && return 0
-  _cosm_update_clean_submodules_in_prod_mode "$@"
+  module_in_dev_mode || _cosm_update_submodules_excluded_from_select
 }
-
-# update unstaged clean submodules when switching to prod
-_cosm_update_clean_submodules_in_prod_mode()
+_cosm_on_checkout_no_change()
 {
-  [[ $1 =~ ^(.*/)?[0-9]+\.[0-9]+$ || $1 =~ ^(.*/)?v[0-9]+\.[0-9]+ ]] || return 0
-
-  local needUpdate=( $(array_remove_array 'unstagedCleanSubmodules[@]' 'configSelectExclude[@]') )
-  # io_trace "_cosm_update_clean_submodules_in_prod $(print_vars unstagedCleanSubmodules[@] configSelectExclude[@] needUpdate[@])"
-  if [ ${#needUpdate[@]} -ne 0 ]; then
-    visit_async 'needUpdate[@]' 'repo_update_submodule'
-  fi
+  [ ${#moduleSubmodulePaths[@]} -eq 0 ] && return 0
+  module_in_dev_mode || _cosm_update_submodules_excluded_from_select
 }
+
 # Update active submodules that are excluded from select
 _cosm_update_submodules_excluded_from_select()
 {
-  [[ $commitExcludedSubmodules == true ]] && return 0
   local needUpdate=( $(array_remove_array 'configSelectExclude[@]' 'configSkuExclude[@]') )
-  # io_trace "_cosm_update_submodules_excluded_from_select $(print_vars configSelectExclude[@] configSkuExclude[@] needUpdate[@])"
+  # io_trace "_cosm_update_submodules_excluded_from_select $(print_vars needUpdate[@])"
   if [ ${#needUpdate[@]} -ne 0 ]; then
     visit_async 'needUpdate[@]' 'repo_update_submodule'
   fi
@@ -89,7 +82,7 @@ _cosm_discard_submodules_excluded_from_sku()
 {
   # discard unstaged clean submodules which are excluded from SKU
   local discard=( $(array_intersect_array 'unstagedCleanSubmodules[@]' 'configSkuExclude[@]') ) ec=0
-  # io_trace "_cosm_discard_submodules_excluded_from_sku -- $(print_vars unstagedCleanSubmodules[@] discard[@])"
+  # io_trace "_cosm_discard_submodules_excluded_from_sku -- $(print_vars discard[@])"
   if [ ${#discard[@]} -ne 0 ]; then
     visit_async 'discard[@]' 'repo_discard_submodule' || ec=$?
     unstagedCleanSubmodules=( $(array_remove_array 'unstagedCleanSubmodules[@]' 'discard[@]') )
