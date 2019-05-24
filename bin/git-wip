@@ -70,6 +70,11 @@ wip_command()
 
   cmd_visit_modules
 }
+
+#######
+# START
+#######
+
 wip_start_epilog()
 {
   local devBranch=$(wip_to_ref "$moduleDevBranch")
@@ -82,7 +87,13 @@ wip_start_epilog()
     fi
   fi
   branch_checkout "$wipBranch" true
+  branch_show_status
 }
+
+#######
+# ENTER
+#######
+
 wip_enter_epilog()
 {
   local devBranch=$(wip_to_ref "$moduleDevBranch")
@@ -95,12 +106,14 @@ wip_enter_epilog()
   elif module_is_bundle; then
     mio_error "SKU ${VC}$wipPrefix:$wipSuffix${Red} not found"
   fi
+  branch_show_status
 }
 wip_share_epilog()
 {
   _wip_check_wip_mode || return 0
 
   branch_ensure_remote "$moduleDevBranch"
+  branch_show_status
 }
 
 #########
@@ -119,6 +132,7 @@ wip_release_epilog()
     # merge, checkout prod || vtag || dev and del wip
     _wip_merge _wip_release_merge_dev _wip_release_merge_prod
   fi
+  branch_show_status
 }
 # scope: devBranch
 _wip_release_merge_dev()
@@ -150,6 +164,7 @@ wip_finish_epilog()
     # merge, checkout prod || vtag || dev and del wip
     _wip_merge _wip_finish_merge_dev _wip_finish_merge_prod
   fi
+  branch_show_status
 }
 # scope: devBranch
 _wip_finish_merge_dev()

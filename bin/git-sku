@@ -71,7 +71,17 @@ sku_command()
   cmd_visit_modules
 }
 
+#######
+# ENTER
+#######
+
 sku_enter_prolog() { sku_checkout "$sku" "$checkoutType" true; }
+sku_enter_epilog() { branch_show_status; }
+
+######
+# INFO
+######
+
 sku_info_prolog()
 {
   local label sku skus=() acolor=${LightGreen} icolor=${DarkGray} bcolor=${Cyan}
@@ -97,5 +107,6 @@ sku_info_prolog()
 
   mio_message "[${skuList}]" "${bcolor}"
 }
+sku_info_epilog() { branch_show_status; }
 
 sku_run  "$@"
