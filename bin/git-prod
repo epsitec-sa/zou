@@ -24,7 +24,6 @@ prod_parse()
     --rc)           prerelPrefix='rc';;
     --rtm)          prerelPrefix='rtm';;
     enter|release)  subcommand=$1;;
-    publish)        subcommand='release';;  # alias
     --)             shift; break;;
     -*) io_error "unknown option ${VC}$1${Red}\n"; io_help $0; return 1;;
     *)  args+=( "$1" );;
@@ -63,6 +62,7 @@ prod_command()
     release) recursive=true;;
   esac
   cmd_register_module_paths "$recursive" "${prodModulePaths[@]}"
+
   prod_${subcommand}_run
 }
 
@@ -86,7 +86,6 @@ prod_release_run()
   # dry run scope
   local rstatusParentGate rstatusLookupPath rstatusParentLookupPath principalReleaseStatus
 
-  disableUpdateSubmodulesInProdMode=true
   cmd_visit_modules
 }
 
