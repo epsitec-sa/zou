@@ -218,8 +218,8 @@ print_vars()
       array=( "${!param}" )
       printf '%b ' "${param%\[@\]}=(${array[@]@Q})"
     # color
-    elif [[ ${!param} =~ ^\\e\[[0-9\;]+m$ ]]; then
-      printf '%b ' "$param='${!param}$param${NC}'"
+    elif [[ ${!param} =~ ^\\e\[[0-9][^m]*m ]]; then
+      printf '%b ' "$param='${!param}${NC}'"
     else
       printf '%b ' "$param='${!param}'"
     fi
