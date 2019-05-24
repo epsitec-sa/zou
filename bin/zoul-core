@@ -151,11 +151,6 @@ io_error_unsafe()    { io_message_unsafe "$1" "${2:-error}"   ${Red}; }
 io_message_unsafe()
 {
   local message=$1 label=$2 color=${3:-${Cyan}}
-  # if [[ -z $color ]]; then
-  #   color=${Cyan}
-  # elif ! [[ $color =~ ^\\ ]]; then
-  #   color=${!color}
-  # fi
   if [[ -n $label ]]; then
     if [[ $label =~ ^\\e\[ ]]; then
       # colored label 
