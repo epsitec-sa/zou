@@ -182,7 +182,7 @@ _branch_merge_resolve_submodule_conflicts()
   local line status path lines ec=0
   IFS=$'\n' lines=($(git status -s --porcelain)); IFS=$OIFS
   for line in "${lines[@]}"; do
-    if [[ $line =~ ^([A-Z]+)[[:blank:]]+(.+)$ ]]; then
+    if [[ $line =~ ^[[:blank:]]*([A-Z]+)[[:blank:]]+(.+)$ ]]; then
       status=${BASH_REMATCH[1]}
       path=${BASH_REMATCH[2]}
       if [[ -f "$path/.git" ]]; then
