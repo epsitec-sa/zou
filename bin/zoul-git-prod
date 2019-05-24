@@ -68,8 +68,11 @@ _prod_trace()
 _prod_init_vars()
 {
   prodBranch=''; prodBranchPath=''; prodVTag=''; prodHTag=''
-  prodAlias='<>'; devAlias='<>'; vtagStatus='vtagMissing'; vtag2dev=0; vtag2prod=0
+  vtagStatus='vtagMissing'; vtag2dev=0; vtag2prod=0
   releaseVTag=''; releasePrerelPrefix=''; releaseStatus='error'
+  local alias; vtag_format_alias
+  prodAlias=$alias; devAlias=$alias; moduleAlias=$alias 
+  # io_trace "_prod_init_vars -- $(print_vars prodAlias devAlias moduleAlias)"
 }
 _prod_init_scope()
 {
@@ -342,7 +345,7 @@ _prod_check_dev_htag_ancestry()
   branch_is_merged "$moduleDevBranchPath" "$prodHTag" && return 0
   branch_is_merged "$prodHTag" "$moduleDevBranchPath" && return 0
   
-  mio_warning "Tag ${VC}$prodHTag${Brown} is not on the same branch as ${VC}$moduleDevBranch"
+  mio_warning "Tag ${VC}$prodHTag${Brown} is not on branch ${VC}$moduleDevBranch"
   _prod_init_vars
   return 1
 }
@@ -522,7 +525,7 @@ _prod_on_head_changed()
 }
 _prod_on_head_name_changed()
 {
-  _prod_reset_alias
+  prod_reset_scope
 }
 _prod_on_branch_created()
 {
