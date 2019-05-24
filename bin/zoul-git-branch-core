@@ -15,16 +15,16 @@ ZOUL_GIT_BRANCH_CORE=true
 #   showSwitchingMessage
 
 headChangedEvent=()
+headNameChangedEvent=()
+checkoutNoChangeEvent=()
 branchCreatedEvent=()
 branchDeletedEvent=()
-branch_raise_head_changed_event()   { raise_event 'headChangedEvent[@]' "$@"; }
-branch_raise_branch_created_event() { raise_event 'branchCreatedEvent[@]' "$@"; }
-branch_raise_branch_deleted_event() { raise_event 'branchDeletedEvent[@]' "$@"; }
+branch_raise_head_changed_event()        { raise_event 'headChangedEvent[@]' "$@"; }
+branch_raise_head_name_changed_event ()  { raise_event 'headNameChangedEvent[@]' "$@"; }
+branch_raise_checkout_no_change_event()  { raise_event 'checkoutNoChangeEvent[@]' "$@"; }
+branch_raise_branch_created_event()      { raise_event 'branchCreatedEvent[@]' "$@"; }
+branch_raise_branch_deleted_event()      { raise_event 'branchDeletedEvent[@]' "$@"; }
 
-headNameChangedEvent=()
-branchCheckoutEvent=()
-branch_raise_head_name_changed_event () { raise_event 'headNameChangedEvent[@]' "$@"; }
-branch_raise_branch_checkout_event()    { raise_event 'branchCheckoutEvent[@]' "$@"; }
 
 # in:
 #  lbranch=$1 -- local branch name
@@ -414,26 +414,29 @@ branch_checkout()
     _branch_checkout_core; ec=$?
     return $ec
   else
-    _branch_checkout_raiseEvents
+    branch_raise_checkout_no_change_event "$refSym"
   fi
 }
-_branch_checkout_raiseEvents()
+_branch_raise_checked_out_events()
 {
-  branch_raise_branch_checkout_event "$refSym"
   if [[ $raiseEvent -eq 0 ]]; then
     branch_raise_head_changed_event "$refSym"
   elif [[ $moduleHead != $refSym ]]; then
     branch_raise_head_name_changed_event "$refSym"
+  else
+    branch_raise_checkout_no_change_event "$refSym"
   fi
 }
 _branch_checkout_core()
 {
   # io_trace "_branch_checkout_core >>"
   local breakLoop skipLine ec line lines color alias
+
   IFS=$'\n' lines=( $(git checkout "$ref" 2>&1) ); ec=$?; IFS=$OIFS
   if [[ $ec -eq 0 ]]; then
-    _branch_checkout_raiseEvents
+    _branch_raise_checked_out_events
   fi
+  
   io_lock_enter
   for line in "${lines[@]}"; do
     if false; then
