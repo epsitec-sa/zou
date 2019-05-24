@@ -50,16 +50,19 @@ branch_upstream()
 #  rbranch    -- remote branch (even if lbranch does not exist)
 branch_set_upstream()
 {
+  # io_trace "branch_set_upstream ${*@Q}"
   rbranch=$(git rev-parse --abbrev-ref $1@{upstream} 2>/dev/null)
   [ $? -eq 0 ] && return 0
   local remote
   for remote in $(git remote); do
     if branch_is_remote "$remote/$1"; then
       rbranch="$remote/$1"
+      # io_trace "branch_set_upstream 2 -- $(print_vars rbranch)"
       return 0
     fi
   done
   rbranch=''
+  # io_trace "branch_set_upstream 3 -- $(print_vars rbranch)"
   return 1
 }
 branch_exists()
@@ -269,10 +272,12 @@ branch_realize()
 #   2 -- branch does not exists
 branch_set_realize()
 {
+  # io_trace "branch_set_realize ${*@Q}"
   branch=''; lbranch=''; bref=''
   local ref=${1:-HEAD}
   if [[ $ref == 'HEAD' ]]; then
     ref=$(branch_list_all_at 'HEAD' | cut -f 1 -d ' ')
+    # io_trace "branch_set_realize 0 -- $(print_vars ref)"
     [[ -z $ref ]] && return 2
   fi
   if branch_is_local "$ref"; then
@@ -290,12 +295,19 @@ branch_set_realize()
   else
     local rbranch
     branch_set_upstream "$ref"
-    [ $? -ne 0 ] && return 2
-    branch=$rbranch
-    lbranch=${branch#*/}
-    bref="refs/remotes/$branch"
-    # io_trace "branch_set_realize 2 -- $(print_vars ref branch lbranch bref)"
-    return 1
+    if [ $? -ne 0 ]; then
+      branch=$ref
+      lbranch=$branch
+      bref="refs/heads/$branch"
+      # io_trace "branch_set_realize 3.2 -- $(print_vars ref branch lbranch bref)"
+      return 2
+    else
+      branch=$rbranch
+      lbranch=${branch#*/}
+      bref="refs/remotes/$branch"
+      # io_trace "branch_set_realize 3.2 -- $(print_vars ref branch lbranch bref)"
+      return 1
+    fi
   fi
 }
 branch_without_remote_prefix() { branch_is_remote $1 && echo ${1#*/} || echo $1; }
@@ -382,7 +394,7 @@ branch_checkout()
     # io_trace "branch_checkout 2.3 -- $(print_vars ref refSym forceCheckout checkout raiseEvent isCurrent)"
   fi
   branch_ref_type $ref; refType=$?
-  # io_trace "branch_checkout 2 -- $(print_vars ref forceCheckout refSym refType)"
+  # io_trace "branch_checkout 2 -- $(print_vars ref forceCheckout ref refSym refType)"
   if [ $checkout -eq 0 ]; then
     # compute symbols
     local ioType ioRef=$refSym ec=0
