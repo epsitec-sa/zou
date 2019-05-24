@@ -21,7 +21,7 @@ doNotRegisterBundle=false
 
 # events registration
 headChangedEvent+=( _module_reset_scope )
-headNameChangedEvent+=( _module_reset_head_name )
+headNameChangedEvent+=( _module_reset_scope )
 
 # run a function in the startup module root folder with startup, bundle and module scopes defined
 module_run()
@@ -201,25 +201,6 @@ _module_reset_scope()
   # io_trace_unsafe "_module_reset_scope -- $(print_vars moduleTracePrefix)"
   # io_lock_exit
 }
-_module_reset_head_name()
-{
-  [[ $moduleScopeInitialized == true ]] || return 0
-  # io_trace_unsafe "_module_reset_head_name -- ${*@Q}"
-
-  if [[ "$PWD" == "$bundleRoot" ]]; then
-    bundleHead=$1
-    _module_set_bundle_trace_prefix
-  fi
-
-  moduleHead=$1
-  _module_set_trace_prefix
-  
-  # io_lock_enter
-  # io_trace_unsafe "_module_reset_head_name -- $(print_vars bundleHead moduleHead )"
-  # io_trace_unsafe "_module_reset_head_name -- $(print_vars bundleTracePrefix)"
-  # io_trace_unsafe "_module_reset_head_name -- $(print_vars moduleTracePrefix)"
-  # io_lock_exit
-}
 
 ##############
 # DEV BRANCHES
@@ -244,7 +225,7 @@ _module_set_bundle_dev_branch()
   local branch lbranch bref
   branch_set_realize "$bundleDevBranch"
   bundleDevBranchPath=$branch
-  # io_trace "_module_set_dev_branch 4 -- $(print_vars bundleHead bundleDevBranch devBranchPath)"
+  # io_trace "_module_set_dev_branch 4 -- $(print_vars bundleHead bundleDevBranch bundleDevBranchPath)"
 }
 _bundle_vref_to_dev()
 {
