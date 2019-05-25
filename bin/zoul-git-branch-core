@@ -422,7 +422,7 @@ _branch_raise_checked_out_events()
 _branch_checkout_core()
 {
   # io_trace "_branch_checkout_core >>"
-  local breakLoop skipLine ec line lines color alias
+  local skipNextLines skipCurrentLine ec line lines color alias
 
   IFS=$'\n' lines=( $(git checkout "$ref" 2>&1) ); ec=$?; IFS=$OIFS
   if [[ $ec -eq 0 ]]; then
@@ -430,20 +430,14 @@ _branch_checkout_core()
   fi
   
   io_lock_enter
+  # for line in "${lines[@]}"; do
+  #   io_message_unsafe "--$line" "$moduleTracePrefix" "${DarkGray}"
+  # done
   for line in "${lines[@]}"; do
-    if false; then
-      moduleAlias='' io_trace_unsafe "-- $line" ${DarkGray}
-      if [[ $breakLoop != true ]]; then
-        _branch_checkout_selector
-        [[ $skipLine == true ]] && continue
-        io_message_unsafe "${indent}$line" "$moduleTracePrefix" "$color"
-      fi
-    else
-      _branch_checkout_selector
-      [[ $skipLine == true ]] && continue
-      io_message_unsafe "${indent}$line" "$moduleTracePrefix" "$color"
-      [[ $breakLoop == true ]] && break
-    fi
+    _branch_checkout_selector
+    [[ $skipCurrentLine == true ]] && continue
+    io_message_unsafe "${indent}$line" "$moduleTracePrefix" "$color"
+    [[ $skipNextLines == true ]] && break
   done
   io_lock_exit
   # io_trace "_branch_checkout_core <<"
@@ -452,43 +446,38 @@ _branch_checkout_core()
 _branch_checkout_selector()
 {
   # io_trace_unsafe "_branch_checkout_selector 1 -- $(print_vars ioType ioRef alias line)"
-  breakLoop=''; skipLine=''; indent=''; alias=''
+  skipNextLines=''; skipCurrentLine=''; skipAllLines=''; indent=''; alias=''
   # [[ -z $line ]] && continue
   if [[ $line =~ ^Switched ]]; then
     line="Switched to $ioType ${VC}$ioRef"
     color=${Green}
     alias=$moduleAlias
-    breakLoop=true
+    skipNextLines=true
   elif [[ $line =~ ^(Note:\ checking\ out|Previous\ HEAD) ]]; then
     line="Switched to $ioType ${VC}$ioRef"
     color=${Green}
     alias=$moduleAlias
-    breakLoop=true
+    skipNextLines=true
   elif [[ $line =~ ^Already ]]; then
     line="Already on ${VC}$ioRef"
     color=${LightBlue}
     alias=$moduleAlias
-    breakLoop=true
+    skipNextLines=true
   elif [[ $line =~ ^HEAD\ is\ now\ at\ ([0-9a-f]+) && $isCurrent -eq 0 ]]; then
     line="Already at ${VC}$ioRef"
     color=${LightBlue}
     alias=$moduleAlias
-    breakLoop=true
-  elif [[ $line =~ ^Your\ branch\ is\ up ]]; then
-    skipLine=true
-    return
-  elif [[ $line =~ ^Aborting ]]; then
-    skipLine=true
-    return
+    skipNextLines=true
   elif [[ $line =~ ^([wW]arning:)(.*) ]]; then
     line="${Brown}${BASH_REMATCH[1]}${DarkGray}${BASH_REMATCH[2]}"
     color=${DarkGray}
   elif [[ $line =~ ^(error|fatal)(:[[:blank:]]*)(.*) ]]; then
     line="${Red}${BASH_REMATCH[1]}${BASH_REMATCH[2]}${BASH_REMATCH[3],}"
     color=${Cyan}
-  else
-    color=${color:-${DarkGray}}
-    indent='  '
+  elif [[ -z $color ]]; then
+    skipCurrentLine=true
+    # color=${DarkGray}
+    # indent='  '
   fi
   if [[ -n $alias ]]; then
     line="${color}$line ${color}($alias${color})"
