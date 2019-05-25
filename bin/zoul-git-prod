@@ -283,8 +283,10 @@ prod_checkout()
   if [[ $vtagStatus == 'vtag' ]]; then
     if [[ $vnext == true ]]; then
       branch_checkout "$prodBranch" "$forceCheckout"
-    else
+    elif [[ -n $prodVTag ]]; then
       branch_checkout "$prodVTag" "$forceCheckout"
+    else
+      dev_checkout "$forceCheckout" "$devBranch"
     fi
   else
     dev_checkout "$forceCheckout" "$devBranch"
