@@ -27,8 +27,6 @@ wip_parse()
   wip_parse_wip "${args[@]}"
   cmd_check_args "${args[@]:1}"
 
-  [[ $wipOnProd == true ]] && wipPrefix=${wipPrefix:-hotfix} || wipPrefix=${wipPrefix:-wip}
-  wipSuffix=${wipSuffix:-work}
   # io_trace "wip_parse -- $(print_vars recursive wipPrefix wipSuffix subcommand wipModulePaths[@])"
 }
 wip_parse_wip()
@@ -38,6 +36,13 @@ wip_parse_wip()
   wipPrefix=${BASH_REMATCH[1]%:}
   wipSuffix=${BASH_REMATCH[2]}
 }
+wip_is_specified() { [[ -n $wipSuffix || -n $wipPrefix ]]; }
+wip_set_default()
+{
+  [[ $wipOnProd == true ]] && wipPrefix=${wipPrefix:-hotfix} || wipPrefix=${wipPrefix:-wip}
+  wipSuffix=${wipSuffix:-work}
+}
+
 wip_run()
 {
   # parse command line
@@ -47,10 +52,18 @@ wip_run()
         
   wip_parse "$@" || return $?
 
+  local wipLabel
+  if wip_is_specified; then
+    wip_set_default
+    wipLabel="$wipPrefix:$wipSuffix"
+  else
+    wipLabel='WIP'
+  fi
+
   case $subcommand in
-    start)   startupMessage="Starting ${Brown}$wipPrefix:$wipSuffix${White}, please wait...";;
-    enter)   startupMessage="Entering ${Brown}$wipPrefix:$wipSuffix${White}, please wait...";;
-    share)   startupMessage="Sharing ${Brown}current WIP${White}, please wait...";;
+    start)   startupMessage="Starting ${Brown}$wipLabel${White}, please wait...";;
+    enter)   startupMessage="Entering ${Brown}$wipLabel${White}, please wait...";;
+    share)   startupMessage="Sharing ${Brown}$wipLabel${White}, please wait...";;
     release) startupMessage="Releasing WIP, please wait...";;
     finish)  startupMessage="Finishing WIP, please wait...";;
   esac
@@ -66,6 +79,7 @@ wip_command()
   case $subcommand in
     start|enter) cmd_register_module_paths false "$bundleRoot";;
     share)       cmd_register_module_paths true  "$bundleRoot";;
+    finish)      cmd_set_recursive_if_registered "$bundleRoot";;
   esac
 
   cmd_visit_modules
@@ -77,8 +91,13 @@ wip_command()
 
 wip_start_epilog()
 {
+  if ! wip_is_specified; then
+    wip_set_wip "$bundleHead" || wip_set_default
+  fi
+
   local devBranch=$(wip_to_ref "$moduleDevBranch")
   local wipBranch=$(ref_to_wip "$devBranch" "$wipSuffix" "$wipPrefix")
+  # io_trace "wip_start -- $(print_vars wipBranch devBranch moduleHead)"
   if [[ $moduleHead != $wipBranch ]]; then
     if [[ $wipOnProd == true && -n $prodBranchPath ]]; then
       git branch "$wipBranch" "$prodBranchPath" &>/dev/null
@@ -96,6 +115,10 @@ wip_start_epilog()
 
 wip_enter_epilog()
 {
+  if ! wip_is_specified; then
+    wip_set_wip "$bundleHead" || wip_set_default
+  fi
+
   local devBranch=$(wip_to_ref "$moduleDevBranch")
   local wipBranch=$(ref_to_wip "$devBranch" "$wipSuffix" "$wipPrefix")
   # checkout wip branch if it exists
@@ -110,7 +133,7 @@ wip_enter_epilog()
 }
 wip_share_epilog()
 {
-  _wip_check_wip_mode || return 0
+  _wip_enter_wip_mode || return 0
 
   branch_ensure_remote "$moduleDevBranch"
   branch_show_status
@@ -122,7 +145,7 @@ wip_share_epilog()
 
 wip_release_epilog()
 {
-  _wip_check_wip_mode || return 0
+  _wip_enter_wip_mode || return 0
 
   local devBranch=$(wip_to_ref $moduleDevBranch)
   local wipBranch=$moduleHead
@@ -138,14 +161,22 @@ wip_release_epilog()
 _wip_release_merge_dev()
 {
   local wipBranch=$1 mergeTarget=$2
-  branch_merge "$wipBranch" "$mergeTarget"
+  if ref_equals "$wipBranch" "$mergeTarget"; then
+    mio_message "Already released" ${LightBlue}
+  else
+    branch_merge "$wipBranch" "$mergeTarget"
+  fi
 }
 # scope: devBranch
 _wip_release_merge_prod()
 {
   local wipBranch=$1 mergeTarget=$2
-  branch_merge "$wipBranch" "$mergeTarget" \
-  && branch_merge "$wipBranch" "$devBranch"
+  if ref_equals "$wipBranch" "$mergeTarget"; then
+    mio_message "Already released" ${LightBlue}
+  else
+    branch_merge "$wipBranch" "$mergeTarget" \
+    && branch_merge "$wipBranch" "$devBranch"
+  fi
 }
 
 ########
@@ -154,7 +185,7 @@ _wip_release_merge_prod()
 
 wip_finish_epilog()
 {
-  _wip_check_wip_mode || return 0
+  _wip_enter_wip_mode || return 0
 
   local devBranch=$(wip_to_ref $moduleDevBranch)
   local wipBranch=$moduleHead
@@ -168,8 +199,9 @@ wip_finish_epilog()
 }
 # scope: devBranch
 _wip_finish_merge_dev()
-{
+{ 
   local wipBranch=$1 mergeTarget=$2
+  # io_trace "_wip_finish_merge_dev -- $(print_vars wipBranch mergeTarget)"
   branch_merge "$wipBranch" "$mergeTarget" \
   && dev_checkout true "$devBranch" \
   && branch_delete "$wipBranch"
@@ -178,6 +210,7 @@ _wip_finish_merge_dev()
 _wip_finish_merge_prod()
 {
   local wipBranch=$1 mergeTarget=$2
+  # io_trace "_wip_finish_merge_prod -- $(print_vars wipBranch mergeTarget)"
   branch_merge "$wipBranch" "$mergeTarget" \
   && branch_merge "$wipBranch" "$devBranch" \
   && branch_checkout "$prodBranch" true \
@@ -188,12 +221,6 @@ _wip_finish_merge_prod()
 # HELPERS
 #########
 
-_wip_check_wip_mode()
-{
-  module_in_wip_mode && return 0
-  mio_warning "Use ${VC}git wip enter${Brown} to switch to WIP mode"
-  return 1
-}
 # scope: wipBranch devBranch
 # in:
 #   $1:devAction  wipBranch mergeTarget
@@ -216,8 +243,28 @@ _wip_merge()
     mergeTarget=$devBranch
     action=$devAction
   fi
-  # io_trace "$action $wipBranch $mergeTarget"
+  # io_trace "_wip_merge -- $action $wipBranch $mergeTarget"
   $action "$wipBranch" "$mergeTarget"
+}
+_wip_enter_wip_mode()
+{
+  module_in_wip_mode && return 0
+
+  if module_is_bundle; then
+    mio_warning "Use ${VC}git wip start${Brown} to switch to WIP mode"
+    return 1
+  else
+    # infer module wip branch from bundle
+    local wipBranch
+    wipBranch=$(wip_to_wip $bundleHead)
+    if [ $? -ne 0 ]; then
+      # bundle not in wip mode
+      mio_warning "Use ${VC}git wip start${Brown} to switch to WIP mode"
+      return 1
+    fi
+    local branch lbranch bref
+    branch_set_realize "$wipBranch" && branch_checkout "$lbranch"
+  fi
 }
 
 wip_run  "$@"

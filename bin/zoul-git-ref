@@ -318,3 +318,64 @@ wip_to_ref()
     echo "$(ref_join ${atoms[@]})"
   fi
 }
+# usage:
+#   wip_to_wip 'wip/sal/work' 'sku/dev' -> wip/sku/work
+# in:
+#   $1:wipTemplate  -- wip branch template
+#   $2:devBranch    -- dev branch to convert
+# return code:
+#   0 -- success
+#   1 -- wip template is not a wip branch
+# out:
+#   wipBranch -- dev branch converted to wip branch
+wip_to_wip()
+{
+  local wipTemplate=$1 devBranch=${2:-$1}
+  local devTemplate=$(wip_to_ref "$wipTemplate")
+  wipBranch=''
+  [[ -z $wipTemplate || $wipTemplate == $devTemplate ]] && return 1  # not a wip branch
+  # 
+  if [[ $devBranch == $devTemplate ]]; then
+    # io_trace "wip_to_wip 1 -- $(print_vars wipTemplate devBranch devTemplate)"
+    echo $wipTemplate
+  elif [[ $devBranch == $(wip_to_ref "$devBranch") ]]; then
+    local IFS='/' atoms
+    atoms=( $wipTemplate ); IFS=$'\n'
+    # io_trace "wip_to_wip 2 -- $(print_vars wipTemplate devBranch devTemplate atoms[@])"
+    if [ ${#atoms[@]} -eq 1 ]; then
+      echo $wipTemplate
+    else
+      ref_to_wip "$devBranch" "${atoms[-1]}" "${atoms[0]}"
+    fi
+  else
+    # io_trace "wip_to_wip 3 -- $(print_vars wipTemplate devBranch devTemplate)"
+    echo "$devBranch"
+  fi
+}
+# usage:
+#   local wipPrefix wipSuffix
+#   wip_set_wip 'wip/sal/work' -> wipPrefix=wip, wipSuffix=work
+# in:
+#   $1:wipBranch
+# return code:
+#   0 -- success
+#   1 -- wipBranch is not a wip branch
+# out:
+#   wipPrefix
+#   wipSuffix
+wip_set_wip()
+{
+  local wipBranch=$1
+  [[ -z $wipBranch || $wipBranch == $(wip_to_ref "$wipBranch") ]] && return 1  # not a wip branch
+
+  local IFS='/' atoms
+  atoms=( $wipBranch ); IFS=$'\n'
+  # io_trace "wip_set_wip -- $(print_vars wipBranch atoms[@])"
+  if [ ${#atoms[@]} -eq 1 ]; then
+    wipPrefix=${atoms[0]}
+    wipSuffix=''
+  else
+    wipPrefix=${atoms[0]}
+    wipSuffix=${atoms[-1]}
+  fi
+}

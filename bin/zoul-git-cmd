@@ -56,6 +56,13 @@ cmd_register_module_paths()
   done
   # declare -p cmdRecursiveMap
 }
+cmd_set_recursive_if_registered()
+{
+  local path=$1 recursive=${2:-true}
+  if [[ -n ${cmdRecursiveMap[$path]} ]]; then
+    cmdRecursiveMap[$path]=$recursive
+  fi
+}
 
 ############################
 # REGISTERED MODULES VISITOR
