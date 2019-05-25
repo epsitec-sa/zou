@@ -294,20 +294,12 @@ branch_set_realize()
     return 1
   else
     local rbranch
-    branch_set_upstream "$ref"
-    if [ $? -ne 0 ]; then
-      branch=$ref
-      lbranch=$branch
-      bref="refs/heads/$branch"
-      # io_trace "branch_set_realize 3.2 -- $(print_vars ref branch lbranch bref)"
-      return 2
-    else
-      branch=$rbranch
-      lbranch=${branch#*/}
-      bref="refs/remotes/$branch"
-      # io_trace "branch_set_realize 3.2 -- $(print_vars ref branch lbranch bref)"
-      return 1
-    fi
+    branch_set_upstream "$ref" || return 2
+    branch=$rbranch
+    lbranch=${branch#*/}
+    bref="refs/remotes/$branch"
+    # io_trace "branch_set_realize 3.2 -- $(print_vars ref branch lbranch bref)"
+    return 1
   fi
 }
 branch_without_remote_prefix() { branch_is_remote $1 && echo ${1#*/} || echo $1; }
