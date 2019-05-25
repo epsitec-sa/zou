@@ -175,7 +175,7 @@ _prod_set_prod_info()
 {
   vtag_set_describe "$prodBranchPath" "$prodBranch" 'auto' # -> vbranch vtag delta alias
   # allow duplicate tags in bundle
-  htag=$(vtag_highest $vbranch true)
+  htag=$(vtag_highest "$vbranch" true)
   # io_trace "_prod_set_prod_info 1 -- $(print_vars prodBranch vbranch vtag htag delta alias)"
   if [[ $htag != $vtag ]]; then
     vtag=$htag
@@ -186,7 +186,7 @@ _prod_set_prod_info()
   # [ $delta -ne 0 ] && alias="$lbranch $alias" # (master > v2.0.0 (8))
   # disallow duplicate tags in bundle
   if ! module_is_bundle; then
-    htag=$(vtag_highest $vbranch false)
+    htag=$(vtag_highest "$vbranch" false)
   fi
   # vnode or vtag
   vtag_is_vnode $vtag && status='vnode' || status='vtag'
@@ -262,7 +262,8 @@ sku_checkout()
   # io_trace "sku_checkout ${*@Q}"
   local sku=$1 checkoutType=${2:-vtag} forceCheckout=$3 branch lbranch ec=0
   branch_set_best_match_dev "$sku"  # -> branch lbranch
-  _prod_init_scope $branch $lbranch
+  _prod_init_scope "$branch" "$lbranch"
+  # io_trace "sku_checkout -- $(print_vars branch lbranch)"
 
   local prodHeadChangedDisabled=true
 
