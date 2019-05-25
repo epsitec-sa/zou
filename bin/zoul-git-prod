@@ -90,10 +90,6 @@ _prod_init_scope()
       _prod_set_no_prod_info "$vtag"
     else
       _prod_set_prod_info
-      if [[ $vbranch != $prodBranch ]]; then
-        mio_error "Branches ${VC}$prodBranch${LightPurple} and ${VC}$vbranch${LightPurple} are intermixed" ${LightPurple}
-        return 1
-      fi
     fi
     _prod_init_prod
   else
@@ -174,12 +170,16 @@ _prod_init_prod()
 _prod_set_prod_info()
 {
   vtag_set_describe "$prodBranchPath" "$prodBranch" 'auto' # -> vbranch vtag delta alias
+  if [[ $vbranch != $prodBranch ]]; then
+    mio_error "Branches ${VC}$prodBranch${LightPurple} and ${VC}$vbranch${LightPurple} are both descendants of (${VC}$vtag)" ${LightPurple}
+    return 1
+  fi
   # allow duplicate tags in bundle
   htag=$(vtag_highest "$vbranch" true)
-  # io_trace "_prod_set_prod_info 1 -- $(print_vars prodBranch vbranch vtag htag delta alias)"
+  # io_trace "_prod_set_prod_info 1 -- $(print_vars prodBranch prodBranchPath vbranch vtag htag delta alias)"
   if [[ $htag != $vtag ]]; then
     vtag=$htag
-    delta=$(( $(git rev-list --count $vtag..$vbranch) ))
+    delta=$(( $(git rev-list --count $vtag..$prodBranchPath) ))
     vtag_format_alias "$vtag" "$delta"
     # io_trace "_prod_set_prod_info 2 -- $(print_vars prodBranch vbranch vtag htag delta alias)"
   fi
