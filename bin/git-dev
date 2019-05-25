@@ -79,15 +79,16 @@ dev_enter_epilog()
 # RELEASE
 #########
 
-dev_release_prolog()
-{
-  dev_checkout false "$moduleDevBranch"
-  prod_ensure_vbranch "$defaultVersion" "$incrementKind"
-}
 dev_release_epilog()
 {
-  cosm_commit_unstaged_clean_submodules
-  branch_merge "$moduleDevBranch" "$prodBranchPath" '-Xtheirs'
+  if cosm_has_submodules_to_commit || ! ref_equals "$moduleDevBranch" "$prodBranchPath"; then
+    dev_checkout false "$moduleDevBranch"
+    prod_ensure_vbranch "$defaultVersion" "$incrementKind"
+    cosm_commit_unstaged_clean_submodules
+    branch_merge "$moduleDevBranch" "$prodBranchPath" '-Xtheirs'
+  else
+    mio_message "Already released" ${LightBlue}
+  fi
 }
 
 dev_run  "$@"

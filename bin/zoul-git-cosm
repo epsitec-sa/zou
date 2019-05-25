@@ -89,6 +89,10 @@ _cosm_discard_submodules_excluded_from_sku()
   fi
   return $ec
 }
+cosm_has_submodules_to_commit()
+{
+  [[ -n $(array_remove_array 'unstagedCleanSubmodules[@]' 'configSkuExclude[@]') ]]
+}
 cosm_commit_unstaged_clean_submodules()
 {
   [ ${#moduleSubmodulePaths[@]} -eq 0 ] && return 0
