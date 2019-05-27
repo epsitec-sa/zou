@@ -81,6 +81,10 @@ dev_enter_epilog()
 
 dev_release_epilog()
 {
+  # release only modules in dev mode
+  module_in_dev_mode || return 0
+  module_in_wip_mode && return 0
+
   if cosm_has_submodules_to_commit || ! ref_equals "$moduleDevBranchPath" "$prodBranchPath"; then
     dev_checkout false "$moduleDevBranch"
     prod_ensure_vbranch "$defaultVersion" "$incrementKind"
