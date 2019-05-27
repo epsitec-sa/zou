@@ -175,7 +175,7 @@ _wip_release_merge_prod()
     mio_message "Already released" ${LightBlue}
   else
     branch_merge "$wipBranch" "$mergeTarget" \
-    && branch_merge "$wipBranch" "$devBranch"
+    && branch_merge "$wipBranch" "$devBranchPath"
   fi
 }
 
@@ -212,7 +212,7 @@ _wip_finish_merge_prod()
   local wipBranch=$1 mergeTarget=$2
   # io_trace "_wip_finish_merge_prod -- $(print_vars wipBranch mergeTarget)"
   branch_merge "$wipBranch" "$mergeTarget" \
-  && branch_merge "$wipBranch" "$devBranch" \
+  && branch_merge "$wipBranch" "$devBranchPath" \
   && branch_checkout "$prodBranch" true \
   && branch_delete "$wipBranch"
 }
@@ -227,23 +227,19 @@ _wip_finish_merge_prod()
 #   $2:prodAction wipBranch mergeTarget
 _wip_merge()
 {
-  local devAction=$1 prodAction=$2 mergeTarget action
-  if branch_is_merged "$wipBranch" "$devBranch"; then
-    if [[ $wipOnProd == true && -n $prodBranchPath ]]; then
-      mergeTarget=$prodBranchPath
-      action=$prodAction
-    else
-      mergeTarget=$devBranch
-      action=$devAction
-    fi
-  elif [[ -n $prodBranchPath ]]; then
+  local devAction=$1 prodAction=$2 mergeTarget action branch lbranch bref devBranchPath
+  branch_set_realize "$devBranch"
+  devBranchPath=$branch
+
+  if [[ $wipOnProd == true && -n $prodBranchPath ]]; then
     mergeTarget=$prodBranchPath
     action=$prodAction
+    # io_trace "_wip_merge PROD -- $(print_vars wipBranch devBranch devBranchPath prodBranchPath mergeTarget action)"
   else
-    mergeTarget=$devBranch
+    mergeTarget=$devBranchPath
     action=$devAction
+    # io_trace "_wip_merge DEV -- $(print_vars wipBranch devBranch devBranchPath prodBranchPath mergeTarget action)"
   fi
-  # io_trace "_wip_merge -- $action $wipBranch $mergeTarget"
   $action "$wipBranch" "$mergeTarget"
 }
 _wip_enter_wip_mode()
