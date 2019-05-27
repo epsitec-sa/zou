@@ -321,6 +321,7 @@ prod_ensure_vbranch()
   _prod_check_dev_htag_ancestry
   if [[ -n $prodBranch ]]; then
     local incrementKind=$2
+    # io_trace "prod_ensure_vbranch 1 -- $(print_vars version incrementKind prodBranch vtag2dev)"
     if [ ${vtag2dev:-0} -gt 0 ] && [[ -n $incrementKind && $prodBranch =~ ^(.*/)?([0-9]+)\.([0-9]+)(.*)$ ]]; then
       local prefix=${BASH_REMATCH[1]} major=${BASH_REMATCH[2]} minor=${BASH_REMATCH[3]} suffix=${BASH_REMATCH[4]}
       case $incrementKind in
@@ -335,6 +336,7 @@ prod_ensure_vbranch()
     local version=$1 branch lbranch bref
     [[ $incrementKind == 'major' ]] && version=${version:-1.0} || version=${version:-0.1}
     branch_set_realize $(wip_to_ref $moduleDevBranch)
+    # io_trace "prod_ensure_vbranch 2 -- $(print_vars version incrementKind prodBranch vtag2dev)"
 
     [[ $lbranch =~ (.*/)?(.+)$ ]] || return 1
     vbranch_create "${BASH_REMATCH[1]}$version" "$branch" \
@@ -344,7 +346,8 @@ prod_ensure_vbranch()
 _prod_check_dev_htag_ancestry()
 {
   # verify that dev branch and htag are on same branch
-  [[ -z $prodHTag ]] && return 0
+  [[ -z $prodHTag ]] || ! tag_exists "$prodHTag" && return 0
+
   branch_is_merged "$moduleDevBranchPath" "$prodHTag" && return 0
   branch_is_merged "$prodHTag" "$moduleDevBranchPath" && return 0
   
