@@ -7,48 +7,58 @@
 # 4. remove leading zeros to prerelease version (v1.2.3-rc01 -> v1.2.3-rc1 )
 # 5. remove other folder's redondant tags
 
-[[ -z $ZOUL_GIT_STOW ]]          && . zoul-git-stow
-[[ -z $ZOUL_GIT_REPO ]]          && . zoul-git-repo
-[[ -z $ZOUL_GIT_MODULE ]]        && . zoul-git-module
-[[ -z $ZOUL_GIT_TAG ]]           && . zoul-git-tag
+[[ -z $ZOUL_GIT_CMD ]]    && . zoul-git-cmd
+[[ -z $ZOUL_GIT_STOW ]]   && . zoul-git-stow
+[[ -z $ZOUL_GIT_REPO ]]   && . zoul-git-repo
+[[ -z $ZOUL_GIT_MODULE ]] && . zoul-git-module
+[[ -z $ZOUL_GIT_TAG ]]    && . zoul-git-tag
 
 stow_parse()
 {
+  local args=()
   while [[ "$#" > 0 ]]; do case "$1" in
     -h|--help) zou-help $0; exit 0;;
+    -j*)            jobsCount=${1#-j};;
     -r|--recursive) recursive=true;;
+    -a|--all)       noSkuFilter=true;;
     -p|--push)      stowPushTags=true;;
-    -a|--all)       archive=true; stowBranches=true; stowTags=true;;
-    -*) forOpts+=($1);;
+    -f|--full)      stowArchive=true; stowBranches=true; stowTags=true;;
+    --)             shift; break;;
+    -*) io_error "unknown option '$1'"; return 1;;
+    *)  args+=( "$1" );;
   esac; shift; done
+
+  cmd_check_args "${args[@]}"
+  
+  stowModulePaths=( "$@" )
 }
 stow_run()
 {
-  local stowPushTags recursive forOpts=() \
-        archive stowBranches stowTags
+  local jobsCount recursive noSkuFilter command='stow' subcommand='do' \
+        cmdScopes=( config_scope ) stowModulePaths=() \
+        stowPushTags stowArchive stowBranches stowTags
 
   stow_parse "$@" || return $?
 
   startupMessage="Stowing, please wait..."
 
-  module_run stow_main
+  module_run "${cmdScopes[@]}" stow_command
 }
-stow_main()
+stow_command()
 {
-  [ ${#moduleSubmodulePaths[@]} -eq 0 ] && recursive=''
+  # io_trace "stow_command -- $(print_vars stowModulePaths[@])"
 
-  if [[ $recursive = true ]]; then
-    . git-for "${forOpts[@]}" -- 'stow_node'
-  else
-    module_run stow_node
-  fi
+  [ ${#stowModulePaths[@]} -eq 0 ] && stowModulePaths+=( './' )
+  cmd_register_module_paths "$recursive" "${stowModulePaths[@]}"
+
+  cmd_visit_modules
 }
-stow_node()
+stow_do_prolog()
 {
   local noTagPush=true stowArchiveDelay
 
-  if [[ $archive == true ]]; then
-    mio_message "Computing archive delay..." ${Gray}
+  if [[ $stowArchive == true ]]; then
+    mio_message "Computing stowArchive delay..." ${Gray}
     stow_set_archive_delay $(branch_list_all_flatten)
     mio_info "Archive delay = ${VC}$stowArchiveDelay${Cyan} days"
   fi

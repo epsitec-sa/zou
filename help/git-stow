@@ -3,17 +3,20 @@ usage: git stow [<options>]
 Stow branches and tags
 
     -h|--help               display help
-    -r|--recursive          traverse submodules recursively
+    -j<n>                   number of submodules synchronized in parallel (default to 32)
+    -a|--all                visit all submodules (ignore SKU filter)
+    -r|--recursive)         visit specified modules recursively
+
     -p|--push               mirror tags when done
                             WARNING: remote tags are deleted and replaced with local tags
-    -a|--all                execute all stow steps (default to step 5)
+    -f|--full               execute all stow steps (default to step 5)
 
 1. Remove redondant branches
 2. Classify branches
-   - archive old branches (> 1 year)
+   - archive old branches (> 2 years)
 3. Remove redondant tags
 4. Classify tags
-   - archive old tags (> 1 year)
+   - archive old tags (> 2 years)
    - remove vtags prerelease leading zeros
 5. Promote vtags
    - move vtags in associated vbranch folder
@@ -21,4 +24,4 @@ Stow branches and tags
 
 example:
     git stow
-    git stow --all --push
+    git stow --full --push
