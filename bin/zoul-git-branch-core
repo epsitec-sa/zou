@@ -580,15 +580,16 @@ branch_move()
 branch_delete()
 {
   # io_trace "branch_delete ${*@Q}"
-  local branch=$1 rbranch remote ec=0
-  [[ -z "$branch" ]] && { mio_error "branch_delete: missing argument[s]"; return 1; }
-  [[ $branch == 'master' ]] && { mio_error "branch_delete: branch 'master' cannot be deleted"; return 1; }
-  branch=$(branch_realize "$branch"); ec=$?
-  ref_is_current "$branch" &&  { mio_error "branch_delete: current branch '$branch' cannot be deleted"; return 1; }
+  local ref=$1 branch lbranch bref rbranch remote ec=0
+  [[ -z "$ref" ]] && { mio_error "branch_delete: missing argument[s]"; return 1; }
+  [[ $ref == 'master' ]] && { mio_error "branch_delete: branch 'master' cannot be deleted"; return 1; }
+  branch_set_realize "$ref"; ec=$?
+  ref_is_current "$lbranch" &&  { mio_error "branch_delete: current branch '$lbranch' cannot be deleted"; return 1; }
+  # io_trace "branch_delete 1 -- $(print_vars branch lbranch bref)"
   if [ $ec -eq 0 ]; then
     # local branch exists
+    rbranch=$(branch_upstream "$branch")
     if [ $? -eq 0 ]; then
-      rbranch=$(branch_upstream "$branch")
       remote=${rbranch%%/*}
       # io_trace "branch_delete (DELETE BOTH) -- $(print_vars branch branch2 rbranch remote)"
       # delete remote branch
