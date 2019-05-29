@@ -88,10 +88,7 @@ tag_move_to_commit()
 tag_new()
 {
   local tag=$1 commit=${2:-HEAD} message=$3
-  if tag_exists "$tag"; then
-    mio_error "Tag '$tag' already exists"
-    return 1
-  elif git tag -a -m "'$message'" "$tag" "$commit"; then
+  if ! tag_exists "$tag" && git tag -a -m "'$message'" "$tag" "$commit"; then
     mio_success "Created tag ${VC}$tag${Green} on ${VC}$commit${Green}"
   fi
   tag_push_not_followed $tag $commit
