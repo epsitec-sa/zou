@@ -96,10 +96,12 @@ config_sku_list_included()
 }
 config_sku_status()
 {
+  io_lock_enter
   for path in $(config_sku_list_included | sort); do
-    mio_success "  $path"
+    mio_success_unsafe "  $path"
   done
   for path in $(config_sku_list_excluded | sort); do
-    mio_message "x $path" ${Purple}
+    mio_message_unsafe "x $path" ${Purple}
   done
+  io_lock_exit
 }
