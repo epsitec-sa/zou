@@ -21,7 +21,7 @@ branchDeletedEvent+=( _prod_on_branch_deleted )
 prod_scope()
 {
   # setup prod context
-  local prodScopeInitialized=true prodHeadChangedDisabled \
+  local prodScopeInitialized=true \
         prodBranch prodBranchPath \
         prodVTag prodHTag prodAlias devAlias moduleAlias \
         vtagStatus vtag2dev vtag2prod \
@@ -263,15 +263,12 @@ sku_checkout()
   _prod_init_scope "$branch" "$lbranch"
   # io_trace "sku_checkout -- $(print_vars branch lbranch)"
 
-  local prodHeadChangedDisabled=true
-
   case $checkoutType in
     vtag)   prod_checkout false "$forceCheckout" "$lbranch" || ec=$?;;
     vnext)  prod_checkout true  "$forceCheckout" "$lbranch" || ec=$?;;
     dev)    dev_checkout        "$forceCheckout" "$lbranch" || ec=$?;;
   esac
-  
-  prodHeadChangedDisabled=''
+
   return $ec
 }
 prod_checkout()
@@ -525,7 +522,7 @@ _prod_increment_release_version_core()
 
 _prod_on_head_changed()
 {
-  [[ $prodHeadChangedDisabled == true ]] && _prod_reset_alias || prod_reset_scope
+   prod_reset_scope
 }
 _prod_on_head_name_changed()
 {
