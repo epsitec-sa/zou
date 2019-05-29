@@ -1,14 +1,17 @@
 usage: git sandbox [<options>]
 
-Create and manage a git sandbox.
+Create and manage git sandboxes in folder 'zou.test' (sibling of zou bundle)
 
     -h|--help               display help
-    --reset                 reset repos
-    --sm                    create submodules
-    --skus                  create SKUs
-    --work                  create some work in all modules
-    --vr                    create version resources
+    --reset                 delete all repos and create 'sat1'
+    --clone                 clone 'sat1' to 'sat2'
+    --sm                    create 'sm1', sm1/sm3' and 'sm2' submodules in 'sat1'
+    --skus                  create 'sm1' and 'sm2' SKUs in 'sat1'
+    --work                  create some work in all modules of 'sat1'
+    --vr                    create version resources in 'sat1'
     
 example:
+    git sandbox                         # create a sanbox in 'zou.test/sat1'
+    git sandbox --clone                 # create a sanbox in 'zou.test/sat1'
     git sandbox --reset --sm --skus     # create a sandbox with submodules and SKUs
     git sandbox --vr --work             # commit version resources and some work

@@ -4,7 +4,7 @@
 #   [[ -z $ZOUL_GIT_SANDBOX ]] && sandbox_create --reset
 ZOUL_GIT_SANDBOX=true
 
-[[ -z $ZOUL_CORE ]]           && . zoul-core
+[[ -z $ZOUL_CORE ]]              && . zoul-core
 [[ -z $ZOUL_GIT_SANDBOX_DATA ]]  && . zoul-git-sandbox-data
 [[ -z $ZOUL_GIT_SANDBOX_UTILS ]] && . zoul-git-sandbox-utils
 
@@ -25,42 +25,18 @@ sandbox_create()
 
   # HUBs
   ( _sandbox_create_local_and_remote_repo "$sat1Dir" "$satHubDir" ) &
-
-  if [[ $sandboxSubmodules == true ]]; then
-    for id in sm1 sm2 sm3; do
-      ( _sandbox_create_sm_repo "$id" ) &
-    done
-    wait
-
-    # populate submodules
-
-    # SM1.SM3
-    cd "$sm1Dir"
-    git submodule add "$sm3HubDir" 'sm3' &>/dev/null
-    mio_info "Added submodule ${VC}sm3${Cyan} to ${VC}sm1"
-    git commit -m'SM1: add submodule' &>/dev/null
-    git submodule update --init --recursive &>/dev/null
-    git push -u origin master &>/dev/null
-
-    # SAT1.SM1, SAT1.SM2
-    cd "$sat1Dir"
-    git submodule add "$sm1HubDir" 'sm1' &>/dev/null
-    mio_info "Added submodule ${VC}sm1${Cyan} to ${VC}sat1"
-    git submodule add "$sm2HubDir" 'sm2' &>/dev/null
-    mio_info "Added submodule ${VC}sm2${Cyan} to ${VC}sat1"
-    git commit -m'SAT1: add submodules' &>/dev/null
-
-    git submodule update --init --recursive &>/dev/null
-    git push -u origin master &>/dev/null
-  fi
+  [[ $sandboxSubmodules == true ]] && sandbox_create_submodules
   wait
 
+  sandbox_clone
+  mio_warning "$(printf '%.s-' {1..42}) created repos at ${VC}$zouTestRoot"
+}
+sandbox_clone()
+{
   # SAT2 <- HUB
   mio_info "Cloning ${VC}sat2"
   cd "$zouTestRoot"
   git clone --recurse-submodules -j16 "$satHubDir" 'sat2' &>/dev/null
-
-  mio_warning "$(printf '%.s-' {1..42}) created repos at ${VC}$zouTestRoot"
 }
 sandbox_delete()
 {
@@ -72,7 +48,36 @@ sandbox_delete()
   done
   wait
 }
+sandbox_create_submodules()
+{
+  [ -d "$sat1Dir/sm1" ] && return 0
 
+  for id in sm1 sm2 sm3; do
+    ( _sandbox_create_sm_repo "$id" ) &
+  done
+  wait
+
+  # populate submodules
+
+  # SM1.SM3
+  cd "$sm1Dir"
+  git submodule add "$sm3HubDir" 'sm3' &>/dev/null
+  mio_info "Added submodule ${VC}sm3${Cyan} to ${VC}sm1"
+  git commit -m'SM1: add submodule' &>/dev/null
+  git submodule update --init --recursive &>/dev/null
+  git push -u origin master &>/dev/null
+
+  # SAT1.SM1, SAT1.SM2
+  cd "$sat1Dir"
+  git submodule add "$sm1HubDir" 'sm1' &>/dev/null
+  mio_info "Added submodule ${VC}sm1${Cyan} to ${VC}sat1"
+  git submodule add "$sm2HubDir" 'sm2' &>/dev/null
+  mio_info "Added submodule ${VC}sm2${Cyan} to ${VC}sat1"
+  git commit -m'SAT1: add submodules' &>/dev/null
+
+  git submodule update --init --recursive &>/dev/null
+  git push -u origin master &>/dev/null
+}
 # example:
 #   sandbox_visit_commit_work "$sat1Dir" "$sat1Dir/sm1" "$sat1Dir/sm2"
 sandbox_commit_work()
