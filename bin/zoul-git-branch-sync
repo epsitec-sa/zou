@@ -51,7 +51,16 @@ _branch_oreset_visitor()
   local r=$1 l=$2 i=$3 current=$4
   # io_trace "_branch_reset_visitor 1 -- $(print_vars r l i current)"
 
-  [[ -z $r || $(git rev-parse "$l") == $(git rev-parse "$r") ]] && return 0
+  if [[ -z $r ]]; then
+    if [[ $pruneBranches == true ]]; then
+      mio_warning "Pruning branches..."
+      [[ $l == $current ]] && branch_checkout 'master'
+      branch_delete "$l"
+    fi
+    return 0
+  else
+    ref_equals "$l" "$r" && return 0
+  fi
   # pull changes
   [[ $i =~ ^\< ]] && { _branch_sync_merge "$r" "$l" || return 1; }
   # reset to upstream
@@ -128,7 +137,7 @@ branch_sync_all()
 }
 branch_oreset_all()
 {
-  local forceReset=$1; shift 1
+  local forceReset=$1 pruneBranches=$2; shift 2
   
   git fetch --prune --all &>/dev/null
   git fetch --tags --force &>/dev/null
@@ -138,11 +147,11 @@ branch_oreset_all()
     git checkout . &>/dev/null
     repo_list_untracked | xargs --no-run-if-empty rm
   else
-   repo_require_clean_work_tree 'Cannot reset' || return 1
+    repo_require_clean_work_tree 'Cannot reset' || return 1
   fi
 
   # prune tags asynchronously
-  ( repo_prune_tags false false ) &
+  ( repo_prune_tags false true ) &
 
   syncNoPush=true _branch_sync_visit _branch_oreset_visitor false "$@"
 }

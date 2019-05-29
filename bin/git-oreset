@@ -1,5 +1,6 @@
 #!/bin/bash
 
+[[ -z $ZOUL_GIT_CMD ]]         && . zoul-git-cmd
 [[ -z $ZOUL_GIT_MODULE ]]      && . zoul-git-module
 [[ -z $ZOUL_GIT_CONFIG ]]      && . zoul-git-config
 [[ -z $ZOUL_GIT_COSM ]]        && . zoul-git-cosm
@@ -7,41 +8,53 @@
 
 oreset_parse()
 {
+  local args=()
   while [[ "$#" > 0 ]]; do case "$1" in
     -h|--help) zou-help $0; exit 0;;
-    -a|--all)           noSkuFilter=true;;
-    -r|--recursive)     recursive=true;;
-    -f|--force)         forceReset=true;;
-    -j*)                jobsCount=${1#-j};;
+    -j*)                 jobsCount=${1#-j};;
+    -r|--recursive)      recursive=true;;
+    -a|--all)            noSkuFilter=true;;
+    -f|--force)          forceReset=true;;
+    -p|--prune_branches) pruneBranches=true;;
+    --)                  shift; break;;
     -*) io_error "unknown option '$1'"; return 1;;
+    *)  args+=( "$1" );;
   esac; shift; done
+
+  cmd_check_args "${args[@]}"
+  
+  oresetModulePaths=( "$@" )
 }
 oreset_run()
 {
   # parse command line
-  local jobsCount noSkuFilter recursive forceReset
+  local jobsCount recursive noSkuFilter command='oreset' subcommand='do' \
+        cmdScopes=( config_scope cosm_scope ) oresetModulePaths=() \
+        forceReset pruneBranches
+
   oreset_parse "$@" || return $?
   
-  local showSubmoduleMessage=true \
-        oresetScopes=( config_scope cosm_scope )
+  startupMessage="Resetting, please wait..."
 
-  startupMessage="Resetting and pruning tags, please wait..."
+  module_run "${cmdScopes[@]}" oreset_command
+}
+oreset_command()
+{
+  # io_trace "stow_command -- $(print_vars stowModulePaths[@])"
 
-  module_run "${oresetScopes[@]}" oreset_tree
+  [ ${#stowModulePaths[@]} -eq 0 ] && stowModulePaths+=( './' )
+  cmd_register_module_paths "$recursive" "${stowModulePaths[@]}"
+
+  cmd_visit_modules
+  wait
 }
-oreset_tree()
+oreset_do_prolog()
 {
-  oreset_prolog
-  [[ $recursive == true ]] && oreset_submodules
-  cosm_process_unstaged_submodules
+  branch_oreset_all "$forceReset" "$pruneBranches"
 }
-oreset_prolog()
+oreset_do_epilog()
 {
-  branch_oreset_all "$forceReset"
-}
-oreset_submodules()
-{
-  module_visit_submodules_async 'configSkuInclude[@]' "${oresetScopes[@]}" 'oreset_tree'
+  cosm_discard_unstaged_submodules
 }
 
 oreset_run "$@"

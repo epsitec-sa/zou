@@ -1,16 +1,17 @@
 usage: git oreset [<options>]
 
-Reset all local branches to match remote branches and prune tags.
-WARNING: this command cancel unpushed modifications.
+Reset local branches to remote branches, prune tags and branches.
+WARNING: this command delete local changes with -f or -p options.
 
-    -h|--help               display help
     -j<n>                   number of submodules synchronized in parallel (default to 32)
     -a|--all                visit all submodules (ignore SKU filter)
-    -r|--recursive          visit submodules recursively
+    -r|--recursive)         visit specified modules recursively
+
     -f|--force              discard unstaged changes and delete untracked files
+    -p|--prune-branches     prune untracked branches
     
 example:
-    git oreset              # reset clean working dir
-    git oreset -f           # reset dirty working dir
-    git oreset -r           # reset clean working dir and submodules recursively
-    git oreset -r -f        # reset dirty working dir and submodules recursively
+    git oreset              # reset local branches to remote branches
+    git oreset -f           # reset and delete local changes
+    git oreset -f -p        # reset and delete local changes and untracked branches
+    git oreset -r           # reset recursively
