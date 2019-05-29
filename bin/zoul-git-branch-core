@@ -619,9 +619,7 @@ branch_delete()
 branch_create()
 {
   local branch=$1 commit=${2:-HEAD}
-  if ref_exists $branch; then
-    mio_warning "Branch '$branch' already exists"
-  else
+  if ! ref_exists $branch; then
     git branch "$branch" "$commit"
     branch_raise_branch_created_event "$branch"
     mio_success "Created branch ${VC}$branch"
