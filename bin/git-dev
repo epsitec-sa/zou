@@ -82,8 +82,8 @@ dev_enter_epilog()
 dev_release_epilog()
 {
   # release only modules in dev mode
-  module_in_dev_mode || return 0
-  module_in_wip_mode && return 0
+  _dev_check_in_dev_mode || return 0
+
   # a submodule can create a vbranch in the bundle without refreshing the prod scope (run in a subshell)
   # io_trace "dev_release_epilog -- $(print_vars moduleDevBranchPath prodBranchPath)"
   module_is_bundle && _cmd_is_recursive && prod_reset_scope
@@ -95,6 +95,13 @@ dev_release_epilog()
   else
     mio_message "Already released" ${LightBlue}
   fi
+}
+_dev_check_in_dev_mode()
+{
+  module_in_strict_dev_mode && return 0
+  ! module_is_startup && return 0
+  mio_warning "Use ${VC}git dev enter${Brown} to switch to development"
+  return 1
 }
 
 dev_run  "$@"
