@@ -1,30 +1,49 @@
 #!/bin/bash
 
+[[ -z $ZOUL_GIT_CMD ]]    && . zoul-git-cmd
 [[ -z $ZOUL_GIT_REPO ]]   && . zoul-git-repo
-[[ -z $ZOUL_GIT_MODULE ]] && . zoul-git-module
 
 cleanex_parse()
 {
+  local args=()
   while [[ "$#" > 0 ]]; do case "$1" in
     -h|--help) zou-help $0; exit 0;;
-    .)              recursive='';;
+    -j*)            jobsCount=${1#-j};;
+    -r|--recursive) recursive=true;;
+    -a|--all)       noSkuFilter=true;;
     -d|--dsm-only)  dsmOnly=true;;
     -f|--force)     force=true;;
-    -*) forOpts+=($1);;
+    --)             shift; break;;
+    -*) io_error "unknown option '$1'"; return 1;;
+    *)  args+=( "$1" );;
   esac; shift; done
+
+  cmd_check_args "${args[@]}"
+  
+  cleanexModulePaths=( "$@" )
 }
 cleanex_run()
 {
-  local dsmOnly force forOpts=() recursive=true
+  local jobsCount recursive noSkuFilter command='cleanex' subcommand='do' \
+        cmdScopes=( config_scope ) cleanexModulePaths=() \
+        dsmOnly force
+
   cleanex_parse "$@" || return $?
 
-  if [[ $recursive = true ]]; then
-    . git-for "${forOpts[@]}" -- 'cleanex_node'
-  else
-    module_run cleanex_node
-  fi
+  startupMessage="Cleaning, please wait..."
+
+  module_run "${cmdScopes[@]}" cleanex_command
 }
-cleanex_node()
+cleanex_command()
+{
+  # io_trace "stow_command -- $(print_vars stowModulePaths[@])"
+
+  [ ${#cleanexModulePaths[@]} -eq 0 ] && cleanexModulePaths+=( './' )
+  cmd_register_module_paths "$recursive" "${cleanexModulePaths[@]}"
+
+  cmd_visit_modules
+}
+cleanex_do_prolog()
 {
   if [[ $dsmOnly == true ]]; then
     repo_remove_dangling_submodules_async
@@ -44,14 +63,8 @@ cleanex_node()
 
   local line
   mio_info 'Removing ignored files...'
-  ( git clean -xdf -e 'packages' ) | \
-  while read -r line; do
-    mio_message "  $line" ${DarkGray}
-  done
-
+  io_buffered_eval 'git clean -xdf -e packages'
   git checkout . &>/dev/null
-
-  mio_info "Cleaned"
 }
 
 cleanex_run "$@"
