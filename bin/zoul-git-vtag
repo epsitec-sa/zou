@@ -163,7 +163,7 @@ _vtag_describe()
 #   alias   -- condensed vtag info - (> v1.0.0 (8)) means branch is ahead of v1.0.0 by 8 commits
 _vtag_set_info()
 {
-  local ltag=$1 stag=$2 regex=$(wildcard_to_regex_match_whole $3) lsuf
+  local ltag=$1 stag=$2 regex=$(wildcard_to_regex_match_whole $3) lsuf vtags
   # io_trace "_vtag_set_info 1 -- $(print_vars ltag stag regex)"
 
   lsuf=${ltag#$stag}
@@ -176,11 +176,12 @@ _vtag_set_info()
   vbranch=${BASH_REMATCH[1]}${BASH_REMATCH[2]};
 
   # get the highest vtag pointing at the same commit that matches given regex
-  vtag=$(vtag_highest_of $(vtag_match_vtags_at "$stag^{}" "$regex"))
+  vtags=$(vtag_match_vtags_at "$stag^{}" "$regex")
+  vtag=$(vtag_highest_of $vtags)
 
   # compute alias
   vtag_format_alias "$vtag" "$delta"
-  # io_trace "_vtag_set_info 2 -> $(print_vars vtag delta alias)"
+  # io_trace "_vtag_set_info 2 -> $(print_vars vtags vtag delta alias)"
 }
 # out:
 #   alias
@@ -211,12 +212,16 @@ vtag_format_alias()
 #  $1:ref    -- commish
 #  $2:regex  -- regex to match with
 # output:
-#  list of vtags pointing at given commit
+#  list of vtags pointing at given commit (given ref will be omitted)
 vtag_match_vtags_at()
 {
-  local ref=$1 regex=$2 tag
-  for tag in $(git tag --sort=-v:refname --points-at "$ref"); do
-    [[ $tag =~ $regex ]] && echo "$tag"
+  # io_trace "vtag_match_vtags_at ${*@Q}"
+  local ref=$1 regex=$2 tags tag
+  for tag in $(git tag --sort=-v:refname -l --points-at "$ref"); do
+    # io_trace "vtag_match_vtags_at -- $(print_vars ref regex tag)"
+    [[ $tag == $ref ]] && continue
+    [[ $tag =~ $regex ]] && echo $tag
+    vtag_match_vtags_at "$tag" "$match"
   done
 }
 vtag_highest_of()
