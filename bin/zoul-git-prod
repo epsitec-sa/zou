@@ -176,8 +176,8 @@ _prod_set_prod_info()
     mio_error "Branches ${VC}$prodBranch${LightPurple} and ${VC}$vbranch${LightPurple} are both descendants of (${VC}$vtag)" ${LightPurple}
     return 1
   fi
-  # allow duplicate tags in bundle
-  htag=$(vtag_highest "$vbranch" true)
+  # get highest tag in same folder
+  htag=$(vtag_highest "$vbranch" true)   # in same folder
   # io_trace "_prod_set_prod_info 1 -- $(print_vars prodBranch prodBranchPath vbranch vtag htag delta alias)"
   if [[ $htag != $vtag ]]; then
     vtag=$htag
@@ -313,65 +313,56 @@ dev_checkout()
 #   prod_ensure_vbranch 0.1 'minor'
 prod_ensure_vbranch()
 {
-  _prod_check_dev_htag_ancestry
-  if [[ -n $prodBranch ]]; then
-    local incrementKind=$2
-    # io_trace "prod_ensure_vbranch 1 -- $(print_vars version incrementKind prodBranch vtag2dev)"
-    if [ ${vtag2dev:-0} -gt 0 ] && [[ -n $incrementKind && $prodBranch =~ ^(.*/)?([0-9]+)\.([0-9]+)(.*)$ ]]; then
-      local prefix=${BASH_REMATCH[1]} major=${BASH_REMATCH[2]} minor=${BASH_REMATCH[3]} suffix=${BASH_REMATCH[4]}
-      case $incrementKind in
-        minor) (( minor += 1 ));;
-        major) (( major += 1 )); minor=0;;
-        *) mio_error "prod_ensure_vbranch: bad increment type ${VC}$incrementKind${Red}"; exit 1;;
-      esac
-      vbranch_create "${prefix}${major}.${minor}${suffix}" "$branch" \
-      && _prod_ensure_bundle_vbranch
+  if [[ $prodBranch =~ ^(.*/)?([0-9]+)\.([0-9]+)(.*)$ ]]; then
+    local vbranch prodFolder major=${BASH_REMATCH[2]} minor=${BASH_REMATCH[3]} suffix=${BASH_REMATCH[4]} \
+    # prod folder should be equal to dev folder
+    [[ $(wip_to_ref $moduleDevBranch) =~ ^(.*/)? ]] && prodFolder=${BASH_REMATCH[1]}
+    # update major and/or minor versions
+    case $incrementKind in
+      minor) (( minor += 1 ));;
+      major) (( major += 1 )); minor=0;;
+    esac
+    vbranch="${prodFolder}${major}.${minor}${suffix}"
+    if [[ $vbranch != $prodBranch ]]; then
+      vbranch_create "$vbranch" "$moduleDevBranchPath"
     fi
   else
-    local version=$1 branch lbranch bref
+    local version=$1 branch lbranch bref vbranch
     [[ $incrementKind == 'major' ]] && version=${version:-1.0} || version=${version:-0.1}
     branch_set_realize $(wip_to_ref $moduleDevBranch)
-    # io_trace "prod_ensure_vbranch 2 -- $(print_vars version incrementKind prodBranch vtag2dev)"
+    # io_trace "prod_ensure_vbranch 2 -- $(print_vars version incrementKind prodBranch vtag2dev branch lbranch)"
 
-    [[ $lbranch =~ (.*/)?(.+)$ ]] || return 1
-    vbranch_create "${BASH_REMATCH[1]}$version" "$branch" \
-    && _prod_ensure_bundle_vbranch
+    [[ $lbranch =~ ^(.*/)? ]] || return 1
+    vbranch=${BASH_REMATCH[1]}$version
+    # io_trace "prod_ensure_vbranch 3 -- $(print_vars vbranch)"
+    vbranch_create "$vbranch" "$branch"
   fi
-}
-_prod_check_dev_htag_ancestry()
-{
-  # verify that dev branch and htag are on same branch
-  [[ -z $prodHTag ]] || ! tag_exists "$prodHTag" && return 0
-
-  branch_is_merged "$moduleDevBranchPath" "$prodHTag" && return 0
-  branch_is_merged "$prodHTag" "$moduleDevBranchPath" && return 0
-  
-  mio_warning "Tag ${VC}$prodHTag${Brown} is not on branch ${VC}$moduleDevBranch"
-  _prod_init_vars
-  return 1
+  _prod_ensure_bundle_vbranch
 }
 _prod_ensure_bundle_vbranch()
 {
   module_is_principal || return 0
-  # io_trace "_prod_ensure_bundle_vbranch -- $(print_vars moduleId principalModuleId)"
+  # io_trace "_prod_ensure_bundle_vbranch -- $(print_vars moduleId principalModuleId prodBranch)"
   local bundleScopes=( prod_scope )
   module_visit "$bundleRoot" "${bundleScopes[@]}" _prod_ensure_bundle_vbranch_core "$prodBranch"
 }
 _prod_ensure_bundle_vbranch_core()
 {
-  local principalBranch=$1 principalVersion \
-        prefix version vbranch
+  [[ $prodBranch == $1 ]] && return 0
+  
+  local principalBranch=$1 principalVersion principalSuffix \
+        devFolder devBranch vbranch
 
-  [[ $principalBranch =~ ^(.*/)?([0-9]+\.[0-9]+) ]]
+  [[ $principalBranch =~ ^(.*/)?([0-9]+\.[0-9]+)(.*)$ ]]
   principalVersion=${BASH_REMATCH[2]}
-  [[ $prodBranch =~ ^(.*/)?([0-9]+\.[0-9]+)(.*)$ ]]
-  prefix=${BASH_REMATCH[1]}
-  version=${BASH_REMATCH[2]}
-  suffix=${BASH_REMATCH[3]}
-  [[ $version == $principalVersion ]] && return 0
+  principalSuffix=${BASH_REMATCH[3]}
 
-  vbranch=${prefix}${principalVersion}${suffix}
-  # io_trace "_prod_ensure_bundle_vbranch_core ${*@Q} -- $(print_vars principalBranch principalVersion prodBranch version vbranch)"
+  devBranch=$(wip_to_ref "$moduleDevBranch")
+  [[ $devBranch =~ ^(.*/) ]] && devFolder=${BASH_REMATCH[1]}
+
+  vbranch=${devFolder}${principalVersion}${principalSuffix}
+  # io_trace "_prod_ensure_bundle_vbranch_core ${*@Q} -- $(print_vars principalBranch principalVersion principalSuffix devFolder vbranch)"
+
   vbranch_create "$vbranch" "$moduleDevBranchPath"
 }
 
