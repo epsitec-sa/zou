@@ -105,6 +105,18 @@ cosm_commit_unstaged_submodules()
   local unstaged=( "${unstagedCleanSubmodules[@]}" "${unstagedDirtySubmodules[@]}" )
   repo_commit_submodules "$moduleRoot" $(array_remove_array 'unstaged[@]' 'configSkuExclude[@]')
 }
+cosm_discard_unstaged_submodules()
+{
+  # discard unstaged clean submodules which are excluded from SKU
+  local discard=( "${unstagedCleanSubmodules[@]}" "${unstagedDirtySubmodules[@]}" )
+  # io_trace "cosm_discard_unstaged_submodules -- $(print_vars discard[@])"
+  if [ ${#discard[@]} -ne 0 ]; then
+    visit_async 'discard[@]' 'repo_discard_submodule' || ec=$?
+    unstagedCleanSubmodules=()
+    unstagedDirtySubmodules=()
+  fi
+  return $ec
+}
 # Process unstaged submodules
 #   - update unselected submodules
 #   - discard excluded submodules
