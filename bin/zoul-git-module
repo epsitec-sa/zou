@@ -72,6 +72,10 @@ module_in_dev_mode()    { [[ $moduleHead == $moduleDevBranch ]]; }
 bundle_in_dev_mode()    { [[ $bundleHead == $bundleDevBranch ]]; }
 module_in_prod_mode()   { [[ $moduleHead =~ ^(.*/)?v?[0-9]+\.[0-9] ]]; }
 bundle_in_prod_mode()   { [[ $bundleHead =~ ^(.*/)?v?[0-9]+\.[0-9] ]]; }
+module_is_startup()     { [[ $moduleRoot == $startupRoot ]]; }
+
+module_in_strict_dev_mode() { module_in_dev_mode && ! module_in_wip_mode; }
+bundle_in_strict_dev_mode() { bundle_in_dev_mode && ! bundle_in_wip_mode; }
 
 ########
 # SCOPES
