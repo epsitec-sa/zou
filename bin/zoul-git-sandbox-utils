@@ -1,0 +1,210 @@
+#!/bin/bash
+
+# Use the following statement to include current lib only once
+#   [[ -z $ZOUL_GIT_SANDBOX_UTILS ]] && . zoul-git-sandbox-utils
+ZOUL_GIT_SANDBOX_UTILS=true
+
+file_change_commit()
+{
+  local file=$1; shift
+  local change="$*"
+  local prefix=${PWD##*/}; prefix=${prefix^^}
+  local message="$prefix: $file: $change"
+  echo "$change" >> "$file"
+  git update-index --add -- "$file" &>/dev/null \
+  && git commit -m "$message" -- "$file" &>/dev/null \
+  && mio_info "Commited $file -- $change"
+}
+file_change()
+{
+  local file=$1; shift
+  local change="$*"
+  local dir=$(dirname "$file")
+  [[ -d $dir ]] || mkdir "$dir"
+
+  echo "$change" >> "$file"
+
+  mio_info "Modified $file -- $change"
+}
+file_commit()
+{
+  local file=$1; shift
+  local change="$*"
+  local prefix=${PWD##*/}; prefix=${prefix^^}
+  local message="$prefix: $file: $change"
+  git update-index --add -- "$file" &>/dev/null \
+  && git commit -m "$message" -- "$file" &>/dev/null \
+  && mio_info "Commited $file -- $change"
+}
+file_commit_all()
+{
+  mio_info "file_commit_all $*"
+  for f in $(repo_list_uncommited) $(repo_list_untracked); do
+    file_commit "$f" "$@"
+  done
+}
+commit_vresources_sal()
+{
+  commit_version_props
+  commit_assembly_info
+  commit_sal_version
+}
+commit_vresources_compta()
+{
+  commit_version_props
+  commit_compta_version
+}
+
+commit_version_props()
+{
+  [ -f 'Version.props' ] && return 0
+  local register=$1
+
+  cat >Version.props <<\EOF
+<Project>
+  <PropertyGroup>
+      <Version></Version>
+  </PropertyGroup>
+</Project>
+EOF
+  file_commit Version.props 'initial version'
+  [[ $register == true ]] && git config-version --version-props
+}
+commit_assembly_info()
+{
+  [ -f 'Properties/AssemblyInfo.cs' ] && return 0
+  local register=$1
+
+  mkdir './Properties'
+  cat >Properties/AssemblyInfo.cs <<\EOF
+using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+
+// General Information about an assembly is controlled through the following
+// set of attributes. Change these attribute values to modify the information
+// associated with an assembly.
+[assembly: AssemblyTitle("ConsoleApp1")]
+[assembly: AssemblyDescription("")]
+[assembly: AssemblyConfiguration("")]
+[assembly: AssemblyCompany("")]
+[assembly: AssemblyProduct("ConsoleApp1")]
+[assembly: AssemblyCopyright("Copyright ©  2019")]
+[assembly: AssemblyTrademark("")]
+[assembly: AssemblyCulture("")]
+
+// Setting ComVisible to false makes the types in this assembly not visible
+// to COM components.  If you need to access a type in this assembly from
+// COM, set the ComVisible attribute to true on that type.
+[assembly: ComVisible(false)]
+
+// The following GUID is for the ID of the typelib if this project is exposed to COM
+[assembly: Guid("50bb1bae-95ef-43a6-87b8-a7f71e4ed280")]
+
+// Version information for an assembly consists of the following four values:
+//
+//      Major Version
+//      Minor Version
+//      Build Number
+//      Revision
+//
+// You can specify all the values or you can default the Build and Revision Numbers
+// by using the '*' as shown below:
+// [assembly: AssemblyVersion("1.0.*")]
+[assembly: AssemblyVersion("1.0.0.0")]
+[assembly: AssemblyFileVersion("1.0.0.0")]
+EOF
+  file_commit Properties/AssemblyInfo.cs 'initial version'
+  [[ $register == true ]] && git config-version --assembly-info
+}
+commit_compta_version()
+{
+  [ -f 'libcompta/version.h' ] && return 0
+
+  mkdir "./libcompta"
+
+  cat >libcompta/version.h <<\EOF
+#pragma once
+
+#define MAJREV			  8		// révision
+#define MINREV			  17	// version
+#define PROVREV			  00  // provisoire
+
+#define MAJREV_SHOW		12	// révision
+#define MINREV_SHOW		8	  // version
+#define PROVREV_SHOW	0 	// provisoire
+EOF
+
+  cat >update-version <<\EOF
+#!/bin/bash
+
+# Update technical version
+# Triggered by git publish
+
+[[ -z $ZOUL_CORE ]] && . zoul-core
+
+update_version()
+{
+  local version=$1 major=$2 minor=$3 patch=$4 prerelease=$5 meta=$6
+  local file='libcompta/version.h'
+
+  local script="\
+  s,(MAJREV_SHOW[[:blank:]]+)[0-9]+,\1$major,; \
+  s,(MINREV_SHOW[[:blank:]]+)[0-9]+,\1$minor,; \
+  s,(PROVREV_SHOW[[:blank:]]+)[0-9]+,\1$patch,"
+
+  ised "$file" "$script"
+}
+
+update_version "$@"
+EOF
+  file_commit libcompta/version.h 'initial version'
+  file_commit update-version 'initial version'
+}
+commit_sal_version()
+{
+  [ -f 'sal.version.ini' ] && return 0
+
+  cat >sal.version.ini <<\EOF
+#if	0
+VERSION:    13.0.000
+DATE:       14.06.2018
+MODEL:      13.0.1823.2
+COMPATIBLE: 13.0.000
+PROVISOIRE: 1
+
+// NB: Lorsque COMPATIBLE est changé, alors il doit être identique à VERSION !
+#endif
+
+#define \
+INTERNAL    13.0.1824.13
+#define \
+INTERNALRC  13,0,1824,13
+EOF
+
+  cat >update-version <<\EOF
+#!/bin/bash
+
+# Update technical version
+# Triggered by git publish
+
+[[ -z $ZOUL_CORE ]] && . zoul-core
+
+update_version()
+{
+  local version=$1 major=$2 minor=$3 patch=$4 prerelease=$5 meta=$6
+  local yyww=$(date +%y%V)
+  local file='sal.version.ini'
+
+  local script="\
+    s/(INTERNAL[[:blank:]]+)[0-9\.]+/\1$major.$minor.$patch.$yyww/; \
+    s/(INTERNALRC[[:blank:]]+)[0-9\,]+/\1$major,$minor,$patch,$yyww/"
+
+  ised "$file" "$script"
+}
+
+update_version "$@"
+EOF
+  file_commit sal.version.ini 'initial version'
+  file_commit update-version 'initial version'
+}

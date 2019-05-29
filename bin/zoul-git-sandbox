@@ -1,0 +1,137 @@
+#!/bin/bash
+
+# Use the following statement to include current lib only once
+#   [[ -z $ZOUL_GIT_SANDBOX ]] && sandbox_create --reset
+ZOUL_GIT_SANDBOX=true
+
+[[ -z $ZOUL_CORE ]]           && . zoul-core
+[[ -z $ZOUL_GIT_SANDBOX_DATA ]]  && . zoul-git-sandbox-data
+[[ -z $ZOUL_GIT_SANDBOX_UTILS ]] && . zoul-git-sandbox-utils
+
+sandbox_create()
+{
+  local sandboxReset sandboxSubmodules
+
+  while [[ "$#" > 0 ]]; do case "$1" in
+    --reset) sandboxReset=true;;
+    --sm)    sandboxSubmodules=true;;
+    -*) io_error "unknown option: ${VC}$1"; return 1;;
+    *)  io_warning "skipped argument: ${VC}$1";;
+  esac; shift; done
+
+  if [[ -d $satHubDir && $sandboxReset == true ]]; then
+    sandbox_delete
+  fi
+
+  # HUBs
+  ( _sandbox_create_local_and_remote_repo "$sat1Dir" "$satHubDir" ) &
+
+  if [[ $sandboxSubmodules == true ]]; then
+    for id in sm1 sm2 sm3; do
+      ( _sandbox_create_sm_repo "$id" ) &
+    done
+    wait
+
+    # populate submodules
+
+    # SM1.SM3
+    cd "$sm1Dir"
+    git submodule add "$sm3HubDir" 'sm3' &>/dev/null
+    mio_info "Added submodule ${VC}sm3${Cyan} to ${VC}sm1"
+    git commit -m'SM1: add submodule' &>/dev/null
+    git submodule update --init --recursive &>/dev/null
+    git push -u origin master &>/dev/null
+
+    # SAT1.SM1, SAT1.SM2
+    cd "$sat1Dir"
+    git submodule add "$sm1HubDir" 'sm1' &>/dev/null
+    mio_info "Added submodule ${VC}sm1${Cyan} to ${VC}sat1"
+    git submodule add "$sm2HubDir" 'sm2' &>/dev/null
+    mio_info "Added submodule ${VC}sm2${Cyan} to ${VC}sat1"
+    git commit -m'SAT1: add submodules' &>/dev/null
+
+    git submodule update --init --recursive &>/dev/null
+    git push -u origin master &>/dev/null
+  fi
+  wait
+
+  # SAT2 <- HUB
+  mio_info "Cloning ${VC}sat2"
+  cd "$zouTestRoot"
+  git clone --recurse-submodules -j16 "$satHubDir" 'sat2' &>/dev/null
+
+  mio_warning "$(printf '%.s-' {1..42}) created repos at ${VC}$zouTestRoot"
+}
+sandbox_delete()
+{
+  for id in sm1 sm2 sm3 sat1 sat2 origin; do
+  (
+    dir=${id}Dir; dir=${!dir}
+    _sandbox_delete_repo "$dir"
+  ) &
+  done
+  wait
+}
+
+# example:
+#   sandbox_visit_commit_work "$sat1Dir" "$sat1Dir/sm1" "$sat1Dir/sm2"
+sandbox_commit_work()
+{
+  local file=${1:-readme.md}
+  file_change_commit "$file" "some work @ $(date +%T)"
+}
+sandbox_visit_commit_work()
+{
+  local path
+  for path; do
+    sandbox_visit "$path" sandbox_commit_work
+  done
+}
+sandbox_visit()
+{
+  local path=$(realpath ${1:-.})
+  # io_trace "sandbox_visit ${*@Q}"
+  if [[ $path == $PWD ]]; then
+    $2 "${@:3}"
+  elif [ -d "$path" ]; then
+    local OPWD=$PWD ec=0
+    cd "$path"
+    $2 "${@:3}" || ec=$?
+    cd $OPWD
+    return $ec
+  else
+    return 128
+  fi
+}
+
+_sandbox_create_local_and_remote_repo()
+{
+  local localDir=$1 remoteDir=$2
+
+  _sandbox_create_empty_repo "$remoteDir" --bare
+  _sandbox_create_empty_repo "$localDir"
+  git remote add origin "$remoteDir"
+  # - readme
+  file_change_commit 'readme.md' 'initial version'
+  git push -u origin master &>/dev/null
+}
+_sandbox_create_empty_repo()
+{
+  [[ -d "$1" ]] || mkdir -p "$1"
+  cd "$1"
+  git init "${@:2}" &>/dev/null
+  mio_info "Created repo at ${VC}$1"
+}
+_sandbox_create_sm_repo()
+{
+  local id=$1 localDir remoteDir
+  localDir=${id}Dir; localDir=${!localDir}
+  remoteDir=${1}HubDir; remoteDir=${!remoteDir}
+  _sandbox_create_local_and_remote_repo "$localDir" "$remoteDir"
+}
+_sandbox_delete_repo()
+{
+  [[ -d "$1" ]] || return 0
+  rm -rf "$1"
+  mio_warning "Deleted repo ${VC}$1"
+}

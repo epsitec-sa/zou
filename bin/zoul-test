@@ -1,0 +1,24 @@
+#!/bin/bash
+
+# Use the following statement to include current lib only once
+#   [[ -z $ZOUL_TEST ]] && . zoul-test
+ZOUL_TEST=true
+
+[[ -z $ZOUL_CORE ]] && . zoul-core
+
+zou_bundle_root()
+{
+  local dir
+  dir=$(realpath "${1:-.}") || return $?
+  while [[ -n "$dir" && ! -d "$dir/.git" ]]; do
+    dir="${dir%/*}"
+  done
+  [[ -z $dir ]] && return 1
+  echo "$dir"
+}
+
+# create test-results folder
+zouTestRoot=$(realpath "$(zou_bundle_root "$zouBinDir")/../zou.test")
+[[ -d "$zouTestRoot" ]] || mkdir -p "$zouTestRoot"
+
+# io_debug zouTestRoot

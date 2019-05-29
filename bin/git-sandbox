@@ -1,0 +1,62 @@
+#!/bin/bash
+
+[[ -z $ZOUL_GIT_SANDBOX ]] && . zoul-git-sandbox
+
+sandbox_parse()
+{
+  while [[ "$#" > 0 ]]; do case "$1" in
+    -h|--help) zou-help $0; exit 0;;
+    --) shift; args+=("$@"); break;;
+    --debug)     debug=true;;
+    --reset)     reset=true;;
+    --skus)      createSkus=true;;
+    --work)      createWork=true;;
+    --vr)        createVResources=true;;
+    *) args+=("$1");;
+  esac; shift; done
+}
+
+sandbox_run()
+{
+  # io_trace "sandbox_run $(print_vars satHubDir sat1Dir sat2Dir)"
+  # CREATE SANDBOX
+  local args=() debug reset createSkus createWork createVResources
+  
+  sandbox_parse "$@" || return $?
+
+  if [[ ! -d $satHubDir || $reset == true ]]; then
+    sandbox_create --reset "${args[@]}"
+  fi
+  [[ $createVResources == true ]] && sandbox_create_vresources
+  [[ $createSkus == true ]] && sandbox_create_skus
+  [[ $createWork == true ]] && sandbox_create_work
+}
+sandbox_create_skus()
+{
+  sandbox_visit "$sat1Dir/sm1" git checkout -b sku/sm1/dev
+  sandbox_visit "$sat1Dir/sm2" git checkout -b sku/sm2/dev
+
+  cd "$sat1Dir"
+  git checkout -b sku/sm1/dev
+  git checkout -b sku/sm2/dev
+
+  git-sku enter master
+}
+sandbox_create_vresources()
+{
+  if sandbox_visit "$sat1Dir/sm2" commit_vresources_compta \
+  && sandbox_visit "$sat1Dir/sm1" commit_vresources_sal; then
+    sandbox_visit "$sat1Dir" commit_version_props
+  else
+    sandbox_visit "$sat1Dir" commit_vresources_sal
+  fi
+
+  cd "$sat1Dir"
+  git-config-version -r --reset --auto
+}
+sandbox_create_work()
+{
+  sandbox_visit_commit_work "$sat1Dir/sm1" "$sat1Dir/sm1/sm3" "$sat1Dir/sm2" "$sat1Dir"
+}
+
+sandbox_run "$@"
