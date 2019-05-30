@@ -10,36 +10,29 @@ ZOUL_GIT_SANDBOX=true
 
 sandbox_create()
 {
-  local sandboxReset sandboxSubmodules
-
+  local sandboxReset createSubmodules
   while [[ "$#" > 0 ]]; do case "$1" in
     --reset) sandboxReset=true;;
-    --sm)    sandboxSubmodules=true;;
-    -*) io_error "unknown option: ${VC}$1"; return 1;;
-    *)  io_warning "skipped argument: ${VC}$1";;
+    --sm)    createSubmodules=true;;
   esac; shift; done
 
-  if [[ -d $satHubDir && $sandboxReset == true ]]; then
-    sandbox_delete
-  fi
-
-  # HUBs
-  ( _sandbox_create_local_and_remote_repo "$sat1Dir" "$satHubDir" ) &
-  [[ $sandboxSubmodules == true ]] && sandbox_create_submodules
+  [[ $sandboxReset == true ]] && sandbox_delete
+  ( sandbox_create_bundle ) &
+  [[ $createSubmodules == true ]] && sandbox_create_submodules
   wait
 
   sandbox_clone
   mio_warning "$(printf '%.s-' {1..42}) created repos at ${VC}$zouTestRoot"
 }
-sandbox_clone()
+
+sandbox_create_bundle()
 {
-  # SAT2 <- HUB
-  mio_info "Cloning ${VC}sat2"
-  cd "$zouTestRoot"
-  git clone --recurse-submodules -j16 "$satHubDir" 'sat2' &>/dev/null
+  [ -d $satHubDir ] && return 0
+  _sandbox_create_local_and_remote_repo "$sat1Dir" "$satHubDir"
 }
 sandbox_delete()
 {
+  [ -d $satHubDir ] || return 0
   for id in sm1 sm2 sm3 sat1 sat2 origin; do
   (
     dir=${id}Dir; dir=${!dir}
@@ -47,6 +40,13 @@ sandbox_delete()
   ) &
   done
   wait
+}
+sandbox_clone()
+{
+  # SAT2 <- HUB
+  mio_info "Cloning ${VC}sat2"
+  cd "$zouTestRoot"
+  git clone --recurse-submodules -j16 "$satHubDir" 'sat2' &>/dev/null
 }
 sandbox_create_submodules()
 {
@@ -78,12 +78,50 @@ sandbox_create_submodules()
   git submodule update --init --recursive &>/dev/null
   git push -u origin master &>/dev/null
 }
+sandbox_create_skus()
+{
+  cd "$sat1Dir/sm1"
+  sandbox_create_sku_with_work sku/sm1/dev
+  sandbox_commit_work "$(file_create_name)"
+  cd "$sat1Dir/sm2"
+  sandbox_create_sku_with_work sku/sm2/dev
+  sandbox_create_sku_with_work sku/dev
+  sandbox_commit_work "$(file_create_name)"
+  cd "$sat1Dir"
+  sandbox_create_sku_with_work sku/sm1/dev
+  sandbox_create_sku_with_work sku/sm2/dev
+  sandbox_commit_work "$(file_create_name)"
+}
+sandbox_create_vresources()
+{
+  if sandbox_visit "$sat1Dir/sm2" commit_vresources_compta \
+  && sandbox_visit "$sat1Dir/sm1" commit_vresources_sal; then
+    sandbox_visit "$sat1Dir" commit_version_props
+  else
+    sandbox_visit "$sat1Dir" commit_vresources_sal
+  fi
+
+  cd "$sat1Dir"
+  git-config-version -r --reset --auto
+}
+sandbox_create_work()
+{
+  sandbox_visit_commit_work "$sat1Dir/sm1" "$sat1Dir/sm1/sm3" "$sat1Dir/sm2" "$sat1Dir"
+}
+
+sandbox_create_sku_with_work()
+{
+  local sku=$1 startPoint=${2:-master}
+  git checkout -b "$sku" "$startPoint" &>/dev/null
+  sandbox_commit_work "$(file_create_name)"
+  git checkout - &>/dev/null
+}
 # example:
 #   sandbox_visit_commit_work "$sat1Dir" "$sat1Dir/sm1" "$sat1Dir/sm2"
 sandbox_commit_work()
 {
   local file=${1:-readme.md}
-  file_change_commit "$file" "some work @ $(date +%T)"
+  file_change_commit "$file" "some work @ $(date +%T) on $(git symbolic-ref --short HEAD 2>/dev/null)"
 }
 sandbox_visit_commit_work()
 {
