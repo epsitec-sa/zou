@@ -16,13 +16,15 @@ dev_parse()
     -r|--recursive) recursive=true;;
     --minor)        incrementKind='minor';;
     --major)        incrementKind='major';;
-    enter|release)  subcommand=$1;;
+    attach)         subcommand=$1;;
+    enter)          subcommand=$1;;
+    release)        subcommand=$1;;
     --)             shift; break;;
     -*) io_error "unknown option ${VC}$1${Red}\n"; io_help $0; return 1;;
     *)  args+=( "$1" );;
   esac; shift; done
 
-  cmd_check_subcommand 'enter' 'release'
+  cmd_check_subcommand 'enter' 'release' 'attach'
   cmd_check_args "${args[@]}"
   
   devModulePaths=( "$@" )
@@ -48,6 +50,7 @@ dev_run()
   dev_parse "$@" || return $?
   
   case $subcommand in
+    attach)  startupMessage="Attaching to development, please wait...";;
     enter)   startupMessage="Entering development, please wait...";;
     release) startupMessage="Releasing development, please wait...";;
   esac
@@ -59,10 +62,20 @@ dev_command()
   [ ${#devModulePaths[@]} -eq 0 ] && devModulePaths+=( './' )
   cmd_register_module_paths "$recursive" "${devModulePaths[@]}"
   case $subcommand in
-    enter) cmd_register_module_paths false "$bundleRoot";;
+    attach|enter) cmd_register_module_paths false "$bundleRoot";;
   esac
 
   cmd_visit_modules
+}
+
+########
+# ATTACH
+########
+
+dev_attach_epilog()
+{
+  module_dev_attach true
+  branch_show_status
 }
 
 #######
