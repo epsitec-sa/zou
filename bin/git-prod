@@ -141,8 +141,8 @@ _prod_release()
   case $releaseStatus in
     unreleased) _prod_release_unreleased;;
     ffRelease)  _prod_release_ff;;
-    released)   mio_message "Already released" ${LightBlue};;
-    *)          mio_error "Fatal: releaseStatus '$releaseStatus' not implemented"; exit 1;;
+    released)   _prod_release_released;;
+    *)          _prod_release_unimplemented;;
   esac
   # io_trace "_prod_release 1 -- $(print_vars lbranch vbranch vtag htag prerelPrefix releaseStatus)"
 }
@@ -169,6 +169,13 @@ _prod_release_unreleased()
     && mio_success "Released branch ${VC}$prodBranch${Green} at ${VC}$releaseVTag" \
     || { mio_error "Release of branch '$prodBranch' failed"; return 1; }
   fi
+}
+_prod_release_released()
+{
+  if [[ $dryRun != true && $vtableCreate == true ]]; then
+    module_is_startup && vtableCreate=false
+  fi
+  mio_message "Already released" ${LightBlue}
 }
 _prod_release_unimplemented()
 {
@@ -227,8 +234,7 @@ _vtable_commit()
     vtable_update "$startupRoot" "$moduleId" "$vtableLookupPath" "$vtableGate"
     mio_message "Created version table for ${VC}$prodBranch${DarkGray} at ${VC}$releaseVTag" ${DarkGray}
   elif [[ $vtableCreate == true ]]; then
-    # io_trace "_vtable_commit -- $(print_vars lbranch vbranch vnext)"
-    branch_is_merged "$prodBranch" "$moduleDevBranchPath" && return 0
+    # io_trace "_vtable_commit -- $(print_vars releaseStatus prodBranch moduleDevBranch vnext)"
     local tmpBranch="_zou_$(date +%y%V)"
     git checkout -b "$tmpBranch" &>/dev/null
     vtable_update "$startupRoot" "$moduleId" "$vtableLookupPath" "$vtableGate" true
