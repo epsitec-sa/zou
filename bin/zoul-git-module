@@ -10,6 +10,7 @@ ZOUL_GIT_MODULE=true
 [[ -z $ZOUL_GIT_BUNDLE ]]        && . zoul-git-bundle
 [[ -z $ZOUL_GIT_BRANCH_CORE ]]   && . zoul-git-branch-core
 [[ -z $ZOUL_GIT_BRANCH_SELECT ]] && . zoul-git-branch-select
+[[ -z $ZOUL_GIT_BRANCH_SYNC ]]   && . zoul-git-branch-sync
 
 # global variables
 startupMessage=''
@@ -22,6 +23,7 @@ doNotRegisterBundle=false
 # events registration
 headChangedEvent+=( _module_reset_scope )
 headNameChangedEvent+=( _module_reset_scope )
+branchSyncEvent+=( _module_on_sync )
 
 # run a function in the startup module root folder with startup, bundle and module scopes defined
 module_run()
@@ -225,6 +227,14 @@ _module_reset_scope()
   # io_lock_exit
 }
 
+_module_on_sync()
+{
+  [[ $3 =~ ^\< ]] || return 0
+  moduleSubmodulePaths=( $(repo_list_submodule_paths $PWD) )
+  # io_trace "_module_on_sync -- $(print_vars moduleSubmodulePaths[@])"
+
+}
+
 ##############
 # DEV BRANCHES
 ##############
@@ -278,6 +288,11 @@ _module_set_module_dev_branch()
   else
     _module_infer_dev_from_bundle
     # io_trace "_module_set_module_dev_branch 4 -- $(print_vars moduleId bundleDevBranch moduleHead moduleDevBranch)"
+
+    # moduleHead is a SHA try to to attach to dev branch
+    if ref_equals "$moduleHead" "$moduleDevBranchPath"; then
+      branch_checkout "$moduleDevBranch" false
+    fi
   fi
 }
 _module_infer_dev_from_bundle()

@@ -7,12 +7,14 @@ ZOUL_GIT_CONFIG=true
 [[ -z $ZOUL_GIT_MODULE ]]        && . zoul-git-module
 [[ -z $ZOUL_GIT_CONFIG_SKU ]]    && . zoul-git-config-sku
 [[ -z $ZOUL_GIT_CONFIG_SELECT ]] && . zoul-git-config-select
+[[ -z $ZOUL_GIT_BRANCH_SYNC ]]   && . zoul-git-branch-sync
 
 # global options
 #   noSkuFilter
 #   noSelectFilter
 
 # io_trace "headChangedEvent+=( _config_reset_scope )"
+# io_trace "branchSyncEvent+=( _config_on_sync )"
 headChangedEvent+=( _config_reset_scope )
 branchSyncEvent+=( _config_on_sync )
 
@@ -35,7 +37,8 @@ config_has_submodules() { [ ${#configSelectInclude[@]} -gt 0 ]; }
 
 _config_on_sync()
 {
-  [[ $3 =~ ^\< ]] && _config_reset_scope
+  [[ $3 =~ ^\< ]] || return 0
+  _config_reset_scope
 }
 _config_reset_scope()
 {
