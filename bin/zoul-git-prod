@@ -292,10 +292,14 @@ dev_checkout()
   # io_trace "dev_checkout -- ${*@Q}"
   local forceCheckout=$1 devBranch=$2
   if [[ -z $devBranch ]]; then
-    local branch lbranch
-    branch_set_best_match_dev "$bundleDevBranch" # -> branch lbranch
-    devBranch=$lbranch
-    # io_trace "dev_checkout 1 -- $(print_vars bundleDevBranch branch lbranch devBranch)"
+    if module_is_bundle; then
+      devBranch=$bundleDevBranch
+    else
+      local branch lbranch
+      branch_set_best_match_dev "$bundleDevBranch" # -> branch lbranch
+      devBranch=$lbranch
+      # io_trace "dev_checkout 1 -- $(print_vars bundleDevBranch branch lbranch devBranch)"
+    fi
   fi
   devBranch=$(wip_to_ref $devBranch)
   # io_trace "dev_checkout 2 -- $(print_vars bundleDevBranch branch lbranch devBranch)"
