@@ -77,6 +77,25 @@ module_is_startup()     { [[ $moduleRoot == $startupRoot ]]; }
 module_in_strict_dev_mode() { module_in_dev_mode && ! module_in_wip_mode; }
 bundle_in_strict_dev_mode() { bundle_in_dev_mode && ! bundle_in_wip_mode; }
 
+module_dev_attach()
+{
+  local forceCheckout=${1:-true} devBranchPath=$2 devBranch
+  if [[ -z $devBranchPath || $devBranchPath == $moduleDevBranchPath ]]; then
+    devBranchPath=$moduleDevBranchPath
+    devBranch=$moduleDevBranch
+  else
+    local branch lbranch bref
+    branch_set_realize "$devBranchPath"
+    devBranchPath=$branch
+    devBranch=$lbranch
+  fi
+  if module_is_bundle || ref_equals "$moduleHead" "$devBranchPath"; then
+    branch_checkout "$devBranch" "$forceCheckout"
+  else
+    branch_checkout "$moduleHead" "$forceCheckout"
+  fi
+}
+
 ########
 # SCOPES
 ########
