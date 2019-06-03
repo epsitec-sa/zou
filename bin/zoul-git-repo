@@ -374,7 +374,7 @@ repo_commit_submodules()
   local branch=${moduleHead:-$(branch_current)}
   # io_trace "repo_commit_submodules 2 -- $(print_vars branch cslist)"
   git commit -m 'zou-flow: update submodules' -- "$@" >/dev/null \
-  && [[ $showSubmoduleMessage == true ]] && mio_message "  Commited submodules '$cslist' on branch '$branch'" ${DarkGray}
+  && io_message "  Commited submodules '$cslist' on branch '$branch'" "$moduleTracePrefix" ${DarkGray}
   repo_raise_submodule_changed_event "$@"
   cd "$opwd"
 }
