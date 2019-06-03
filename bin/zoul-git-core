@@ -24,28 +24,31 @@ ref_equals()     { [[ $(git rev-parse $1^{} 2>/dev/null) == $(git rev-parse $2^{
 ref_is_head()    { [[ $(git rev-parse $1^{} 2>/dev/null) == $(git rev-parse HEAD) ]]; }
 ref_is_current() { [[ $1 == $(git rev-parse --abbrev-ref HEAD) ]]; }
 ref_rename()     { [[ $1 =~ ^(.*/)? ]] && echo "${BASH_REMATCH[1]}$2"; }
-# return code:
-#   0: ref is a branch
-#   1: ref is a tag
-#   2: ref is a sha
-ref_symbol()
+# usage:
+#   local refSymbol refType
+#   ref_set_symbol REF
+# in:
+#   $1:commit
+# out:
+#   refSymbol
+#   refType     -- (branch|tag|sha)
+ref_set_symbol()
 {
-  local commit=${1:-HEAD} ref ec=0
-  # io_trace "ref_symbol 1 -- $(print_vars commit)"
-  ref=$(git rev-parse --abbrev-ref "$commit" 2>/dev/null)
-  if [ $? -ne 0 ] || [[ -z $ref || $ref == 'HEAD' ]]; then
+  local commit=${1:-HEAD}
+  refType='branch'
+  # io_trace "ref_set_symbol 1 -- $(print_vars commit)"
+  refSymbol=$(git rev-parse --abbrev-ref "$commit" 2>/dev/null)
+  if [ $? -ne 0 ] || [[ -z $refSymbol || $refSymbol == 'HEAD' ]]; then
     local tags=( $(git tag --points-at "$commit" 2>/dev/null) )
     if [ ${#tags[@]} -eq 0 ]; then
-      ref="$(git rev-parse --short "$commit" 2>/dev/null)"
-      ec=2
+      refSymbol="$(git rev-parse --short "$commit" 2>/dev/null)"
+      refType='sha'
     else
-      ref=${tags[-1]}
-      ec=1
+      refSymbol=${tags[-1]}
+      refType='tag'
     fi
   fi
-  echo "$ref"
-  # io_trace "ref_symbol 2 -- $(print_vars commit ref tags[@] ec)"
-  return $ec
+  # io_trace "ref_set_symbol 2 -- $(print_vars commit tags[@] refSymbol refType)"
 }
 
 ref_timespan()
