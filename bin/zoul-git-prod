@@ -53,13 +53,14 @@ _prod_reset_alias()
 }
 _prod_trace()
 {
-  :
-  # io_lock_enter
-  # io_trace_unsafe "$1 -- $(print_vars prodBranch prodBranchPath)"
-  # io_trace_unsafe "$1 -- $(print_vars vtagStatus prodVTag prodHTag)"
-  # io_trace_unsafe "$1 -- $(print_vars vtag2dev vtag2prod prodAlias devAlias moduleAlias)"
-  # io_trace_unsafe "$1 -- $(print_vars releaseStatus releaseVTag releasePrerelPrefix)"
-  # io_lock_exit
+  return 0
+
+  io_lock_enter
+  io_trace_unsafe "$1 -- $(print_vars prodBranch prodBranchPath)"
+  io_trace_unsafe "$1 -- $(print_vars vtagStatus prodVTag prodHTag)"
+  io_trace_unsafe "$1 -- $(print_vars vtag2dev vtag2prod prodAlias devAlias moduleAlias)"
+  io_trace_unsafe "$1 -- $(print_vars releaseStatus releaseVTag releasePrerelPrefix)"
+  io_lock_exit
 }
 
 ########################################################

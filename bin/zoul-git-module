@@ -98,6 +98,46 @@ module_dev_attach()
   fi
 }
 
+#########
+# TRACING
+#########
+
+_module_trace()
+{
+  return 0
+
+  io_lock_enter
+  case $1 in
+  _module_scope_startup)
+    io_trace_unsafe "$1 -- $(print_vars startupDir startupRoot)"
+    io_trace_unsafe "$1 -- $(print_vars bundleId principalModuleId)"
+    io_trace_unsafe "$1 -- $(print_vars bundleHead bundleHeadType)"
+    io_trace_unsafe "$1 -- $(print_vars bundleDevBranch bundleDevBranchPath)"
+    io_trace_unsafe "$1 -- $(print_vars bundleUrl bundleUrlName bundleRoot)"
+    # io_trace_unsafe "$1 -- $(print_vars bundleTracePrefix)"
+    ;;
+  _module_scope)
+    io_trace_unsafe "$1 -- $(print_vars moduleId)"
+    io_trace_unsafe "$1 -- $(print_vars moduleSubmodulePaths[@])"
+    io_trace_unsafe "$1 -- $(print_vars moduleHead moduleHeadType)"
+    io_trace_unsafe "$1 -- $(print_vars moduleDevBranch moduleDevBranchPath)"
+    io_trace_unsafe "$1 -- $(print_vars modulePath moduleBundlePath moduleRoot)"
+    # io_trace_unsafe "$1 -- $(print_vars moduleTracePrefix)"
+    ;;
+  _module_reset_scope)
+    io_trace_unsafe "$1 -- $(print_vars bundleId moduleId principalModuleId)"
+    io_trace_unsafe "$1 -- $(print_vars bundleHead bundleHeadType)"
+    io_trace_unsafe "$1 -- $(print_vars bundleDevBranch bundleDevBranchPath)"
+    io_trace_unsafe "$1 -- $(print_vars moduleHead moduleHeadType)"
+    io_trace_unsafe "$1 -- $(print_vars moduleDevBranch moduleDevBranchPath)"
+    io_trace_unsafe "$1 -- $(print_vars moduleSubmodulePaths[@])"
+    # io_trace_unsafe "$1 -- $(print_vars bundleTracePrefix)"
+    # io_trace_unsafe "$1 -- $(print_vars moduleTracePrefix)"
+    ;;
+  esac
+  io_lock_exit
+}
+
 ########
 # SCOPES
 ########
@@ -139,14 +179,7 @@ _module_scope_startup()
 
   _module_register_bundle
 
-  # io_lock_enter
-  # io_trace_unsafe "_module_scope_startup -- $(print_vars startupDir startupRoot)"
-  # io_trace_unsafe "_module_scope_startup -- $(print_vars bundleId principalModuleId)"
-  # io_trace_unsafe "_module_scope_startup -- $(print_vars bundleHead bundleHeadType)"
-  # io_trace_unsafe "_module_scope_startup -- $(print_vars bundleDevBranch bundleDevBranchPath)"
-  # io_trace_unsafe "_module_scope_startup -- $(print_vars bundleUrl bundleUrlName bundleRoot)"
-  # io_trace_unsafe "_module_scope_startup -- $(print_vars bundleTracePrefix)"
-  # io_lock_exit
+  _module_trace '_module_scope_startup'
 
   # io_trace "_module_scope_startup >> $*"
   # execute next russian doll
@@ -189,14 +222,7 @@ _module_scope()
 
   _module_set_module_dev_branch
 
-  # io_lock_enter
-  # io_trace_unsafe "_module_scope -- $(print_vars moduleId)"
-  # io_trace_unsafe "_module_scope -- $(print_vars moduleSubmodulePaths[@])"
-  # io_trace_unsafe "_module_scope -- $(print_vars moduleHead moduleHeadType)"
-  # io_trace_unsafe "_module_scope -- $(print_vars moduleDevBranch moduleDevBranchPath)"
-  # io_trace_unsafe "_module_scope -- $(print_vars modulePath moduleBundlePath moduleRoot)"
-  # io_trace_unsafe "_module_scope -- $(print_vars moduleTracePrefix)"
-  # io_lock_exit
+  _module_trace '_module_scope'
 
   # io_trace "_module_scope >> $*"
   # execute next russian doll
@@ -221,15 +247,7 @@ _module_reset_scope()
   _module_set_trace_prefix
   _module_set_module_dev_branch
   
-  # io_lock_enter
-  # io_trace_unsafe "_module_reset_scope -- $(print_vars bundleId moduleId)"
-  # io_trace_unsafe "_module_reset_scope -- $(print_vars bundleHead bundleDevBranch bundleDevBranchPath)"
-  # io_trace_unsafe "_module_reset_scope -- $(print_vars moduleHead moduleHeadType)"
-  # io_trace_unsafe "_module_reset_scope -- $(print_vars moduleDevBranch moduleDevBranchPath)"
-  # io_trace_unsafe "_module_reset_scope -- $(print_vars moduleSubmodulePaths[@])"
-  # io_trace_unsafe "_module_reset_scope -- $(print_vars bundleTracePrefix)"
-  # io_trace_unsafe "_module_reset_scope -- $(print_vars moduleTracePrefix)"
-  # io_lock_exit
+  _module_trace '_module_reset_scope'
 }
 
 _module_on_sync()
