@@ -2,6 +2,7 @@
 
 [[ -z $ZOUL_GIT_CMD ]]           && . zoul-git-cmd
 [[ -z $ZOUL_GIT_PROD ]]          && . zoul-git-prod
+[[ -z $ZOUL_GIT_COSM ]]          && . zoul-git-cosm
 [[ -z $ZOUL_GIT_BRANCH_MERGE ]]  && . zoul-git-branch-merge
 [[ -z $ZOUL_GIT_BRANCH_SELECT ]] && . zoul-git-branch-select
 
@@ -47,7 +48,7 @@ wip_run()
 {
   # parse command line
   local jobsCount recursive command='wip' subcommand \
-        cmdScopes=( prod_scope config_scope ) \
+        cmdScopes=( prod_scope config_scope cosm_scope ) \
         wipOnProd wipPrefix wipSuffix wipModulePaths=()
         
   wip_parse "$@" || return $?
@@ -146,37 +147,22 @@ wip_share_epilog()
 wip_release_epilog()
 {
   _wip_enter_wip_mode || return 0
-
-  local devBranch=$(wip_to_ref $moduleDevBranch)
-  local wipBranch=$moduleHead
-  # io_trace "wip_release_epilog 1 -- $(print_vars wipBranch devBranch)"
-  if [[ $wipBranch != $devBranch ]]; then
-    # io_trace "wip_release_epilog 2 -- $(print_vars wipBranch devBranch)"
-    # merge, checkout prod || vtag || dev and del wip
-    _wip_merge _wip_release_merge_dev _wip_release_merge_prod
-  fi
+  # io_trace "wip_release_epilog 1 -- $(print_vars moduleHead)"
+  _wip_merge $moduleHead _wip_release_merge_dev _wip_release_merge_prod true
   branch_show_status
 }
-# scope: devBranch
 _wip_release_merge_dev()
 {
-  local wipBranch=$1 mergeTarget=$2
-  if ref_equals "$wipBranch" "$mergeTarget"; then
-    mio_message "Already released" ${LightBlue}
-  else
-    branch_merge "$wipBranch" "$mergeTarget"
-  fi
+  local wipBranch=$1 mergeTarget=$2 devBranchPath=$3 devBranch=$4
+  # io_trace "_wip_release_merge_dev -- $(print_vars wipBranch mergeTarget devBranchPath devBranch)"
+  branch_merge "$wipBranch" "$mergeTarget"
 }
-# scope: devBranch
 _wip_release_merge_prod()
 {
-  local wipBranch=$1 mergeTarget=$2
-  if ref_equals "$wipBranch" "$mergeTarget"; then
-    mio_message "Already released" ${LightBlue}
-  else
-    branch_merge "$wipBranch" "$mergeTarget" \
-    && branch_merge "$wipBranch" "$devBranchPath"
-  fi
+  local wipBranch=$1 mergeTarget=$2 devBranchPath=$3 devBranch=$4
+  # io_trace "_wip_release_merge_prod -- $(print_vars wipBranch mergeTarget devBranchPath devBranch)"
+  branch_merge "$wipBranch" "$devBranchPath" \
+  && branch_merge "$wipBranch" "$mergeTarget"
 }
 
 ########
@@ -186,22 +172,15 @@ _wip_release_merge_prod()
 wip_finish_epilog()
 {
   _wip_enter_wip_mode || return 0
-
-  local devBranch=$(wip_to_ref $moduleDevBranch)
-  local wipBranch=$moduleHead
-  # io_trace "wip_finish 1 -- $(print_vars wipBranch devBranch)"
-  if [[ $wipBranch != $devBranch ]]; then
-    # io_trace "wip_finish 2 -- $(print_vars wipBranch devBranch)"
-    # merge, checkout prod || vtag || dev and del wip
-    _wip_merge _wip_finish_merge_dev _wip_finish_merge_prod
-  fi
+  # io_trace "wip_finish 1 -- $(print_vars moduleHead)"
+  _wip_merge $moduleHead _wip_finish_merge_dev _wip_finish_merge_prod
   branch_show_status
 }
 # scope: devBranch
 _wip_finish_merge_dev()
 { 
-  local wipBranch=$1 mergeTarget=$2
-  # io_trace "_wip_finish_merge_dev -- $(print_vars wipBranch mergeTarget)"
+  local wipBranch=$1 mergeTarget=$2 devBranchPath=$3 devBranch=$4
+  # io_trace "_wip_finish_merge_dev -- $(print_vars wipBranch mergeTarget devBranchPath devBranch)"
   branch_merge "$wipBranch" "$mergeTarget" \
   && dev_checkout true "$devBranch" \
   && branch_delete "$wipBranch"
@@ -209,10 +188,10 @@ _wip_finish_merge_dev()
 # scope: devBranch
 _wip_finish_merge_prod()
 {
-  local wipBranch=$1 mergeTarget=$2
-  # io_trace "_wip_finish_merge_prod -- $(print_vars wipBranch mergeTarget)"
-  branch_merge "$wipBranch" "$mergeTarget" \
-  && branch_merge "$wipBranch" "$devBranchPath" \
+  local wipBranch=$1 mergeTarget=$2 devBranchPath=$3 devBranch=$4
+  # io_trace "_wip_finish_merge_prod -- $(print_vars wipBranch mergeTarget devBranchPath devBranch)"
+  branch_merge "$wipBranch" "$devBranchPath" \
+  && branch_merge "$wipBranch" "$mergeTarget" \
   && branch_checkout "$prodBranch" true \
   && branch_delete "$wipBranch"
 }
@@ -221,26 +200,41 @@ _wip_finish_merge_prod()
 # HELPERS
 #########
 
-# scope: wipBranch devBranch
+# usage:
+#   _wip_merge TO_MERGE DEV_ACTION PROD_ACTION
 # in:
-#   $1:devAction  wipBranch mergeTarget
-#   $2:prodAction wipBranch mergeTarget
+#   $1:devAction  wipBranch mergeTarget devBranchPath devBranch
+#   $2:prodAction wipBranch mergeTarget devBranchPath devBranch
 _wip_merge()
 {
-  local devAction=$1 prodAction=$2 mergeTarget action branch lbranch bref devBranchPath
-  branch_set_realize "$devBranch"
-  devBranchPath=$branch
+  local wipBranch=$1 devAction=$2 prodAction=$3 showStatusMessage=$4 mergeTarget action \
+        branch lbranch bref
+
+  branch_set_realize "$(wip_to_ref $wipBranch)"
+
+  # a submodule can create a vbranch in the bundle without refreshing the prod scope (run in a subshell)
+  module_is_bundle && _cmd_is_recursive && prod_reset_scope
 
   if [[ $wipOnProd == true && -n $prodBranchPath ]]; then
-    mergeTarget=$prodBranchPath
     action=$prodAction
-    # io_trace "_wip_merge PROD -- $(print_vars wipBranch devBranch devBranchPath prodBranchPath mergeTarget action)"
+    mergeTarget=$prodBranchPath
+    cosm_commit_unstaged_clean_submodules
+    # io_trace "_wip_merge PROD -- $(print_vars action wipBranch mergeTarget branch lbranch)"
   else
-    mergeTarget=$devBranchPath
     action=$devAction
-    # io_trace "_wip_merge DEV -- $(print_vars wipBranch devBranch devBranchPath prodBranchPath mergeTarget action)"
+    mergeTarget=$branch
+    # io_trace "_wip_merge DEV -- $(print_vars action wipBranch mergeTarget branch lbranch)"
   fi
-  $action "$wipBranch" "$mergeTarget"
+
+  if [[ $showStatusMessage == true ]]; then
+    local sha=$(git rev-parse "$mergeTarget")
+    $action "$wipBranch" "$mergeTarget" "$branch" "$lbranch"
+    if [[ $sha == $(git rev-parse "$mergeTarget") ]]; then
+      mio_message "Already released" ${LightBlue}
+    fi
+  else
+    $action "$wipBranch" "$mergeTarget" "$branch" "$lbranch"
+  fi
 }
 _wip_enter_wip_mode()
 {
