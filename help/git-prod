@@ -11,12 +11,23 @@ options:
     -h|--help               display help
     -r|--recursive)         visit specified modules recursively
     --vnext                 checkout next version (default to actual version)
+    -t|--vtable             force creation of a vtable when startup module is a composite submodule
+                            (default is to create a vtable only when the startup module is a bundle)
+    -u|--reuse              reuse last version of startup module
+    --alpha                 release startup module as alpha version
+    --beta                  release startup module as beta version
+    --rc                    release startup module as RC version
+    --rtm                   release startup module as RTM version (remove pre-release version)
     <module-paths>          specific modules to visit (default to current module)
     
 example:
-    git prod enter                 # checkout actual version in current module
-    git prod enter --vnext         # checkout next   version in current module
-    git prod enter -r              # checkout actual version in current module recursively
+    git prod enter                 # checkout actual version in startup module
+    git prod enter --vnext         # checkout next   version in startup module
+    git prod enter -r              # checkout actual version in startup module recursively
     git prod enter -- m1 m2        # checkout actual version in child modules 'm1' and 'm2'
     git prod release               # release production branches in current module recursively
     git prod release -- ../m1      # release production branches in sibling module 'm1' recursively
+    git prod release --alpha       # release production branches as alpha version
+    git prod release --rtm         # release production branches as RTM version
+    git prod release --reuse       # release production branches and reuse last version of startup module
+    git prod release --vtable      # force creation of a vtable when startup module is composite (even if it's not a bundle)
