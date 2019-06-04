@@ -1,45 +1,68 @@
 #!/bin/bash
 
+[[ -z $ZOUL_GIT_CMD ]]    && . zoul-git-cmd
 [[ -z $ZOUL_GIT_BUNDLE ]] && . zoul-git-bundle
-[[ -z $ZOUL_GIT_MODULE ]] && . zoul-git-module
 
 doNotRegisterBundle=true
 
 ptags_parse()
 {
+  local args=()
   while [[ "$#" > 0 ]]; do case "$1" in
-    -h|--help)    zou-help $0; exit 0;;
-    -v|--verbose) verbose=true;;
-    -g|--global)  global=true;;
-    .)            recursive='';;
-    -*)           forOpts+=($1);;
+    -h|--help)      zou-help $0; exit 0;;
+    -j*)            jobsCount=${1#-j};;
+    -r|--recursive) recursive=true;;
+    -a|--all)       noSkuFilter=true;;
+    -v|--verbose)   verbose=true;;
+    -g|--global)    global=true;;
+    --)             shift; break;;
+    -*) io_error "unknown option '$1'"; return 1;;
+    *)  args+=( "$1" );;
   esac; shift; done
+
+  cmd_check_args "${args[@]}"
+  
+  ptagsModulePaths=( "$@" )
+  # io_trace "sync_parse -- $(print_vars noSkuFilter cleanLocalBranches syncNoPush ptagsModulePaths[@])"
 }
 ptags_run()
 {
-  local recursive=true global verbose forOpts=()
-  ptags_parse "$@" || return $?
+  # parse command line
+  local jobsCount recursive command='ptags' subcommand='do' \
+        cmdScopes=( config_scope ) ptagsModulePaths=() \
+        noSkuFilter verbose global
 
-  startupMessage="Pruning tags, please wait..."
+  ptags_parse "$@" || return $?
 
   if [[ $global == true ]]; then
     startupMessage=''
     ptags_prune_registered_bundles_tags
-  elif [[ $recursive = true ]]; then
-    . git-for -a "${forOpts[@]}" -- 'ptags_node'
   else
-    module_run ptags_node
+    startupMessage="Pruning tags, please wait..."
+    module_run "${cmdScopes[@]}" ptags_command
   fi
+
 }
-ptags_node()
+ptags_command()
 {
+  [ ${#ptagsModulePaths[@]} -eq 0 ] && ptagsModulePaths+=( './' )
+  cmd_register_module_paths "$recursive" "${ptagsModulePaths[@]}"
+  # io_trace "ptags_command -- $(print_vars verbose recursive global ptagsModulePaths[@])"
+
+  cmd_visit_modules
+}
+
+ptags_do_prolog()
+{
+  # io_trace "ptags_do_prolog -- $(print_vars verbose global)"
   repo_prune_tags "$verbose"
 }
+
 ptags_prune_registered_bundles_tags()
 {
   local bundleRegisteredPaths
   bundle_set_registered_paths
-  bundle_visit_async 'bundleRegisteredPaths[@]' git-prunetags
+  bundle_visit_async 'bundleRegisteredPaths[@]' git-prunetags -r
 }
 
 ptags_run "$@"
