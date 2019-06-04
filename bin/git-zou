@@ -10,7 +10,7 @@ zou_banner()
     }
   done < "$zouDir/Version.props"
   printf "%b" "\e[1;34mZou tools [Version \e[0;32m$version\e[1;34m]
-Copyright © 2019, EPSITEC SA, CH-1400 Yverdon-les-Bains, Switzerland"
+Copyright © 2019, EPSITEC SA, CH-1400 Yverdon-les-Bains, Switzerland\e[0m"
 }
 zou_help()
 {
@@ -39,10 +39,9 @@ readonly NC='\e[0m' Red='\e[0;31m' Brown='\e[0;33m' Cyan='\e[0;36m'
 
 zou_setup()
 {
-  sleep .2
   local zouDir=$1; shift
   local message="${Cyan}[zou]${NC} : ${Brown}Starting asynchronous update...${NC}"
-  printf '\n%b\n' "$message"
+  printf '\n\n%b\n' "$message"
 
   cd "$zouDir"
   if test -n "$(git status --porcelain)"; then
@@ -50,7 +49,7 @@ zou_setup()
     printf '%b\n' "$message"
   else
     message="${Cyan}[zou]${NC} : ${Cyan}Downloading, please wait...${NC}"
-    printf '%b\n\n' "$message"
+    printf '%b\n' "$message"
     git fetch --prune --all &>/dev/null
     git fetch --tags --force &>/dev/null
     git merge FETCH_HEAD &>/dev/null
@@ -59,12 +58,32 @@ zou_setup()
   fi
 }
 
+# register for launcher exiting event
+launcherExiting=1
+trap "launcherExiting=0" USR1
+
+# notify launcher that we are listening
+kill -USR1 $PPID; shift
+
+# wait for launcher to exit
+while [ $launcherExiting -ne 0 ]; do sleep .1; done
+
 zou_setup "$@"
 rm "$0"
 EOF
 
+  # register for worker listening event
+  workerListening=1
+  trap "workerListening=0" USR1
+
+  # start asynchronous worker
   chmod u+x "$setup"
-  ("$setup" "$zouDir" "${args[@]}") &
+  ("$setup" "$PPID" "$zouDir" "${args[@]}") &
+
+  # worker can do the real work when launcher exits
+  trap "kill -USR1 $!" EXIT
+  # wait for worker to listen
+  while [ $workerListening -ne 0 ]; do sleep .1; done
 }
 
 zou_main "$@"
