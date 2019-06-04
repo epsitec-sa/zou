@@ -377,13 +377,24 @@ _prod_ensure_bundle_vbranch_core()
 prod_fix_release_status()
 {
   _prod_should_release "$1" && releaseStatus='unreleased'
+  # io_trace "prod_fix_release_status -- $(print_vars releasePrerelPrefix releaseStatus)"
 }
 _prod_should_release()
 {
   local prerelPrefix=$1
   [[ $releaseStatus != 'released' ]] && return 1
+  # io_trace "_prod_should_release 1 -- $(print_vars prerelPrefix releasePrerelPrefix releaseStatus)"
   cosm_has_unstaged_submodules && return 0
-  [[ -n $releasePrerelPrefix && $prerelPrefix != $releasePrerelPrefix ]]
+  # io_trace "_prod_should_release 2 -- $(print_vars prerelPrefix releasePrerelPrefix releaseStatus)"
+  [[ -z $prerelPrefix ]] && return 1
+  # io_trace "_prod_should_release 3 -- $(print_vars prerelPrefix releasePrerelPrefix releaseStatus)"
+  [[ $prerelPrefix == 'rtm' && -z $releasePrerelPrefix ]] && return 1
+  # io_trace "_prod_should_release 4 -- $(print_vars prerelPrefix releasePrerelPrefix releaseStatus)"
+  [[ $prerelPrefix == $releasePrerelPrefix ]] && return 1
+  # io_trace "_prod_should_release 5 -- $(print_vars prerelPrefix releasePrerelPrefix releaseStatus)"
+  [[ $prerelPrefix > $releasePrerelPrefix ]] && return 0
+  # io_trace "_prod_should_release 6 -- $(print_vars prerelPrefix releasePrerelPrefix releaseStatus)"
+  return 1
 }
 
 prod_increment_release_version()
