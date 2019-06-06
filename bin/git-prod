@@ -118,6 +118,18 @@ prod_release_prolog()
 
 prod_release_epilog()
 {
+  local moduleForceRelease modulePrerelPrefix=$prerelPrefix
+  if module_is_principal; then
+    # force release apply only to principal module
+    moduleForceRelease=$forceRelease
+    # prerelease always apply to principal module
+    # io_trace "prod_release_epilog PRINCIPAL -- $(print_vars moduleForceRelease modulePrerelPrefix releasePrerelPrefix)"
+  elif _cmd_is_child; then
+    # prerelease does not apply to child modules (excepting principal module)
+    [[ $prerelPrefix != 'rtm' ]] && modulePrerelPrefix=''
+    # io_trace "prod_release_epilog CHILD -- $(print_vars moduleForceRelease modulePrerelPrefix releasePrerelPrefix)"
+  fi
+
   _prod_fix_release_status
   _prod_release || return $?
   _vtable_update
@@ -133,22 +145,20 @@ prod_release_xepilog()
 
 _prod_fix_release_status()
 {
-  local moduleForceRelease
-  module_is_principal && moduleForceRelease=$forceRelease
 
   [[ $dryRun == true ]] && _rstatus_update
-  prod_fix_release_status "$prerelPrefix" "$moduleForceRelease"
+  prod_fix_release_status "$modulePrerelPrefix" "$moduleForceRelease"
 }
 _prod_release()
 {
-  # io_trace "_prod_release 1 -- $(print_vars prerelPrefix releaseStatus)"
+  # io_trace "_prod_release 1 -- $(print_vars modulePrerelPrefix releaseStatus)"
   case $releaseStatus in
     unreleased) _prod_release_unreleased;;
     ffRelease)  _prod_release_ff;;
     released)   _prod_release_released;;
     *)          _prod_release_unimplemented;;
   esac
-  # io_trace "_prod_release 1 -- $(print_vars prerelPrefix releaseStatus)"
+  # io_trace "_prod_release 1 -- $(print_vars modulePrerelPrefix releaseStatus)"
 }
 _prod_release_ff()
 {
@@ -163,7 +173,7 @@ _prod_release_ff()
 _prod_release_unreleased()
 {
   # head will change
-  prod_increment_release_version "$prerelPrefix"
+  prod_increment_release_version "$modulePrerelPrefix"
 
   if [[ $dryRun == true ]]; then
     mio_success "Branch ${VC}$prodBranch${Green} will be released at ${VC}$releaseVTag" "$alias"
