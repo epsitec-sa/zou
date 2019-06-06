@@ -16,6 +16,7 @@ prod_parse()
     -j*)            jobsCount=${1#-j};;
     -r|--recursive) recursive=true;;
     -n|--dry-run)   dryRun=true;;
+    -f|--force)     forceRelease=true;;
     --vnext)        vnext=true;;
     --vtable)       vtable=true;;
     --reuse)        prerelPrefix='reuse';;
@@ -40,7 +41,7 @@ prod_run()
   # parse command line
   local jobsCount recursive command='prod' subcommand \
         cmdScopes=( prod_scope config_scope cosm_scope ) \
-        commitSubmodules=true \
+        commitSubmodules=true forceRelease \
         vnext vtable prerelPrefix dryRun prodModulePaths=()
 
   prod_parse "$@" || return $?
@@ -132,8 +133,11 @@ prod_release_xepilog()
 
 _prod_fix_release_status()
 {
+  local moduleForceRelease
+  module_is_principal && moduleForceRelease=$forceRelease
+
   [[ $dryRun == true ]] && _rstatus_update
-  prod_fix_release_status "$prerelPrefix"
+  prod_fix_release_status "$prerelPrefix" "$moduleForceRelease"
 }
 _prod_release()
 {
