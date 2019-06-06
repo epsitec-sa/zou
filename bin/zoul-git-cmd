@@ -111,6 +111,14 @@ _cmd_is_recursive()
   done
   return 1
 }
+_cmd_is_child()
+{
+  local path
+  for path in "${!cmdRecursiveMap[@]}"; do
+    [[ -n ${moduleRoot#$path} ]] && return 0
+  done
+  return 1
+}
 _cmd_xscope()
 {
   # io_trace "_cmd_xscope ${*@Q}"
