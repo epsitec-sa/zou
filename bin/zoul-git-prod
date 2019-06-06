@@ -318,6 +318,7 @@ dev_checkout()
 #   prod_ensure_vbranch 0.1 'minor'
 prod_ensure_vbranch()
 {
+  module_in_wip_mode && return 0
   if [[ $prodBranch =~ ^(.*/)?([0-9]+)\.([0-9]+)(.*)$ ]]; then
     local vbranch prodFolder major=${BASH_REMATCH[2]} minor=${BASH_REMATCH[3]} suffix=${BASH_REMATCH[4]} \
     # prod folder should be equal to dev folder
