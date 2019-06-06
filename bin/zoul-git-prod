@@ -389,7 +389,7 @@ _prod_should_release()
   # io_trace "_prod_should_release 1 -- $(print_vars prerelPrefix releasePrerelPrefix releaseStatus)"
   cosm_has_unstaged_submodules && return 0
   # io_trace "_prod_should_release 2 -- $(print_vars prerelPrefix releasePrerelPrefix releaseStatus)"
-  [[ -z $prerelPrefix ]] && return 1
+  [[ -z $prerelPrefix || $prerelPrefix == 'reuse' ]] && return 1
   # io_trace "_prod_should_release 3 -- $(print_vars prerelPrefix releasePrerelPrefix releaseStatus)"
   [[ $prerelPrefix == 'rtm' && -z $releasePrerelPrefix ]] && return 1
   # io_trace "_prod_should_release 4 -- $(print_vars prerelPrefix releasePrerelPrefix releaseStatus)"
