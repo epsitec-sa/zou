@@ -211,6 +211,9 @@ _wip_merge()
         branch lbranch bref
 
   branch_set_realize "$(wip_to_ref $wipBranch)"
+  if [ $? -eq 2 ]; then
+    branch_set_best_match_dev "$bundleDevBranch"
+  fi
 
   # a submodule can create a vbranch in the bundle without refreshing the prod scope (run in a subshell)
   module_is_bundle && _cmd_is_recursive && prod_reset_scope
