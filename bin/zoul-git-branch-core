@@ -580,7 +580,7 @@ branch_move()
 branch_delete()
 {
   # io_trace "branch_delete ${*@Q}"
-  local ref=$1 branch lbranch bref rbranch remote ec=0
+  local ref=$1 remoteOnly=$2 branch lbranch bref rbranch remote ec=0
   [[ -z "$ref" ]] && { mio_error "branch_delete: missing argument[s]"; return 1; }
   [[ $ref == 'master' ]] && { mio_error "branch_delete: branch 'master' cannot be deleted"; return 1; }
   branch_set_realize "$ref"; ec=$?
@@ -594,10 +594,14 @@ branch_delete()
       # io_trace "branch_delete (DELETE BOTH) -- $(print_vars branch branch2 rbranch remote)"
       # delete remote branch
       git push --delete --force "$remote" "$branch" >/dev/null 2>&1
-      # delete local branch
-      git branch -D "$branch" >/dev/null 2>&1
-      branch_raise_branch_deleted_event "$branch" "$rbranch"
-    else
+      if [[ $remoteOnly == true ]]; then
+        branch_raise_branch_deleted_event "$rbranch"
+      else
+        # delete local branch
+        git branch -D "$branch" >/dev/null 2>&1
+        branch_raise_branch_deleted_event "$branch" "$rbranch"
+      fi
+    elif [[ $remoteOnly != true ]]; then
       # remote branch does not exist : delete local only
       # io_trace "branch_delete (DELETE LOCAL ONLY) -- $(print_vars branch branch2)"
       git branch -D "$branch" >/dev/null 2>&1
