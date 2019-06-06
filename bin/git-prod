@@ -72,8 +72,8 @@ prod_command()
 ###############
 
 prod_enter_run()    { cmd_visit_modules; }
-prod_enter_prolog() { prod_checkout "$vnext" true; }
-prod_enter_epilog() { branch_show_status; }
+prod_enter_prolog() { prod_checkout "$vnext" true || io_trace_error 'prod_enter_prolog'; }
+prod_enter_epilog() { branch_show_status || io_trace_error 'prod_enter_epilog'; }
 
 #################
 # RELEASE COMMAND
@@ -106,9 +106,9 @@ prod_release_prolog()
   esac
   
   if [[ $dryRun == true ]]; then
-    _rstatus_init
+    _rstatus_init || io_trace_error 'prod_release_prolog 1'
   else
-    branch_checkout "$prodBranch"
+    branch_checkout "$prodBranch" || io_trace_error 'prod_release_prolog 2'
   fi
 }
 
@@ -131,8 +131,8 @@ prod_release_epilog()
   fi
 
   _prod_fix_release_status
-  _prod_release || return $?
-  _vtable_update
+  _prod_release || io_trace_error 'prod_release_epilog 1' || return $?
+  _vtable_update || io_trace_error 'prod_release_epilog 2'
 }
 prod_release_xepilog()
 {
