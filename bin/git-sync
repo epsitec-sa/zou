@@ -12,6 +12,7 @@ sync_parse()
     -r|--recursive) recursive=true;;
     -a|--all)       noSkuFilter=true;;
     -c|--clean)     cleanLocalBranches=true;;
+    -C)             cleanLocalBranches=true; deleteBrokenTrackingInfoBranches=true;;
     -p|--pull)      syncNoPush=true;;
     --)             shift; break;;
     -*) io_error "unknown option '$1'"; return 1;;
@@ -21,14 +22,14 @@ sync_parse()
   cmd_check_args "${args[@]}"
   
   syncModulePaths=( "$@" )
-  # io_trace "sync_parse -- $(print_vars noSkuFilter cleanLocalBranches syncNoPush syncModulePaths[@])"
+  # io_trace "sync_parse -- $(print_vars noSkuFilter cleanLocalBranches deleteBrokenTrackingInfoBranches syncNoPush syncModulePaths[@])"
 }
 sync_run()
 {
   # parse command line
   local jobsCount recursive command='sync' subcommand='do' \
         cmdScopes=( config_scope ) syncModulePaths=() \
-        noSkuFilter noSelectFilter=true cleanLocalBranches syncNoPush
+        noSkuFilter noSelectFilter=true cleanLocalBranches deleteBrokenTrackingInfoBranches syncNoPush
 
   sync_parse "$@" || return $?
   
@@ -48,7 +49,7 @@ sync_command()
 
 sync_do_prolog()
 {
-  branch_sync_all
+  branch_sync_all "$deleteBrokenTrackingInfoBranches"
   _sync_clean
 }
 sync_do_epilog()

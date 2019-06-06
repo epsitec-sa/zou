@@ -77,7 +77,7 @@ _branch_oreset_visitor()
 }
 _branch_sync_visit() 
 {
-  local visitor=$1 fixTracking=$2 current=$moduleHead color l r i; shift 2
+  local visitor=$1 fixTracking=$2 deleteBrokenTrackingInfoBranches=$3 current=$moduleHead color l r i; shift 3
   [[ -z $current ]] && current=$(branch_current)
 
   if [[ $fixTracking == true ]]; then
@@ -93,7 +93,7 @@ _branch_sync_visit()
       '<')  [[ $l == $current ]] && color=${Yellow}      || color=${Brown};;   # behind
       '<>') [[ $l == $current ]] && color=${LightPurple} || color=${Purple};;  # ahead and behind
       '=')  [[ $l == $current ]] && color=${LightGreen}  || color=${Green};;
-      *)    color=${LightBlue};;
+      *)    [[ -n $r ]] && { i='?'; color=${Purple}; } || color=${LightBlue};;
     esac
     $visitor "$r" "$l" "$i" "$current" || return $?
     local linfo=$(string_pad_right 18 $l)
@@ -111,10 +111,13 @@ _branch_sync_fix_tracking()
       # detach head
       git checkout "$l^{}" &>/dev/null
     fi
-    if git branch -d "$l" &>/dev/null; then
+    local deleteOption
+    [[ $deleteBrokenTrackingInfoBranches == true ]] && deleteOption='-D' || deleteOption='-d'
+    if git branch "$deleteOption" "$l" &>/dev/null; then
       mio_message "  Deleted obsolete branch '$l'" ${DarkGray}
-    else
-      git branch --unset-upstream "$l"
+    # else
+    #   git branch --unset-upstream "$l"
+    #   mio_message "  Removed obsolete tracking info for branch '$l'" ${DarkGray}
     fi
   else
     # no tracking info
@@ -130,13 +133,15 @@ _branch_sync_fix_tracking()
 }
 branch_sync_all()
 {
+  local deleteBrokenTrackingInfoBranches=$1; shift
+
   git fetch --prune --all &>/dev/null
   git fetch --tags --force &>/dev/null
 
   branch_merge_abort
   repo_require_clean_work_tree 'Cannot synchronize' || return 1
 
-  _branch_sync_visit _branch_sync_visitor true "$@"
+  _branch_sync_visit _branch_sync_visitor true "$deleteBrokenTrackingInfoBranches" "$@"
 }
 branch_oreset_all()
 {
@@ -156,5 +161,5 @@ branch_oreset_all()
   # prune tags asynchronously
   ( repo_prune_tags false true ) &
 
-  syncNoPush=true _branch_sync_visit _branch_oreset_visitor false "$@"
+  syncNoPush=true _branch_sync_visit _branch_oreset_visitor false false "$@"
 }
