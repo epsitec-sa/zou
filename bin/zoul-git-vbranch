@@ -17,9 +17,9 @@ vbranch_prev_vtag()
   # io_trace "vbranch_prev_vtag ${*@Q}"
 
   local branch=$(git_symbolic_ref ${1:-HEAD}) prerelPrefix=$2 vbranch
-  local vbranch vtag delta alias
+  local vbranch vtag delta
   vtag_set_describe "$branch"
-  # io_trace "vbranch_prev_vtag -- $(print_vars branch prerelPrefix vtag delta alias)"
+  # io_trace "vbranch_prev_vtag -- $(print_vars branch prerelPrefix vtag delta)"
 
   [[ -z $vtag ]] && {
     mio_error "vbranch_prev_vtag: $branch has no vtag ancestor"

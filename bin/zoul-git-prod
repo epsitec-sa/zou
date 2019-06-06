@@ -79,11 +79,11 @@ _prod_init_scope()
 {
   # io_trace "_prod_init_scope ${*@Q}"
   local devBranchPath=$1 devBranch=${2:-$1} \
-        vbranch vtag htag delta=0 alias status strict
+        vbranch vtag htag delta=0 status strict
 
   # 1. Retrieve vtag and vbranch info starting from dev branch
   module_is_bundle && strict=true
-  vtag_set_describe "$devBranchPath" "$devBranch" 'auto' "$strict" # -> vbranch vtag delta alias
+  vtag_set_describe "$devBranchPath" "$devBranch" 'auto' "$strict" # -> vbranch vtag delta
   if [[ -n $vtag ]]; then
     _prod_init_dev true
 
@@ -96,7 +96,6 @@ _prod_init_scope()
     _prod_init_prod
   else
     status='vtagMissing'
-    vtag_format_alias "$vtag" "$delta"
     _prod_init_dev
   fi
   _prod_init_release_status "$delta" "$status"
@@ -105,11 +104,11 @@ _prod_init_scope()
 }
 _prod_init_xscope()
 {
-  local vbranch vtag htag delta=0 alias status strict
+  local vbranch vtag htag delta=0 status strict
 
   # io_trace "_prod_init_xscope 1 -- $(print_vars moduleHead)"
   module_is_bundle && strict=true
-  vtag_set_describe "$moduleHead" "$moduleHead" false # -> vbranch vtag delta alias
+  vtag_set_describe "$moduleHead" "$moduleHead" false # -> vbranch vtag delta
   if [[ -n $vtag ]]; then
     _prod_init_dev false
 
@@ -141,6 +140,9 @@ _prod_init_dev()
   fi
   prodVTag=$vtag
   vtag2dev=$delta
+
+  local alias
+  vtag_format_alias "$vtag" "$delta"
   devAlias=$alias
   moduleAlias=$alias
 }
@@ -148,16 +150,19 @@ _prod_init_prod()
 {
   prodVTag=$vtag
   prodHTag=$htag
-  prodAlias=$alias
   vtag2prod=$delta
   vtagStatus=$status
   releaseVTag=$vtag
   vtag_is_semver "$vtag" && releasePrerelPrefix=${BASH_REMATCH[7]#-}
 
+  local alias
+  vtag_format_alias "$vtag" "$delta"
+  prodAlias=$alias
+
   _prod_reset_alias
 }
 # usage:
-#   local vbranch vtag htag delta alias status
+#   local vbranch vtag htag delta status
 #   _prod_set_prod_info
 # scope:
 #   devBranch devBranchPath prodBranch prodBranchPath strict
@@ -166,35 +171,33 @@ _prod_init_prod()
 #   vtag      -- nearest vtag (depends on skipVNodes value)
 #   htag      -- highest vtag on vbranch (depends on allowDuplicateTags value)
 #   delta     -- number of commits between branch and vtag (can be negative if branch is behind vtag)
-#   alias     -- condensed vtag info - (> v1.0.0 (8)) means branch is ahead of v1.0.0 by 8 commits
 #   status    -- vnode       -- nearest vtag is a vnode (branch was never released on this vbranch)
 #                vtag        -- nearest vtag is a vtag
 #                vtagMissing -- no vtag found (branch was never released)
 _prod_set_prod_info()
 {
-  vtag_set_describe "$prodBranchPath" "$prodBranch" 'auto' "$strict" # -> vbranch vtag delta alias
+  vtag_set_describe "$prodBranchPath" "$prodBranch" 'auto' "$strict" # -> vbranch vtag delta
   if [[ $vbranch != $prodBranch ]]; then
     mio_error "Branches ${VC}$prodBranch${LightPurple} and ${VC}$vbranch${LightPurple} are both descendants of (${VC}$vtag)" ${LightPurple}
     return 1
   fi
   # get highest tag in same folder
   htag=$(vtag_highest "$vbranch" true)   # in same folder
-  # io_trace "_prod_set_prod_info 1 -- $(print_vars prodBranch prodBranchPath vbranch vtag htag delta alias)"
+  # io_trace "_prod_set_prod_info 1 -- $(print_vars prodBranch prodBranchPath vbranch vtag htag delta)"
   if [[ $htag != $vtag ]]; then
     vtag=$htag
     delta=$(( $(git rev-list --count $vtag..$prodBranchPath) ))
-    vtag_format_alias "$vtag" "$delta"
-    # io_trace "_prod_set_prod_info 2 -- $(print_vars prodBranch vbranch vtag htag delta alias)"
+    # io_trace "_prod_set_prod_info 2 -- $(print_vars prodBranch vbranch vtag htag delta)"
   fi
   [[ -z $strict ]] && htag=$(vtag_highest "$vbranch" false) # in all folders
   # vnode or vtag
   vtag_is_vnode $vtag && status='vnode' || status='vtag'
-  # io_trace "_prod_set_prod_info 3 -- $(print_vars prodBranch vbranch vtag htag status alias)"
+  # io_trace "_prod_set_prod_info 3 -- $(print_vars prodBranch vbranch vtag htag status)"
 }
 _prod_set_xprod_info()
 {
-  vtag_set_describe "$prodBranchPath" "$prodBranch" 'auto' "$strict" # -> vbranch vtag delta alias
-  # io_trace "_prod_set_xprod_info 1 -- $(print_vars prodBranch vbranch vtag htag delta alias)"
+  vtag_set_describe "$prodBranchPath" "$prodBranch" 'auto' "$strict" # -> vbranch vtag delta
+  # io_trace "_prod_set_xprod_info 1 -- $(print_vars prodBranch vbranch vtag htag delta)"
   if module_is_bundle; then
     htag=$(vtag_highest $vbranch true)
   else
@@ -202,10 +205,10 @@ _prod_set_xprod_info()
   fi
   # vnode or vtag
   vtag_is_vnode $vtag && status='vnode' || status='vtag'
-  # io_trace "_prod_set_xprod_info 2 -- $(print_vars prodBranch vbranch vtag htag status alias)"
+  # io_trace "_prod_set_xprod_info 2 -- $(print_vars prodBranch vbranch vtag htag status)"
 }
 # in:  vtag
-# out: htag delta alias status
+# out: htag delta status
 _prod_set_no_prod_info()
 {
   local vtag=$1
@@ -213,12 +216,10 @@ _prod_set_no_prod_info()
   delta=0
   if [[ -z $vtag ]]; then
     status='vtagMissing'
-    alias='<>'
   else
     vtag_is_vnode $vtag && status='vnode' || status='vtag'
   fi
-  vtag_format_alias "$vtag" "$delta"
-  # io_trace "_prod_set_no_prod_info -- $(print_vars vtag htag delta status alias)"
+  # io_trace "_prod_set_no_prod_info -- $(print_vars vtag htag delta status)"
 }
 # in:  delta status
 # out: releaseStatus -- (error, unreleasable, released, unreleased, ffRelease)
