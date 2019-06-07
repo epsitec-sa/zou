@@ -281,6 +281,9 @@ prod_checkout()
   # io_trace "prod_checkout -- $(print_vars vnext forceCheckout devBranch vtagStatus prodBranch prodVTag)"
   if [[ $vtagStatus == 'vtag' ]]; then
     if [[ $vnext == true ]]; then
+      if [[ $moduleHead != $moduleDevBranch ]]; then
+        _prod_init_scope "$moduleDevBranchPath" "$moduleDevBranch"
+      fi
       branch_checkout "$prodBranch" "$forceCheckout"
     elif [[ -n $prodVTag ]]; then
       branch_checkout "$prodVTag" "$forceCheckout"
