@@ -275,6 +275,20 @@ ref_prod_fallback()
   fi
   echo 'prod'
 }
+ref_in_fallback()
+{
+  local ref=$1 sku=${2:-$moduleDevBranch}
+  # io_trace "ref_in_fallback 1 -- $(print_vars ref sku)"
+  [[ $ref == $sku ]] && return 0
+  [[ -z $ref || -z $sku ]] && return 1
+  if [[ $ref =~ ^(.*/)?v?[0-9]+\.[0-9]+.*$ ]]; then
+    local folder=${BASH_REMATCH[1]}
+    [[ -z $folder ]] && ref='master' || ref=${folder}dev
+  fi
+  local fallback=( $(ref_dev_fallback "$sku") )
+  # io_trace "ref_in_fallback 2 -- $(print_vars ref sku fallback[@])"
+  array_contains_element "$ref" "${fallback[@]}"
+}
 ref_to_wip()
 {
   [[ -z $1 || -z $2 ]] && return 1
