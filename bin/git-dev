@@ -72,21 +72,15 @@ dev_command()
 # ATTACH
 ########
 
-dev_attach_epilog()
-{
-  module_dev_attach true
-  branch_show_status || io_trace_error 'dev_attach_epilog'
-}
+dev_attach_prolog() { module_dev_attach true || io_trace_error 'dev_attach_prolog'; }
+dev_attach_epilog() { branch_show_status     || io_trace_error 'dev_attach_epilog'; }
 
 #######
 # ENTER
 #######
 
-dev_enter_epilog()
-{
-  dev_checkout true
-  branch_show_status || io_trace_error 'dev_attach_epilog'
-}
+dev_enter_prolog() { dev_checkout true  || io_trace_error 'dev_enter_prolog'; }
+dev_enter_epilog() { branch_show_status || io_trace_error 'dev_enter_epilog'; }
 
 #########
 # RELEASE
