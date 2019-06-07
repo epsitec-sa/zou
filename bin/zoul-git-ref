@@ -174,8 +174,8 @@ ref_dev_fallback()
     echo 'master'
     return 0
   fi
-  # ignore prod branches
-  [[ ${atoms[-1]} =~ ^[0-9]+\.[0-9]+$ ]] && atoms[-1]='dev'
+  # ignore prod branches and vtags
+  [[ ${atoms[-1]} =~ ^v?[0-9]+\.[0-9]+ ]] && atoms[-1]='dev'
 
   if [ ${#atoms[@]} -eq 1 ]; then
     case ${atoms[0]} in
