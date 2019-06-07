@@ -20,6 +20,7 @@ branchDeletedEvent+=( _prod_on_branch_deleted )
 #   module_run prod_scope $*
 prod_scope()
 {
+  # io_trace "prod_scope ${*@Q}"
   # setup prod context
   local prodScopeInitialized=true \
         prodBranch prodBranchPath \
@@ -39,6 +40,7 @@ prod_reset_scope()
   # avoid prematured event processing
   [[ $prodScopeInitialized == true ]] || return 0
 
+  # io_trace "prod_reset_scope ${*@Q}"
   _prod_init_vars
 
   if [[ $configSelectIsExcluded == true ]]; then
@@ -262,8 +264,8 @@ sku_checkout()
   # io_trace "sku_checkout ${*@Q}"
   local sku=$1 checkoutType=${2:-vtag} forceCheckout=$3 branch lbranch ec=0
   branch_set_best_match_dev "$sku"  # -> branch lbranch
-  _prod_init_scope "$branch" "$lbranch"
   # io_trace "sku_checkout -- $(print_vars branch lbranch)"
+  _prod_init_scope "$branch" "$lbranch"
 
   case $checkoutType in
     vtag)   prod_checkout false "$forceCheckout" "$lbranch" || ec=$?;;
