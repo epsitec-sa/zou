@@ -76,14 +76,17 @@ cmd_set_recursive_if_registered()
 #   cmd_visit_modules
 cmd_visit_modules()
 {
-  if array_contains_element "$startupRoot" "${cmdModulePaths[@]}"; then
-    # startup module scope is already initialized
-    # io_trace "cmd_visit_modules 1 ${*@Q} -- $(print_vars cmdModulePaths[@])"
-    module_visit_submodules_async 'cmdModulePaths[@]' _cmd_tree "$@"
-  else
+  # if array_contains_element "$startupRoot" "${cmdModulePaths[@]}"; then
+  #   # startup module scope is already initialized
+  #   local cmdModuleOtherPaths=( $(array_remove_element cmdModulePaths[@] "$startupRoot") )
+  #   io_trace "cmd_visit_modules 1.1 ${*@Q} -- $(print_vars startupRoot)"
+  #   module_visit "$startupRoot" _cmd_tree "$@"
+  #   io_trace "cmd_visit_modules 1.2 ${*@Q} -- $(print_vars cmdModuleOtherPaths[@])"
+  #   module_visit_submodules_async 'cmdModuleOtherPaths[@]' "${cmdScopes[@]}" _cmd_tree "$@"
+  # else
     # io_trace "cmd_visit_modules 2 ${*@Q} -- $(print_vars cmdScopes[@] cmdModulePaths[@])"
     module_visit_submodules_async 'cmdModulePaths[@]' "${cmdScopes[@]}" _cmd_tree "$@"
-  fi
+  # fi
 }
 
 ####################
