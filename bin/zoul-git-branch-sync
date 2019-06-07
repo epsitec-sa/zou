@@ -6,6 +6,7 @@
 #   [[ -z $ZOUL_GIT_BRANCH_SYNC ]] && . zoul-git-branch-sync
 ZOUL_GIT_BRANCH_SYNC=true
 
+[[ -z $ZOUL_GIT_REF ]]          && . zoul-git-ref
 [[ -z $ZOUL_GIT_REPO ]]         && . zoul-git-repo
 [[ -z $ZOUL_GIT_BRANCH_CORE ]]  && . zoul-git-branch-core
 [[ -z $ZOUL_GIT_BRANCH_MERGE ]] && . zoul-git-branch-merge
@@ -105,6 +106,7 @@ _branch_sync_visit()
 }
 _branch_sync_fix_tracking()
 {
+  # io_trace "_branch_sync_fix_tracking -- $(print_vars l r i)"
   if [[ -n $r ]]; then
     # tracking branch was deleted or renamed
     if ref_is_current "$l"; then
@@ -121,7 +123,15 @@ _branch_sync_fix_tracking()
     fi
   else
     # no tracking info
-    if [[ $l =~ ^sku/ ]] || branch_is_prod "$l"; then
+    local pushBranch
+    if [[ -n $moduleDevBranch ]]; then
+      # only push branch matching current sku
+      # io_trace "_branch_sync_fix_tracking "$moduleDevBranch" "$l""
+      ref_in_fallback "$l" "$moduleDevBranch" && pushBranch=true
+    elif [[ $l =~ ^sku/ ]] || branch_is_prod "$l"; then
+      pushBranch=true
+    fi
+    if [[ $pushBranch == true ]]; then
       # automatically push sku and prod branches
       local remote=$(git_remote)
       if [[ -n $remote ]] && ! branch_is_archived "$l" "$remote"; then
