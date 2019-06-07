@@ -73,14 +73,20 @@ _config_reset_scope()
     configSelectExcludeBundlePaths=( "${configSelectExclude[@]/#/$moduleBundlePath\/}" )
     configSelectIncludeBundlePaths=( "${configSelectIncludeBundlePaths[@]#/}" )
     configSelectExcludeBundlePaths=( "${configSelectExcludeBundlePaths[@]#/}" )
-
-    # io_lock_enter
-    # io_trace_unsafe "_config_reset_scope -- $(print_vars configSkuInclude[@])"
-    # io_trace_unsafe "_config_reset_scope -- $(print_vars configSkuExclude[@])"
-    # io_trace_unsafe "_config_reset_scope -- $(print_vars configSelectInclude[@])"
-    # io_trace_unsafe "_config_reset_scope -- $(print_vars configSelectExclude[@])"
-    # io_trace_unsafe "_config_reset_scope -- $(print_vars configSelectIncludeBundlePaths[@])"
-    # io_trace_unsafe "_config_reset_scope -- $(print_vars configSelectExcludeBundlePaths[@])"
-    # io_lock_exit
   fi
+
+  _config_trace
+}
+_config_trace()
+{
+  return 0
+
+  io_lock_enter
+  # io_trace_unsafe "_config_reset_scope -- $(print_vars configSkuInclude[@])"
+  # io_trace_unsafe "_config_reset_scope -- $(print_vars configSkuExclude[@])"
+  io_trace_unsafe "_config_reset_scope -- $(print_vars configSelectInclude[@])"
+  io_trace_unsafe "_config_reset_scope -- $(print_vars configSelectExclude[@])"
+  # io_trace_unsafe "_config_reset_scope -- $(print_vars configSelectIncludeBundlePaths[@])"
+  # io_trace_unsafe "_config_reset_scope -- $(print_vars configSelectExcludeBundlePaths[@])"
+  io_lock_exit
 }

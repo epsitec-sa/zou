@@ -43,12 +43,17 @@ cosm_reset_scope()
   [ ${#moduleSubmodulePaths[@]} -eq 0 ] && return 0
   repo_split_unstaged_submodules "$moduleRoot"
 
-  # io_lock_enter
-  # io_trace_unsafe "cosm_reset_scope -- $(print_vars unstagedCleanSubmodules[@])"
-  # io_trace_unsafe "cosm_reset_scope -- $(print_vars unstagedDirtySubmodules[@])"
-  # io_lock_exit
+  _cosm_trace
 }
+_cosm_trace()
+{
+  return 0
 
+  io_lock_enter
+  io_trace_unsafe "cosm_reset_scope -- $(print_vars unstagedCleanSubmodules[@])"
+  io_trace_unsafe "cosm_reset_scope -- $(print_vars unstagedDirtySubmodules[@])"
+  io_lock_exit
+}
 _cosm_on_head_changed()
 {
   cosm_reset_scope
