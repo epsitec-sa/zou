@@ -81,15 +81,15 @@ sandbox_create_skus()
 {
   cd "$sat1Dir/sm1"
   sandbox_create_sku_with_work sku/sm1/dev
-  sandbox_commit_work "$(file_create_name)"
+  sandbox_commit_work
   cd "$sat1Dir/sm2"
   sandbox_create_sku_with_work sku/sm2/dev
   sandbox_create_sku_with_work sku/dev
-  sandbox_commit_work "$(file_create_name)"
+  sandbox_commit_work
   cd "$sat1Dir"
   sandbox_create_sku_with_work sku/sm1/dev
   sandbox_create_sku_with_work sku/sm2/dev
-  sandbox_commit_work "$(file_create_name)"
+  sandbox_commit_work
 }
 sandbox_create_vresources()
 {
@@ -112,14 +112,14 @@ sandbox_create_sku_with_work()
 {
   local sku=$1 startPoint=${2:-master}
   git checkout -b "$sku" "$startPoint" &>/dev/null
-  sandbox_commit_work "$(file_create_name)"
+  sandbox_commit_work
   git checkout - &>/dev/null
 }
 # example:
 #   sandbox_visit_commit_work "$sat1Dir" "$sat1Dir/sm1" "$sat1Dir/sm2"
 sandbox_commit_work()
 {
-  local file=${1:-readme.md}
+  local file=${1:-$(file_create_name)}
   file_change_commit "$file" "some work @ $(date +%T) on $(git symbolic-ref --short HEAD 2>/dev/null)"
 }
 sandbox_visit_commit_work()
