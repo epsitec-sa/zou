@@ -90,7 +90,7 @@ wip_command()
 # START
 #######
 
-wip_start_epilog()
+wip_start_prolog()
 {
   if ! wip_is_specified; then
     wip_set_wip "$bundleHead" || wip_set_default
@@ -107,14 +107,14 @@ wip_start_epilog()
     fi
   fi
   branch_checkout "$wipBranch" true
-  branch_show_status
 }
+wip_start_epilog() { branch_show_status; }
 
 #######
 # ENTER
 #######
 
-wip_enter_epilog()
+wip_enter_prolog()
 {
   if ! wip_is_specified; then
     wip_set_wip "$bundleHead" || wip_set_default
@@ -130,8 +130,13 @@ wip_enter_epilog()
   elif module_is_bundle; then
     mio_error "SKU ${VC}$wipPrefix:$wipSuffix${Red} not found"
   fi
-  branch_show_status
 }
+wip_enter_epilog() { branch_show_status; }
+
+#######
+# SHARE
+#######
+
 wip_share_epilog()
 {
   _wip_enter_wip_mode || return 0
