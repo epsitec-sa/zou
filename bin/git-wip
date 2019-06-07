@@ -15,14 +15,14 @@ wip_parse()
     -r|--recursive) recursive=true;;
     start|enter)    subcommand=$1;;
     release|finish) subcommand=$1;;
-    share)          subcommand=$1;;
+    exit|share)     subcommand=$1;;
     --prod)         wipOnProd=true;;
     --)             shift; break;;
     -*) io_error "unknown option ${VC}$1${Red}\n"; io_help $0; return 1;;
     *)  args+=( "$1" );;
   esac; shift; done
 
-  cmd_check_subcommand 'start' 'enter' 'share' 'release' 'finish'
+  cmd_check_subcommand 'start' 'enter' 'exit' 'share' 'release' 'finish'
 
   wipModulePaths=( "$@" )
   wip_parse_wip "${args[@]}"
@@ -64,6 +64,7 @@ wip_run()
   case $subcommand in
     start)   startupMessage="Starting ${Brown}$wipLabel${White}, please wait...";;
     enter)   startupMessage="Entering ${Brown}$wipLabel${White}, please wait...";;
+    exit)    startupMessage="Exiting ${Brown}$wipLabel${White}, please wait...";;
     share)   startupMessage="Sharing ${Brown}$wipLabel${White}, please wait...";;
     release) startupMessage="Releasing WIP, please wait...";;
     finish)  startupMessage="Finishing WIP, please wait...";;
@@ -132,6 +133,19 @@ wip_enter_prolog()
   fi
 }
 wip_enter_epilog() { branch_show_status; }
+
+######
+# EXIT
+######
+
+wip_exit_prolog()
+{
+  module_in_wip_mode || return 0
+
+  local devBranch=$(wip_to_ref "$moduleDevBranch")
+  branch_checkout "$devBranch" true
+}
+wip_exit_epilog() { branch_show_status; }
 
 #######
 # SHARE
