@@ -18,41 +18,6 @@ branch_ensure_attached()
   ! branch_is_attached && branch_set_select_auto "$sku" false false
 }
 
-# Use this method to find the development branch which best matches any superproject branch (dev|prod)
-#
-# usage:
-#   local branch lbranch
-#   branch_set_best_match_dev $bundleDevBranch
-# in:
-#   $1:sku=bundleDevBranch
-# out:
-#   branch   -- local or remote
-#   lbranch  -- local branch
-# return:
-#   1 -- not found
-branch_set_best_match_dev()
-{
-  branch=''; lbranch=''
-  local sku=${1:-$bundleDevBranch} patterns branches remoteIndex pattern b i
-  patterns=( $(ref_dev_fallback $sku) )
-  branches=( $(branch_list_local) )
-  remoteIndex=${#branches[@]}
-  branches+=( $(branch_list_remote_untracked) )
-
-  # io_trace "branch_set_best_match_dev -- ${*@Q} -- $(print_vars patterns[@] branches[@])"
-  # try to find a branch matching bundle branch name
-  for pattern in "${patterns[@]}"; do
-    for i in ${!branches[@]}; do
-      b=${branches[i]}
-      (( $i < $remoteIndex )) && lbranch=$b || lbranch=${b#*/}
-      [[ $lbranch == $pattern ]] && {
-        branch=$b
-        return 0
-      }
-    done
-  done
-  return 1
-}
 # Select branch or vtag and return publish status
 # - if checkout fails, display repo status
 # - if checkout succeeds, push branch
