@@ -6,7 +6,7 @@ ZOUL_GIT_PROD=true
 
 [[ -z $ZOUL_GIT_REF ]]            && . zoul-git-ref
 [[ -z $ZOUL_GIT_VBRANCH ]]        && . zoul-git-vbranch
-[[ -z $ZOUL_GIT_BRANCH_SELECT ]]  && . zoul-git-branch-select
+[[ -z $ZOUL_GIT_BRANCH_CORE ]]    && . zoul-git-branch-core
 [[ -z $ZOUL_GIT_BRANCH_MERGE ]]   && . zoul-git-branch-merge
 [[ -z $ZOUL_GIT_CONFIG_VERSION ]] && . zoul-git-config-version
 
@@ -334,6 +334,7 @@ prod_ensure_vbranch()
       minor) (( minor += 1 ));;
       major) (( major += 1 )); minor=0;;
     esac
+    # io_trace "prod_ensure_vbranch 1 -- $(print_vars prodFolder major minor incrementKind prodBranch)"
     vbranch="${prodFolder}${major}.${minor}${suffix}"
     if [[ $vbranch != $prodBranch ]]; then
       vbranch_create "$vbranch" "$moduleDevBranchPath"
@@ -490,7 +491,7 @@ _prod_get_principal_module_release_info()
 #
 # usage:
 #  local prerelPrefix='reuse' vnext
-#  branch_set_vnext $noIncrement
+#  _prod_increment_release_version $noIncrement
 # in:
 #  prerelPrefix=$1  -- prerelease prefix (alpha, beta, rc, rtm, reuse)
 #  $1:noIncrement   -- do not increment 

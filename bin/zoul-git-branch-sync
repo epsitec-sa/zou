@@ -36,10 +36,11 @@ _branch_sync_sync()
   branch_merge "$r" "$l" &>/dev/null && \
   _branch_sync_push "$r" "$l"
 }
+# scope:
+#   l r i current
 _branch_sync_visitor()
 {
-  local r=$1 l=$2 i=$3 current=$4
-  # io_trace "_branch_sync_visitor -- $(print_vars r l i)"
+  # io_trace "_branch_sync_visitor -- $(print_vars l r i current)"
   case $i in
     '>')  _branch_sync_push  "$r" "$l" || return 1;; # l > r ahead   -- move r
     '<')  _branch_sync_merge "$r" "$l" || return 1;; # l < r behind  -- move l
@@ -50,10 +51,12 @@ _branch_sync_visitor()
     _branch_raise_branch_sync_event "$r" "$l" "$i"
   fi
 }
+# scope:
+#   l r i current
+#   pruneBranches -- delete local only branches
 _branch_oreset_visitor()
 {
-  local r=$1 l=$2 i=$3 current=$4
-  # io_trace "_branch_reset_visitor 1 -- $(print_vars r l i current)"
+  # io_trace "_branch_reset_visitor 1 -- $(print_vars l r i current)"
 
   if [[ -z $r ]]; then
     if [[ $pruneBranches == true ]]; then
@@ -78,14 +81,8 @@ _branch_oreset_visitor()
 }
 _branch_sync_visit() 
 {
-  local visitor=$1 fixTracking=$2 deleteBrokenTrackingInfoBranches=$3 current=$moduleHead color l r i; shift 3
+  local visitor=$1 current=$moduleHead color l r i; shift 1
   [[ -z $current ]] && current=$(branch_current)
-
-  if [[ $fixTracking == true ]]; then
-    while read l r i; do
-      [[ -z $i ]] && _branch_sync_fix_tracking
-    done < <(branch_sync_info "$@")
-  fi
 
   while read l r i; do
     [[ $l == $current ]] && linfo="* $l"
@@ -96,7 +93,7 @@ _branch_sync_visit()
       '=')  [[ $l == $current ]] && color=${LightGreen}  || color=${Green};;
       *)    [[ -n $r ]] && { i='?'; color=${Purple}; } || color=${LightBlue};;
     esac
-    $visitor "$r" "$l" "$i" "$current" || return $?
+    $visitor || return $?
     local linfo=$(string_pad_right 18 $l)
     [[ $l == $current ]] && linfo="* $linfo" || linfo="  $linfo"
     [[ $syncNoPush == true && $i =~ '>' ]] && color=${DarkGray}
@@ -106,7 +103,17 @@ _branch_sync_visit()
 }
 _branch_sync_fix_tracking()
 {
-  # io_trace "_branch_sync_fix_tracking -- $(print_vars l r i)"
+  local deleteBrokenTrackingInfoBranches=$1 l r i
+  while read l r i; do
+    # io_trace "_branch_sync_fix_tracking -- $(print_vars l r i deleteBrokenTrackingInfoBranches)"
+    [[ -z $i ]] && _branch_sync_fix_tracking_core
+  done < <(branch_sync_info "$@")
+}
+# scope:
+#   l r i
+#   deleteBrokenTrackingInfoBranches
+_branch_sync_fix_tracking_core()
+{
   if [[ -n $r ]]; then
     # tracking branch was deleted or renamed
     if ref_is_current "$l"; then
@@ -123,15 +130,17 @@ _branch_sync_fix_tracking()
     fi
   else
     # no tracking info
-    local pushBranch
-    if [[ -n $moduleDevBranch ]]; then
-      # only push branch matching current sku
-      # io_trace "_branch_sync_fix_tracking "$moduleDevBranch" "$l""
-      ref_in_fallback "$l" "$moduleDevBranch" && pushBranch=true
-    elif [[ $l =~ ^sku/ ]] || branch_is_prod "$l"; then
-      pushBranch=true
-    fi
-    if [[ $pushBranch == true ]]; then
+
+    # local pushBranch
+    # if [[ -n $moduleDevBranch ]]; then
+    #   # only push branch matching current sku
+    #   # io_trace "_branch_sync_fix_tracking "$moduleDevBranch" "$l""
+    #   ref_in_fallback "$l" "$moduleDevBranch" && pushBranch=true
+    # elif [[ $l =~ ^sku/ ]] || branch_is_prod "$l"; then
+    #   pushBranch=true
+    # fi
+
+    if [[ $l =~ ^sku/ ]] || branch_is_prod "$l"; then
       # automatically push sku and prod branches
       local remote=$(git_remote)
       if [[ -n $remote ]] && ! branch_is_archived "$l" "$remote"; then
@@ -151,7 +160,9 @@ branch_sync_all()
   branch_merge_abort
   repo_require_clean_work_tree 'Cannot synchronize' || return 1
 
-  _branch_sync_visit _branch_sync_visitor true "$deleteBrokenTrackingInfoBranches" "$@"
+  _branch_sync_fix_tracking "$deleteBrokenTrackingInfoBranches"
+
+  _branch_sync_visit _branch_sync_visitor "$@"
 }
 branch_oreset_all()
 {
@@ -171,5 +182,5 @@ branch_oreset_all()
   # prune tags asynchronously
   ( repo_prune_tags false true ) &
 
-  syncNoPush=true _branch_sync_visit _branch_oreset_visitor false false "$@"
+  syncNoPush=true _branch_sync_visit _branch_oreset_visitor "$@"
 }
