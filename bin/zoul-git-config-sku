@@ -98,10 +98,10 @@ config_sku_status()
 {
   io_lock_enter
   for path in $(config_sku_list_included | sort); do
-    mio_success_unsafe "  $path"
+    io_success_unsafe "  $path" "$moduleTracePrefix"
   done
   for path in $(config_sku_list_excluded | sort); do
-    mio_message_unsafe "x $path" ${Purple}
+    io_message_unsafe "x $path" "$moduleTracePrefix" ${Purple}
   done
   io_lock_exit
 }

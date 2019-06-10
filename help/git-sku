@@ -1,17 +1,23 @@
-usage: git sku [<options>] enter [<sku-spec>]
-   or: git sku [<options>] info -- <module-paths>
+usage: git sku enter  [--vnext] [--dev]    [<sku-spec>]
+   or: git sku info   [-r]                 [-- <module-paths> ]
+   or: git sku config [-r] [-i ..] [-x ..] [-- <module-paths> ]
 
 Manage SKUs.
 
 commands:
     enter                   enter SKU
-    info                    display SKU info
+    config                  [de]activate SKU submodules (default to active)
+    info                    display SKU specialization info
 
 options:
     -h|--help               display help
     -r|--recursive          visit specified modules recursively
     --vnext                 enter next version (default to actual version)
     --dev                   enter developement mode (default to actual version)
+    -i|--include [SM1,...]  include specific submodules (default to all) in current SKU
+    -x|--exclude [SM1,...]  exclude specific submodules (default to all) from current SKU
+
+arguments:
     <sku-spec>              SKU specification
     <module-paths>          specific modules to visit (default to current module)
     
@@ -23,5 +29,12 @@ example:
                                   # checkout vbranch 'sku/sal/<version>' of bundle and fallback vbranches of submodules
     git sku enter --vnext         # enter next version of current SKU
     git sku enter --dev           # enter development mode in current SKU
+    
     git sku info                  # display SKU info of bundle and current module
     git sku info -- ../m1         # display SKU info of bundle and sibling module 'm1'
+
+    git sku config                # display [in]active submodules
+    git sku config -r             # display [in]active submodules recursively
+    git sku config -i             # include all submodules in current SKU (default)
+    git sku config -x             # exclude all submodules from current SKU
+    git sku config -x sm1 sm2     # exclude submodules sm1 and sm2 from current SKU

@@ -4,6 +4,7 @@
 [[ -z $ZOUL_GIT_PROD ]]          && . zoul-git-prod
 [[ -z $ZOUL_GIT_COSM ]]          && . zoul-git-cosm
 [[ -z $ZOUL_GIT_BRANCH_SELECT ]] && . zoul-git-branch-select
+[[ -z $ZOUL_GIT_CONFIG_SKU ]]    && . zoul-git-config-sku
 
 sku_parse()
 {
@@ -17,12 +18,15 @@ sku_parse()
     --dev)          checkoutType='dev';;
     enter)          subcommand=$1;;
     info)           subcommand=$1;;
+    config)         subcommand=$1;;
+    -i|--include)   [[ $configMode == 'configExclude' ]] && { io_error 'options conflict'; exit 1; } || configMode='configInclude';;
+    -x|--exclude)   [[ $configMode == 'configInclude' ]] && { io_error 'options conflict'; exit 1; } || configMode='configExclude';;
     --)             shift; break;;
     -*) io_error "unknown option '$1'"; return 1;;
     *)  args+=( "$1" );;
   esac; shift; done
 
-  cmd_check_subcommand 'enter' 'info'
+  cmd_check_subcommand 'enter' 'info' 'config'
   
   skuModulePaths=( "$@" )
   sku_parse_sku "${args[@]}"
@@ -40,6 +44,7 @@ sku_run()
   # parse command line
   local jobsCount recursive=false command='sku' subcommand \
         cmdScopes=( prod_scope config_scope cosm_scope ) \
+        configMode='status' configInclude=() configExclude=() \
         checkoutType='vtag' noSkuFilter skuSpec skuModulePaths=()
 
   sku_parse "$@" || return $?
@@ -64,6 +69,10 @@ sku_command()
     info)
       [ ${#skuModulePaths[@]} -eq 0 ] && skuModulePaths+=( './' )
       cmd_register_module_paths false "$bundleRoot"
+      cmd_register_module_paths "$recursive" "${skuModulePaths[@]}"
+      ;;
+    config)
+      [ ${#skuModulePaths[@]} -eq 0 ] && skuModulePaths+=( './' )
       cmd_register_module_paths "$recursive" "${skuModulePaths[@]}"
       ;;
   esac
@@ -108,5 +117,85 @@ sku_info_prolog()
   mio_message "[${skuList}]" "${bcolor}"
 }
 sku_info_epilog() { branch_show_status; }
+
+########
+# CONFIG
+########
+
+sku_config_prolog()
+{
+  if [ ${#configInclude[@]} -ne 0 ]; then
+    if [ ${#configInclude[@]} -eq 1 ]; then
+      config_sku_include "${configInclude[0]}"
+    else
+      config_sku_include_many "${configInclude[@]}"
+    fi
+  fi
+  if [ ${#configExclude[@]} -ne 0 ]; then
+    if [ ${#configExclude[@]} -eq 1 ]; then
+      config_sku_exclude "${configExclude[0]}"
+    else
+      config_sku_exclude_many "${configExclude[@]}"
+    fi
+  fi
+
+  case "$configMode" in
+    configInclude) [ ${#configInclude[@]} -eq 0 ] && config_sku_include_all;;
+    configExclude) [ ${#configExclude[@]} -eq 0 ] && config_sku_exclude_all;;
+  esac
+
+  config_sku_status
+}
+
+#########
+# HELPERS
+#########
+
+# usage:
+#   local sku
+#   branch_set_bestmatch_sku $skuSpec
+# in:
+#   skuSpec=$1  -- SKU dev branch spec (fact/std, fact/net, ...)
+# out:
+#   sku
+branch_set_bestmatch_sku()
+{
+  local skuSpec=$1
+  if [[ -z $skuSpec ]]; then
+    sku=$bundleDevBranch
+  elif [[ "$moduleRoot" == "$bundleRoot" ]]; then
+    _branch_set_bestmatch_sku_core
+  else
+    cd "$bundleRoot"
+    _branch_set_bestmatch_sku_core
+    cd "$moduleRoot"
+  fi
+}
+_branch_set_bestmatch_sku_core()
+{
+  if branch_exists "$skuSpec"; then
+    sku=$skuSpec
+  else
+    local branch candidates=() resku="^(.*/)?$(wildcard_to_regex "$skuSpec")(/.*)?$"
+    for branch in $(branch_list_all_flatten); do
+      [[ $branch =~ ^(.*/)?[0-9]+\.[0-9]+ ]] && continue   # skip prod branches
+      [[ $branch =~ $resku ]] && candidates+=( "$branch" )
+      # io_trace "_branch_set_bestmatch_sku_core -- $(print_vars branch candidates[@])"
+    done
+    case ${#candidates[@]} in
+      0) io_error "SKU ${VC}$skuSpec${Red} does not exist." "fatal"; exit 1;;
+      1) sku=${candidates[0]};;
+      *)
+        local skuCandidates=() c
+        for c in "${candidates[@]}"; do
+          [[ $c =~ ^sku/ ]] && skuCandidates+=( "$c" )
+        done
+        case ${#skuCandidates[@]} in
+          1) sku=${skuCandidates[0]};;
+          *) io_error "SKU ${VC}$skuSpec${Red} is ambiguous, use one of (${VC}$(string_join ', ' "${candidates[@]}")${Red})"; exit 1;;
+        esac
+    esac
+  fi
+}
 
 sku_run  "$@"

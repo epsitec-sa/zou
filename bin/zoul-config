@@ -23,10 +23,10 @@ config_setup()
 
   # update zou aliases
   local alias
-  for alias in csku csel cver cpub smaster spull sclean oprune publish select attach; do
+  for alias in csku csel cver cpub smaster spull sclean oprune publish select attach config-sku; do
     git config --global --unset-all alias.$alias
   done
-  git config --global --add alias.csku 'config-sku'
+  git config --global --add alias.csku 'sku config'
   git config --global --add alias.csel 'config-select'
   git config --global --add alias.cver 'config-version'
   git config --global --add alias.smaster 'sku enter master --dev'
@@ -37,6 +37,7 @@ config_setup()
   git config --global --add alias.select '!printf '"'"'%b\n'"'"' '"'"'\e[0;31mThis command is deprecated, use \e[0;37mgit (wip|dev|prod) enter\e[0;31m instead\e[0m'"'"''
   git config --global --add alias.attach '!printf '"'"'%b\n'"'"' '"'"'\e[0;31mThis command is deprecated, use \e[0;37mgit dev attach\e[0;31m instead\e[0m'"'"''
   git config --global --add alias.vbranch '!printf '"'"'%b\n'"'"' '"'"'\e[0;31mThis command is deprecated, use \e[0;37mgit dev release\e[0;31m instead\e[0m'"'"''
+  git config --global --add alias.config-sku '!printf '"'"'%b\n'"'"' '"'"'\e[0;31mThis command is deprecated, use \e[0;37mgit sku config\e[0;31m instead\e[0m'"'"''
 }
 config_migrate_registered_bundles()
 {
