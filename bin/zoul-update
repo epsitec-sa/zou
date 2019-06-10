@@ -6,6 +6,7 @@ ZOUL_UPDATE=true
 
 [[ -z $ZOUL_CORE ]]            && . zoul-core
 [[ -z $ZOUL_CONFIG ]]          && . zoul-config
+[[ -z $ZOUL_GIT_VTAG ]]        && . zoul-git-vtag
 [[ -z $ZOUL_GIT_MODULE ]]      && . zoul-git-module
 [[ -z $ZOUL_GIT_BRANCH_CORE ]] && . zoul-git-branch-core
 
@@ -50,7 +51,7 @@ zou_prune_tags()
 }
 zou_update_bundle()
 {
-  git-sync --pull --clean
+  git-sync -r --pull --clean
   git-sku enter "$@"
 }
 zou_update_epilog()
