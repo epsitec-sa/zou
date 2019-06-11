@@ -50,6 +50,7 @@ file_create_name()
   local extension=${1:-.txt} folder=${PWD##*/} sku=$(git symbolic-ref --short HEAD 2>/dev/null)
   sku=${sku%/dev}   # remove '/dev' suffix
   sku=${sku#sku/}   # remove 'sku/' prefix
+  sku=${sku:-master}
   sku=${sku//\//-}  # replace '/' with '-'
   echo ${folder}-${sku}${extension}
 }
