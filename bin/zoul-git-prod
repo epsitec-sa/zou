@@ -277,21 +277,21 @@ sku_checkout()
 }
 prod_checkout()
 {
-  local vnext=$1 forceCheckout=$2 devBranch=$3
-  # io_trace "prod_checkout -- $(print_vars vnext forceCheckout devBranch vtagStatus prodBranch prodVTag)"
-  if [[ $vtagStatus == 'vtag' ]]; then
-    if [[ $vnext == true ]]; then
-      if [[ $moduleHead != $moduleDevBranch ]]; then
-        _prod_init_scope "$moduleDevBranchPath" "$moduleDevBranch"
-      fi
-      branch_checkout "$prodBranch" "$forceCheckout"
-    elif [[ -n $prodVTag ]]; then
+  local vnext=$1 forceCheckout=$2 devFallback=$3
+  # io_trace "prod_checkout -- $(print_vars vnext forceCheckout devFallback vtagStatus prodBranch prodVTag)"
+  if [[ $vnext == true ]]; then
+    if [[ $moduleHead != $moduleDevBranch ]]; then
+      _prod_init_scope "$moduleDevBranchPath" "$moduleDevBranch"
+    fi
+    branch_checkout "$prodBranch" "$forceCheckout"
+  elif [[ $vtagStatus == 'vtag' ]]; then
+    if [[ -n $prodVTag ]]; then
       branch_checkout "$prodVTag" "$forceCheckout"
     else
-      dev_checkout "$forceCheckout" "$devBranch"
+      dev_checkout "$forceCheckout" "$devFallback"
     fi
   else
-    dev_checkout "$forceCheckout" "$devBranch"
+    dev_checkout "$forceCheckout" "$devFallback"
   fi
 }
 dev_checkout()
