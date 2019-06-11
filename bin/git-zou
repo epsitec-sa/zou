@@ -35,11 +35,10 @@ zou_main()
   cat >"$setup" <<\EOF
 #!/bin/bash
 
-readonly NC='\e[0m' Red='\e[0;31m' Brown='\e[0;33m' Cyan='\e[0;36m'
-
 zou_setup()
 {
   local zouDir=$1; shift
+  local NC='\e[0m' Red='\e[0;31m' Brown='\e[0;33m' Cyan='\e[0;36m'
   local message="${Cyan}[zou]${NC} : ${Brown}Starting asynchronous update...${NC}"
   printf '\n\n%b\n' "$message"
 
@@ -54,7 +53,8 @@ zou_setup()
     git fetch --tags --force >/dev/null
     git merge FETCH_HEAD >/dev/null
 
-    zoul-update "$@"
+    . zoul-update
+    zou_update "$@"
   fi
 }
 

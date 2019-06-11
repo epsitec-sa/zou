@@ -4,11 +4,12 @@
 #   [[ -z $ZOUL_UPDATE ]] && . zoul-update
 ZOUL_UPDATE=true
 
-[[ -z $ZOUL_CORE ]]            && . zoul-core
 [[ -z $ZOUL_CONFIG ]]          && . zoul-config
 [[ -z $ZOUL_GIT_VTAG ]]        && . zoul-git-vtag
+[[ -z $ZOUL_GIT_PROD ]]        && . zoul-git-prod
 [[ -z $ZOUL_GIT_MODULE ]]      && . zoul-git-module
 [[ -z $ZOUL_GIT_BRANCH_CORE ]] && . zoul-git-branch-core
+[[ -z $ZOUL_GIT_BRANCH_SYNC ]] && . zoul-git-branch-sync
 
 zou_parse()
 {
@@ -16,14 +17,21 @@ zou_parse()
     -z|--zou-only)      zouOnly=true;;
     -u|--no-prune-tags) noPruneTags=true;;
     ---version)         actualVersion=$2; shift;;
-    *)                  selectArgs+=($1);;
+    --vnext)            skuArgs+=($1);;
+    --dev)              skuArgs+=($1);;
+    -*) io_error "unknown option '$1'"; return 1;;
   esac; shift; done
 }
 
 zou_update()
 {
-  local resetConfig zouOnly noPruneTags actualVersion selectArgs=()
-  zou_parse "$@"
+  module_run _zou_update_core "$@"
+}
+
+_zou_update_core()
+{
+  local resetConfig zouOnly noPruneTags actualVersion skuArgs=()
+  zou_parse "$@" || return $?
   
   config_setup
   config_migrate_registered_bundles
@@ -34,27 +42,27 @@ zou_update()
     git-sku enter "${selectArgs[@]}"
   else
     # zou repo inside zou-dev bundle
-    module_visit "$bundleRoot" zou_update_bundle "${selectArgs[@]}"
+    module_visit "$bundleRoot" _zou_update_bundle "${skuArgs[@]}"
   fi
-  zou_register_bundles
-  zou_prune_tags
-  zou_update_epilog
+  _zou_register_bundles
+  _zou_prune_tags
+  _zou_update_epilog
 }
-zou_register_bundles()
-{
-  git-bundler --scan
-}
-zou_prune_tags()
-{
-  [[ $noPruneTags == true ]] && return 0
-  git-prunetags --global
-}
-zou_update_bundle()
+_zou_update_bundle()
 {
   git-sync -r --pull --clean
   git-sku enter "$@"
 }
-zou_update_epilog()
+_zou_register_bundles()
+{
+  git-bundler --scan
+}
+_zou_prune_tags()
+{
+  [[ $noPruneTags == true ]] && return 0
+  git-prunetags --global
+}
+_zou_update_epilog()
 {
   printf '\n'
 
@@ -75,5 +83,3 @@ zou_update_epilog()
   io_warning "$traceMessage" "$tracePrefix"
   io_warning "Press [Enter] to continue..." "$tracePrefix"
 }
-
-module_run zou_update "$@"
