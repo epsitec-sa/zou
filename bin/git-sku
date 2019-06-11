@@ -22,7 +22,12 @@ sku_parse()
     -x|--exclude)   [[ $configMode == 'configInclude' ]] && { io_error 'options conflict'; exit 1; } || configMode='configExclude';;
     --)             shift; break;;
     -*) io_error "unknown option '$1'"; return 1;;
-    *)  args+=( "$1" );;
+    *)
+      case "$configMode" in
+        configInclude) configInclude+=($1);;
+        configExclude) configExclude+=($1);;
+        *) args+=( "$1" );;
+      esac
   esac; shift; done
 
   cmd_check_subcommand 'enter' 'info' 'config'
