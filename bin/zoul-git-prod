@@ -434,7 +434,7 @@ prod_commit_release()
     # update technical version
     _prod_commit_release_core 'version_update'
     local comment="publish branch '$prodBranch' as '$releaseVTag'"
-    git tag -a -m "zou-flow: $comment" "$releaseVTag" "$prodBranch"
+    io_buffered_eval "git tag -a -m 'zou-flow: $comment' "$releaseVTag" "$prodBranch" 2>&1"
     # io_trace "prod_commit_release 2 -- $(print_vars releasePrerelPrefix releaseVTag prodBranch)"
   fi
 }
@@ -457,7 +457,7 @@ _prod_refresh_bundle_htag()
   # io_trace "_prod_refresh_bundle_htag 1 -- $(print_vars principalModuleId prodHTag noIncrement)"
   [[ -n $principalModuleId ]] && module_is_bundle  || return 0
 
-  local pinfo pstatus ptag pver hver \
+  local pinfo pstatus ptag pver hver htag \
         principalScopes=( prod_scope )
 
   pinfo=$(module_visit "$principalModuleId" "${principalScopes[@]}" _prod_get_principal_module_release_info)
@@ -476,7 +476,9 @@ _prod_refresh_bundle_htag()
   hver=$(vtag_highest_of $pver $hver)
   # restore folder
   [[ $prodHTag =~ ^.*/ ]]
-  prodHTag=${BASH_REMATCH[0]}$hver
+  htag=${BASH_REMATCH[0]}$hver
+  [[ $htag == $prodHTag ]] && noIncrement=''
+  prodHTag=$htag
   # io_trace "_prod_refresh_bundle_htag 2 -- $(print_vars principalModuleId ptag pstatus prodHTag noIncrement)"
 }
 # run in principal module context
