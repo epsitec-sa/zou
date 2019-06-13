@@ -10,7 +10,7 @@ zou_banner()
     }
   done < "$zouDir/Version.props"
   printf "%b" "\e[1;34mZou tools [Version \e[0;32m$version\e[1;34m]
-Copyright © 2019, EPSITEC SA, CH-1400 Yverdon-les-Bains, Switzerland\e[0m"
+Copyright © 2019, EPSITEC SA, CH-1400 Yverdon-les-Bains, Switzerland\e[0m\n"
 }
 zou_help()
 {
@@ -26,59 +26,30 @@ zou_parse()
 }
 zou_main()
 {
-  local zouDir=$(realpath "$(dirname "${BASH_SOURCE[0]}")/..") args=() version
+  local args=() version zouBinDir zouDir setupDir boot='zoul-update-boot'
+  zouBinDir=$(dirname "${BASH_SOURCE[0]}")
+  zouDir=$(realpath "$zouBinDir/..")
+
+  cd "$zouDir"
+  if test -n "$(git status --porcelain)"; then
+    printf -v zouDir %q "$zouDir"
+    printf '\n%b\n' "\e[0;36m[zou]\e[0m : \e[0;31mRepo \e[0;37m$zouDir\e[0;31m is not clean, aborting...\e[0m"
+    exit 1
+  fi
+
   zou_banner
   zou_parse "$@"
   args+=(---version $version)
 
-  local setup=$(mktemp)
-  cat >"$setup" <<\EOF
-#!/bin/bash
-
-zou_setup()
-{
-  local zouDir=$1; shift
-  local NC='\e[0m' Red='\e[0;31m' Brown='\e[0;33m' Cyan='\e[0;36m'
-  local message="${Cyan}[zou]${NC} : ${Brown}Starting asynchronous update...${NC}"
-  printf '\n\n%b\n' "$message"
-
-  cd "$zouDir"
-  if test -n "$(git status --porcelain)"; then
-    message="${Cyan}[zou]${NC} : ${Red}Repo '$zouDir' is not clean, aborting...${NC}"
-    printf '%b\n' "$message"
-  else
-    message="${Cyan}[zou]${NC} : ${Cyan}Downloading, please wait...${NC}"
-    printf '%b\n' "$message"
-    git fetch --prune --all >/dev/null
-    git fetch --tags --force >/dev/null
-    git merge FETCH_HEAD >/dev/null
-
-    . zoul-update
-    zou_update "$@"
-  fi
-}
-
-# register for launcher exiting event
-launcherExiting=1
-trap "launcherExiting=0" USR1
-
-# notify launcher that we are listening
-kill -USR1 $PPID; shift
-
-# wait for launcher to exit
-while [ $launcherExiting -ne 0 ]; do sleep .1; done
-
-zou_setup "$@"
-rm "$0"
-EOF
+  setupDir=$(mktemp -d)
+  cp --preserve "$zouBinDir/$boot" "$setupDir"
 
   # register for worker listening event
   workerListening=1
   trap "workerListening=0" USR1
 
   # start asynchronous worker
-  chmod u+x "$setup"
-  ("$setup" "$PPID" "$zouDir" "${args[@]}") &
+  ("$setupDir/$boot" "$zouBinDir" "$setupDir" "${args[@]}") &
 
   # worker can do the real work when launcher exits
   trap "kill -USR1 $!" EXIT
