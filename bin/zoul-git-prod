@@ -283,7 +283,11 @@ prod_checkout()
     if [[ $moduleHead != $moduleDevBranch ]]; then
       _prod_init_scope "$moduleDevBranchPath" "$moduleDevBranch"
     fi
-    branch_checkout "$prodBranch" "$forceCheckout"
+    if [[ -n $prodBranch ]]; then
+      branch_checkout "$prodBranch" "$forceCheckout"
+    else
+      dev_checkout "$forceCheckout" "$devFallback"
+    fi
   elif [[ $vtagStatus == 'vtag' ]]; then
     if [[ -n $prodVTag ]]; then
       branch_checkout "$prodVTag" "$forceCheckout"
