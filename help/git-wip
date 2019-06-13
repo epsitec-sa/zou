@@ -1,23 +1,26 @@
-usage: git wip [<options>] start [<prefix>:][<suffix>] -- <module-paths>
-   or: git wip [<options>] enter [<prefix>:][<suffix>] -- <module-paths>
-   or: git wip [<options>] exit  [<prefix>:][<suffix>] -- <module-paths>
-   or: git wip [<options>] release -- <module-paths>
-   or: git wip [<options>] finish  -- <module-paths>
+usage: git wip start   [-r] [--hotfix] [<prefix>:][<suffix>] [-- <module-paths>]
+   or: git wip enter   [-r] [--hotfix] [<prefix>:][<suffix>] [-- <module-paths>]
+   or: git wip exit    [-r] [-- <module-paths>]
+   or: git wip release [-r] [--merge] [-- <module-paths>]
+   or: git wip finish  [-r] [--merge] [-- <module-paths>]
+   or: git wip share
 
 Manage WIP mode.
 
 commands:
     start                   create and checkout WIP branches in bundle and specified modules
     enter                   checkout WIP branches in bundle and specified modules
-    exit                    enter DEV mode in modules where WIP mode is activated
-    release                 merge WIP branches into DEV branches
-    finish                  release, delete WIP branches and switch to DEV mode
+    exit                    enter DEV or PROD mode in modules where WIP mode is activated (always recursive in bundle)
+    release                 merge WIP branches into DEV and/or PROD branches (stay on WIP branches)
+    finish                  release, exit and delete WIP branches
+    share                   make all active WIP branches public (push them on origin)
 
 options:
     -h|--help               display help
     -r|--recursive          visit specified modules recursively
-    --prod                  create WIP on PROD branch (default to DEV branch) - can be used for hotfixes
-    <prefix>                WIP prefix (default to 'wip' on DEV branch and to 'hotfix' on PROD branch)
+    --hotfix                create a hotfix (graft WIP branch on production branch)
+    --merge                 merge WIP branch into PROD and DEV branches (default in bundle)
+    <prefix>                WIP prefix (default to 'hotfix' if --hotfix is specified else 'wip')
     <suffix>                WIP suffix (default to 'work')
     <module-paths>          specific modules to visit (default to current module)
     
@@ -28,7 +31,8 @@ example:
     git wip start issue:7         # start 'issue:7'  in bundle and current module
     git wip start -- m1 m2        # start 'wip:work' in bundle and child modules 'm1' and 'm2'
     git wip start -r              # start 'wip:work' in bundle and current module recursively
-    git wip start --prod my       # start 'hotfix:my' on PROD branch in bundle and current module
+    git wip start --hotfix my     # start 'hotfix:my' on PROD branch in bundle and current module
+    git wip start hotfix:my       # same as 'git wip start --hotfix my'
 
     git wip enter my              # enter 'wip:my'    in bundle and current module
     git wip enter hotfix:my       # enter 'hotfix:my' in bundle and current module

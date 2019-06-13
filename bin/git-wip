@@ -15,7 +15,8 @@ wip_parse()
     start|enter)    subcommand=$1;;
     release|finish) subcommand=$1;;
     exit|share)     subcommand=$1;;
-    --prod)         wipProd=true;;
+    --merge)        mergeIntoDev=true;;
+    --hotfix)       wipHotfix=true;;
     --)             shift; break;;
     -*) io_error "unknown option ${VC}$1${Red}\n"; io_help $0; return 1;;
     *)  args+=( "$1" );;
@@ -35,20 +36,29 @@ wip_parse_wip()
   [[ ${1:0:1} != '-' && $1 =~ ^([^:]+:)?([^[:blank:]]*) ]] || return 1
   wipPrefix=${BASH_REMATCH[1]%:}
   wipSuffix=${BASH_REMATCH[2]}
+  if [[ $wipHotfix == true ]]; then
+    wipPrefix=${wipPrefix:-hotfix}
+    if [[ $wipPrefix != 'hotfix' ]]; then
+      io_error "option ${VC}--hotfix${Red} implies ${VC}$wipPrefix:$wipSuffix${Red}"
+      return 1
+    fi
+  fi
+}
+wip_init_wip()
+{
+  wipPrefix=$1
+  wipSuffix=$2
+  [[ $wipPrefix == 'hotfix' ]] && wipHotfix=true || true
 }
 wip_is_specified() { [[ -n $wipSuffix || -n $wipPrefix ]]; }
-wip_set_default()
-{
-  [[ $wipProd == true ]] && wipPrefix=${wipPrefix:-hotfix} || wipPrefix=${wipPrefix:-wip}
-  wipSuffix=${wipSuffix:-work}
-}
+wip_set_default()  { wipPrefix=${wipPrefix:-wip}; wipSuffix=${wipSuffix:-work}; }
 
 wip_run()
 {
   # parse command line
   local jobsCount recursive command='wip' subcommand \
         cmdScopes=( prod_scope config_scope cosm_scope ) \
-        wipProd wipPrefix wipSuffix wipModulePaths=()
+        wipHotfix mergeIntoDev wipPrefix wipSuffix wipModulePaths=()
         
   wip_parse "$@" || return $?
 
@@ -78,9 +88,10 @@ wip_command()
   cmd_register_module_paths "$recursive" "${wipModulePaths[@]}"
 
   case $subcommand in
-    start|enter) cmd_register_module_paths false "$bundleRoot";;
+    start)       cmd_register_module_paths false "$bundleRoot";;
     share)       cmd_register_module_paths true  "$bundleRoot";;
-    finish)      cmd_set_recursive_if_registered "$bundleRoot";;
+    enter)       cmd_set_recursive_if_registered "$bundleRoot" || cmd_register_module_paths false "$bundleRoot";;
+    exit|finish) cmd_set_recursive_if_registered "$bundleRoot";;
   esac
 
   cmd_visit_modules
@@ -100,7 +111,7 @@ wip_start_prolog()
   local wipBranch=$(ref_to_wip "$devBranch" "$wipSuffix" "$wipPrefix")
   # io_trace "wip_start -- $(print_vars wipBranch devBranch moduleHead)"
   if [[ $moduleHead != $wipBranch ]]; then
-    if [[ $wipProd == true && -n $prodBranchPath ]]; then
+    if [[ $wipHotfix == true && -n $prodBranchPath ]]; then
       git branch "$wipBranch" "$prodBranchPath" &>/dev/null
     else
       git branch "$wipBranch" "$moduleDevBranchPath" &>/dev/null
@@ -142,7 +153,7 @@ wip_exit_prolog()
   module_in_wip_mode || return 0
 
   local targetBranch
-  [[ $wipProd == true ]] && targetBranch=$prodBranch || targetBranch=$(wip_to_ref "$moduleDevBranch")
+  [[ $wipHotfix == true ]] && targetBranch=$prodBranch || targetBranch=$(wip_to_ref "$moduleDevBranch")
   branch_checkout "$targetBranch" true
 }
 wip_exit_epilog() { branch_show_status; }
@@ -167,23 +178,21 @@ wip_release_epilog()
 {
   _wip_enter_wip_mode || return 0
   # io_trace "wip_release_epilog 1 -- $(print_vars moduleHead)"
-  _wip_merge $moduleHead _wip_release_merge_dev _wip_release_merge_prod true
+  _wip_merge $moduleHead _wip_release_merge_dev _wip_release_merge_prod true || return $?
   branch_show_status
 }
 _wip_release_merge_dev()
 {
   local wipBranch=$1 mergeTarget=$2 devBranchPath=$3 devBranch=$4
   # io_trace "_wip_release_merge_dev -- $(print_vars wipBranch mergeTarget devBranchPath devBranch)"
-  cosm_commit_unstaged_clean_submodules
   branch_merge_sync "$wipBranch" "$mergeTarget"
 }
 _wip_release_merge_prod()
 {
   local wipBranch=$1 mergeTarget=$2 devBranchPath=$3 devBranch=$4
   # io_trace "_wip_release_merge_prod -- $(print_vars wipBranch mergeTarget devBranchPath devBranch)"
-  cosm_commit_unstaged_clean_submodules
-  branch_merge "$wipBranch" "$devBranchPath" \
-  && branch_merge "$wipBranch" "$mergeTarget"
+  branch_merge "$wipBranch" "$mergeTarget" \
+  && _wip_merge_into_dev "$wipBranch" "$devBranchPath"
 }
 
 ########
@@ -194,7 +203,7 @@ wip_finish_epilog()
 {
   _wip_enter_wip_mode || return 0
   # io_trace "wip_finish 1 -- $(print_vars moduleHead)"
-  _wip_merge $moduleHead _wip_finish_merge_dev _wip_finish_merge_prod
+  _wip_merge $moduleHead _wip_finish_merge_dev _wip_finish_merge_prod || return $?
   branch_show_status
 }
 # scope: devBranch
@@ -202,8 +211,7 @@ _wip_finish_merge_dev()
 { 
   local wipBranch=$1 mergeTarget=$2 devBranchPath=$3 devBranch=$4
   # io_trace "_wip_finish_merge_dev -- $(print_vars wipBranch mergeTarget devBranchPath devBranch)"
-  cosm_commit_unstaged_clean_submodules
-  branch_merge_sync "$wipBranch" "$mergeTarget" \
+  branch_merge "$wipBranch" "$mergeTarget" \
   && dev_checkout true "$devBranch" \
   && branch_delete "$wipBranch"
 }
@@ -212,9 +220,8 @@ _wip_finish_merge_prod()
 {
   local wipBranch=$1 mergeTarget=$2 devBranchPath=$3 devBranch=$4
   # io_trace "_wip_finish_merge_prod -- $(print_vars wipBranch mergeTarget devBranchPath devBranch)"
-  cosm_commit_unstaged_clean_submodules
-  branch_merge "$wipBranch" "$devBranchPath" \
-  && branch_merge "$wipBranch" "$mergeTarget" \
+  branch_merge "$wipBranch" "$mergeTarget" \
+  && _wip_merge_into_dev "$wipBranch" "$devBranchPath" \
   && branch_checkout "$prodBranch" true \
   && branch_delete "$wipBranch"
 }
@@ -241,11 +248,19 @@ _wip_merge()
   # a submodule can create a vbranch in the bundle without refreshing the prod scope (run in a subshell)
   module_is_bundle && _cmd_is_recursive && prod_reset_scope
 
-  if [[ $wipProd == true && -n $prodBranchPath ]]; then
-    action=$prodAction
-    mergeTarget=$prodBranchPath
-    cosm_commit_unstaged_clean_submodules
-    # io_trace "_wip_merge PROD -- $(print_vars action wipBranch mergeTarget branch lbranch)"
+  # try to determine merge target automatically - can be dev or prod
+  local devBranch=$(wip_to_ref "$moduleDevBranch")
+  # io_trace "_wip_merge -- $(print_vars wipBranch devBranch prodBranch wipPrefix wipSuffix)"
+  if [[ $wipHotfix == true ]]; then
+    if [[ -z $prodBranch ]]; then
+      mio_error "No production branch found"
+      return 1
+    else
+      action=$prodAction
+      mergeTarget=$prodBranchPath
+      cosm_commit_unstaged_clean_submodules
+      # io_trace "_wip_merge PROD -- $(print_vars action wipBranch mergeTarget branch lbranch)"
+    fi
   else
     action=$devAction
     mergeTarget=$branch
@@ -262,25 +277,36 @@ _wip_merge()
     $action "$wipBranch" "$mergeTarget" "$branch" "$lbranch"
   fi
 }
+# out: wipPrefix, wipSuffix
 _wip_enter_wip_mode()
 {
-  module_in_wip_mode && return 0
-
-  if module_is_bundle; then
+  if module_in_wip_mode; then
+    wip_init_wip "${bundleHead%%/*}" "${bundleHead##*/}"
+  elif module_is_bundle; then
     mio_warning "Use ${VC}git wip start${Brown} to switch to WIP mode"
     return 1
   else
     # infer module wip branch from bundle
     local wipBranch
     wipBranch=$(wip_to_wip $bundleHead)
-    if [ $? -ne 0 ]; then
+    if [ $? -eq 0 ]; then
+      wip_init_wip "${wipBranch%%/*}" "${wipBranch##*/}"
+    else
       # bundle not in wip mode
       mio_warning "Use ${VC}git wip start${Brown} to switch to WIP mode"
       return 1
     fi
+    io_trace "_wip_enter_wip_mode -- $(print_vars wipBranch wipPrefix wipSuffix)"
     local branch lbranch bref
     branch_set_realize "$wipBranch" && branch_checkout "$lbranch"
   fi
+}
+_wip_merge_into_dev()
+{
+  local wipBranch=$1 devBranchPath=$2
+  [[ $mergeIntoDev == true ]] \
+  && branch_merge    "$wipBranch" "$devBranchPath" \
+  || branch_merge_ff "$wipBranch" "$devBranchPath" || true
 }
 
 wip_run  "$@"

@@ -61,7 +61,9 @@ cmd_set_recursive_if_registered()
   local path=$1 recursive=${2:-true}
   if [[ -n ${cmdRecursiveMap[$path]} ]]; then
     cmdRecursiveMap[$path]=$recursive
+    return 0
   fi
+  return 1
 }
 
 ############################
