@@ -16,6 +16,7 @@ prod_parse()
     -r|--recursive) recursive=true;;
     -n|--dry-run)   dryRun=true;;
     -f|--force)     forceRelease=true;;
+    --merge)        mergeIntoDev=true;;
     --vnext)        vnext=true;;
     --vtable)       vtable=true;;
     --reuse)        prerelPrefix='reuse';;
@@ -40,7 +41,7 @@ prod_run()
   # parse command line
   local jobsCount recursive command='prod' subcommand \
         cmdScopes=( prod_scope config_scope cosm_scope ) \
-        commitSubmodules=true forceRelease \
+        commitSubmodules=true forceRelease mergeIntoDev \
         vnext vtable prerelPrefix dryRun prodModulePaths=()
 
   prod_parse "$@" || return $?
@@ -117,16 +118,20 @@ prod_release_prolog()
 
 prod_release_epilog()
 {
-  local moduleForceRelease modulePrerelPrefix=$prerelPrefix
+  local moduleForceRelease moduleMergeIntoDev=$mergeIntoDev modulePrerelPrefix=$prerelPrefix
+
+  # always merge into dev in bundle
+  module_is_bundle && moduleMergeIntoDev=true
+
   if module_is_principal; then
     # force release apply only to principal module
     moduleForceRelease=$forceRelease
     # prerelease always apply to principal module
-    # io_trace "prod_release_epilog PRINCIPAL -- $(print_vars moduleForceRelease modulePrerelPrefix releasePrerelPrefix)"
+    # io_trace "prod_release_epilog PRINCIPAL -- $(print_vars moduleForceRelease moduleMergeIntoDev modulePrerelPrefix releasePrerelPrefix)"
   elif _cmd_is_child; then
     # prerelease does not apply to child modules (excepting principal module)
     [[ $prerelPrefix != 'rtm' ]] && modulePrerelPrefix=''
-    # io_trace "prod_release_epilog CHILD -- $(print_vars moduleForceRelease modulePrerelPrefix releasePrerelPrefix)"
+    # io_trace "prod_release_epilog CHILD -- $(print_vars moduleForceRelease moduleMergeIntoDev modulePrerelPrefix releasePrerelPrefix)"
   fi
 
   _prod_fix_release_status
@@ -199,12 +204,20 @@ _prod_merge_into_dev()
 {
   local toMerge=$1 toMergeAlias=${2:-$1} devBranch=$(wip_to_ref "$moduleDevBranch")
   if [[ $devBranch == $moduleDevBranch ]]; then
-    branch_merge "$toMerge" "$moduleDevBranchPath" "$toMergeAlias" '-Xours'
+    _prod_merge_into_dev_core "$toMerge" "$moduleDevBranchPath" "$toMergeAlias"
   else
     local branch lbranch bref
     branch_set_realize "$devBranch"
-    branch_merge "$toMerge" "$branch" "$toMergeAlias" '-Xours'
+    _prod_merge_into_dev_core "$toMerge" "$branch" "$toMergeAlias"
   fi
+}
+_prod_merge_into_dev_core()
+{
+  local toMerge=$1 mergeInto=$2 toMergeAlias=${3:-$1}
+  # io_trace "_prod_merge_into_dev_core -- $(print_vars toMerge mergeInto toMergeAlias moduleMergeIntoDev)"
+  [[ $moduleMergeIntoDev == true ]] \
+  && branch_merge    "$toMerge" "$mergeInto" "$toMergeAlias" '-Xours' \
+  || branch_merge_ff "$toMerge" "$mergeInto" "$toMergeAlias" || true
 }
 
 ###############
@@ -238,7 +251,7 @@ _vtable_update_core()
 {
   [[ $vtableCreate == true ]] && vtable_update "$startupRoot" "$moduleId" "$vtableLookupPath" "$vtableGate"
   [[ $configSelectIsExcluded == true || $dryRun == true ]] && return 0
-  branch_merge "$prodBranch" "$moduleDevBranchPath" '-Xours' || io_trace_error "_vtable_update_core merge"
+  _prod_merge_into_dev_core "$prodBranch" "$moduleDevBranchPath" || io_trace_error "_vtable_update_core merge"
 }
 _vtable_commit()
 {
