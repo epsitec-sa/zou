@@ -54,7 +54,7 @@ prod_run()
       [[ $dryRun == true ]] && startupMessage="${DarkGray}$startupMessage";;
   esac
 
-  module_run "${cmdScopes[@]}" prod_command
+  bundle_scope prod_command
 }
 prod_command()
 {
@@ -64,14 +64,13 @@ prod_command()
   esac
   cmd_register_module_paths "$recursive" "${prodModulePaths[@]}"
 
-  prod_${subcommand}_run
+  cmd_visit_modules
 }
 
 ###############
 # ENTER COMMAND
 ###############
 
-prod_enter_run()    { cmd_visit_modules; }
 prod_enter_prolog() { prod_checkout "$vnext" true || io_trace_error 'prod_enter_prolog'; }
 prod_enter_epilog() { branch_show_status || io_trace_error 'prod_enter_epilog'; }
 
@@ -79,8 +78,10 @@ prod_enter_epilog() { branch_show_status || io_trace_error 'prod_enter_epilog'; 
 # RELEASE COMMAND
 #################
 
-prod_release_run()
+prod_release_root_scope()
 {
+  # io_trace "prod_release_root_scope ${*@Q}"
+
   # version table scope
   local vtableCreate vtableGate vtableLookupPath
   _vtable_init
@@ -88,7 +89,8 @@ prod_release_run()
   # dry run scope
   local rstatusParentGate rstatusLookupPath rstatusParentLookupPath principalReleaseStatus
 
-  cmd_visit_modules
+  # execute next russian doll
+  $1 "${@:2}"
 }
 
 ################

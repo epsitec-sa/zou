@@ -78,17 +78,8 @@ cmd_set_recursive_if_registered()
 #   cmd_visit_modules
 cmd_visit_modules()
 {
-  # if array_contains_element "$startupRoot" "${cmdModulePaths[@]}"; then
-  #   # startup module scope is already initialized
-  #   local cmdModuleOtherPaths=( $(array_remove_element cmdModulePaths[@] "$startupRoot") )
-  #   io_trace "cmd_visit_modules 1.1 ${*@Q} -- $(print_vars startupRoot)"
-  #   module_visit "$startupRoot" _cmd_tree "$@"
-  #   io_trace "cmd_visit_modules 1.2 ${*@Q} -- $(print_vars cmdModuleOtherPaths[@])"
-  #   module_visit_submodules_async 'cmdModuleOtherPaths[@]' "${cmdScopes[@]}" _cmd_tree "$@"
-  # else
-    # io_trace "cmd_visit_modules 2 ${*@Q} -- $(print_vars cmdScopes[@] cmdModulePaths[@])"
-    module_visit_submodules_async 'cmdModulePaths[@]' "${cmdScopes[@]}" _cmd_tree "$@"
-  # fi
+  # io_trace "cmd_visit_modules ${*@Q} -- $(print_vars cmdScopes[@] cmdModulePaths[@])"
+  module_visit_submodules_async 'cmdModulePaths[@]' "${cmdScopes[@]}" _cmd_tree_root "$@"
 }
 
 ####################
@@ -100,10 +91,10 @@ _cmd_visit_tree()
   _cmd_is_recursive || return 0
 
   local ec=0
+  # io_trace "_cmd_visit_tree 1 ${*@Q} -- $(print_vars configSelectInclude[@] cmdScopes[@])"
   module_visit_submodules_async "configSelectInclude[@]" "${cmdScopes[@]}" _cmd_tree "$@" || io_trace_error "_cmd_visit_tree 1" || ec=$?
-  # io_trace "_cmd_visit_tree 1 ${*@Q} -- $(print_vars configSelectInclude[@] cmdScopes[@] ec)"
+  # io_trace "_cmd_visit_tree 2 ${*@Q} -- $(print_vars configSelectInclude[@] cmdScopes[@])"
   module_visit_submodules_async "configSelectExclude[@]" _cmd_xscope "${cmdScopes[@]}" _cmd_xtree "$@" || io_trace_error "_cmd_visit_tree 2" || ec=$?
-  # io_trace "_cmd_visit_tree 2 ${*@Q} -- $(print_vars configSelectInclude[@] cmdScopes[@] ec)"
   [[ $(type -t cosm_reset_scope) == 'function' ]] && cosm_reset_scope
   return $ec
 }
@@ -137,6 +128,15 @@ _cmd_xscope()
 # INCLUDED SUBMODULE VISITOR
 ############################
 
+_cmd_tree_root()
+{
+  # io_trace "_cmd_tree_root ${*@Q}"
+  if [[ $(type -t "${command}_${subcommand}_root_scope") == 'function' ]]; then
+    ${command}_${subcommand}_root_scope _cmd_tree "$@"
+  else
+    _cmd_tree "$@"
+  fi
+}
 _cmd_tree()
 {
   # io_trace "_cmd_tree ${*@Q}"

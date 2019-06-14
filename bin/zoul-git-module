@@ -20,14 +20,14 @@ showVisitModuleMessage=false
 doNotRegisterBundle=false
 
 # events registration
-headChangedEvent+=( _module_reset_scope )
-headNameChangedEvent+=( _module_reset_scope )
+headChangedEvent+=( _bundle_reset_scope _module_reset_scope )
+headNameChangedEvent+=( _bundle_reset_scope _module_reset_scope )
 branchSyncEvent+=( _module_on_sync )
 
 # run a function in the startup module root folder with startup, bundle and module scopes defined
 module_run()
 {
-  _module_scope_startup _module_scope "$@"
+  bundle_scope module_scope "$@"
 }
 # usage:
 #   module_visit sm-path next ...
@@ -107,7 +107,7 @@ _module_trace()
 
   io_lock_enter
   case $1 in
-  _module_scope_startup)
+  bundle_scope)
     io_trace_unsafe "$1 -- $(print_vars startupDir startupRoot)"
     io_trace_unsafe "$1 -- $(print_vars bundleId principalModuleId)"
     io_trace_unsafe "$1 -- $(print_vars bundleHead bundleHeadType)"
@@ -115,7 +115,13 @@ _module_trace()
     io_trace_unsafe "$1 -- $(print_vars bundleUrl bundleUrlName bundleRoot)"
     # io_trace_unsafe "$1 -- $(print_vars bundleTracePrefix)"
     ;;
-  _module_scope)
+  _bundle_reset_scope)
+    io_trace_unsafe "$1 -- $(print_vars bundleId principalModuleId)"
+    io_trace_unsafe "$1 -- $(print_vars bundleHead bundleHeadType)"
+    io_trace_unsafe "$1 -- $(print_vars bundleDevBranch bundleDevBranchPath)"
+    # io_trace_unsafe "$1 -- $(print_vars bundleTracePrefix)"
+    ;;
+  module_scope)
     io_trace_unsafe "$1 -- $(print_vars moduleId)"
     io_trace_unsafe "$1 -- $(print_vars moduleSubmodulePaths[@])"
     io_trace_unsafe "$1 -- $(print_vars moduleHead moduleHeadType)"
@@ -124,13 +130,10 @@ _module_trace()
     # io_trace_unsafe "$1 -- $(print_vars moduleTracePrefix)"
     ;;
   _module_reset_scope)
-    io_trace_unsafe "$1 -- $(print_vars bundleId moduleId principalModuleId)"
-    io_trace_unsafe "$1 -- $(print_vars bundleHead bundleHeadType)"
-    io_trace_unsafe "$1 -- $(print_vars bundleDevBranch bundleDevBranchPath)"
+    io_trace_unsafe "$1 -- $(print_vars moduleId)"
     io_trace_unsafe "$1 -- $(print_vars moduleHead moduleHeadType)"
     io_trace_unsafe "$1 -- $(print_vars moduleDevBranch moduleDevBranchPath)"
     io_trace_unsafe "$1 -- $(print_vars moduleSubmodulePaths[@])"
-    # io_trace_unsafe "$1 -- $(print_vars bundleTracePrefix)"
     # io_trace_unsafe "$1 -- $(print_vars moduleTracePrefix)"
     ;;
   esac
@@ -142,7 +145,7 @@ _module_trace()
 ########
 
 # run a function in the startup module root folder with startup and bundle scopes defined
-_module_scope_startup()
+bundle_scope()
 {
   # setup startup context
   local startupDir=$PWD startupRoot \
@@ -152,7 +155,8 @@ _module_scope_startup()
         bundleUrl bundleUrlName \
         bundleTracePrefix \
         principalModuleId \
-        submodulePathMaxLength
+        submodulePathMaxLength \
+        moduleStartupScopeInitialized=true
 
   startupRoot=$(repo_module_root)
   [[ -z $startupRoot ]] && {
@@ -178,18 +182,17 @@ _module_scope_startup()
 
   _module_register_bundle
 
-  _module_trace '_module_scope_startup'
+  _module_trace 'bundle_scope'
 
-  # io_trace "_module_scope_startup >> $*"
+  # io_trace "bundle_scope >> $*"
   # execute next russian doll
   $1 "${@:2}"
-  # io_trace "_module_scope_startup << $*"
+  # io_trace "bundle_scope << $*"
 }
-
 # run a function in the module root folder with module scope defined
-_module_scope()
+module_scope()
 {
-  # io_trace "_module_scope $*"
+  # io_trace "module_scope $*"
   # setup module context
   local moduleRoot moduleConfigFile moduleId moduleSubmodulePaths \
         moduleParent modulePath moduleBundlePath \
@@ -221,12 +224,26 @@ _module_scope()
 
   _module_set_module_dev_branch
 
-  _module_trace '_module_scope'
+  _module_trace 'module_scope'
 
-  # io_trace "_module_scope >> $*"
+  # io_trace "module_scope >> $*"
   # execute next russian doll
   $1 "${@:2}"
-  # io_trace "_module_scope << $*"
+  # io_trace "module_scope << $*"
+}
+_bundle_reset_scope()
+{
+  [[ $moduleStartupScopeInitialized == true ]] || return 0
+  # io_trace_unsafe "_bundle_reset_scope -- ${*@Q}"
+
+  if [[ "$PWD" == "$bundleRoot" ]]; then
+    bundleHead=$1
+    _module_set_bundle_trace_prefix
+    _module_set_bundle_dev_branch
+    _module_set_principal_module_id
+
+    _module_trace '_bundle_reset_scope'
+  fi
 }
 _module_reset_scope()
 {
@@ -235,13 +252,6 @@ _module_reset_scope()
 
   moduleSubmodulePaths=( $(repo_list_submodule_paths $PWD) )
   
-  if [[ "$PWD" == "$bundleRoot" ]]; then
-    bundleHead=$1
-    _module_set_bundle_trace_prefix
-    _module_set_bundle_dev_branch
-    _module_set_principal_module_id
-  fi
-
   moduleHead=$1
   _module_set_trace_prefix
   _module_set_module_dev_branch
@@ -254,7 +264,6 @@ _module_on_sync()
   [[ $3 =~ ^\< ]] || return 0
   moduleSubmodulePaths=( $(repo_list_submodule_paths $PWD) )
   # io_trace "_module_on_sync -- $(print_vars moduleSubmodulePaths[@])"
-
 }
 
 ##############
@@ -361,7 +370,8 @@ _module_submodule_visitor()
   _module_enter "$smPath" || return $?
   repo_check_submodule "$smPath" || return $?
   # io_trace "_module_submodule_visitor $smPath >> $*"
-  _module_scope $* || return $?
+  module_scope $* || return $?
+  # $1 "${@:2}" || return $?
   # io_trace "_module_submodule_visitor $smPath << $*"
 }
 # usage:
