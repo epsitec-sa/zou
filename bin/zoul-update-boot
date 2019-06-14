@@ -10,9 +10,9 @@ zou_setup()
   sleep .2
   message="${Cyan}[zou]${NC} : ${Cyan}Downloading, please wait...${NC}"
   printf '%b\n' "$message"
-  git fetch --prune --all >/dev/null
-  git fetch --tags --force >/dev/null
-  git merge FETCH_HEAD >/dev/null
+  git fetch --prune --all &>/dev/null
+  git fetch --tags --force &>/dev/null
+  git merge FETCH_HEAD &>/dev/null
 
   find . -maxdepth 1 -type f -iname 'zoul-*' -not -iname 'zoul-update-boot' -exec cp --preserve '{}' "$setupDir/{}" ';'
   find . -maxdepth 1 -type f -iname 'git-*' -exec cp --preserve '{}' "$setupDir/{}" ';'
