@@ -42,6 +42,8 @@ wip_parse_wip()
       io_error "option ${VC}--hotfix${Red} implies ${VC}$wipPrefix:$wipSuffix${Red}"
       return 1
     fi
+  elif [[ $wipPrefix == 'hotfix' ]]; then
+    wipHotfix=true
   fi
 }
 wip_init_wip()
@@ -83,7 +85,7 @@ wip_run()
 }
 wip_command()
 {
-  # io_trace "wip_command -- $(print_vars subcommand wipPrefix wipSuffix wipModulePaths[@])"
+  # io_trace "wip_command -- $(print_vars subcommand wipHotfix wipPrefix wipSuffix wipModulePaths[@])"
   [ ${#wipModulePaths[@]} -eq 0 ] && wipModulePaths+=( './' )
   cmd_register_module_paths "$recursive" "${wipModulePaths[@]}"
 
@@ -109,7 +111,7 @@ wip_start_prolog()
 
   local devBranch=$(wip_to_ref "$moduleDevBranch")
   local wipBranch=$(ref_to_wip "$devBranch" "$wipSuffix" "$wipPrefix")
-  # io_trace "wip_start -- $(print_vars wipBranch devBranch moduleHead)"
+  # io_trace "wip_start -- $(print_vars wipHotfix wipBranch devBranch moduleHead prodBranchPath)"
   if [[ $moduleHead != $wipBranch ]]; then
     if [[ $wipHotfix == true && -n $prodBranchPath ]]; then
       git branch "$wipBranch" "$prodBranchPath" &>/dev/null
@@ -296,7 +298,7 @@ _wip_enter_wip_mode()
       mio_warning "Use ${VC}git wip start${Brown} to switch to WIP mode"
       return 1
     fi
-    io_trace "_wip_enter_wip_mode -- $(print_vars wipBranch wipPrefix wipSuffix)"
+    # io_trace "_wip_enter_wip_mode -- $(print_vars wipBranch wipPrefix wipSuffix)"
     local branch lbranch bref
     branch_set_realize "$wipBranch" && branch_checkout "$lbranch"
   fi
