@@ -59,13 +59,20 @@ io_set_version()
 {
   version=''
 
-  local line regex='Version>(.*)</'
+  local line regex='Version>(.*)</' versionProps
+  
+  if [ -f "$zouBinDir/Version.props" ]; then
+    versionProps="$zouBinDir/Version.props"
+  else
+    versionProps="$zouBinDir/../Version.props"
+  fi
+
   while read -r line || [[ -n "$line" ]]; do
     [[ "$line" =~ $regex ]] && {
       version=${BASH_REMATCH[1]}
       break
     }
-  done < "$zouBinDir/../Version.props"
+  done < "$versionProps"
 }
 io_banner()
 {
