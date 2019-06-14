@@ -32,7 +32,9 @@ _zou_update_core()
 {
   local resetConfig zouOnly noPruneTags actualVersion skuArgs=()
   zou_parse "$@" || return $?
-  
+
+  # io_trace "_zou_update_core -- $(print_vars resetConfig zouOnly noPruneTags actualVersion skuArgs[@])"
+
   config_setup
   config_migrate_registered_bundles
 
