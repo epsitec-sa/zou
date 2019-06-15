@@ -103,7 +103,7 @@ module_dev_attach()
 
 _module_trace()
 {
-  return 0
+  [[ -z $2 ]] && return 0
 
   io_lock_enter
   case $1 in
@@ -136,6 +136,29 @@ _module_trace()
     io_trace_unsafe "$1 -- $(print_vars moduleSubmodulePaths[@])"
     # io_trace_unsafe "$1 -- $(print_vars moduleTracePrefix)"
     ;;
+  *)
+    io_trace_unsafe "$1 -- $(print_vars startupDir)"
+    io_trace_unsafe "$1 -- $(print_vars startupRoot)"
+    io_trace_unsafe "$1 -- $(print_vars bundleRoot)"
+    io_trace_unsafe "$1 -- $(print_vars bundleId)"
+    io_trace_unsafe "$1 -- $(print_vars principalModuleId)"
+    io_trace_unsafe "$1 -- $(print_vars bundleHead)"
+    io_trace_unsafe "$1 -- $(print_vars bundleHeadType)"
+    io_trace_unsafe "$1 -- $(print_vars bundleDevBranch)"
+    io_trace_unsafe "$1 -- $(print_vars bundleDevBranchPath)"
+    io_trace_unsafe "$1 -- $(print_vars bundleUrlName )"
+    io_trace_unsafe "$1 -- $(print_vars bundleUrl)"
+    # io_trace_unsafe "$1 -- $(print_vars bundleTracePrefix)"
+    io_trace_unsafe "$1 -- $(print_vars moduleRoot)"
+    io_trace_unsafe "$1 -- $(print_vars modulePath)"
+    io_trace_unsafe "$1 -- $(print_vars moduleBundlePath)"
+    io_trace_unsafe "$1 -- $(print_vars moduleId)"
+    io_trace_unsafe "$1 -- $(print_vars moduleSubmodulePaths[@])"
+    io_trace_unsafe "$1 -- $(print_vars moduleHead)"
+    io_trace_unsafe "$1 -- $(print_vars moduleHeadType)"
+    io_trace_unsafe "$1 -- $(print_vars moduleDevBranch)"
+    io_trace_unsafe "$1 -- $(print_vars moduleDevBranchPath)"
+    # io_trace_unsafe "$1 -- $(print_vars moduleTracePrefix)"
   esac
   io_lock_exit
 }

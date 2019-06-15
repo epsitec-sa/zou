@@ -16,6 +16,8 @@ headNameChangedEvent+=( _prod_on_head_name_changed )
 branchCreatedEvent+=( _prod_on_branch_created )
 branchDeletedEvent+=( _prod_on_branch_deleted )
 
+prod_run() { module_run prod_scope "$@"; }
+
 # usage:
 #   module_run prod_scope $*
 prod_scope()
@@ -55,13 +57,32 @@ _prod_reset_alias()
 }
 _prod_trace()
 {
-  return 0
+  [[ -z $2 ]] && return 0
 
   io_lock_enter
-  io_trace_unsafe "$1 -- $(print_vars prodBranch prodBranchPath)"
-  io_trace_unsafe "$1 -- $(print_vars vtagStatus prodVTag prodHTag)"
-  io_trace_unsafe "$1 -- $(print_vars vtag2dev vtag2prod prodAlias devAlias moduleAlias)"
-  io_trace_unsafe "$1 -- $(print_vars releaseStatus releaseVTag releasePrerelPrefix)"
+  case $1 in
+  _prod_*)
+    io_trace_unsafe "$1 -- $(print_vars prodBranch prodBranchPath)"
+    io_trace_unsafe "$1 -- $(print_vars vtagStatus prodVTag prodHTag)"
+    io_trace_unsafe "$1 -- $(print_vars vtag2dev vtag2prod prodAlias devAlias moduleAlias)"
+    io_trace_unsafe "$1 -- $(print_vars releaseStatus releaseVTag releasePrerelPrefix)"
+    ;;
+  *)
+    io_trace_unsafe "$1 -- $(print_vars prodBranch)"
+    io_trace_unsafe "$1 -- $(print_vars prodBranchPath)"
+    io_trace_unsafe "$1 -- $(print_vars vtagStatus)"
+    io_trace_unsafe "$1 -- $(print_vars prodVTag)"
+    io_trace_unsafe "$1 -- $(print_vars prodHTag)"
+    io_trace_unsafe "$1 -- $(print_vars vtag2dev)"
+    io_trace_unsafe "$1 -- $(print_vars vtag2prod)"
+    io_trace_unsafe "$1 -- $(print_vars prodAlias)"
+    io_trace_unsafe "$1 -- $(print_vars devAlias)"
+    io_trace_unsafe "$1 -- $(print_vars moduleAlias)"
+    io_trace_unsafe "$1 -- $(print_vars releaseStatus)"
+    io_trace_unsafe "$1 -- $(print_vars releaseVTag)"
+    io_trace_unsafe "$1 -- $(print_vars releasePrerelPrefix)"
+    ;;
+  esac
   io_lock_exit
 }
 
