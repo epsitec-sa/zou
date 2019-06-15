@@ -217,9 +217,20 @@ _prod_merge_into_dev_core()
 {
   local toMerge=$1 mergeInto=$2 toMergeAlias=${3:-$1}
   # io_trace "_prod_merge_into_dev_core -- $(print_vars toMerge mergeInto toMergeAlias moduleMergeIntoDev)"
-  [[ $moduleMergeIntoDev == true ]] \
-  && branch_merge    "$toMerge" "$mergeInto" "$toMergeAlias" '-Xours' \
-  || branch_merge_ff "$toMerge" "$mergeInto" "$toMergeAlias" || true
+  if [[ $moduleMergeIntoDev == true ]] || _prod_can_merge_into_dev "$toMerge" "$mergeInto"; then
+    branch_merge    "$toMerge" "$mergeInto" "$toMergeAlias" '-Xours'
+  else
+    branch_merge_ff "$toMerge" "$mergeInto" "$toMergeAlias" || true
+  fi
+}
+_prod_can_merge_into_dev()
+{
+  local toMerge=$1 mergeInto=$2 mergeBase comment IFS=$'\n'
+  mergeBase=$(git merge-base "$toMerge" "$mergeInto")
+  for comment in $(git log --format=%B "$mergeBase..$toMerge"); do
+    # io_trace "_prod_can_merge_into_dev -- $(print_vars mergeBase comment)"
+    [[ $comment =~ ^zou-flow: ]] || return 1
+  done
 }
 
 ###############
