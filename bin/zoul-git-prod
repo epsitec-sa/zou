@@ -330,9 +330,11 @@ prod_ensure_vbranch()
 {
   module_in_wip_mode && return 0
   if [[ $prodBranch =~ ^(.*/)?([0-9]+)\.([0-9]+)(.*)$ ]]; then
-    local vbranch prodFolder major=${BASH_REMATCH[2]} minor=${BASH_REMATCH[3]} suffix=${BASH_REMATCH[4]} \
-    # prod folder should be equal to dev folder
-    [[ $(wip_to_ref $moduleDevBranch) =~ ^(.*/)? ]] && prodFolder=${BASH_REMATCH[1]}
+    local vbranch prodFolder=${BASH_REMATCH[1]} major=${BASH_REMATCH[2]} minor=${BASH_REMATCH[3]} suffix=${BASH_REMATCH[4]}
+    
+    # do not share prod branch by default - if not already shared, create vbranch in same folder as dev branch
+    [[ $vtagStatus == 'vnode' && $(wip_to_ref $moduleDevBranch) =~ ^(.*/)? ]] && prodFolder=${BASH_REMATCH[1]}
+
     # update major and/or minor versions
     case $incrementKind in
       minor) (( minor += 1 ));;

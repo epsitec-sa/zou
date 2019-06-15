@@ -97,7 +97,9 @@ dev_release_epilog()
     dev_checkout false "$moduleDevBranch"
     prod_ensure_vbranch "$defaultVersion" "$incrementKind"
     cosm_commit_unstaged_clean_submodules
-    branch_merge "$moduleDevBranchPath" "$prodBranchPath" '-Xtheirs' || io_trace_error 'dev_release_epilog'
+    branch_merge "$moduleDevBranchPath" "$prodBranchPath" '-Xtheirs' \
+    && branch_merge_ff "$prodBranchPath" "$moduleDevBranchPath" \
+    || io_trace_error 'dev_release_epilog'
   else
     mio_message "Already released" ${LightBlue}
   fi
