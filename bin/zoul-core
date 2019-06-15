@@ -14,7 +14,7 @@ IFS=$' \t\n'
 OIFS=$IFS
 
 # force git to use invariant language
-export LANG=C
+export LANG=C.UTF-8
 
 # declare startup constants
 zouStartupPath=$(realpath "${BASH_SOURCE[-1]}")
@@ -414,19 +414,23 @@ path_make_relative()
   local relativeTo=$(realpath "${2:-.}")
   realpath --relative-to="$relativeTo" "$path"
 }
+
 get_file_encoding()
 {
   local info=$(file -i "$1")
-  info="${info##*=}"
+  info="${info##*charset=}"
   info="${info,,}"
-  [[ $info == 'unknown-8bit' ]] && info='utf-8'
-  echo $info
+  [[ $info == 'unknown-8bit' ]] && echo 'utf-8' || echo $info
 }
 _locale_encoding()
 {
-  local info=$(locale | grep -0 'LANG=')
-  info="${info##*.}"
-  echo "${info,,}"
+  _lang_to_encoding $(locale | grep -0 'LANG=')
+}
+_lang_to_encoding()
+{
+  # LANG=C        -> ''
+  # LANG=C.UTF-8  -> 'utf-8'
+  [[ $1 =~ ^.*\.(.*)$ ]] && echo ${BASH_REMATCH[1],,} || true
 }
 
 zouEncoding="$(_locale_encoding)"
