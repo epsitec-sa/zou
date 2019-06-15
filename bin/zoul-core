@@ -633,10 +633,22 @@ raise_event()
   return 0
 }
 
-# trace constants (if debug == true)
-# io_debug zouStartupPath
-# io_debug zouStartupDir
-# io_debug zouStartupFileName
-# io_debug zouBinDir
-# io_debug zouCommand
-# io_debug zouEncoding
+# Execute a command and capture stdout stderr and return code into variables
+# usage:
+#   local vout verr vret
+#   eval "$(declare_exec vout verr vret COMMAND ...)"
+#   return $vret
+# in:
+#   $1:vout     -- variable name where stdout will be saved
+#   $2:verr     -- variable name where stderr will be saved
+#   $3:vret     -- variable name where return code will be saved
+#   $4:command  -- command to be executed
+#   ...         -- command parameters 
+declare_exec()
+{
+  ($4 "${@:5}") \
+    2> >(_declare_stdin "$2") \
+    1> >(_declare_stdin "$1"); _declare_xcode "$3"
+}
+_declare_stdin() { printf -v "$1" "%s" "$(cat)"; declare -p "$1"; }
+_declare_xcode() { printf -v "$1" "%s" "$?";     declare -p "$1"; }
