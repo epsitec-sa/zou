@@ -289,6 +289,17 @@ ref_in_fallback()
   # io_trace "ref_in_fallback 2 -- $(print_vars ref sku fallback[@])"
   array_contains_element "$ref" "${fallback[@]}"
 }
+ref_prod_to_dev()
+{
+  local ref=$1
+  [[ $ref =~ ^(.*/)?v?[0-9]+\.[0-9]+.*$ ]] || return 1
+  [[ -z ${BASH_REMATCH[1]} ]] && echo 'master' || echo "${BASH_REMATCH[1]}dev"
+}
+ref_prod_match_dev()
+{
+  local refProd=$1 refDev=$2
+  ref_in_fallback $(ref_prod_to_dev "$refProd") "$refDev"
+}
 ref_to_wip()
 {
   [[ -z $1 || -z $2 ]] && return 1
