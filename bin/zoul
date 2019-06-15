@@ -13,9 +13,11 @@ while [[ "$#" > 0 ]]; do case "$1" in
       -z|--zou-vars        display zou variables
       --debug              display debug info"
     exit 0;;
+  --) shift; zoulArgs+=($@); break;;
   -z|--zou-vars) showZouVars=true;;
   --debug)       debug=true;;
   -*) echo "unknown option: $1" >&2; exit 1;;
+  *) zoulArgs+=($1);;
 esac; shift; done
 
 unset ZOUL_CORE
@@ -73,7 +75,42 @@ unset ZOUL_GIT_SANDBOX
 [[ -z $ZOUL_GIT_SANDBOX ]]        && . zoul-git-sandbox
 
 if [[ $showZouVars == true ]]; then
-  for zouVar in $(compgen -v | grep -Ei '^(zou|io)_'); do
+  for zouVar in $(compgen -v | grep -Ei '^(zou|io)'); do
     declare -p $zouVar
   done
 fi
+
+# banana()
+# {
+#   echo 'banana to stdout'
+#   echo >&2 'banana to stderr'
+#   return 2
+# }
+zoul_eval()
+{
+  [ $# -eq 0 ] && return 0
+  local zoulStdOut zoulStdErr zoulRetCode zoulRetLabel zoulMessage
+  eval "$(declare_exec zoulStdOut zoulStdErr zoulRetCode "$@")"
+  if [[ $zoulRetCode -eq 0 ]]; then
+    zoulRetLabel=${Green}$zoulRetCode
+  else
+    zoulRetLabel=${Red}$zoulRetCode
+  fi
+  zoulMessage="${White}$* ${NC}-> ($zoulRetLabel${NC})"
+
+  _zoul_eval_message "$zoulStdOut" ${Green}
+  _zoul_eval_message "$zoulStdErr" ${Red}
+  printf '%b\n' "$zoulMessage${NC}"
+}
+_zoul_eval_message()
+{
+  [[ -z "$1" ]] && return 0
+  local IFS=$'\n' line lines
+  lines=("$1")
+  for line in ${lines[@]}; do
+    zoulMessage="$zoulMessage\n  ${NC}-> ${2}$line"
+  done
+  return ${#lines[@]}
+}
+
+zoul_eval "${zoulArgs[@]}"
