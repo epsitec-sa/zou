@@ -175,8 +175,6 @@ version_update_custom()
   local techver=$1 varray=( ${!2} ) updater="${3:-$PWD/update-version}"
   if [[ -f "$updater" ]]; then
     source "$updater" "${varray[@]}"
-  else
-    return 1
   fi
 }
 version_create_custom()
@@ -268,7 +266,7 @@ version_remove_file_spec()
 version_verify_context()
 {
   if [[ -z $moduleConfigFile ]]; then
-    io_error "fatal: $1 should run in module scope context"
+    io_error "$1 should run in module scope context" 'fatal'
     exit 1
   fi
 }
