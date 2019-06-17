@@ -275,7 +275,7 @@ _module_reset_scope()
 
   moduleSubmodulePaths=( $(repo_list_submodule_paths $PWD) )
   
-  moduleHead=$1
+  _module_set_head $1
   _module_set_trace_prefix
   _module_set_module_dev_branch
   
@@ -306,8 +306,8 @@ _module_set_head()
     moduleHead=$bundleHead
     moduleHeadType=$bundleHeadType
   else
-    local refSymbol refType
-    ref_set_symbol 'HEAD'
+    local ref=${1:-HEAD} refSymbol refType
+    ref_set_symbol "$ref"
     moduleHead=$refSymbol
     moduleHeadType=$refType
   fi
@@ -351,19 +351,12 @@ _module_set_module_dev_branch()
     moduleDevBranch=$bundleDevBranch
     # io_trace "_module_set_module_dev_branch 1 -- $(print_vars moduleId bundleDevBranch moduleHead moduleDevBranch)"
   # we are in detached HEAD or on vtag/prod branch 
-  elif [[ $moduleHead == 'HEAD' || $moduleHead =~ ^(.*/)?v?[0-9]+\.[0-9]+ ]]; then
-    _module_infer_dev_from_bundle
-    # io_trace "_module_set_module_dev_branch 2 -- $(print_vars moduleId bundleDevBranch moduleHead moduleDevBranch)"
-  elif [[ $moduleHead == $(git rev-parse --abbrev-ref "$moduleHead" 2>/dev/null) ]]; then
-    moduleDevBranchPath=$moduleHead
-    moduleDevBranch=$moduleHead
-    # io_trace "_module_set_module_dev_branch 3 -- $(print_vars moduleId bundleDevBranch moduleHead moduleDevBranch)"
   else
     _module_infer_dev_from_bundle
-    # io_trace "_module_set_module_dev_branch 4 -- $(print_vars moduleId bundleDevBranch moduleHead moduleDevBranch)"
+    # io_trace "_module_set_module_dev_branch 2 -- $(print_vars moduleHead moduleHeadType moduleDevBranch)"
 
-    # moduleHead is a SHA try to to attach to dev branch
-    if ref_equals "$moduleHead" "$moduleDevBranchPath"; then
+    # if moduleHead is a SHA try to to attach to dev branch
+    if [[ $moduleHeadType == 'sha' ]] && ref_equals "$moduleHead" "$moduleDevBranchPath"; then
       branch_checkout "$moduleDevBranch" false
     fi
   fi
