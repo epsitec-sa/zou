@@ -119,6 +119,7 @@ _prod_init_scope()
     _prod_init_prod
   else
     status='vtagMissing'
+    _prod_init_vars
     _prod_init_dev
   fi
   _prod_init_release_status "$delta" "$status"
@@ -299,9 +300,13 @@ sku_checkout()
 prod_checkout()
 {
   local vnext=$1 forceCheckout=$2 devFallback=$3
-  # io_trace "prod_checkout -- $(print_vars vnext forceCheckout devFallback vtagStatus prodBranch prodVTag)"
+  # io_trace "prod_checkout -- $(print_vars moduleHead moduleDevBranch vnext forceCheckout devFallback vtagStatus prodBranch prodVTag)"
   if [[ $vnext == true ]]; then
-    if [[ $moduleHead != $moduleDevBranch ]]; then
+    if [[ -n $devFallback && $moduleDevBranch != $devFallback ]]; then
+      local branch lbranch bref
+      branch_set_realize "$devFallback"
+      _prod_init_scope "$branch" "$lbranch"
+    elif [[ $moduleHead != $moduleDevBranch ]]; then
       _prod_init_scope "$moduleDevBranchPath" "$moduleDevBranch"
     fi
     if [[ -n $prodBranch ]]; then
