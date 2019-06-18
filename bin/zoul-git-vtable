@@ -29,7 +29,7 @@ vtable_row()
         md_moduleId md_vtag IFS=' '
   dev=${moduleDevBranch}
   prod=${prodBranch}
-  hash=$(git rev-parse --short "${prodVTag:-$moduleHead}" 2>/dev/null)
+  hash=$(git rev-parse --short "${prodVTag:-$moduleHead}^{}" 2>/dev/null)
   tags=$(git tag -l --sort=-v:refname)
   if [[ $prodVTag =~ ^(.*/)?v([0-9]+)\.([0-9]+) ]]; then
     folder=${BASH_REMATCH[1]}
