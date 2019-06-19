@@ -217,8 +217,12 @@ _prod_merge_into_dev_core()
 {
   local toMerge=$1 mergeInto=$2 toMergeAlias=${3:-$1}
   # io_trace "_prod_merge_into_dev_core -- $(print_vars toMerge mergeInto toMergeAlias moduleMergeIntoDev)"
-  if [[ $moduleMergeIntoDev == true ]] || _prod_can_merge_into_dev "$toMerge" "$mergeInto"; then
-    branch_merge    "$toMerge" "$mergeInto" "$toMergeAlias" '-Xours'
+
+  if _prod_can_merge_into_dev "$toMerge" "$mergeInto"; then
+    branch_merge "$toMerge" "$mergeInto" "$toMergeAlias" '-Xtheirs'
+  elif [[ $moduleMergeIntoDev == true ]]; then
+    # if merge option is specified, we need to resolve conflicts manually
+    branch_merge "$toMerge" "$mergeInto" "$toMergeAlias"
   else
     branch_merge_ff "$toMerge" "$mergeInto" "$toMergeAlias" || true
   fi
