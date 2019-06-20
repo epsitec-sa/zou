@@ -199,7 +199,14 @@ ref_dev_fallback()
     fi
     
     fallback=( $(ref_scan_sort_join "${atoms[@]}") )
-    # io_trace "ref_dev_fallback 3 -- $(print_vars fallback[@])"
+    # io_trace "ref_dev_fallback 3.2 -- $(print_vars fallback[@])"
+
+    if [[ ${#atoms[@]} -ge 3 && ${atoms[1]} != 'sku' ]]; then
+      # add wip/sku/x
+      local w=${atoms[0]}/sku/${atoms[-1]} n=$(( ${#fallback[@]} - 1 ))
+      fallback=( "${fallback[@]:0:$n}" "$w" "${fallback[-1]}" )
+      # io_trace "ref_dev_fallback 3.3 -- $(print_vars w n fallback[@])"
+    fi
 
     # append sku fallback
     local sku=$(wip_to_ref "${fallback[0]}")
