@@ -16,7 +16,7 @@ tagger_email() { git show $1 -q | grep Tagger: | sed -E 's,Tagger:s+(.*)s+<(.*)>
 tag_date()     { git show $1 -q | grep Date: | sed -E 's,Date:s+(.*),1,' | head -n 1; }
 tag_comment()  { git tag -l -n1 $1 | sed -E "s,^[^']+'([^']*).*$,\1,"; }
 
-tag_exists()         { git show-ref -s --verify "refs/tags/$1" &>/dev/null; }
+tag_exists()         { git show-ref -s --verify "refs/tags/$1" &>/dev/null || return 1; }
 tag_is_lightweight() { [[ $(git rev-parse $1) == $(git rev-parse $1^{}) ]]; }
 tag_is_annotated()   { [[ $(git rev-parse $1) != $(git rev-parse $1^{}) ]]; }
 commit_is_pushed()   { [[ -n $(git branch -r --contains $1) ]]; }
@@ -159,4 +159,64 @@ _tag_mirror_line_selector()
 {
   [[ $line =~ ^.*\[new\ tag\][[:blank:]]+(.*)$ ]] && line="${BASH_REMATCH[1]}"
 }
+
+tag_delete_tags()
+{
+  tag_delete_local_tags "$@"
+  tag_delete_remote_tags "$@"
+}
+tag_delete_local_tags()
+{
+  [ $# -eq 0 ] && return 0
+  local ltags=( $(git tag -l "$@") ) tag
+  [ ${#ltags[@]} -eq 0 ] && return 0
+  if [[ $dryRun == true ]]; then
+    io_lock_enter
+    for tag in ${ltags[@]}; do
+      mio_message_unsafe "Local tag ${VC}$tag${Cyan} will be deleted."
+    done
+    io_lock_exit
+  else
+    io_buffered_eval "git tag -d ${ltags[*]} 2>&1" _tag_delete_local_tags_line_selector
+  fi
+}
+tag_delete_remote_tags()
+{
+  [[ $noTagPush == true ]] && return 0
+  [ $# -eq 0 ] && return 0
+  local remote=$(git remote) line rtags tag
+  for line in $(git ls-remote "$remote" "$@"); do
+    [[ $line =~ \^\{\}$ ]] && continue
+    [[ $line =~ refs/tags/(.*) ]] && rtags+=(${BASH_REMATCH[1]})
+  done
+  [ ${#rtags[@]} -eq 0 ] && return 0
+  if [[ $dryRun == true ]]; then
+    io_lock_enter
+    for tag in ${rtags[@]}; do
+      mio_message_unsafe "Remote tag ${VC}$tag${Cyan} will be deleted."
+    done
+    io_lock_exit
+  else
+    io_buffered_eval "git push --delete $remote ${rtags[*]} 2>&1" _tag_delete_remote_tags_line_selector
+  fi
+}
+_tag_delete_local_tags_line_selector()
+{
+  if [[ $line =~ ^error ]]; then
+    color=${Red}
+  elif [[ $line =~ ^([^\']+)\'([^\']+)\'(.*) ]]; then
+    line="${BASH_REMATCH[1]}${VC}${BASH_REMATCH[2]}${Brown}${BASH_REMATCH[3]}"
+    color=${Brown}
+  fi
+}
+_tag_delete_remote_tags_line_selector()
+{
+  if [[ $line =~ \[deleted\][[:blank:]]+(.*) ]]; then
+    line="Deleted remote tag ${VC}${BASH_REMATCH[1]}"
+    color=${Brown}
+  else
+    color=${DarkGray}
+  fi
+}
+
 

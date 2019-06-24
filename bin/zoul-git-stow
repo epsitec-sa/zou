@@ -159,7 +159,7 @@ stow_classify_branches()
 
 stow_remove_classified_tags()
 {
-  local refPath stowFolder stowType tag tag1 tag2 ec=0
+  local refPath stowFolder stowType tag tag1 tag2 tagsToDelete=() ec=0
 
   # group by namespace
   declare -A archiveMap
@@ -180,17 +180,17 @@ stow_remove_classified_tags()
     tag1=${archiveMap[$refPath]}
     tag2=${otherMap[$refPath]}
     if [[ -n $tag2 ]] && ref_equals $tag1 $tag2; then
-      tag_delete $tag2 || ec=$?
+      tagsToDelete+=($tag2)
       unset otherMap[$refPath]
     fi
     tag2=${twinMap[$refPath]}
     if [[ -n $tag2 ]] && ref_equals $tag1 $tag2; then
-      tag_delete $tag2 || ec=$?
+      tagsToDelete+=($tag2)
       unset twinMap[$refPath]
     fi
     tag2=${activeMap[$refPath]}
     if [[ -n $tag2 ]] && ref_equals $tag1 $tag2; then
-      tag_delete $tag2 || ec=$?
+      tagsToDelete+=($tag2)
       unset activeMap[$refPath]
     fi
   done
@@ -199,12 +199,12 @@ stow_remove_classified_tags()
     tag1=${otherMap[$refPath]}
     tag2=${twinMap[$refPath]}
     if [[ -n $tag2 ]] && ref_equals $tag1 $tag2; then
-      tag_delete $tag2 || ec=$?
+      tagsToDelete+=($tag2)
       unset twinMap[$refPath]
     fi
     tag2=${activeMap[$refPath]}
     if [[ -n $tag2 ]] && ref_equals $tag1 $tag2; then
-      tag_delete $tag2 || ec=$?
+      tagsToDelete+=($tag2)
       unset activeMap[$refPath]
     fi
   done
@@ -213,10 +213,11 @@ stow_remove_classified_tags()
     tag1=${activeMap[$refPath]}
     tag2=${twinMap[$refPath]}
     if [[ -n $tag2 ]] && ref_equals $tag1 $tag2; then
-      tag_delete $tag2 || ec=$?
+      tagsToDelete+=($tag2)
       unset twinMap[$refPath]
     fi
   done
+  tag_delete_tags "${tagsToDelete[@]}" || ec=$?
 }
 # in:
 #  tags=$@ -- tag list
@@ -225,7 +226,7 @@ stow_remove_classified_tags()
 stow_remove_promoted_vtags()
 {
   local stowType stowFolder refPath refType refStowType stowPath \
-        version tag tags vtag vtags hash folder ec=0 IFS=' '
+        version tag tags vtag vtags hash folder tagsToDelete=() ec=0 IFS=' '
 
   declare -A hashMap
   for tag; do
@@ -270,13 +271,14 @@ stow_remove_promoted_vtags()
           for folder in ${!ftagMap[@]}; do
             vtags=( ${ftagMap[$folder]} )
             for vtag in ${vtags[@]}; do
-              tag_delete "$vtag"
+              tagsToDelete+=($vtag)
             done
           done
         fi
       done
     fi
   done
+  tag_delete_tags "${tagsToDelete[@]}" || ec=$?
   return $ec
 }
 # in:

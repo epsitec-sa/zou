@@ -12,7 +12,8 @@ deltag_parse()
     -u|--no-push) noTagPush=true;;
     --debug) debug=true;;
     -*) io_error "unknown option: $1"; exit 1;;
-    *) args+=("$1");;
+    .) args+=( $(git tag -l | grep -Ev '/') );;
+    *) args+=( $(git tag -l "$1") );;
   esac; shift; done
 }
 
@@ -27,31 +28,7 @@ deltag_main()
 {
   local tag=$1
   [[ -z $tag ]] && { io_error "missing argument"; exit 1; }
-  if tag_exists $tag; then
-    deltag_delete $tag
-  else
-    # assume tag is a glob
-    for tag in $(deltag_tag_enumerator "$tag"); do
-      deltag_delete $tag
-    done
-    [[ -z $noTagPush ]] && tag_mirror false $dryRun
-  fi
-}
-deltag_delete()
-{
-  local tag=$1
-  if [[ $dryRun == true ]]; then
-    mio_message "Deleted tag ${VC}$tag${DarkGray}" ${DarkGray}
-  else
-    tag_delete "$tag"
-  fi
-}
-deltag_tag_enumerator()
-{
-  case "$1" in
-    .) git tag -l | grep -Ev '/';;  
-    *) git tag -l "$1";;
-  esac
+  tag_delete_tags "${args[@]}"
 }
 
 deltag_run "$@"
