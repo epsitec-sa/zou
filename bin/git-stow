@@ -85,7 +85,12 @@ stow_do_prolog()
   stow_promote_vtags 'vbranches[@]' $(git tag -l --sort=-v:refname)
   stow_orphans 'vbranches[@]' $(git tag -l)
 
-  [[ $stowPushTags == true ]] && tag_mirror || true
+
+  if [[ $stowPushTags == true ]]; then
+    tag_mirror
+  else
+    mio_info "Use ${VC}git mirrortags${Cyan} to replace remote tags with local ones${VC}"
+  fi
 }
 
 stow_run "$@"

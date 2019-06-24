@@ -107,14 +107,17 @@ tag_delete()
 }
 tag_delete_tags()
 {
+  # io_trace "tag_delete_tags ${*@Q}"
   tag_delete_local_tags "$@"
   tag_delete_remote_tags "$@"
 }
 tag_delete_local_tags()
 {
   [ $# -eq 0 ] && return 0
-  local ltags=( $(git tag -l "$@") ) tag
+  local ltags tag IFS=$'\n'
+  ltags=( $(git tag -l "$@") )
   [ ${#ltags[@]} -eq 0 ] && return 0
+  # io_trace "tag_delete_local_tags -- $(print_vars ltags[@])"
   if [[ $dryRun == true ]]; then
     io_lock_enter
     for tag in ${ltags[@]}; do
@@ -122,27 +125,29 @@ tag_delete_local_tags()
     done
     io_lock_exit
   else
+    IFS=' '
     io_buffered_eval "git tag -d ${ltags[*]} 2>&1" _tag_delete_local_tags_line_selector
   fi
 }
 tag_delete_remote_tags()
 {
   [ $# -eq 0 ] && return 0
-  local remote=$(git remote) line rtags tag
+  local remote=$(git remote) line rtags tag IFS=$'\n'
   for line in $(git ls-remote "$remote" "$@"); do
     [[ $line =~ \^\{\}$ ]] && continue
     [[ $line =~ refs/tags/(.*) ]] && rtags+=(${BASH_REMATCH[1]})
   done
   [ ${#rtags[@]} -eq 0 ] && return 0
-  if [[ $noTagPush == true ]]; then
-    mio_info "Use ${VC}git mirrortags${Cyan} to delete remote tags ${VC}"
-  elif [[ $dryRun == true ]]; then
+  # io_trace "tag_delete_remote_tags -- $(print_vars rtags[@])"
+  
+  if [[ $dryRun == true ]]; then
     io_lock_enter
     for tag in ${rtags[@]}; do
       mio_message_unsafe "Remote tag ${VC}$tag${Cyan} will be deleted."
     done
     io_lock_exit
-  else
+  elif [[ $noTagPush != true ]]; then
+    IFS=' '
     io_buffered_eval "git push --delete $remote ${rtags[*]} 2>&1" _tag_delete_remote_tags_line_selector
   fi
 }
