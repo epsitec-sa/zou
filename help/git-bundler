@@ -1,13 +1,15 @@
 usage: git bundler [<options>] [--] [<bundle-path>...]
 
-Register bundle path in global git config file
+Register bundle path in global zou-flow config file (~/.zou-flow)
 or/and list registered bundles
 
     -h|--help               display help
     -u|--unregister         unregister bundle path
+    -s|--scan               scan and register bundles that are siblings of zou.
     <bundle-path>...        bundle path
     
 example:
-    git bundler                   # register current bundle
-    git bundler -u                # register current bundle
-    git bundler bundle1 bundle2   # register bundle1 and bundle2 pathes
+    git bundler                     # register current bundle
+    git bundler -s                  # register zou's sibling bundles
+    git bundler -u                  # unregister current bundle
+    git bundler -- bundle1 bundle2  # register bundle1 and bundle2 pathes
