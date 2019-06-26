@@ -108,10 +108,10 @@ vtag_highest()
 # in:
 #   $1:branch     -- local or remote branch name
 #   $2:lbranch    -- local branch name
-#   $3:skipVNodes -- (auto | true | *)
+#   $3:skipVNodes -- (auto | vtag | *)
 #                 -- auto - match vtag  then match vnode then fallback
-#                 -- true - match vtag  then fallback
-#                 -- *    - match vnode then fallback
+#                 -- vtag - match vtag  then fallback
+#                 -- *    - match first then fallback
 # out:
 #   vbranch -- the infered vbranch name 
 #   vtag    -- the highest vtag that match the glob
@@ -128,7 +128,7 @@ vtag_set_describe()
   for match in "${fallback[@]}"; do
     case $skipVNodes in
     auto) ltag=$(_vtag_describe '*-@') || ltag=$(_vtag_describe);;
-    true) ltag=$(_vtag_describe '*-@');;
+    vtag) ltag=$(_vtag_describe '*-@');;
     *)    ltag=$(_vtag_describe);;
     esac
     # io_trace "vtag_set_describe 2 -- $(print_vars branch lbranch skipVNodes match ltag)"

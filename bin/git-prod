@@ -16,9 +16,9 @@ prod_parse()
     -r|--recursive) recursive=true;;
     -n|--dry-run)   dryRun=true;;
     -f|--force)     forceRelease=true;;
-    --vlast)        vlast=true;;
     --merge)        mergeIntoDev=true;;
     --vnext)        vnext=true;;
+    --vlast)        vlast=true;;
     --vtable)       vtable=true;;
     --reuse)        prerelPrefix='reuse';;
     --alpha)        prerelPrefix='alpha';;
@@ -60,6 +60,8 @@ prod_run()
 prod_command()
 {
   [ ${#prodModulePaths[@]} -eq 0 ] && prodModulePaths+=( './' )
+  [[ $vlast == true ]] && vtagResolveMode='auto'
+  
   case $subcommand in
     release) recursive=true;;
   esac
@@ -111,9 +113,9 @@ prod_release_prolog()
   if [[ $dryRun == true ]]; then
     _rstatus_init || io_trace_error 'prod_release_prolog 1'
   elif [[ $vlast == true ]] && cmd_is_child; then
-    branch_checkout "$prodVTag" || io_trace_error 'prod_release_prolog 2'
+    prod_checkout false true "$moduleDevBranch" || io_trace_error 'prod_release_prolog 2'
   else
-    branch_checkout "$prodBranch" || io_trace_error 'prod_release_prolog 3'
+    prod_checkout true true "$moduleDevBranch" || io_trace_error 'prod_release_prolog 3'
   fi
 }
 
@@ -156,7 +158,7 @@ _prod_fix_release_status()
 {
 
   [[ $dryRun == true ]] && _rstatus_update
-  prod_fix_release_status "$modulePrerelPrefix" "$moduleForceRelease"
+  prod_fix_release_status "$modulePrerelPrefix" "$moduleForceRelease" "$vlast"
 }
 _prod_release()
 {
@@ -218,6 +220,9 @@ _prod_merge_into_dev()
 }
 _prod_merge_into_dev_core()
 {
+  # io_trace "_prod_merge_into_dev_core -- $(print_vars releaseStatus vlast)"
+  [[ $releaseStatus == 'released' && $vlast == true ]] && return 0
+
   local toMerge=$1 mergeInto=$2 toMergeAlias=${3:-$1}
   # io_trace "_prod_merge_into_dev_core -- $(print_vars toMerge mergeInto toMergeAlias moduleMergeIntoDev)"
 

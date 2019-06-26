@@ -16,6 +16,8 @@ headNameChangedEvent+=( _prod_on_head_name_changed )
 branchCreatedEvent+=( _prod_on_branch_created )
 branchDeletedEvent+=( _prod_on_branch_deleted )
 
+vtagResolveMode=''  # (auto|vtag|*)
+
 prod_run() { module_run prod_scope "$@"; }
 
 # usage:
@@ -64,7 +66,7 @@ _prod_trace()
   _prod_*)
     io_trace_unsafe "$1 -- $(print_vars prodBranch prodBranchPath)"
     io_trace_unsafe "$1 -- $(print_vars vtagStatus prodVTag prodHTag)"
-    io_trace_unsafe "$1 -- $(print_vars vtag2dev vtag2prod prodAlias devAlias moduleAlias)"
+    io_trace_unsafe "$1 -- $(print_vars vtag2dev vtag2prod vtagResolveMode prodAlias devAlias moduleAlias)"
     io_trace_unsafe "$1 -- $(print_vars releaseStatus releaseVTag releasePrerelPrefix)"
     ;;
   *)
@@ -75,6 +77,7 @@ _prod_trace()
     io_trace_unsafe "$1 -- $(print_vars prodHTag)"
     io_trace_unsafe "$1 -- $(print_vars vtag2dev)"
     io_trace_unsafe "$1 -- $(print_vars vtag2prod)"
+    io_trace_unsafe "$1 -- $(print_vars vtagResolveMode)"
     io_trace_unsafe "$1 -- $(print_vars prodAlias)"
     io_trace_unsafe "$1 -- $(print_vars devAlias)"
     io_trace_unsafe "$1 -- $(print_vars moduleAlias)"
@@ -106,7 +109,7 @@ _prod_init_scope()
 
   # 1. Retrieve vtag and vbranch info starting from dev branch
   module_is_bundle && strict=true
-  vtag_set_describe "$devBranchPath" "$devBranch" 'auto' "$strict" # -> vbranch vtag delta
+  vtag_set_describe "$devBranchPath" "$devBranch" "$vtagResolveMode" "$strict" # -> vbranch vtag delta
   if [[ -n $vtag ]]; then
     _prod_init_dev true
 
@@ -132,7 +135,7 @@ _prod_init_xscope()
 
   # io_trace "_prod_init_xscope 1 -- $(print_vars moduleHead)"
   module_is_bundle && strict=true
-  vtag_set_describe "$moduleHead" "$moduleHead" false # -> vbranch vtag delta
+  vtag_set_describe "$moduleHead" "$moduleHead" # -> vbranch vtag delta
   if [[ -n $vtag ]]; then
     _prod_init_dev false
 
@@ -200,7 +203,7 @@ _prod_init_prod()
 #                vtagMissing -- no vtag found (branch was never released)
 _prod_set_prod_info()
 {
-  vtag_set_describe "$prodBranchPath" "$prodBranch" 'auto' "$strict" # -> vbranch vtag delta
+  vtag_set_describe "$prodBranchPath" "$prodBranch" "$vtagResolveMode" "$strict" # -> vbranch vtag delta
   if [[ $vbranch != $prodBranch ]]; then
     mio_error "Branches ${VC}$prodBranch${LightPurple} and ${VC}$vbranch${LightPurple} are both descendants of (${VC}$vtag)" ${LightPurple}
     return 1
@@ -220,7 +223,7 @@ _prod_set_prod_info()
 }
 _prod_set_xprod_info()
 {
-  vtag_set_describe "$prodBranchPath" "$prodBranch" 'auto' "$strict" # -> vbranch vtag delta
+  vtag_set_describe "$prodBranchPath" "$prodBranch" "$vtagResolveMode" "$strict" # -> vbranch vtag delta
   # io_trace "_prod_set_xprod_info 1 -- $(print_vars prodBranch vbranch vtag htag delta)"
   if module_is_bundle; then
     htag=$(vtag_highest $vbranch true)
@@ -284,13 +287,13 @@ _prod_init_release_status()
 sku_checkout()
 {
   # io_trace "sku_checkout ${*@Q}"
-  local sku=$1 checkoutType=${2:-vtag} forceCheckout=$3 branch lbranch ec=0
+  local sku=$1 checkoutType=${2:-vlast} forceCheckout=$3 branch lbranch ec=0
   branch_set_best_match_dev "$sku"  # -> branch lbranch
   # io_trace "sku_checkout -- $(print_vars branch lbranch)"
   _prod_init_scope "$branch" "$lbranch"
 
   case $checkoutType in
-    vtag)   prod_checkout false "$forceCheckout" "$lbranch" || ec=$?;;
+    vlast)  prod_checkout false "$forceCheckout" "$lbranch" || ec=$?;;
     vnext)  prod_checkout true  "$forceCheckout" "$lbranch" || ec=$?;;
     dev)    dev_checkout        "$forceCheckout" "$lbranch" || ec=$?;;
   esac
@@ -416,9 +419,11 @@ _prod_ensure_bundle_vbranch_core()
 
 prod_fix_release_status()
 {
-  local prerelPrefix=$1 forceRelease=$2
+  local prerelPrefix=$1 forceRelease=$2 vlast=$3
   # io_trace "prod_fix_release_status 1 -- $(print_vars forceRelease prerelPrefix releasePrerelPrefix releaseStatus)"
   _prod_should_release "$@" && releaseStatus='unreleased'
+  [[ $vlast == true && $releaseStatus == 'unreleased' && $vtagStatus == 'vtag' ]] && releaseStatus='released'
+
   # io_trace "prod_fix_release_status 2 -- $(print_vars forceRelease prerelPrefix releasePrerelPrefix releaseStatus)"
 }
 _prod_should_release()

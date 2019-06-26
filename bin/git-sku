@@ -49,7 +49,7 @@ sku_run()
   local jobsCount recursive=false command='sku' subcommand \
         cmdScopes=( prod_scope config_scope cosm_scope ) \
         configMode='status' configInclude=() configExclude=() \
-        checkoutType='vtag' noSkuFilter skuSpec skuModulePaths=()
+        checkoutType='vlast' noSkuFilter skuSpec skuModulePaths=()
 
   sku_parse "$@" || return $?
   
@@ -66,6 +66,7 @@ sku_command()
   local sku
   branch_set_bestmatch_sku "$skuSpec"
   # io_trace "sku_command -- $(print_vars skuSpec sku subcommand skuModulePaths[@])"
+  [[ $checkoutType == 'vlast' ]] && vtagResolveMode='auto'
 
   case "$subcommand" in
     enter)
