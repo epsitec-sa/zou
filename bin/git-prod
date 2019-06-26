@@ -16,6 +16,7 @@ prod_parse()
     -r|--recursive) recursive=true;;
     -n|--dry-run)   dryRun=true;;
     -f|--force)     forceRelease=true;;
+    --vlast)        vlast=true;;
     --merge)        mergeIntoDev=true;;
     --vnext)        vnext=true;;
     --vtable)       vtable=true;;
@@ -42,7 +43,7 @@ prod_run()
   local jobsCount recursive command='prod' subcommand \
         cmdScopes=( prod_scope config_scope cosm_scope ) \
         commitSubmodules=true forceRelease mergeIntoDev \
-        vnext vtable prerelPrefix dryRun prodModulePaths=()
+        vnext vlast vtable prerelPrefix dryRun prodModulePaths=()
 
   prod_parse "$@" || return $?
   
@@ -83,8 +84,8 @@ prod_release_root_scope()
   # io_trace "prod_release_root_scope ${*@Q}"
 
   # version table scope
-  local vtableCreate vtableGate vtableLookupPath
-  _vtable_init
+  local vtableCreate vtableGate vtableLookupPath vtableRoot
+  _vtable_init || return $?
 
   # dry run scope
   local rstatusParentGate rstatusLookupPath rstatusParentLookupPath principalReleaseStatus
@@ -109,8 +110,10 @@ prod_release_prolog()
   
   if [[ $dryRun == true ]]; then
     _rstatus_init || io_trace_error 'prod_release_prolog 1'
+  elif [[ $vlast == true ]] && cmd_is_child; then
+    branch_checkout "$prodVTag" || io_trace_error 'prod_release_prolog 2'
   else
-    branch_checkout "$prodBranch" || io_trace_error 'prod_release_prolog 2'
+    branch_checkout "$prodBranch" || io_trace_error 'prod_release_prolog 3'
   fi
 }
 
@@ -130,7 +133,7 @@ prod_release_epilog()
     moduleForceRelease=$forceRelease
     # prerelease always apply to principal module
     # io_trace "prod_release_epilog PRINCIPAL -- $(print_vars moduleForceRelease moduleMergeIntoDev modulePrerelPrefix releasePrerelPrefix)"
-  elif _cmd_is_child; then
+  elif cmd_is_child; then
     # prerelease does not apply to child modules (excepting principal module)
     [[ $prerelPrefix != 'rtm' ]] && modulePrerelPrefix=''
     # io_trace "prod_release_epilog CHILD -- $(print_vars moduleForceRelease moduleMergeIntoDev modulePrerelPrefix releasePrerelPrefix)"
@@ -193,7 +196,7 @@ _prod_release_unreleased()
 _prod_release_released()
 {
   if [[ $dryRun != true && $vtableCreate == true ]]; then
-    module_is_startup && vtableCreate=false
+    [[ $moduleRoot == $vtableRoot ]] && vtableCreate=false
   fi
   mio_message "Already released" ${LightBlue}
 }
@@ -246,19 +249,25 @@ _vtable_init()
   # [[ $dryRun == true ]] && return 0
   if [[ $vtable == true ]]; then
     vtableCreate=true
-  elif [[ $startupRoot == $bundleRoot ]] && module_has_submodules; then
+  elif cmd_is_single_root "$bundleRoot"; then
     vtableCreate=true
   fi
   if [[ $vtableCreate == true ]]; then
+    vtableRoot=$(cmd_single_root)
+    if [ $? -ne 0 ]; then
+      mio_error "Version table cannot be created when distinct modules are specified (${VC}$(cmd_registered_paths)${Red})"
+      return 1
+    fi
+
     vtableGate=$(lock_init)
     vtableLookupPath="$(mktemp)"
-    vtable_init "$startupRoot" "$vtableLookupPath"
+    vtable_init "$vtableRoot" "$vtableLookupPath"
   fi
 }
 _vtable_update()
 {
-  # io_trace "_vtable_update -- $(print_vars vtable vtableCreate configSelectIsExcluded)"
-  if [[ "$PWD" == "$startupRoot" ]]; then
+  # io_trace "_vtable_update -- $(print_vars vtable vtableCreate configSelectIsExcluded vtableRoot PWD)"
+  if [[ "$PWD" == "$vtableRoot" ]]; then
     _vtable_commit
   else
     _vtable_update_core
@@ -266,7 +275,7 @@ _vtable_update()
 }
 _vtable_update_core()
 {
-  [[ $vtableCreate == true ]] && vtable_update "$startupRoot" "$moduleId" "$vtableLookupPath" "$vtableGate"
+  [[ $vtableCreate == true ]] && vtable_update "$vtableRoot" "$moduleId" "$vtableLookupPath" "$vtableGate"
   [[ $configSelectIsExcluded == true || $dryRun == true ]] && return 0
   _prod_merge_into_dev_core "$prodBranch" "$moduleDevBranchPath" || io_trace_error "_vtable_update_core merge"
 }
@@ -274,13 +283,13 @@ _vtable_commit()
 {
   if [[ $dryRun == true ]]; then
     [[ $vtableCreate == true ]] || return 0
-    vtable_update "$startupRoot" "$moduleId" "$vtableLookupPath" "$vtableGate"
+    vtable_update "$vtableRoot" "$moduleId" "$vtableLookupPath" "$vtableGate"
     mio_message "Created version table for ${VC}$prodBranch${DarkGray} at ${VC}$releaseVTag" ${DarkGray}
   elif [[ $vtableCreate == true ]]; then
     # io_trace "_vtable_commit -- $(print_vars releaseStatus prodBranch moduleDevBranch vnext)"
     local tmpBranch="_zou_$(date +%y%V)"
     git checkout -b "$tmpBranch" &>/dev/null
-    vtable_update "$startupRoot" "$moduleId" "$vtableLookupPath" "$vtableGate" true
+    vtable_update "$vtableRoot" "$moduleId" "$vtableLookupPath" "$vtableGate" true
     mio_message "Created version table for ${VC}$prodBranch${Green} at ${VC}$releaseVTag" ${Green}
     _prod_merge_into_dev "$tmpBranch" "$prodBranch"
     git checkout "$prodBranch" &>/dev/null

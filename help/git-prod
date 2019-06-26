@@ -1,5 +1,5 @@
 usage: git prod enter [-r] [--vnext] [-- <module-paths>]
-   or: git prod release [-n] [-f] [--vtable] [--merge]
+   or: git prod release [-n] [-f] [--vlast] [--vtable] [--merge]
        [--(reuse|alpha|beta|rc|rtm)] [-- <module-paths>]
 
 Manage production mode.
@@ -14,6 +14,7 @@ options:
     -n|--dry-run            do not really release
     -f|--force              force the release of the principal module
                             use it to release a new bundle version when the principal module did not change
+    --vlast                 release last version of submodules (default to next version)
     --merge                 merge released production branch into development branch (default in bundle)
     --vnext                 checkout next version (default to actual version)
     --vtable                force creation of a vtable when startup module is a composite submodule
@@ -36,3 +37,4 @@ example:
     git prod release --rtm         # release production branches as RTM version
     git prod release --reuse       # release production branches and reuse last version of startup module
     git prod release --vtable      # force creation of a vtable when startup module is composite (even if it's not a bundle)
+    git prod release --vlast       # release last version of submodules
