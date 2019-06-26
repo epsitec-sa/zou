@@ -13,6 +13,7 @@ dev_parse()
     -j*)            jobsCount=${1#-j};;
     -v*)            dev_parse_default_version "$1";;
     -r|--recursive) recursive=true;;
+    -a|--all)       noSkuFilter=true;;
     --minor)        incrementKind='minor';;
     --major)        incrementKind='major';;
     attach)         subcommand=$1;;
@@ -44,7 +45,7 @@ dev_run()
   # parse command line
   local jobsCount recursive command='dev' subcommand \
         cmdScopes=( prod_scope config_scope cosm_scope ) \
-        incrementKind defaultVersion='0.1' devModulePaths=()
+        noSkuFilter incrementKind defaultVersion='0.1' devModulePaths=()
 
   dev_parse "$@" || return $?
   
