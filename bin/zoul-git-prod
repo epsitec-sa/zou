@@ -447,7 +447,7 @@ prod_increment_release_version()
 {
   local prerelPrefix=$1 noIncrement
   # get principal module version
-  _prod_refresh_bundle_htag # update prodHTag and noIncrement
+  _prod_refresh_bundle_htag # -> prodHTag and noIncrement
   _prod_increment_release_version "$prerelPrefix" "$noIncrement" # -> releaseVTag releasePrerelPrefix
 
   # io_lock_enter
@@ -524,16 +524,17 @@ _prod_get_principal_module_release_info()
   echo "$releaseStatus;$releaseVTag"
 }
 
-# Compute next version
+# Compute next version and prerelease
 #
 # usage:
-#  local prerelPrefix='reuse' vnext
-#  _prod_increment_release_version $noIncrement
+#  local releaseVTag releasePrerelPrefix
+#  _prod_increment_release_version $prerelPrefix $noIncrement
 # in:
-#  prerelPrefix=$1  -- prerelease prefix (alpha, beta, rc, rtm, reuse)
-#  $1:noIncrement   -- do not increment 
+#  $1:prerelPrefix  -- prerelease prefix (alpha, beta, rc, rtm, reuse)
+#  $2:noIncrement   -- do not increment 
 # out:
-#  prerelPrefix=     -- prerelease prefix (alpha, beta, rc, rtm, reuse)
+#  releaseVTag
+#  releasePrerelPrefix  -- prerelease prefix (alpha, beta, rc, rtm, reuse)
 _prod_increment_release_version()
 {
   if [[ $releaseStatus == 'released' ]]; then
@@ -555,7 +556,7 @@ _prod_increment_release_version()
   fi
 }
 # out:
-#  vnext
+#   releaseVTag
 _prod_increment_release_version_core()
 {
   local vnext
