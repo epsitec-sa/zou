@@ -442,18 +442,20 @@ _prod_should_release()
   # io_trace "_prod_should_release 6 -- $(print_vars prerelPrefix releasePrerelPrefix releaseStatus)"
   return 1
 }
-
+# return code
+#   127 -- principal module and bundle have same versions
 prod_increment_release_version()
 {
-  local prerelPrefix=$1 noIncrement
+  local prerelPrefix=$1 noIncrement ec=0
   # get principal module version
-  _prod_refresh_bundle_htag # -> prodHTag and noIncrement
+  _prod_refresh_bundle_htag || ec=$?  # -> prodHTag and noIncrement
   _prod_increment_release_version "$prerelPrefix" "$noIncrement" # -> releaseVTag releasePrerelPrefix
 
   # io_lock_enter
   # io_trace_unsafe "prod_increment_release_version -- $(print_vars releaseStatus releasePrerelPrefix)"
   # io_trace_unsafe "prod_increment_release_version -- $(print_vars prodVTag prodHTag releaseVTag)"
   # io_lock_exit
+  return $ec
 }
 prod_commit_release()
 {
@@ -483,13 +485,15 @@ _prod_commit_release_core()
   version_commit_files "$releaseVTag" "${vresources[@]}" ${unstagedCleanSubmodules[@]}
   # branch_merge "$prodBranch" "$moduleDevBranchPath" &>/dev/null
 }
+# return code
+#   127 -- principal module and bundle have same versions
 _prod_refresh_bundle_htag()
 {
   # io_trace "_prod_refresh_bundle_htag 1 -- $(print_vars principalModuleId prodHTag noIncrement)"
   [[ -n $principalModuleId ]] && module_is_bundle  || return 0
 
   local pinfo pstatus ptag pver hver htag \
-        principalScopes=( prod_scope )
+        principalScopes=( prod_scope ) ec=0
 
   pinfo=$(module_visit "$principalModuleId" "${principalScopes[@]}" _prod_get_principal_module_release_info)
   pstatus=${pinfo%;*}
@@ -500,7 +504,7 @@ _prod_refresh_bundle_htag()
   hver=${prodHTag##*/}
   # io_trace "_prod_refresh_bundle_htag 1 -- $(print_vars principalModuleId ptag pstatus prodHTag pinfo pstatus ptag hver pver)"
   if [[ $pstatus == 'released' && $hver == $pver ]]; then
-    mio_message "Bundle ${VC}$bundleId${LightPurple} and module ${VC}$principalModuleId${LightPurple} have same version" ${LightPurple}
+    ec=127
   else
     noIncrement=true
   fi
@@ -511,6 +515,7 @@ _prod_refresh_bundle_htag()
   [[ $htag == $prodHTag ]] && noIncrement=''
   prodHTag=$htag
   # io_trace "_prod_refresh_bundle_htag 2 -- $(print_vars principalModuleId ptag pstatus prodHTag noIncrement)"
+  return $ec
 }
 # run in principal module context
 _prod_get_principal_module_release_info()

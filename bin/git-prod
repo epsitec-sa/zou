@@ -199,6 +199,9 @@ _prod_release_unreleased()
 {
   # head will change
   prod_increment_release_version "$modulePrerelPrefix"
+  if [ $? -eq 127 ]; then
+    mio_message "Bundle ${VC}$bundleId${LightPurple} and module ${VC}$principalModuleId${LightPurple} have same version" ${LightPurple}
+  fi
 
   if [[ $dryRun == true ]]; then
     mio_success "Branch ${VC}$prodBranch${Green} will be released at ${VC}$releaseVTag" "$alias"
