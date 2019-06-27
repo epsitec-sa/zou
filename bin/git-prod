@@ -46,16 +46,21 @@ prod_run()
         vnext vlast vtable prerelPrefix dryRun prodModulePaths=()
 
   prod_parse "$@" || return $?
-  
+  prod_startup_message
+
+  bundle_scope prod_command
+}
+prod_startup_message()
+{
   case $subcommand in
     enter)
       startupMessage="Entering production, please wait...";;
     release)
-      startupMessage="Releasing production, please wait..."
+      local what='next version'
+      [[ $vlast == true ]] && what='last version'
+      startupMessage="Releasing ${Brown}$what${White}, please wait..."
       [[ $dryRun == true ]] && startupMessage="${DarkGray}$startupMessage";;
   esac
-
-  bundle_scope prod_command
 }
 prod_command()
 {

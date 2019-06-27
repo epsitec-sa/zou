@@ -52,15 +52,21 @@ sku_run()
         checkoutType='vlast' noSkuFilter skuSpec skuModulePaths=()
 
   sku_parse "$@" || return $?
-  
-  case $subcommand in
-    enter) startupMessage="Entering ${Brown}${skuSpec:-current SKU}${White}, please wait...";;
-    info)  startupMessage="Getting SKU info, please wait...";;
-  esac
+  sku_startup_message
 
   bundle_scope sku_command
 }
-
+sku_startup_message()
+{
+  case $subcommand in
+    enter)
+      local what='next version'
+      [[ $checkoutType == 'vlast' ]] && what='last version'
+      startupMessage="Entering ${Brown}$what${White} of ${Brown}${skuSpec:-current SKU}${White}, please wait...";;
+    info)
+      startupMessage="Getting SKU info, please wait...";;
+  esac
+}
 sku_command()
 {
   local sku
