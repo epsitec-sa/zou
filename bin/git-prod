@@ -56,10 +56,10 @@ prod_startup_message()
     enter)
       startupMessage="Entering production, please wait...";;
     release)
-      local what='next version'
+      local what='next version' color=${White}
+      [[ $dryRun == true ]] && color=${DarkGray}
       [[ $vlast == true ]] && what='last version'
-      startupMessage="Releasing ${Brown}$what${White}, please wait..."
-      [[ $dryRun == true ]] && startupMessage="${DarkGray}$startupMessage";;
+      startupMessage="${color}Releasing ${Brown}$what${color}, please wait...";;
   esac
 }
 prod_command()
