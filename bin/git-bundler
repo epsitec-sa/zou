@@ -3,6 +3,7 @@
 [[ -z $ZOUL_CORE ]]       && . zoul-core
 [[ -z $ZOUL_GIT_REPO ]]   && . zoul-git-repo
 [[ -z $ZOUL_GIT_BUNDLE ]] && . zoul-git-bundle
+[[ -z $ZOUL_GIT_CMD ]]    && . zoul-git-cmd
 
 bundler_parse()
 {
@@ -11,6 +12,7 @@ bundler_parse()
     -h|--help) zou-help $0; exit 0;;
     -u|--unregister) unregister=true;;
     -s|--scan)       scan=true;;
+    --config)        config=true;;
     -*) io_error "unknown option '$1'"; return 1;;
     *)  bundlePaths+=( "$(realpath $1)" )
   esac; shift; done
@@ -20,7 +22,7 @@ bundler_run()
   # avoid default registration
   doNotRegisterBundle=true
 
-  local unregister scan bundlePaths=()
+  local unregister scan config bundlePaths=()
   bundler_parse "$@"
 
   if [[ $scan == true ]]; then
@@ -39,8 +41,16 @@ bundler_run()
   local bundleRegisteredPaths
   bundle_set_registered_paths
   # io_trace "bundler_run 2 -- $(print_vars bundleRegisteredPaths[@])"
+  
   if [ ${#bundleRegisteredPaths[@]} -eq 0 ]; then
     mio_warning "No bundle registered."
+  elif [[ $config == true ]]; then
+    io_message "Configuring bundles, please wait..."
+    if [[ $scan == true ]]; then
+      bundle_visit_async 'bundleRegisteredPaths[@]' _bundler_config
+    else
+      bundle_visit_async 'bundlePaths[@]' _bundler_config
+    fi
   else
     bundle_visit_async 'bundleRegisteredPaths[@]' _bundler_status
   fi
@@ -57,13 +67,32 @@ _bundler_scan()
 _bundler_register()
 {
   local url=$(git config remote.origin.url)
-  bundle_register "$url" "$bundleRoot"
+  bundle_register "$url" "$bundleRoot" "$config"
 }
 _bundler_unregister()
 {
   local url=$(git config remote.origin.url)
   bundle_unregister "$url" "$bundleRoot"
 }
+
+_bundler_config()
+{
+  local command='_bundler' subcommand='config' noSkuFilter=true cmdScopes=( config_scope )
+  bundle_scope _bundler_config_command
+  _bundler_status
+}
+_bundler_config_command()
+{
+  cmd_register_module_paths true "$bundleRoot"
+  cmd_visit_modules
+}
+_bundler_config_prolog()
+{
+  # io_trace '_bundler_config_prolog'
+  
+  git config push.followTags true
+}
+
 _bundler_status()
 {
   io_message "${LightBlue}$bundleUrl${White} -> ${VC}$bundleRoot${White}" "$bundleTracePrefix" ${White}

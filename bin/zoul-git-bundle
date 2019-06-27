@@ -12,14 +12,13 @@ gitConfigGate=$(lock_init "${zouConfigFile}_lock")
 
 bundle_register()
 {
-  local url=$1 path=$2
+  local url=$1 path=$2 config=$3
   # io_trace "bundle_register -- $(print_vars url path)"
   lock_enter "$gitConfigGate"
   if ! git config --file "$zouConfigFile" --get-regexp "zou.$url.path" "$path" >/dev/null; then
     git config --file "$zouConfigFile" --add "zou.$url.path" "$path"
   fi
   lock_exit "$gitConfigGate"
-  git config push.followTags true
 }
 bundle_unregister()
 {
