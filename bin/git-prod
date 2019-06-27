@@ -15,7 +15,6 @@ prod_parse()
     -j*)            jobsCount=${1#-j};;
     -r|--recursive) recursive=true;;
     -n|--dry-run)   dryRun=true;;
-    -f|--force)     forceRelease=true;;
     --merge)        mergeIntoDev=true;;
     --vnext)        vnext=true;;
     --vlast)        vlast=true;;
@@ -42,7 +41,7 @@ prod_run()
   # parse command line
   local jobsCount recursive command='prod' subcommand \
         cmdScopes=( prod_scope config_scope cosm_scope ) \
-        commitSubmodules=true forceRelease mergeIntoDev \
+        commitSubmodules=true mergeIntoDev \
         vnext vlast vtable prerelPrefix dryRun prodModulePaths=()
 
   prod_parse "$@" || return $?
@@ -88,14 +87,20 @@ prod_enter_epilog() { branch_show_status || io_trace_error 'prod_enter_epilog'; 
 
 prod_release_root_scope()
 {
-  # io_trace "prod_release_root_scope ${*@Q}"
+  # avoid reentrency
+  if [[ $prodReleaseRootScopeInitialized != true ]]; then
 
-  # version table scope
-  local vtableCreate vtableGate vtableLookupPath vtableRoot
-  _vtable_init || return $?
+    # io_trace "prod_release_root_scope ${*@Q}"
+    local prodReleaseRootScopeInitialized=true forcePrincipalRelease
 
-  # dry run scope
-  local rstatusParentGate rstatusLookupPath rstatusParentLookupPath principalReleaseStatus
+    # version table scope
+    local vtableCreate vtableGate vtableLookupPath vtableRoot
+    _vtable_init || return $?
+
+    # dry run scope
+    local rstatusParentGate rstatusLookupPath rstatusParentLookupPath principalReleaseStatus
+
+  fi
 
   # execute next russian doll
   $1 "${@:2}"
@@ -107,26 +112,25 @@ prod_release_root_scope()
 
 prod_release_scope()
 {
-  local moduleForceRelease moduleMergeIntoDev=$mergeIntoDev modulePrerelPrefix=$prerelPrefix \
+  # io_trace "prod_release_scope -- $(print_vars prodBranch)"
+  local moduleMergeIntoDev=$mergeIntoDev modulePrerelPrefix=$prerelPrefix \
         hasBeenReleased moduleVLast
 
   # always merge into dev in bundle
   module_is_bundle && moduleMergeIntoDev=true
 
   if module_is_principal; then
-    # force release applies only to principal module
-    moduleForceRelease=$forceRelease
     # vlast does not apply to principal module if force release is specified
-    [[ $vlast == true && $forceRelease != true ]] && cmd_is_child && moduleVLast=true
+    [[ $vlast == true && $forcePrincipalRelease != true ]] && cmd_is_child && moduleVLast=true
     # prerelease always applies to principal module
 
-    # io_trace "prod_release_epilog PRINCIPAL -- $(print_vars moduleForceRelease moduleMergeIntoDev modulePrerelPrefix releasePrerelPrefix)"
+    # io_trace "prod_release_scope PRINCIPAL -- $(print_vars forcePrincipalRelease moduleMergeIntoDev modulePrerelPrefix releasePrerelPrefix)"
   elif cmd_is_child; then
     # vlast applies to child modules
     [[ $vlast == true ]] && moduleVLast=true
     # prerelease does not apply to child modules (excepting principal module)
     [[ $prerelPrefix != 'rtm' ]] && modulePrerelPrefix=''
-    # io_trace "prod_release_epilog CHILD -- $(print_vars moduleForceRelease moduleMergeIntoDev modulePrerelPrefix releasePrerelPrefix)"
+    # io_trace "prod_release_scope CHILD -- $(print_vars forcePrincipalRelease moduleMergeIntoDev modulePrerelPrefix releasePrerelPrefix)"
   fi
 
   # execute next russian doll
@@ -156,6 +160,7 @@ prod_release_prolog()
 
 prod_release_epilog()
 {
+  # io_trace "prod_release_epilog -- $(print_vars prodBranch)"
   _prod_fix_release_status
   _prod_release || io_trace_error 'prod_release_epilog 1' || return $?
   _vtable_update || io_trace_error 'prod_release_epilog 2'
@@ -171,8 +176,8 @@ prod_release_xepilog()
 
 _prod_fix_release_status()
 {
+  prod_fix_release_status "$modulePrerelPrefix" "$forcePrincipalRelease" "$moduleVLast"
   [[ $dryRun == true ]] && _rstatus_update
-  prod_fix_release_status "$modulePrerelPrefix" "$moduleForceRelease" "$moduleVLast"
 }
 _prod_release()
 {
@@ -199,9 +204,7 @@ _prod_release_unreleased()
 {
   # head will change
   prod_increment_release_version "$modulePrerelPrefix"
-  if [ $? -eq 127 ]; then
-    mio_message "Bundle ${VC}$bundleId${LightPurple} and module ${VC}$principalModuleId${LightPurple} have same version" ${LightPurple}
-  fi
+  [ $? -eq 127 ] && _prod_force_release_of_principal_module 
 
   if [[ $dryRun == true ]]; then
     mio_success "Branch ${VC}$prodBranch${Green} will be released at ${VC}$releaseVTag" "$alias"
@@ -223,6 +226,14 @@ _prod_release_unimplemented()
 {
   mio_error "Fatal: releaseStatus '$releaseStatus' not implemented"
   exit 1
+}
+_prod_force_release_of_principal_module()
+{
+  [[ $releaseStatus == 'released' ]] && return 0 
+  mio_message "Bundle ${VC}$bundleId${LightPurple} and module ${VC}$principalModuleId${LightPurple} have same version" ${LightPurple}
+  local forcePrincipalRelease=true
+  cmd_visit_module "$principalModuleId"
+  cosm_reset_scope
 }
 _prod_merge_into_dev()
 {
