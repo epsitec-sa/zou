@@ -107,8 +107,28 @@ prod_release_root_scope()
 
 prod_release_scope()
 {
-  local hasBeenReleased moduleVLast
-  [[ $vlast == true ]] && cmd_is_child && moduleVLast=true
+  local moduleForceRelease moduleMergeIntoDev=$mergeIntoDev modulePrerelPrefix=$prerelPrefix \
+        hasBeenReleased moduleVLast
+
+  # always merge into dev in bundle
+  module_is_bundle && moduleMergeIntoDev=true
+
+  if module_is_principal; then
+    # force release applies only to principal module
+    moduleForceRelease=$forceRelease
+    # vlast does not apply to principal module if force release is specified
+    [[ $vlast == true && $forceRelease != true ]] && cmd_is_child && moduleVLast=true
+    # prerelease always applies to principal module
+
+    # io_trace "prod_release_epilog PRINCIPAL -- $(print_vars moduleForceRelease moduleMergeIntoDev modulePrerelPrefix releasePrerelPrefix)"
+  elif cmd_is_child; then
+    # vlast applies to child modules
+    [[ $vlast == true ]] && moduleVLast=true
+    # prerelease does not apply to child modules (excepting principal module)
+    [[ $prerelPrefix != 'rtm' ]] && modulePrerelPrefix=''
+    # io_trace "prod_release_epilog CHILD -- $(print_vars moduleForceRelease moduleMergeIntoDev modulePrerelPrefix releasePrerelPrefix)"
+  fi
+
   # execute next russian doll
   $1 "${@:2}"
 }
@@ -136,22 +156,6 @@ prod_release_prolog()
 
 prod_release_epilog()
 {
-  local moduleForceRelease moduleMergeIntoDev=$mergeIntoDev modulePrerelPrefix=$prerelPrefix
-
-  # always merge into dev in bundle
-  module_is_bundle && moduleMergeIntoDev=true
-
-  if module_is_principal; then
-    # force release apply only to principal module
-    moduleForceRelease=$forceRelease
-    # prerelease always apply to principal module
-    # io_trace "prod_release_epilog PRINCIPAL -- $(print_vars moduleForceRelease moduleMergeIntoDev modulePrerelPrefix releasePrerelPrefix)"
-  elif cmd_is_child; then
-    # prerelease does not apply to child modules (excepting principal module)
-    [[ $prerelPrefix != 'rtm' ]] && modulePrerelPrefix=''
-    # io_trace "prod_release_epilog CHILD -- $(print_vars moduleForceRelease moduleMergeIntoDev modulePrerelPrefix releasePrerelPrefix)"
-  fi
-
   _prod_fix_release_status
   _prod_release || io_trace_error 'prod_release_epilog 1' || return $?
   _vtable_update || io_trace_error 'prod_release_epilog 2'

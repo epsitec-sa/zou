@@ -420,7 +420,7 @@ prod_fix_release_status()
   local prerelPrefix=$1 forceRelease=$2 vlast=$3
   # io_trace "prod_fix_release_status 1 -- $(print_vars forceRelease prerelPrefix releasePrerelPrefix releaseStatus)"
   _prod_should_release "$@" && releaseStatus='unreleased'
-  [[ $vlast == true && $releaseStatus == 'unreleased' && $vtagStatus == 'vtag' ]] && releaseStatus='released'
+  [[ $vlast == true && $releaseStatus == 'unreleased' && $vtagStatus == 'vtag' && $forceRelease != true ]] && releaseStatus='released'
 
   # io_trace "prod_fix_release_status 2 -- $(print_vars forceRelease prerelPrefix releasePrerelPrefix releaseStatus)"
 }
