@@ -105,6 +105,13 @@ prod_release_root_scope()
 # Release prolog
 ################
 
+prod_release_scope()
+{
+  local hasBeenReleased moduleVLast
+  [[ $vlast == true ]] && cmd_is_child && moduleVLast=true
+  # execute next russian doll
+  $1 "${@:2}"
+}
 prod_release_prolog()
 {
   # io_trace "prod_release_prolog -- $(print_vars prodBranch)"
@@ -114,13 +121,12 @@ prod_release_prolog()
       mio_info "  use ${VC}git dev release${Cyan} to release some development code."
       return 1;;
   esac
-  
   if [[ $dryRun == true ]]; then
     _rstatus_init || io_trace_error 'prod_release_prolog 1'
-  elif [[ $vlast == true ]] && cmd_is_child; then
-    prod_checkout false true "$moduleDevBranch" || io_trace_error 'prod_release_prolog 2'
+  elif [[ $moduleVLast == true ]]; then
+    prod_checkout false true "$moduleDevBranch" true || io_trace_error 'prod_release_prolog 2'
   else
-    prod_checkout true true "$moduleDevBranch" || io_trace_error 'prod_release_prolog 3'
+    prod_checkout true  true "$moduleDevBranch" true || io_trace_error 'prod_release_prolog 3'
   fi
 }
 
@@ -161,9 +167,8 @@ prod_release_xepilog()
 
 _prod_fix_release_status()
 {
-
   [[ $dryRun == true ]] && _rstatus_update
-  prod_fix_release_status "$modulePrerelPrefix" "$moduleForceRelease" "$vlast"
+  prod_fix_release_status "$modulePrerelPrefix" "$moduleForceRelease" "$moduleVLast"
 }
 _prod_release()
 {
@@ -174,7 +179,7 @@ _prod_release()
     released)   _prod_release_released;;
     *)          _prod_release_unimplemented;;
   esac
-  # io_trace "_prod_release 1 -- $(print_vars modulePrerelPrefix releaseStatus)"
+  # io_trace "_prod_release 2 -- $(print_vars modulePrerelPrefix releaseStatus hasBeenReleased)"
 }
 _prod_release_ff()
 {
@@ -182,7 +187,7 @@ _prod_release_ff()
     mio_success "Branch ${VC}$prodBranch${Green} will be forwarded to ${VC}$prodVTag${Green}"
   else
     branch_merge "$prodVTag" "$prodBranchPath" \
-    && branch_raise_head_changed_event "$prodBranch" \
+    && { branch_raise_head_changed_event "$prodBranch"; hasBeenReleased=true; } \
     || { mio_error "Merge of branch ${VC}$prodBranch${Red} failed"; return 1; }
   fi
 }
@@ -196,7 +201,7 @@ _prod_release_unreleased()
   else
     prod_commit_release \
     && branch_raise_head_changed_event "$prodBranch" \
-    && mio_success "Released branch ${VC}$prodBranch${Green} at ${VC}$releaseVTag" \
+    && { mio_success "Released branch ${VC}$prodBranch${Green} at ${VC}$releaseVTag"; hasBeenReleased=true; } \
     || { mio_error "Release of branch '$prodBranch' failed"; return 1; }
   fi
 }
@@ -225,8 +230,8 @@ _prod_merge_into_dev()
 }
 _prod_merge_into_dev_core()
 {
-  # io_trace "_prod_merge_into_dev_core -- $(print_vars releaseStatus vlast)"
-  [[ $releaseStatus == 'released' && $vlast == true ]] && return 0
+  # io_trace "_prod_merge_into_dev_core -- $(print_vars hasBeenReleased moduleVLast)"
+  [[ $hasBeenReleased == true ]] || return 0
 
   local toMerge=$1 mergeInto=$2 toMergeAlias=${3:-$1}
   # io_trace "_prod_merge_into_dev_core -- $(print_vars toMerge mergeInto toMergeAlias moduleMergeIntoDev)"

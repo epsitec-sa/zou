@@ -302,8 +302,8 @@ sku_checkout()
 }
 prod_checkout()
 {
-  local vnext=$1 forceCheckout=$2 devFallback=$3
-  # io_trace "prod_checkout -- $(print_vars moduleHead moduleDevBranch vnext forceCheckout devFallback vtagStatus prodBranch prodVTag)"
+  local vnext=$1 forceCheckout=$2 devFallback=$3 vnodeCheckoutProd=$4
+  # io_trace "prod_checkout -- $(print_vars vnext forceCheckout devFallback vnodeCheckoutProd vtagStatus prodBranch prodVTag moduleHead moduleDevBranch )"
   if [[ $vnext == true ]]; then
     if [[ -n $devFallback && $moduleDevBranch != $devFallback ]]; then
       local branch lbranch bref
@@ -318,11 +318,9 @@ prod_checkout()
       dev_checkout "$forceCheckout" "$devFallback"
     fi
   elif [[ $vtagStatus == 'vtag' ]]; then
-    if [[ -n $prodVTag ]]; then
-      branch_checkout "$prodVTag" "$forceCheckout"
-    else
-      dev_checkout "$forceCheckout" "$devFallback"
-    fi
+    branch_checkout "$prodVTag" "$forceCheckout"
+  elif [[ $vtagStatus == 'vnode' && $vnodeCheckoutProd == true ]]; then
+    branch_checkout "$prodBranch" "$forceCheckout"
   else
     dev_checkout "$forceCheckout" "$devFallback"
   fi
