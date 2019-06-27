@@ -31,7 +31,7 @@ zou_main()
   zouDir=$(realpath "$zouBinDir/..")
 
   cd "$zouDir"
-  if test -n "$(git status --porcelain)"; then
+  if [[ -z $zouFakeUpdate ]] && test -n "$(git status --porcelain)"; then
     printf -v zouDir %q "$zouDir"
     printf '\n%b\n' "\e[0;36m[zou]\e[0m : \e[0;31mRepo \e[0;37m$zouDir\e[0;31m is not clean, aborting...\e[0m"
     exit 1

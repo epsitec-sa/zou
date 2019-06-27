@@ -5,19 +5,26 @@ zou_setup()
   local NC='\e[0m' Red='\e[0;31m' Brown='\e[0;33m' Cyan='\e[0;36m' message
 
   cd "$zouBinDir"
-  message="\n${Cyan}[zou]${NC} : ${Brown}Starting asynchronous update...${NC}"
-  printf '%b\n' "$message"
+  message="${Cyan}[zou]${NC} : ${Brown}Starting asynchronous update...${NC}"
+  printf '\n%b' "$message"
   sleep .2
   message="${Cyan}[zou]${NC} : ${Cyan}Downloading, please wait...${NC}"
-  printf '%b\n' "$message"
-  git fetch --prune --all &>/dev/null
-  git fetch --tags --force &>/dev/null
-  git merge FETCH_HEAD &>/dev/null
+  printf '\n%b' "$message"
+  if [[ -z $zouFakeUpdate ]]; then
+    git fetch --prune --all &>/dev/null
+    git fetch --tags --force &>/dev/null
+    git merge FETCH_HEAD &>/dev/null
+  else
+    _zou_create_fake_version_props
+  fi
 
+  message="${Cyan}[zou]${NC} : ${Cyan}Making a copy, please wait...${NC}"
+  printf '\n%b' "$message"
   find . -maxdepth 1 -type f -iname 'zoul-*' -not -iname 'zoul-update-boot' -exec cp --preserve '{}' "$setupDir/{}" ';'
   find . -maxdepth 1 -type f -iname 'git-*' -exec cp --preserve '{}' "$setupDir/{}" ';'
   cp ../Version.props "$setupDir"
-
+  
+  printf '\n'
   export PATH="$setupDir:$PATH"
 
   zoul-update "$@"
@@ -34,7 +41,27 @@ zou_wait_launcher_exit()
   # wait for launcher to exit
   while [ $launcherExiting -ne 0 ]; do sleep .1; done
 }
-zou_clean() { rm -rf "$setupDir"; }
+zou_clean()
+{
+  rm -rf "$setupDir"
+  # clean fake version.props
+  if [[ -n $zouFakeUpdate ]]; then
+    git checkout "$zouBinDir/../Version.props" &>/dev/null
+  fi
+}
+
+_zou_create_fake_version_props()
+{
+  cat >../Version.props <<\EOF
+<Project>
+  <PropertyGroup>
+    <Version>57.57.57.5757</Version>
+  </PropertyGroup>
+</Project>
+EOF
+}
+
+[[ -n $zouFakeUpdate ]] && printf '\n%s\n' "[FAKE UPDATE] zoul_update_boot ${*@Q}" >&2
 
 zouBinDir=$1
 setupDir=$2

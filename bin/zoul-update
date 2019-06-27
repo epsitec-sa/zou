@@ -30,24 +30,26 @@ zou_update()
 
 _zou_update_core()
 {
-  local resetConfig zouOnly noPruneTags actualVersion skuArgs=()
+  local zouOnly noPruneTags actualVersion version skuArgs=()
   zou_parse "$@" || return $?
+  io_set_version
 
-  # io_trace "_zou_update_core -- $(print_vars resetConfig zouOnly noPruneTags actualVersion skuArgs[@])"
+  # io_trace "_zou_update_core -- $(print_vars zouOnly noPruneTags actualVersion version skuArgs[@] zouBinDir)"
 
   config_setup
   config_migrate_registered_bundles
 
-  printf '\n'
-  if [[ $zouOnly == true || "$bundleRoot" == "$PWD" ]]; then
-    # zou repo alone, fetch has already been done
-    git-sku enter "${selectArgs[@]}"
-  else
-    # zou repo inside zou-dev bundle
-    module_visit "$bundleRoot" _zou_update_bundle "${skuArgs[@]}"
+  if [[ -z $zouFakeUpdate ]]; then
+    if [[ $zouOnly == true || "$bundleRoot" == "$PWD" ]]; then
+      # zou repo alone, fetch has already been done
+      git-sku enter "${selectArgs[@]}"
+    else
+      # zou repo inside zou-dev bundle
+      module_visit "$bundleRoot" _zou_update_bundle "${skuArgs[@]}"
+    fi
+    _zou_register_bundles
+    _zou_prune_tags
   fi
-  _zou_register_bundles
-  _zou_prune_tags
   _zou_update_epilog
 }
 _zou_update_bundle()
@@ -66,11 +68,10 @@ _zou_prune_tags()
 }
 _zou_update_epilog()
 {
-  printf '\n'
 
-  local vtag delta version
+  local vtag delta
   vtag_set_describe $moduleHead
-  io_set_version
+  # io_trace "_zou_update_epilog -- $(print_vars vtag delta)"
   local tracePrefix="${Cyan}[zou]${NC}" traceVersion traceMessage
   if [[ $actualVersion == $version ]]; then
     if [ $delta -eq 0 ]; then
@@ -82,6 +83,7 @@ _zou_update_epilog()
     traceVersion="switched to new version ${Green}$version${Brown}"
   fi
   traceMessage="Update finished ($traceVersion)."
+  
   io_warning "$traceMessage" "$tracePrefix"
   io_warning "Press [Enter] to continue..." "$tracePrefix"
 }
