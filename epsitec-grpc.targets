@@ -16,6 +16,8 @@
     <ClCompile>
       <!-- Needed by the C++ compiler to find the generated protobuf souce code -->
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(IntDir)</AdditionalIncludeDirectories>
+      <!-- Compile grpc with _WIN32_WINNT of at least 0x600 (aka Windows Vista) -->
+      <PreprocessorDefinitions Condition="!$([System.String]::new('%(PreprocessorDefinitions)').Contains('_WIN32_WINNT'))">%(PreprocessorDefinitions);_WIN32_WINNT=0x600</PreprocessorDefinitions>
     </ClCompile>
     <!-- Needed by the linker to resolve symbols used by the grpc libraries -->
     <Link>
