@@ -22,6 +22,7 @@ zou_parse()
   while [[ "$#" > 0 ]]; do case "$1" in
     -h|--help) zou_help; exit 0;;
     -v|--version) exit 0;;
+    --fake) export zouFakeUpdate=true;;
     -*) args+=($1);;
   esac; shift; done
 }
@@ -30,16 +31,17 @@ zou_main()
   local args=() version zouBinDir zouDir setupDir boot='zoul-update-boot'
   zouBinDir=$(dirname "${BASH_SOURCE[0]}")
   zouDir=$(realpath "$zouBinDir/..")
-
   cd "$zouDir"
+
+  zou_banner
+  zou_parse "$@"
+
   if [[ -z $zouFakeUpdate ]] && test -n "$(git status --porcelain)"; then
     printf -v zouDir %q "$zouDir"
     printf '\n%b\n' "\e[0;36m[zou]\e[0m : \e[0;31mRepo \e[0;37m$zouDir\e[0;31m is not clean, aborting...\e[0m"
     exit 1
   fi
 
-  zou_banner
-  zou_parse "$@"
   args+=(---version $version)
 
   setupDir=$(mktemp -d)
