@@ -56,6 +56,7 @@ _zou_update_core()
     _zou_register_bundles
     _zou_prune_tags
   fi
+  ( _zou_setup_chicken )
   _zou_update_epilog
 }
 _zou_update_bundle()
@@ -71,6 +72,24 @@ _zou_prune_tags()
 {
   [[ $noPruneTags == true ]] && return 0
   git-prunetags --global
+}
+_zou_setup_chicken()
+{
+  local develDir=$(realpath "$bundleRoot/..")
+  local chickenDir=$develDir/zou.chicken
+  # io_trace "_zou_setup_chicken -- $(print_vars chickenDir)"
+  if [ -d "$chickenDir" ]; then
+    cd "$chickenDir"
+    git sync
+  else
+    local tracePrefix="${Cyan}[zou.chicken]${NC}"
+    io_warning "Installing zou.chicken into ${VC}$chickenDir${Brown}" "$tracePrefix"
+    io_warning "This can take a while, please be patient..." "$tracePrefix"
+    cd "$develDir"
+    git clone 'https://git.epsitec.ch/Build/zou.chicken.git'
+    nuget sources remove -name chicken &>/dev/null
+    nuget sources add -name chicken -source "$(cygpath -w "$chickenDir")" &>/dev/null
+  fi
 }
 _zou_update_epilog()
 {
