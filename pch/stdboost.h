@@ -33,3 +33,9 @@
 #include <boost/utility/string_ref.hpp>
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
+
+// Disable some boost 1.70.0 warnings
+#pragma warning(push)
+#pragma warning(disable : 4244) // disable "conversion....possible loss of data" warning
+#include <boost/process/detail/windows/wait_group.hpp>
+#pragma warning(pop)
