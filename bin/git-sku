@@ -60,9 +60,13 @@ sku_startup_message()
 {
   case $subcommand in
     enter)
-      local what='next version'
-      [[ $checkoutType == 'vlast' ]] && what='last version'
-      startupMessage="Entering ${Brown}$what${White} of ${Brown}${skuSpec:-current SKU}${White}, please wait...";;
+      local what;
+      case "$checkoutType" in
+        dev)   what='development';;
+        vnext) what='next version';;
+        vlast) what='last version';;
+      esac
+      startupMessage="Entering ${Brown}$what${White} on ${Brown}${skuSpec:-current SKU}${White}, please wait...";;
     info)
       startupMessage="Getting SKU info, please wait...";;
   esac
