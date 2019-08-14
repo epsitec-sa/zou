@@ -1,6 +1,7 @@
 #!/bin/bash
 
 [[ -z $ZOUL_GIT_CMD ]]         && . zoul-git-cmd
+[[ -z $ZOUL_GIT_COSM ]]        && . zoul-git-cosm
 [[ -z $ZOUL_GIT_BRANCH_SYNC ]] && . zoul-git-branch-sync
 
 sync_parse()
@@ -28,7 +29,7 @@ sync_run()
 {
   # parse command line
   local jobsCount recursive command='sync' subcommand='do' \
-        cmdScopes=( config_scope ) syncModulePaths=() \
+        cmdScopes=( config_scope cosm_scope ) syncModulePaths=() \
         noSkuFilter noSelectFilter=true cleanLocalBranches deleteBrokenTrackingInfoBranches syncNoPush
 
   sync_parse "$@" || return $?
@@ -54,6 +55,12 @@ sync_do_prolog()
 }
 sync_do_epilog()
 {
+  # discard 'external' submodules
+  # need to compute external submodules because select filter is disabled (noSelectFilter == true)
+  # (see zoul-git-config::config_reset_scope).
+  local exclude=( $(config_select_list_excluded moduleSubmodulePaths[@]) )
+  # io_trace "sync_do_epilog $(print_vars moduleSubmodulePaths[@] exclude[@])"
+  cosm_discard_submodules 'exclude[@]'
   branch_show_status
 }
 _sync_clean()

@@ -94,6 +94,17 @@ _cosm_discard_submodules_excluded_from_sku()
   fi
   return $ec
 }
+cosm_discard_submodules()
+{
+  # discard unstaged clean submodules which are excluded from SKU
+  local discard=( $(array_intersect_array 'unstagedCleanSubmodules[@]' $1) ) ec=0
+  # io_trace "cosm_discard_submodules -- $(print_vars unstagedCleanSubmodules[@] $1 discard[@])"
+  if [ ${#discard[@]} -ne 0 ]; then
+    visit_async 'discard[@]' 'repo_discard_submodule' || ec=$?
+    unstagedCleanSubmodules=( $(array_remove_array 'unstagedCleanSubmodules[@]' 'discard[@]') )
+  fi
+  return $ec
+}
 cosm_has_submodules_to_commit()
 {
   [[ -n $(array_remove_array 'unstagedCleanSubmodules[@]' 'configSkuExclude[@]') ]]
