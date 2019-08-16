@@ -35,6 +35,16 @@ config_scope()
 }
 config_has_submodules() { [ ${#configSelectInclude[@]} -gt 0 ]; }
 
+config_list_external()
+{
+  if [[ $noSelectFilter == true ]]; then
+    local external=( $(config_select_list_excluded moduleSubmodulePaths[@]) )
+    external=( $(array_remove_array external[@] configSkuExclude[@]) )
+    printf '%s\n' "${external[@]}"
+  else
+    printf '%s\n' "${configSelectExclude[@]}"
+  fi
+}
 _config_on_sync()
 {
   [[ $3 =~ ^\< ]] || return 0
