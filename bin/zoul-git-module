@@ -225,7 +225,7 @@ module_scope()
   moduleRoot="$PWD"
   moduleConfigFile="$moduleRoot/.zou-flow"
   moduleId=$(repo_module_id)
-  moduleSubmodulePaths=( $(repo_list_submodule_paths "$moduleRoot") )
+  module_update_submodules "$moduleRoot"
 
   moduleParent=$(repo_module_parent)
   [[ -n $moduleParent ]] && modulePath=${moduleRoot#$moduleParent/}
@@ -273,7 +273,7 @@ _module_reset_scope()
   [[ $moduleScopeInitialized == true ]] || return 0
   # io_trace_unsafe "_module_reset_scope -- ${*@Q}"
 
-  moduleSubmodulePaths=( $(repo_list_submodule_paths $PWD) )
+  module_update_submodules
   
   _module_set_head $1
   _module_set_trace_prefix
@@ -281,11 +281,15 @@ _module_reset_scope()
   
   _module_trace '_module_reset_scope'
 }
+module_update_submodules()
+{
+  moduleSubmodulePaths=( $(repo_list_submodule_paths "${1:-$PWD}") )
+}
 
 _module_on_sync()
 {
   [[ $3 =~ ^\< ]] || return 0
-  moduleSubmodulePaths=( $(repo_list_submodule_paths $PWD) )
+  module_update_submodules
   # io_trace "_module_on_sync -- $(print_vars moduleSubmodulePaths[@])"
 }
 
