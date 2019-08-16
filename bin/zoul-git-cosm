@@ -37,8 +37,14 @@ cosm_has_unstaged_submodules()
 }
 cosm_has_unstaged_clean_submodules()
 {
+  # io_trace "cosm_has_unstaged_clean_submodules -- $(print_vars unstagedCleanSubmodules[@])"
   [ ${#unstagedCleanSubmodules[@]} -gt 0 ]
 }
+cosm_has_unstaged_dirty_submodules()
+{
+  [ ${#unstagedDirtySubmodules[@]} -gt 0 ]
+}
+
 cosm_reset_scope()
 {
   [[ $cosmScopeInitialized == true ]] || return 0
@@ -46,6 +52,8 @@ cosm_reset_scope()
   unstagedDirtySubmodules=()
   [ ${#moduleSubmodulePaths[@]} -eq 0 ] && return 0
   repo_split_unstaged_submodules "$moduleRoot"
+  unstagedCleanSubmodules=( $(array_remove_array 'unstagedCleanSubmodules[@]' 'configSkuExclude[@]') )
+  unstagedDirtySubmodules=( $(array_remove_array 'unstagedDirtySubmodules[@]' 'configSkuExclude[@]') )
 
   _cosm_trace
 }
@@ -172,28 +180,21 @@ cosm_commit_unstaged_clean_external_submodules()
 cosm_commit_unstaged_clean_submodules()
 {
   [ ${#moduleSubmodulePaths[@]} -eq 0 ] && return 0
-  local toCommit=( $(array_remove_array 'unstagedCleanSubmodules[@]' 'configSkuExclude[@]') )
-  # io_trace "cosm_commit_unstaged_clean_submodules $(print_vars toCommit[@])"
-  _cosm_commit_submodules "${toCommit[@]}"
+  # io_trace "cosm_commit_unstaged_clean_submodules $(print_vars unstagedCleanSubmodules[@])"
+  _cosm_commit_submodules "${unstagedCleanSubmodules[@]}"
 }
 _cosm_commit_unstaged_submodules()
 {
   [ ${#moduleSubmodulePaths[@]} -eq 0 ] && return 0
-  local unstaged toCommit
-  unstaged=( "${unstagedCleanSubmodules[@]}" "${unstagedDirtySubmodules[@]}" )
-  toCommit=( $(array_remove_array 'unstaged[@]' 'configSkuExclude[@]') )
-  # io_trace "_cosm_commit_unstaged_submodules $(print_vars toCommit[@])"
-  _cosm_commit_submodules "${toCommit[@]}"
+  local unstaged=( "${unstagedCleanSubmodules[@]}" "${unstagedDirtySubmodules[@]}" )
+  # io_trace "_cosm_commit_unstaged_submodules $(print_vars unstaged[@])"
+  _cosm_commit_submodules "${unstaged[@]}"
 }
 _cosm_commit_submodules()
 {
   repo_commit_submodules "$moduleRoot" "$@"
 }
 
-cosm_has_submodules_to_commit()
-{
-  [[ -n $(array_remove_array 'unstagedCleanSubmodules[@]' 'configSkuExclude[@]') ]]
-}
 # Process unstaged submodules
 #   - update unselected submodules
 #   - discard excluded submodules
