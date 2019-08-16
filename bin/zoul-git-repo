@@ -256,11 +256,13 @@ repo_list_deleted()    { git ls-files --deleted; }
 repo_list_uncommited() { git diff-index --cached --name-only -r --ignore-submodules HEAD --; }
 repo_list_unmerged()   { git diff --name-only --diff-filter=U --ignore-submodules | cut -f1; }
 repo_is_merging()      { git merge HEAD &>/dev/null && return 1 || return 0; }
-repo_is_clean()        { git diff-index --ignore-submodules --quiet HEAD --; } # no unstaged
 repo_is_all_clean()    { test -z "$(git status -s --porcelain)"; }  # neither unstaged nor untracked
 
 repo_is_bundle_root()  { [[ -d "${1:-.}/.git" ]]; }
 repo_is_module_root()  { [[ -f "${1:-.}/.git" ]]; }
+
+repo_is_clean()                   { git diff-index --quiet HEAD --; } # no unstaged
+repo_is_clean_ignore_submodules() { git diff-index --ignore-submodules --quiet HEAD --; } # no unstaged
 
 repo_has_submodules()
 {
