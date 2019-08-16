@@ -433,12 +433,9 @@ repo_remove_dangling_submodules_async()
 }
 repo_check_submodule()
 {
+  # io_trace "repo_check_submodule ${*@Q} -- PWD=$PWD"
   [[ -f .git || -d .git ]] && return 0
-  cd "$startupRoot"
-  repo_update_submodule "$1"
-  cd "$1"
-  [[ -f .git || -d .git ]] && return 0
-  mio_error "Not a git submodule '$1'"
+  mio_error "Not a git submodule ${VC}$smPath"
   return 1
 }
 repo_prune_tags()
