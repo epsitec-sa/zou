@@ -128,7 +128,7 @@ sandbox_commit_work()
 {
   local file=${1:-$(file_create_name)}
   # ensure to commit on a branch
-  # [[ $(git rev-parse --abbrev-ref HEAD) == 'HEAD' ]] && git checkout master &>/dev/null
+  [[ $(git rev-parse --abbrev-ref HEAD) == 'HEAD' ]] && git checkout master &>/dev/null
   file_change_commit "$file" "some work @ $(date +%T) on $(git symbolic-ref --short HEAD 2>/dev/null)"
 }
 # example:
