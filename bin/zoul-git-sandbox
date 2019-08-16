@@ -6,6 +6,7 @@ ZOUL_GIT_SANDBOX=true
 
 [[ -z $ZOUL_CORE ]]              && . zoul-core
 [[ -z $ZOUL_GIT_CORE ]]          && . zoul-git-core
+[[ -z $ZOUL_GIT_REPO ]]          && . zoul-git-repo
 [[ -z $ZOUL_GIT_SANDBOX_DATA ]]  && . zoul-git-sandbox-data
 [[ -z $ZOUL_GIT_SANDBOX_UTILS ]] && . zoul-git-sandbox-utils
 
@@ -106,7 +107,9 @@ sandbox_create_vresources()
 }
 sandbox_create_work()
 {
-  sandbox_visit_commit_work "$sat1Dir/sm1" "$sat1Dir/sm1/sm3" "$sat1Dir/sm2" "$sat1Dir"
+  local root
+  root=$(repo_bundle_root) || "$sat1Dir"
+  sandbox_visit_commit_work "$root/sm1" "$root/sm1/sm3" "$root/sm2" "$root"
 }
 
 sandbox_create_sku_with_work()
@@ -124,6 +127,8 @@ sandbox_create_sku_with_work()
 sandbox_commit_work()
 {
   local file=${1:-$(file_create_name)}
+  # ensure to commit on a branch
+  # [[ $(git rev-parse --abbrev-ref HEAD) == 'HEAD' ]] && git checkout master &>/dev/null
   file_change_commit "$file" "some work @ $(date +%T) on $(git symbolic-ref --short HEAD 2>/dev/null)"
 }
 # example:
