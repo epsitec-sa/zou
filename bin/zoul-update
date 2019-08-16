@@ -48,19 +48,21 @@ _zou_update_core()
   if [[ -z $zouFakeUpdate ]]; then
     if [[ $zouOnly == true || "$bundleRoot" == "$PWD" ]]; then
       # zou repo alone, fetch has already been done
-      git-sku enter "${selectArgs[@]}"
+      git checkout master &>/dev/null
+      git-sku enter "${skuArgs[@]}"
     else
       # zou repo inside zou-dev bundle
       module_visit "$bundleRoot" _zou_update_bundle "${skuArgs[@]}"
     fi
     _zou_register_bundles
     _zou_prune_tags
+    ( _zou_setup_chicken )
   fi
-  ( _zou_setup_chicken )
   _zou_update_epilog
 }
 _zou_update_bundle()
 {
+  git checkout master &>/dev/null
   git-sync -r --pull --clean
   git-sku enter "$@"
 }
