@@ -32,6 +32,10 @@ prod_parse()
 
   cmd_check_subcommand 'enter' 'release'
   cmd_check_args "${args[@]}"
+  if [[ $vlast != '' && $vlast == "$vnext" ]]; then
+    io_error "options ${VC}--vlast${Red} and ${VC}--vnext${Red} are mutually exclusive, use only one of them\n"
+    exit '1'
+  fi
   
   prodModulePaths=( "$@" )
   # io_trace "prod_parse -- $(print_vars recursive vnext subcommand prodModulePaths[@])"
