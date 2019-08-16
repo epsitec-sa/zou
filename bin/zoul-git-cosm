@@ -14,8 +14,6 @@ ZOUL_GIT_COSM=true
 #   commitDirtySubmodules
 
 headChangedEvent+=( _cosm_on_head_changed )
-headNameChangedEvent+=( _cosm_on_head_name_changed )
-checkoutNoChangeEvent+=( _cosm_on_checkout_no_change )
 submoduleChangedEvent+=( _cosm_on_submodule_changed )
 branchSyncEvent+=( _cosm_on_sync )
 
@@ -75,14 +73,6 @@ _cosm_on_head_changed()
   [ ${#moduleSubmodulePaths[@]} -eq 0 ] && return 0
   _cosm_sync_submodules
   _cosm_discard_inactive_submodules
-  _cosm_update_external_submodules
-}
-_cosm_on_head_name_changed()
-{
-  _cosm_update_external_submodules
-}
-_cosm_on_checkout_no_change()
-{
   _cosm_update_external_submodules
 }
 _cosm_on_sync()
