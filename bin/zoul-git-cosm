@@ -12,6 +12,7 @@ ZOUL_GIT_COSM=true
 #   showSubmoduleMessage
 #   commitSubmodules
 #   commitDirtySubmodules
+#   synchronizeSubmoduleUrl
 
 headChangedEvent+=( _cosm_on_head_changed )
 submoduleChangedEvent+=( _cosm_on_submodule_changed )
@@ -71,7 +72,7 @@ _cosm_on_head_changed()
   cosm_reset_scope
 
   [ ${#moduleSubmodulePaths[@]} -eq 0 ] && return 0
-  _cosm_sync_submodules
+  [[ $synchronizeSubmoduleUrl == true ]] && _cosm_sync_submodules
   _cosm_discard_inactive_submodules
   _cosm_update_external_submodules
 }
