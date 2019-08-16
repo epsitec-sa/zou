@@ -381,6 +381,11 @@ repo_commit_submodules()
   cd "$opwd"
 }
 
+repo_sync_submodule()
+{
+  # io_trace "repo_sync_submodule ${*@Q}"
+  io_buffered_eval "git submodule sync \"$1\" 2>&1" _repo_submodule_selector ${DarkGray}
+}
 repo_update_submodule()
 {
   # io_trace "repo_update_submodule ${*@Q}"
