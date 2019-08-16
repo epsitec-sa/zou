@@ -7,14 +7,15 @@
 sync_parse()
 {
   local args=()
-  while [[ "$#" > 0 ]]; do case "$1" in
-    -h|--help) zou-help $0; exit 0;;
+  while [[ "$#" -gt 0 ]]; do case "$1" in
+    -h|--help) zou-help "$0"; exit 0;;
     -j*)            jobsCount=${1#-j};;
     -r|--recursive) recursive=true;;
     -a|--all)       noSkuFilter=true;;
     -c|--clean)     cleanLocalBranches=true;;
     -C)             cleanLocalBranches=true; deleteBrokenTrackingInfoBranches=true;;
     -p|--pull)      syncNoPush=true;;
+    --cosm)         syncSubmodules=true;;
     --)             shift; break;;
     -*) io_error "unknown option '$1'"; return 1;;
     *)  args+=( "$1" );;
@@ -30,7 +31,8 @@ sync_run()
   # parse command line
   local jobsCount recursive command='sync' subcommand='do' \
         cmdScopes=( config_scope cosm_scope ) syncModulePaths=() \
-        noSkuFilter noSelectFilter=true cleanLocalBranches deleteBrokenTrackingInfoBranches syncNoPush
+        deleteBrokenTrackingInfoBranches syncNoPush \
+        syncSubmodules
 
   sync_parse "$@" || return $?
   
@@ -48,27 +50,59 @@ sync_command()
   cmd_visit_modules
 }
 
+sync_do_scope()
+{
+  # io_trace "sync_do_scope ${*@Q}"
+  local branchSyncVisitInfo=()
+  # execute next russian doll
+  $1 "${@:2}"
+}
 sync_do_prolog()
 {
+  # io_trace ">>> sync_do_prolog ${*@Q} -1- PWD=$PWD"
   branch_sync_all "$deleteBrokenTrackingInfoBranches"
+  # io_trace "### sync_do_prolog -2- $(print_vars branchSyncVisitInfo[@]) PWD=$PWD"
+  cosm_update_active_submodules
   _sync_clean
+  # io_trace "<<< sync_do_prolog -3- $(print_vars branchSyncVisitInfo[@]) PWD=$PWD"
 }
 sync_do_epilog()
 {
-  # discard 'external' submodules
-  # need to compute external submodules because select filter is disabled (noSelectFilter == true)
-  # (see zoul-git-config::config_reset_scope).
-  local exclude=( $(config_select_list_excluded moduleSubmodulePaths[@]) )
-  # io_trace "sync_do_epilog $(print_vars moduleSubmodulePaths[@] exclude[@])"
-  cosm_discard_submodules 'exclude[@]'
+  # io_trace ">>> sync_do_epilog ${*@Q} -- $(print_vars branchSyncVisitInfo[@]) PWD=$PWD"
+  _sync_commit "${branchSyncVisitInfo[@]}"
   branch_show_status
+  # io_trace "<<< sync_do_epilog ${*@Q} -- $(print_vars branchSyncVisitInfo[@]) PWD=$PWD"
+}
+sync_do_xprolog()
+{
+  # io_trace "sync_do_xprolog ${*@Q} -- PWD=$PWD"
+  # local syncNoRaiseEvent='true' # syncNoPush=true
+  sync_do_prolog
+}
+sync_do_xepilog()
+{
+  branch_show_status
+}
+_sync_commit()
+{
+  local r=$1 l=$2 i=$3 commitAction
+  # io_trace ">>> _sync_commit ${*@Q} -- $(print_vars r l i syncSubmodules) PWD=$PWD"
+  if [[ $i =~ (\=|\>)$ ]]; then
+    if [[ $syncSubmodules == true ]]; then
+      commitAction='cosm_commit_unstaged_clean_submodules'
+    else
+      commitAction='cosm_commit_unstaged_clean_external_submodules'
+    fi
+    $commitAction || git push --follow-tags ${r%%/*} $l &>/dev/null
+  fi
 }
 _sync_clean()
 {
   [[ $cleanLocalBranches == true ]] || return 0
   local branch
   for branch in $(branch_list_local_can_delete); do
-    local info=$(git branch -D "$branch" 2>/dev/null)
+    local info
+    info=$(git branch -D "$branch" 2>/dev/null)
     [[ -n $info ]] && mio_warning "$info"
   done
 }
