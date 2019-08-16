@@ -376,6 +376,7 @@ array_intersect_array()
   # note:
   #   array are passed by names: ${!1} is an indirection
   local array1=( "${!1}" ) array2=( "${!2}" ) i j
+  # io_trace "array_intersect_array ${*@Q} -- $(print_vars array1[@] array2[@])"
   for i in ${array1[@]}; do
     for j in "${array2[@]}"; do
       if [[ "$i" == "$j" ]]; then
@@ -411,7 +412,7 @@ array_remove_element()
   # note:
   #   array are passed by names: ${!1} is an indirection
   local array=( "${!1}" ) i
-  for i in ${!array[@]}; do
+  for i in "${!array[@]}"; do
     if [[ "${array[i]}" == "$2" ]]; then
       unset 'array[i]'
       break
