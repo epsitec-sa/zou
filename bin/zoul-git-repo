@@ -365,7 +365,7 @@ repo_commit_submodule_enumerator()
 }
 repo_commit_submodules()
 {
-  # io_trace "repo_commit_submodules 1 -- ${*@Q}"
+  # io_trace "repo_commit_submodules -1- ${*@Q}"
   local mroot=$1; shift
   [ $# -eq 0 ] && return 0
   
@@ -375,7 +375,7 @@ repo_commit_submodules()
   local opwd=$PWD cslist=$(string_join ', ' "$@")
   cd "$mroot"
   local branch=${moduleHead:-$(branch_current)}
-  # io_trace "repo_commit_submodules 2 -- $(print_vars branch cslist)"
+  # io_trace "repo_commit_submodules -2- $(print_vars branch cslist)"
   git commit -m 'zou-flow: update submodules' -- "$@" >/dev/null \
   && io_message "  Commited submodules '$cslist' on branch '$branch'" "$moduleTracePrefix" ${DarkGray}
   repo_raise_submodule_changed_event "$@"
