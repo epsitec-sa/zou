@@ -388,7 +388,7 @@ _module_submodule_visitor()
 {
   local smPath=$1; shift
   _module_enter "$smPath" || return $?
-  repo_check_submodule "$smPath" || return $?
+  repo_check_submodule "$moduleRoot" "$smPath" || return $?
   # io_trace "_module_submodule_visitor $smPath >> $*"
   module_scope $* || return $?
   # $1 "${@:2}" || return $?
