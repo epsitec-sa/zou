@@ -66,7 +66,7 @@ _branch_sync_visitor()
 #   pruneBranches -- delete local only branches
 _branch_oreset_visitor()
 {
-  # io_trace ">>> _branch_reset_visitor $(print_vars l r i current)"
+  # io_trace ">>> _branch_reset_visitor -0- $(print_vars l r i current)"
 
   if [[ -z $r ]]; then
     if [[ $pruneBranches == true ]]; then
@@ -87,15 +87,17 @@ _branch_oreset_visitor()
   fi
   # reset to upstream
   if [[ $l == "$current" ]]; then
+    # io_trace "### _branch_reset_visitor -4- $(print_vars l r i current)"
     git reset --hard '@{u}' >/dev/null
     _branch_raise_branch_sync_event "$r" "$l" "$i"
   else
     # reset ref
+    # io_trace "### _branch_reset_visitor -5- $(print_vars l r i current)"
     git update-ref "refs/heads/$l" "$r" >/dev/null
     git reset . >/dev/null
     git checkout . >/dev/null
   fi
-  # io_trace "<<< _branch_reset_visitor -4- $(print_vars l r i current)"
+  # io_trace "<<< _branch_reset_visitor -6- $(print_vars l r i current)"
 }
 _branch_sync_visit() 
 {
