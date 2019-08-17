@@ -104,7 +104,7 @@ _branch_sync_visit()
     if [[ $l == "$current" ]]; then
       linfo="* $l"
       branchSyncVisitInfo=("$r" "$l" "$i")
-    elif [[ $current ==  $(git rev-parse --short "$r") ]]; then
+    elif [[ -n $r && $current ==  $(git rev-parse --short "$r") ]]; then
       branchSyncVisitInfo=("$r" "$l" "$i")
     fi
     # io_trace "### _branch_sync_visit -- $(print_vars l r i current branchSyncVisitInfo[@])"
