@@ -10,6 +10,9 @@ ZOUL_GIT_PROD=true
 [[ -z $ZOUL_GIT_BRANCH_MERGE ]]   && . zoul-git-branch-merge
 [[ -z $ZOUL_GIT_CONFIG_VERSION ]] && . zoul-git-config-version
 
+prodPreinitEvent=()
+prod_raise_preinit_event() { raise_event 'prodPreinitEvent[@]' "$@"; }
+
 # io_trace "headChangedEvent+=( prod_reset_scope )"
 headChangedEvent+=( _prod_on_head_changed )
 headNameChangedEvent+=( _prod_on_head_name_changed )
@@ -47,6 +50,8 @@ prod_reset_scope()
   [[ $prodScopeInitialized == true ]] || return 0
 
   # io_trace "prod_reset_scope ${*@Q}"
+  prod_raise_preinit_event
+
   _prod_init_vars
 
   if [[ $configSelectIsExcluded == true ]]; then

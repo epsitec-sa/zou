@@ -7,6 +7,8 @@
 [[ -z $ZOUL_GIT_VTABLE ]]        && . zoul-git-vtable
 [[ -z $ZOUL_GIT_BRANCH_MERGE ]]  && . zoul-git-branch-merge
 
+prodPreinitEvent+=( _prod_on_preinit )
+
 prod_parse()
 {
   local args=()
@@ -73,7 +75,13 @@ prod_command()
 
   cmd_visit_modules
 }
-
+_prod_on_preinit()
+{
+  # io_trace "_prod_on_preinit ${*@Q}"
+  if [[ $subcommand == 'release' ]] && module_is_bundle; then
+    checkoutType='vnext'
+  fi
+}
 ###############
 # ENTER COMMAND
 ###############
