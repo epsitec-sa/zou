@@ -66,7 +66,7 @@ _branch_sync_visitor()
 #   pruneBranches -- delete local only branches
 _branch_oreset_visitor()
 {
-  # io_trace "_branch_reset_visitor 1 -- $(print_vars l r i current)"
+  # io_trace ">>> _branch_reset_visitor $(print_vars l r i current)"
 
   if [[ -z $r ]]; then
     if [[ $pruneBranches == true ]]; then
@@ -74,20 +74,26 @@ _branch_oreset_visitor()
       [[ $l == $current ]] && branch_checkout 'master'
       branch_delete "$l"
     fi
+    # io_trace "<<< _branch_reset_visitor -1- $(print_vars l r i current)"
     return 0
-  else
-    ref_equals "$l" "$r" && return 0
+  elif ref_equals "$l" "$r"; then
+    # io_trace "<<< _branch_reset_visitor -2- $(print_vars l r i current)"
+    return 0
   fi
   # pull changes
-  [[ $i =~ ^\< ]] && { _branch_sync_merge "$r" "$l" || return 1; }
+  if [[ $i =~ ^\< ]] && ! _branch_sync_merge "$r" "$l"; then
+    # io_trace "<<< _branch_reset_visitor -3- $(print_vars l r i current)"
+    return 1
+  fi
   # reset to upstream
-  if [[ $l == $current ]]; then
-    git reset --hard @{u} >/dev/null
+  if [[ $l == "$current" ]]; then
+    git reset --hard '@{u}' >/dev/null
     _branch_raise_branch_sync_event "$r" "$l" "$i"
   else
     # reset ref
     git update-ref "refs/heads/$l" "$r" >/dev/null
   fi
+  # io_trace "<<< _branch_reset_visitor -4- $(print_vars l r i current)"
 }
 _branch_sync_visit() 
 {
