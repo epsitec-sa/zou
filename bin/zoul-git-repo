@@ -261,7 +261,13 @@ repo_is_all_clean()    { test -z "$(git status -s --porcelain)"; }  # neither un
 repo_is_bundle_root()  { [[ -d "${1:-.}/.git" ]]; }
 repo_is_module_root()  { [[ -f "${1:-.}/.git" ]]; }
 
-repo_is_clean()                   { git diff-index --quiet HEAD --; } # no unstaged
+repo_is_clean()
+{
+  if ! git diff-index --quiet HEAD --; then
+    # io_trace "repo '$PWD' is not clean"
+    return 1
+  fi
+}
 repo_is_clean_ignore_submodules() { git diff-index --ignore-submodules --quiet HEAD --; } # no unstaged
 
 repo_has_submodules()

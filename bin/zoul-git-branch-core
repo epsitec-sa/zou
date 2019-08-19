@@ -111,7 +111,7 @@ branch_is_ancestor_of_any()
   local ref=${1:-HEAD} branch ec
   for branch in $(branch_list_local_tracked); do
     git merge-base --is-ancestor "$ref" "$branch"; ec=$?
-    # io_trace "branch_is_ancestor_of_any -- $(print_vars branch ec)"
+    # io_trace "branch_is_ancestor_of_any -- $(print_vars ref branch ec) PWD='$PWD'"
     [ $ec -eq 0 ] && return 0
   done
   return 1
@@ -142,21 +142,21 @@ branch_sync_info()
 branch_list_local_tracked()
 {
   local l r i
-  while read l r i; do
+  while read -r l r i; do
     [[ -n $l && -n $r ]] && echo $l
   done < <(branch_sync_info)
 }
 branch_list_remote_tracked()
 {
   local l r i
-  while read l r i; do
+  while read -r l r i; do
     [[ -n $r ]] && echo $r
   done < <(branch_sync_info)
 }
 branch_list_all_tracked()
 {
   local l r i
-  while read l r i; do
+  while read -r l r i; do
     [[ -n $r ]] && {
       [[ -n $l ]] && echo $l
       echo $r
@@ -166,7 +166,8 @@ branch_list_all_tracked()
 branch_list_local_can_delete()
 {
   # list local branches that can be removed safely
-  local l r i c remote=$(git_remote)
+  local l r i c remote
+  remote=$(git_remote)
   while read l r i; do
     # exclude branch 'master' and current branch
     [[ -z $c ]] && c=$(wildcard_to_regex ${moduleHead:-$(branch_current)})

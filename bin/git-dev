@@ -103,7 +103,9 @@ dev_release_epilog()
     || io_trace_error 'dev_release_epilog'
   elif cosm_has_unstaged_dirty_submodules; then
     mio_error "error : ${VC}$moduleId${Red} still contains dirty submodules"
-    mio_message "  it seems that the head of ${VC}${unstagedDirtySubmodules[@]}${LightCyan} is a lost commit"
+    for sm in "${unstagedDirtySubmodules[@]}"; do
+      mio_message "  it seems that the head of ${VC}$sm${LightCyan} is a lost commit"
+    done
     branch_show_status
   else
     mio_message "Already released" ${LightBlue}

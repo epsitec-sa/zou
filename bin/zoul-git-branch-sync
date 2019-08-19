@@ -150,21 +150,9 @@ _branch_sync_fix_tracking_core()
     [[ $deleteBrokenTrackingInfoBranches == true ]] && deleteOption='-D' || deleteOption='-d'
     if git branch "$deleteOption" "$l" &>/dev/null; then
       mio_message "  Deleted obsolete branch '$l'" ${DarkGray}
-    # else
-    #   git branch --unset-upstream "$l"
-    #   mio_message "  Removed obsolete tracking info for branch '$l'" ${DarkGray}
     fi
   else
     # no tracking info
-
-    # local pushBranch
-    # if [[ -n $moduleDevBranch ]]; then
-    #   # only push branch matching current sku
-    #   # io_trace "_branch_sync_fix_tracking "$moduleDevBranch" "$l""
-    #   ref_in_fallback "$l" "$moduleDevBranch" && pushBranch=true
-    # elif [[ $l =~ ^sku/ ]] || branch_is_prod "$l"; then
-    #   pushBranch=true
-    # fi
 
     if [[ $l =~ ^sku/ ]] || branch_is_prod "$l"; then
       # automatically push sku and prod branches
