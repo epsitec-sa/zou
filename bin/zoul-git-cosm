@@ -24,6 +24,7 @@ cosm_scope()
 {
   # setup cosm context
   local unstagedCleanSubmodules unstagedDirtySubmodules \
+        unstagedCleanInactiveSubmodules unstagedDirtyInactiveSubmodules \
         showSubmoduleMessage=true cosmScopeInitialized=true
   
   cosm_reset_scope
@@ -50,11 +51,16 @@ cosm_reset_scope()
   [[ $cosmScopeInitialized == true ]] || return 0
   unstagedCleanSubmodules=()
   unstagedDirtySubmodules=()
+  unstagedCleanInactiveSubmodules=()
+  unstagedDirtyInactiveSubmodules=()
   [ ${#moduleSubmodulePaths[@]} -eq 0 ] && return 0
   repo_split_unstaged_submodules "$moduleRoot"
+  unstagedCleanInactiveSubmodules=( $(array_intersect_array 'unstagedCleanSubmodules[@]' 'configSkuExclude[@]') )
+  unstagedDirtyInactiveSubmodules=( $(array_intersect_array 'unstagedDirtySubmodules[@]' 'configSkuExclude[@]') )
   unstagedCleanSubmodules=( $(array_remove_array 'unstagedCleanSubmodules[@]' 'configSkuExclude[@]') )
   unstagedDirtySubmodules=( $(array_remove_array 'unstagedDirtySubmodules[@]' 'configSkuExclude[@]') )
 
+  _cosm_discard_inactive_submodules
   _cosm_trace
 }
 _cosm_trace()
@@ -64,6 +70,8 @@ _cosm_trace()
   io_lock_enter
   io_trace_unsafe "cosm_reset_scope -- $(print_vars unstagedCleanSubmodules[@])"
   io_trace_unsafe "cosm_reset_scope -- $(print_vars unstagedDirtySubmodules[@])"
+  io_trace_unsafe "cosm_reset_scope -- $(print_vars unstagedCleanInactiveSubmodules[@])"
+  io_trace_unsafe "cosm_reset_scope -- $(print_vars unstagedDirtyInactiveSubmodules[@])"
   io_lock_exit
 }
 
@@ -81,7 +89,6 @@ _cosm_on_head_changed()
 
   [ ${#moduleSubmodulePaths[@]} -eq 0 ] && return 0
   [[ $synchronizeSubmoduleUrl == true ]] && _cosm_sync_submodules
-  _cosm_discard_inactive_submodules
   _cosm_update_external_submodules
 }
 _cosm_on_sync()
@@ -137,9 +144,10 @@ _cosm_update_submodule()
 
 _cosm_discard_inactive_submodules()
 {
-  # io_trace "_cosm_discard_inactive_submodules -- $(print_vars configSkuExclude[@])"
-  if [ ${#configSkuExclude[@]} -ne 0 ]; then
-    _cosm_discard_submodules 'configSkuExclude[@]'
+  # io_trace "_cosm_discard_inactive_submodules -- $(print_vars unstagedCleanInactiveSubmodules[@])"
+  if [ ${#unstagedCleanInactiveSubmodules[@]} -ne 0 ]; then
+    visit_async 'unstagedCleanInactiveSubmodules[@]' 'repo_discard_submodule'
+    unstagedCleanInactiveSubmodules=()
   fi
 }
 cosm_discard_unstaged_submodules()
@@ -151,17 +159,6 @@ cosm_discard_unstaged_submodules()
     visit_async 'discard[@]' 'repo_discard_submodule' || ec=$?
     unstagedCleanSubmodules=()
     unstagedDirtySubmodules=()
-  fi
-  return $ec
-}
-_cosm_discard_submodules()
-{
-  # discard unstaged clean submodules which are excluded from SKU
-  local discard=( $(array_intersect_array 'unstagedCleanSubmodules[@]' "$1") ) ec=0
-  # io_trace "_cosm_discard_submodules -- $(print_vars unstagedCleanSubmodules[@] $1 discard[@])"
-  if [ ${#discard[@]} -ne 0 ]; then
-    visit_async 'discard[@]' 'repo_discard_submodule' || ec=$?
-    unstagedCleanSubmodules=( $(array_remove_array 'unstagedCleanSubmodules[@]' 'discard[@]') )
   fi
   return $ec
 }

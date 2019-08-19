@@ -374,14 +374,17 @@ repo_commit_submodules()
   [[ -z $mroot ]] && mroot=$moduleRoot
   [[ -z $mroot ]] && { mroot=$(repo_module_root) || return 1; }
 
-  local opwd=$PWD cslist=$(string_join ', ' "$@")
-  cd "$mroot"
+  local opwd=$PWD sm
+  cd "$mroot" || io_trace_error "repo_commit_submodules: cd $mroot" || exit 1
   local branch=${moduleHead:-$(branch_current)}
   # io_trace "repo_commit_submodules -2- $(print_vars branch cslist)"
-  git commit -m 'zou-flow: update submodules' -- "$@" >/dev/null \
-  && io_message "  Commited submodules '$cslist' on branch '$branch'" "$moduleTracePrefix" ${DarkGray}
+  if git commit -m 'zou-flow: update submodules' -- "$@" >/dev/null; then
+    for sm; do
+      io_message "  Commited submodules '$sm' on branch '$branch'" "$moduleTracePrefix" ${DarkGray}
+    done
+  fi
   repo_raise_submodule_changed_event "$@"
-  cd "$opwd"
+  cd "$opwd" || io_trace_error "repo_commit_submodules: cd $opwd" || exit 1
   return 1
 }
 
