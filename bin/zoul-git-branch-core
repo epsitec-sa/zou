@@ -111,12 +111,16 @@ branch_current()
   echo "$ref"
   branch_is_local "$ref"
 }
-branch_is_ancestor_of_any()
+branch_is_ancestor_of_remote_or_remote_candidates()
 {
-  local ref=${1:-HEAD} branch ec
-  for branch in $(branch_list_local_tracked); do
+  branch_is_ancestor_of "$1" $(branch_list_remote) $(branch_list_remote_candidates)
+}
+branch_is_ancestor_of()
+{
+  local ref=${1:-HEAD} branch ec; shift
+  for branch; do
     git merge-base --is-ancestor "$ref" "$branch"; ec=$?
-    # io_trace "branch_is_ancestor_of_any -- $(print_vars ref branch ec) PWD='$PWD'"
+    # io_trace "branch_is_ancestor_of -- $(print_vars ref branch ec) PWD='$PWD'"
     [ $ec -eq 0 ] && return 0
   done
   return 1
