@@ -1,4 +1,6 @@
 #!/bin/bash
+# shellcheck disable=SC2034
+
 # https://longair.net/blog/2009/04/16/git-fetch-and-merge/
 # https://stackoverflow.com/questions/501407/is-there-a-git-merge-dry-run-option
 
@@ -11,12 +13,18 @@ ZOUL_GIT_BRANCH_SYNC=true
 [[ -z $ZOUL_GIT_BRANCH_CORE ]]  && . zoul-git-branch-core
 [[ -z $ZOUL_GIT_BRANCH_MERGE ]] && . zoul-git-branch-merge
 
-# global options
+# global variables
+#   branchSyncVisitInfo = ( $r $l $i )
 #   syncNoPush
+#   syncNoRaiseEvent
+
+branchSyncVisitInfo=()
+syncNoPush=''
+syncNoRaiseEvent=''
 
 # io_trace "branchSyncEvent=()"
 branchSyncEvent=()
-_branch_raise_branch_sync_event() { raise_event 'branchSyncEvent[@]' "$@"; }
+_branch_raise_branch_sync_event() { [[ $syncNoRaiseEvent == true ]] || raise_event 'branchSyncEvent[@]' "$@"; }
 
 _branch_sync_push()
 {
@@ -47,8 +55,10 @@ _branch_sync_visitor()
     '<>') _branch_sync_sync  "$r" "$l" || return 1;; # ahead and behind
     *) return 0;;
   esac
-  if [[ $l == $current ]]; then
+  if [[ $l == "$current" ]]; then
     _branch_raise_branch_sync_event "$r" "$l" "$i"
+  elif [[ $current ==  $(git rev-parse --short "$r") ]]; then
+    branch_checkout "$l" false
   fi
 }
 # scope:
@@ -56,7 +66,7 @@ _branch_sync_visitor()
 #   pruneBranches -- delete local only branches
 _branch_oreset_visitor()
 {
-  # io_trace "_branch_reset_visitor 1 -- $(print_vars l r i current)"
+  # io_trace ">>> _branch_reset_visitor -0- $(print_vars l r i current)"
 
   if [[ -z $r ]]; then
     if [[ $pruneBranches == true ]]; then
@@ -64,28 +74,44 @@ _branch_oreset_visitor()
       [[ $l == $current ]] && branch_checkout 'master'
       branch_delete "$l"
     fi
+    # io_trace "<<< _branch_reset_visitor -1- $(print_vars l r i current)"
     return 0
-  else
-    ref_equals "$l" "$r" && return 0
+  elif ref_equals "$l" "$r"; then
+    # io_trace "<<< _branch_reset_visitor -2- $(print_vars l r i current)"
+    return 0
   fi
   # pull changes
-  [[ $i =~ ^\< ]] && { _branch_sync_merge "$r" "$l" || return 1; }
+  if [[ $i =~ ^\< ]] && ! _branch_sync_merge "$r" "$l"; then
+    # io_trace "<<< _branch_reset_visitor -3- $(print_vars l r i current)"
+    return 1
+  fi
   # reset to upstream
-  if [[ $l == $current ]]; then
-    git reset --hard @{u} >/dev/null
+  if [[ $l == "$current" ]]; then
+    # io_trace "### _branch_reset_visitor -4- $(print_vars l r i current)"
+    git reset --hard '@{u}' >/dev/null
     _branch_raise_branch_sync_event "$r" "$l" "$i"
   else
     # reset ref
+    # io_trace "### _branch_reset_visitor -5- $(print_vars l r i current)"
     git update-ref "refs/heads/$l" "$r" >/dev/null
+    git reset . >/dev/null
+    git checkout . >/dev/null
   fi
+  # io_trace "<<< _branch_reset_visitor -6- $(print_vars l r i current)"
 }
 _branch_sync_visit() 
 {
-  local visitor=$1 current=$moduleHead color l r i; shift 1
+  local visitor=$1 current=$moduleHead color l r i linfo; shift 1
   [[ -z $current ]] && current=$(branch_current)
 
-  while read l r i; do
-    [[ $l == $current ]] && linfo="* $l"
+  while read -r l r i; do
+    if [[ $l == "$current" ]]; then
+      linfo="* $l"
+      branchSyncVisitInfo=("$r" "$l" "$i")
+    elif [[ -n $r && $current ==  $(git rev-parse --short "$r") ]]; then
+      branchSyncVisitInfo=("$r" "$l" "$i")
+    fi
+    # io_trace "### _branch_sync_visit -- $(print_vars l r i current branchSyncVisitInfo[@])"
     case $i in
       '>')  [[ $l == $current ]] && color=${Yellow}      || color=${Brown};;   # ahead
       '<')  [[ $l == $current ]] && color=${Yellow}      || color=${Brown};;   # behind
@@ -94,8 +120,8 @@ _branch_sync_visit()
       *)    [[ -n $r ]] && { i='?'; color=${Purple}; } || color=${LightBlue};;
     esac
     $visitor || return $?
-    local linfo=$(string_pad_right 18 $l)
-    [[ $l == $current ]] && linfo="* $linfo" || linfo="  $linfo"
+    linfo=$(string_pad_right 18 "$l")
+    [[ $l == "$current" ]] && linfo="* $linfo" || linfo="  $linfo"
     [[ $syncNoPush == true && $i =~ '>' ]] && color=${DarkGray}
     mio_message "$linfo $(string_pad_right 2 $i) $r" $color
   done < <(branch_sync_info "$@")
@@ -104,7 +130,7 @@ _branch_sync_visit()
 _branch_sync_fix_tracking()
 {
   local deleteBrokenTrackingInfoBranches=$1 l r i
-  while read l r i; do
+  while read -r l r i; do
     # io_trace "_branch_sync_fix_tracking -- $(print_vars l r i deleteBrokenTrackingInfoBranches)"
     [[ -z $i ]] && _branch_sync_fix_tracking_core
   done < <(branch_sync_info "$@")
@@ -142,7 +168,8 @@ _branch_sync_fix_tracking_core()
 
     if [[ $l =~ ^sku/ ]] || branch_is_prod "$l"; then
       # automatically push sku and prod branches
-      local remote=$(git_remote)
+      local remote
+      remote=$(git_remote)
       if [[ -n $remote ]] && ! branch_is_archived "$l" "$remote"; then
         branch_ensure_remote "$l" "$remote"
       fi
@@ -173,7 +200,8 @@ branch_oreset_all()
 
   branch_merge_abort
   if [[ $forceReset == true ]]; then
-    git checkout . &>/dev/null
+    git reset . >/dev/null
+    git checkout . >/dev/null
     repo_list_untracked | xargs --no-run-if-empty rm
   else
     repo_require_clean_work_tree 'Cannot reset' || return 1

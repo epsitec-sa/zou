@@ -7,7 +7,9 @@ ZOUL_CORE=true
 [[ -z $ZOUL_LOCK ]]    && . zoul-lock
 [[ -z $ZOUL_PROCESS ]] && . zoul-process
 
-zouTraceError=false
+# Environment variables
+# zouTraceError=true
+# zouTraceScope=true
 
 # work with default IFS
 IFS=$' \t\n'
@@ -376,6 +378,7 @@ array_intersect_array()
   # note:
   #   array are passed by names: ${!1} is an indirection
   local array1=( "${!1}" ) array2=( "${!2}" ) i j
+  # io_trace "array_intersect_array ${*@Q} -- $(print_vars array1[@] array2[@])"
   for i in ${array1[@]}; do
     for j in "${array2[@]}"; do
       if [[ "$i" == "$j" ]]; then
@@ -383,6 +386,23 @@ array_intersect_array()
       fi
     done
   done
+}
+array_union_array()
+{
+  # usage:
+  #   if there is spaces in array elements:
+  #     mapfile -t result <<< "$(array_union_array array[@] remove[@])"
+  #   else
+  #     result=( $(array_union_array array[@] remove[@]) )
+  # note:
+  #   array are passed by names: ${!1} is an indirection
+  local array1=( "${!1}" ) array2=( "${!2}" ) i
+  for i in "${!array2[@]}"; do
+    if ! array_contains_element "${array2[$i]}" "${array1[@]}"; then
+      array1+=( ${array2[$i]} )
+    fi
+  done
+  printf '%s\n' "${array1[@]}"
 }
 array_remove_element()
 {
@@ -394,7 +414,7 @@ array_remove_element()
   # note:
   #   array are passed by names: ${!1} is an indirection
   local array=( "${!1}" ) i
-  for i in ${!array[@]}; do
+  for i in "${!array[@]}"; do
     if [[ "${array[i]}" == "$2" ]]; then
       unset 'array[i]'
       break

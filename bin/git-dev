@@ -92,15 +92,19 @@ dev_release_epilog()
   _dev_check_in_dev_mode || return 0
 
   # a submodule can create a vbranch in the bundle without refreshing the prod scope (run in a subshell)
-  # io_trace "dev_release_epilog -- $(print_vars moduleDevBranchPath prodBranchPath)"
+  # io_trace "dev_release_epilog -1- $(print_vars incrementKind moduleDevBranchPath prodBranchPath)"
   module_is_bundle && _cmd_is_recursive && prod_reset_scope
-  if [[ -n $incrementKind ]] || cosm_has_submodules_to_commit || ! ref_equals "$moduleDevBranchPath" "$prodBranchPath"; then
+  if [[ -n $incrementKind ]] || cosm_has_unstaged_clean_submodules || ! ref_equals "$moduleDevBranchPath" "$prodBranchPath"; then
     dev_checkout false "$moduleDevBranch"
     prod_ensure_vbranch "$defaultVersion" "$incrementKind"
     cosm_commit_unstaged_clean_submodules
     branch_merge "$moduleDevBranchPath" "$prodBranchPath" '-Xtheirs' \
     && branch_merge_ff "$prodBranchPath" "$moduleDevBranchPath" \
     || io_trace_error 'dev_release_epilog'
+  elif cosm_has_unstaged_dirty_submodules; then
+    mio_error "error : ${VC}$moduleId${Red} still contains dirty submodules"
+    mio_message "  it seems that the head of ${VC}${unstagedDirtySubmodules[@]}${LightCyan} is a lost commit"
+    branch_show_status
   else
     mio_message "Already released" ${LightBlue}
   fi

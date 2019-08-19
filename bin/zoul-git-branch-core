@@ -106,6 +106,16 @@ branch_current()
   echo "$ref"
   branch_is_local "$ref"
 }
+branch_is_ancestor_of_any()
+{
+  local ref=${1:-HEAD} branch ec
+  for branch in $(branch_list_local_tracked); do
+    git merge-base --is-ancestor "$ref" "$branch"; ec=$?
+    # io_trace "branch_is_ancestor_of_any -- $(print_vars branch ec)"
+    [ $ec -eq 0 ] && return 0
+  done
+  return 1
+}
 branch_current_root_branch()
 {
   local opwd=$PWD branch ec=0

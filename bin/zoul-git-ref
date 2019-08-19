@@ -228,7 +228,7 @@ ref_tag_fallback()
 {
   local IFS='/' tag="${2:-v[0-9]*}" strict=$3 atoms fallback
   atoms=( $1 ); IFS=$'\n'
-  # io_trace "ref_tag_fallback 1 -- $(print_vars tag atoms[@])"
+  # io_trace "ref_tag_fallback -1- $(print_vars tag strict atoms[@])"
 
   if [[ ${#atoms[@]} -eq 0 || ${atoms[0]} == 'master' ]]; then
     echo "$tag"
@@ -246,9 +246,9 @@ ref_tag_fallback()
     else
       IFS=$'\n'
       fallback=( $(ref_scan_sort_join "${atoms[@]}") )
-      # io_trace "ref_tag_fallback 1 -- $(print_vars tag atoms[@] fallback[@])"
+      # io_trace "ref_tag_fallback -2- $(print_vars tag atoms[@] fallback[@])"
       [[ ${#fallback[@]} -eq 0 || ${fallback[-1]} != "$tag" ]] && fallback+=( $tag )
-      # io_trace "ref_tag_fallback 2 -- $(print_vars tag atoms[@] fallback[@])"
+      # io_trace "ref_tag_fallback -3- $(print_vars tag atoms[@] fallback[@])"
       printf '%s\n' "${fallback[@]}"
     fi
   else

@@ -90,6 +90,7 @@ module_dev_attach()
     devBranchPath=$branch
     devBranch=$lbranch
   fi
+  # io_trace "module_dev_attach ${*@Q} -- $(print_vars ref devBranchPath)"
   if module_is_bundle || ref_equals "$ref" "$devBranchPath"; then
     branch_checkout "$devBranch" "$forceCheckout"
   else
@@ -103,7 +104,7 @@ module_dev_attach()
 
 _module_trace()
 {
-  [[ -z $2 ]] && return 0
+  [[ $zouTraceScope == true ]] || return 0
 
   io_lock_enter
   case $1 in
@@ -225,7 +226,7 @@ module_scope()
   moduleRoot="$PWD"
   moduleConfigFile="$moduleRoot/.zou-flow"
   moduleId=$(repo_module_id)
-  moduleSubmodulePaths=( $(repo_list_submodule_paths "$moduleRoot") )
+  module_update_submodules "$moduleRoot"
 
   moduleParent=$(repo_module_parent)
   [[ -n $moduleParent ]] && modulePath=${moduleRoot#$moduleParent/}
@@ -273,7 +274,7 @@ _module_reset_scope()
   [[ $moduleScopeInitialized == true ]] || return 0
   # io_trace_unsafe "_module_reset_scope -- ${*@Q}"
 
-  moduleSubmodulePaths=( $(repo_list_submodule_paths $PWD) )
+  module_update_submodules
   
   _module_set_head $1
   _module_set_trace_prefix
@@ -281,11 +282,15 @@ _module_reset_scope()
   
   _module_trace '_module_reset_scope'
 }
+module_update_submodules()
+{
+  moduleSubmodulePaths=( $(repo_list_submodule_paths "${1:-$PWD}") )
+}
 
 _module_on_sync()
 {
   [[ $3 =~ ^\< ]] || return 0
-  moduleSubmodulePaths=( $(repo_list_submodule_paths $PWD) )
+  module_update_submodules
   # io_trace "_module_on_sync -- $(print_vars moduleSubmodulePaths[@])"
 }
 
@@ -384,7 +389,7 @@ _module_submodule_visitor()
 {
   local smPath=$1; shift
   _module_enter "$smPath" || return $?
-  repo_check_submodule "$smPath" || return $?
+  repo_check_submodule "$moduleRoot" "$smPath" || return $?
   # io_trace "_module_submodule_visitor $smPath >> $*"
   module_scope $* || return $?
   # $1 "${@:2}" || return $?
