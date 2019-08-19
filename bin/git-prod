@@ -75,13 +75,7 @@ prod_command()
 
   cmd_visit_modules
 }
-_prod_on_preinit()
-{
-  # io_trace "_prod_on_preinit ${*@Q}"
-  if [[ $subcommand == 'release' ]] && module_is_bundle; then
-    checkoutType='vnext'
-  fi
-}
+
 ###############
 # ENTER COMMAND
 ###############
@@ -118,35 +112,9 @@ prod_release_root_scope()
 # Release prolog
 ################
 
-prod_release_scope()
-{
-  # io_trace "prod_release_scope -- $(print_vars prodBranch)"
-  local moduleMergeIntoDev=$mergeIntoDev modulePrerelPrefix=$prerelPrefix \
-        hasBeenReleased moduleVLast
-
-  # always merge into dev in bundle
-  module_is_bundle && moduleMergeIntoDev=true
-
-  if module_is_principal; then
-    # vlast does not apply to principal module if force release is specified
-    [[ $checkoutType == 'vlast' && $forcePrincipalRelease != true ]] && cmd_is_child && moduleVLast=true
-    # prerelease always applies to principal module
-
-    # io_trace "prod_release_scope PRINCIPAL -- $(print_vars forcePrincipalRelease moduleMergeIntoDev modulePrerelPrefix releasePrerelPrefix)"
-  elif cmd_is_child; then
-    # vlast applies to child modules
-    [[ $checkoutType == 'vlast' ]] && moduleVLast=true
-    # prerelease does not apply to child modules (excepting principal module)
-    [[ $prerelPrefix != 'rtm' ]] && modulePrerelPrefix=''
-    # io_trace "prod_release_scope CHILD -- $(print_vars forcePrincipalRelease moduleMergeIntoDev modulePrerelPrefix releasePrerelPrefix)"
-  fi
-
-  # execute next russian doll
-  $1 "${@:2}"
-}
 prod_release_prolog()
 {
-  # io_trace "prod_release_prolog -- $(print_vars prodBranch)"
+  # io_trace "prod_release_prolog -1- $(print_vars prodBranch)"
   case "$releaseStatus" in
     error|unreleasable)
       mio_error "Branch ${VC}$moduleDevBranch${Red} cannot be released."
@@ -155,10 +123,8 @@ prod_release_prolog()
   esac
   if [[ $dryRun == true ]]; then
     _rstatus_init || io_trace_error 'prod_release_prolog 1'
-  elif [[ $moduleVLast == true ]]; then
-    prod_checkout 'vlast' true "$moduleDevBranch" true || io_trace_error 'prod_release_prolog 2'
   else
-    prod_checkout 'vnext'  true "$moduleDevBranch" true || io_trace_error 'prod_release_prolog 3'
+    prod_checkout "$prodCheckoutType" true "$moduleDevBranch" true || io_trace_error 'prod_release_prolog -2-'
   fi
 }
 
@@ -182,9 +148,40 @@ prod_release_xepilog()
 # Release helpers
 #################
 
+_prod_on_preinit()
+{
+  # act as a prod_release_scope method
+  [[ $subcommand != 'release' ]] && return 0
+  # io_trace "prod_release_scope -- $(print_vars forcePrincipalRelease checkoutType prodCheckoutType prodBranch)"
+  local moduleMergeIntoDev=$mergeIntoDev modulePrerelPrefix=$prerelPrefix \
+        hasBeenReleased
+
+  prodCheckoutType=$checkoutType
+  # io_trace "_prod_on_preinit -- $(print_vars checkoutType prodCheckoutType moduleMergeIntoDev modulePrerelPrefix)"
+
+  if module_is_bundle; then
+    # always merge prod into dev in bundle
+    moduleMergeIntoDev=true
+    # vlast does not apply to bundle
+    prodCheckoutType='vnext'
+    # io_trace "_prod_on_preinit BUNDLE -- $(print_vars prodCheckoutType moduleMergeIntoDev)"
+  elif module_is_principal; then
+    # vlast does not apply to principal module if force release is specified
+    if [[ $forcePrincipalRelease == true ]]; then
+      prodCheckoutType='vnext'
+    fi
+    # io_trace "_prod_on_preinit PRINCIPAL -- $(print_vars prodCheckoutType forcePrincipalRelease)"
+  elif cmd_is_child; then
+    # prerelease does not apply to child modules (excepting principal module)
+    if [[ $prerelPrefix != 'rtm' ]]; then
+      modulePrerelPrefix=''
+    fi
+    # io_trace "_prod_on_preinit CHILD -- $(print_vars prodCheckoutType modulePrerelPrefix)"
+  fi
+}
 _prod_fix_release_status()
 {
-  prod_fix_release_status "$modulePrerelPrefix" "$forcePrincipalRelease" "$moduleVLast"
+  prod_fix_release_status "$modulePrerelPrefix" "$forcePrincipalRelease" "$prodCheckoutType"
   [[ $dryRun == true ]] && _rstatus_update
 }
 _prod_release()
@@ -256,7 +253,7 @@ _prod_merge_into_dev()
 }
 _prod_merge_into_dev_core()
 {
-  # io_trace "_prod_merge_into_dev_core -- $(print_vars hasBeenReleased moduleVLast)"
+  # io_trace "_prod_merge_into_dev_core -- $(print_vars hasBeenReleased prodCheckoutType)"
   [[ $hasBeenReleased == true ]] || return 0
 
   local toMerge=$1 mergeInto=$2 toMergeAlias=${3:-$1}
