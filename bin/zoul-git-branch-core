@@ -70,6 +70,11 @@ branch_exists()
   branch_realize "$1" >/dev/null
   [ $? -le 1 ]
 }
+branch_is_remote_candidate()
+{
+  local branch=$1 remote=$2
+  ( [[ $branch =~ ^sku/ ]] || branch_is_prod "$branch" ) && ! branch_is_archived "$branch" "$remote"
+}
 branch_is_archived()
 {
   local branch=$1 remote=$2
@@ -188,6 +193,15 @@ branch_list_local_untracked()
   local branches=( $(branch_list_local) )
   local tracked=( $(branch_list_local_tracked) )
   array_remove_array branches[@] tracked[@]
+}
+branch_list_remote_candidates()
+{
+  local branch remote
+  remote=$(git_remote)
+  [[ -z $remote ]] && return 1
+  for branch in $(branch_list_local_untracked); do
+    branch_is_remote_candidate "$branch" "$remote" && echo "$branch"
+  done
 }
 branch_list_remote_untracked()
 {

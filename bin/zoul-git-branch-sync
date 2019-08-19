@@ -153,14 +153,10 @@ _branch_sync_fix_tracking_core()
     fi
   else
     # no tracking info
-
-    if [[ $l =~ ^sku/ ]] || branch_is_prod "$l"; then
-      # automatically push sku and prod branches
-      local remote
-      remote=$(git_remote)
-      if [[ -n $remote ]] && ! branch_is_archived "$l" "$remote"; then
-        branch_ensure_remote "$l" "$remote"
-      fi
+    local remote
+    remote=$(git_remote)
+    if branch_is_remote_candidate "$l" "$remote"; then
+      branch_ensure_remote "$l" "$remote"
     fi
   fi
   # io_trace "_branch_sync_fix_tracking -- $(print_vars l r i color)"
