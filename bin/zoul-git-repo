@@ -304,7 +304,7 @@ repo_list_unstaged_clean_submodules()
     smroot="$mroot/$smpath"
     if repo_is_module_root "$smroot"; then
       cd "$smroot"
-      repo_is_clean && branch_is_ancestor_of_remote_or_remote_candidates && echo $smid
+      repo_is_clean && branch_is_ancestor_of_local_trackable && echo $smid
       cd "$opwd"
     fi
   done
@@ -324,7 +324,7 @@ repo_split_unstaged_submodules()
     if repo_is_module_root "$smroot"; then
       cd "$smroot"
       # io_trace "repo_split_unstaged_submodules - $(print_vars smroot)"
-      if repo_is_clean && branch_is_ancestor_of_remote_or_remote_candidates; then
+      if repo_is_clean && branch_is_ancestor_of_local_trackable; then
         unstagedCleanSubmodules+=( $smid )
       else
         unstagedDirtySubmodules+=( $smid )

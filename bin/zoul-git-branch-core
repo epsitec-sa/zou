@@ -111,9 +111,9 @@ branch_current()
   echo "$ref"
   branch_is_local "$ref"
 }
-branch_is_ancestor_of_remote_or_remote_candidates()
+branch_is_ancestor_of_local_trackable()
 {
-  branch_is_ancestor_of "$1" $(branch_list_remote) $(branch_list_remote_candidates)
+  branch_is_ancestor_of "$1" $(branch_list_local_trackable)
 }
 branch_is_ancestor_of()
 {
@@ -198,14 +198,17 @@ branch_list_local_untracked()
   local tracked=( $(branch_list_local_tracked) )
   array_remove_array branches[@] tracked[@]
 }
-branch_list_remote_candidates()
+branch_list_local_trackable()
 {
-  local branch remote
+  local l r i remote
   remote=$(git_remote)
-  [[ -z $remote ]] && return 1
-  for branch in $(branch_list_local_untracked); do
-    branch_is_remote_candidate "$branch" "$remote" && echo "$branch"
-  done
+  while read -r l r i; do
+    if [ -z $r ]; then
+      branch_is_remote_candidate "$l" "$remote" && echo "$l"
+    else
+      echo $l
+    fi
+  done < <(branch_sync_info)
 }
 branch_list_remote_untracked()
 {
