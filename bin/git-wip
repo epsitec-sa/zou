@@ -111,12 +111,12 @@ wip_start_prolog()
 
   local devBranch=$(wip_to_ref "$moduleDevBranch")
   local wipBranch=$(ref_to_wip "$devBranch" "$wipSuffix" "$wipPrefix")
-  # io_trace "wip_start -- $(print_vars wipHotfix wipBranch devBranch moduleHead prodBranchPath)"
+  io_trace "wip_start -- $(print_vars wipHotfix wipBranch devBranch moduleHead prodBranchPath)"
   if [[ $moduleHead != $wipBranch ]]; then
     if [[ $wipHotfix == true && -n $prodBranchPath ]]; then
       git branch "$wipBranch" "$prodBranchPath" &>/dev/null
     else
-      git branch "$wipBranch" "$moduleDevBranchPath" &>/dev/null
+      git branch "$wipBranch" "$moduleHead" &>/dev/null
     fi
   fi
   branch_checkout "$wipBranch" true
