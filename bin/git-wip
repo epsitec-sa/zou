@@ -115,8 +115,10 @@ wip_start_prolog()
   if [[ $moduleHead != $wipBranch ]]; then
     if [[ $wipHotfix == true && -n $prodBranchPath ]]; then
       git branch "$wipBranch" "$prodBranchPath" &>/dev/null
-    else
+    elif module_in_dev_mode; then
       git branch "$wipBranch" "$moduleHead" &>/dev/null
+    else
+      git branch "$wipBranch" "$moduleDevBranchPath" &>/dev/null
     fi
   fi
   branch_checkout "$wipBranch" true
