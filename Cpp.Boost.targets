@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" InitialTargets="_CppBoostTrace">
 
   <PropertyGroup>
     <PackagesConfigFile Condition="'$(PackagesConfigFile)' == ''">packages.config</PackagesConfigFile>
@@ -56,6 +56,7 @@
   </Target>
 
   <Target Name="_BoostUpdateExistingPackagesConfig" DependsOnTargets="_BoostUpdateBoostOnlyPackagesConfig" Inputs="$(_BoostOnlyPackagesConfigFile)" Outputs="$(PackagesConfigFile)" >
+    <Copy Condition="!Exists('$(PackagesConfigFile)')" SourceFiles="$(_BoostOnlyPackagesConfigFile)" DestinationFiles="$(PackagesConfigFile)"/>
     <!-- Remove previous boost packages -->
     <FileUpdate Files="$(PackagesConfigFile)"
                 Regex='^\s*&lt;package\s+id="boost\S*".*$'
