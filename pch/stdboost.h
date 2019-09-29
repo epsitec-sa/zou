@@ -8,6 +8,11 @@
 
 #pragma once
 
+#pragma warning(push)
+#pragma warning(disable : 4244 4267)
+#pragma warning(disable : 26110 26439 26495 26498 26444 26451 28251)
+#pragma warning(disable : 6001 6011 6031 6248 6255 6258 6282 6387 6388)
+
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/archive/iterators/binary_from_base64.hpp>
@@ -15,18 +20,25 @@
 #include <boost/archive/iterators/transform_width.hpp>
 #include <boost/asio.hpp>
 #include <boost/asio/spawn.hpp>
+#include <boost/asio/ssl/stream.hpp>
 #include <boost/date_time.hpp>
+#include <boost/exception/exception.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/path.hpp>
 #include <boost/format.hpp>
+#include <boost/function/function_base.hpp>
 #include <boost/functional/hash.hpp>
+#include <boost/interprocess/windows_shared_memory.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/locale.hpp>
 #include <boost/multiprecision/cpp_dec_float.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
+#include <boost/process.hpp>
+#include <boost/process/windows.hpp>
 #include <boost/regex.hpp>
+#include <boost/signals2/signal.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/condition_variable.hpp>
 #include <boost/tokenizer.hpp>
@@ -34,8 +46,6 @@
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
 
-// Disable some boost 1.70.0 warnings
-#pragma warning(push)
-#pragma warning(disable : 4244) // disable "conversion....possible loss of data" warning
 #include <boost/process/detail/windows/wait_group.hpp>
+
 #pragma warning(pop)
