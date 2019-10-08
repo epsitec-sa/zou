@@ -442,12 +442,12 @@ _prod_ensure_bundle_vbranch_core()
 
 prod_fix_release_status()
 {
-  local prerelPrefix=$1 forceRelease=$2 vlast=$3
-  # io_trace "prod_fix_release_status 1 -- $(print_vars forceRelease prerelPrefix releasePrerelPrefix releaseStatus)"
+  local prerelPrefix=$1 forceRelease=$2 checkoutType=$3
+  # io_trace "prod_fix_release_status 1 -- $(print_vars prerelPrefix forceRelease checkoutType releasePrerelPrefix releaseStatus)"
   _prod_should_release "$@" && releaseStatus='unreleased'
-  [[ $vlast == true && $releaseStatus == 'unreleased' && $vtagStatus == 'vtag' && $forceRelease != true ]] && releaseStatus='released'
+  [[ $checkoutType == 'vlast' && $releaseStatus == 'unreleased' && $vtagStatus == 'vtag' && $forceRelease != true ]] && releaseStatus='released'
 
-  # io_trace "prod_fix_release_status 2 -- $(print_vars forceRelease prerelPrefix releasePrerelPrefix releaseStatus)"
+  # io_trace "prod_fix_release_status 2 -- $(print_vars prerelPrefix forceRelease checkoutType releasePrerelPrefix releaseStatus)"
 }
 _prod_should_release()
 {
