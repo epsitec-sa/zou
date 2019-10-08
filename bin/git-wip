@@ -28,7 +28,7 @@ wip_parse()
   wip_parse_wip "${args[@]}"
   cmd_check_args "${args[@]:1}"
 
-  # io_trace "wip_parse -- $(print_vars recursive wipPrefix wipSuffix subcommand wipModulePaths[@])"
+  # io_trace "wip_parse -- $(print_vars recursive wipPrefix wipSuffix subcommand wipModulePaths[@] args[@])"
 }
 wip_parse_wip()
 {
@@ -111,14 +111,16 @@ wip_start_prolog()
 
   local devBranch=$(wip_to_ref "$moduleDevBranch")
   local wipBranch=$(ref_to_wip "$devBranch" "$wipSuffix" "$wipPrefix")
-  io_trace "wip_start -- $(print_vars wipHotfix wipBranch devBranch moduleHead prodBranchPath)"
+  # io_trace "wip_start -- $(print_vars wipHotfix wipBranch devBranch moduleHead moduleDevBranch prodBranchPath)"
   if [[ $moduleHead != $wipBranch ]]; then
     if [[ $wipHotfix == true && -n $prodBranchPath ]]; then
       git branch "$wipBranch" "$prodBranchPath" &>/dev/null
     elif module_in_dev_mode; then
       git branch "$wipBranch" "$moduleHead" &>/dev/null
+      # git branch "$wipBranch" "$moduleDevBranchPath" &>/dev/null
     else
-      git branch "$wipBranch" "$moduleDevBranchPath" &>/dev/null
+      mio_warning "Use ${VC}git dev enter${Brown} to switch to development"
+      return 1
     fi
   fi
   branch_checkout "$wipBranch" true
@@ -180,8 +182,11 @@ wip_share_epilog()
 
 wip_release_epilog()
 {
+  if wip_is_specified; then
+    local targetWipPrefix=$wipPrefix targetWipSuffix=$wipSuffix
+  fi
   _wip_enter_wip_mode || return 0
-  # io_trace "wip_release_epilog 1 -- $(print_vars moduleHead)"
+  # io_trace "wip_release_epilog 1 -- $(print_vars moduleHead wipPrefix wipSuffix targetWipPrefix targetWipSuffix)"
   _wip_merge $moduleHead _wip_release_merge_dev _wip_release_merge_prod true || return $?
   branch_show_status
 }
@@ -205,6 +210,9 @@ _wip_release_merge_prod()
 
 wip_finish_epilog()
 {
+  if wip_is_specified; then
+    local targetWipPrefix=$wipPrefix targetWipSuffix=$wipSuffix
+  fi
   _wip_enter_wip_mode || return 0
   # io_trace "wip_finish 1 -- $(print_vars moduleHead)"
   _wip_merge $moduleHead _wip_finish_merge_dev _wip_finish_merge_prod || return $?
@@ -216,7 +224,7 @@ _wip_finish_merge_dev()
   local wipBranch=$1 mergeTarget=$2 devBranchPath=$3 devBranch=$4
   # io_trace "_wip_finish_merge_dev -- $(print_vars wipBranch mergeTarget devBranchPath devBranch)"
   branch_merge "$wipBranch" "$mergeTarget" \
-  && dev_checkout true "$devBranch" \
+  && dev_checkout true "$devBranch" false \
   && branch_delete "$wipBranch"
 }
 # scope: devBranch
@@ -242,19 +250,24 @@ _wip_finish_merge_prod()
 _wip_merge()
 {
   local wipBranch=$1 devAction=$2 prodAction=$3 showStatusMessage=$4 mergeTarget action \
-        branch lbranch bref
+        devBranch branch lbranch bref
 
-  branch_set_realize "$(wip_to_ref $wipBranch)"
+  devBranch=$(wip_to_ref "$wipBranch")
+  if [[ -n $targetWipSuffix ]]; then
+    devBranch=$(ref_to_wip "$devBranch" "$targetWipSuffix" "$targetWipPrefix")
+  fi
+
+  branch_set_realize "$devBranch" # -> branch, lbranch, bref
   if [ $? -eq 2 ]; then
-    branch_set_best_match_dev "$bundleDevBranch"
+    # branch does not exists
+    branch_set_best_match_dev "$bundleDevBranch"  # -> branch, lbranch
   fi
 
   # a submodule can create a vbranch in the bundle without refreshing the prod scope (run in a subshell)
   module_is_bundle && _cmd_is_recursive && prod_reset_scope
 
   # try to determine merge target automatically - can be dev or prod
-  local devBranch=$(wip_to_ref "$moduleDevBranch")
-  # io_trace "_wip_merge -- $(print_vars wipBranch devBranch prodBranch wipPrefix wipSuffix)"
+  # io_trace "_wip_merge -- $(print_vars wipBranch devBranch prodBranch)"
   if [[ $wipHotfix == true ]]; then
     if [[ -z $prodBranch ]]; then
       mio_error "No production branch found"
