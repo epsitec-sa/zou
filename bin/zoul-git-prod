@@ -351,7 +351,7 @@ prod_checkout()
 dev_checkout()
 {
   # io_trace "dev_checkout -- ${*@Q}"
-  local forceCheckout=$1 devBranch=$2
+  local forceCheckout=$1 devBranch=$2 strict=${3:true}
   if [[ -z $devBranch ]]; then
     if module_is_bundle; then
       devBranch=$bundleDevBranch
@@ -362,7 +362,9 @@ dev_checkout()
       # io_trace "dev_checkout 1 -- $(print_vars bundleDevBranch branch lbranch devBranch)"
     fi
   fi
-  devBranch=$(wip_to_ref $devBranch)
+  if [[ $strict == true ]]; then
+    devBranch=$(wip_to_ref $devBranch)
+  fi
   # io_trace "dev_checkout 2 -- $(print_vars bundleDevBranch branch lbranch devBranch)"
   branch_checkout "$devBranch" "$forceCheckout"
 }
