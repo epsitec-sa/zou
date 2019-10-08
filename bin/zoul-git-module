@@ -90,6 +90,7 @@ module_dev_attach()
     devBranchPath=$branch
     devBranch=$lbranch
   fi
+  # io_trace "module_dev_attach ${*@Q} -- $(print_vars ref devBranchPath)"
   if module_is_bundle || ref_equals "$ref" "$devBranchPath"; then
     branch_checkout "$devBranch" "$forceCheckout"
   else
@@ -103,7 +104,7 @@ module_dev_attach()
 
 _module_trace()
 {
-  [[ -z $2 ]] && return 0
+  [[ $zouTraceScope == true ]] || return 0
 
   io_lock_enter
   case $1 in
@@ -225,7 +226,7 @@ module_scope()
   moduleRoot="$PWD"
   moduleConfigFile="$moduleRoot/.zou-flow"
   moduleId=$(repo_module_id)
-  moduleSubmodulePaths=( $(repo_list_submodule_paths "$moduleRoot") )
+  module_update_submodules "$moduleRoot"
 
   moduleParent=$(repo_module_parent)
   [[ -n $moduleParent ]] && modulePath=${moduleRoot#$moduleParent/}
@@ -273,7 +274,7 @@ _module_reset_scope()
   [[ $moduleScopeInitialized == true ]] || return 0
   # io_trace_unsafe "_module_reset_scope -- ${*@Q}"
 
-  moduleSubmodulePaths=( $(repo_list_submodule_paths $PWD) )
+  module_update_submodules
   
   _module_set_head $1
   _module_set_trace_prefix
@@ -281,11 +282,15 @@ _module_reset_scope()
   
   _module_trace '_module_reset_scope'
 }
+module_update_submodules()
+{
+  moduleSubmodulePaths=( $(repo_list_submodule_paths "${1:-$PWD}") )
+}
 
 _module_on_sync()
 {
   [[ $3 =~ ^\< ]] || return 0
-  moduleSubmodulePaths=( $(repo_list_submodule_paths $PWD) )
+  module_update_submodules
   # io_trace "_module_on_sync -- $(print_vars moduleSubmodulePaths[@])"
 }
 
@@ -320,18 +325,18 @@ _module_set_bundle_dev_branch()
     ltag=$(git describe --tags --match '*v[0-9]*' 2>/dev/null | head -n1)
     stag=${ltag%-*-g*}
     _bundle_vref_to_dev "$stag" || bundleDevBranch='master'
-    # io_trace "_module_set_dev_branch 1 -- $(print_vars bundleHead bundleDevBranch)"
+    # io_trace "_module_set_bundle_dev_branch -1- $(print_vars bundleHead bundleDevBranch)"
   elif [[ $bundleHead == $(git rev-parse --abbrev-ref "$bundleHead" 2>/dev/null) ]]; then
     _bundle_vref_to_dev "$bundleHead" || bundleDevBranch=$bundleHead
-    # io_trace "_module_set_dev_branch 2 -- $(print_vars bundleHead bundleDevBranch)"
+    # io_trace "_module_set_bundle_dev_branch -2- $(print_vars bundleHead bundleDevBranch)"
   elif ! _bundle_vref_to_dev "$bundleHead"; then
     bundleDevBranch='master'
   fi
-  # io_trace "_module_set_dev_branch 3 -- $(print_vars bundleHead bundleDevBranch)"
+  # io_trace "_module_set_bundle_dev_branch -3- $(print_vars bundleHead bundleDevBranch)"
   local branch lbranch bref
   bundleDevBranchPath=$bundleDevBranch
   branch_set_realize "$bundleDevBranch" && bundleDevBranchPath=$branch
-  # io_trace "_module_set_dev_branch 4 -- $(print_vars bundleHead bundleDevBranch bundleDevBranchPath)"
+  # io_trace "_module_set_bundle_sdev_branch -4- $(print_vars bundleHead bundleDevBranch bundleDevBranchPath)"
 }
 _bundle_vref_to_dev()
 {
@@ -345,15 +350,15 @@ _bundle_vref_to_dev()
 }
 _module_set_module_dev_branch()
 {
-  # io_trace "_module_set_module_dev_branch 0 -- $(print_vars moduleId bundleDevBranch moduleHead moduleDevBranch)"
+  # io_trace "_module_set_module_dev_branch -0- $(print_vars moduleId bundleDevBranch moduleHead moduleDevBranch)"
   if module_is_bundle; then
     moduleDevBranchPath=$bundleDevBranchPath
     moduleDevBranch=$bundleDevBranch
-    # io_trace "_module_set_module_dev_branch 1 -- $(print_vars moduleId bundleDevBranch moduleHead moduleDevBranch)"
+    # io_trace "_module_set_module_dev_branch -1- $(print_vars moduleId bundleDevBranch moduleHead moduleDevBranch)"
   # we are in detached HEAD or on vtag/prod branch 
   else
     _module_infer_dev_from_bundle
-    # io_trace "_module_set_module_dev_branch 2 -- $(print_vars moduleHead moduleHeadType moduleDevBranch)"
+    # io_trace "_module_set_module_dev_branch -2- $(print_vars moduleHead moduleHeadType moduleDevBranch)"
 
     # if moduleHead is a SHA try to to attach to dev branch
     if [[ $moduleHeadType == 'sha' ]] && ref_equals "$moduleHead" "$moduleDevBranchPath"; then
@@ -384,7 +389,7 @@ _module_submodule_visitor()
 {
   local smPath=$1; shift
   _module_enter "$smPath" || return $?
-  repo_check_submodule "$smPath" || return $?
+  repo_check_submodule "$moduleRoot" "$smPath" || return $?
   # io_trace "_module_submodule_visitor $smPath >> $*"
   module_scope $* || return $?
   # $1 "${@:2}" || return $?

@@ -13,15 +13,16 @@ zou_setup()
   if [[ -z $zouFakeUpdate ]]; then
     git fetch --prune --all &>/dev/null
     git fetch --tags --force &>/dev/null
-    git merge FETCH_HEAD &>/dev/null
+    git checkout master &>/dev/null
+    git pull &>/dev/null
   else
     _zou_create_fake_version_props
   fi
 
   message="${Cyan}[zou]${NC} : ${Cyan}Making a copy, please wait...${NC}"
   printf '\n%b' "$message"
-  find . -maxdepth 1 -type f -iname 'zoul-*' -not -iname 'zoul-update-boot' -exec cp --preserve '{}' "$setupDir/{}" ';'
-  find . -maxdepth 1 -type f -iname 'git-*' -exec cp --preserve '{}' "$setupDir/{}" ';'
+  find . -maxdepth 1 -type f -iname 'zoul-*' -exec cp --preserve '{}' "$setupDir/{}" ';'
+  find . -maxdepth 1 -type f -iname 'git-* ' -exec cp --preserve '{}' "$setupDir/{}" ';'
   cp ../Version.props "$setupDir"
   
   printf '\n'
@@ -61,7 +62,7 @@ _zou_create_fake_version_props()
 EOF
 }
 
-[[ -n $zouFakeUpdate ]] && printf '\n%s\n' "[FAKE UPDATE] zoul_update_boot ${*@Q}" >&2
+[[ -n $zouFakeUpdate ]] && printf '\n%s\n' "[FAKE UPDATE BOOT] zouBinDir=$1 setupDir=$2 ${*:3}" >&2
 
 zouBinDir=$1
 setupDir=$2

@@ -7,6 +7,8 @@
 [[ -z $ZOUL_GIT_VTABLE ]]        && . zoul-git-vtable
 [[ -z $ZOUL_GIT_BRANCH_MERGE ]]  && . zoul-git-branch-merge
 
+prodPreinitEvent+=( _prod_on_preinit )
+
 prod_parse()
 {
   local args=()
@@ -16,8 +18,8 @@ prod_parse()
     -r|--recursive) recursive=true;;
     -n|--dry-run)   dryRun=true;;
     --merge)        mergeIntoDev=true;;
-    --vnext)        vnext=true;;
-    --vlast)        vlast=true;;
+    --vnext)        checkoutType='vnext';;
+    --vlast)        checkoutType='vlast';;
     --vtable)       vtable=true;;
     --reuse)        prerelPrefix='reuse';;
     --alpha)        prerelPrefix='alpha';;
@@ -34,7 +36,7 @@ prod_parse()
   cmd_check_args "${args[@]}"
   
   prodModulePaths=( "$@" )
-  # io_trace "prod_parse -- $(print_vars recursive vnext subcommand prodModulePaths[@])"
+  # io_trace "prod_parse -- $(print_vars recursive checkoutType subcommand prodModulePaths[@])"
 }
 prod_run()
 {
@@ -42,7 +44,8 @@ prod_run()
   local jobsCount recursive command='prod' subcommand \
         cmdScopes=( prod_scope config_scope cosm_scope ) \
         commitSubmodules=true mergeIntoDev \
-        vnext vlast vtable prerelPrefix dryRun prodModulePaths=()
+        vtable prerelPrefix dryRun prodModulePaths=() \
+        checkoutType='vnext'
 
   prod_parse "$@" || return $?
   prod_startup_message
@@ -57,14 +60,13 @@ prod_startup_message()
     release)
       local what='next version' color=${White}
       [[ $dryRun == true ]] && color=${DarkGray}
-      [[ $vlast == true ]] && what='last version'
+      [[ $checkoutType == 'vlast' ]] && what='last version'
       startupMessage="${color}Releasing ${Brown}$what${color}, please wait...";;
   esac
 }
 prod_command()
 {
   [ ${#prodModulePaths[@]} -eq 0 ] && prodModulePaths+=( './' )
-  [[ $vlast == true ]] && vtagResolveMode='auto'
   
   case $subcommand in
     release) recursive=true;;
@@ -78,7 +80,7 @@ prod_command()
 # ENTER COMMAND
 ###############
 
-prod_enter_prolog() { prod_checkout "$vnext" true || io_trace_error 'prod_enter_prolog'; }
+prod_enter_prolog() { prod_checkout "$checkoutType" true || io_trace_error 'prod_enter_prolog'; }
 prod_enter_epilog() { branch_show_status || io_trace_error 'prod_enter_epilog'; }
 
 #################
@@ -110,35 +112,9 @@ prod_release_root_scope()
 # Release prolog
 ################
 
-prod_release_scope()
-{
-  # io_trace "prod_release_scope -- $(print_vars prodBranch)"
-  local moduleMergeIntoDev=$mergeIntoDev modulePrerelPrefix=$prerelPrefix \
-        hasBeenReleased moduleVLast
-
-  # always merge into dev in bundle
-  module_is_bundle && moduleMergeIntoDev=true
-
-  if module_is_principal; then
-    # vlast does not apply to principal module if force release is specified
-    [[ $vlast == true && $forcePrincipalRelease != true ]] && cmd_is_child && moduleVLast=true
-    # prerelease always applies to principal module
-
-    # io_trace "prod_release_scope PRINCIPAL -- $(print_vars forcePrincipalRelease moduleMergeIntoDev modulePrerelPrefix releasePrerelPrefix)"
-  elif cmd_is_child; then
-    # vlast applies to child modules
-    [[ $vlast == true ]] && moduleVLast=true
-    # prerelease does not apply to child modules (excepting principal module)
-    [[ $prerelPrefix != 'rtm' ]] && modulePrerelPrefix=''
-    # io_trace "prod_release_scope CHILD -- $(print_vars forcePrincipalRelease moduleMergeIntoDev modulePrerelPrefix releasePrerelPrefix)"
-  fi
-
-  # execute next russian doll
-  $1 "${@:2}"
-}
 prod_release_prolog()
 {
-  # io_trace "prod_release_prolog -- $(print_vars prodBranch)"
+  # io_trace "prod_release_prolog -1- $(print_vars prodBranch)"
   case "$releaseStatus" in
     error|unreleasable)
       mio_error "Branch ${VC}$moduleDevBranch${Red} cannot be released."
@@ -147,10 +123,8 @@ prod_release_prolog()
   esac
   if [[ $dryRun == true ]]; then
     _rstatus_init || io_trace_error 'prod_release_prolog 1'
-  elif [[ $moduleVLast == true ]]; then
-    prod_checkout false true "$moduleDevBranch" true || io_trace_error 'prod_release_prolog 2'
   else
-    prod_checkout true  true "$moduleDevBranch" true || io_trace_error 'prod_release_prolog 3'
+    prod_checkout "$prodCheckoutType" true "$moduleDevBranch" true || io_trace_error 'prod_release_prolog -2-'
   fi
 }
 
@@ -174,9 +148,40 @@ prod_release_xepilog()
 # Release helpers
 #################
 
+_prod_on_preinit()
+{
+  # act as a prod_release_scope method
+  [[ $subcommand != 'release' ]] && return 0
+  # io_trace "prod_release_scope -- $(print_vars forcePrincipalRelease checkoutType prodCheckoutType prodBranch)"
+  local moduleMergeIntoDev=$mergeIntoDev modulePrerelPrefix=$prerelPrefix \
+        hasBeenReleased
+
+  prodCheckoutType=$checkoutType
+  # io_trace "_prod_on_preinit -- $(print_vars checkoutType prodCheckoutType moduleMergeIntoDev modulePrerelPrefix)"
+
+  if module_is_bundle; then
+    # always merge prod into dev in bundle
+    moduleMergeIntoDev=true
+    # vlast does not apply to bundle
+    prodCheckoutType='vnext'
+    # io_trace "_prod_on_preinit BUNDLE -- $(print_vars prodCheckoutType moduleMergeIntoDev)"
+  elif module_is_principal; then
+    # vlast does not apply to principal module if force release is specified
+    if [[ $forcePrincipalRelease == true ]]; then
+      prodCheckoutType='vnext'
+    fi
+    # io_trace "_prod_on_preinit PRINCIPAL -- $(print_vars prodCheckoutType forcePrincipalRelease)"
+  elif cmd_is_child; then
+    # prerelease does not apply to child modules (excepting principal module)
+    if [[ $prerelPrefix != 'rtm' ]]; then
+      modulePrerelPrefix=''
+    fi
+    # io_trace "_prod_on_preinit CHILD -- $(print_vars prodCheckoutType modulePrerelPrefix)"
+  fi
+}
 _prod_fix_release_status()
 {
-  prod_fix_release_status "$modulePrerelPrefix" "$forcePrincipalRelease" "$moduleVLast"
+  prod_fix_release_status "$modulePrerelPrefix" "$forcePrincipalRelease" "$prodCheckoutType"
   [[ $dryRun == true ]] && _rstatus_update
 }
 _prod_release()
@@ -248,7 +253,7 @@ _prod_merge_into_dev()
 }
 _prod_merge_into_dev_core()
 {
-  # io_trace "_prod_merge_into_dev_core -- $(print_vars hasBeenReleased moduleVLast)"
+  # io_trace "_prod_merge_into_dev_core -- $(print_vars hasBeenReleased prodCheckoutType)"
   [[ $hasBeenReleased == true ]] || return 0
 
   local toMerge=$1 mergeInto=$2 toMergeAlias=${3:-$1}
@@ -319,7 +324,7 @@ _vtable_commit()
     vtable_update "$vtableRoot" "$moduleId" "$vtableLookupPath" "$vtableGate"
     mio_message "Created version table for ${VC}$prodBranch${DarkGray} at ${VC}$releaseVTag" ${DarkGray}
   elif [[ $vtableCreate == true ]]; then
-    # io_trace "_vtable_commit -- $(print_vars releaseStatus prodBranch moduleDevBranch vnext)"
+    # io_trace "_vtable_commit -- $(print_vars releaseStatus prodBranch moduleDevBranch checkoutType)"
     local tmpBranch="_zou_$(date +%y%V)"
     git checkout -b "$tmpBranch" &>/dev/null
     vtable_update "$vtableRoot" "$moduleId" "$vtableLookupPath" "$vtableGate" true

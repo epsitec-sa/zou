@@ -1,16 +1,21 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" InitialTargets="_CppBoostTrace">
 
   <PropertyGroup>
     <PackagesConfigFile Condition="'$(PackagesConfigFile)' == ''">packages.config</PackagesConfigFile>
 
     <BoostToolset Condition="'$(BoostToolset)' == ''">$(PlatformToolset)</BoostToolset>
+    <BoostToolset Condition="'$(BoostToolset)' == 'v142'"   >vc142</BoostToolset>
+    <BoostToolset Condition="'$(BoostToolset)' == 'v141'"   >vc141</BoostToolset>
     <BoostToolset Condition="'$(BoostToolset)' == 'v140'"   >vc140</BoostToolset>
     <BoostToolset Condition="'$(BoostToolset)' == 'v140_xp'">vc140</BoostToolset>
     <BoostToolset Condition="'$(BoostToolset)' == 'v120'"   >vc120</BoostToolset>
     <BoostToolset Condition="'$(BoostToolset)' == 'v120_xp'">vc120</BoostToolset>
     <BoostToolset Condition="'$(BoostToolset)' == 'v110'"   >vc110</BoostToolset>
     <BoostToolset Condition="'$(BoostToolset)' == 'v110_xp'">vc110</BoostToolset>
+
+    <BoostTargetSubdir Condition="$(BoostVersion.StartsWith(1.70))">build</BoostTargetSubdir>
+    <BoostTargetSubdir Condition="'$(BoostTargetSubdir)' == ''">build\native</BoostTargetSubdir>
 
     <_BoostPackagesConfigType Condition="'$(ConfigurationType)' == 'StaticLibrary'">Headers</_BoostPackagesConfigType>
     <_BoostPackagesConfigType Condition="'$(ConfigurationType)' == 'DynamicLibrary'">Libs</_BoostPackagesConfigType>
@@ -51,6 +56,7 @@
   </Target>
 
   <Target Name="_BoostUpdateExistingPackagesConfig" DependsOnTargets="_BoostUpdateBoostOnlyPackagesConfig" Inputs="$(_BoostOnlyPackagesConfigFile)" Outputs="$(PackagesConfigFile)" >
+    <Copy Condition="!Exists('$(PackagesConfigFile)')" SourceFiles="$(_BoostOnlyPackagesConfigFile)" DestinationFiles="$(PackagesConfigFile)"/>
     <!-- Remove previous boost packages -->
     <FileUpdate Files="$(PackagesConfigFile)"
                 Regex='^\s*&lt;package\s+id="boost\S*".*$'

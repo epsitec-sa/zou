@@ -35,6 +35,16 @@ config_scope()
 }
 config_has_submodules() { [ ${#configSelectInclude[@]} -gt 0 ]; }
 
+config_list_external()
+{
+  if [[ $noSelectFilter == true ]]; then
+    local external=( $(config_select_list_excluded moduleSubmodulePaths[@]) )
+    external=( $(array_remove_array external[@] configSkuExclude[@]) )
+    printf '%s\n' "${external[@]}"
+  else
+    printf '%s\n' "${configSelectExclude[@]}"
+  fi
+}
 _config_on_sync()
 {
   [[ $3 =~ ^\< ]] || return 0
@@ -81,14 +91,14 @@ _config_reset_scope()
 }
 _config_trace()
 {
-  return 0
+  [[ $zouTraceScope == true ]] || return 0
 
   io_lock_enter
-  # io_trace_unsafe "_config_reset_scope -- $(print_vars configSkuInclude[@])"
-  # io_trace_unsafe "_config_reset_scope -- $(print_vars configSkuExclude[@])"
+  [[ -n $1 ]] && io_trace_unsafe "_config_reset_scope -- $(print_vars configSkuInclude[@])"
+  [[ -n $1 ]] && io_trace_unsafe "_config_reset_scope -- $(print_vars configSkuExclude[@])"
   io_trace_unsafe "_config_reset_scope -- $(print_vars configSelectInclude[@])"
   io_trace_unsafe "_config_reset_scope -- $(print_vars configSelectExclude[@])"
-  # io_trace_unsafe "_config_reset_scope -- $(print_vars configSelectIncludeBundlePaths[@])"
-  # io_trace_unsafe "_config_reset_scope -- $(print_vars configSelectExcludeBundlePaths[@])"
+  [[ -n $1 ]] && io_trace_unsafe "_config_reset_scope -- $(print_vars configSelectIncludeBundlePaths[@])"
+  [[ -n $1 ]] && io_trace_unsafe "_config_reset_scope -- $(print_vars configSelectExcludeBundlePaths[@])"
   io_lock_exit
 }

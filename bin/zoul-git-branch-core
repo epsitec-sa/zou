@@ -70,6 +70,11 @@ branch_exists()
   branch_realize "$1" >/dev/null
   [ $? -le 1 ]
 }
+branch_is_remote_candidate()
+{
+  local branch=$1 remote=$2
+  ( [[ $branch =~ ^sku/ ]] || branch_is_prod "$branch" ) && ! branch_is_archived "$branch" "$remote"
+}
 branch_is_archived()
 {
   local branch=$1 remote=$2
@@ -106,6 +111,20 @@ branch_current()
   echo "$ref"
   branch_is_local "$ref"
 }
+branch_is_ancestor_of_local_trackable()
+{
+  branch_is_ancestor_of "$1" $(branch_list_local_trackable)
+}
+branch_is_ancestor_of()
+{
+  local ref=${1:-HEAD} branch ec; shift
+  for branch; do
+    git merge-base --is-ancestor "$ref" "$branch"; ec=$?
+    # io_trace "branch_is_ancestor_of -- $(print_vars ref branch ec) PWD='$PWD'"
+    [ $ec -eq 0 ] && return 0
+  done
+  return 1
+}
 branch_current_root_branch()
 {
   local opwd=$PWD branch ec=0
@@ -132,21 +151,21 @@ branch_sync_info()
 branch_list_local_tracked()
 {
   local l r i
-  while read l r i; do
+  while read -r l r i; do
     [[ -n $l && -n $r ]] && echo $l
   done < <(branch_sync_info)
 }
 branch_list_remote_tracked()
 {
   local l r i
-  while read l r i; do
+  while read -r l r i; do
     [[ -n $r ]] && echo $r
   done < <(branch_sync_info)
 }
 branch_list_all_tracked()
 {
   local l r i
-  while read l r i; do
+  while read -r l r i; do
     [[ -n $r ]] && {
       [[ -n $l ]] && echo $l
       echo $r
@@ -156,7 +175,8 @@ branch_list_all_tracked()
 branch_list_local_can_delete()
 {
   # list local branches that can be removed safely
-  local l r i c remote=$(git_remote)
+  local l r i c remote
+  remote=$(git_remote)
   while read l r i; do
     # exclude branch 'master' and current branch
     [[ -z $c ]] && c=$(wildcard_to_regex ${moduleHead:-$(branch_current)})
@@ -177,6 +197,18 @@ branch_list_local_untracked()
   local branches=( $(branch_list_local) )
   local tracked=( $(branch_list_local_tracked) )
   array_remove_array branches[@] tracked[@]
+}
+branch_list_local_trackable()
+{
+  local l r i remote
+  remote=$(git_remote)
+  while read -r l r i; do
+    if [ -z $r ]; then
+      branch_is_remote_candidate "$l" "$remote" && echo "$l"
+    else
+      echo $l
+    fi
+  done < <(branch_sync_info)
 }
 branch_list_remote_untracked()
 {

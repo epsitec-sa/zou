@@ -31,6 +31,8 @@ zou_parse()
 
 zou_update()
 {
+  [[ -n $zouFakeUpdate ]] && io_trace "[FAKE UPDATE] zou_update -- SCRIPT='$0' PWD='$PWD'"
+  [[ -n $zouFakeUpdate ]] && io_trace "[FAKE UPDATE] zou_update -- ${*@Q}"
   module_run _zou_update_core "$@"
 }
 
@@ -40,21 +42,33 @@ _zou_update_core()
   zou_parse "$@" || return $?
   io_set_version
 
-  # io_trace "_zou_update_core -- $(print_vars zouOnly noPruneTags actualVersion version skuArgs[@] zouBinDir)"
+  [[ -n $zouFakeUpdate ]] && io_trace "[FAKE UPDATE] zou_update -- $(print_vars zouOnly noPruneTags noConfig)"
+  [[ -n $zouFakeUpdate ]] && io_trace "[FAKE UPDATE] zou_update -- $(print_vars actualVersion version skuArgs)"
 
   config_setup
   config_migrate_registered_bundles
 
   if [[ -z $zouFakeUpdate ]]; then
     if [[ $zouOnly == true || "$bundleRoot" == "$PWD" ]]; then
-      # zou repo alone, fetch has already been done
-      git-sku enter "${selectArgs[@]}"
+      git-sync -r --pull --clean
+      git-sku enter "${skuArgs[@]}"
     else
       # zou repo inside zou-dev bundle
       module_visit "$bundleRoot" _zou_update_bundle "${skuArgs[@]}"
     fi
     _zou_register_bundles
     _zou_prune_tags
+    ( _zou_setup_chicken )
+  else
+    # FAKE UPDATE
+    io_trace "[FAKE UPDATE] zou_update -- $(print_vars zouBinDir) PWD='$PWD'"
+    if [[ $zouOnly == true || "$bundleRoot" == "$PWD" ]]; then
+      io_trace "[FAKE UPDATE] git-sync -r --pull --clean"
+      io_trace "[FAKE UPDATE] git-sku enter ${skuArgs[*]@Q}"
+    else
+      # zou repo inside zou-dev bundle
+      module_visit "$bundleRoot" _zou_update_bundle_fake "${skuArgs[@]}"
+    fi
   fi
   _zou_update_epilog
 }
@@ -62,6 +76,13 @@ _zou_update_bundle()
 {
   git-sync -r --pull --clean
   git-sku enter "$@"
+}
+_zou_update_bundle_fake()
+{
+  io_lock_enter
+  io_trace_unsafe "[FAKE UPDATE] git-sync -r --pull --clean"
+  io_trace_unsafe "[FAKE UPDATE] git-sku enter ${*@Q}"
+  io_lock_exit
 }
 _zou_register_bundles()
 {
@@ -71,6 +92,24 @@ _zou_prune_tags()
 {
   [[ $noPruneTags == true ]] && return 0
   git-prunetags --global
+}
+_zou_setup_chicken()
+{
+  local develDir=$(realpath "$bundleRoot/..")
+  local chickenDir=$develDir/zou.chicken
+  # io_trace "_zou_setup_chicken -- $(print_vars chickenDir)"
+  if [ -d "$chickenDir" ]; then
+    cd "$chickenDir"
+    git sync
+  else
+    local tracePrefix="${Cyan}[zou.chicken]${NC}"
+    io_warning "Installing zou.chicken into ${VC}$chickenDir${Brown}" "$tracePrefix"
+    io_warning "This can take a while, please be patient..." "$tracePrefix"
+    cd "$develDir"
+    git clone 'https://git.epsitec.ch/Build/zou.chicken.git'
+    nuget sources remove -name chicken &>/dev/null
+    nuget sources add -name chicken -source "$(cygpath -w "$chickenDir")" &>/dev/null
+  fi
 }
 _zou_update_epilog()
 {

@@ -256,11 +256,19 @@ repo_list_deleted()    { git ls-files --deleted; }
 repo_list_uncommited() { git diff-index --cached --name-only -r --ignore-submodules HEAD --; }
 repo_list_unmerged()   { git diff --name-only --diff-filter=U --ignore-submodules | cut -f1; }
 repo_is_merging()      { git merge HEAD &>/dev/null && return 1 || return 0; }
-repo_is_clean()        { git diff-index --ignore-submodules --quiet HEAD --; } # no unstaged
 repo_is_all_clean()    { test -z "$(git status -s --porcelain)"; }  # neither unstaged nor untracked
 
 repo_is_bundle_root()  { [[ -d "${1:-.}/.git" ]]; }
 repo_is_module_root()  { [[ -f "${1:-.}/.git" ]]; }
+
+repo_is_clean()
+{
+  if ! git diff-index --quiet HEAD --; then
+    # io_trace "repo '$PWD' is not clean"
+    return 1
+  fi
+}
+repo_is_clean_ignore_submodules() { git diff-index --ignore-submodules --quiet HEAD --; } # no unstaged
 
 repo_has_submodules()
 {
@@ -296,7 +304,7 @@ repo_list_unstaged_clean_submodules()
     smroot="$mroot/$smpath"
     if repo_is_module_root "$smroot"; then
       cd "$smroot"
-      repo_is_clean && echo $smid
+      repo_is_clean && branch_is_ancestor_of_local_trackable && echo $smid
       cd "$opwd"
     fi
   done
@@ -315,9 +323,12 @@ repo_split_unstaged_submodules()
     smroot="$mroot/$smpath"
     if repo_is_module_root "$smroot"; then
       cd "$smroot"
-      repo_is_clean \
-      && unstagedCleanSubmodules+=( $smid ) \
-      || unstagedDirtySubmodules+=( $smid ) 
+      # io_trace "repo_split_unstaged_submodules - $(print_vars smroot)"
+      if repo_is_clean && branch_is_ancestor_of_local_trackable; then
+        unstagedCleanSubmodules+=( $smid )
+      else
+        unstagedDirtySubmodules+=( $smid )
+      fi
       cd "$opwd"
     fi
   done
@@ -362,56 +373,51 @@ repo_commit_submodule_enumerator()
 }
 repo_commit_submodules()
 {
-  # io_trace "repo_commit_submodules 1 -- ${*@Q}"
+  # io_trace "repo_commit_submodules -1- ${*@Q}"
   local mroot=$1; shift
   [ $# -eq 0 ] && return 0
   
   [[ -z $mroot ]] && mroot=$moduleRoot
   [[ -z $mroot ]] && { mroot=$(repo_module_root) || return 1; }
 
-  local opwd=$PWD cslist=$(string_join ', ' "$@")
-  cd "$mroot"
+  local opwd=$PWD sm
+  cd "$mroot" || io_trace_error "repo_commit_submodules: cd $mroot" || exit 1
   local branch=${moduleHead:-$(branch_current)}
-  # io_trace "repo_commit_submodules 2 -- $(print_vars branch cslist)"
-  git commit -m 'zou-flow: update submodules' -- "$@" >/dev/null \
-  && io_message "  Commited submodules '$cslist' on branch '$branch'" "$moduleTracePrefix" ${DarkGray}
+  # io_trace "repo_commit_submodules -2- $(print_vars branch cslist)"
+  if git commit -m 'zou-flow: update submodules' -- "$@" >/dev/null; then
+    for sm; do
+      io_message "  Commited submodules '$sm' on branch '$branch'" "$moduleTracePrefix" ${DarkGray}
+    done
+  fi
   repo_raise_submodule_changed_event "$@"
-  cd "$opwd"
+  cd "$opwd" || io_trace_error "repo_commit_submodules: cd $opwd" || exit 1
+  return 1
 }
 
+repo_sync_submodule()
+{
+  # io_trace "repo_sync_submodule ${*@Q}"
+  io_buffered_eval "git submodule sync \"$1\" 2>&1" _repo_submodule_selector ${DarkGray}
+}
 repo_update_submodule()
 {
-  # io_trace "repo_update_submodule ${*@Q}"
-  local smPaths=()
-  io_buffered_eval "git submodule update --init --recursive "$1" 2>&1" _repo_submodule_selector ${DarkGray}
+  # io_trace "@@@ repo_update_submodule ${*@Q} -1- PWD=$PWD"
+  local smPaths
+  smPaths=( $(io_buffered_eval "git submodule update --init \"$1\" 2>&1" _repo_submodule_selector ${DarkGray}) )
+  # io_trace "@@@ repo_update_submodule -2- $(print_vars smPaths[@]) PWD=$PWD"
   [ ${#smPaths[@]} -ne 0 ] && repo_raise_submodule_changed_event "${smPaths[@]}"
 }
 repo_discard_submodule()
 {
   # io_trace "repo_discard_submodule ${*@Q}"
-  local smPaths=()
-  io_eval "git submodule update --recursive "$1" 2>&1" _repo_submodule_selector ${DarkGray}
-  [ ${#smPaths[@]} -ne 0 ] && repo_raise_submodule_changed_event "${smPaths[@]}"
-}
-
-repo_update_submodules()
-{
-  [ ${#moduleSubmodulePaths[@]} -eq 0 ] && return 0
-  mio_info 'Updating submodules...'
-  local smPaths=()
-  io_buffered_eval "git submodule update --init --recursive 2>&1" _repo_submodule_selector ${DarkGray}
-  [ ${#smPaths[@]} -ne 0 ] && repo_raise_submodule_changed_event "${smPaths[@]}"
-}
-repo_discard_submodules()
-{
-  local sms smPaths=()
-  IFS=' ' sms=( "$@" ); IFS=$OIFS
-  io_eval "git submodule update --recursive -- ${sms[*]} 2>&1" _repo_submodule_selector ${DarkGray}
+  local smPaths
+  smPaths=( $(io_eval "git submodule update --recursive \"$1\" 2>&1" _repo_submodule_selector ${DarkGray}) )
+  # io_trace "repo_discard_submodule -- $(print_vars smPaths[@])"
   [ ${#smPaths[@]} -ne 0 ] && repo_raise_submodule_changed_event "${smPaths[@]}"
 }
 _repo_submodule_selector()
 {
-  [[ $line =~ ^Submodule\ path\ \'([^\']+)\' ]] && smPaths+=( "${BASH_REMATCH[1]}" )
+  [[ $line =~ ^Submodule[[:blank:]]+path[[:blank:]]+\'([^\']+)\' ]] && echo "${BASH_REMATCH[1]}" || :
 }
 
 repo_discard_internal_ignore_list()
@@ -433,12 +439,9 @@ repo_remove_dangling_submodules_async()
 }
 repo_check_submodule()
 {
+  # io_trace "repo_check_submodule ${*@Q} -- PWD=$PWD"
   [[ -f .git || -d .git ]] && return 0
-  cd "$startupRoot"
-  repo_update_submodule "$1"
-  cd "$1"
-  [[ -f .git || -d .git ]] && return 0
-  mio_error "Not a git submodule '$1'"
+  mio_error "Not a git submodule ${VC}$smPath"
   return 1
 }
 repo_prune_tags()
