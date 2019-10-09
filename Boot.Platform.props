@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Resolves missing properties when using 'dotnet msbuild' command. -->
+<Project InitialTargets="ZouCheckPlatform;TraceBootPlatform" 
+         TreatAsLocalProperty="RuntimeIdentifier;RuntimePlatform;Platform">
+
+  <PropertyGroup>
+    <RuntimePlatform Condition="'$(Platform)' == 'Win32' Or '$(Platform)' == 'x86' Or $(RuntimeIdentifier.EndsWith('x86'))">x86</RuntimePlatform>
+    <RuntimePlatform Condition="'$(RuntimePlatform)' == ''">x64</RuntimePlatform>
+
+    <Platform Condition="'$(Platform)' == '' And '$(RuntimePlatform)' == 'x86'">Win32</Platform>
+    <Platform Condition="'$(Platform)' == ''">x64</Platform>
+
+    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == '' And $([MSBuild]:: IsOsPlatform(Windows))">win-$(RuntimePlatform)</RuntimeIdentifier>
+    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == '' And $([MSBuild]:: IsOsPlatform(OSX))">osx-$(RuntimePlatform)</RuntimeIdentifier>
+    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == '' And $([MSBuild]:: IsOsPlatform(Linux))">linux-$(RuntimePlatform)</RuntimeIdentifier>
+  </PropertyGroup>
+  
+  <Target Name="ZouCheckPlatform" Condition="'$(Platform)' != '' And '$(RuntimePlatform)' != ''">
+    <PropertyGroup>
+      <ErrorMessage>"Platform ($(Platform)) and RuntimePlatform ($(RuntimePlatform)) are not compatibles"</ErrorMessage>
+    </PropertyGroup>
+    <Error Text="$(ErrorMessage)" Condition="('$(Platform)' == 'Win32' Or '$(Platform)' == 'x86') And '$(RuntimePlatform)' != 'x86'" />
+    <Error Text="$(ErrorMessage)" Condition="('$(Platform)' == '' Or '$(Platform)' == 'x64') And '$(RuntimePlatform)' != 'x64'" />
+  </Target>
+  
+  <Target Name="TraceBootPlatform" Condition="'$(ZouTrace)' == 'true'">
+    <Message Importance="high" Text="Platform          = $(Platform)" />
+    <Message Importance="high" Text="RuntimePlatform   = $(RuntimePlatform)" />
+    <Message Importance="high" Text="RuntimeIdentifier = $(RuntimeIdentifier)" />
+  </Target>
+
+</Project>
