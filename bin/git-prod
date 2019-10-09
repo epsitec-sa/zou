@@ -78,15 +78,14 @@ prod_command()
 
 _prod_on_preinit()
 {
-  prodCheckoutType=$checkoutType
-  # if module_is_bundle; then
-  #   # vlast does not apply to bundle
-  #   prodCheckoutType='vnext'
-  #   io_trace "_prod_on_preinit BUNDLE -- $(print_vars checkoutType prodCheckoutType prerelPrefix)"
-  # else
-  #   prodCheckoutType=$checkoutType
-  #   io_trace "_prod_on_preinit CHILD -- $(print_vars checkoutType prodCheckoutType prerelPrefix)"
-  # fi
+  if module_is_bundle; then
+    # vlast does not apply to bundle
+    prodCheckoutType='vnext'
+    # io_trace "_prod_on_preinit BUNDLE -- $(print_vars checkoutType prodCheckoutType prerelPrefix)"
+  else
+    prodCheckoutType=$checkoutType
+    # io_trace "_prod_on_preinit CHILD -- $(print_vars checkoutType prodCheckoutType prerelPrefix)"
+  fi
 }
 
 ###############
