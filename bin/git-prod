@@ -78,14 +78,15 @@ prod_command()
 
 _prod_on_preinit()
 {
-  if module_is_bundle; then
-    # vlast does not apply to bundle
-    prodCheckoutType='vnext'
-    io_trace "_prod_on_preinit BUNDLE -- $(print_vars checkoutType prodCheckoutType prerelPrefix)"
-  else
-    prodCheckoutType=$checkoutType
-    io_trace "_prod_on_preinit CHILD -- $(print_vars checkoutType prodCheckoutType prerelPrefix)"
-  fi
+  prodCheckoutType=$checkoutType
+  # if module_is_bundle; then
+  #   # vlast does not apply to bundle
+  #   prodCheckoutType='vnext'
+  #   io_trace "_prod_on_preinit BUNDLE -- $(print_vars checkoutType prodCheckoutType prerelPrefix)"
+  # else
+  #   prodCheckoutType=$checkoutType
+  #   io_trace "_prod_on_preinit CHILD -- $(print_vars checkoutType prodCheckoutType prerelPrefix)"
+  # fi
 }
 
 ###############
@@ -114,7 +115,7 @@ prod_release_root_scope()
     # dry run scope
     local rstatusParentGate rstatusLookupPath rstatusParentLookupPath principalReleaseStatus
 
-    io_trace "prod_release_root_scope -- $(print_vars forcePrincipalRelease checkoutType prodCheckoutType prodBranch moduleMergeIntoDev modulePrerelPrefix)"
+    # io_trace "prod_release_root_scope -- $(print_vars forcePrincipalRelease checkoutType prodCheckoutType prodBranch moduleMergeIntoDev modulePrerelPrefix)"
   fi
 
   # execute next russian doll
@@ -124,24 +125,24 @@ prod_release_scope()
 {
   local moduleMergeIntoDev=$mergeIntoDev modulePrerelPrefix=$prerelPrefix hasBeenReleased
 
-  io_trace "prod_release_scope -- $(print_vars checkoutType prodCheckoutType prodBranch moduleMergeIntoDev modulePrerelPrefix)"
+  # io_trace "prod_release_scope -- $(print_vars checkoutType prodCheckoutType prodBranch moduleMergeIntoDev modulePrerelPrefix)"
 
   if module_is_bundle; then
     # always merge prod into dev in bundle
     moduleMergeIntoDev=true
-    io_trace "_prod_on_preinit BUNDLE -- $(print_vars prodCheckoutType modulePrerelPrefix moduleMergeIntoDev)"
+    # io_trace "_prod_on_preinit BUNDLE -- $(print_vars prodCheckoutType modulePrerelPrefix moduleMergeIntoDev)"
   elif module_is_principal; then
     # vlast does not apply to principal module if force release is specified
     if [[ $forcePrincipalRelease == true ]]; then
       prodCheckoutType='vnext'
     fi
-    io_trace "_prod_on_preinit PRINCIPAL -- $(print_vars prodCheckoutType modulePrerelPrefix forcePrincipalRelease)"
+    # io_trace "_prod_on_preinit PRINCIPAL -- $(print_vars prodCheckoutType modulePrerelPrefix forcePrincipalRelease)"
   elif cmd_is_child; then
     # prerelease does not apply to child modules (excepting principal module)
     if [[ $prerelPrefix != 'rtm' ]]; then
       modulePrerelPrefix=''
     fi
-    io_trace "_prod_on_preinit CHILD -- $(print_vars prodCheckoutType modulePrerelPrefix)"
+    # io_trace "_prod_on_preinit CHILD -- $(print_vars prodCheckoutType modulePrerelPrefix)"
   fi
 
   # execute next russian doll
@@ -154,7 +155,6 @@ prod_release_scope()
 
 prod_release_prolog()
 {
-  io_trace "prod_release_prolog -- $(print_vars forcePrincipalRelease checkoutType prodCheckoutType prodBranch moduleMergeIntoDev modulePrerelPrefix)"
   # io_trace "prod_release_prolog -1- $(print_vars prodBranch)"
   case "$releaseStatus" in
     error|unreleasable)
