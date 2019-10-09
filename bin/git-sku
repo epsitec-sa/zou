@@ -5,6 +5,8 @@
 [[ -z $ZOUL_GIT_COSM ]]          && . zoul-git-cosm
 [[ -z $ZOUL_GIT_CONFIG_SKU ]]    && . zoul-git-config-sku
 
+prodPreinitEvent+=( _prod_on_preinit )
+
 sku_parse()
 {
   local args=()
@@ -96,11 +98,24 @@ sku_command()
   cmd_visit_modules
 }
 
+_prod_on_preinit()
+{
+  prodCheckoutType=$checkoutType
+  # if module_is_bundle; then
+  #   # vlast does not apply to bundle
+  #   [[ $checkoutType == 'vlast' ]] && prodCheckoutType='vnext'
+  #   # io_trace "_prod_on_preinit BUNDLE -- $(print_vars checkoutType prodCheckoutType)"
+  # else
+  #   prodCheckoutType=$checkoutType
+  #   # io_trace "_prod_on_preinit CHILD -- $(print_vars checkoutType prodCheckoutType)"
+  # fi
+}
+
 #######
 # ENTER
 #######
 
-sku_enter_prolog() { sku_checkout "$sku" "$checkoutType" true; }
+sku_enter_prolog() { sku_checkout "$sku" "$prodCheckoutType" true; }
 sku_enter_epilog() { branch_show_status; }
 
 ######
