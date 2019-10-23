@@ -192,6 +192,7 @@ bundle_scope()
 
   bundleId=$(repo_bundle_id)
   bundleRoot=$(repo_bundle_root)
+  bundleConfigFile="$bundleRoot/.zou-flow"
 
   cd "$bundleRoot"
   _bundle_set_head
@@ -431,13 +432,16 @@ _module_register_bundle()
 _module_set_principal_module_id()
 {
   # if the bundle branch name starts with 'sku/', use the following part as the principal module ID
-  # else use the bundle name without '-dev' suffix
+  # else use the bundle name without '-*' suffix
+
+  principalModuleId=$(git config --file "$bundleConfigFile" "sku.principalModuleId")
+  [ -d "$bundleRoot/$principalModuleId" ] && return 0
 
   if [[ $bundleDevBranch =~ ^sku/([^/]+) ]]; then
     principalModuleId=${BASH_REMATCH[1]}
     [ -d "$bundleRoot/$principalModuleId" ] && return 0
   fi
-  principalModuleId=${bundleUrlName%-dev}
+  principalModuleId=${bundleUrlName%-*}
   [ -d "$bundleRoot/$principalModuleId" ] && return 0
   principalModuleId=''
   return 1
