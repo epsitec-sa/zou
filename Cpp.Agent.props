@@ -1,4 +1,39 @@
-<?xml version="1.0" encoding="utf-8"?>
+<!--
+Summary
+
+# : import project
++ : define data
+
+# Cpp.Boot.props
+  # zou.props
+  # zou.Errors.props
+  # Cpp.PlatformToolset.props
+  # Cpp.PlatformVersion.props
+  # Cpp.CharacterSet.props
+  # Cpp.Configuration.props
+  # Boot.Core.props (if netcore)
+# Agent.props
+  + Standard C# project configurations
+  + Default targets (Build, Clean, PackFilter)
+  # Microsoft.Cpp.Default.props
+  + define as C++ utility project
+  # Microsoft.Cpp.props
+# Boot.Platform.props
+  + RuntimeIdentifier
+  + RuntimePlatform
+  + ForwardPlatform
+# Cpp.NTVersion.props
+# Com.WorkDir.props
+# Tmp.IntDir.props
+# Cpp.AsmDir.props
+# Cpp.PkgDir.props
+# Cpp.OutDir.props
+# Agent.targets (ImportMicrosoftCppTargets: true)
+  + TargetDir, OutputPath, IntermediateOutputPath if netcore
+  # Forward.props
+  # Microsoft.Cpp.targets
+
+-->
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
   <PropertyGroup>
@@ -7,7 +42,9 @@
 
   <Import Project="Cpp.Boot.props" Condition="'$(ZouVersion)' == ''"/>
   <Import Project="Agent.props" />
-  
+
+  <Import Project="Boot.Platform.props" Condition="'$(RuntimePlatform)' == ''" />
+
   <ImportGroup Label="PropertySheets">
     <Import Project="Cpp.NTVersion.props" />
     <Import Project="Com.WorkDir.props"/>
