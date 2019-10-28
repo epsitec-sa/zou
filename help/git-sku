@@ -1,6 +1,7 @@
 usage: git sku enter  [-a] [--(vlast|vnext|dev)] [<sku-spec>]
    or: git sku info   [-a] [-r]                 [-- <module-paths> ]
    or: git sku config [-a] [-r] [-i ..] [-x ..] [-- <module-paths> ]
+   or: git sku config -m PMID
 
 Select and manage SKUs.
 
@@ -22,7 +23,9 @@ enter:
 config:
     -i|--include [SM1,...]  include specific submodules (default to all) in current SKU
     -x|--exclude [SM1,...]  exclude specific submodules (default to all) from current SKU
-
+    -m|--pmid PMID          override principal module ID default
+                                default == fact   if SKU == fact/std (sku/fact/std/dev)
+                                default == cresus if SKU == master && bundle == cresus-*
 arguments:
     <sku-spec>              SKU specification
     <module-paths>          specific modules to visit (default to current module)
@@ -45,3 +48,4 @@ example:
     git sku config -i             # include all submodules in current SKU (default)
     git sku config -x             # exclude all submodules from current SKU
     git sku config -x sm1 sm2     # exclude submodules sm1 and sm2 from current SKU
+    git sku config -m sm2         # override principal module ID default

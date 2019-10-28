@@ -23,6 +23,7 @@ sku_parse()
     config)         subcommand=$1;;
     -i|--include)   [[ $configMode == 'configExclude' ]] && { io_error 'options conflict'; exit 1; } || configMode='configInclude';;
     -x|--exclude)   [[ $configMode == 'configInclude' ]] && { io_error 'options conflict'; exit 1; } || configMode='configExclude';;
+    -m|--pmid)      shift; configPrincipalModuleId=$1;;
     --)             shift; break;;
     -*) io_error "unknown option '$1'"; return 1;;
     *)
@@ -51,7 +52,7 @@ sku_run()
   # parse command line
   local jobsCount recursive=false command='sku' subcommand \
         cmdScopes=( prod_scope config_scope cosm_scope ) \
-        configMode='status' configInclude=() configExclude=() \
+        configMode='status' configInclude=() configExclude=() configPrincipalModuleId \
         noSkuFilter skuSpec skuModulePaths=() \
         checkoutType='vlast'
 
@@ -174,6 +175,16 @@ sku_config_prolog()
     configInclude) [ ${#configInclude[@]} -eq 0 ] && config_sku_include_all;;
     configExclude) [ ${#configExclude[@]} -eq 0 ] && config_sku_exclude_all;;
   esac
+
+  if [[ -n $configPrincipalModuleId ]]; then
+    if [ -d "$bundleRoot/$configPrincipalModuleId" ]; then
+      config_sku_set_principal_module_id "$configPrincipalModuleId"
+      principalModuleId="$configPrincipalModuleId"
+    else
+      io_error "module not found: '$configPrincipalModuleId'"
+      exit 1
+    fi
+  fi
 
   config_sku_status
 }

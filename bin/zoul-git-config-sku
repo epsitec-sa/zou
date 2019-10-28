@@ -94,9 +94,26 @@ config_sku_list_included()
   [[ -n $2 ]] && skuExclude=( "${!2}" ) || skuExclude=( $(config_sku_list_excluded) )
   array_remove_array submodules[@] skuExclude[@]
 }
+config_sku_set_principal_module_id()
+{
+  local pid=$1
+  git config --file "$bundleConfigFile" "sku.principalModuleId" "$pid" >/dev/null
+
+  git update-index --add -- "$bundleConfigFile" &>/dev/null \
+  && git commit -m "zou-flow: modify principal module to '$pid'" -- "$bundleConfigFile" &>/dev/null
+}
+config_sku_get_principal_module_id()
+{
+  git config --file "$bundleConfigFile" "sku.principalModuleId"
+}
 config_sku_status()
 {
   io_lock_enter
+  if [[ -n "$principalModuleId" ]]; then
+    io_message_unsafe "principal module = $principalModuleId" "$moduleTracePrefix" ${White}
+  else
+    io_warning_unsafe "no principal module ${Cyan}(use ${VC}git sku config -m PMID${Cyan} to define one)" "$moduleTracePrefix"
+ fi
   for path in $(config_sku_list_included | sort); do
     io_success_unsafe "  $path" "$moduleTracePrefix"
   done
