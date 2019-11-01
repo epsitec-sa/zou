@@ -36,12 +36,14 @@ branch_merge()
     *)  toMergeAlias=$1;;
   esac; shift; done
   toMergeAlias=${toMergeAlias:-$toMerge}
+  # io_trace "branch_merge -1- -- $(print_vars toMerge intoBranch toMergeAlias mergeOpts[@])"
 
   _branch_merge_ff || ec=$?
   case $ec in
     0|128) return $ec;;
     *) ec=0;;
   esac
+  # io_trace "branch_merge -2- -- $(print_vars toMerge intoBranch toMergeAlias needCheckout mergeOpts[@])"
 
   local message="zou-flow: merge '$toMergeAlias' into '$intoBranch'"
 
@@ -50,6 +52,7 @@ branch_merge()
     git checkout - &>/dev/null
   else
     _branch_merge "$message" "$toMerge" "${mergeOpts[@]}" || ec=$?
+    # io_trace "branch_merge -4- -- $(print_vars toMerge intoBranch toMergeAlias needCheckout mergeOpts[@] ec)"
   fi
   if [ $ec -eq 0 ]; then
     mio_success "Merged ${VC}$toMergeAlias${Green} into ${VC}$intoBranchName${Green}"
