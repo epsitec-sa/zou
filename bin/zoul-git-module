@@ -435,7 +435,7 @@ _module_set_principal_module_id()
   # else use the bundle name without '-*' suffix
 
   principalModuleId=$(git config --file "$bundleConfigFile" "sku.principalModuleId")
-  [ -d "$bundleRoot/$principalModuleId" ] && return 0
+  [ -n "$principalModuleId" ] && [ -d "$bundleRoot/$principalModuleId" ] && return 0
 
   if [[ $bundleDevBranch =~ ^sku/([^/]+) ]]; then
     principalModuleId=${BASH_REMATCH[1]}
