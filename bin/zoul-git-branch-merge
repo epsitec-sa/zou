@@ -46,13 +46,24 @@ branch_merge()
   # io_trace "branch_merge -2- -- $(print_vars toMerge intoBranch toMergeAlias needCheckout mergeOpts[@])"
 
   local message="zou-flow: merge '$toMergeAlias' into '$intoBranch'"
-
   if [[ $needCheckout == true ]] && git checkout $intoBranchName &>/dev/null; then
+    # io_trace "branch_merge -3- -- $(print_vars toMerge intoBranch toMergeAlias needCheckout mergeOpts[@])"
     _branch_merge "$message" "$toMerge" "${mergeOpts[@]}" || ec=$?
+    if [ $ec -ne 0 ] && repo_is_merging; then
+
+      mio_error "Merging ${VC}$toMergeAlias${Red} into ${VC}$intoBranch${Red} will cause merge conflicts."
+      branch_show_status '  '
+      io_lock_enter
+      mio_message_unsafe "You have to merge these branches manually." ${Cyan}
+      mio_message_unsafe "  Your merge tool is probably not configured." ${DarkGray}
+      mio_message_unsafe "  See 'git mergetool --tool-help' or 'git help config' for more details." ${DarkGray}
+      io_lock_exit
+      branch_merge_abort
+    fi
     git checkout - &>/dev/null
   else
-    _branch_merge "$message" "$toMerge" "${mergeOpts[@]}" || ec=$?
     # io_trace "branch_merge -4- -- $(print_vars toMerge intoBranch toMergeAlias needCheckout mergeOpts[@] ec)"
+    _branch_merge "$message" "$toMerge" "${mergeOpts[@]}" || ec=$?
   fi
   if [ $ec -eq 0 ]; then
     mio_success "Merged ${VC}$toMergeAlias${Green} into ${VC}$intoBranchName${Green}"
@@ -129,11 +140,7 @@ _branch_merge_ff()
   [[ $hashToMerge == $hashMergeBase ]] && return 0
 
   if [[ "$(git symbolic-ref HEAD 2>/dev/null)" == "$intoRef" ]]; then
-    if git merge --ff-only "$toMerge" &>/dev/null; then
-      mio_success "Merged ${VC}$toMergeAlias${Green} into ${VC}$intoBranchName${Green} (fast-forward)"
-    else
-      return 1
-    fi
+    _branch_merge_ff_only || return 1
   else
     needCheckout=true
     if [[ $hashMergeBase != "$hashMergeInto" ]]; then
@@ -146,6 +153,14 @@ _branch_merge_ff()
     fi
   fi
   # io_trace "_branch_merge_ff -- $(print_vars toMerge intoBranch ref)" ${Green}
+}
+_branch_merge_ff_only()
+{
+  if git merge --ff-only "$toMerge" &>/dev/null; then
+    mio_success "Merged ${VC}$toMergeAlias${Green} into ${VC}$intoBranchName${Green} (fast-forward)"
+  else
+    return 1
+  fi
 }
 _branch_merge()
 {
@@ -160,14 +175,14 @@ _branch_merge()
   if _branch_merge_resolve_submodule_conflicts; then
     git commit -m "$message" >/dev/null
   elif ! _branch_merge_interactive; then
-    git diff
+    # git diff
     return 1
   fi
 }
 _branch_merge_interactive()
 {
   local ec=0
-  _branch_merge_tool && git commit --no-edit >/dev/null || ec=$?
+  _branch_merge_tool &>/dev/null && git commit --no-edit &>/dev/null || ec=$?
   _branch_remove_temp_merge_files
   return $ec
 }

@@ -523,11 +523,10 @@ _branch_checkout_selector()
 }
 branch_show_status()
 {
-  io_buffered_eval 'git status -s --porcelain | sort' _branch_show_status_line_selector ${Gray}
+  io_buffered_eval 'git status -s --porcelain | sort' _branch_show_status_line_selector ${Gray} "$1"
 }
 _branch_show_status_line_selector()
 {
-  indent=''
   if [[ $line =~ ^([[:blank:]]*[A-Z\?]+[[:blank:]]+)(.+)$ ]]; then
     line=${Red}${BASH_REMATCH[1]}${Gray}${BASH_REMATCH[2]}
   fi
