@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Resolves missing properties when using 'dotnet msbuild' command. -->
+<Project InitialTargets="TraceBootPlatform;ZouCheckPlatform" 
+         TreatAsLocalProperty="RuntimeIdentifier;RuntimePlatform;Platform">
+
+  <Choose>
+    <When Condition="'$(RuntimeIdentifier)' == ''">
+      <PropertyGroup>
+        <RuntimePlatform Condition="'$(Platform)' == 'Win32' Or '$(Platform)' == 'x86' Or $(RuntimeIdentifier.EndsWith('x86'))">x86</RuntimePlatform>
+        <RuntimePlatform Condition="'$(RuntimePlatform)' == ''">x64</RuntimePlatform>
+
+        <ForwardPlatform Condition="'$(ForwardPlatform)' == '' And '$(RuntimePlatform)' == 'x86'">Win32</ForwardPlatform>
+        <ForwardPlatform Condition="'$(ForwardPlatform)' == ''">x64</ForwardPlatform>
+
+        <RuntimeIdentifier Condition="$([MSBuild]:: IsOsPlatform(Windows))">win-$(RuntimePlatform)</RuntimeIdentifier>
+        <RuntimeIdentifier Condition="$([MSBuild]:: IsOsPlatform(OSX))">osx-$(RuntimePlatform)</RuntimeIdentifier>
+        <RuntimeIdentifier Condition="$([MSBuild]:: IsOsPlatform(Linux))">linux-$(RuntimePlatform)</RuntimeIdentifier>
+      </PropertyGroup>
+    </When>
+    <When Condition="$(RuntimeIdentifier.EndsWith('x86'))">
+      <PropertyGroup>
+        <ForwardPlatform>x86</ForwardPlatform>
+        <RuntimePlatform>x86</RuntimePlatform>
+      </PropertyGroup>
+    </When>
+    <Otherwise>
+      <PropertyGroup>
+        <ForwardPlatform>x64</ForwardPlatform>
+        <RuntimePlatform>x64</RuntimePlatform>
+      </PropertyGroup>
+    </Otherwise>
+  </Choose>
+  
+  <Target Name="ZouCheckPlatform" Condition="'$(ForwardPlatform)' != '' And '$(RuntimePlatform)' != ''">
+    <PropertyGroup>
+      <ErrorMessage>"Platform ($(ForwardPlatform)) and RuntimePlatform ($(RuntimePlatform)) are not compatibles"</ErrorMessage>
+    </PropertyGroup>
+    <Error Text="$(ErrorMessage)" Condition="('$(ForwardPlatform)' == 'Win32' Or '$(ForwardPlatform)' == 'x86') And '$(RuntimePlatform)' != 'x86'" />
+    <Error Text="$(ErrorMessage)" Condition="('$(ForwardPlatform)' == '' Or '$(ForwardPlatform)' == 'x64') And '$(RuntimePlatform)' != 'x64'" />
+  </Target>
+  
+  <Target Name="TraceBootPlatform" Condition="'$(ZouTraceProps)' == 'true'">
+    <Message Importance="high" Text="Platform          = $(Platform)" />
+    <Message Importance="high" Text="PlatformSpecified = $(PlatformSpecified)" />
+    <Message Importance="high" Text="ForwardPlatform   = $(ForwardPlatform)" />
+    <Message Importance="high" Text="RuntimePlatform   = $(RuntimePlatform)" />
+    <Message Importance="high" Text="RuntimeIdentifier = $(RuntimeIdentifier)" />
+  </Target>
+
+</Project>

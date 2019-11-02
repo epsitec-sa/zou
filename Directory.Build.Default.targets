@@ -1,5 +1,5 @@
 <!-- Defines the default metadata for VS2017 .NET projects (epilog) -->
-<Project>
+<Project  InitialTargets="TraceDirectoryBuildDefaultTargets">
   <PropertyGroup>
     <!-- Package default properties -->
     <FirstCopyrightYear Condition="'$(FirstCopyrightYear)' == ''"></FirstCopyrightYear>
@@ -29,6 +29,12 @@
     <NoWarn>$(NoWarn);8632</NoWarn>
 
   </PropertyGroup>
+
+  <!-- TargetFrameworks -->
+  <!-- Do not set TargetFrameworks when running inside Visual Studio -->
+  <PropertyGroup Condition="'$(TargetFrameworks)' == '' And '$(BuildingInsideVisualStudio)' == ''">
+    <TargetFrameworks Condition="'$(TargetFrameworks)' == ''">net472;netcoreapp3.0;netstandard2.0;netstandard2.1</TargetFrameworks>
+  </PropertyGroup>
   
   <!-- Exclude git metadata from project -->
   <ItemGroup>
@@ -46,5 +52,12 @@
         <_Parameter1>$(MSBuildProjectName).Tests</_Parameter1>
       </AssemblyAttribute>
     </ItemGroup>
+  </Target>
+
+  <Target Name="TraceDirectoryBuildDefaultTargets" Condition="'$(ZouTrace)' == 'true'">
+    <Message Importance="high" Text=" TargetFramework           = $(TargetFramework)" />
+    <Message Importance="high" Text=" TargetFrameworks          = $(TargetFrameworks)" />
+    <Message Importance="high" Text=" TargetFrameworkIdentifier = $(TargetFrameworkIdentifier)" />
+    <Message Importance="high" Text=" TargetFrameworkVersion    = $(TargetFrameworkVersion)" />
   </Target>
 </Project>

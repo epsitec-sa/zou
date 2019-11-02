@@ -305,8 +305,8 @@ sku_checkout()
 
   case $prodCheckoutType in
     vlast)  prod_checkout 'vlast' "$forceCheckout" "$lbranch" || ec=$?;;
-    vnext)  prod_checkout 'vnext'  "$forceCheckout" "$lbranch" || ec=$?;;
-    dev)    dev_checkout        "$forceCheckout" "$lbranch" || ec=$?;;
+    vnext)  prod_checkout 'vnext' "$forceCheckout" "$lbranch" || ec=$?;;
+    dev)    dev_checkout          "$forceCheckout" "$lbranch" || ec=$?;;
   esac
 
   return $ec
@@ -351,7 +351,7 @@ prod_checkout()
 dev_checkout()
 {
   # io_trace "dev_checkout -- ${*@Q}"
-  local forceCheckout=$1 devBranch=$2
+  local forceCheckout=$1 devBranch=$2 strict=${3:true}
   if [[ -z $devBranch ]]; then
     if module_is_bundle; then
       devBranch=$bundleDevBranch
@@ -362,7 +362,9 @@ dev_checkout()
       # io_trace "dev_checkout 1 -- $(print_vars bundleDevBranch branch lbranch devBranch)"
     fi
   fi
-  devBranch=$(wip_to_ref $devBranch)
+  if [[ $strict == true ]]; then
+    devBranch=$(wip_to_ref $devBranch)
+  fi
   # io_trace "dev_checkout 2 -- $(print_vars bundleDevBranch branch lbranch devBranch)"
   branch_checkout "$devBranch" "$forceCheckout"
 }
@@ -440,12 +442,12 @@ _prod_ensure_bundle_vbranch_core()
 
 prod_fix_release_status()
 {
-  local prerelPrefix=$1 forceRelease=$2 vlast=$3
-  # io_trace "prod_fix_release_status 1 -- $(print_vars forceRelease prerelPrefix releasePrerelPrefix releaseStatus)"
+  local prerelPrefix=$1 forceRelease=$2 checkoutType=$3
+  # io_trace "prod_fix_release_status 1 -- $(print_vars prerelPrefix forceRelease checkoutType releasePrerelPrefix releaseStatus)"
   _prod_should_release "$@" && releaseStatus='unreleased'
-  [[ $vlast == true && $releaseStatus == 'unreleased' && $vtagStatus == 'vtag' && $forceRelease != true ]] && releaseStatus='released'
+  [[ $checkoutType == 'vlast' && $releaseStatus == 'unreleased' && $vtagStatus == 'vtag' && $forceRelease != true ]] && releaseStatus='released'
 
-  # io_trace "prod_fix_release_status 2 -- $(print_vars forceRelease prerelPrefix releasePrerelPrefix releaseStatus)"
+  # io_trace "prod_fix_release_status 2 -- $(print_vars prerelPrefix forceRelease checkoutType releasePrerelPrefix releaseStatus)"
 }
 _prod_should_release()
 {
@@ -471,7 +473,7 @@ prod_increment_release_version()
 {
   local prerelPrefix=$1 noIncrement ec=0
   # get principal module version
-  _prod_refresh_bundle_htag || ec=$?  # -> prodHTag and noIncrement
+  _prod_refresh_bundle_htag || ec=$?  # -> prodHTag noIncrement
   _prod_increment_release_version "$prerelPrefix" "$noIncrement" # -> releaseVTag releasePrerelPrefix
 
   # io_lock_enter
@@ -513,7 +515,7 @@ _prod_commit_release_core()
 _prod_refresh_bundle_htag()
 {
   [[ -n $principalModuleId ]] && module_is_bundle  || return 0
-  # io_trace "_prod_refresh_bundle_htag 1 -- $(print_vars principalModuleId prodHTag noIncrement)"
+  # io_trace "_prod_refresh_bundle_htag 1 -- $(print_vars principalModuleId prodHTag releaseStatus noIncrement)"
 
   local pinfo pstatus ptag pver hver htag \
         principalScopes=( prod_scope ) ec=0
@@ -525,7 +527,7 @@ _prod_refresh_bundle_htag()
 
   pver=${ptag##*/}
   hver=${prodHTag##*/}
-  # io_trace "_prod_refresh_bundle_htag 2 -- $(print_vars principalModuleId ptag pstatus prodHTag pinfo pstatus ptag hver pver)"
+  # io_trace "_prod_refresh_bundle_htag 2 -- $(print_vars principalModuleId prodHTag releaseStatus ptag pstatus bver pver)"
   if [[ $pstatus == 'released' && $hver == $pver ]]; then
     ec=127
   else
@@ -537,7 +539,7 @@ _prod_refresh_bundle_htag()
   htag=${BASH_REMATCH[0]}$hver
   [[ $htag == $prodHTag ]] && noIncrement=''
   prodHTag=$htag
-  # io_trace "_prod_refresh_bundle_htag 2 -- $(print_vars principalModuleId ptag pstatus prodHTag noIncrement)"
+  # io_trace "_prod_refresh_bundle_htag 3 -- $(print_vars principalModuleId prodHTag releaseStatus ptag pstatus noIncrement ec)"
   return $ec
 }
 # run in principal module context

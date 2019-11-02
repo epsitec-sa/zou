@@ -115,6 +115,10 @@ branch_is_ancestor_of_local_trackable()
 {
   branch_is_ancestor_of "$1" $(branch_list_local_trackable)
 }
+branch_is_ancestor_of_local()
+{
+  branch_is_ancestor_of "$1" $(branch_list_local)
+}
 branch_is_ancestor_of()
 {
   local ref=${1:-HEAD} branch ec; shift
@@ -519,11 +523,10 @@ _branch_checkout_selector()
 }
 branch_show_status()
 {
-  io_buffered_eval 'git status -s --porcelain | sort' _branch_show_status_line_selector ${Gray}
+  io_buffered_eval 'git status -s --porcelain | sort' _branch_show_status_line_selector ${Gray} "$1"
 }
 _branch_show_status_line_selector()
 {
-  indent=''
   if [[ $line =~ ^([[:blank:]]*[A-Z\?]+[[:blank:]]+)(.+)$ ]]; then
     line=${Red}${BASH_REMATCH[1]}${Gray}${BASH_REMATCH[2]}
   fi

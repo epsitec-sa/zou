@@ -87,7 +87,7 @@ _sync_commit()
 {
   local r=$1 l=$2 i=$3 commitAction
   # io_trace ">>> _sync_commit ${*@Q} -- $(print_vars r l i syncSubmodules) PWD=$PWD"
-  if [[ $i =~ (\=|\>)$ ]]; then
+  if [[ $i == '' || $i =~ (\=|\>)$ ]]; then
     if [[ $syncSubmodules == true ]]; then
       commitAction='cosm_commit_unstaged_clean_submodules'
     else

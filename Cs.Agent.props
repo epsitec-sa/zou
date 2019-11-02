@@ -1,6 +1,36 @@
-<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<!--
+Summary
 
+# : import project
++ : define data
+
+# Cs.Boot.props
+  # zou.props
+  # zou.Errors.props
+  # Cs.PlatformToolset.props
+  # Boot.Core.props (if netcore)
+# Agent.props
+  + Standard C# project configurations
+  + Default targets (Build, Clean, PackFilter)
+  # Microsoft.Cpp.Default.props
+  + define as C++ utility project
+  # Microsoft.Cpp.props
++ Force Platform to 'Any CPU' if netcore
++ Force ForwardPlatform to 'Any CPU' if Platform is 'Win32'
+# Boot.Platform.props
+  + RuntimeIdentifier
+  + RuntimePlatform
+  + ForwardPlatform
+# Com.WorkDir.props
+# Tmp.IntDir.props
+# Cs.PkgDir.props
+# Cs.OutDir.props
+# Agent.targets (ImportMicrosoftCppTargets: false)
+  + TargetDir, OutputPath, IntermediateOutputPath if netcore
+  # Forward.props
+  # Microsoft.Cpp.targets
+-->
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <_PropertySheetDisplayName>[zou] C# Agent</_PropertySheetDisplayName>
   </PropertyGroup>
@@ -8,12 +38,19 @@
   <Import Project="Cs.Boot.props" Condition="'$(ZouVersion)' == ''"/>
   <Import Project="Agent.props" />
 
+  <PropertyGroup Condition="'$(MSBuildRuntimeType)' == 'Core'">
+    <Platform Condition="'$(Platform)' == ''">Any CPU</Platform>
+  </PropertyGroup>
+  
   <PropertyGroup>
     <!-- A C# agent builds external projects/solutions into a C# container (uses the C# standard settings for platform, output path, ...) -->
     <!-- Normally, external components are C# based, because C++ components should be imported via interop build action (cf Cs.Interop.targets) -->
     <!-- The C# agent being a C++ utility project, we need to map its mandatory 'Win32' platform to 'Any CPU' for the external C# components -->
     <ForwardPlatform Condition="'$(Platform)' == 'Win32'">Any CPU</ForwardPlatform>
   </PropertyGroup>
+
+
+  <Import Project="Boot.Platform.props" Condition="'$(RuntimePlatform)' == ''" />
 
   <ImportGroup Label="PropertySheets">
     <Import Project="Com.WorkDir.props" />

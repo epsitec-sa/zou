@@ -3,7 +3,7 @@ The Agent.props & .targets are used to create a minimal zou agent.
 with standard configurations (Debug, Release) and platforms (Win32, x64 and Any CPU).
 Example: see Templates\Cs.Component.Pack.vcxproj
 -->
-<Project>
+<Project InitialTargets="TraceAgent">
   
   <!-- Standard C# project configurations -->
   <ItemGroup Label="ProjectConfigurations">
@@ -49,4 +49,8 @@ Example: see Templates\Cs.Component.Pack.vcxproj
   <!-- C++ utility properties -->
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" Condition="Exists('$(VCTargetsPath)\Microsoft.Cpp.props')"/>
 
+  <Target Name="TraceAgent" Condition="'$(ZouTraceProps)' == 'true'">
+    <Message Importance="high" Text="Configuration = $(Configuration)" />
+    <Message Importance="high" Text="Platform      = $(Platform)" />
+  </Target>
 </Project>
