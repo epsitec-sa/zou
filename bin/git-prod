@@ -21,6 +21,7 @@ prod_parse()
     --vnext)        checkoutType='vnext';;
     --vlast)        checkoutType='vlast';;
     --vtable)       vtable=true;;
+    --force)        forcePrincipalRelease=true;;
     --reuse)        prerelPrefix='reuse';;
     --alpha)        prerelPrefix='alpha';;
     --beta)         prerelPrefix='beta';;
@@ -45,7 +46,7 @@ prod_run()
         cmdScopes=( prod_scope config_scope cosm_scope ) \
         commitSubmodules=true mergeIntoDev \
         vtable prerelPrefix dryRun prodModulePaths=() \
-        checkoutType='vnext'
+        checkoutType='vnext' forcePrincipalRelease
 
   prod_parse "$@" || return $?
   prod_startup_message
@@ -105,7 +106,7 @@ prod_release_root_scope()
   if [[ $prodReleaseRootScopeInitialized != true ]]; then
 
     # io_trace "prod_release_root_scope ${*@Q}"
-    local prodReleaseRootScopeInitialized=true forcePrincipalRelease
+    local prodReleaseRootScopeInitialized=true
 
     # version table scope
     local vtableCreate vtableGate vtableLookupPath vtableRoot

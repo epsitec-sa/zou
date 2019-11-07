@@ -348,6 +348,7 @@ repo_list_untracked()
 }
 repo_list_unstaged()
 {
+  local path
   for path in $(git diff-files --name-only -r --ignore-submodules); do
     if [[ -f $path ]]; then
       # skip internal ignore list
@@ -355,7 +356,6 @@ repo_list_unstaged()
     fi
   done
 }
-
 repo_list_dangling_submodules()
 {
   local path
@@ -419,10 +419,16 @@ _repo_submodule_selector()
 {
   [[ $line =~ ^Submodule[[:blank:]]+path[[:blank:]]+\'([^\']+)\' ]] && echo "${BASH_REMATCH[1]}" || :
 }
-
 repo_discard_internal_ignore_list()
 {
-  git checkout -- "${internalIgnoreList[@]}" &>/dev/null
+  local discarded=0 path
+  for path in $(git diff-files --name-only -r --ignore-submodules); do
+    if [[ -f $path ]] && array_contains_element "$path" "${internalIgnoreList[@]}"; then
+      git checkout -- "$path"
+      (( discarded += 1 ))
+    fi
+  done
+  return $discarded
 }
 repo_remove_dangling_submodule()
 {

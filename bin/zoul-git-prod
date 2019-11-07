@@ -473,7 +473,7 @@ prod_increment_release_version()
 {
   local prerelPrefix=$1 noIncrement ec=0
   # get principal module version
-  _prod_refresh_bundle_htag || ec=$?  # -> prodHTag and noIncrement
+  _prod_refresh_bundle_htag || ec=$?  # -> prodHTag noIncrement
   _prod_increment_release_version "$prerelPrefix" "$noIncrement" # -> releaseVTag releasePrerelPrefix
 
   # io_lock_enter
@@ -515,7 +515,7 @@ _prod_commit_release_core()
 _prod_refresh_bundle_htag()
 {
   [[ -n $principalModuleId ]] && module_is_bundle  || return 0
-  # io_trace "_prod_refresh_bundle_htag 1 -- $(print_vars principalModuleId prodHTag noIncrement)"
+  # io_trace "_prod_refresh_bundle_htag 1 -- $(print_vars principalModuleId prodHTag releaseStatus noIncrement)"
 
   local pinfo pstatus ptag pver hver htag \
         principalScopes=( prod_scope ) ec=0
@@ -527,7 +527,7 @@ _prod_refresh_bundle_htag()
 
   pver=${ptag##*/}
   hver=${prodHTag##*/}
-  # io_trace "_prod_refresh_bundle_htag 2 -- $(print_vars principalModuleId ptag pstatus prodHTag pinfo pstatus ptag hver pver)"
+  # io_trace "_prod_refresh_bundle_htag 2 -- $(print_vars principalModuleId prodHTag releaseStatus ptag pstatus bver pver)"
   if [[ $pstatus == 'released' && $hver == $pver ]]; then
     ec=127
   else
@@ -539,7 +539,7 @@ _prod_refresh_bundle_htag()
   htag=${BASH_REMATCH[0]}$hver
   [[ $htag == $prodHTag ]] && noIncrement=''
   prodHTag=$htag
-  # io_trace "_prod_refresh_bundle_htag 2 -- $(print_vars principalModuleId ptag pstatus prodHTag noIncrement)"
+  # io_trace "_prod_refresh_bundle_htag 3 -- $(print_vars principalModuleId prodHTag releaseStatus ptag pstatus noIncrement ec)"
   return $ec
 }
 # run in principal module context

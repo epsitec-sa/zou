@@ -36,12 +36,13 @@ _branch_sync_push()
 _branch_sync_merge()
 {
   local r=$1 l=$2
-  branch_merge "$r" "$l" &>/dev/null
+  repo_discard_internal_ignore_list
+  branch_merge "$r" "$l"
 }
 _branch_sync_sync()
 {
   local r=$1 l=$2
-  branch_merge "$r" "$l" &>/dev/null && \
+  _branch_sync_merge "$r" "$l" && \
   _branch_sync_push "$r" "$l"
 }
 # scope:
@@ -168,11 +169,7 @@ branch_sync_all()
   git fetch --prune --all &>/dev/null
   git fetch --tags --force &>/dev/null
 
-  branch_merge_abort
-  repo_require_clean_work_tree 'Cannot synchronize' || return 1
-
   _branch_sync_fix_tracking "$deleteBrokenTrackingInfoBranches"
-
   _branch_sync_visit _branch_sync_visitor "$@"
 }
 branch_oreset_all()
