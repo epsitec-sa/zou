@@ -283,7 +283,7 @@ _prod_init_release_status()
     # never released on this vbranch
     releaseStatus='unreleased'
   else
-    mio_error "_prod_init_release_status: status '$status' not implemented"
+    [[ -n "$status" ]] && mio_error "_prod_init_release_status: status '$status' not implemented"
     return 1
   fi
   # io_trace "_prod_init_release_status -> $(print_vars releaseStatus)"
