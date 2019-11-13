@@ -3,7 +3,7 @@
 
   <PropertyGroup>
     <PackagesConfigFile Condition="'$(PackagesConfigFile)' == ''">packages.config</PackagesConfigFile>
-    <VldIniPath>$(SolutionOrProjectDir)vld.ini</VldIniPath>
+    <VldIniPath>$(ProjectDir)vld.ini</VldIniPath>
 
     <_VldTemplateDir>$(ZouDir).Templates\nuget\</_VldTemplateDir>
     <_VldTemplatePathPrefix>$(_VldTemplateDir)Cpp.Vld</_VldTemplatePathPrefix>
@@ -28,9 +28,10 @@
   </PropertyGroup>
   
   <!-- Update vld.ini -->
-  <ItemGroup Condition="'$(VLDImport)' == 'true'">
+  <!--<ItemGroup Condition="'$(VLDImport)' == 'true'">
     <ImportFile Include="$(VldIniPath)" />
-  </ItemGroup>
+  </ItemGroup>-->
+
 
   <!-- Import binaries -->
   <PropertyGroup>
@@ -39,7 +40,10 @@
     <VldLibDir>$(NugetPackagesDir)VisualLeakDetector.$(VldVersion)\lib\native\address-model-$(NumericPlatform)\lib\</VldLibDir>
   </PropertyGroup>
   <ItemGroup Condition="'$(VLDImport)' == 'true'">
-    <ImportFile Include="$(VldLibDir)*.*">
+    <ImportFile Include="$(VldLibDir)*.dll">
+      <ImportDir>$(OutDir)</ImportDir>
+    </ImportFile>
+    <ImportFile Include="$(VldLibDir)*.manifest">
       <ImportDir>$(OutDir)</ImportDir>
     </ImportFile>
   </ItemGroup>
@@ -63,9 +67,17 @@
   <Target Name="_VldUpdateExistingPackagesConfig"
           DependsOnTargets="_VldCreateVldOnlyPackagesConfig"
           Condition="'$(_PackagesConfigExists)' == 'true'" >
+    <!-- Update package name -->
+    <FileUpdate Files="$(PackagesConfigFile)"
+                Regex='^(?&lt;A&gt;\s*&lt;package\s+id=")VisualLeakDetector(?&lt;Z&gt;"[^\r\n]+)'
+                ReplacementText="${A}epsitec-vld${Z}"
+                Multiline="true"
+                IgnoreCase="true">
+      <Output TaskParameter="Changed" PropertyName="_VldNameChanged" />
+    </FileUpdate>
     <!-- Update version -->
     <FileUpdate Files="$(PackagesConfigFile)"
-                Regex='^(?&lt;A&gt;\s*&lt;package\s+id="VisualLeakDetector"\s+version=")\S+(?&lt;Z&gt;"[^\r\n]+)'
+                Regex='^(?&lt;A&gt;\s*&lt;package\s+id="epsitec-vld"\s+version=")\S+(?&lt;Z&gt;"[^\r\n]+)'
                 ReplacementText="${A}$(VldVersion)${Z}"
                 Multiline="true"
                 IgnoreCase="true">
@@ -90,7 +102,7 @@
     <Copy Condition="'$(_PackagesConfigExists)' != 'true'" SourceFiles="$(_VldOnlyPackagesConfigFile)" DestinationFiles="$(PackagesConfigFile)" />
 
     <PropertyGroup>
-      <_PackagesConfigChanged Condition="'$(_PackagesConfigExists)' != 'true' Or'$(_VldVersionChanged)' == 'true' Or '$(_VldToolsetChanged)' == 'true' Or '$(_VldMergeChanged)' == 'true'">true</_PackagesConfigChanged>
+      <_PackagesConfigChanged Condition="'$(_PackagesConfigExists)' != 'true' Or'$(_VldNameChanged)' == 'true' Or'$(_VldVersionChanged)' == 'true' Or '$(_VldToolsetChanged)' == 'true' Or '$(_VldMergeChanged)' == 'true'">true</_PackagesConfigChanged>
     </PropertyGroup>
 
     <!--<Message Importance="high" Text="_VldVersionChanged = $(_VldVersionChanged)"/>
