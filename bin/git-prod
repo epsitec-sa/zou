@@ -123,8 +123,9 @@ prod_release_root_scope()
 }
 prod_release_scope()
 {
-  local moduleMergeIntoDev=$mergeIntoDev modulePrerelPrefix=$prerelPrefix hasBeenReleased
-
+  local moduleMergeIntoDev=$mergeIntoDev modulePrerelPrefix=$prerelPrefix wasInDevMode hasBeenReleased
+  module_in_strict_dev_mode; wasInDevMode=$?
+  
   # io_trace "prod_release_scope -- $(print_vars checkoutType prodCheckoutType prodBranch moduleMergeIntoDev modulePrerelPrefix)"
 
   if module_is_bundle; then
@@ -178,7 +179,12 @@ prod_release_epilog()
   # io_trace "prod_release_epilog -- $(print_vars prodBranch)"
   _prod_fix_release_status
   _prod_release || io_trace_error 'prod_release_epilog 1' || return $?
-  _vtable_update || io_trace_error 'prod_release_epilog 2'
+  _vtable_update || io_trace_error 'prod_release_epilog 2' || return $?
+
+  [[ $dryRun == true ]] && return 0
+  [ $wasInDevMode -eq 0 ] && module_dev_attach
+
+  return 0
 }
 prod_release_xepilog()
 {
