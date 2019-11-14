@@ -37,15 +37,12 @@
   <PropertyGroup>
     <NumericPlatform Condition="'$(Platform)'=='Win32'">32</NumericPlatform>
     <NumericPlatform Condition="'$(Platform)'=='x64'">64</NumericPlatform>
-    <VldLibDir>$(NugetPackagesDir)VisualLeakDetector.$(VldVersion)\lib\native\address-model-$(NumericPlatform)\lib\</VldLibDir>
+    <VldLibDir>$(NugetPackagesDir)epsitec-vld.$(VldVersion)\lib\native\address-model-$(NumericPlatform)\lib\</VldLibDir>
   </PropertyGroup>
+  
   <ItemGroup Condition="'$(VLDImport)' == 'true'">
-    <ImportFile Include="$(VldLibDir)*.dll">
-      <ImportDir>$(OutDir)</ImportDir>
-    </ImportFile>
-    <ImportFile Include="$(VldLibDir)*.manifest">
-      <ImportDir>$(OutDir)</ImportDir>
-    </ImportFile>
+    <ImportFile Include="$(VldLibDir)*.dll" />
+    <ImportFile Include="$(VldLibDir)*.manifest" />
   </ItemGroup>
   
   <!-- Import standard nuget VLD imports -->
@@ -57,7 +54,7 @@
     <Copy SourceFiles="$(_VldTemplatePathPrefix).packages.config" DestinationFiles="$(_VldOnlyPackagesConfigFile)" />
     <!-- Update version -->
     <FileUpdate Files="$(_VldOnlyPackagesConfigFile)"
-                Regex='^(?&lt;A&gt;\s*&lt;package\s+id="VisualLeakDetector"\s+version=")\S+(?&lt;Z&gt;"[^\r\n]+)'
+                Regex='^(?&lt;A&gt;\s*&lt;package\s+id="epsitec-vld"\s+version=")\S+(?&lt;Z&gt;"[^\r\n]+)'
                 ReplacementText="${A}$(VldVersion)${Z}"
                 Multiline="true"
                 IgnoreCase="true">
@@ -127,6 +124,6 @@
     <Message Importance="high" Text="VldLibDir         = $(VldLibDir)" />
     <Message Importance="high" Text="VLDImport         = $(VLDImport)" />
     <Message Importance="high" Text="OutDir            = $(OutDir)" />
-    <LogItems Items="@(CustomBuild)" />
+    <Message Importance="high" Text="ImportFile        = %(ImportFile.Identity)" />
   </Target>
 </Project>
