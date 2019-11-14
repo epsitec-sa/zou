@@ -108,6 +108,13 @@ _branch_merge_ff()
   if [ $ec -eq 2 ]; then
     mio_error "Invalid branch name '$intoBranch' (error code = $ec)"
     return 128
+  elif [ $ec -eq 1 ]; then
+    local remote=${branch%/*}
+    git fetch "$remote" "$lbranch":"$lbranch" &>/dev/null
+    io_eval "git push "$remote" --set-upstream "$lbranch" 2>/dev/null" : ${DarkGray}
+    intoBranch=$lbranch
+    intoBranchName=$lbranch
+    intoRef="refs/heads/$lbranch"
   else
     intoBranch=$branch
     intoBranchName=$lbranch
