@@ -1,7 +1,9 @@
-<!-- Defines the default metadata for VS2017 .NET projects (epilog) -->
+<!-- Defines the default metadata for .NET projects (epilog) -->
 <Project  InitialTargets="TraceDirectoryBuildDefaultTargets">
   <PropertyGroup>
     <!-- Package default properties -->
+    <AssemblyTitle Condition="'$(AssemblyTitle)' == ''">$(AssemblyName)</AssemblyTitle>
+    <AssemblyTitle>$(AssemblyTitle) ($(TargetFramework))</AssemblyTitle>
     <FirstCopyrightYear Condition="'$(FirstCopyrightYear)' == ''"></FirstCopyrightYear>
     <LastCopyrightYear Condition="'$(LastCopyrightYear)' == ''">$([System.DateTime]::Now.ToString(yyyy))</LastCopyrightYear>
     <CopyrightYears Condition="'$(CopyrightYears)' == '' And ('$(FirstCopyrightYear)' == '' Or '$(FirstCopyrightYear)' == '$(LastCopyrightYear)')">$(LastCopyrightYear)</CopyrightYears>
