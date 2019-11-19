@@ -2,7 +2,11 @@
 <Project>
   <!-- Default properties (can be overloaded in bundle after importing this script) -->
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.0</TargetFramework>
+    <FullTargetFramework Condition="'$(FullTargetFramework)' == ''">net472</FullTargetFramework>
+    <CoreTargetFramework Condition="'$(CoreTargetFramework)' == ''">netcoreapp3.0</CoreTargetFramework>
+    <TargetFramework Condition="'$(TargetFramework)' == '' And '$(RuntimeType)' == 'Core'">$(CoreTargetFramework)</TargetFramework>
+    <TargetFramework Condition="'$(TargetFramework)' == '' And '$(RuntimeType)' == 'Full'">$(FullTargetFramework)</TargetFramework>
+    <TargetFramework Condition="'$(TargetFramework)' == ''">$(CoreTargetFramework)</TargetFramework>
     <RuntimeIdentifiers>win7-x86;win-x86;win-x64;osx-x64;linux-x64</RuntimeIdentifiers>
     <Company>Epsitec</Company>
   </PropertyGroup>
