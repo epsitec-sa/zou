@@ -18,15 +18,8 @@
 #define NO_WARN_MBCS_MFC_DEPRECATION
 #define _AFX_ALL_WARNINGS
 
-//..................................... Boost warnings
-
-// http://stackoverflow.com/questions/18837401/c-boost-read-json-crash-and-i-had-define-boost-spirit-threadsafe
-// http://www.boost.org/doc/libs/1_60_0/boost/log/support/spirit_classic.hpp
-#define BOOST_SPIRIT_THREADSAFE
-
-// Since boost v1.62.0.0, coroutine is deprecated
-#define BOOST_COROUTINE_NO_DEPRECATION_WARNING
-#define BOOST_COROUTINES_NO_DEPRECATION_WARNING
+// Error with C++ 17 Standard
+#define _SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING
 
 //----------------------------------------------------------------------------- Visual Leak Detector
 
@@ -49,6 +42,7 @@
 #include <afxwin.h>  // MFC core and standard components
 #include <afxext.h>  // MFC extensions
 #include <afxdisp.h> // MFC Automation
+#include <afxmt.h>   // MFC Multithreaded Extensions
 
 #ifndef _AFX_NO_OLE_SUPPORT
 #include <afxdtctl.h> // Prise en charge MFC pour les contrôles communs Internet Explorer 4
@@ -73,6 +67,9 @@
 
 //----------------------------------------------------------------------------- STL
 
+#include <string>
+
+#include <array>
 #include <list>
 #include <map>
 #include <queue>

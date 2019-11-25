@@ -1,12 +1,16 @@
 // stdboost.h : include file for boost include files
-// Include the following MSBuild code at the end of associated C++ project (.vcxproj)
-// 
-//  <ImportGroup Label = "ExtensionTargets">
-//    <Import Project = "$(ZouDir)Zou.Cpp.targets" / >
-//  </ ImportGroup>
-
 
 #pragma once
+
+#include "zou/pch/stdafx.h"
+
+// http://stackoverflow.com/questions/18837401/c-boost-read-json-crash-and-i-had-define-boost-spirit-threadsafe
+// http://www.boost.org/doc/libs/1_60_0/boost/log/support/spirit_classic.hpp
+#define BOOST_SPIRIT_THREADSAFE
+
+// Since boost v1.62.0.0, coroutine is deprecated
+#define BOOST_COROUTINE_NO_DEPRECATION_WARNING
+#define BOOST_COROUTINES_NO_DEPRECATION_WARNING
 
 #pragma warning(push)
 #pragma warning(disable : 4244 4267)
@@ -18,9 +22,6 @@
 #include <boost/archive/iterators/binary_from_base64.hpp>
 #include <boost/archive/iterators/base64_from_binary.hpp>
 #include <boost/archive/iterators/transform_width.hpp>
-#include <boost/asio.hpp>
-#include <boost/asio/spawn.hpp>
-#include <boost/asio/ssl/stream.hpp>
 #include <boost/date_time.hpp>
 #include <boost/exception/exception.hpp>
 #include <boost/filesystem.hpp>
