@@ -21,10 +21,18 @@
 // Error with C++ 17 Standard
 #define _SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING
 
-//----------------------------------------------------------------------------- Visual Leak Detector
+//----------------------------------------------------------------------------- Memory Leak Detection
 
+// Visual Leak Detector
 #ifdef _VLD
 #include <vld.h>
+#endif
+
+// CRT
+#ifdef _DEBUG
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
 #endif
 
 //----------------------------------------------------------------------------- AFX
@@ -66,6 +74,8 @@
 #endif
 
 //----------------------------------------------------------------------------- STL
+
+#define _SCL_SECURE_NO_WARNINGS
 
 #include <string>
 

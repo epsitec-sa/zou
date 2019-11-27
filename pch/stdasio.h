@@ -4,13 +4,15 @@
 
 #include "zou/pch/stdboost.h"
 
-//#pragma warning(push)
-//#pragma warning(disable : 4244 4267)
-//#pragma warning(disable : 26110 26439 26495 26498 26444 26451 28251)
-//#pragma warning(disable : 6001 6011 6031 6248 6255 6258 6282 6387 6388)
+#pragma warning(push, 0)
 
 #include <boost/asio.hpp>
-#include <boost/asio/spawn.hpp>
-#include <boost/asio/ssl/stream.hpp>
+//#include <boost/asio/spawn.hpp>
+//#include <boost/asio/ssl/stream.hpp>
+//#include <boost/asio/detail/impl/win_iocp_socket_service_base.ipp>
+//#include <boost/asio/detail/strand_executor_service.hpp>
+//#include <boost/asio/detail/conditionally_enabled_mutex.hpp>
+//#include <boost/asio/detail/impl/service_registry.ipp>
+//#include <boost/asio/basic_socket.hpp>
 
-//#pragma warning(pop)
+#pragma warning(pop)
