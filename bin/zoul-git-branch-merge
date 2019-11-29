@@ -172,15 +172,19 @@ _branch_merge()
 {
   local message=$1 toMerge=$2; shift 2
   if git merge -m "$message" "$@" "$toMerge" &>/dev/null; then
-    # io_trace "_branch_merge -- $(print_vars toMerge intoBranch ref)" ${Green}
+    # io_trace "_branch_merge -1- -- $(print_vars toMerge intoBranch ref)" ${Green}
     return 0
   fi
-
-  ! repo_is_merging && return 1
+  # io_trace "_branch_merge -2- -- $(print_vars toMerge intoBranch ref)" ${Green}
 
   if _branch_merge_resolve_submodule_conflicts; then
-    git commit -m "$message" >/dev/null
+    # io_trace "_branch_merge -3- -- $(print_vars toMerge intoBranch ref)" ${Green}
+    if git merge -sours -m "$message" "$@" "$toMerge" &>/dev/null; then
+      # io_trace "_branch_merge -3.1- -- $(print_vars toMerge intoBranch ref)" ${Green}
+      return 0
+    fi
   elif ! _branch_merge_interactive; then
+    # io_trace "_branch_merge -4- -- $(print_vars toMerge intoBranch ref)" ${Green}
     # git diff
     return 1
   fi
@@ -209,6 +213,7 @@ _branch_merge_resolve_submodule_conflicts()
     if [[ $line =~ ^[[:blank:]]*([A-Z]+)[[:blank:]]+(.+)$ ]]; then
       status=${BASH_REMATCH[1]}
       path=${BASH_REMATCH[2]}
+      # io_trace "_branch_merge_resolve_submodule_conflicts -- $(print_vars status path)" ${Green}
       if [[ -f "$path/.git" ]]; then
         # ignore submodules - keep local one
         git reset -q "$path"
