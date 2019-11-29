@@ -32,7 +32,8 @@
 #   [[ -z $ZOUL_GIT_REPO ]] && . zoul-git-repo
 ZOUL_GIT_REPO=true
 
-[[ -z $ZOUL_CORE ]] && . zoul-core
+[[ -z $ZOUL_CORE ]]     && . zoul-core
+[[ -z $ZOUL_GIT_CORE ]] && . zoul-git-core
 
 # global options
 #   showSubmoduleMessage
@@ -382,8 +383,16 @@ repo_commit_submodules()
 
   local opwd=$PWD sm
   cd "$mroot" || io_trace_error "repo_commit_submodules: cd $mroot" || exit 1
+
+  # do not commit on detached head
+  [[ -z $moduleHeadType ]] && moduleHeadType=$(ref_type)
+  if [[ $moduleHeadType != 'branch' ]]; then
+    mio_warning "Cannot commit submodules on detached head"
+    return 0
+  fi
+
   local branch=${moduleHead:-$(branch_current)}
-  # io_trace "repo_commit_submodules -2- $(print_vars branch cslist)"
+  # io_trace "repo_commit_submodules -2- $(print_vars branch)"
   if git commit -m 'zou-flow: update submodules' -- "$@" >/dev/null; then
     for sm; do
       io_message "  Commited submodules '$sm' on branch '$branch'" "$moduleTracePrefix" ${DarkGray}
