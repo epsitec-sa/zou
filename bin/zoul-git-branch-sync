@@ -144,13 +144,17 @@ _branch_sync_fix_tracking_core()
   if [[ -n $r ]]; then
     # tracking branch was deleted or renamed
     if ref_is_current "$l"; then
-      # detach head
-      git checkout "$l^{}" &>/dev/null
+      if [[ -z "$moduleDevBranch" || "$l" == "$moduleDevBranch" ]]; then
+        # detach head
+        branch_checkout "$l^{}"
+      else
+        module_dev_attach 'true'
+      fi
     fi
     local deleteOption
     [[ $deleteBrokenTrackingInfoBranches == true ]] && deleteOption='-D' || deleteOption='-d'
     if git branch "$deleteOption" "$l" &>/dev/null; then
-      mio_message "  Deleted obsolete branch '$l'" ${DarkGray}
+      mio_warning "Deleted branch ${VC}$l${Brown} (remote branch was deleted or renamed)"
     fi
   else
     # no tracking info
