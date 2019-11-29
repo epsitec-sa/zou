@@ -47,6 +47,8 @@ ref_set_symbol()
       refSymbol=${tags[-1]}
       refType='tag'
     fi
+  elif [[ 'tag' == $(git_object_type "$refSymbol") ]]; then
+    refType='tag'
   fi
   # io_trace "ref_set_symbol 2 -- $(print_vars commit tags[@] refSymbol refType)"
 }
