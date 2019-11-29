@@ -191,7 +191,7 @@ mio_error_unsafe()   { mio_message_unsafe "$1" "${Red}"; }
 mio_message_unsafe()
 {
   local message=$1 color=${2:-$Cyan}
-  [[ -n $moduleAlias ]] && message="$message ${color}($moduleAlias${color})"
+  [[ -n $moduleAlias ]] && message="$message${DarkGray} -- $moduleAlias"
   io_message_unsafe "$message" "$moduleTracePrefix" "$color"
 }
 

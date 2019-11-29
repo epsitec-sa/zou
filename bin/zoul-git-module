@@ -539,7 +539,11 @@ _module_set_trace_prefix()
     local mcolor=${LightCyan}
     if [[ $useLongModuleTracePrefix == true ]]; then
       local sid bcolor bid mid=$moduleId bid=$moduleHead
-      [ $? -eq 0 ] && bcolor=${Cyan} || bcolor=${Brown}
+      case "$moduleHeadType" in
+      tag) bcolor=${Brown};;
+      sha) bcolor=${Purple};;
+      *)   module_in_prod_mode && bcolor=${Cyan} || bcolor=${Green};;
+      esac
       _module_set_smart_id2 42 "$mid" "$mcolor" "$bid" "$bcolor"
       moduleTracePrefix=$sid
     else
@@ -556,8 +560,12 @@ _module_set_bundle_trace_prefix()
     cd "$bundleRoot"
     
     bid=$bundleHead
-    # [ $? -eq 0 ] && bcolor=${Cyan} || bcolor=${Brown}
-    _module_set_smart_id2 42 "$mid" ${White} "$bid" ${White}
+    case "$bundleHeadType" in
+    tag) bcolor=${Brown};;
+    sha) bcolor=${Purple};;
+    *) bcolor=${White};;
+    esac
+    _module_set_smart_id2 42 "$mid" ${White} "$bid" $bcolor
     bundleTracePrefix=$sid
     
     cd - &>/dev/null

@@ -192,9 +192,11 @@ vtag_format_alias()
   else
     local prefix color
     if [ $delta -gt 0 ]; then
-      prefix="${Brown}>($delta) "
+      prefix="${Brown}($delta)"
     elif [ $delta -lt 0 ]; then
-      prefix="${Brown}<($((-delta))) "
+      prefix="${Purple}($((-delta)))"
+    # else
+    #   prefix="${LightGreen}="
     fi
     if [[ $vtag =~ -@$ ]]; then
       color=${LightPurple}
@@ -203,7 +205,7 @@ vtag_format_alias()
     else
       color=${Green}
     fi
-    alias="${prefix}${color}$vtag"
+    alias="${color}$vtag${prefix}"
   fi
 }
 # list all vtags pointing at given commit that match a regex
