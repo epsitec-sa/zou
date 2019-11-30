@@ -594,11 +594,12 @@ error()
 #   color=$3    -- default color
 io_eval()
 {
-  local selector=${2:-:} color=${3:-$NC} indent=${4:-  } isLastLine
+  local selector=${2:-:} color=${3:-$NC} indent=${4:-  } isLastLine=0 skipCurrentLine line
   # io_trace "io_eval ${*@Q} -- $(print_vars selector color)"
   IFS=$'\n' eval "$1" | \
   while read -r line; do
     $selector "$line" "$color"; isLastLine=$?
+    [[ $skipCurrentLine == true ]] && continue
     io_message "${indent}$line" "$moduleTracePrefix" "$color"
     [ $isLastLine -ne 0 ] && break
   done; IFS=$OIFS
@@ -606,12 +607,13 @@ io_eval()
 }
 io_locked_eval()
 {
-  local selector=${2:-:} color=${3:-$NC} indent=${4:-  } isLastLine
+  local selector=${2:-:} color=${3:-$NC} indent=${4:-  } isLastLine=0 skipCurrentLine line
   # io_trace "io_locked_eval ${*@Q} -- $(print_vars selector color)"
   io_lock_enter
   IFS=$'\n' eval "$1" | \
   while read -r line; do
     $selector "$line" "$color"; isLastLine=$?
+    [[ $skipCurrentLine == true ]] && continue
     io_message_unsafe "${indent}$line" "$moduleTracePrefix" "$color"
     [ $isLastLine -ne 0 ] && break
   done; IFS=$OIFS
@@ -621,7 +623,7 @@ io_locked_eval()
 io_buffered_eval()
 {
   # io_trace "io_buffered_eval ${*@Q}"
-  local selector=${2:-:} color=$3 indent=${4:-  } isLastLine=0 line lines ec
+  local selector=${2:-:} color=$3 indent=${4:-  } isLastLine=0 skipCurrentLine line lines ec
   # io_trace "io_buffered_eval 1 -- $(print_vars selector color indent)"
   IFS=$'\n' lines=( $(eval "$1") ); ec=$?; IFS=$OIFS
   if [[ -z $color ]]; then
@@ -630,6 +632,7 @@ io_buffered_eval()
   io_lock_enter
   for line in "${lines[@]}"; do
     $selector "$line" "$color"; isLastLine=$?
+    [[ $skipCurrentLine == true ]] && continue
     io_message_unsafe "${indent}$line" "$moduleTracePrefix" "$color"
     [ $isLastLine -ne 0 ] && break
   done
