@@ -76,7 +76,7 @@ branch_is_merged()
   local toMerge=$1 mergeInto=$2 \
         hashToMerge hashMergeInto hashMergeBase
 
-  # io_trace "_branch_merge_ff -- $(print_vars toMerge intoBranch intoRef intoBranchName)"
+  # io_trace "branch_is_merged -- $(print_vars toMerge intoBranch intoRef intoBranchName)"
 
   hashToMerge=$(git rev-parse --verify "$toMerge^{}" 2>/dev/null) || return 128
   hashMergeInto=$(git rev-parse --verify "$mergeInto^{}" 2>/dev/null) || return 128
@@ -103,24 +103,18 @@ _branch_merge_ff()
 {
   # merge 'toMerge' (invariant) into 'intoBranch' < 'toMerge'
   # 'intoBranch' should be a local branch with a symbolic name
+
   local hashToMerge hashMergeInto hashMergeBase intoRef branch lbranch bref ec=0
-  branch_set_realize "$intoBranch" || ec=$?
+  branch_set_realize "$intoBranch" 'true' || ec=$?
+  # io_trace "_branch_merge_ff -1- -- $(print_vars branch lbranch bref ec)"
   if [ $ec -eq 2 ]; then
     mio_error "Invalid branch name '$intoBranch' (error code = $ec)"
     return 128
-  elif [ $ec -eq 1 ]; then
-    local remote=${branch%/*}
-    git fetch "$remote" "$lbranch":"$lbranch" &>/dev/null
-    io_eval "git push "$remote" --set-upstream "$lbranch" 2>/dev/null" : ${DarkGray}
-    intoBranch=$lbranch
-    intoBranchName=$lbranch
-    intoRef="refs/heads/$lbranch"
   else
     intoBranch=$branch
     intoBranchName=$lbranch
     intoRef=$bref
   fi
-  # io_trace "_branch_merge_ff -- $(print_vars toMerge intoBranch intoRef intoBranchName)"
 
   hashToMerge="$(git rev-parse --verify "$toMerge^{}" 2>/dev/null)"
   if [ $? -ne 0 ]; then
@@ -158,7 +152,7 @@ _branch_merge_ff()
       return 1
     fi
   fi
-  # io_trace "_branch_merge_ff -- $(print_vars toMerge intoBranch ref)" ${Green}
+  io_trace "_branch_merge_ff -2- -- $(print_vars toMerge intoBranch ref)" ${Green}
 }
 _branch_merge_ff_only()
 {
