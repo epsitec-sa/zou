@@ -385,17 +385,31 @@ dev_checkout()
 ########################################################
 # BRANCH CREATION
 
+# Compute version branch
+#
+# usage:
+#   local vbranch graftPoint
+#   prod_set_vbranch 0.1 'minor'
+#   [ $? -ne 0 ] && vbranch_create "$vbranch" "$graftPoint"
+#
 # in:
 #   version=${1:-0.1}   -- default version if no vbranch exists
 #   incrementKind=${2}  -- (minor|major)
 #                       -- increment minor or major version if vbranch exists
-# exemple:
-#   prod_ensure_vbranch 0.1 'minor'
-prod_ensure_vbranch()
+# out:
+#   vbranch -- version branch
+#
+# return:
+#   0: vbranch exists
+#   1: vbranch does not exist
+#   255: error
+
+prod_set_vbranch()
 {
-  module_in_wip_mode && return 0
+  local version=$1 incrementKind=$2
+  io_trace "prod_set_vbranch -1- -- $(print_vars version incrementKind)"
   if [[ $prodBranch =~ ^(.*/)?([0-9]+)\.([0-9]+)(.*)$ ]]; then
-    local vbranch prodFolder=${BASH_REMATCH[1]} major=${BASH_REMATCH[2]} minor=${BASH_REMATCH[3]} suffix=${BASH_REMATCH[4]}
+    local prodFolder=${BASH_REMATCH[1]} major=${BASH_REMATCH[2]} minor=${BASH_REMATCH[3]} suffix=${BASH_REMATCH[4]}
     
     # do not share prod branch by default - if not already shared, create vbranch in same folder as dev branch
     [[ $vtagStatus == 'vnode' && $(wip_to_ref $moduleDevBranch) =~ ^(.*/)? ]] && prodFolder=${BASH_REMATCH[1]}
@@ -405,22 +419,40 @@ prod_ensure_vbranch()
       minor) (( minor += 1 ));;
       major) (( major += 1 )); minor=0;;
     esac
-    # io_trace "prod_ensure_vbranch 1 -- $(print_vars prodFolder major minor incrementKind prodBranch)"
     vbranch="${prodFolder}${major}.${minor}${suffix}"
-    if [[ $vbranch != $prodBranch ]]; then
-      vbranch_create "$vbranch" "$moduleDevBranchPath"
-    fi
+    graftPoint=$moduleDevBranchPath
+    io_trace "prod_set_vbranch -2- -- $(print_vars prodFolder major minor incrementKind prodBranch)"
+    [[ $vbranch == $prodBranch ]]; ec=$?
+    return $ec
   else
-    local version=$1 branch lbranch bref vbranch
+    local branch lbranch bref
     [[ $incrementKind == 'major' ]] && version=${version:-1.0} || version=${version:-0.1}
     branch_set_realize $(wip_to_ref $moduleDevBranch)
-    # io_trace "prod_ensure_vbranch 2 -- $(print_vars version incrementKind prodBranch vtag2dev branch lbranch)"
+    io_trace "prod_set_vbranch -3- -- $(print_vars version incrementKind prodBranch vtag2dev branch lbranch)"
 
-    [[ $lbranch =~ ^(.*/)? ]] || return 1
+    [[ $lbranch =~ ^(.*/)? ]] || return 255
     vbranch=${BASH_REMATCH[1]}$version
-    # io_trace "prod_ensure_vbranch 3 -- $(print_vars vbranch)"
-    vbranch_create "$vbranch" "$branch"
+    graftPoint=$branch
+    io_trace "prod_set_vbranch -4- -- $(print_vars vbranch graftPoint)"
+    return 1
   fi
+}
+# in:
+#   version=${1:-0.1}   -- default version if no vbranch exists
+#   incrementKind=${2}  -- (minor|major)
+#                       -- increment minor or major version if vbranch exists
+prod_ensure_vbranch()
+{
+  module_in_wip_mode && return 0
+
+  local version=$1 incrementKind=$2 vbranch graftPoint ec
+  prod_set_vbranch "$version" "$incrementKind"; ec=$?
+  io_trace "prod_ensure_vbranch -1- -- $(print_vars version incrementKind vbranch graftPoint ec)"
+  case $ec in
+    0) ;; # vbranch exists
+    1) vbranch_create "$vbranch" "$graftPoint";;
+    *) return $ec;;
+  esac
   _prod_ensure_bundle_vbranch
 }
 _prod_ensure_bundle_vbranch()
