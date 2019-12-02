@@ -297,7 +297,8 @@ branch_realize()
 #   local branch lbranch bref
 #   branch_set_realize BRANCH
 # in:
-#   ref=$1    -- local or remote branch ref
+#   ref=$1      -- local or remote branch ref
+#   ensureLocal -- if true and ref is remote only, fetch and create local branch
 # var-out:
 #   branch    -- local branch name (0) if it exists || remote branch name (1) if it exists || empty (2) 
 #   lbranch   -- local branch name (even if it does not exist)
@@ -310,7 +311,7 @@ branch_set_realize()
 {
   # io_trace "branch_set_realize ${*@Q}"
   branch=''; lbranch=''; bref=''
-  local ref=${1:-HEAD}
+  local ref=${1:-HEAD} ensureLocal=${2:-false}
   if [[ $ref == 'HEAD' ]]; then
     ref=$(branch_list_all_at 'HEAD' | cut -f 1 -d ' ')
     # io_trace "branch_set_realize 0 -- $(print_vars ref)"
@@ -319,23 +320,35 @@ branch_set_realize()
   if branch_is_local "$ref"; then
     branch=$ref
     lbranch=$branch
-    bref="refs/heads/$branch"
+    bref="refs/heads/$lbranch"
     # io_trace "branch_set_realize 1 -- $(print_vars ref branch lbranch bref)"
     return 0
-  elif branch_is_remote "$ref"; then
-    branch=$ref
-    lbranch=${branch#*/}
-    bref="refs/remotes/$branch"
-    # io_trace "branch_set_realize 2 -- $(print_vars ref branch lbranch bref)"
-    return 1
   else
-    local rbranch
-    branch_set_upstream "$ref" || return 2
-    branch=$rbranch
-    lbranch=${branch#*/}
-    bref="refs/remotes/$branch"
-    # io_trace "branch_set_realize 3.2 -- $(print_vars ref branch lbranch bref)"
-    return 1
+    if branch_is_remote "$ref"; then
+      branch=$ref
+      lbranch=${branch#*/}
+      bref="refs/remotes/$branch"
+      # io_trace "branch_set_realize 2 -- $(print_vars ref branch lbranch bref)"
+    else
+      local rbranch
+      branch_set_upstream "$ref" || return 2
+      branch=$rbranch
+      lbranch=${branch#*/}
+      bref="refs/remotes/$branch"
+      # io_trace "branch_set_realize 3 -- $(print_vars ref branch lbranch bref)"
+    fi
+
+    if [[ $ensureLocal == 'true' ]]; then
+      local remote=${branch%%/*}
+      git fetch "$remote" "$lbranch":"$lbranch" &>/dev/null
+      io_eval "git push "$remote" --set-upstream "$lbranch" 2>/dev/null" : ${DarkGray}
+      bref="refs/heads/$lbranch"
+      # io_trace "branch_set_realize 4 -- $(print_vars ref branch lbranch bref)"
+      return 0
+    else
+      # branch is remote
+      return 1
+    fi
   fi
 }
 branch_without_remote_prefix() { branch_is_remote $1 && echo ${1#*/} || echo $1; }
