@@ -407,7 +407,7 @@ dev_checkout()
 prod_set_vbranch()
 {
   local version=$1 incrementKind=$2
-  io_trace "prod_set_vbranch -1- -- $(print_vars version incrementKind)"
+  # io_trace "prod_set_vbranch -1- -- $(print_vars version incrementKind)"
   if [[ $prodBranch =~ ^(.*/)?([0-9]+)\.([0-9]+)(.*)$ ]]; then
     local prodFolder=${BASH_REMATCH[1]} major=${BASH_REMATCH[2]} minor=${BASH_REMATCH[3]} suffix=${BASH_REMATCH[4]}
     
@@ -421,19 +421,19 @@ prod_set_vbranch()
     esac
     vbranch="${prodFolder}${major}.${minor}${suffix}"
     graftPoint=$moduleDevBranchPath
-    io_trace "prod_set_vbranch -2- -- $(print_vars prodFolder major minor incrementKind prodBranch)"
+    # io_trace "prod_set_vbranch -2- -- $(print_vars prodFolder major minor incrementKind prodBranch)"
     [[ $vbranch == $prodBranch ]]; ec=$?
     return $ec
   else
     local branch lbranch bref
     [[ $incrementKind == 'major' ]] && version=${version:-1.0} || version=${version:-0.1}
     branch_set_realize $(wip_to_ref $moduleDevBranch)
-    io_trace "prod_set_vbranch -3- -- $(print_vars version incrementKind prodBranch vtag2dev branch lbranch)"
+    # io_trace "prod_set_vbranch -3- -- $(print_vars version incrementKind prodBranch vtag2dev branch lbranch)"
 
     [[ $lbranch =~ ^(.*/)? ]] || return 255
     vbranch=${BASH_REMATCH[1]}$version
     graftPoint=$branch
-    io_trace "prod_set_vbranch -4- -- $(print_vars vbranch graftPoint)"
+    # io_trace "prod_set_vbranch -4- -- $(print_vars vbranch graftPoint)"
     return 1
   fi
 }
@@ -447,7 +447,7 @@ prod_ensure_vbranch()
 
   local version=$1 incrementKind=$2 vbranch graftPoint ec
   prod_set_vbranch "$version" "$incrementKind"; ec=$?
-  io_trace "prod_ensure_vbranch -1- -- $(print_vars version incrementKind vbranch graftPoint ec)"
+  # io_trace "prod_ensure_vbranch -1- -- $(print_vars version incrementKind vbranch graftPoint ec)"
   case $ec in
     0) ;; # vbranch exists
     1) vbranch_create "$vbranch" "$graftPoint";;
