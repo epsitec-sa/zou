@@ -539,11 +539,7 @@ _module_set_trace_prefix()
     local mcolor=${LightCyan}
     if [[ $useLongModuleTracePrefix == true ]]; then
       local sid bcolor bid mid=$moduleId bid=$moduleHead
-      case "$moduleHeadType" in
-      tag) bcolor=${Brown};;
-      sha) bcolor=${Purple};;
-      *)   module_in_prod_mode && bcolor=${Cyan} || bcolor=${Green};;
-      esac
+      _module_set_bcolor 'module' "$moduleHeadType"
       _module_set_smart_id2 42 "$mid" "$mcolor" "$bid" "$bcolor"
       moduleTracePrefix=$sid
     else
@@ -556,15 +552,11 @@ _module_set_trace_prefix()
 _module_set_bundle_trace_prefix()
 {
   if [[ $useLongModuleTracePrefix == true ]]; then
-    local sid bid mid=$bundleId
+    local sid bcolor bid mid=$bundleId
     cd "$bundleRoot"
     
     bid=$bundleHead
-    case "$bundleHeadType" in
-    tag) bcolor=${Brown};;
-    sha) bcolor=${Purple};;
-    *) bcolor=${White};;
-    esac
+    _module_set_bcolor 'bundle' "$bundleHeadType"
     _module_set_smart_id2 42 "$mid" ${White} "$bid" $bcolor
     bundleTracePrefix=$sid
     
@@ -574,4 +566,17 @@ _module_set_bundle_trace_prefix()
     printf -v bundleTracePrefix "%-${len}s" "[$bundleId]"
     bundleTracePrefix="${White}$bundleTracePrefix${NC}"
   fi
+}
+_module_set_bcolor()
+{
+  local moduleType=$1 headType=$2
+  case "$headType" in
+    sha) bcolor=${Red};;
+    tag) bcolor=${Purple};;
+    *)
+      case $moduleType in
+        bundle) module_in_prod_mode && bcolor=${Gray} || bcolor=${White};;
+        *)      module_in_prod_mode && bcolor=${Blue} || bcolor=${LightGreen};;
+      esac;;
+  esac
 }
