@@ -65,20 +65,30 @@ vbranch_group_by_version()
   done
   [ ${#lookup[@]} -eq 0 ] && echo 'declare -A lookup=()' || declare -p lookup
 }
-vbranch_create()
+# in:
+#   vbranch
+# out:
+#   vnode
+vbranch_set_vnode()
 {
-  local branch=$1 commit=${2:-$moduleHead} message=$3 \
-        prefix version vnode
+  local branch=$1 prefix version
 
   if [[ $branch =~ ^(.*/)?([0-9]+\.[0-9]+)$ ]]; then
     prefix=${BASH_REMATCH[1]}
     version=${BASH_REMATCH[2]}
     vnode="${prefix}v${version}-@"
-    # create vnode
-    tag_new "$vnode" "$commit" "$message"
-    # create vbranch
-    branch_create $branch $commit
+    return 0
   else
     mio_error "Branch '$branch' is not a vbranch"
+    return 1
   fi
+}
+vbranch_create()
+{
+  local branch=$1 commit=${2:-$moduleHead} message=$3 vnode
+  vbranch_set_vnode "$branch" || return $?
+  # create vnode
+  tag_new "$vnode" "$commit" "$message"
+  # create vbranch
+  branch_create $branch $commit
 }
