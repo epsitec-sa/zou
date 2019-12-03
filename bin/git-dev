@@ -16,15 +16,21 @@ dev_parse()
     -a|--all)       noSkuFilter=true;;
     --minor)        incrementKind='minor';;
     --major)        incrementKind='major';;
+    --alpha)        prerelPrefix='alpha';;
+    --beta)         prerelPrefix='beta';;
+    --rc)           prerelPrefix='rc';;
+    --rtm)          prerelPrefix='rtm';;
+    --vcommit)      vcommit=true;;
     attach)         subcommand=$1;;
     enter)          subcommand=$1;;
     release)        subcommand=$1;;
+    vupdate)        subcommand=$1;;
     --)             shift; break;;
     -*) io_error "unknown option ${VC}$1${Red}\n"; io_help $0; return 1;;
     *)  args+=( "$1" );;
   esac; shift; done
 
-  cmd_check_subcommand 'enter' 'release' 'attach'
+  cmd_check_subcommand 'enter' 'release' 'attach' 'vupdate'
   cmd_check_args "${args[@]}"
   
   devModulePaths=( "$@" )
@@ -45,7 +51,8 @@ dev_run()
   # parse command line
   local jobsCount recursive command='dev' subcommand \
         cmdScopes=( prod_scope config_scope cosm_scope ) \
-        noSkuFilter incrementKind defaultVersion='0.1' devModulePaths=()
+        noSkuFilter incrementKind defaultVersion='0.1' \
+        prerelPrefix vcommit devModulePaths=()
 
   dev_parse "$@" || return $?
   
@@ -53,6 +60,7 @@ dev_run()
     attach)  startupMessage="Attaching to development, please wait...";;
     enter)   startupMessage="Entering development, please wait...";;
     release) startupMessage="Releasing development, please wait...";;
+    vupdate) startupMessage="Updating version, please wait...";;
   esac
 
   bundle_scope dev_command
@@ -89,7 +97,7 @@ dev_enter_epilog() { branch_show_status || io_trace_error 'dev_enter_epilog'; }
 dev_release_epilog()
 {
   # release only modules in dev mode
-  _dev_check_in_dev_mode || return 0
+  _dev_check_in_strict_dev_mode || return 0
 
   # a submodule can create a vbranch in the bundle without refreshing the prod scope (run in a subshell)
   # io_trace "dev_release_epilog -1- $(print_vars incrementKind moduleDevBranchPath prodBranchPath)"
@@ -111,11 +119,45 @@ dev_release_epilog()
     mio_message "Already released" ${LightBlue}
   fi
 }
-_dev_check_in_dev_mode()
+_dev_check_in_strict_dev_mode()
 {
   module_in_strict_dev_mode && return 0
-  mio_warning "Use ${VC}git dev enter${Brown} to switch to development"
+  _dev_switch_to_dev_message
   return 1
+}
+
+#########
+# VUPDATE
+#########
+
+dev_vupdate_epilog()
+{
+  _dev_check_in_dev_mode || return 0
+  dev_checkout false "$moduleDevBranch"
+
+  local vbranch graftPoint vtag vnext
+  prod_set_vbranch "$defaultVersion" "$incrementKind" # -> vbranch graftPoint
+  # io_trace "dev_vupdate_epilog -1- -- $(print_vars defaultVersion incrementKind vbranch)"
+
+  prod_increment_update_version "$vbranch" "$prerelPrefix" "$vcommit" # -> vtag vnext
+  # io_trace "dev_vupdate_epilog -2- -- $(print_vars vtag vnext)"
+
+  branch_show_status
+}
+_dev_check_in_dev_mode()
+{
+  module_in_dev_mode && return 0
+  _dev_switch_to_dev_message
+  return 1
+}
+
+#########
+# HELPERS
+#########
+
+_dev_switch_to_dev_message()
+{
+  mio_warning "Use ${VC}git dev enter${Brown} to switch to development"
 }
 
 dev_run  "$@"

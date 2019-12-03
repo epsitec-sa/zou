@@ -1,6 +1,7 @@
 usage: git dev enter   [-a] [-r] -- <module-paths>
    or: git dev attach  [-a] [-r] -- <module-paths>
    or: git dev release [-a] [-r] [-v<MAJ.MIN>] [--(minor|major)] -- <module-paths>
+   or: git dev vupdate [-a] [-r] [-v<MAJ.MIN>] [--(minor|major)] [--(alpha|beta|rc|rtm)] [--vcommit] -- <module-paths>
 
 Manage dev mode.
 
@@ -9,7 +10,9 @@ commands:
     attach                  attach to DEV branches in bundle and specified modules
                                 checkout DEV branch if it coincide with current head
     release                 merge DEV branches into PROD branches
-                                create a PROD branch is necessary (use -v option)
+                                create a PROD branch if necessary (use -v option)
+    vupdate                 update version resources (do not release DEV branch)
+
 options:
     -h|--help               display help
     -r|--recursive          visit specified modules recursively
@@ -20,15 +23,29 @@ release:
     -v<MAJ.MIN>             specify default PROD branch version if it does not exist (default to 0.1)
     --minor                 merge DEV branch into new minor PROD branch (increment PROD branch minor version)
     --major                 merge DEV branch into new major PROD branch (increment PROD branch major version)
+
+vupdate:
+    -v<MAJ.MIN>             specify default major and minor version if it does not exist (default to 0.1)
+    --minor                 bump minor version and update version resources
+    --major                 bump major version and update version resources
+    --alpha                 bump version to alpha prerelease and update version resources
+    --beta                  bump version to beta prerelease and update version resources
+    --rc                    bump version to RC and update version resources
+    --rtm                   bump version to RTM and update version resources
+    --vcommit               commit version resources
     
 example:
-    git dev enter                 # enter DEV mode in bundle and current module
-    git dev enter                 # enter DEV mode in bundle and current module
-    git dev enter -r              # enter DEV mode in bundle and current module recursively
-    git dev enter -- m1 m2        # enter DEV mode in bundle and child modules 'm1' and 'm2'
-    git dev attach -r             # attach to DEV branches in bundle and current module recursively
-    git dev release               # merge DEV branch into current PROD branch (create version 0.1 if necessary)
-    git dev release -v1.0         # merge DEV branch into current PROD branch (create version 1.0 if necessary)
-    git dev release --minor       # merge DEV branch into new minor PROD branch
-    git dev release --major       # merge DEV branch into new major PROD branch
-    git dev release -r -- ../m1   # merge DEV branch into PROD branch in sibling module 'm1' recursively
+    git dev enter                       # enter DEV mode in bundle and current module
+    git dev enter                       # enter DEV mode in bundle and current module
+    git dev enter -r                    # enter DEV mode in bundle and current module recursively
+    git dev enter -- m1 m2              # enter DEV mode in bundle and child modules 'm1' and 'm2'
+    git dev attach -r                   # attach to DEV branches in bundle and current module recursively
+    git dev release                     # merge DEV branch into current PROD branch (create version 0.1 if necessary)
+    git dev release -v1.0               # merge DEV branch into current PROD branch (create version 1.0 if necessary)
+    git dev release --minor             # merge DEV branch into new minor PROD branch
+    git dev release --major             # merge DEV branch into new major PROD branch
+    git dev release -r -- ../m1         # merge DEV branch into PROD branch in sibling module 'm1' recursively
+    git dev vupdate                     # bump version patch (don't commit)
+    git dev vupdate --minor             # bump minor version (don't commit)
+    git dev vupdate --alpha             # bump prerelease version (don't commit)
+    git dev vupdate --vcommit           # bump version patch and commit on DEV branch
