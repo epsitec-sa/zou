@@ -10,6 +10,9 @@ ZOUL_GIT_BRANCH_MERGE=true
 [[ -z $ZOUL_GIT_REPO ]]        && . zoul-git-repo
 [[ -z $ZOUL_GIT_BRANCH_CORE ]] && . zoul-git-branch-core
 
+mergedEvent=()
+branch_raise_merged_event() { raise_event 'mergedEvent[@]' "$@"; }
+
 branch_merge_ff()
 {
   local toMerge=$1 intoBranch=$2 toMergeAlias=${3:-$1} intoBranchName needCheckout
@@ -147,6 +150,7 @@ _branch_merge_ff()
       return 1
     fi
     if git update-ref -m "merge $toMerge into $intoBranch (fast forward)" "$intoRef" "$hashToMerge" "$hashMergeInto"; then
+      branch_raise_merged_event "$toMerge" "$intoBranch"
       [[ $quiet == true ]] || mio_success "Merged ${VC}$toMergeAlias${Green} into ${VC}$intoBranchName${Green} (fast-forward)"
     else
       return 1
@@ -157,6 +161,7 @@ _branch_merge_ff()
 _branch_merge_ff_only()
 {
   if git merge --ff-only "$toMerge" &>/dev/null; then
+    branch_raise_merged_event "$toMerge" "$intoBranch"
     [[ $quiet == true ]] || mio_success "Merged ${VC}$toMergeAlias${Green} into ${VC}$intoBranchName${Green} (fast-forward)"
   else
     return 1
@@ -167,6 +172,7 @@ _branch_merge()
   local message=$1 toMerge=$2; shift 2
   if git merge -m "$message" "$@" "$toMerge" &>/dev/null; then
     # io_trace "_branch_merge -1- -- $(print_vars toMerge intoBranch ref)" ${Green}
+    branch_raise_merged_event "$toMerge" "$intoBranch"
     return 0
   fi
   # io_trace "_branch_merge -2- -- $(print_vars toMerge intoBranch ref)" ${Green}
@@ -175,6 +181,7 @@ _branch_merge()
     # io_trace "_branch_merge -3- -- $(print_vars toMerge intoBranch ref)" ${Green}
     if git merge -sours -m "$message" "$@" "$toMerge" &>/dev/null; then
       # io_trace "_branch_merge -3.1- -- $(print_vars toMerge intoBranch ref)" ${Green}
+      branch_raise_merged_event "$toMerge" "$intoBranch"
       return 0
     fi
   elif ! _branch_merge_interactive; then
@@ -188,6 +195,7 @@ _branch_merge_interactive()
   local ec=0
   _branch_merge_tool &>/dev/null && git commit --no-edit &>/dev/null || ec=$?
   _branch_remove_temp_merge_files
+  [ $ec -eq 0 ] && branch_raise_merged_event "$toMerge" "$intoBranch"
   return $ec
 }
 _branch_remove_temp_merge_files()
