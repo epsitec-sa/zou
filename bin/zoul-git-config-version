@@ -23,7 +23,7 @@ version_commit_files()
 {
   local techver=$1; shift
   [ $# -ne 0 ] && {
-    git commit -m"zou-flow: update technical version to $techver" -- "$@" &>/dev/null \
+    git_commit "update technical version to $techver" "$@" \
     && mio_success "Updated technical version to ${VC}$techver${NC}"
   }
 }
@@ -249,7 +249,7 @@ version_add_file_spec()
     done
   done
   git update-index --add -- "$moduleConfigFile" &>/dev/null && \
-  git commit -m "zou-flow: register version resources" -- "$moduleConfigFile" &>/dev/null
+  git_commit "register version resources" "$moduleConfigFile"
 }
 version_remove_file_spec()
 {
@@ -260,7 +260,7 @@ version_remove_file_spec()
       git config --file "$moduleConfigFile" --unset update-version.$type $file
     done
   done
-  git commit -m "zou-flow: unregister version resources" -- "$moduleConfigFile" &>/dev/null
+  git_commit "unregister version resources" "$moduleConfigFile"
 }
 
 version_verify_context()
@@ -338,6 +338,6 @@ version_config_auto()
   if [ ${#files[@]} -gt 0 ]; then
     # io_trace "version_config_auto -- $(print_vars files[@])"
     git update-index --add -- "$moduleConfigFile" &>/dev/null \
-    && git commit -m 'zou-flow: register version resources' -- "$moduleConfigFile" &>/dev/null
+    && git_commit 'register version resources' "$moduleConfigFile"
   fi
 }

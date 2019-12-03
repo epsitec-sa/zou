@@ -393,7 +393,7 @@ repo_commit_submodules()
 
   local branch=${moduleHead:-$(branch_current)}
   # io_trace "repo_commit_submodules -2- $(print_vars branch)"
-  if git commit -m 'zou-flow: update submodules' -- "$@" >/dev/null; then
+  if git_commit 'update submodules' "$@"; then
     for sm; do
       io_message "  Commited submodules '$sm' on branch '$branch'" "$moduleTracePrefix" ${DarkGray}
     done

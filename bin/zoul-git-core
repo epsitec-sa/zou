@@ -95,3 +95,33 @@ git_user_abbrev()
   done
   echo ${abbrev,,}
 }
+
+# Usage:
+#   local message=( 'title' 'content 1' 'content 2')
+#   git_commit 'message[@]' file1 file2
+git_commit()
+{
+  # io_trace "git_commit ${*@Q}"
+  local _messages_ version header footer content
+  if [[ "$1" =~ \[@\]$ ]]; then
+    _messages_=( "${!1}" )
+  else
+    _messages_=( "$1" )
+  fi
+  # io_trace "git_commit -- $(print_vars _messages_[@])"
+
+  shift
+  header="zou-flow: ${_messages_[0]}"
+  content=( "${_messages_[@]:1}" )
+  # insert '- ' to beginning of all content lines
+  for i in ${!content[@]}; do
+    [[ "${content[i]}" =~ \- ]] || content[i]="- ${content[i]}"
+  done
+  # concat zou-flow version
+  io_set_version
+  content+=( "- zou-flow (v$version)" )
+  printf -v footer '%s \n' "${content[@]}"
+  # io_trace "git_commit -- $(print_vars header content[@] footer)"
+  git add -- "$@" \
+  && git commit -m "$header" -m "$footer" >/dev/null
+}
