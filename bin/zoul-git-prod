@@ -649,6 +649,41 @@ _prod_increment_release_version_core()
 }
 
 ########################################################
+# VERSION UPDATE (git dev vupdate)
+
+# in:
+#   vbranch
+#   prerelPrefix
+#   vcommit
+# out:
+#  vtag
+#  vnext
+prod_increment_update_version()
+{
+  local vbranch=$1 prerelPrefix=$2 vcommit=$3 vnode vresources=()
+
+  if [[ $vbranch == $prodBranch ]]; then
+    vtag="$prodHTag"
+    # io_trace "prod_increment_update_version -1- -- $(print_vars vbranch prodBranch vtag)"
+  else
+    vbranch_set_vnode "$vbranch" || return 1 # -> vnode
+    vtag=$vnode
+    # io_trace "prod_increment_update_version -2- -- $(print_vars vbranch prodBranch vtag)"
+  fi
+
+  vtag_set_increment "$vtag" "$prerelPrefix" || return 1 # -> vnext
+  # io_trace "prod_increment_update_version -3- -- $(print_vars vtag prerelPrefix vnext)"
+
+  # update technical version - modify resources files
+  vresources=( $(version_update "$vnext") )
+  if [[ $vcommit == 'true' ]]; then
+    version_commit_files "$vnext" "${vresources[@]}"
+  else
+    mio_warning "Updated technical version to ${VC}$vnext${NC}"
+  fi
+}
+
+########################################################
 # EVENTS
 
 _prod_on_head_changed()
