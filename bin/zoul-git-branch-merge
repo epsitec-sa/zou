@@ -209,16 +209,19 @@ _branch_merge_tool()
 }
 _branch_merge_resolve_submodule_conflicts()
 {
-  local line status path lines ec=0
+  local line status path lines broot="$bundleRoot" ec=0
+  [[ -z "$broot" ]] && broot=$(repo_bundle_root)
+  # io_trace "_branch_merge_resolve_submodule_conflicts -- $(print_vars broot)"
+
   IFS=$'\n' lines=($(git status -s --porcelain)); IFS=$OIFS
   for line in "${lines[@]}"; do
     if [[ $line =~ ^[[:blank:]]*([A-Z]+)[[:blank:]]+(.+)$ ]]; then
       status=${BASH_REMATCH[1]}
       path=${BASH_REMATCH[2]}
-      # io_trace "_branch_merge_resolve_submodule_conflicts -- $(print_vars status path)" ${Green}
-      if [[ -f "$path/.git" ]]; then
+      # io_trace "_branch_merge_resolve_submodule_conflicts -- $(print_vars status path)"
+      if [[ -f "$path/.git" || -d "$broot/.git/modules/$path" ]]; then
         # ignore submodules - keep local one
-        git reset -q "$path"
+        git reset -q -- "$path"
       else
         # still unmerged files
         ec=1
