@@ -288,7 +288,7 @@ _prod_can_merge_into_dev()
 {
   local toMerge=$1 mergeInto=$2 mergeBase comment IFS=$'\n'
   mergeBase=$(git merge-base "$toMerge" "$mergeInto")
-  for comment in $(git log --format=%B "$mergeBase..$toMerge"); do
+  for comment in $(git log --format=%s "$mergeBase..$toMerge"); do
     # io_trace "_prod_can_merge_into_dev -- $(print_vars mergeBase comment)"
     [[ $comment =~ ^zou-flow: ]] || return 1
   done
