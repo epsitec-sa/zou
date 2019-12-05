@@ -122,6 +122,6 @@ git_commit()
   content+=( "- zou-flow (v$version)" )
   printf -v footer '%s \n' "${content[@]}"
   # io_trace "git_commit -- $(print_vars header content[@] footer)"
-  git add -- "$@" \
-  && git commit -m "$header" -m "$footer" >/dev/null
+  git add -- "$@" &>/dev/null \
+  && git commit -m "$header" -m "$footer" &>/dev/null
 }
