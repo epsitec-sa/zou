@@ -100,14 +100,14 @@ _branch_oreset_visitor()
   # reset to upstream
   if [[ $l == "$current" ]]; then
     # io_trace "### _branch_reset_visitor -4- $(print_vars l r i current)"
-    git reset --hard '@{u}' >/dev/null
+    git reset --hard '@{u}' &>/dev/null
     _branch_raise_branch_sync_event "$r" "$l" "$i"
   else
     # reset ref
     # io_trace "### _branch_reset_visitor -5- $(print_vars l r i current)"
     git update-ref "refs/heads/$l" "$r" >/dev/null
-    git reset . >/dev/null
-    git checkout . >/dev/null
+    git reset . &>/dev/null
+    git checkout . &>/dev/null
   fi
   # io_trace "<<< _branch_reset_visitor -6- $(print_vars l r i current)"
 }
@@ -196,8 +196,8 @@ branch_oreset_all()
 
   branch_merge_abort
   if [[ $forceReset == true ]]; then
-    git reset . >/dev/null
-    git checkout . >/dev/null
+    git reset . &>/dev/null
+    git checkout . &>/dev/null
     repo_list_untracked | xargs --no-run-if-empty rm
   else
     repo_require_clean_work_tree 'Cannot reset' || return 1
