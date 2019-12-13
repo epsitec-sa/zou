@@ -465,10 +465,10 @@ repo_prune_tags()
   [[ $showMessage == true ]] && mio_warning "Pruning tags..."
 
   if [[ $verbose == true ]]; then
-    git tag -d $(git tag -l) &>/dev/null
+    git tag -l | xargs git tag -d &>/dev/null
     io_buffered_eval 'git fetch --tags 2>&1' _repo_prune_tags_line_selector
   else
-    git tag -d $(git tag -l) &>/dev/null
+    git tag -l | xargs git tag -d &>/dev/null
     git fetch --tags &>/dev/null
   fi
 }
