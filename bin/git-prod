@@ -123,7 +123,7 @@ prod_release_root_scope()
 }
 prod_release_scope()
 {
-  local moduleMergeIntoDev=$mergeIntoDev modulePrerelPrefix=$prerelPrefix wasInDevMode hasBeenReleased
+  local moduleMergeIntoDev=$mergeIntoDev modulePrerelPrefix=$prerelPrefix wasInDevMode hasBeenReleased forceRelease
   module_in_strict_dev_mode; wasInDevMode=$?
   
   # io_trace "prod_release_scope -- $(print_vars checkoutType prodCheckoutType prodBranch moduleMergeIntoDev modulePrerelPrefix)"
@@ -135,15 +135,16 @@ prod_release_scope()
   elif module_is_principal; then
     # vlast does not apply to principal module if force release is specified
     if [[ $forcePrincipalRelease == true ]]; then
+      forceRelease=true
       prodCheckoutType='vnext'
     fi
-    # io_trace "_prod_on_preinit PRINCIPAL -- $(print_vars prodCheckoutType modulePrerelPrefix forcePrincipalRelease)"
+    # io_trace "_prod_on_preinit PRINCIPAL -- $(print_vars prodCheckoutType modulePrerelPrefix forceRelease)"
   elif cmd_is_child; then
     # prerelease does not apply to child modules (excepting principal module)
     if [[ $prerelPrefix != 'rtm' ]]; then
       modulePrerelPrefix=''
     fi
-    # io_trace "_prod_on_preinit CHILD -- $(print_vars prodCheckoutType modulePrerelPrefix)"
+    # io_trace "_prod_on_preinit CHILD -- $(print_vars prodCheckoutType modulePrerelPrefix forceRelease)"
   fi
 
   # execute next russian doll
@@ -197,7 +198,7 @@ prod_release_xepilog()
 
 _prod_fix_release_status()
 {
-  prod_fix_release_status "$modulePrerelPrefix" "$forcePrincipalRelease" "$prodCheckoutType"
+  prod_fix_release_status "$modulePrerelPrefix" "$forceRelease" "$prodCheckoutType"
   [[ $dryRun == true ]] && _rstatus_update
 }
 _prod_release()
