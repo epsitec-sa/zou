@@ -56,6 +56,10 @@ io_print_colors()
   done
   printf '%15b%20b\n' "${colors[@]}"
 }
+io_remove_colors()
+{
+  printf "%b\n" "$@" | sed -r "s/\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[m|K]//g"
+}
 # out:
 #   version
 io_set_version()
