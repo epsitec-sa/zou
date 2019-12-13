@@ -33,7 +33,7 @@ prod_scope()
   # vtagResolveMode  -- (auto|vtag|*)
   local prodScopeInitialized=true \
         prodBranch prodBranchPath \
-        prodVTag prodHTag prodAlias devAlias prod2devAlias moduleAlias \
+        prodVTag prodHTag prodAlias devAlias prod2devAlias dev2prodAlias moduleAlias \
         vtagStatus vtag2dev vtag2prod \
         releaseVTag releasePrerelPrefix releaseStatus \
         prodCheckoutType vtagResolveMode
@@ -64,11 +64,17 @@ prod_reset_scope()
 _prod_reset_alias()
 {
   if module_in_prod_mode; then
-    moduleAlias=$prodAlias
-  elif [[ -z $prod2devAlias ]]; then
-    moduleAlias="$devAlias"
-  elif (( $prod2dev != 0 )); then
-    moduleAlias="$devAlias${White} / $prod2devAlias"
+    if [[ -z $dev2prodAlias ]]; then
+      moduleAlias="$prodAlias"
+    elif (( $prod2dev != 0 )); then
+      moduleAlias="$prodAlias${White} / $dev2prodAlias"
+    fi
+  else
+    if [[ -z $prod2devAlias ]]; then
+      moduleAlias="$devAlias"
+    elif (( $prod2dev != 0 )); then
+      moduleAlias="$devAlias${White} / $prod2devAlias"
+    fi
   fi
 }
 _prod_trace()
@@ -81,7 +87,7 @@ _prod_trace()
     io_trace_unsafe "$1 -- $(print_vars prodBranch prodBranchPath prodCheckoutType)"
     io_trace_unsafe "$1 -- $(print_vars vtagStatus prodVTag prodHTag)"
     io_trace_unsafe "$1 -- $(print_vars vtag2dev vtag2prod prod2dev vtagResolveMode)"
-    io_trace_unsafe "$1 -- $(print_vars prodAlias devAlias prod2devAlias moduleAlias)"
+    io_trace_unsafe "$1 -- $(print_vars prodAlias devAlias prod2devAlias dev2prodAlias moduleAlias)"
     io_trace_unsafe "$1 -- $(print_vars releaseStatus releaseVTag releasePrerelPrefix)"
     ;;
   *)
@@ -98,6 +104,7 @@ _prod_trace()
     io_trace_unsafe "$1 -- $(print_vars prodAlias)"
     io_trace_unsafe "$1 -- $(print_vars devAlias)"
     io_trace_unsafe "$1 -- $(print_vars prod2devAlias)"
+    io_trace_unsafe "$1 -- $(print_vars dev2prodAlias)"
     io_trace_unsafe "$1 -- $(print_vars moduleAlias)"
     io_trace_unsafe "$1 -- $(print_vars releaseStatus)"
     io_trace_unsafe "$1 -- $(print_vars releaseVTag)"
@@ -113,14 +120,14 @@ _prod_trace()
 _prod_init_vars()
 {
   prodBranch=''; prodBranchPath=''; prodVTag=''; prodHTag=''
-  vtagStatus='vtagMissing'; vtag2dev=0; vtag2prod=0; prod2dev=0;
+  vtagStatus='vtagMissing'; vtag2dev=0; vtag2prod=0; prod2dev=0
   releaseVTag=''; releasePrerelPrefix=''; releaseStatus='error'
   local alias; vtag_format_alias
-  prodAlias=$alias; devAlias=$alias; prod2devAlias=$alias; moduleAlias=$alias
+  prodAlias=$alias; devAlias=$alias; prod2devAlias=$alias; dev2prodAlias=$alias; moduleAlias=$alias
 
   [[ $prodCheckoutType == 'vlast' ]] && vtagResolveMode='auto' || vtagResolveMode='first'
 
-  # io_trace "_prod_init_vars -- $(print_vars prodAlias devAlias prod2devAlias moduleAlias prodCheckoutType vtagResolveMode)"
+  # io_trace "_prod_init_vars -- $(print_vars prodAlias devAlias prod2devAlias dev2prodAlias moduleAlias prodCheckoutType vtagResolveMode)"
 }
 _prod_init_scope()
 {
@@ -208,8 +215,14 @@ _prod_init_prod()
   prodAlias=$alias
 
   prod2dev=$(( $(git rev-list --count $prodBranchPath..$moduleDevBranchPath) ))
+  if [ $prod2dev -eq 0 ]; then
+    prod2dev=$(( -$(git rev-list --count $moduleDevBranchPath..$prodBranchPath) ))
+  fi
+  # io_trace "_prod_init_prod -- $(print_vars prodBranchPath moduleDevBranchPath prod2dev)"
   vtag_format_alias "$prodBranch" "$prod2dev"
   prod2devAlias=$alias
+  vtag_format_alias "$moduleDevBranchPath" "$((-$prod2dev))"
+  dev2prodAlias=$alias
 
   _prod_reset_alias
 }
