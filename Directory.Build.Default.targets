@@ -33,10 +33,10 @@
 
   <!-- TargetFrameworks -->
   <!-- Do not set TargetFrameworks when running inside Visual Studio -->
-  <PropertyGroup Condition="'$(TargetFrameworks)' == '' And '$(BuildingInsideVisualStudio)' == '' And '$(RuntimeType)' == 'Core'">
+  <PropertyGroup Condition="'$(TargetFrameworks)' == '' And '$(BuildingInsideVisualStudio)' == ''">
     <TargetFrameworks>$(FullTargetFramework);$(CoreTargetFramework);netstandard2.0;netstandard2.1</TargetFrameworks>
   </PropertyGroup>
-
+  
   <!-- Exclude git metadata from project -->
   <ItemGroup>
     <None Remove=".git*" />
@@ -56,8 +56,6 @@
   </Target>
 
   <Target Name="TraceDirectoryBuildDefaultTargets" Condition="'$(ZouTrace)' == 'true'">
-    <Message Importance="high" Text=" ProjectName               = $(ProjectName)" />
-    <Message Importance="high" Text=" RuntimeType               = $(RuntimeType)" />
     <Message Importance="high" Text=" TargetFramework           = $(TargetFramework)" />
     <Message Importance="high" Text=" TargetFrameworks          = $(TargetFrameworks)" />
     <Message Importance="high" Text=" TargetFrameworkIdentifier = $(TargetFrameworkIdentifier)" />
