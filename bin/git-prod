@@ -226,7 +226,7 @@ _prod_release_unreleased()
 {
   # head will change
   prod_increment_release_version "$modulePrerelPrefix"
-  [ $? -eq 127 ] && _prod_force_release_of_principal_module 
+  [ $? -eq 127 ] && _prod_force_release_of_principal_module
 
   if [[ $dryRun == true ]]; then
     mio_success "Branch ${VC}$prodBranch${Green} will be released at ${VC}$releaseVTag" "$alias"
@@ -252,7 +252,7 @@ _prod_release_unimplemented()
 _prod_force_release_of_principal_module()
 {
   [[ $releaseStatus == 'released' ]] && return 0 
-  mio_message "Bundle ${VC}$bundleId${LightPurple} and module ${VC}$principalModuleId${LightPurple} have same version" ${LightPurple}
+  mio_message "Forcing release of principal module ${VC}$principalModuleId" ${LightPurple}
   local forcePrincipalRelease=true
   cmd_visit_module "$principalModuleId"
   cosm_reset_scope

@@ -209,6 +209,7 @@ _prod_init_prod()
   vtagStatus=$status
   releaseVTag=$vtag
   vtag_is_semver "$vtag" && releasePrerelPrefix=${BASH_REMATCH[7]#-}
+  # io_trace "_prod_init_prod 1 -- $(print_vars prodVTag prodHTag releaseVTag)"
 
   local alias
   vtag_format_alias "$vtag" "$delta"
@@ -218,7 +219,7 @@ _prod_init_prod()
   if [ $prod2dev -eq 0 ]; then
     prod2dev=$(( -$(git rev-list --count $moduleDevBranchPath..$prodBranchPath) ))
   fi
-  # io_trace "_prod_init_prod -- $(print_vars prodBranchPath moduleDevBranchPath prod2dev)"
+  # io_trace "_prod_init_prod 2 -- $(print_vars prodBranchPath moduleDevBranchPath prod2dev)"
   vtag_format_alias "$prodBranch" "$prod2dev"
   prod2devAlias=$alias
   vtag_format_alias "$moduleDevBranchPath" "$((-$prod2dev))"
@@ -570,35 +571,38 @@ _prod_commit_release_core()
   # branch_merge "$prodBranch" "$moduleDevBranchPath" &>/dev/null
 }
 # return code
-#   127 -- principal module and bundle have same versions
+#   127 -- principal module should be released
 _prod_refresh_bundle_htag()
 {
   [[ -n $principalModuleId ]] && module_is_bundle  || return 0
   # io_trace "_prod_refresh_bundle_htag 1 -- $(print_vars principalModuleId prodHTag releaseStatus noIncrement)"
 
-  local pinfo pstatus ptag pver hver htag \
+  local pinfo pstatus premain pvtag phtag pvver phver hver htag \
         principalScopes=( prod_scope ) ec=0
 
   pinfo=$(module_visit "$principalModuleId" "${principalScopes[@]}" _prod_get_principal_module_release_info)
-  pstatus=${pinfo%;*}
-  ptag=${pinfo#*;}
-  [ -z $ptag ] && return 0
+  pstatus=${pinfo%%;*}
+  premain=${pinfo#*;}
+  pvtag=${premain%%;*}
+  phtag=${premain#*;}
+  [ -z $phtag ] && return 0
 
-  pver=${ptag##*/}
+  pvver=${pvtag##*/}
+  phver=${phtag##*/}
   hver=${prodHTag##*/}
-  # io_trace "_prod_refresh_bundle_htag 2 -- $(print_vars principalModuleId prodHTag releaseStatus ptag pstatus bver pver)"
-  if [[ $pstatus == 'released' && $hver == $pver ]]; then
+  # io_trace "_prod_refresh_bundle_htag 2 -- $(print_vars principalModuleId prodHTag releaseStatus pvtag phtag pstatus pvver phver hver)"
+  if [[ $pstatus == 'released' && ($hver == $phver || ($releaseStatus == 'unreleased' && $pvver != $phver)) ]]; then
     ec=127
   else
     noIncrement=true
   fi
-  hver=$(vtag_highest_of $pver $hver)
+  hver=$(vtag_highest_of $phver $hver)
   # restore folder
   [[ $prodHTag =~ ^.*/ ]]
   htag=${BASH_REMATCH[0]}$hver
   [[ $htag == $prodHTag ]] && noIncrement=''
   prodHTag=$htag
-  # io_trace "_prod_refresh_bundle_htag 3 -- $(print_vars principalModuleId prodHTag releaseStatus ptag pstatus noIncrement ec)"
+  # io_trace "_prod_refresh_bundle_htag 4 -- $(print_vars principalModuleId prodHTag releaseStatus pvtag phtag pstatus noIncrement ec)"
   return $ec
 }
 # run in principal module context
@@ -607,10 +611,9 @@ _prod_get_principal_module_release_info()
   # io_trace "_prod_get_principal_module_release_info 1 -- $(print_vars releaseStatus prodVTag prodHTag releaseVTag)"
   # [[ $dryRun == true && -n $principalReleaseStatus ]] && releaseStatus=$principalReleaseStatus
   # io_trace "_prod_get_principal_module_release_info 2 -- $(print_vars lbranch vbranch vtag htag delta status nextHead releaseStatus)"
-  local prerelPrefix noIncrement
   _prod_increment_release_version
-  # io_trace "_prod_get_principal_module_release_info 2 -- $(print_vars releaseStatus prodVTag prodHTag releaseVTag)"
-  echo "$releaseStatus;$releaseVTag"
+  # io_trace "_prod_get_principal_module_release_info 2 -- $(print_vars bundleReleaseStatus releaseStatus prodVTag prodHTag releaseVTag)"
+  echo "$releaseStatus;$prodVTag;$releaseVTag"
 }
 
 # Compute next version and prerelease
