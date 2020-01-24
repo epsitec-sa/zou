@@ -1,8 +1,9 @@
 usage: git wip start   [-r] [--hotfix] [<prefix>:][<suffix>] [-- <module-paths>]
    or: git wip enter   [-r] [--hotfix] [<prefix>:][<suffix>] [-- <module-paths>]
    or: git wip exit    [-r] [-- <module-paths>]
+   or: git wip update  [-r] [-- <module-paths>]
    or: git wip release [-r] [--merge] [-- <module-paths>] [<prefix>:][<suffix>]
-   or: git wip finish  [-r] [--merge] [-- <module-paths>][<prefix>:][<suffix>]
+   or: git wip finish  [-r] [--merge] [-- <module-paths>] [<prefix>:][<suffix>]
    or: git wip share
 
 Manage WIP mode.
@@ -11,6 +12,7 @@ commands:
     start                   create and checkout WIP branches in bundle and specified modules
     enter                   checkout WIP branches in bundle and specified modules
     exit                    enter DEV or PROD mode in modules where WIP mode is activated (always recursive in bundle)
+    update                  merge DEV and/or PROD branches into WIP branches      (stay on WIP branches)
     release                 merge WIP branches into WIP, DEV and/or PROD branches (stay on WIP branches)
     finish                  release, exit and delete WIP branches
     share                   make all active WIP branches public (push them on origin)
@@ -37,6 +39,8 @@ example:
     git wip enter my              # enter 'wip:my'    in bundle and current module
     git wip enter hotfix:my       # enter 'hotfix:my' in bundle and current module
 
+    git wip update                # merge DEV code into current WIP in current module
+    
     git wip release               # release WIP code to DEV in current module
     git wip release -r            # release WIP code to DEV in current module recursively
     git wip release wip:my        # release WIP code to wip:my in current module

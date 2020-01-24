@@ -13,8 +13,9 @@ wip_parse()
     -j*)            jobsCount=${1#-j};;
     -r|--recursive) recursive=true;;
     start|enter)    subcommand=$1;;
-    release|finish) subcommand=$1;;
-    exit|share)     subcommand=$1;;
+    release|update) subcommand=$1;;
+    exit|finish)    subcommand=$1;;
+    share)          subcommand=$1;;
     --merge)        mergeIntoDev=true;;
     --hotfix)       wipHotfix=true;;
     --)             shift; break;;
@@ -22,7 +23,7 @@ wip_parse()
     *)  args+=( "$1" );;
   esac; shift; done
 
-  cmd_check_subcommand 'start' 'enter' 'exit' 'share' 'release' 'finish'
+  cmd_check_subcommand 'start' 'enter' 'exit' 'share' 'release' 'update' 'finish'
 
   wipModulePaths=( "$@" )
   wip_parse_wip "${args[@]}"
@@ -66,6 +67,9 @@ wip_run()
 
   local wipLabel
   if wip_is_specified; then
+    case $subcommand in
+      update|exit) io_error "too many arguments (${VC}$wipPrefix:$wipSuffix${Red})"
+    esac
     wip_set_default
     wipLabel="$wipPrefix:$wipSuffix"
   else
@@ -78,6 +82,7 @@ wip_run()
     exit)    startupMessage="Exiting ${Brown}$wipLabel${White}, please wait...";;
     share)   startupMessage="Sharing ${Brown}$wipLabel${White}, please wait...";;
     release) startupMessage="Releasing WIP, please wait...";;
+    update)  startupMessage="Updating WIP, please wait...";;
     finish)  startupMessage="Finishing WIP, please wait...";;
   esac
 
@@ -90,10 +95,10 @@ wip_command()
   cmd_register_module_paths "$recursive" "${wipModulePaths[@]}"
 
   case $subcommand in
-    start)       cmd_register_module_paths false "$bundleRoot";;
-    share)       cmd_register_module_paths true  "$bundleRoot";;
-    enter)       cmd_set_recursive_if_registered "$bundleRoot" || cmd_register_module_paths false "$bundleRoot";;
-    exit|finish) cmd_set_recursive_if_registered "$bundleRoot";;
+    start|update) cmd_register_module_paths false "$bundleRoot";;
+    share)        cmd_register_module_paths true  "$bundleRoot";;
+    enter)        cmd_set_recursive_if_registered "$bundleRoot" || cmd_register_module_paths false "$bundleRoot";;
+    exit|finish)  cmd_set_recursive_if_registered "$bundleRoot";;
   esac
 
   cmd_visit_modules
@@ -205,6 +210,24 @@ _wip_release_merge_prod()
 }
 
 ########
+# UPDATE
+########
+
+wip_update_epilog()
+{
+  _wip_enter_wip_mode || return 0
+  # io_trace "wip_update_epilog 1 -- $(print_vars moduleHead wipPrefix wipSuffix targetWipPrefix targetWipSuffix)"
+  _wip_merge $moduleHead _wip_update_merge _wip_update_merge true || return $?
+  branch_show_status
+}
+_wip_update_merge()
+{
+  local wipBranch=$1 mergeTarget=$2 devBranchPath=$3 devBranch=$4
+  # io_trace "_wip_update_merge_dev -- $(print_vars wipBranch mergeTarget devBranchPath devBranch)"
+  branch_merge "$mergeTarget" "$wipBranch"
+}
+
+########
 # FINISH
 ########
 
@@ -288,7 +311,11 @@ _wip_merge()
     local sha=$(git rev-parse "$mergeTarget")
     $action "$wipBranch" "$mergeTarget" "$branch" "$lbranch"
     if [[ $sha == $(git rev-parse "$mergeTarget") ]]; then
-      mio_message "Already released" ${LightBlue}
+      if [[ $subcommand == update ]]; then
+        mio_message "Already updated" ${LightBlue}
+      else
+        mio_message "Already released" ${LightBlue}
+      fi
     fi
   else
     $action "$wipBranch" "$mergeTarget" "$branch" "$lbranch"
@@ -300,7 +327,7 @@ _wip_enter_wip_mode()
   if module_in_wip_mode; then
     wip_init_wip "${bundleHead%%/*}" "${bundleHead##*/}"
   elif module_is_bundle; then
-    mio_warning "Use ${VC}git wip start${Brown} to switch to WIP mode"
+    mio_warning "Use ${VC}git wip enter${Brown} to switch to WIP mode"
     return 1
   else
     # infer module wip branch from bundle
@@ -310,7 +337,7 @@ _wip_enter_wip_mode()
       wip_init_wip "${wipBranch%%/*}" "${wipBranch##*/}"
     else
       # bundle not in wip mode
-      mio_warning "Use ${VC}git wip start${Brown} to switch to WIP mode"
+      mio_warning "Use ${VC}git wip enter${Brown} to switch to WIP mode"
       return 1
     fi
     # io_trace "_wip_enter_wip_mode -- $(print_vars wipBranch wipPrefix wipSuffix)"
