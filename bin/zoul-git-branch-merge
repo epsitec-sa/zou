@@ -171,21 +171,27 @@ _branch_merge()
 {
   local message=$1 toMerge=$2; shift 2
   if git merge -m "$message" "$@" "$toMerge" &>/dev/null; then
-    # io_trace "_branch_merge -1- -- $(print_vars toMerge intoBranch ref)" ${Green}
+    # io_trace "_branch_merge -1- -- $(print_vars toMerge intoBranch)" ${Green}
     branch_raise_merged_event "$toMerge" "$intoBranch"
     return 0
+  else
+    branch_merge_abort
   fi
-  # io_trace "_branch_merge -2- -- $(print_vars toMerge intoBranch ref)" ${Green}
+  # io_trace "_branch_merge -2- -- $(print_vars toMerge intoBranch)" ${Green}
 
   if _branch_merge_resolve_submodule_conflicts; then
-    # io_trace "_branch_merge -3- -- $(print_vars toMerge intoBranch ref)" ${Green}
-    if git merge -m "$message" "$@" "$toMerge" &>/dev/null; then
-      # io_trace "_branch_merge -3.1- -- $(print_vars toMerge intoBranch ref)" ${Green}
+    # io_trace "_branch_merge -3- -- $(print_vars toMerge intoBranch)" ${Green}
+    
+    # no files to merge, just submodules, use the ours strategy
+    if git merge -m "$message" "$@" "$toMerge" -sours &>/dev/null; then
+      # io_trace "_branch_merge -3.1- -- $(print_vars toMerge intoBranch)" ${Green}
       branch_raise_merged_event "$toMerge" "$intoBranch"
       return 0
+    else
+      return 1
     fi
   elif ! _branch_merge_interactive; then
-    # io_trace "_branch_merge -4- -- $(print_vars toMerge intoBranch ref)" ${Green}
+    # io_trace "_branch_merge -4- -- $(print_vars toMerge intoBranch)" ${Green}
     # git diff
     return 1
   fi
@@ -221,6 +227,7 @@ _branch_merge_resolve_submodule_conflicts()
       # io_trace "_branch_merge_resolve_submodule_conflicts -- $(print_vars status path)"
       if [[ -f "$path/.git" || -d "$broot/.git/modules/$path" ]]; then
         # ignore submodules - keep local one
+        # git add -- "$path"
         git reset -q -- "$path"
       else
         # still unmerged files
