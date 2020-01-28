@@ -174,8 +174,6 @@ _branch_merge()
     # io_trace "_branch_merge -1- -- $(print_vars toMerge intoBranch)" ${Green}
     branch_raise_merged_event "$toMerge" "$intoBranch"
     return 0
-  else
-    branch_merge_abort
   fi
   # io_trace "_branch_merge -2- -- $(print_vars toMerge intoBranch)" ${Green}
 
@@ -188,6 +186,7 @@ _branch_merge()
       branch_raise_merged_event "$toMerge" "$intoBranch"
       return 0
     else
+      # io_trace "_branch_merge -3.2- -- $(print_vars toMerge intoBranch)" ${Green}
       return 1
     fi
   elif ! _branch_merge_interactive; then
@@ -217,14 +216,14 @@ _branch_merge_resolve_submodule_conflicts()
 {
   local line status path lines broot="$bundleRoot" ec=0
   [[ -z "$broot" ]] && broot=$(repo_bundle_root)
-  # io_trace "_branch_merge_resolve_submodule_conflicts -- $(print_vars broot)"
+  # io_trace "_branch_merge_resolve_submodule_conflicts 1 -- $(print_vars broot)"
 
   IFS=$'\n' lines=($(git status -s --porcelain)); IFS=$OIFS
   for line in "${lines[@]}"; do
     if [[ $line =~ ^[[:blank:]]*([A-Z]+)[[:blank:]]+(.+)$ ]]; then
       status=${BASH_REMATCH[1]}
       path=${BASH_REMATCH[2]}
-      # io_trace "_branch_merge_resolve_submodule_conflicts -- $(print_vars status path)"
+      # io_trace "_branch_merge_resolve_submodule_conflicts 2 -- $(print_vars status path)"
       if [[ -f "$path/.git" || -d "$broot/.git/modules/$path" ]]; then
         # ignore submodules - keep local one
         # git add -- "$path"
@@ -232,6 +231,7 @@ _branch_merge_resolve_submodule_conflicts()
       else
         # still unmerged files
         ec=1
+        # io_trace "_branch_merge_resolve_submodule_conflicts 3 -- $(print_vars status path ec)"
       fi
     fi
   done
