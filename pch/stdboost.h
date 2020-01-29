@@ -36,6 +36,7 @@
 #include <boost/process.hpp>
 #include <boost/process/windows.hpp>
 #include <boost/regex.hpp>
+#include <boost/signals2.hpp>
 #include <boost/signals2/signal.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/condition_variable.hpp>
