@@ -179,8 +179,11 @@ _branch_merge()
 
   if _branch_merge_resolve_submodule_conflicts; then
     # io_trace "_branch_merge -3- -- $(print_vars toMerge intoBranch)" ${Green}
-    
+
     # no files to merge, just submodules, use the ours strategy
+    # all conflicts should be resolved
+    branch_merge_abort
+
     if git merge -m "$message" "$@" "$toMerge" -sours &>/dev/null; then
       # io_trace "_branch_merge -3.1- -- $(print_vars toMerge intoBranch)" ${Green}
       branch_raise_merged_event "$toMerge" "$intoBranch"
