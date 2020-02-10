@@ -195,8 +195,8 @@ bundle_scope()
   bundleConfigFile="$bundleRoot/.zou-flow"
 
   cd "$bundleRoot"
+
   _bundle_set_head
-  cd - >/dev/null
   
   repo_set_bundle_url_info "$bundleRoot"  # -> bundleUrl bundleUrlName
   _module_set_bundle_trace_prefix
@@ -208,6 +208,8 @@ bundle_scope()
   _module_register_bundle
 
   _module_trace 'bundle_scope'
+
+  cd - >/dev/null
 
   # io_trace "bundle_scope >> $*"
   # execute next russian doll
