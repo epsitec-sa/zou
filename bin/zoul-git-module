@@ -195,8 +195,8 @@ bundle_scope()
   bundleConfigFile="$bundleRoot/.zou-flow"
 
   cd "$bundleRoot"
-
   _bundle_set_head
+  cd - >/dev/null
   
   repo_set_bundle_url_info "$bundleRoot"  # -> bundleUrl bundleUrlName
   _module_set_bundle_trace_prefix
@@ -208,8 +208,6 @@ bundle_scope()
   _module_register_bundle
 
   _module_trace 'bundle_scope'
-
-  cd - >/dev/null
 
   # io_trace "bundle_scope >> $*"
   # execute next russian doll
@@ -322,6 +320,8 @@ _module_set_head()
 }
 _module_set_bundle_dev_branch()
 {
+  cd "$bundleRoot"
+
   if [[ $bundleHead == 'HEAD' || ( $(git_object_type $bundleHead) == 'tag' && ! $bundleHead =~ (.*/)?v[0-9]+\.[0-9]+ ) ]]; then
     # we are in detached HEAD : infer dev branch from vtag name
     local ltag stag folder
@@ -340,6 +340,7 @@ _module_set_bundle_dev_branch()
   branch_set_realize "$bundleDevBranch"
   bundleDevBranchPath=$branch
   # io_trace "_module_set_bundle_sdev_branch -4- $(print_vars bundleHead bundleDevBranch bundleDevBranchPath)"
+  cd - >/dev/null
 }
 _bundle_vref_to_dev()
 {
