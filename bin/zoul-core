@@ -449,7 +449,11 @@ get_file_encoding()
 }
 _locale_encoding()
 {
-  _lang_to_encoding $(locale | grep -0 'LANG=')
+  if command -v locale; then
+    _lang_to_encoding $(locale | grep -0 'LANG=')
+  else
+    _lang_to_encoding "LANG=$LANG"
+  fi
 }
 _lang_to_encoding()
 {
