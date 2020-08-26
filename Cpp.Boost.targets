@@ -92,12 +92,12 @@
     
     <!-- Restore nuget packages if necessary... -->
     <Exec Condition="'$(_PackagesConfigChanged)' == 'true'" Command='"$(ZouBinDir)nuget" restore "$(PackagesConfigFile)" -PackagesDirectory "$(NugetPackagesDir.TrimEnd(\/))"' />
-    <Exec Condition="'$(_PackagesConfigChanged)' == 'true'" Command='git add "$(PackagesConfigFile)"' />
-    <Exec Condition="'$(_PackagesConfigChanged)' == 'true'" Command='git commit "-mzou-build: update boost version to $(BoostVersion)" "$(PackagesConfigFile)"' />
+    <Exec Condition="'$(_PackagesConfigChanged)' == 'true'" Command='git add "$(PackagesConfigFile)" &gt;NUL' ContinueOnError='true' />
+    <Exec Condition="'$(_PackagesConfigChanged)' == 'true'" Command='git commit "-mzou-build: update boost version to $(BoostVersion)" "$(PackagesConfigFile)" &gt;NUL' ContinueOnError='true' />
   </Target>
 
   <Target Name="BoostClean" AfterTargets="Clean">
-    <Delete Files="$(IntDir)zou.boost.packages.config" />
+    <Delete Files="$(_BoostOnlyPackagesConfigFile)" />
   </Target>
 
   <Target Name="_CppBoostTrace" Condition="'$(ZouTrace)' == 'true'">
