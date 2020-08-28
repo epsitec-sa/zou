@@ -1,9 +1,10 @@
 <!-- Defines the default metadata for .NET projects (epilog) -->
 <Project  InitialTargets="TraceDirectoryBuildDefaultTargets">
+  <Import Project="Boot.Platform.props" Condition="'$(RuntimePlatform)' == ''"/>
   <PropertyGroup>
     <!-- Package default properties -->
     <AssemblyTitle Condition="'$(AssemblyTitle)' == ''">$(AssemblyName)</AssemblyTitle>
-    <AssemblyTitle>$(AssemblyTitle) ($(TargetFramework))</AssemblyTitle>
+    <AssemblyTitle>$(AssemblyTitle) ($(RuntimeIdentifier).$(TargetFramework))</AssemblyTitle>
     <FirstCopyrightYear Condition="'$(FirstCopyrightYear)' == ''"></FirstCopyrightYear>
     <LastCopyrightYear Condition="'$(LastCopyrightYear)' == ''">$([System.DateTime]::Now.ToString(yyyy))</LastCopyrightYear>
     <CopyrightYears Condition="'$(CopyrightYears)' == '' And ('$(FirstCopyrightYear)' == '' Or '$(FirstCopyrightYear)' == '$(LastCopyrightYear)')">$(LastCopyrightYear)</CopyrightYears>
@@ -11,7 +12,7 @@
     <Copyright Condition="'$(Copyright)' == ''">Copyright © $(CopyrightYears), EPSITEC SA, CH-1400 Yverdon-les-Bains, Switzerland</Copyright>
     <Authors Condition="'$(Authors)' == ''">$(Company)</Authors>
     <Product Condition="'$(Product)' == ''">$(AssemblyName)</Product>
-    <Description Condition="'$(Description)' == ''">$(Product) v$(Version) ($(TargetFramework))</Description>
+    <Description Condition="'$(Description)' == ''">$(Product) v$(Version) ($(RuntimeIdentifier).$(TargetFramework))</Description>
     <DefaultLanguage Condition="'$(DefaultLanguage)' == ''">en-US</DefaultLanguage>
     <PackageId Condition="'$(PackageId)' == ''">$(ProjectName)</PackageId>
     <PackageId Condition="!$(PackageId.StartsWith('$(Company)'))">$(Company).$(PackageId)</PackageId>
