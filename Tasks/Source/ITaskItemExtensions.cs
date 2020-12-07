@@ -1,29 +1,29 @@
-using System;
+// Copyright © 2013-2020, EPSITEC SA, CH-1400 Yverdon-les-Bains, Switzerland
+// Author: Roger VUISTINER, Maintainer: Roger VUISTINER
+
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.Build.Framework;
-using Microsoft.Build.Utilities;
 
-namespace Epsitec.Zou
+using Microsoft.Build.Framework;
+
+namespace Zou.Tasks
 {
-	public static class ITaskItemExtensions
+    public static class ITaskItemExtensions
 	{
-		public static IEnumerable<string> GetMetadata(this ITaskItem self, IEnumerable<string> keys)
+		public static IEnumerable<string>   GetMetadata(this ITaskItem self, IEnumerable<string> keys)
 		{
 			return keys.Select (k => self.GetMetadata (k));
 		}
-		public static string JoinMetadata(this ITaskItem self, string keys)
+		public static string                JoinMetadata(this ITaskItem self, string keys)
 		{
 			return string.Join(";", keys.Split(';').Select (k => self.GetMetadata (k)));
 		}
-		public static IEnumerable<string> CustomMetadataNames(this ITaskItem self)
+		public static IEnumerable<string>   CustomMetadataNames(this ITaskItem self)
 		{
 			return self.MetadataNames.Cast<string>().Except(StandardMetadataNames);
 		}
 
-		private static IEnumerable<string> StandardMetadataNames
+		private static IEnumerable<string>  StandardMetadataNames
 		{
 			get
 			{

@@ -1,46 +1,23 @@
+// Copyright © 2013-2020, EPSITEC SA, CH-1400 Yverdon-les-Bains, Switzerland
+// Author: Roger VUISTINER, Maintainer: Roger VUISTINER
+
 using Bcx.Linq;
 using Microsoft.Build.Framework;
 using System;
 using System.Linq;
 
-namespace Epsitec.Zou
+namespace Zou.Tasks
 {
 	public class SaveItems : ItemsTask
 	{
-		[Required]
-		public ITaskItem[]		Items
-		{
-			get;
-			set;
-		}
-		public string			Metadata
-		{
-			get;
-			set;
-		}
-		public bool				KeepDuplicates
-		{
-			get;
-			set;
-		}
-		public bool				Overwrite
-		{
-			get;
-			set;
-		}
-		[Output]
-		public ITaskItem[]		OldItems
-		{
-			get;
-			set;
-		}
-		[Output]
-		public ITaskItem[]		NewItems
-		{
-			get;
-			set;
-		}
-		public override bool	Execute()
+        public string			        Metadata       { get; set; }
+        public bool				        KeepDuplicates { get; set; }
+        public bool				        Overwrite      { get; set; }
+		[Required] public ITaskItem[]   Items          { get; set; }
+        [Output]   public ITaskItem[]	OldItems       { get; set; }
+        [Output]   public ITaskItem[]	NewItems       { get; set; }
+
+        public override bool    Execute()
 		{
 			var inputMemos = this.Items.Select (item => ItemMemo.FromTaskItem (item, this.RelativeTo, this.Metadata)).ToArray ();
 			var oldMemos   = ItemMemo.Parse (this.ReadAllLines ()).ToArray ();

@@ -1,4 +1,6 @@
- 
+// Copyright © 2013-2020, EPSITEC SA, CH-1400 Yverdon-les-Bains, Switzerland
+// Author: Roger VUISTINER, Maintainer: Roger VUISTINER
+
 using System;
 using Microsoft.Build.Utilities;
 using Microsoft.Build.Framework;
@@ -34,27 +36,14 @@ namespace MSBuild.Community.Tasks
     /// </example>
     public class Prompt : Task
     {
-        private string text = "Press Enter to continue...";
-
         /// <summary>
         /// The message to display in the console.
         /// </summary>
-        public string Text
-        {
-            get { return text; }
-            set { text = value; }
-        }
-
-        private string userInput;
-
+        public string           Text      { get; set; } = "Press Enter to continue...";
         /// <summary>
         /// The text entered at the console.
         /// </summary>
-        [Output]
-        public string UserInput
-        {
-            get { return userInput; }
-        }
+        [Output] public string  UserInput { get; private set; }
 
         /// <summary>
         /// When overridden in a derived class, executes the task.
@@ -62,10 +51,10 @@ namespace MSBuild.Community.Tasks
         /// <returns>
         /// true if the task successfully executed; otherwise, false.
         /// </returns>
-        public override bool Execute()
+        public override bool    Execute()
         {
-            Console.WriteLine(text);
-            userInput = Console.ReadLine();
+            Console.WriteLine(this.Text);
+            this.UserInput = Console.ReadLine();
             return true;
         }
     }

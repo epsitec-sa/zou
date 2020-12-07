@@ -5,7 +5,7 @@ using Microsoft.Build.Utilities;
 using System.IO;
 using System.Net;
 
-namespace Epsitec.Zou
+namespace Zou.Tasks
 {
     /// <summary>
     /// Makes an HTTP request, optionally validating the result and writing it to a file.
