@@ -1,9 +1,12 @@
+// Copyright © 2013-2020, EPSITEC SA, CH-1400 Yverdon-les-Bains, Switzerland
+// Author: Roger VUISTINER, Maintainer: Roger VUISTINER
+
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Epsitec.Zou
+namespace Zou.Tasks
 {
 	public class LeftOuterJoin : JoinTask
 	{

@@ -1,3 +1,6 @@
+// Copyright © 2013-2020, EPSITEC SA, CH-1400 Yverdon-les-Bains, Switzerland
+// Author: Roger VUISTINER, Maintainer: Roger VUISTINER
+
 using Bcx.Linq;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
@@ -6,28 +9,15 @@ using System.IO;
 using System.Linq;
 using System.Xml.Linq;
 
-namespace Epsitec.Zou
+namespace Zou.Tasks
 {
 	public class MergePackagesConfig : Task
 	{
-		[Required]
-		public ITaskItem[] MergeFiles
-		{
-			get;
-			set;
-		}
-		[Required]
-		public string IntoFile
-		{
-			get;
-			set;
-		}
-		[Output]
-		public bool Changed
-		{
-			get; set;
-		}
-		public override bool				Execute()
+		[Required] public ITaskItem[]   MergeFiles { get; set; }
+		[Required] public string        IntoFile   { get; set; }
+		[Output]   public bool          Changed    { get; set; }
+
+        public override bool			Execute()
 		{
 			try
 			{
@@ -57,7 +47,7 @@ namespace Epsitec.Zou
 			return !this.Log.HasLoggedErrors;
 		}
 
-		private XDocument Merge(XDocument doc1, XDocument doc2)
+		private XDocument               Merge(XDocument doc1, XDocument doc2)
 		{
 			var count0 = doc1.Root.Elements ().Count ();
 			doc1.Root.Add (

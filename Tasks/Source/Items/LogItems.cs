@@ -1,64 +1,58 @@
+// Copyright © 2013-2020, EPSITEC SA, CH-1400 Yverdon-les-Bains, Switzerland
+// Author: Roger VUISTINER, Maintainer: Roger VUISTINER
+
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Epsitec.Zou
+namespace Zou.Tasks
 {
-	public class LogItems : Task
-	{
-		public string			Title
-		{
-			get; set;
-		}
-		public bool				AllMetadata
-		{
-			get; set;
-		}
-		[Required]				
-		public ITaskItem[]		Items
-		{
-			get;
-			set;
-		}
-		public override bool	Execute()
-		{
-			this.Items.ForEach (item => this.LogItem (item));
-			return !this.Log.HasLoggedErrors;
-		}
+    public class LogItems : Task
+    {
+        public string                   Title       { get; set; }
+        public bool                     AllMetadata { get; set; }
+        [Required] public ITaskItem[]   Items       { get; set; }
 
-		private void			LogItem(ITaskItem item)
-		{
-			var header = string.IsNullOrEmpty (this.Title) ? $"{item.ItemSpec}:" : $"{this.Title} [{item.ItemSpec}]";
+        public override bool Execute()
+        {
+            this.Items.ForEach(item => this.LogItem(item));
+            return !this.Log.HasLoggedErrors;
+        }
 
-			if (this.AllMetadata)
-			{
-				this.LogMetadata (item.MetadataNames, header, item.GetMetadata);
-			}
-			else
-			{
-				this.LogMetadata (item.CustomMetadataNames(), header, item.GetMetadata);
-			}
-		}
-        private void            LogMetadata(System.Collections.ICollection names, string header, Func<string, string> getMetaData) => this.LogMetadata(names.Cast<string>(), header, getMetaData);
-        private void			LogMetadata(IEnumerable<string> names, string header, Func<string, string> getMetaData)
-		{
-			if (names.IsEmpty ())
-			{
-				this.Log.LogMessage (MessageImportance.Normal, header);
-			}
-			else
-			{
-				var maxNameLength = names.Max (name => name.Length);
-				var lines = names
-					.Where (name => name != "OriginalItemSpec")
-					.OrderBy (name => name)
-					.Select (name => $"  {name.PadRight (maxNameLength)} = {getMetaData (name)}")
-					.StartWith ($"{header}:");
+        private void LogItem(ITaskItem item)
+        {
+            var header = string.IsNullOrEmpty(this.Title) ? $"{item.ItemSpec}:" : $"{this.Title} [{item.ItemSpec}]";
 
-				this.Log.LogMessage (MessageImportance.Normal, string.Join ("\n", lines));
-			}
-		}
-	}
+            if (this.AllMetadata)
+            {
+                this.LogMetadata(item.MetadataNames, header, item.GetMetadata);
+            }
+            else
+            {
+                this.LogMetadata(item.CustomMetadataNames(), header, item.GetMetadata);
+            }
+        }
+        private void LogMetadata(System.Collections.ICollection names, string header, Func<string, string> getMetaData) => this.LogMetadata(names.Cast<string>(), header, getMetaData);
+        private void LogMetadata(IEnumerable<string> names, string header, Func<string, string> getMetaData)
+        {
+            if (names.IsEmpty())
+            {
+                this.Log.LogMessage(MessageImportance.Normal, header);
+            }
+            else
+            {
+                var maxNameLength = names.Max(name => name.Length);
+                var lines = names
+                  .Where(name => name != "OriginalItemSpec")
+                  .OrderBy(name => name)
+                  .Select(name => $"  {name.PadRight(maxNameLength)} = {getMetaData(name)}")
+                  .StartWith($"{header}:");
+
+                this.Log.LogMessage(MessageImportance.Normal, string.Join("\n", lines));
+            }
+        }
+    }
 }

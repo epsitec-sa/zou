@@ -1,17 +1,21 @@
+// Copyright © 2013-2020, EPSITEC SA, CH-1400 Yverdon-les-Bains, Switzerland
+// Author: Roger VUISTINER, Maintainer: Roger VUISTINER
+
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
+
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace Epsitec.Zou
+namespace Zou.Tasks
 {
-	public enum ProjectType
-	{
-		Solution,
-		CSharp,
-		Cpp,
+    public enum ProjectType
+    {
+        Solution,
+        CSharp,
+        Cpp,
         PowerShell,
         FSharp,
         VisualBasic,
@@ -24,40 +28,32 @@ namespace Epsitec.Zou
         MsBuild,
         Sql,
         DataBase
-	}
-	public enum Platform
-	{
-		NotSpecified,
-		AnyCpu,
-		Win32,
-		x86,
-		x64,
-		Arm,
-		Itanium
-	}
+    }
+    public enum Platform
+    {
+        NotSpecified,
+        AnyCpu,
+        Win32,
+        x86,
+        x64,
+        Arm,
+        Itanium
+    }
 
-	public class AddBuildOptions : Task
-	{
-		[Required]
-		public ITaskItem[]				Projects
-		{
-			get;
-			set;
-		}
-		[Output]
-		public ITaskItem[]				ProjectsOutput
-		{
-			get; private set;
-		}
-		public override bool			Execute()
-		{
-			this.ProjectsOutput = this.Projects.SelectMany (project => this.AddOptions (project)).ToArray ();
-			return !this.Log.HasLoggedErrors;
-		}
+    public class AddBuildOptions : Task
+    {
+        [Required] public ITaskItem[]   Projects       { get; set; }
+        [Output]   public ITaskItem[]   ProjectsOutput { get; private set; }
 
-		private IEnumerable<ITaskItem>	AddOptions(ITaskItem projectItem)
-		{
-			var template = new TaskItem (projectItem);
+        public override bool            Execute()
+        {
+            this.ProjectsOutput = this.Projects.SelectMany(project => this.AddOptions(project)).ToArray();
+            return !this.Log.HasLoggedErrors;
+        }
+
+        private IEnumerable<ITaskItem>  AddOptions(ITaskItem projectItem)
+        {
+            var template = new TaskItem(projectItem);
             this.ProcessOptions(template);
 
             foreach (var target in template.GetMetadata("Targets").Split(';'))
@@ -87,131 +83,131 @@ namespace Epsitec.Zou
                 yield return project;
 
             }
-		}
-		private void					ProcessOptions(ITaskItem project)
-		{
-			try
-			{
-				var projectType = project.GetProjectType ();
-				var platform    = this.ProcessPlatform (project, projectType);
-				this.ProcessOutDir (project, projectType, platform);
-			}
-			catch (Exception e)
-			{
-				this.Log.LogErrorFromException (e);
-			}
-		}
-		private Platform				ProcessPlatform(ITaskItem project, ProjectType projectType)
-		{
-			var platform = project.GetPlatform ();
-			if (platform == Platform.Win32)
-			{
-				if (projectType == ProjectType.CSharp)
-				{
-					platform = Platform.AnyCpu;
-				}
-			}
+        }
+        private void                    ProcessOptions(ITaskItem project)
+        {
+            try
+            {
+                var projectType = project.GetProjectType();
+                var platform = this.ProcessPlatform(project, projectType);
+                this.ProcessOutDir(project, projectType, platform);
+            }
+            catch (Exception e)
+            {
+                this.Log.LogErrorFromException(e);
+            }
+        }
+        private Platform                ProcessPlatform(ITaskItem project, ProjectType projectType)
+        {
+            var platform = project.GetPlatform();
+            if (platform == Platform.Win32)
+            {
+                if (projectType == ProjectType.CSharp)
+                {
+                    platform = Platform.AnyCpu;
+                }
+            }
 
-			if (platform == Platform.AnyCpu)
-			{
-				if (projectType == ProjectType.Solution)
-				{
-					project.SetMetadata ("Platform", "Any CPU");
-				}
-				else
-				{
-					project.SetMetadata ("Platform", "AnyCPU");
-				}
-			}
-			return platform;
-		}
-		private void					ProcessOutDir(ITaskItem project, ProjectType projectType, Platform platform)
-		{
-			if (projectType == ProjectType.CSharp && string.IsNullOrEmpty(project.GetMetadata ("OutPutPath")))
-			{
-				var outDir = project.GetMetadata ("OutDir");
-				if (!string.IsNullOrEmpty(outDir))
-				{
+            if (platform == Platform.AnyCpu)
+            {
+                if (projectType == ProjectType.Solution)
+                {
+                    project.SetMetadata("Platform", "Any CPU");
+                }
+                else
+                {
+                    project.SetMetadata("Platform", "AnyCPU");
+                }
+            }
+            return platform;
+        }
+        private void                    ProcessOutDir(ITaskItem project, ProjectType projectType, Platform platform)
+        {
+            if (projectType == ProjectType.CSharp && string.IsNullOrEmpty(project.GetMetadata("OutPutPath")))
+            {
+                var outDir = project.GetMetadata("OutDir");
+                if (!string.IsNullOrEmpty(outDir))
+                {
                     if (0 != string.Compare("Publish", project.GetMetadata("_Target"), StringComparison.OrdinalIgnoreCase))
                     {
                         project.SetMetadata("OutputPath", outDir);
                     }
-                    project.RemoveMetadata ("OutDir");
-				}
-			}
-		}
+                    project.RemoveMetadata("OutDir");
+                }
+            }
+        }
+    }
 
-	}
+    internal class BuildPropertyComparer : IComparer<Tuple<string, string>>
+    {
+        public static readonly BuildPropertyComparer Default = new BuildPropertyComparer();
 
-	internal class BuildPropertyComparer : IComparer<Tuple<string, string>>
-	{
-		public static readonly BuildPropertyComparer	Default = new BuildPropertyComparer ();
-		public int										Compare(Tuple<string, string> x, Tuple<string, string> y)
-		{
-			var xEndsWithBackslash = x.Item2.EndsWith ("\\");
-			var yEndsWithBackslash = y.Item2.EndsWith ("\\");
-			if (xEndsWithBackslash)
-			{
-				return yEndsWithBackslash ? string.Compare (x.Item1, y.Item1) : -1;
-			}
-			else if (yEndsWithBackslash)
-			{
-				return xEndsWithBackslash ? string.Compare (x.Item1, y.Item1) : 1;
-			}
-			else
-			{
-				return string.Compare (x.Item1, y.Item1);
-			}
-		}
-	}
-	internal static partial class Mixins
-	{
-		public static bool					IsBuildProperty(string name) => !Mixins.NonBuildProperties.Contains (name);
-		public static Platform				GetPlatform(this ITaskItem item)
-		{
-			var metadata = item.GetMetadata ("Platform");
-			if (string.IsNullOrWhiteSpace (metadata))
-			{
-				return Platform.NotSpecified;
-			}
-			else if (0 == string.Compare(metadata, "Any CPU", StringComparison.OrdinalIgnoreCase))
-			{
-				return Platform.AnyCpu;
-			}
+        public int Compare(Tuple<string, string> x, Tuple<string, string> y)
+        {
+            var xEndsWithBackslash = x.Item2.EndsWith("\\");
+            var yEndsWithBackslash = y.Item2.EndsWith("\\");
+            if (xEndsWithBackslash)
+            {
+                return yEndsWithBackslash ? string.Compare(x.Item1, y.Item1) : -1;
+            }
+            else if (yEndsWithBackslash)
+            {
+                return xEndsWithBackslash ? string.Compare(x.Item1, y.Item1) : 1;
+            }
+            else
+            {
+                return string.Compare(x.Item1, y.Item1);
+            }
+        }
+    }
+    internal static partial class Mixins
+    {
+        public static bool          IsBuildProperty(string name) => !Mixins.NonBuildProperties.Contains(name);
+        public static Platform      GetPlatform(this ITaskItem item)
+        {
+            var metadata = item.GetMetadata("Platform");
+            if (string.IsNullOrWhiteSpace(metadata))
+            {
+                return Platform.NotSpecified;
+            }
+            else if (0 == string.Compare(metadata, "Any CPU", StringComparison.OrdinalIgnoreCase))
+            {
+                return Platform.AnyCpu;
+            }
             if (Enum.TryParse(metadata, true, out Platform platform))
             {
                 return platform;
             }
-            throw new ArgumentOutOfRangeException (nameof (metadata), $"Platform '{metadata}' not defined in zou");
-		}
-		public static ProjectType			GetProjectType(this ITaskItem item)
-		{
-			var extension = Path.GetExtension (item.ItemSpec);
+            throw new ArgumentOutOfRangeException(nameof(metadata), $"Platform '{metadata}' not defined in zou");
+        }
+        public static ProjectType   GetProjectType(this ITaskItem item)
+        {
+            var extension = Path.GetExtension(item.ItemSpec);
             if (ProjectExtensionToType.TryGetValue(extension, out var projectType))
             {
                 return projectType;
             }
-            throw new ArgumentOutOfRangeException (nameof (extension), $"Project type '{extension}' not defined in zou");
-		}
+            throw new ArgumentOutOfRangeException(nameof(extension), $"Project type '{extension}' not defined in zou");
+        }
 
-		private static IEnumerable<string>	NonBuildProperties
-		{
-			get
-			{
+        private static IEnumerable<string> NonBuildProperties
+        {
+            get
+            {
                 yield return "_Target";
                 yield return "BuildInParallel";
-				yield return "Language";
-				yield return "Link";
+                yield return "Language";
+                yield return "Link";
                 yield return "OriginalItemSpec";
                 yield return "Targets";
                 yield return "Verbosity";
-			}
-		}
+            }
+        }
 
-		private static readonly Dictionary<string, ProjectType> ProjectExtensionToType = new Dictionary<string, ProjectType>()
-		{
-			{ ".sln",         ProjectType.Solution },
-			{ ".csproj",      ProjectType.CSharp },
+        private static readonly Dictionary<string, ProjectType> ProjectExtensionToType = new Dictionary<string, ProjectType>()
+        {
+            { ".sln",         ProjectType.Solution },
+            { ".csproj",      ProjectType.CSharp },
             { ".vcxproj",     ProjectType.Cpp },
             { ".pssproj",     ProjectType.PowerShell },
             { ".fsproj",      ProjectType.FSharp },
@@ -226,5 +222,5 @@ namespace Epsitec.Zou
             { ".sqlproj",     ProjectType.Sql },
             { ".dbproj",      ProjectType.DataBase },
         };
-	}
+    }
 }

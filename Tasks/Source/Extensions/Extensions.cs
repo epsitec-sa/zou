@@ -1,3 +1,6 @@
+// Copyright © 2013-2020, EPSITEC SA, CH-1400 Yverdon-les-Bains, Switzerland
+// Author: Roger VUISTINER, Maintainer: Roger VUISTINER
+
 using Bcx.IO;
 using System;
 using System.Collections.Generic;
@@ -7,7 +10,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 
-namespace Epsitec.Zou
+namespace Zou.Tasks
 {
     public static class DirectoryInfoExtensions
     {
@@ -31,38 +34,38 @@ namespace Epsitec.Zou
         /// Set escaped value to true if these values are already escaped with Regex.Escape method.
         /// If escaped is false, the underlying implementation will escape them.
         /// </remarks>
-        public static DirectoryInfo CreateIndexedSubdirectory(this DirectoryInfo source, out int index, string prefix = null, string suffix = null, bool escaped = false)
+        public static DirectoryInfo   CreateIndexedSubdirectory(this DirectoryInfo source, out int index, string prefix = null, string suffix = null, bool escaped = false)
         {
             source.CreateIndexedSubdirectory(out index, out var subdir, prefix, suffix, escaped);
             return subdir;
         }
-        public static DirectoryInfo CreateIndexedSubdirectory(this DirectoryInfo source, out DirectoryInfo subdirectory, string prefix = null, string suffix = null, bool escaped = false)
+        public static DirectoryInfo   CreateIndexedSubdirectory(this DirectoryInfo source, out DirectoryInfo subdirectory, string prefix = null, string suffix = null, bool escaped = false)
         {
             return source.CreateIndexedSubdirectory(out var index, out subdirectory, prefix, suffix, escaped);
         }
-        public static DirectoryInfo CreateIndexedSubdirectory(this DirectoryInfo source, out int index, out DirectoryInfo subdirectory, string prefix = null, string suffix = null, bool escaped = false)
+        public static DirectoryInfo   CreateIndexedSubdirectory(this DirectoryInfo source, out int index, out DirectoryInfo subdirectory, string prefix = null, string suffix = null, bool escaped = false)
         {
             subdirectory = source.GetIndexedSubdirectory(out index, prefix, suffix, escaped).EnsureExists();
             return source.Clone();
         }
-        public static DirectoryInfo EnsureExists(this DirectoryInfo source)
+        public static DirectoryInfo   EnsureExists(this DirectoryInfo source)
         {
             return source.CreateSafe();
         }
-        public static DirectoryInfo CreateSafe(this DirectoryInfo source)
+        public static DirectoryInfo   CreateSafe(this DirectoryInfo source)
         {
             return Helpers.Retry(() => Helpers.Create(source));
         }
-        private static DirectoryInfo GetIndexedSubdirectory(this DirectoryInfo source, out int index, string prefix, string suffix, bool escaped)
+        private static DirectoryInfo  GetIndexedSubdirectory(this DirectoryInfo source, out int index, string prefix, string suffix, bool escaped)
         {
             return new DirectoryInfo(source.GetIndexedSubdirectoryPath(out index, prefix, suffix, escaped));
         }
-        private static string GetIndexedSubdirectoryPath(this DirectoryInfo source, out int index, string prefix, string suffix, bool escaped)
+        private static string         GetIndexedSubdirectoryPath(this DirectoryInfo source, out int index, string prefix, string suffix, bool escaped)
         {
             var existingNames = source.EnumerateDirectoriesSafe().Select(dir => dir.Name);
             return source.GetIndexedSubpath(out index, existingNames, prefix, suffix, escaped);
         }
-        private static string GetIndexedSubpath(this DirectoryInfo source, out int index, IEnumerable<string> existingNames, string prefix, string suffix, bool escaped)
+        private static string         GetIndexedSubpath(this DirectoryInfo source, out int index, IEnumerable<string> existingNames, string prefix, string suffix, bool escaped)
         {
             prefix = prefix ?? string.Empty;
             suffix = suffix ?? string.Empty;
@@ -74,11 +77,11 @@ namespace Epsitec.Zou
             var name = prefix + index.ToString() + suffix;
             return source.GetSubpath(name);
         }
-        public static string GetSubpath(this DirectoryInfo source, string name)
+        public static string          GetSubpath(this DirectoryInfo source, string name)
         {
             return Path.Combine(source.FullName, name);
         }
-        private static DirectoryInfo Clone(this DirectoryInfo source)
+        private static DirectoryInfo  Clone(this DirectoryInfo source)
         {
             // used for immutability (sort of)
             return new DirectoryInfo(source.FullName);
@@ -86,7 +89,7 @@ namespace Epsitec.Zou
 
         private static class Helpers
         {
-            public static Regex NumberExtractorRegex(string prefix, string suffix, bool escaped)
+            public static Regex             NumberExtractorRegex(string prefix, string suffix, bool escaped)
             {
                 if (!escaped)
                 {
@@ -100,16 +103,16 @@ namespace Epsitec.Zou
                 sb.Append('$');
                 return new Regex(sb.ToString(), RegexOptions.IgnoreCase);
             }
-            public static int? ExtractInt(string value, Regex extractor)
+            public static int?              ExtractInt(string value, Regex extractor)
             {
                 var match = extractor.Match(value);
                 return match.Success ? int.Parse(match.Groups[1].Value) : default(int?);
             }
-            public static IEnumerable<int> ExtractInt(IEnumerable<string> values, Regex extractor)
+            public static IEnumerable<int>  ExtractInt(IEnumerable<string> values, Regex extractor)
             {
                 return values.Select(v => Helpers.ExtractInt(v, extractor)).Where(i => i.HasValue).Select(i => i.Value);
             }
-            public static DirectoryInfo Create(DirectoryInfo source)
+            public static DirectoryInfo     Create(DirectoryInfo source)
             {
                 if (!source.Exists)
                 {
@@ -119,7 +122,7 @@ namespace Epsitec.Zou
                 }
                 return source;
             }
-            public static T Retry<T>(Func<T> func)
+            public static T                 Retry<T>(Func<T> func)
             {
                 return func.RetryWithBackoffStrategy(10, TimeSpan.FromMilliseconds(10), retryPredicate: e => e is IOException || e is UnauthorizedAccessException);
             }

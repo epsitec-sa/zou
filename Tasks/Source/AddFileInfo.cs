@@ -1,24 +1,19 @@
+// Copyright © 2013-2020, EPSITEC SA, CH-1400 Yverdon-les-Bains, Switzerland
+// Author: Roger VUISTINER, Maintainer: Roger VUISTINER
+
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 using System.IO;
 using System.Linq;
 
-namespace Epsitec.Zou
+namespace Zou.Tasks
 {
 	public class AddFileInfo : Task
 	{
-		[Required]
-		public ITaskItem[]		Files
-		{
-			get; set;
-		}
-		[Output]
-		public ITaskItem[]		OutputFiles
-		{
-			get;
-			private set;
-		}
-		public override bool	Execute()
+		[Required] public ITaskItem[]   Files       { get; set; }
+        [Output]   public ITaskItem[]	OutputFiles { get; private set; }
+
+        public override bool	Execute()
 		{
 			this.OutputFiles = this.Files.Select (file => this.AddInfo (file)).ToArray ();
 			return !this.Log.HasLoggedErrors;
