@@ -1,22 +1,25 @@
 // Copyright © 2013-2020, EPSITEC SA, CH-1400 Yverdon-les-Bains, Switzerland
 // Author: Roger VUISTINER, Maintainer: Roger VUISTINER
 
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.IO.Compression;
+using System.Linq;
+
 using Bcx.IO;
 
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.IO.Compression;
-using System.Linq;
-
 namespace Zou.Tasks
 {
     public class Zip : Task
     {
+        // <PropertyGroup>
+        //     <ZipFolder>Source/Items</ZipFolder>
+        // </PropertyGroup>
+
         public bool                     Overwrite { get; set; } = true;
         public bool                     Update    { get; set; }
         [Required] public string        FileName  { get; set; }
@@ -24,7 +27,6 @@ namespace Zou.Tasks
 
         public override bool            Execute()
         {
-            //Debugger.Launch();
             this.CreateZipFile(this.FileName, this.Files.Select(f => f.ItemSpec));
             return !this.Log.HasLoggedErrors;
         }
@@ -46,8 +48,9 @@ namespace Zou.Tasks
                 using var zipFile = ZipFile.Open(zipPath, archiveMode);
                 foreach (var fileName in fileNames)
                 {
-                    var relPath = PathEx.GetRelativePath(zipBasePath, Path.GetFullPath(fileName));
-                    zipFile.CreateEntryFromFile(relPath, relPath, CompressionLevel.Optimal);
+                    var fullPath = Path.GetFullPath(fileName);
+                    var relPath  = PathEx.GetRelativePath(zipBasePath, fullPath);
+                    zipFile.CreateEntryFromFile(fullPath, relPath, CompressionLevel.Optimal);
                 }
             }
             catch(Exception e)
