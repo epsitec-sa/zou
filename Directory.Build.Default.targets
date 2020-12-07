@@ -55,6 +55,18 @@
       </AssemblyAttribute>
     </ItemGroup>
   </Target>
+  
+  <Target Name="ZipSource">
+    <PropertyGroup>
+      <ZipPath>$(ProjectDir)$(ProjectName).zip</ZipPath>
+    </PropertyGroup>
+    <ItemGroup>
+      <ZipFile Include="@(Compile)" Exclude="$(IntermediateOutputPath)*.cs"/>
+    </ItemGroup>
+    
+    <Message Text="Compressing source files into $(ZipPath)..." Importance="high" />
+    <Zip Files="@(ZipFile)" FileName="$(ZipPath)" />
+  </Target>
 
   <Target Name="TraceDirectoryBuildDefaultTargets" Condition="'$(ZouTrace)' == 'true'">
     <Message Importance="high" Text=" TargetFramework           = $(TargetFramework)" />
