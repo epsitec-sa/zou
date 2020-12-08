@@ -68,16 +68,13 @@
     <Zip Files="@(ZipFile)" FileName="$(ZipPath)" />
   </Target>
 
-  <Target Name="ZipFolder" AfterTargets="Build" Condition="'$(ZipFolder)' != ''">
-    <PropertyGroup>
-      <ZipPath>$(ZipFolder).zip</ZipPath>
-    </PropertyGroup>
-    <ItemGroup>
-      <ZipFile Include="$(ZipFolder)/*.*" />
-    </ItemGroup>
-
-    <Message Text="Compressing $(ZipFolder) into $(ZipPath)..." Importance="high" />
-    <Zip Files="@(ZipFile)" FileName="$(ZipPath)" />
+  <ItemGroup Condition="'$(ZipFolder)' != ''">
+    <ZipFile Include="$(ZipFolder)/*.*" />
+  </ItemGroup>
+  
+  <Target Name="ZipFolder" AfterTargets="Build" Inputs="@(ZipFile)" Outputs="$(ZipFolder).zip">
+    <Message Text="Compressing $(ZipFolder) into $(ZipFolder).zip..." Importance="high" />
+    <Zip Files="@(ZipFile)" FileName="$(ZipFolder).zip" />
   </Target>
 
   <Target Name="TraceDirectoryBuildDefaultTargets" Condition="'$(ZouTrace)' == 'true'">
