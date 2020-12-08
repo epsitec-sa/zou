@@ -72,7 +72,7 @@
     <ZipFile Include="$(ZipFolder)/*.*" />
   </ItemGroup>
   
-  <Target Name="ZipFolder" AfterTargets="Build" Inputs="@(ZipFile)" Outputs="$(ZipFolder).zip">
+  <Target Name="ZipFolder" BeforeTargets="Build" Inputs="@(ZipFile)" Outputs="$(ZipFolder).zip">
     <Message Text="Compressing $(ZipFolder) into $(ZipFolder).zip..." Importance="high" />
     <Zip Files="@(ZipFile)" FileName="$(ZipFolder).zip" />
   </Target>
