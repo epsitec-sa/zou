@@ -1,0 +1,43 @@
+<!--
+The Zip.targets can be used to zip a folder.
+Input parameters: $(ZipFolder)
+-->
+<Project>
+
+  <!-- Zip source -->
+  <Target Name="ZipSource">
+    <PropertyGroup>
+      <ZipPath>$(ProjectDir)$(ProjectName).zip</ZipPath>
+    </PropertyGroup>
+    <ItemGroup>
+      <ZipFile Include="$(ProjectPath)"/>
+      <ZipFile Include="@(Compile)" Exclude="$(IntermediateOutputPath)*.cs"/>
+    </ItemGroup>
+
+    <Message Text="Compressing source files into $(ZipPath)..." Importance="high" />
+    <Zip Files="@(ZipFile)" FileName="$(ZipPath)" />
+  </Target>
+
+  <!-- Zip folder -->
+  <Target Name="_InitZipFolder">
+    <PropertyGroup>
+      <ZipFolder>$([System.IO.Path]::GetFullPath('$(ZipFolder)'))</ZipFolder>
+      <ZipFolder>$(ZipFolder.TrimEnd('\/'))</ZipFolder>
+      <ZipPath>$(ZipFolder).zip</ZipPath>
+    </PropertyGroup>
+    <ItemGroup>
+      <ZipFile Include="$(ZipFolder)/**/*.*" />
+    </ItemGroup>
+  </Target>
+  
+  <Target Name="ZipFolderBuild" Condition="'$(ZipFolder)' != '' And Exists('$(ZipFolder)')" DependsOnTargets="_InitZipFolder" BeforeTargets="Build" Inputs="@(ZipFile)" Outputs="$(ZipPath)">
+    <Message Text="[+] Compressing $(ZipFolder) into $(ZipPath)..." Importance="high" />
+    <Zip Files="@(ZipFile)" FileName="$(ZipPath)" />
+  </Target>
+  
+  <Target Name="ZipFolderClean" Condition="'$(ZipFolder)' != '' And Exists('$(ZipFolder)')" DependsOnTargets="_InitZipFolder" AfterTargets="Clean">
+    <Delete Files="$(ZipPath)" ContinueOnError="true" />
+    <Message Text="[-] $(ZipPath)" Importance="high" />
+  </Target>
+
+</Project>
