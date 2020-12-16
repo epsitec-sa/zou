@@ -30,7 +30,7 @@ Input parameters: $(ZipFolder)
     </ItemGroup>
   </Target>
   
-  <Target Name="ZipFolderBuild" Condition="'$(ZipFolder)' != '' And Exists('$(ZipFolder)')" DependsOnTargets="_InitZipFolder" BeforeTargets="Build" Inputs="@(ZipFile)" Outputs="$(ZipPath)">
+  <Target Name="ZipFolderBuild" Condition="'$(ZipFolder)' != '' And Exists('$(ZipFolder)')" DependsOnTargets="_InitZipFolder" BeforeTargets="ResolveReferences" Inputs="@(ZipFile)" Outputs="$(ZipPath)">
     <Message Text="[+] Compressing $(ZipFolder) into $(ZipPath)..." Importance="high" />
     <Zip Files="@(ZipFile)" FileName="$(ZipPath)" />
   </Target>
