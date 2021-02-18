@@ -21,30 +21,39 @@ Input parameters: $(ZipFolder)
   <!-- Zip folder -->
   <Target Name="_InitZipFolder">
     <ItemGroup>
-      <ZipFolders Include="$(ZipFolder)" />
-      <ZipFolders>
-        <ZipFolder>$([System.IO.Path]::GetFullPath('%(Identity)').TrimEnd('\/'))</ZipFolder>
-      </ZipFolders>
-      <ZipFolders>
-        <ZipPath>%(ZipFolder).zip</ZipPath>
-      </ZipFolders>
-    </ItemGroup>
-  </Target>
-
-  <Target Name="ZipFolderBuild" DependsOnTargets="_InitZipFolder" BeforeTargets="ResolveReferences" Inputs="%(ZipFolders.ZipFolder)" Outputs="%(ZipFolders.ZipPath)">
-    <ItemGroup>
-      <ZipFile Include="%(ZipFolders.ZipFolder)/**/*.*" />
+      <ZipFolder Include="$(ZipFolder)" />
+      <ZipFolder>
+        <ZipDir>$([System.String]::new('%(FullPath)').TrimEnd('\/'))</ZipDir>
+      </ZipFolder>
+      <ZipFolder>
+        <ZipPath>%(ZipDir).zip</ZipPath>
+      </ZipFolder>
     </ItemGroup>
 
-    <Warning Condition="!Exists('%(ZipFolders.ZipFolder)')" Text="Folder %(ZipFolders.ZipFolder) does not exists" />
-    <Message Condition="Exists('%(ZipFolders.ZipFolder)')"  Text="[+] Compressing %(ZipFolders.ZipFolder) into %(ZipFolders.ZipPath)..." Importance="high" />
-    <Zip     Condition="Exists('%(ZipFolders.ZipFolder)')"  Files="@(ZipFile)" FileName="%(ZipFolders.ZipPath)" />
+    <LogItems Items="@(ZipFolder)" AllMetadata="true" />
   </Target>
 
+  <Target Name="ZipFolderBuild" DependsOnTargets="_InitZipFolder" BeforeTargets="ResolveReferences" Outputs="%(ZipFolder.ZipPath)">
+    <Warning Condition="!Exists('%(ZipFolder.ZipDir)')" Text="Folder %(ZipFolder.ZipDir) does not exists" />
+    <MSBuild Condition="Exists('%(ZipFolder.ZipDir)')" Projects="$(MSBuildThisFileFullPath)" Targets="_ZipOneFolder" Properties="_ZipFolder=%(ZipFolder.ZipDir);_ZipPath=%(ZipFolder.ZipPath)" />
+  </Target>
 
   <Target Name="ZipFolderClean" DependsOnTargets="_InitZipFolder" AfterTargets="Clean">
-    <Message Condition="Exists('%(ZipFolders.ZipPath)')" Text="[-] %(ZipFolders.ZipPath)" Importance="high" />
-    <Delete  Files="@(ZipFolders->'%(ZipPath)')" ContinueOnError="true" />
+    <Message Condition="Exists('%(ZipFolder.ZipPath)')" Text="[-] %(ZipFolder.ZipPath)" Importance="high" />
+    <Delete Files="@(ZipFolder->'%(ZipPath)')" ContinueOnError="true" />
+  </Target>
+
+
+  <!-- MSBuild subtask for one folder -->
+  <Target Name="_InitZipOneFolder">
+    <ItemGroup>
+      <_ZipFile Include="$(_ZipFolder)/**/*.*" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="_ZipOneFolder" DependsOnTargets="_InitZipOneFolder" Inputs="@(_ZipFile)" Outputs="$(_ZipPath)">
+    <Message Text="[+] Compressing $(_ZipFolder) into $(_ZipPath)..." Importance="high" />
+    <Zip Files="@(_ZipFile)" FileName="$(_ZipPath)" />
   </Target>
 
 </Project>
