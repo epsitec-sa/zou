@@ -20,8 +20,34 @@ Input parameters: $(ZipFolder)
 
   <!-- Zip folder -->
   <Target Name="_InitZipFolder">
+    <!-- Preprocess @(ZipFolder) items and $(ZipFolder) property-->
     <ItemGroup>
+      <!-- Merge $(ZipFolder) (semi-colon separated) into @(ZipFolder) -->
       <ZipFolder Include="$(ZipFolder)" />
+
+      <!-- Discriminate files from directories (CreatedTime metadata is empty for a directory) -->
+      <_ZipFolder Condition="'%(ZipFolder.CreatedTime)' == ''" Include="%(ZipFolder.Identity)" />
+      <_ZipFolder Condition="'%(ZipFolder.CreatedTime)' != ''" Include="%(ZipFolder.RelativeDir)" />
+
+      <!-- Normalize separators so that RemoveDuplicate task can do its job -->
+      <_ZipFolderNormalized Include="$([System.String]::new('%(_ZipFolder.Identity)').TrimEnd('\/').Replace('\', '/'))" />
+
+      <!-- Reset variable for reuse -->
+      <_ZipFolder Remove="@(_ZipFolder)" />
+    </ItemGroup>
+
+    <!-- Remove duplicates from _ZipFolderNormalized items into _ZipFolder -->
+    <RemoveDuplicates Inputs="@(_ZipFolderNormalized)">
+      <Output TaskParameter="Filtered" ItemName="_ZipFolder"/>
+    </RemoveDuplicates>
+
+    <!-- Process ZipFolder items -->
+    <ItemGroup>
+      <!-- Reset -->
+      <ZipFolder Remove="@(ZipFolder)" />
+      <!-- Include preprocessed ZipFolder items -->
+      <ZipFolder Include="@(_ZipFolder)" />
+      <!-- Compute ZipDir and ZipPath (item metadata) -->
       <ZipFolder>
         <ZipDir>$([System.String]::new('%(FullPath)').TrimEnd('\/'))</ZipDir>
       </ZipFolder>
@@ -30,7 +56,13 @@ Input parameters: $(ZipFolder)
       </ZipFolder>
     </ItemGroup>
 
-    <LogItems Items="@(ZipFolder)" AllMetadata="true" />
+    <!-- Clean temp vars -->
+    <ItemGroup>
+      <_ZipFolderNormalized Remove="@(_ZipFolderNormalized)" />
+      <_ZipFolder Remove="@(_ZipFolder)" />
+    </ItemGroup>
+
+    <!--<LogItems Items="@(ZipFolder)" />-->
   </Target>
 
   <Target Name="ZipFolderBuild" DependsOnTargets="_InitZipFolder" BeforeTargets="ResolveReferences" Outputs="%(ZipFolder.ZipPath)">
