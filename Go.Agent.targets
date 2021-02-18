@@ -23,12 +23,10 @@
     
     <ItemGroup>
       <GoBuildCommand Include="go generate" />
-      <GoBuildCommand Include='go build $(GoBuildFlags) -o $(TargetPath) -v' />
-      <GoBuildCommand Condition="Exists('$(GoResourceDir)')" Include='rice append --exec "$(TargetPath)" -i "$(GoResourceDir.TrimEnd(\/))"' />
     </ItemGroup>
 
     <Delete Files="$(TargetPath)" />
-    <Exec WorkingDirectory="$(ProjectDir)" EnvironmentVariables="@(GoBuildEnv)" Command="%(GoBuildCommand.Identity)" />
+    <Exec WorkingDirectory="$(ProjectDir)" EnvironmentVariables="@(GoBuildEnv);TARGETPATH=$(TargetPath)" Command="%(GoBuildCommand.Identity)" />
   </Target>
 
   <Target Name="Clean">
