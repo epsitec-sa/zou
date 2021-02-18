@@ -1,5 +1,5 @@
 <!--
-The Zip.targets can be used to zip a folder.
+The Zip.targets can be used to zip folders.
 Input parameters: $(ZipFolder)
 -->
 <Project>
@@ -20,24 +20,31 @@ Input parameters: $(ZipFolder)
 
   <!-- Zip folder -->
   <Target Name="_InitZipFolder">
-    <PropertyGroup>
-      <ZipFolder>$([System.IO.Path]::GetFullPath('$(ZipFolder)'))</ZipFolder>
-      <ZipFolder>$(ZipFolder.TrimEnd('\/'))</ZipFolder>
-      <ZipPath>$(ZipFolder).zip</ZipPath>
-    </PropertyGroup>
     <ItemGroup>
-      <ZipFile Include="$(ZipFolder)/**/*.*" />
+      <ZipFolders Include="$(ZipFolder)" />
+      <ZipFolders>
+        <ZipFolder>$([System.IO.Path]::GetFullPath('%(Identity)').TrimEnd('\/'))</ZipFolder>
+      </ZipFolders>
+      <ZipFolders>
+        <ZipPath>%(ZipFolder).zip</ZipPath>
+      </ZipFolders>
     </ItemGroup>
   </Target>
-  
-  <Target Name="ZipFolderBuild" Condition="'$(ZipFolder)' != '' And Exists('$(ZipFolder)')" DependsOnTargets="_InitZipFolder" BeforeTargets="ResolveReferences" Inputs="@(ZipFile)" Outputs="$(ZipPath)">
-    <Message Text="[+] Compressing $(ZipFolder) into $(ZipPath)..." Importance="high" />
-    <Zip Files="@(ZipFile)" FileName="$(ZipPath)" />
+
+  <Target Name="ZipFolderBuild" DependsOnTargets="_InitZipFolder" BeforeTargets="ResolveReferences" Inputs="%(ZipFolders.ZipFolder)" Outputs="%(ZipFolders.ZipPath)">
+    <ItemGroup>
+      <ZipFile Include="%(ZipFolders.ZipFolder)/**/*.*" />
+    </ItemGroup>
+
+    <Warning Condition="!Exists('%(ZipFolders.ZipFolder)')" Text="Folder %(ZipFolders.ZipFolder) does not exists" />
+    <Message Condition="Exists('%(ZipFolders.ZipFolder)')"  Text="[+] Compressing %(ZipFolders.ZipFolder) into %(ZipFolders.ZipPath)..." Importance="high" />
+    <Zip     Condition="Exists('%(ZipFolders.ZipFolder)')"  Files="@(ZipFile)" FileName="%(ZipFolders.ZipPath)" />
   </Target>
-  
-  <Target Name="ZipFolderClean" Condition="'$(ZipFolder)' != '' And Exists('$(ZipFolder)')" DependsOnTargets="_InitZipFolder" AfterTargets="Clean">
-    <Delete Files="$(ZipPath)" ContinueOnError="true" />
-    <Message Text="[-] $(ZipPath)" Importance="high" />
+
+
+  <Target Name="ZipFolderClean" DependsOnTargets="_InitZipFolder" AfterTargets="Clean">
+    <Message Condition="Exists('%(ZipFolders.ZipPath)')" Text="[-] %(ZipFolders.ZipPath)" Importance="high" />
+    <Delete  Files="@(ZipFolders->'%(ZipPath)')" ContinueOnError="true" />
   </Target>
 
 </Project>
