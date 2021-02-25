@@ -3,6 +3,7 @@ The Zip.targets can be used to zip folders.
 Input parameters: $(ZipFolder)
 -->
 <Project>
+  <Import Project="zou.props" Condition="'$(ZouVersion)' == ''" />
 
   <!-- Zip source -->
   <Target Name="ZipSource">
@@ -66,7 +67,7 @@ Input parameters: $(ZipFolder)
   </Target>
 
   <Target Name="ZipFolderBuild" DependsOnTargets="_InitZipFolder" BeforeTargets="ResolveReferences" Outputs="%(ZipFolder.ZipPath)">
-    <Warning Condition="!Exists('%(ZipFolder.ZipDir)')" Text="Folder %(ZipFolder.ZipDir) does not exists" />
+    <Warning Condition="'%(ZipFolder.ZipDir)' != '' and !Exists('%(ZipFolder.ZipDir)')" Text="Folder %(ZipFolder.ZipDir) does not exists" />
     <MSBuild Condition="Exists('%(ZipFolder.ZipDir)')" Projects="$(MSBuildThisFileFullPath)" Targets="_ZipOneFolder" Properties="_ZipFolder=%(ZipFolder.ZipDir);_ZipPath=%(ZipFolder.ZipPath)" />
   </Target>
 
