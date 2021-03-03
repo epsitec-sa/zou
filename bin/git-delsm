@@ -1,8 +1,10 @@
 #!/bin/bash
 
 for sm; do
-  git config --file '.gitmodules' --remove-section "submodule.$sm"
-  git update-index --add -- '.gitmodules'
-  git submodule deinit -f -- "$sm"
-  git rm --cached "$sm"
+  echo Removing "$sm" submodule...
+  git config --file '.gitmodules' --remove-section "submodule.$sm" &>/dev/null
+  git update-index --add -- '.gitmodules' &>/dev/null
+  git submodule deinit -f -- "$sm" &>/dev/null
+  git rm --cached "$sm" &>/dev/null
+  rm -rf "$sm"
 done
