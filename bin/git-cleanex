@@ -30,7 +30,12 @@ cleanex_run()
 
   cleanex_parse "$@" || return $?
 
-  startupMessage="Cleaning, please wait..."
+  if [[ $dsmOnly == true ]]; then
+    startupMessage="Removing dangling submodules, please wait..."
+  else
+    startupMessage="Cleaning, please wait..."
+  fi
+
 
   bundle_scope cleanex_command
 }
@@ -47,7 +52,7 @@ cleanex_do_prolog()
 {
   if [[ $dsmOnly == true ]]; then
     repo_remove_dangling_submodules_async
-    return $?
+    return 0
   fi
 
   if [[ $force == true ]]; then
