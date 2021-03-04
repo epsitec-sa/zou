@@ -28,6 +28,7 @@ cosm_scope()
         showSubmoduleMessage=true cosmScopeInitialized=true
   
   cosm_reset_scope
+  repo_remove_dangling_submodules_async
 
   # execute next russian doll
   $1 "${@:2}"
@@ -174,14 +175,14 @@ _cosm_commit_inactive_submodules()
   local cleanExternal=$1
   # io_trace "_cosm_commit_inactive_submodules -- $(print_vars unstagedDirtyInactiveSubmodules[@])"
 
-  _cosm_commit_unstaged_clean_inactive_submodules || ec=$?
+  _cosm_commit_unstaged_clean_inactive_submodules
   if [[ $cleanExternal == true ]]; then
     # commit external to try to make dirty modules clean
-    cosm_commit_unstaged_clean_external_submodules || ec=$?
+    cosm_commit_unstaged_clean_external_submodules
   fi
 
   if [ ${#unstagedDirtyInactiveSubmodules[@]} -ne 0 ]; then
-    module_visit_submodules_async 'unstagedDirtyInactiveSubmodules[@]' 'config_scope cosm_scope _cosm_commit_inactive_submodules' 'true' || ec=$?
+    module_visit_submodules_async 'unstagedDirtyInactiveSubmodules[@]' 'config_scope cosm_scope _cosm_commit_inactive_submodules' 'true'
   fi
 
   return 0
