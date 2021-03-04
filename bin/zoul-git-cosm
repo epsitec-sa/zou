@@ -60,7 +60,7 @@ cosm_reset_scope()
   unstagedCleanSubmodules=( $(array_remove_array 'unstagedCleanSubmodules[@]' 'configSkuExclude[@]') )
   unstagedDirtySubmodules=( $(array_remove_array 'unstagedDirtySubmodules[@]' 'configSkuExclude[@]') )
 
-  _cosm_discard_inactive_submodules
+  _cosm_commit_inactive_submodules
   _cosm_trace
 }
 _cosm_trace()
@@ -167,6 +167,31 @@ cosm_discard_unstaged_submodules()
 # COMMIT
 ########
 
+_cosm_commit_inactive_submodules()
+{
+  # recursively commit unstaged clean submodules which are excluded from SKU or external
+  [ ${#moduleSubmodulePaths[@]} -eq 0 ] && return 0
+  local cleanExternal=$1
+  # io_trace "_cosm_commit_inactive_submodules -- $(print_vars unstagedDirtyInactiveSubmodules[@])"
+
+  _cosm_commit_unstaged_clean_inactive_submodules || ec=$?
+  if [[ $cleanExternal == true ]]; then
+    # commit external to try to make dirty modules clean
+    cosm_commit_unstaged_clean_external_submodules || ec=$?
+  fi
+
+  if [ ${#unstagedDirtyInactiveSubmodules[@]} -ne 0 ]; then
+    module_visit_submodules_async 'unstagedDirtyInactiveSubmodules[@]' 'config_scope cosm_scope _cosm_commit_inactive_submodules' 'true' || ec=$?
+  fi
+
+  return 0
+}
+_cosm_commit_unstaged_clean_inactive_submodules()
+{
+  [ ${#unstagedCleanInactiveSubmodules[@]} -eq 0 ] && return 0
+  # io_trace "_cosm_commit_unstaged_clean_inactive_submodules $(print_vars unstagedCleanInactiveSubmodules[@])"
+  _cosm_commit_submodules "${unstagedCleanInactiveSubmodules[@]}"
+}
 cosm_commit_unstaged_clean_external_submodules()
 {
   [ ${#moduleSubmodulePaths[@]} -eq 0 ] && return 0
