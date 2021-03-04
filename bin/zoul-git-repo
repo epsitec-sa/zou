@@ -391,6 +391,12 @@ repo_commit_submodules()
     return 0
   fi
 
+  for sm; do
+    cd "$sm"
+    repo_remove_dangling_submodules_async
+    cd - &>/dev/null
+  done
+
   local branch=${moduleHead:-$(branch_current)}
   # io_trace "repo_commit_submodules -2- $(print_vars branch)"
   if git_commit 'update submodules' "$@"; then
