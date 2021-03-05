@@ -180,12 +180,16 @@ _branch_merge()
   if _branch_merge_resolve_submodule_conflicts; then
     # io_trace "_branch_merge -3- -- $(print_vars toMerge intoBranch)" ${Green}
 
-    # no files to merge, just submodules, use the ours strategy
+    # no files to merge, just submodules
     # all conflicts should be resolved
     branch_merge_abort
 
-    if git merge -m "$message" "$@" "$toMerge" -sours &>/dev/null; then
-      # io_trace "_branch_merge -3.1- -- $(print_vars toMerge intoBranch)" ${Green}
+    # detect most recent commmit to define the merge strategy
+    local toMergeTime=$(ref_time "$toMerge") intoBranchTime=$(ref_time "$intoBranch") strategy='-sours'
+    (( $toMergeTime >= $intoBranchTime )) && strategy='-X theirs'
+    # io_trace "_branch_merge -3.1- -- $(print_vars toMergeTime intoBranchTime strategy)" ${Green}
+
+    if io_buffered_eval "git merge -m '$message' "$@" '$toMerge' '$strategy' 2>&1" _branch_merge_selector; then
       branch_raise_merged_event "$toMerge" "$intoBranch"
       return 0
     else
@@ -196,6 +200,12 @@ _branch_merge()
     # io_trace "_branch_merge -4- -- $(print_vars toMerge intoBranch)" ${Green}
     # git diff
     return 1
+  fi
+}
+_branch_merge_selector()
+{
+  if [ $ec -eq 0 ]; then
+    skipCurrentLine=true
   fi
 }
 _branch_merge_interactive()
