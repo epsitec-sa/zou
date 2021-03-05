@@ -48,7 +48,7 @@ branch_merge()
   esac
   # io_trace "branch_merge -2- -- $(print_vars toMerge intoBranch toMergeAlias needCheckout mergeOpts[@])"
 
-  local message="zou-flow: merge '$toMergeAlias' into '$intoBranch'"
+  local message="zou-flow: merge $(git rev-parse --short "$toMerge")($toMergeAlias) into $(git rev-parse --short "$intoBranch")($intoBranch)"
   if [[ $needCheckout == true ]] && git checkout $intoBranchName &>/dev/null; then
     # io_trace "branch_merge -3- -- $(print_vars toMerge intoBranch toMergeAlias needCheckout mergeOpts[@])"
     _branch_merge "$message" "$toMerge" "${mergeOpts[@]}" || ec=$?
