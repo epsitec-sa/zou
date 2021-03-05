@@ -62,9 +62,13 @@ ref_type()
 ref_timespan()
 {
   local t0 t1
-  t0=$(git show -s --format=%ct $1^{} 2>/dev/null) || return $?
+  t0=$(ref_time $1) || return $?
   t1=$(date +%s)
   echo $(( t1 - t0 ))
+}
+ref_time()
+{
+  echo $(git show -s --format=%ct $1^{} 2>/dev/null)
 }
 
 git_remote()     { git remote | head -n1; }
