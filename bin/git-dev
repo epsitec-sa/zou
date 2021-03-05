@@ -14,6 +14,7 @@ dev_parse()
     -v*)            dev_parse_default_version "$1";;
     -r|--recursive) recursive=true;;
     -a|--all)       noSkuFilter=true;;
+    -f|--force)     forceRelease=true;;
     --minor)        incrementKind='minor';;
     --major)        incrementKind='major';;
     --alpha)        prerelPrefix='alpha';;
@@ -52,7 +53,7 @@ dev_run()
   local jobsCount recursive command='dev' subcommand \
         cmdScopes=( prod_scope config_scope cosm_scope ) \
         noSkuFilter incrementKind defaultVersion='0.1' \
-        prerelPrefix vcommit devModulePaths=()
+        forceRelease prerelPrefix vcommit devModulePaths=()
 
   dev_parse "$@" || return $?
   
@@ -100,12 +101,26 @@ dev_release_epilog()
   _dev_check_in_strict_dev_mode || return 0
 
   # a submodule can create a vbranch in the bundle without refreshing the prod scope (run in a subshell)
-  # io_trace "dev_release_epilog -1- $(print_vars incrementKind moduleDevBranchPath prodBranchPath)"
+  # io_trace "dev_release_epilog -1- $(print_vars forceRelease incrementKind moduleDevBranchPath prodBranchPath)"
   module_is_bundle && _cmd_is_recursive && prod_reset_scope
-  if [[ -n $incrementKind ]] || cosm_has_unstaged_clean_submodules || ! ref_equals "$moduleDevBranchPath" "$prodBranchPath"; then
+  if [[ $forceRelease == true ]] || [[ -n $incrementKind ]] || cosm_has_unstaged_clean_submodules || ! ref_equals "$moduleDevBranchPath" "$prodBranchPath"; then
+    # io_trace "dev_release_epilog -2- $(print_vars forceRelease incrementKind moduleDevBranchPath prodBranchPath)"
     dev_checkout false "$moduleDevBranch"
     prod_ensure_vbranch "$defaultVersion" "$incrementKind"
     cosm_commit_unstaged_clean_submodules
+    if [[ $forceRelease == true && -z $incrementKind ]] && ref_equals "$moduleDevBranchPath" "$prodBranchPath"; then
+      local vbranch vtag delta graftPoint vnext releaseVTag
+      vtag_set_describe "$moduleDevBranch" # -> vbranch vtag delta
+      # io_trace "dev_release_epilog -3- $(print_vars defaultVersion incrementKind vbranch vtag delta)"
+      if ref_equals "$prodBranchPath" "$vtag" && ! vtag_is_vnode "$vtag"; then
+        _prod_increment_release_version_core "$prerelPrefix"
+        # io_trace "dev_release_epilog -4- $(print_vars defaultVersion incrementKind vbranch graftPoint vtag vnext releaseVTag)"
+        mio_warning "Forcing a new release -> ${VC}$releaseVTag"
+        git_commit "force new release -> $releaseVTag" &>/dev/null
+      else
+        mio_warning "No need to force a new release"
+      fi
+    fi
     branch_merge "$moduleDevBranchPath" "$prodBranchPath" '-Xtheirs' \
     && branch_merge_ff "$prodBranchPath" "$moduleDevBranchPath" \
     || io_trace_error 'dev_release_epilog'
