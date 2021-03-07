@@ -24,6 +24,8 @@ ref_equals()     { [[ $(git rev-parse $1^{} 2>/dev/null) == $(git rev-parse $2^{
 ref_is_head()    { [[ $(git rev-parse $1^{} 2>/dev/null) == $(git rev-parse HEAD) ]]; }
 ref_is_current() { [[ $1 == $(git rev-parse --abbrev-ref HEAD) ]]; }
 ref_rename()     { [[ $1 =~ ^(.*/)? ]] && echo "${BASH_REMATCH[1]}$2"; }
+ref_list_all_at(){ git show-ref --dereference | grep $(git_get_commit $1) | cut -d ' ' -f2 | grep -v '/HEAD$' | sed 's,^refs/[^/]*/,,; s,\^{}$,,'; }
+
 # usage:
 #   local refSymbol refType
 #   ref_set_symbol REF

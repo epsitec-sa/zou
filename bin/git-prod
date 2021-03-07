@@ -20,6 +20,7 @@ prod_parse()
     --merge)        mergeIntoDev=true;;
     --vnext)        checkoutType='vnext';;
     --vlast)        checkoutType='vlast';;
+    --vtag)         attachMode='vtag';;
     --vtable)       vtable=true;;
     --force)        forcePrincipalRelease=true;;
     --reuse)        prerelPrefix='reuse';;
@@ -27,16 +28,25 @@ prod_parse()
     --beta)         prerelPrefix='beta';;
     --rc)           prerelPrefix='rc';;
     --rtm)          prerelPrefix='rtm';;
-    enter|release)  subcommand=$1;;
+    attach)         subcommand=$1;;
+    select)         subcommand=$1;;
+    enter)          subcommand=$1;;
+    release)        subcommand=$1;;
     --)             shift; break;;
     -*) io_error "unknown option ${VC}$1${Red}\n"; io_help $0; return 1;;
     *)  args+=( "$1" );;
   esac; shift; done
 
-  cmd_check_subcommand 'enter' 'release'
-  cmd_check_args "${args[@]}"
+  cmd_check_subcommand 'attach' 'select' 'enter' 'release'
+
+  if [[ $subcommand == 'select' && ${#args[@]} -ge 1 ]]; then
+    prodSelectSpec=${args[0]}
+    args=(${args[@]:1})
+  fi
   
+  cmd_check_args "${args[@]}"
   prodModulePaths=( "$@" )
+  
   # io_trace "prod_parse -- $(print_vars recursive checkoutType subcommand prodModulePaths[@])"
 }
 prod_run()
@@ -46,7 +56,8 @@ prod_run()
         cmdScopes=( prod_scope config_scope cosm_scope ) \
         commitSubmodules=true mergeIntoDev \
         vtable prerelPrefix dryRun prodModulePaths=() \
-        checkoutType='vnext' forcePrincipalRelease
+        checkoutType='vnext' attachMode='auto' forcePrincipalRelease \
+        prodSelectSpec
 
   prod_parse "$@" || return $?
   prod_startup_message
@@ -56,13 +67,23 @@ prod_run()
 prod_startup_message()
 {
   case $subcommand in
-    enter)
-      startupMessage="Entering production, please wait...";;
-    release)
+    attach)
+      local what='branch'
+      [[ $attachMode == 'vtag' ]] && what='tag'
+      startupMessage="Attaching to current version ${Brown}$what${White}, please wait...";;
+    select)
+      local what='current version branch'
+      [[ $attachMode == 'vtag' ]] && what='current version tag'
+      [[ -n $prodSelectSpec ]] && what="version $prodSelectSpec"
+      startupMessage="Selecting ${Brown}$what${White}, please wait...";;
+    *)
       local what='next version' color=${White}
       [[ $dryRun == true ]] && color=${DarkGray}
       [[ $checkoutType == 'vlast' ]] && what='last version'
-      startupMessage="${color}Releasing ${Brown}$what${color}, please wait...";;
+      case $subcommand in
+        enter)   startupMessage="Entering ${Brown}$what${White}, please wait...";;
+        release) startupMessage="${color}Releasing ${Brown}$what${color}, please wait...";;
+      esac;;
   esac
 }
 prod_command()
@@ -70,7 +91,7 @@ prod_command()
   [ ${#prodModulePaths[@]} -eq 0 ] && prodModulePaths+=( './' )
   
   case $subcommand in
-    release) recursive=true;;
+    select|release) recursive=true;;
   esac
   cmd_register_module_paths "$recursive" "${prodModulePaths[@]}"
 
@@ -89,16 +110,54 @@ _prod_on_preinit()
   fi
 }
 
-###############
-# ENTER COMMAND
-###############
+########
+# ATTACH
+########
+
+prod_attach_prolog()  { module_prod_attach "$attachMode" || io_trace_error 'prod_attach_prolog'; }
+prod_attach_epilog()  { branch_show_status               || io_trace_error 'prod_attach_epilog'; }
+prod_attach_xprolog() { module_prod_attach "$attachMode" || io_trace_error 'prod_attach_xprolog'; }
+prod_attach_xepilog() { branch_show_status               || io_trace_error 'prod_attach_xepilog'; }
+
+########
+# SELECT
+########
+
+prod_select_prolog()  { _prod_select       || io_trace_error 'prod_select_prolog'; }
+prod_select_epilog()  { branch_show_status || io_trace_error 'prod_select_epilog'; }
+prod_select_xprolog() { _prod_select       || io_trace_error 'prod_select_xprolog'; }
+prod_select_xepilog() { branch_show_status || io_trace_error 'prod_select_xepilog'; }
+
+_prod_select()
+{
+  if cmd_is_child; then
+    module_update_init
+    module_prod_attach "$attachMode"
+  else
+    if [[ -z $prodSelectSpec ]]; then
+      case $attachMode in
+        vtag) prodSelectSpec=$prodVTag;;
+        *)    prodSelectSpec=$prodBranchPath;;
+      esac
+    else
+      [[ -z $attachMode ]] && vtag_is_semver $prodSelectSpec && attachMode='vtag'
+    fi
+
+    branch_checkout "$prodSelectSpec"
+    module_prod_attach "$attachMode"
+  fi
+}
+
+#######
+# ENTER
+#######
 
 prod_enter_prolog() { prod_checkout "$checkoutType" true || io_trace_error 'prod_enter_prolog'; }
 prod_enter_epilog() { branch_show_status || io_trace_error 'prod_enter_epilog'; }
 
-#################
-# RELEASE COMMAND
-#################
+#########
+# RELEASE
+#########
 
 prod_release_root_scope()
 {

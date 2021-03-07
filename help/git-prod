@@ -1,11 +1,17 @@
-usage: git prod enter [-r] [--vnext] [-- <module-paths>]
+usage: git prod attach [-r] [--vtag] [-- <module-paths>]
+   or: git prod select [--vtag] [<spec>] [-- <module-paths>]
+   or: git prod enter [-r] [--vnext] [-- <module-paths>]
    or: git prod release [-n] [--vlast] [--vtable] [--merge] [--force]
        [--(reuse|alpha|beta|rc|rtm)] [-- <module-paths>]
 
 Manage production mode.
 
 commands:
-    enter                   checkout actual or next version in specified modules
+    attach                  attach to PROD branch / VTAG in specified modules
+                                checkout PROD branch / VTAG if it coincide with current head
+    select                  select PROD branch / VTAG in specified modules
+                                update init and attach children
+    enter                   checkout VNEXT (PROD branch) or VLAST (last VTAG) in specified modules
     release                 release production branches (always recursively)
 
 options:
@@ -13,6 +19,13 @@ options:
     -r|--recursive          visit specified modules recursively
     -n|--dry-run            do not really release
     <module-paths>          specific modules to visit (default to current module)
+
+attach:
+    --vtag                  attach to VTAG in priority (default to PROD branch)
+
+select:
+    --vtag                  select VTAG in priority (default to PROD branch)
+    <spec>                  PROD branch / VTAG (default to VNEXT / VLAST)
 
 enter:
     --vlast                 enter last version - checkout version tag (default)
@@ -32,6 +45,9 @@ release:
     --rtm                   release current module as RTM version (remove pre-release version)
     
 example:
+    git prod attach --vtag         # attach to VTAG in current module
+    git prod select 0.1            # select PROD branch 0.1   in current module, update init and attach to children PROD branches
+    git prod select v0.1.0         # select VTAG       v0.1.0 in current module, update init and attach to children VTAGS
     git prod enter                 # enter last version of current module
     git prod enter --vnext         # enter next version of current module
     git prod enter -r              # enter last version of current module recursively

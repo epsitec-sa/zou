@@ -73,10 +73,15 @@ module_in_dev_mode()    { [[ $(wip_to_ref $moduleHead) == $(wip_to_ref $moduleDe
 bundle_in_dev_mode()    { [[ $(wip_to_ref $bundleHead) == $(wip_to_ref $bundleDevBranch) ]]; }
 module_in_prod_mode()   { [[ $moduleHead =~ ^(.*/)?v?[0-9]+\.[0-9] ]]; }
 bundle_in_prod_mode()   { [[ $bundleHead =~ ^(.*/)?v?[0-9]+\.[0-9] ]]; }
+module_in_hotfix_mode() { [[ $moduleHead =~ ^(.*/)?hotfix/ ]]; }
+bundle_in_hotfix_mode() { [[ $bundleHead =~ ^(.*/)?hotfix/ ]]; }
 module_is_startup()     { [[ $moduleRoot == $startupRoot ]]; }
 
 module_in_strict_dev_mode() { [[ $moduleHead == $(wip_to_ref $moduleDevBranch) ]]; }
 bundle_in_strict_dev_mode() { [[ $bundleHead == $(wip_to_ref $bundleDevBranch) ]]; }
+
+########################################################
+# ATTACH
 
 module_dev_attach()
 {
@@ -95,6 +100,54 @@ module_dev_attach()
     branch_checkout "$devBranch" "$forceCheckout"
   else
     branch_checkout "$ref" "$forceCheckout"
+  fi
+}
+
+module_prod_attach()
+{
+  local attachMode=$1 ref=${2:-$moduleHead} refs vbranch vtag vnode vref
+
+  refs=( $(ref_list_all_at $ref) )
+
+  # io_trace "module_prod_attach ${*@Q} -1- $(print_vars attachMode ref refs[@])" ${Green}
+  
+  for i in ${!refs[@]}; do
+    ref="${refs[i]}"
+    if [[ -z $vbranch ]] && branch_is_prod "$ref"; then
+      vbranch="$ref"
+    elif [[ -z $vnode ]] && vtag_is_vnode "$ref"; then
+      vnode="$ref"
+    elif [[ -z $vtag ]] && vtag_is_semver "$ref"; then
+      vtag="$ref"
+    fi
+  done
+
+  # io_trace "module_prod_attach ${*@Q} -2- $(print_vars vbranch vtag vnode)" ${Green}
+
+  if [[ $attachMode == 'vtag' ]]; then
+    vref="$vtag"
+    [[ -z $vref && -n $vbranch ]] && vref=$vbranch
+  else
+    vref="$vbranch"
+    [[ -z $vref && -n $vtag  ]] && vref=$vtag
+  fi
+
+  [[ -z $vref && -n $vnode ]] && vref=$vnode
+  # io_trace "module_prod_attach ${*@Q} -3- $(print_vars vref vbranch vtag vnode)" ${Green}
+
+  [[ -n $vref ]] && branch_checkout "$vref" true
+
+  return 0
+}
+module_update_init()
+{
+  # io_trace "module_update_init ${*@Q} -- $(print_vars moduleParent)" ${Green}
+  if [[ -n "$moduleParent" ]]; then
+    cd "$moduleParent"
+    io_buffered_eval "git submodule update --init "$modulePath" 2>&1" '' ${DarkGray}
+    cd - &>/dev/null
+
+    _module_reset_scope
   fi
 }
 
