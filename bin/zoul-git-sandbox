@@ -109,7 +109,10 @@ sandbox_create_vresources()
 sandbox_create_work()
 {
   local root
-  root=$(repo_bundle_root) || "$sat1Dir"
+  root=$(repo_module_root)
+  if [[ "$root" != "$sat1Dir" && "$root" != "$sat2Dir" ]]; then
+    root="$sat1Dir"
+  fi
   sandbox_visit_commit_work "$root/sm1" "$root/sm1/sm3" "$root/sm2" "$root"
 }
 
