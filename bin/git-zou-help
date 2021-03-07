@@ -1,0 +1,22 @@
+#!/bin/bash
+
+[[ -z $ZOUL_CORE ]] && . zoul-core
+
+zou_help_parse()
+{
+  while [[ "$#" > 0 ]]; do case "$1" in
+    -h|--help) zou-help "$0"; exit 0;;
+    -*) io_error "unknown option ${VC}$1${Red}\n"; io_help $0; return 1;;
+    *)  zou-help "$1"; exit 0;;
+  esac; shift; done
+}
+
+zou_help_main()
+{
+  zou_help_parse $@
+
+  io_banner
+  io_help_list
+}
+
+zou_help_main "$@"

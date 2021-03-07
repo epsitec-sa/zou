@@ -90,14 +90,14 @@ Copyright © 2019, EPSITEC SA, CH-1400 Yverdon-les-Bains, Switzerland${NC}"
 }
 io_help()
 {
-  local hdir=$(realpath "$zouBinDir/../help") \
-        hname=$(basename "$1") \
-        hpath help
+  local hdir=$(realpath "$zouBinDir/../help") hname=$(basename "$1")
 
-  hpath=$hdir/$hname
-  if [[ -f "$hpath" ]]; then
-    help=$(cat "$hpath")
-    io_message "$help"
+  if [[ -f "$hdir/$hname" ]]; then
+    io_message "$(cat "$hdir/$hname")"
+  elif [[ -f "$hdir/git-$hname" ]]; then
+    io_message "$(cat "$hdir/git-$hname")"
+  elif [[ -f "$hdir/topic-$hname" ]]; then
+    io_message "$(cat "$hdir/topic-$hname")"
   else
     local htpl=$hdir/template/$hname
     if [[ -f "$htpl" ]]; then
@@ -114,6 +114,30 @@ io_help()
       io_error "help file not found - $hpath"
     fi
   fi
+}
+io_help_list()
+{
+    local hdir names commands topics
+    hdir=$(realpath "$zouBinDir/../help/.")
+    topics=( $(io_list_filenames "$hdir" 'topic-*') )
+    commands=( $(io_list_filenames "$hdir" 'git-*') )
+    topics=( "${topics[@]#topic-}" )
+    commands=( "${commands[@]#git-}" )
+    topics=( "${topics[@]/#/  }" )
+    commands=( "${commands[@]/#/  }" )
+    # io_trace "io_help_list -- $(print_vars topics[@])"
+    # io_trace "io_help_list -- $(print_vars commands[@])"
+    
+    IFS=$'\n'
+    mio_message "\nAvailable commands:" ${Gray}
+    mio_message "${commands[*]}";
+    mio_message "\nAvailable topics:" ${Gray}
+    mio_message "${topics[*]}";
+    IFS=$OIFS
+}
+io_list_filenames()
+{
+  find "$1" -maxdepth 1 -type f -iname "$2" -printf "%f\n"
 }
 
 io_trace()
