@@ -1,5 +1,7 @@
 #!/bin/bash
 
+[[ -z $ZOUL_GIT_CORE ]] && . zoul-git-core
+
 while [[ "$#" > 0 ]]; do case "$1" in
   -h|--help) zou-help $0; exit 0;;
   --) args+=( "$@" ); break;;
@@ -9,14 +11,18 @@ while [[ "$#" > 0 ]]; do case "$1" in
 esac; shift; done
 
 for sm in "${args[@]}"; do
-  echo Removing "$sm" submodule...
+  mio_message "Removing ${VC}$sm${LightCyan} submodule..."
   git config --file '.gitmodules' --remove-section "submodule.$sm" &>/dev/null
   git update-index --add -- '.gitmodules' &>/dev/null
   git submodule deinit -f -- "$sm" &>/dev/null
   git rm --cached "$sm" &>/dev/null
   if [[ $keepWork == true ]]; then
-    rm "$sm/.git"
-  else
-    rm -rf "$sm"
+    rm "$sm/.git" &>/dev/null
+  elif [ -d "$sm" ]; then
+    mio_message "Removing ${VC}$sm${LightCyan} folder..."
+    rm -rf "$sm" &>/dev/null
   fi
 done
+
+(( ${#args[@]} > 1 )) && s='s'
+git_commit "delete submodule$s '$(string_join ', ' ${args[@]})'"
