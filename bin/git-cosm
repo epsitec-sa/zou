@@ -15,8 +15,7 @@ cosm_run()
   local forOpts=() commitDirtySubmodules
   cosm_parse "$@" || return $?
 
-  local commitSubmodules=true \
-        commitExcludedSubmodules=true
+  local commitSubmodules=true
 
   . git-for --bottom-up --ancestors --scope cosm_scope "${forOpts[@]}" -- 'cosm_process_unstaged_submodules'
 }

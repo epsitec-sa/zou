@@ -186,7 +186,7 @@ _branch_merge()
 
     # detect most recent commmit to define the merge strategy
     local toMergeTime=$(ref_time "$toMerge") intoBranchTime=$(ref_time "$intoBranch") strategy='-sours'
-    (( $toMergeTime >= $intoBranchTime )) && strategy='-X theirs'
+    (( $toMergeTime >= $intoBranchTime )) && strategy='-Xtheirs'
     # io_trace "_branch_merge -3.1- -- $(print_vars toMergeTime intoBranchTime strategy)" ${Green}
 
     if io_buffered_eval "git merge -m '$message' "$@" '$toMerge' '$strategy' 2>&1" _branch_merge_selector; then

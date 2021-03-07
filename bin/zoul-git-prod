@@ -20,7 +20,6 @@ branchCreatedEvent+=( _prod_on_branch_created )
 branchDeletedEvent+=( _prod_on_branch_deleted )
 mergedEvent+=( _prod_on_merged )
 
-
 prod_run() { module_run prod_scope "$@"; }
 
 # usage:
@@ -244,7 +243,7 @@ _prod_set_prod_info()
 {
   vtag_set_describe "$prodBranchPath" "$prodBranch" "$vtagResolveMode" "$strict" # -> vbranch vtag delta
   if [[ $vbranch != $prodBranch ]]; then
-    mio_error "Branches ${VC}$prodBranch${LightPurple} and ${VC}$vbranch${LightPurple} are both descendants of (${VC}$vtag)" ${LightPurple}
+    mio_message "${LightPurple}Branches ${VC}$prodBranch${LightPurple} and ${VC}$vbranch${LightPurple} are both descendants of (${VC}$vtag${LightPurple})"
     return 1
   fi
   # get highest tag in same folder
