@@ -23,20 +23,25 @@ config_setup()
 
   # update zou aliases
   local alias
-  for alias in csku csel cver cpub smaster spull sclean oprune publish select attach vbranch config-sku; do
+  for alias in hotfix zh sb sbx sbw csku csel cver cpub smaster spull sclean oprune publish select attach vbranch config-sku; do
     git config --global --unset-all alias.$alias
   done
+  git config --global alias.hotfix 'wip --hotfix'
+  git config --global alias.zh 'zou-help'
+  git config --global alias.sb 'sandbox'
+  git config --global alias.sbx 'sandbox --reset --sm --skus --vr'
+  git config --global alias.sbw 'sandbox --work'
   git config --global alias.csku 'sku config'
   git config --global alias.csel 'config-select'
   git config --global alias.cver 'config-version'
   git config --global alias.smaster 'sku enter master --dev'
   git config --global alias.spull 'sync -r -p'
+  git config --global alias.supdate 'submodule update --init --recursive'
   git config --global alias.sclean 'cleanex -r'
   git config --global alias.oprune 'fetch origin --prune'
   git config --global alias.publish '!printf '"'"'%b\n'"'"' '"'"'\e[0;31mThis command is deprecated, use \e[0;37mgit prod release\e[0;31m instead\e[0m'"'"''
   git config --global alias.select '!printf '"'"'%b\n'"'"' '"'"'\e[0;31mThis command is deprecated, use \e[0;37mgit (wip|dev|prod) enter\e[0;31m instead\e[0m'"'"''
   git config --global alias.attach '!printf '"'"'%b\n'"'"' '"'"'\e[0;31mThis command is deprecated, use \e[0;37mgit dev attach\e[0;31m instead\e[0m'"'"''
-  # git config --global alias.vbranch '!printf '"'"'%b\n'"'"' '"'"'\e[0;31mThis command is deprecated, use \e[0;37mgit dev release\e[0;31m instead\e[0m'"'"''
   git config --global alias.config-sku '!printf '"'"'%b\n'"'"' '"'"'\e[0;31mThis command is deprecated, use \e[0;37mgit sku config\e[0;31m instead\e[0m'"'"''
 }
 config_migrate_registered_bundles()
