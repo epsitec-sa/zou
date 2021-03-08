@@ -133,7 +133,7 @@ module_prod_attach()
   fi
 
   [[ -z $vref && -n $vnode ]] && vref=$vnode
-  # io_trace "module_prod_attach ${*@Q} -3- $(print_vars vref vbranch vtag vnode)" ${Green}
+  # io_trace "module_prod_attach ${*@Q} -3- $(print_vars refs[@] vref vbranch vtag vnode)" ${Green}
 
   [[ -n $vref ]] && branch_checkout "$vref" true
 
@@ -326,7 +326,7 @@ _bundle_reset_scope()
 _module_reset_scope()
 {
   [[ $moduleScopeInitialized == true ]] || return 0
-  # io_trace_unsafe "_module_reset_scope -- ${*@Q}"
+  # io_trace_unsafe "_module_reset_scope -- ${*@Q}" ${Green}
 
   module_update_submodules
   
@@ -365,9 +365,12 @@ _module_set_head()
     moduleHead=$bundleHead
     moduleHeadType=$bundleHeadType
   else
-    local ref=${1:-HEAD} refSymbol refType
+    local ref=${1:-HEAD} refSymbol refType branch lbranch bref ec
+    branch_set_realize $ref; ec=$?
+    [ $ec -eq 1 ] && ref=$branch # remote branch
     ref_set_symbol "$ref"
     moduleHead=$refSymbol
+    # io_trace "_module_set_head ${*@Q} -- $(print_vars refSymbol refType branch lbranch bref ec)" ${Green}
     moduleHeadType=$refType
   fi
 }
