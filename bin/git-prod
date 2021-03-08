@@ -16,6 +16,7 @@ prod_parse()
     -h|--help) zou-help $0; exit 0;;
     -j*)            jobsCount=${1#-j};;
     -r|--recursive) recursive=true;;
+    -a|--all)       noSkuFilter=true;;
     -n|--dry-run)   dryRun=true;;
     --merge)        mergeIntoDev=true;;
     --vnext)        checkoutType='vnext';;
@@ -28,10 +29,8 @@ prod_parse()
     --beta)         prerelPrefix='beta';;
     --rc)           prerelPrefix='rc';;
     --rtm)          prerelPrefix='rtm';;
-    attach)         subcommand=$1;;
-    select)         subcommand=$1;;
-    enter)          subcommand=$1;;
-    release)        subcommand=$1;;
+    attach|select)  subcommand=$1; doNotCommitInactiveSubmodules=true; unset commitSubmodules;;
+    enter|release)  subcommand=$1;;
     --)             shift; break;;
     -*) io_error "unknown option ${VC}$1${Red}\n"; io_help $0; return 1;;
     *)  args+=( "$1" );;
@@ -40,8 +39,8 @@ prod_parse()
   cmd_check_subcommand 'attach' 'select' 'enter' 'release'
 
   if [[ $subcommand == 'select' && ${#args[@]} -ge 1 ]]; then
-    prodSelectSpec=${args[0]}
-    args=(${args[@]:1})
+      prodSelectSpec=${args[0]}
+      args=(${args[@]:1})
   fi
   
   cmd_check_args "${args[@]}"
@@ -52,9 +51,9 @@ prod_parse()
 prod_run()
 {
   # parse command line
-  local jobsCount recursive command='prod' subcommand \
+  local jobsCount recursive noSkuFilter command='prod' subcommand \
         cmdScopes=( prod_scope config_scope cosm_scope ) \
-        commitSubmodules=true mergeIntoDev \
+        commitSubmodules=true doNotCommitInactiveSubmodules mergeIntoDev \
         vtable prerelPrefix dryRun prodModulePaths=() \
         checkoutType='vnext' attachMode='auto' forcePrincipalRelease \
         prodSelectSpec
@@ -91,7 +90,8 @@ prod_command()
   [ ${#prodModulePaths[@]} -eq 0 ] && prodModulePaths+=( './' )
   
   case $subcommand in
-    select|release) recursive=true;;
+    select)  recursive=true;;
+    release) recursive=true; unset noSkuFilter;;
   esac
   cmd_register_module_paths "$recursive" "${prodModulePaths[@]}"
 
@@ -123,29 +123,37 @@ prod_attach_xepilog() { branch_show_status               || io_trace_error 'prod
 # SELECT
 ########
 
-prod_select_prolog()  { _prod_select       || io_trace_error 'prod_select_prolog'; }
-prod_select_epilog()  { branch_show_status || io_trace_error 'prod_select_epilog'; }
-prod_select_xprolog() { _prod_select       || io_trace_error 'prod_select_xprolog'; }
-prod_select_xepilog() { branch_show_status || io_trace_error 'prod_select_xepilog'; }
+prod_select_prolog()  { _prod_select_prolog || io_trace_error 'prod_select_prolog'; }
+prod_select_epilog()  { _prod_select_epilog || io_trace_error 'prod_select_epilog'; }
+prod_select_xprolog() { _prod_select_prolog || io_trace_error 'prod_select_xprolog'; }
+prod_select_xepilog() { _prod_select_epilog || io_trace_error 'prod_select_xepilog'; }
 
-_prod_select()
+_prod_select_prolog()
+{
+  cmd_is_child && return 0
+
+  if [[ -z $prodSelectSpec ]]; then
+    case $attachMode in
+      vtag) prodSelectSpec=$prodVTag;;
+      *)    prodSelectSpec=$prodBranchPath;;
+    esac
+  else
+    [[ $attachMode == 'auto' ]] && vtag_is_semver $prodSelectSpec && attachMode='vtag'
+  fi
+
+  # io_trace "_prod_select_prolog -- $(print_vars attachMode prodSelectSpec)" ${Green}
+
+  branch_checkout "$prodSelectSpec" true
+  # module_prod_attach "$attachMode"
+}
+_prod_select_epilog()
 {
   if cmd_is_child; then
     module_update_init
     module_prod_attach "$attachMode"
-  else
-    if [[ -z $prodSelectSpec ]]; then
-      case $attachMode in
-        vtag) prodSelectSpec=$prodVTag;;
-        *)    prodSelectSpec=$prodBranchPath;;
-      esac
-    else
-      [[ -z $attachMode ]] && vtag_is_semver $prodSelectSpec && attachMode='vtag'
-    fi
-
-    branch_checkout "$prodSelectSpec"
-    module_prod_attach "$attachMode"
+    # io_trace "_prod_select_epilog -- $(print_vars attachMode moduleId)" ${Green}
   fi
+  branch_show_status || io_trace_error '_prod_select_epilog'
 }
 
 #######
