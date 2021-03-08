@@ -444,12 +444,10 @@ _module_infer_dev_from_bundle()
 _module_submodule_visitor()
 {
   local smPath=$1; shift
+  repo_ensure_submodule "$moduleRoot" "$smPath" || return $?
   _module_enter "$smPath" || return $?
-  repo_check_submodule "$moduleRoot" "$smPath" || return $?
   # io_trace "_module_submodule_visitor $smPath >> $*"
   module_scope $* || return $?
-  # $1 "${@:2}" || return $?
-  # io_trace "_module_submodule_visitor $smPath << $*"
 }
 # usage:
 #   _module_enter "$moduleDir" || return $?
