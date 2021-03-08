@@ -361,18 +361,49 @@ _bundle_set_head()
 }
 _module_set_head()
 {
+  # io_trace "_module_set_head ${*@Q}" ${Green}
   if module_is_bundle; then
     moduleHead=$bundleHead
     moduleHeadType=$bundleHeadType
   else
-    local ref=${1:-HEAD} refSymbol refType branch lbranch bref ec
-    branch_set_realize $ref; ec=$?
-    [ $ec -eq 1 ] && ref=$branch # remote branch
-    ref_set_symbol "$ref"
-    moduleHead=$refSymbol
-    # io_trace "_module_set_head ${*@Q} -- $(print_vars refSymbol refType branch lbranch bref ec)" ${Green}
-    moduleHeadType=$refType
+    local ref=${1:-HEAD} refs refSymbol refType branch lbranch bref ec
+    ref=$(_module_realize_branch "$ref"); ec=$?
+    if [ $ec -eq 0 ]; then
+      moduleHeadType='branch'
+      branch_set_realize $ref; ec=$?
+      # io_trace "_module_set_head -1- $(print_vars ref branch lbranch bref ec)" ${Green}
+      [ $ec -eq 1 ] && moduleHead=$branch || moduleHead=$lbranch  # remote or local
+    else
+      ref_set_symbol "$ref"
+      # io_trace "_module_set_head -2- $(print_vars ref refSymbol refType)" ${Green}
+      moduleHead=$refSymbol
+      moduleHeadType=$refType
+    fi
+    # io_trace "_module_set_head -3- $(print_vars moduleHead moduleHeadType)" ${Green}
   fi
+}
+_module_realize_branch()
+{
+    local ref=${1:-HEAD} refs cref
+    refs=( $(branch_list_all_at $ref) )
+    # io_trace "_module_realize_branch ${*@Q} -- $(print_vars refs[@])" ${Green}
+    for cref in ${refs[@]}; do
+      if bundle_in_prod_mode && branch_is_prod $cref; then
+        echo $cref
+        return 0
+      elif bundle_in_wip_mode && branch_is_wip; then
+        echo $cref
+        return 0
+      elif bundle_in_hotfix_mode && branch_is_hotfix; then
+        echo $cref
+        return 0
+      elif bundle_in_dev_mode && branch_is_dev; then
+        echo $cref
+        return 0
+      fi
+    done
+    echo $ref
+    return 1
 }
 _module_set_bundle_dev_branch()
 {
