@@ -391,11 +391,11 @@ repo_commit_submodules()
     return 0
   fi
 
-  for sm; do
-    cd "$sm"
-    repo_remove_dangling_submodules_async
-    cd - &>/dev/null
-  done
+  # for sm; do
+  #   cd "$sm"
+  #   repo_remove_dangling_submodules
+  #   cd - &>/dev/null
+  # done
 
   local branch=${moduleHead:-$(branch_current)}
   # io_trace "repo_commit_submodules -2- $(print_vars branch)"
@@ -448,15 +448,22 @@ repo_discard_internal_ignore_list()
 repo_remove_dangling_submodule()
 {
   local smpath=$1 smid=${1%/}
-  # echo "git submodule deinit $smid + git rm --cached $smid"
+  # io_trace "repo_remove_dangling_submodule ${*@Q} -1- $(print_vars smpath smid PWD)"
   git submodule deinit $smid 2>/dev/null && git rm --cached $smid 2>/dev/null
   rm -rf "$smpath"
   mio_warning "Removed dangling submodule '${smpath%/}'"
-  repo_raise_submodule_changed_event "$smpath"
+}
+repo_remove_dangling_submodules()
+{
+  local dangling=($(repo_list_dangling_submodules))
+  # io_trace "repo_remove_dangling_submodules ${*@Q} -1- $(print_vars dangling[@] PWD)"
+  visit 'dangling[@]' repo_remove_dangling_submodule
 }
 repo_remove_dangling_submodules_async()
 {
-  visit_async repo_list_dangling_submodules repo_remove_dangling_submodule
+  local dangling=($(repo_list_dangling_submodules))
+  # io_trace "repo_remove_dangling_submodules ${*@Q} -1- $(print_vars dangling[@] PWD)"
+  visit_async 'dangling[@]' repo_remove_dangling_submodule
 }
 repo_ensure_submodule()
 {

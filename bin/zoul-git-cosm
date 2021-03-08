@@ -12,6 +12,7 @@ ZOUL_GIT_COSM=true
 #   showSubmoduleMessage
 #   commitSubmodules
 #   commitDirtySubmodules
+#   doNotCommitInactiveSubmodules
 #   synchronizeSubmoduleUrl
 
 headChangedEvent+=( _cosm_on_head_changed )
@@ -28,7 +29,6 @@ cosm_scope()
         showSubmoduleMessage=true cosmScopeInitialized=true
   
   cosm_reset_scope
-  repo_remove_dangling_submodules_async
 
   # execute next russian doll
   $1 "${@:2}"
@@ -61,7 +61,8 @@ cosm_reset_scope()
   unstagedCleanSubmodules=( $(array_remove_array 'unstagedCleanSubmodules[@]' 'configSkuExclude[@]') )
   unstagedDirtySubmodules=( $(array_remove_array 'unstagedDirtySubmodules[@]' 'configSkuExclude[@]') )
 
-  _cosm_commit_inactive_submodules
+  # repo_remove_dangling_submodules
+  # _cosm_commit_inactive_submodules
   _cosm_trace
 }
 _cosm_trace()
@@ -170,10 +171,12 @@ cosm_discard_unstaged_submodules()
 
 _cosm_commit_inactive_submodules()
 {
+  [[ $doNotCommitInactiveSubmodules == true ]] && return 0
+
   # recursively commit unstaged clean submodules which are excluded from SKU or external
   [ ${#moduleSubmodulePaths[@]} -eq 0 ] && return 0
   local cleanExternal=$1
-  # io_trace "_cosm_commit_inactive_submodules -- $(print_vars unstagedDirtyInactiveSubmodules[@])"
+  # io_trace "_cosm_commit_inactive_submodules -- $(print_vars doNotCommitInactiveSubmodules unstagedDirtyInactiveSubmodules[@])"
 
   _cosm_commit_unstaged_clean_inactive_submodules
   if [[ $cleanExternal == true ]]; then
