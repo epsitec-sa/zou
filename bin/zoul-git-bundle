@@ -54,7 +54,7 @@ bundle_set_registered_paths()
 bundle_visit_async()
 {
   local _bundleVisitPaths
-  [[ $1 =~ \[@\]$ ]] && _bundleVisitPaths=( "${!1}" ) || _bundleVisitPaths=( "$($1)" )
+  [[ $1 =~ \[@\]$ ]] && _bundleVisitPaths=( "${!1}" ) || ( [[ -n $1 ]] && _bundleVisitPaths=("$($1)") )
   [ ${#_bundleVisitPaths[@]} -eq 0 ] && return 0
 
   # io_trace "bundle_visit_async ${*@Q} -- $(print_vars _bundleVisitPaths[@])"

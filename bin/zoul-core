@@ -549,7 +549,7 @@ ieval()
 visit()
 {
   local ec=0 _zouVisitPaths path
-  [[ $1 =~ \[@\]$ ]] && _zouVisitPaths=("${!1}") || _zouVisitPaths=("$($1)")
+  [[ $1 =~ \[@\]$ ]] && _zouVisitPaths=("${!1}") || ( [[ -n $1 ]] && _zouVisitPaths=("$($1)") )
   [ ${#_zouVisitPaths[@]} -eq 0 ] && return 0
 
   for path in "${_zouVisitPaths[@]}"; do
@@ -570,7 +570,7 @@ visit()
 visit_async()
 {
   local ec=0 _zouVisitPaths path pids=()
-  [[ "$1" =~ \[@\]$ ]] && _zouVisitPaths=("${!1}") || _zouVisitPaths=("$($1)")
+  [[ "$1" =~ \[@\]$ ]] && _zouVisitPaths=("${!1}") || ( [[ -n $1 ]] && _zouVisitPaths=("$($1)") )
   [ ${#_zouVisitPaths[@]} -eq 0 ] && return 0
 
   [[ -z $jobsCount ]] && jobsCount=32
