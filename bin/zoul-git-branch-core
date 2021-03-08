@@ -96,6 +96,9 @@ branch_is_attached()    { git symbolic-ref --short -q HEAD &>/dev/null; }
 branch_is_local()       { git show-ref -s --verify "refs/heads/$1" &>/dev/null; }
 branch_is_remote()      { git show-ref -s --verify "refs/remotes/$1" &>/dev/null; }
 branch_is_prod()        { [[ $1 =~ ^(.*/)?([0-9]+\.[0-9]+)$ ]] && return 0 || return 1; }
+branch_is_dev()         { [[ $1 =~ (master|/dev)$ ]] && return 0 || return 1; }
+branch_is_wip()         { [[ $1 =~ ^(.*/)?wip/ ]] && return 0 || return 1; }
+branch_is_hotfix()      { [[ $1 =~ ^(.*/)?hotfix/ ]] && return 0 || return 1; }
 branch_is_head()
 {
   local hash1 hash2
