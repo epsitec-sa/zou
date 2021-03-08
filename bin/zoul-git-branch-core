@@ -455,7 +455,7 @@ branch_checkout()
     [[ $showSwitchingMessage == true ]] && mio_info "Switching to $ioType $ioRef"
     # checkout
     [ $isCurrent -ne 0 ] && repo_discard_internal_ignore_list
-    _branch_checkout_core; ec=$?
+    _branch_checkout_core "$refSym"; ec=$?
     return $ec
   else
     branch_raise_checkout_no_change_event "$refSym"
@@ -473,8 +473,8 @@ _branch_raise_checked_out_events()
 }
 _branch_checkout_core()
 {
-  # io_trace "_branch_checkout_core >>"
-  local skipNextLines skipCurrentLine ec line lines color alias
+  local ref=$1 skipNextLines skipCurrentLine ec line lines color alias
+  # io_trace ">>>> _branch_checkout_core ${*@Q}"
 
   IFS=$'\n' lines=( $(git checkout "$ref" 2>&1) ); ec=$?; IFS=$OIFS
   if [[ $ec -eq 0 ]]; then
@@ -492,7 +492,7 @@ _branch_checkout_core()
     [[ $skipNextLines == true ]] && break
   done
   io_lock_exit
-  # io_trace "_branch_checkout_core <<"
+  # io_trace "<<<< _branch_checkout_core ${*@Q}"
   return $ec
 }
 _branch_checkout_selector()
