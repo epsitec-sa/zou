@@ -80,6 +80,8 @@ module_is_startup()     { [[ $moduleRoot == $startupRoot ]]; }
 module_in_strict_dev_mode() { [[ $moduleHead == $(wip_to_ref $moduleDevBranch) ]]; }
 bundle_in_strict_dev_mode() { [[ $bundleHead == $(wip_to_ref $bundleDevBranch) ]]; }
 
+module_is_included_in_sku() { array_contains_element "$1" "${configSkuInclude[@]}"; }
+
 ########################################################
 # ATTACH
 
@@ -167,12 +169,14 @@ _module_trace()
     io_trace_unsafe "$1 -- $(print_vars bundleHead bundleHeadType)"
     io_trace_unsafe "$1 -- $(print_vars bundleDevBranch bundleDevBranchPath)"
     io_trace_unsafe "$1 -- $(print_vars bundleUrl bundleUrlName bundleRoot)"
+    io_trace_unsafe "$1 -- $(print_vars includedSkuModule)"
     # io_trace_unsafe "$1 -- $(print_vars bundleTracePrefix)"
     ;;
   _bundle_reset_scope)
     io_trace_unsafe "$1 -- $(print_vars bundleId principalModuleId)"
     io_trace_unsafe "$1 -- $(print_vars bundleHead bundleHeadType)"
     io_trace_unsafe "$1 -- $(print_vars bundleDevBranch bundleDevBranchPath)"
+    io_trace_unsafe "$1 -- $(print_vars includedSkuModule)"
     # io_trace_unsafe "$1 -- $(print_vars bundleTracePrefix)"
     ;;
   module_scope)
@@ -181,6 +185,7 @@ _module_trace()
     io_trace_unsafe "$1 -- $(print_vars moduleHead moduleHeadType)"
     io_trace_unsafe "$1 -- $(print_vars moduleDevBranch moduleDevBranchPath)"
     io_trace_unsafe "$1 -- $(print_vars modulePath moduleBundlePath moduleRoot)"
+    io_trace_unsafe "$1 -- $(print_vars includedSkuModule)"
     # io_trace_unsafe "$1 -- $(print_vars moduleTracePrefix)"
     ;;
   _module_reset_scope)
@@ -188,6 +193,7 @@ _module_trace()
     io_trace_unsafe "$1 -- $(print_vars moduleHead moduleHeadType)"
     io_trace_unsafe "$1 -- $(print_vars moduleDevBranch moduleDevBranchPath)"
     io_trace_unsafe "$1 -- $(print_vars moduleSubmodulePaths[@])"
+    io_trace_unsafe "$1 -- $(print_vars includedSkuModule)"
     # io_trace_unsafe "$1 -- $(print_vars moduleTracePrefix)"
     ;;
   *)
@@ -212,6 +218,7 @@ _module_trace()
     io_trace_unsafe "$1 -- $(print_vars moduleHeadType)"
     io_trace_unsafe "$1 -- $(print_vars moduleDevBranch)"
     io_trace_unsafe "$1 -- $(print_vars moduleDevBranchPath)"
+    io_trace_unsafe "$1 -- $(print_vars includedSkuModule)"
     # io_trace_unsafe "$1 -- $(print_vars moduleTracePrefix)"
   esac
   io_lock_exit
@@ -275,8 +282,10 @@ module_scope()
   local moduleRoot moduleConfigFile moduleId moduleSubmodulePaths \
         moduleParent modulePath moduleBundlePath \
         moduleHead moduleHeadType moduleDevBranch moduleDevBranchPath moduleTracePrefix \
-        moduleScopeInitialized=true
+        includedSkuModule moduleScopeInitialized=true
   
+  [[ "$1" == '-i' ]] && { includedSkuModule=true; shift; }
+
   moduleRoot="$PWD"
   moduleConfigFile="$moduleRoot/.zou-flow"
   moduleId=$(repo_module_id)
@@ -445,11 +454,14 @@ _module_infer_dev_from_bundle()
 #   ${@:2} -- next ...
 _module_submodule_visitor()
 {
-  local smPath=$1; shift
+  local smPath=$1 option; shift
   repo_ensure_submodule "$moduleRoot" "$smPath"
   _module_enter "$smPath" || return $?
-  # io_trace "_module_submodule_visitor $smPath >> $*"
-  module_scope $* || io_trace_error '_module_submodule_visitor'
+
+  module_is_included_in_sku "$smPath" && option='-i'
+  # io_trace "_module_submodule_visitor $smPath -- $(print_vars configSkuInclude[@] configSkuExclude[@] option) >> $*"
+  
+  module_scope "$option" $* || io_trace_error '_module_submodule_visitor'
 }
 # usage:
 #   _module_enter "$moduleDir" || return $?

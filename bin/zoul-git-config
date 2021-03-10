@@ -65,10 +65,7 @@ _config_reset_scope()
     configSelectIncludeBundlePaths=()
     configSelectExcludeBundlePaths=()
   else
-    if [[ $excludedSmOnly == true ]]; then
-      configSkuInclude=( $(config_sku_list_excluded) )
-      configSkuExclude=( $(config_sku_list_included moduleSubmodulePaths[@] configSkuInclude[@]) )
-    elif [[ $noSkuFilter == true ]]; then
+    if [[ $noSkuFilter == true ]]; then
       configSkuExclude=()
       configSkuInclude=( ${moduleSubmodulePaths[@]} )
     else
@@ -91,7 +88,7 @@ _config_reset_scope()
     configSelectExcludeBundlePaths=( "${configSelectExcludeBundlePaths[@]#/}" )
   fi
 
-  _config_trace
+  _config_trace true
 }
 _config_trace()
 {
