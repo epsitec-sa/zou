@@ -1,23 +1,66 @@
 #!/bin/bash
 
+[[ -z $ZOUL_GIT_CMD ]]   && . zoul-git-cmd
+[[ -z $ZOUL_GIT_COSM ]]  && . zoul-git-cosm
+
 cosm_parse()
 {
+  local args=()
   while [[ "$#" > 0 ]]; do case "$1" in
-    --) shift; args+=("$@"); break;;
     -h|--help) zou-help $0; exit 0;;
-    -f|--force) commitDirtySubmodules=true;;
-    -*) forOpts+=($1);;
+    -d|--dsm)  removeDanglingSubmodules=true;;
+    --)  shift; break;;
+    -*)  io_error "unknown option ${VC}$1${Red}\n"; io_help $0; return 1;;
+    *)   args+=( "$1" );;
   esac; shift; done
+
+  cmd_check_args "${args[@]}"
+
+  cosmModulePaths=( "$@" )
 }
 
 cosm_run()
 {
-  local forOpts=() commitDirtySubmodules
+  local command='cosm' subcommand='do' cosmModulePaths=() \
+        cmdScopes=( config_scope cosm_scope ) \
+        noSkuFilter=true removeDanglingSubmodules
+
   cosm_parse "$@" || return $?
 
-  local commitSubmodules=true
+  case $subcommand in
+    do)  startupMessage="Commiting submodules, please wait...";;
+  esac
 
-  . git-for --bottom-up --ancestors --scope cosm_scope "${forOpts[@]}" -- 'cosm_process_unstaged_submodules'
+  bundle_scope cosm_command
+}
+cosm_command()
+{
+  [ ${#cosmModulePaths[@]} -eq 0 ] && cosmModulePaths+=( './' )
+  cmd_register_module_paths true "${cosmModulePaths[@]}"
+
+  cmd_visit_modules
+}
+cosm_do_select()
+{
+  local submodules=("${!1}") gitmodulesPath
+  # io_trace "cosm_do_select -- $(print_vars submodules[@])"
+  # visit only submodules that contains submodules
+  for sm in ${submodules[@]}; do
+    [[ -f "$PWD/$sm/.gitmodules" ]] && echo $sm
+  done
+  # printf '%s\n' "${submodules[@]}"
+}
+cosm_do_prolog()
+{
+  # io_trace "cosm_do_prolog -- $(print_vars submodules[@])"
+  [[ $removeDanglingSubmodules == true ]] && repo_remove_dangling_submodules_async
+  return 0
+}
+cosm_do_epilog()
+{
+  # io_trace "cosm_do_epilog -- $(print_vars submodules[@])"
+  cosm_commit_unstaged_submodules true
+  branch_show_status
 }
 
 cosm_run "$@"
