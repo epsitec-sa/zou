@@ -551,9 +551,7 @@ visit()
   [ ${#_zouVisitPaths[@]} -eq 0 ] && return 0
 
   for path in "${_zouVisitPaths[@]}"; do
-    (
-      $2 "$path" "${@:3}" || exit $?
-    ) || ec=$?
+    ( $2 "$path" "${@:3}" || exit $? ) || ec=$?
     [[ $ec -ne 0 && $stopOnError == true ]] && break
   done
   return $ec
@@ -567,24 +565,26 @@ visit()
 #   ${@:3} -- next ...
 visit_async()
 {
-  local ec=0 _zouVisitPaths path pids=()
+  local ec=0 _zouVisitPaths path pid pids=()
   [[ "$1" =~ \[@\]$ ]] && _zouVisitPaths=("${!1}") || ( [[ -n $1 ]] && _zouVisitPaths=("$($1)") )
   [ ${#_zouVisitPaths[@]} -eq 0 ] && return 0
-
-  [[ -z $jobsCount ]] && jobsCount=32
+  
+  [[ -z $jobsCount ]] && jobsCount=0  # no parallel jobs limit
 
   for path in $(array_sort _zouVisitPaths[@]); do
-    (
-      $2 "$path" "${@:3}" || exit $?
-    ) &
+    ( $2 "$path" "${@:3}" || exit $? )&
     pids+=($!)
-    if (( $(process_job_count) % $jobsCount == 0 )); then
-      wait "${pids[@]}" &>/dev/null || ec=$?
+    if (( "$jobsCount" > 0 )) && (( $(process_job_count) % "$jobsCount" == 0 )); then
+      for pid in "${pids[@]}"; do
+        wait $pid &>/dev/null || io_trace_error 'visit_async' || ec=$?
+      done
       pids=()
       [[ $ec -ne 0 && $stopOnError == true ]] && break
     fi
   done
-  [ ${#pids[@]} -ne 0 ] && wait "${pids[@]}" &>/dev/null || ec=$?
+  for pid in "${pids[@]}"; do
+    wait $pid &>/dev/null || io_trace_error 'visit_async' || ec=$?
+  done
   wait
   return $ec
 }
