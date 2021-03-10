@@ -15,6 +15,7 @@ sku_parse()
     -j*)            jobsCount=${1#-j};;
     -r|--recursive) recursive=true;;
     -a|--all)       noSkuFilter=true;;
+    --xsm)          excludedSmOnly=true;;
     --vlast)        checkoutType='vlast';;
     --vnext)        checkoutType='vnext';;
     --dev)          checkoutType='dev';;
@@ -53,7 +54,7 @@ sku_run()
   local jobsCount recursive=false command='sku' subcommand \
         cmdScopes=( prod_scope config_scope cosm_scope ) \
         configMode='status' configInclude=() configExclude=() configPrincipalModuleId \
-        noSkuFilter skuSpec skuModulePaths=() \
+        noSkuFilter excludedSmOnly skuSpec skuModulePaths=() \
         checkoutType='dev'
 
   sku_parse "$@" || return $?
@@ -65,13 +66,14 @@ sku_startup_message()
 {
   case $subcommand in
     enter)
-      local what;
+      local what forSMs;
       case "$checkoutType" in
         dev)   what='development';;
         vnext) what='next version';;
         vlast) what='last version';;
       esac
-      startupMessage="Entering ${Brown}$what${White} on ${Brown}${skuSpec:-current SKU}${White}, please wait...";;
+      [[ $excludedSmOnly == true ]] && forSMs=" for ${Brown}excluded submodules${White}"
+      startupMessage="Entering ${Brown}$what${White} on ${Brown}${skuSpec:-current SKU}${White}${forSMs}, please wait...";;
     info)
       startupMessage="Getting SKU info, please wait...";;
   esac
@@ -116,7 +118,12 @@ _prod_on_preinit()
 # ENTER
 #######
 
-sku_enter_prolog() { sku_checkout "$sku" "$prodCheckoutType" true; }
+sku_enter_prolog()
+{
+  # io_trace "sku_enter_prolog -- $(print_vars configSelectInclude[@])"
+  # do not checkout SKU in bundle if excludedSmOnly == true
+  [[ $excludedSmOnly == true ]] && module_is_bundle || sku_checkout "$sku" "$prodCheckoutType" true
+}
 sku_enter_epilog() { branch_show_status; }
 
 ######
