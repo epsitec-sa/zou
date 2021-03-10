@@ -4,6 +4,7 @@
 #   [[ -z $ZOUL_CORE ]] && . zoul-core
 ZOUL_CORE=true
 
+[[ -z $ZOUL_SYSTEM ]]  && . zoul-system
 [[ -z $ZOUL_LOCK ]]    && . zoul-lock
 [[ -z $ZOUL_PROCESS ]] && . zoul-process
 
@@ -20,16 +21,16 @@ export LANGUAGE=en_US
 export LANG="$LANGUAGE.UTF-8"
 
 # declare startup constants
-zouStartupPath=$(realpath "${BASH_SOURCE[-1]}")
+zouStartupPath=$(real_path "${BASH_SOURCE[-1]}")
 zouStartupFileName="${zouStartupPath##*/}"
 if [[ "$zouStartupFileName" == bashdb ]]; then
-  zouStartupPath=$(realpath "${BASH_SOURCE[-2]}")
+  zouStartupPath=$(real_path "${BASH_SOURCE[-2]}")
   zouStartupFileName="${zouStartupPath##*/}"
 fi
 zouStartupDir="${zouStartupPath%/*}"
 zouBinDir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 zouCommand="${zouStartupFileName##git-}"
-zouConfigFile="$(realpath ~)/.zou-flow"
+zouConfigFile="$(real_path ~)/.zou-flow"
 
 
 # colors usage
@@ -90,7 +91,7 @@ Copyright © 2019, EPSITEC SA, CH-1400 Yverdon-les-Bains, Switzerland${NC}"
 }
 io_help()
 {
-  local hdir=$(realpath "$zouBinDir/../help") hname=$(basename "$1")
+  local hdir=$(real_path "$zouBinDir/../help") hname=$(basename "$1")
 
   if [[ -f "$hdir/$hname" ]]; then
     io_message "$(cat "$hdir/$hname")"
@@ -118,7 +119,7 @@ io_help()
 io_help_list()
 {
     local hdir names commands topics
-    hdir=$(realpath "$zouBinDir/../help/.")
+    hdir=$(real_path "$zouBinDir/../help/.")
     topics=( $(io_list_filenames "$hdir" 'topic-*') )
     commands=( $(io_list_filenames "$hdir" 'git-*') )
     topics=( "${topics[@]#topic-}" )
@@ -457,9 +458,9 @@ array_contains_element()
 }
 path_make_relative()
 {
-  local path=$(realpath "$1")
-  local relativeTo=$(realpath "${2:-.}")
-  realpath --relative-to="$relativeTo" "$path"
+  local path=$(real_path "$1")
+  local relativeTo=$(real_path "${2:-.}")
+  real_path --relative-to="$relativeTo" "$path"
 }
 
 get_file_encoding()
@@ -503,7 +504,7 @@ ised()
     rm --force "$tmp"
   fi
   
-  realpath "$file"
+  real_path "$file"
   return $ec
 }
 # Escape arguments for command line usage

@@ -26,7 +26,7 @@ cmd_register_module_paths()
   [ $# -eq 0 ] && return 0
 
   for path; do
-    path=$(realpath "$path")
+    path=$(real_path "$path")
     # io_trace "cmd_register_module_paths 1 -- $(print_vars path)"
     if [[ ${cmdRecursiveMap["$path"]:-false} == false ]]; then
       cmdRecursiveMap["$path"]=$recursive

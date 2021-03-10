@@ -14,7 +14,7 @@ bundler_parse()
     -s|--scan)       scan=true;;
     --config)        config=true;;
     -*) io_error "unknown option '$1'"; return 1;;
-    *)  bundlePaths+=( "$(realpath $1)" )
+    *)  bundlePaths+=( "$(real_path $1)" )
   esac; shift; done
 }
 bundler_run()
@@ -58,7 +58,7 @@ bundler_run()
 _bundler_scan()
 {
   io_message "Scanning bundles, please wait..."
-  local root="$(realpath $(repo_bundle_root)/..)"
+  local root="$(real_path $(repo_bundle_root)/..)"
   for dir in $(ls -d $root/*); do
     [[ -d "$dir/.git" ]] || continue
     bundlePaths+=( "$dir" )

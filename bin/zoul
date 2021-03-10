@@ -20,6 +20,7 @@ while [[ "$#" > 0 ]]; do case "$1" in
   *) zoulArgs+=($1);;
 esac; shift; done
 
+unset ZOUL_SYSTEM
 unset ZOUL_CORE
 unset ZOUL_LOCK
 unset ZOUL_CONFIG
@@ -47,6 +48,7 @@ unset ZOUL_GIT_BRANCH_MERGE
 unset ZOUL_GIT_BRANCH_SYNC
 unset ZOUL_GIT_SANDBOX
 
+[[ -z $ZOUL_SYSTEM ]]             && . zoul-system
 [[ -z $ZOUL_CORE ]]               && . zoul-core
 [[ -z $ZOUL_LOCK ]]               && . zoul-lock
 [[ -z $ZOUL_CONFIG ]]             && . zoul-config

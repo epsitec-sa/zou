@@ -55,7 +55,7 @@ repo_bundle_id()
 repo_bundle_root()
 {
   local dir
-  dir=$(realpath "${1:-.}") || return $?
+  dir=$(real_path "${1:-.}") || return $?
   while [[ -n "$dir" && ! -d "$dir/.git" ]]; do
     dir="${dir%/*}"
   done
@@ -91,9 +91,9 @@ repo_set_bundle_url_info()
 repo_path_relative_to_bundle_root()
 {
   local path bdir
-  path=$(realpath "${1:-.}") || return $?
+  path=$(real_path "${1:-.}") || return $?
   bdir=$(repo_bundle_root "${2:-.}") || return $?
-  realpath --relative-to="$bdir" "$path"
+  real_path --relative-to="$bdir" "$path"
 }
 
 ######################
@@ -113,7 +113,7 @@ repo_module_id()
 repo_module_root()
 {
   local dir
-  dir=$(realpath "${1:-.}") || return $?
+  dir=$(real_path "${1:-.}") || return $?
   while [[ -n "$dir" ]]; do
     if [[ -f "$dir/.git" || -d "$dir/.git" ]]; then
       echo "$dir"
@@ -136,7 +136,7 @@ repo_module_parent()
 repo_module_level()
 {
   local dir level=0
-  dir=$(realpath "${1:-.}") || return $?
+  dir=$(real_path "${1:-.}") || return $?
   while [[ -n "$dir" ]]; do
     if [[ -f "$dir/.git" ]]; then
       level=$(( $level + 1 ))
@@ -156,9 +156,9 @@ repo_module_level()
 #  $2 : any folder path inside the reference module
 repo_module_root_relative_to_path()
 {
-  local dir=$(realpath "${1:-.}") mdir
+  local dir=$(real_path "${1:-.}") mdir
   mdir=$(repo_module_root "${2:-.}") || return $?
-  realpath --relative-to="$dir" "$mdir"
+  real_path --relative-to="$dir" "$mdir"
 }
 # return the path relative to the module root of any module folder
 # input:
@@ -166,13 +166,13 @@ repo_module_root_relative_to_path()
 #  $2 : any folder path inside the reference module
 repo_path_relative_to_module_root()
 {
-  local dir=$(realpath "${1:-.}") mdir
+  local dir=$(real_path "${1:-.}") mdir
   mdir=$(repo_module_root "${2:-.}") || return $?
-  realpath --relative-to="$mdir" "$dir"
+  real_path --relative-to="$mdir" "$dir"
 }
 repo_module_and_bundle_roots()
 {
-  local dir=$(realpath ${1:-.}) mdir bdir
+  local dir=$(real_path ${1:-.}) mdir bdir
   while [[ -n "$dir" ]]; do
     if [[ -z "$mdir" && -f "$dir/.git" ]]; then
       mdir=$dir
@@ -199,7 +199,7 @@ repo_ancestor_roots()
 }
 repo_module_and_ancestor_roots()
 {
-  local dir=$(realpath ${1:-.})
+  local dir=$(real_path ${1:-.})
   while [[ -n "$dir" ]]; do
     if [[ -f "$dir/.git" ]]; then
       echo "$dir"
@@ -218,7 +218,7 @@ repo_module_and_ancestor_roots()
 repo_submodule_root()
 {
   local dir
-  dir=$(realpath "${1:-.}") || return $?
+  dir=$(real_path "${1:-.}") || return $?
   while [[ -n "$dir" ]]; do
     if [[ -f "$dir/.git" ]]; then
       echo "$dir"
