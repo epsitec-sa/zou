@@ -120,12 +120,26 @@ _cmd_visit_tree()
 {
   _cmd_is_recursive || return 0
 
+  # process custom submodules selection
+  # allow override of configSelectInclude and configSelectExclude arrays (submodules to visit)
+  # - see git-cosm for an exemple
+  local include exclude includeArrayName='configSelectInclude[@]' excludeArrayName='configSelectExclude[@]'
+  if [[ ${#configSelectInclude[@]} -gt 0 && $(type -t "${command}_${subcommand}_select") == 'function' ]]; then
+    include=($(${command}_${subcommand}_select 'configSelectInclude[@]'))
+    includeArrayName='include[@]'
+  fi
+  if [[ ${#configSelectExclude[@]} -gt 0 && $(type -t "${command}_${subcommand}_xselect") == 'function' ]]; then
+    exclude=($(${command}_${subcommand}_xselect 'configSelectExclude[@]'))
+    excludeArrayName='exclude[@]'
+  fi
+
   local ec=0
-  # io_trace "_cmd_visit_tree 1 ${*@Q} -- $(print_vars configSelectInclude[@] cmdScopes[@])"
-  module_visit_submodules_async "configSelectInclude[@]" "${cmdScopes[@]}" _cmd_tree "$@" || io_trace_error "_cmd_visit_tree 1" || ec=$?
-  # io_trace "_cmd_visit_tree 2 ${*@Q} -- $(print_vars configSelectInclude[@] cmdScopes[@])"
-  module_visit_submodules_async "configSelectExclude[@]" _cmd_xscope "${cmdScopes[@]}" _cmd_xtree "$@" || io_trace_error "_cmd_visit_tree 2" || ec=$?
+  # io_trace "_cmd_visit_tree ${*@Q} -1- $(print_vars include[@] configSelectInclude[@] cmdScopes[@])"
+  module_visit_submodules_async "$includeArrayName" "${cmdScopes[@]}" _cmd_tree "$@" || io_trace_error '_cmd_visit_tree 1' || ec=$?
+  # io_trace "_cmd_visit_tree ${*@Q} -2- $(print_vars exclude[@] configSelectExclude[@] cmdScopes[@] ec)"
+  module_visit_submodules_async "$excludeArrayName" _cmd_xscope "${cmdScopes[@]}" _cmd_xtree "$@" || io_trace_error '_cmd_visit_tree 2' || ec=$?
   [[ $(type -t cosm_reset_scope) == 'function' ]] && cosm_reset_scope
+  # io_trace "_cmd_visit_tree ${*@Q} -3- $(print_vars exclude[@] configSelectExclude[@] cmdScopes[@] ec)"
   return $ec
 }
 _cmd_is_recursive()
@@ -171,22 +185,31 @@ _cmd_tree()
 _cmd_tree_core()
 {
   # io_trace "_cmd_tree_core ${*@Q}"
-  _cmd_prolog "$@" || return $?
-  _cmd_visit_tree "$@" || return $?
-  _cmd_epilog "$@"
+  local ec=0;
+  _cmd_prolog "$@" && _cmd_visit_tree "$@" && _cmd_epilog "$@" || ec=1
+  _cmd_finally "$ec"
+  # io_trace "_cmd_tree_core ${*@Q} -- $(print_vars ec)"
+  return $ec
 }
 _cmd_prolog()
 {
-  # io_trace "_cmd_prolog -- $(print_vars command subcommand cmdModulePaths[@])"
   if [[ $(type -t "${command}_${subcommand}_prolog") == 'function' ]]; then
+    # io_trace "_cmd_prolog ${*@Q} -- $(print_vars command subcommand cmdModulePaths[@])"
     ${command}_${subcommand}_prolog "$@" || io_trace_error "${command}_${subcommand}_prolog"
   fi
 }
 _cmd_epilog()
 {
-  # io_trace "_cmd_epilog -- $(print_vars command subcommand cmdModulePaths[@])"
   if [[ $(type -t "${command}_${subcommand}_epilog") == 'function' ]]; then
+    # io_trace "_cmd_epilog ${*@Q} -- $(print_vars command subcommand cmdModulePaths[@])"
     ${command}_${subcommand}_epilog "$@" || io_trace_error "${command}_${subcommand}_epilog"
+  fi
+}
+_cmd_finally()
+{
+  if [[ $(type -t "${command}_${subcommand}_finally") == 'function' ]]; then
+    # io_trace "_cmd_finally ${*@Q} -- $(print_vars command subcommand cmdModulePaths[@])"
+    ${command}_${subcommand}_finally "$@" || io_trace_error "${command}_${subcommand}_finally"
   fi
 }
 
@@ -206,9 +229,10 @@ _cmd_xtree()
 _cmd_xtree_core()
 {
   # io_trace "_cmd_xtree_core ${*@Q}"
-  _cmd_xprolog "$@" || return $?
-  _cmd_visit_tree "$@" || return $?
-  _cmd_xepilog "$@"
+  local ec=0
+  _cmd_xprolog "$@" && _cmd_visit_tree "$@" && _cmd_xepilog "$@" || ec=1
+  _cmd_xfinally "$ec"
+  return $ec
 }
 _cmd_xprolog()
 {
@@ -222,6 +246,13 @@ _cmd_xepilog()
   # io_trace "_cmd_xepilog -- $(print_vars command subcommand cmdModulePaths[@])"
   if [[ $(type -t "${command}_${subcommand}_xepilog") == 'function' ]]; then
     ${command}_${subcommand}_xepilog "$@" || io_trace_error "${command}_${subcommand}_xepilog"
+  fi
+}
+_cmd_xfinally()
+{
+  # io_trace "_cmd_xfinally -- $(print_vars command subcommand cmdModulePaths[@])"
+  if [[ $(type -t "${command}_${subcommand}_xfinally") == 'function' ]]; then
+    ${command}_${subcommand}_xfinally "$@" || io_trace_error "${command}_${subcommand}_xfinally"
   fi
 }
 
