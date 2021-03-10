@@ -1,16 +1,24 @@
 #!/bin/bash
 
-bdir=.
+[[ -z $ZOUL_SYSTEM ]] && . zoul-system
 
-while [[ "$#" > 0 ]]; do case "$1" in
-  -h|--help) zou-help $0; exit 0;;
-  -*) echo "unknown option: $1" >&2; exit 1;;
-  *) bdir=$1;;
-esac; shift; done
+bundle_dir_run()
+{
+  local path='.'
 
-bdir=$(realpath "$bdir")
-while [[ -n "$bdir" && ! -d "$bdir/.git" ]]; do
-  bdir=${bdir%/*}
-done
+  while [[ "$#" > 0 ]]; do case "$1" in
+    -h|--help) zou-help $0; exit 0;;
+    -*) echo "unknown option: $1" >&2; exit 1;;
+    *)  path="$1";;
+  esac; shift; done
 
-echo $bdir
+  path=$(real_path "$path")
+  while [[ -n "$path" && ! -d "$path/.git" ]]; do
+    path=${path%/*}
+    [[ $path =~ \:$ ]] && return 1
+  done
+
+  echo "$path"
+}
+
+bundle_dir_run "$@"
