@@ -48,7 +48,7 @@ repo_raise_submodule_changed_event() { raise_event 'submoduleChangedEvent[@]' "$
 repo_bundle_id()
 {
   local dir
-  dir=$(repo_bundle_root)
+  dir=$(repo_bundle_root "$@")
   [ $? -ne 0 ] && return 1
   echo ${dir##*/}
 }
@@ -58,6 +58,7 @@ repo_bundle_root()
   dir=$(real_path "${1:-.}") || return $?
   while [[ -n "$dir" && ! -d "$dir/.git" ]]; do
     dir="${dir%/*}"
+    [[ $dir =~ \:$ ]] && return 1
   done
   [[ -z $dir ]] && return 1
   echo "$dir"
