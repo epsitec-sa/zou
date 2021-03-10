@@ -104,10 +104,14 @@ git_user_abbrev()
 
 # Usage:
 #   local message=( 'title' 'content 1' 'content 2')
-#   git_commit 'message[@]' file1 file2
+#   git_commit [<options>] 'message[@]' file1 file2
 git_commit()
 {
   # io_trace "git_commit ${*@Q}"
+  while [[ $1 =~ ^-- ]]; do
+    options+=( "$1" ); shift
+  done
+
   local _messages_ version header footer content
   if [[ "$1" =~ \[@\]$ ]]; then
     _messages_=( "${!1}" )
@@ -129,5 +133,5 @@ git_commit()
   printf -v footer '%s \n' "${content[@]}"
   # io_trace "git_commit -- $(print_vars header content[@] footer)"
   git add -- "$@" &>/dev/null \
-  && git commit -m "$header" -m "$footer" --allow-empty &>/dev/null
+  && git commit -m "$header" -m "$footer" "${options[@]}" &>/dev/null
 }
