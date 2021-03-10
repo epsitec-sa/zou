@@ -7,12 +7,7 @@ ZOUL_GIT_COSM=true
 [[ -z $ZOUL_GIT_MODULE ]]        && . zoul-git-module
 
 # global options
-#   noSkuFilter
-#   noSelectFilter
 #   showSubmoduleMessage
-#   commitSubmodules
-#   commitDirtySubmodules
-#   doNotCommitInactiveSubmodules
 #   synchronizeSubmoduleUrl
 
 headChangedEvent+=( _cosm_on_head_changed )
@@ -24,8 +19,8 @@ branchSyncEvent+=( _cosm_on_sync )
 cosm_scope()
 {
   # setup cosm context
-  local unstagedCleanSubmodules unstagedDirtySubmodules \
-        unstagedCleanInactiveSubmodules unstagedDirtyInactiveSubmodules \
+  local unstagedCleanIncludedSubmodules unstagedDirtyIncludedSubmodules \
+        unstagedCleanSubmodules unstagedDirtySubmodules \
         showSubmoduleMessage=true cosmScopeInitialized=true
   
   cosm_reset_scope
@@ -35,16 +30,16 @@ cosm_scope()
 }
 cosm_has_unstaged_submodules()
 {
-  [ ${#unstagedCleanSubmodules[@]} -gt 0 ] || [ ${#unstagedDirtySubmodules[@]} -gt 0 ]
+  [ ${#unstagedCleanIncludedSubmodules[@]} -gt 0 ] || [ ${#unstagedDirtyIncludedSubmodules[@]} -gt 0 ]
 }
 cosm_has_unstaged_clean_submodules()
 {
-  # io_trace "cosm_has_unstaged_clean_submodules -- $(print_vars unstagedCleanSubmodules[@])"
-  [ ${#unstagedCleanSubmodules[@]} -gt 0 ]
+  # io_trace "cosm_has_unstaged_clean_submodules -- $(print_vars unstagedCleanIncludedSubmodules[@])"
+  [ ${#unstagedCleanIncludedSubmodules[@]} -gt 0 ]
 }
 cosm_has_unstaged_dirty_submodules()
 {
-  [ ${#unstagedDirtySubmodules[@]} -gt 0 ]
+  [ ${#unstagedDirtyIncludedSubmodules[@]} -gt 0 ]
 }
 
 cosm_reset_scope()
@@ -52,17 +47,13 @@ cosm_reset_scope()
   [[ $cosmScopeInitialized == true ]] || return 0
   unstagedCleanSubmodules=()
   unstagedDirtySubmodules=()
-  unstagedCleanInactiveSubmodules=()
-  unstagedDirtyInactiveSubmodules=()
+  unstagedCleanIncludedSubmodules=()
+  unstagedDirtyIncludedSubmodules=()
   [ ${#moduleSubmodulePaths[@]} -eq 0 ] && return 0
   repo_split_unstaged_submodules "$moduleRoot"
-  unstagedCleanInactiveSubmodules=( $(array_intersect_array 'unstagedCleanSubmodules[@]' 'configSkuExclude[@]') )
-  unstagedDirtyInactiveSubmodules=( $(array_intersect_array 'unstagedDirtySubmodules[@]' 'configSkuExclude[@]') )
-  unstagedCleanSubmodules=( $(array_remove_array 'unstagedCleanSubmodules[@]' 'configSkuExclude[@]') )
-  unstagedDirtySubmodules=( $(array_remove_array 'unstagedDirtySubmodules[@]' 'configSkuExclude[@]') )
+  unstagedCleanIncludedSubmodules=( $(array_remove_array 'unstagedCleanSubmodules[@]' 'configSkuExclude[@]') )
+  unstagedDirtyIncludedSubmodules=( $(array_remove_array 'unstagedDirtySubmodules[@]' 'configSkuExclude[@]') )
 
-  # repo_remove_dangling_submodules
-  # _cosm_commit_inactive_submodules
   _cosm_trace
 }
 _cosm_trace()
@@ -72,8 +63,8 @@ _cosm_trace()
   io_lock_enter
   io_trace_unsafe "cosm_reset_scope -- $(print_vars unstagedCleanSubmodules[@])"
   io_trace_unsafe "cosm_reset_scope -- $(print_vars unstagedDirtySubmodules[@])"
-  io_trace_unsafe "cosm_reset_scope -- $(print_vars unstagedCleanInactiveSubmodules[@])"
-  io_trace_unsafe "cosm_reset_scope -- $(print_vars unstagedDirtyInactiveSubmodules[@])"
+  io_trace_unsafe "cosm_reset_scope -- $(print_vars unstagedCleanIncludedSubmodules[@])"
+  io_trace_unsafe "cosm_reset_scope -- $(print_vars unstagedDirtyIncludedSubmodules[@])"
   io_lock_exit
 }
 
@@ -146,21 +137,21 @@ _cosm_update_submodule()
 
 _cosm_discard_inactive_submodules()
 {
-  # io_trace "_cosm_discard_inactive_submodules -- $(print_vars unstagedCleanInactiveSubmodules[@])"
-  if [ ${#unstagedCleanInactiveSubmodules[@]} -ne 0 ]; then
-    visit_async 'unstagedCleanInactiveSubmodules[@]' 'repo_discard_submodule'
-    unstagedCleanInactiveSubmodules=()
+  # io_trace "_cosm_discard_inactive_submodules -- $(print_vars unstagedCleanSubmodules[@])"
+  if [ ${#unstagedCleanSubmodules[@]} -ne 0 ]; then
+    visit_async 'unstagedCleanSubmodules[@]' 'repo_discard_submodule'
+    unstagedCleanSubmodules=()
   fi
 }
 cosm_discard_unstaged_submodules()
 {
   # discard unstaged clean submodules which are excluded from SKU
-  local discard=( "${unstagedCleanSubmodules[@]}" "${unstagedDirtySubmodules[@]}" )
+  local discard=( "${unstagedCleanIncludedSubmodules[@]}" "${unstagedDirtyIncludedSubmodules[@]}" )
   # io_trace "cosm_discard_unstaged_submodules -- $(print_vars discard[@])"
   if [ ${#discard[@]} -ne 0 ]; then
     visit_async 'discard[@]' 'repo_discard_submodule' || ec=$?
-    unstagedCleanSubmodules=()
-    unstagedDirtySubmodules=()
+    unstagedCleanIncludedSubmodules=()
+    unstagedDirtyIncludedSubmodules=()
   fi
   return $ec
 }
@@ -169,76 +160,32 @@ cosm_discard_unstaged_submodules()
 # COMMIT
 ########
 
-_cosm_commit_inactive_submodules()
+cosm_commit_unstaged_submodules()
 {
-  [[ $doNotCommitInactiveSubmodules == true ]] && return 0
-
-  # recursively commit unstaged clean submodules which are excluded from SKU or external
+  # recursively commit unstaged clean submodules
   [ ${#moduleSubmodulePaths[@]} -eq 0 ] && return 0
-  local cleanExternal=$1
-  # io_trace "_cosm_commit_inactive_submodules -- $(print_vars doNotCommitInactiveSubmodules unstagedDirtyInactiveSubmodules[@])"
 
-  _cosm_commit_unstaged_clean_inactive_submodules
-  if [[ $cleanExternal == true ]]; then
-    # commit external to try to make dirty modules clean
-    cosm_commit_unstaged_clean_external_submodules
-  fi
-
-  if [ ${#unstagedDirtyInactiveSubmodules[@]} -ne 0 ]; then
-    module_visit_submodules_async 'unstagedDirtyInactiveSubmodules[@]' 'config_scope cosm_scope _cosm_commit_inactive_submodules' 'true'
-  fi
-
-  return 0
-}
-_cosm_commit_unstaged_clean_inactive_submodules()
-{
-  [ ${#unstagedCleanInactiveSubmodules[@]} -eq 0 ] && return 0
-  # io_trace "_cosm_commit_unstaged_clean_inactive_submodules $(print_vars unstagedCleanInactiveSubmodules[@])"
-  _cosm_commit_submodules "${unstagedCleanInactiveSubmodules[@]}"
-}
-cosm_commit_unstaged_clean_external_submodules()
-{
-  [ ${#moduleSubmodulePaths[@]} -eq 0 ] && return 0
-  local toCommit=( $(array_intersect_array 'unstagedCleanSubmodules[@]' 'configSelectExclude[@]') )
-  # io_trace "cosm_commit_unstaged_clean_external_submodules $(print_vars toCommit[@])"
-  _cosm_commit_submodules "${toCommit[@]}"
-}
-cosm_commit_unstaged_clean_submodules()
-{
-  [ ${#moduleSubmodulePaths[@]} -eq 0 ] && return 0
-  # io_trace "cosm_commit_unstaged_clean_submodules $(print_vars unstagedCleanSubmodules[@])"
-  _cosm_commit_submodules "${unstagedCleanSubmodules[@]}"
-}
-_cosm_commit_unstaged_submodules()
-{
-  [ ${#moduleSubmodulePaths[@]} -eq 0 ] && return 0
-  local unstaged=( "${unstagedCleanSubmodules[@]}" "${unstagedDirtySubmodules[@]}" )
-  # io_trace "_cosm_commit_unstaged_submodules $(print_vars unstaged[@])"
-  _cosm_commit_submodules "${unstaged[@]}"
-}
-_cosm_commit_submodules()
-{
-  repo_commit_submodules "$moduleRoot" "$@"
-}
-
-# Process unstaged submodules
-#   - update unselected submodules
-#   - discard excluded submodules
-#   - commit clean submodules
-#   - optionnally commit dirty submodules
-# exemple:
-#   commitDirtySubmodules=true
-#   cosm_scope cosm_node
-cosm_process_unstaged_submodules()
-{
-  [ ${#moduleSubmodulePaths[@]} -eq 0 ] && return 0
-  [[ $commitSubmodules == true ]] || return 0
-
-  # io_trace "cosm_process_unstaged_submodules -- $(print_vars unstagedCleanSubmodules[@] unstagedDirtySubmodules[@])"
-
-  if [[ $commitDirtySubmodules == true ]]; then
-    _cosm_commit_unstaged_submodules
+  local commitAll=$1 clean
+  if [[ $commitAll == true ]]; then
+    clean=( ${unstagedCleanSubmodules[@]} )
   else
-    cosm_commit_unstaged_clean_submodules
+    clean=( ${unstagedCleanIncludedSubmodules[@]} )
   fi
+  # io_trace "cosm_commit_unstaged_submodules $(print_vars commitAll clean[@])"
+  repo_commit_submodules "$moduleRoot" "${clean[@]}"
+}
+cosm_commit_unstaged_external_submodules()
+{
+  [ ${#moduleSubmodulePaths[@]} -eq 0 ] && return 0
+  
+  local commitAll=$1 clean
+  if [[ $commitAll == true ]]; then
+    clean=( ${unstagedCleanSubmodules[@]} )
+  else
+    clean=( ${unstagedCleanIncludedSubmodules[@]} )
+  fi
+
+  clean=( $(array_intersect_array 'clean[@]' 'configSelectExclude[@]') )
+  # io_trace "cosm_commit_unstaged_external_submodules $(print_vars commitAll clean[@])"
+  repo_commit_submodules "$moduleRoot" "${clean[@]}"
 }

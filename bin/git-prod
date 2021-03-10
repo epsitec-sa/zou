@@ -29,7 +29,7 @@ prod_parse()
     --beta)         prerelPrefix='beta';;
     --rc)           prerelPrefix='rc';;
     --rtm)          prerelPrefix='rtm';;
-    attach|select)  subcommand=$1; doNotCommitInactiveSubmodules=true; unset commitSubmodules;;
+    attach|select)  subcommand=$1;;
     enter|release)  subcommand=$1;;
     --)             shift; break;;
     -*) io_error "unknown option ${VC}$1${Red}\n"; io_help $0; return 1;;
@@ -53,8 +53,7 @@ prod_run()
   # parse command line
   local jobsCount recursive noSkuFilter command='prod' subcommand \
         cmdScopes=( prod_scope config_scope cosm_scope ) \
-        commitSubmodules=true doNotCommitInactiveSubmodules mergeIntoDev \
-        vtable prerelPrefix dryRun prodModulePaths=() \
+        mergeIntoDev vtable prerelPrefix dryRun prodModulePaths=() \
         checkoutType='vnext' attachMode='auto' forcePrincipalRelease \
         prodSelectSpec
 

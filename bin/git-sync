@@ -89,9 +89,9 @@ _sync_commit()
   # io_trace ">>> _sync_commit ${*@Q} -- $(print_vars r l i syncSubmodules) PWD=$PWD"
   if [[ $i == '' || $i =~ (\=|\>)$ ]]; then
     if [[ $syncSubmodules == true ]]; then
-      commitAction='cosm_commit_unstaged_clean_submodules'
+      commitAction='cosm_commit_unstaged_submodules true'
     else
-      commitAction='cosm_commit_unstaged_clean_external_submodules'
+      commitAction='cosm_commit_unstaged_external_submodules true'
     fi
     $commitAction || git push --follow-tags ${r%%/*} $l &>/dev/null
   fi

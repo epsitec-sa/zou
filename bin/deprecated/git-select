@@ -14,7 +14,6 @@ select_parse()
     -a|--all)           noSkuFilter=true;;
     --dev)              selectDev=true;;
     --prod)             selectDev=false;;
-    --cosm)             commitSubmodules=true;;
     --)                 shift; selectModulePaths+=("$@"); break;;
     -*) io_error "unknown option '$1'"; return 1;;
     *) sku=$1;;
@@ -25,7 +24,7 @@ select_run()
   io_error "This command is deprecated, use ${VC}git (wip|dev|prod)${Red} instead"; exit 1
 
   # parse command line
-  local jobsCount noSkuFilter selectDev commitSubmodules sku selectModulePaths=()
+  local jobsCount noSkuFilter selectDev sku selectModulePaths=()
   select_parse "$@" || return $?
 
   local selectScopes=( prod_scope config_scope cosm_scope )
@@ -65,7 +64,6 @@ select_tree()
 
   select_prolog || return $?
   select_submodules || return $?
-  cosm_process_unstaged_submodules
 }
 select_prolog()
 {

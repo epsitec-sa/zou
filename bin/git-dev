@@ -107,7 +107,7 @@ dev_release_epilog()
     # io_trace "dev_release_epilog -2- $(print_vars forceRelease incrementKind moduleDevBranchPath prodBranchPath)"
     dev_checkout false "$moduleDevBranch"
     prod_ensure_vbranch "$defaultVersion" "$incrementKind"
-    cosm_commit_unstaged_clean_submodules
+    cosm_commit_unstaged_submodules
     if [[ $forceRelease == true && -z $incrementKind ]] && ref_equals "$moduleDevBranchPath" "$prodBranchPath"; then
       local vbranch vtag delta graftPoint vnext releaseVTag
       vtag_set_describe "$moduleDevBranch" # -> vbranch vtag delta
@@ -126,7 +126,7 @@ dev_release_epilog()
     || io_trace_error 'dev_release_epilog'
   elif cosm_has_unstaged_dirty_submodules; then
     mio_error "error : ${VC}$moduleId${Red} still contains dirty submodules"
-    for sm in "${unstagedDirtySubmodules[@]}"; do
+    for sm in "${unstagedDirtyIncludedSubmodules[@]}"; do
       mio_message "  it seems that the head of ${VC}$sm${LightCyan} is a lost commit"
     done
     branch_show_status
