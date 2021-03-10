@@ -85,7 +85,7 @@ bundle_in_strict_dev_mode() { [[ $bundleHead == $(wip_to_ref $bundleDevBranch) ]
 
 module_dev_attach()
 {
-  local forceCheckout=${1:-true} ref=${2:-$moduleHead} devBranchPath=$3 devBranch
+  local forceCheckout=$1 ref=${2:-$moduleHead} devBranchPath=$3 devBranch
   if [[ -z $devBranchPath || $devBranchPath == $moduleDevBranchPath ]]; then
     devBranchPath=$moduleDevBranchPath
     devBranch=$moduleDevBranch
@@ -446,10 +446,10 @@ _module_infer_dev_from_bundle()
 _module_submodule_visitor()
 {
   local smPath=$1; shift
-  repo_ensure_submodule "$moduleRoot" "$smPath" || return $?
+  repo_ensure_submodule "$moduleRoot" "$smPath"
   _module_enter "$smPath" || return $?
   # io_trace "_module_submodule_visitor $smPath >> $*"
-  module_scope $* || return $?
+  module_scope $* || io_trace_error '_module_submodule_visitor'
 }
 # usage:
 #   _module_enter "$moduleDir" || return $?
