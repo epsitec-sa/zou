@@ -243,15 +243,17 @@ prod_release_prolog()
 
 prod_release_epilog()
 {
-  # io_trace "prod_release_epilog -- $(print_vars prodBranch)"
+  # io_trace "prod_release_epilog ${*@Q} -- $(print_vars prodBranch)"
   _prod_fix_release_status
   _prod_release || io_trace_error 'prod_release_epilog 1' || return $?
   _vtable_update || io_trace_error 'prod_release_epilog 2' || return $?
-
+  return 0
+}
+prod_release_finally()
+{
+  # io_trace "prod_release_finally ${*@Q} -- $(print_vars prodBranch)"
   [[ $dryRun == true ]] && return 0
   [ $wasInDevMode -eq 0 ] && module_dev_attach
-
-  return 0
 }
 prod_release_xepilog()
 {
