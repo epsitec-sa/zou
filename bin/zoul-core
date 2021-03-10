@@ -155,9 +155,9 @@ io_trace_unsafe()
 io_trace_error()
 {
   local ec=$?
-  [[ $zouTraceError != true ]] && return $ec
+  [[ $zouTraceError == true ]] || return $ec
   [ $ec -eq 0 ] && return 0
-  io_trace "$1 (error code=$ec)"
+  io_trace "$1 (error code=$ec)" ${Red}
   return $ec
 }
 
