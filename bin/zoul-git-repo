@@ -471,20 +471,15 @@ repo_ensure_submodule()
   local moduleRoot=$1 smPath=$2
   # io_trace "repo_ensure_submodule ${*@Q} -- PWD=$PWD"
   [[ -f "$smPath/.git" || -d "$smPath/.git" ]] && return 0
-  io_buffered_eval "git submodule update --init --recursive "$smPath" 2>&1" '_repo_ensure_submodule_line_selector' ${DarkGray} # || {  mio_error "Not a git submodule ${VC}$smPath"; return 1; }
+  io_buffered_eval "git submodule update --init "$smPath" 2>&1" '_repo_ensure_submodule_line_selector' ${DarkGray} # || {  mio_error "Not a git submodule ${VC}$smPath"; return 1; }
 }
 _repo_ensure_submodule_line_selector()
 {
   if [[ $line =~ ^([Cc]loning[^\']+)\'([^\']+)\'(.*) ]]; then
-    # local IFS='/' path filename
-    # path=( ${BASH_REMATCH[2]} )
-    # filename=${path[-1]}
     unset skipCurrentLine
     color=${DarkGray}
     line="${BASH_REMATCH[1]}${VC}${BASH_REMATCH[2]}${color}${BASH_REMATCH[3]}"
-  # elif [[ ! $line =~ ^Submodule\ path ]]; then
-  #   color=${DarkGray}
-  #   skipCurrentLine=true
+    return 1
   else
     skipCurrentLine=true
   fi
