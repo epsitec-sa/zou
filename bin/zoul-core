@@ -58,7 +58,7 @@ io_print_colors()
 }
 io_remove_colors()
 {
-  printf "%b\n" "$@" | sed -r "s/\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[m|K]//g"
+  printf '%s\n' "$@" | sed -r 's/\\e\[[[:digit:]][^m]*m//g'
 }
 # out:
 #   version
@@ -247,17 +247,15 @@ trace_vars()
 }
 print_vars()
 {
-  local param array
+  local param value
   for param in "$@"; do
-    # array
+    value=( $(io_remove_colors "${!param}") )
     if [[ $param =~ \[@\]$ ]]; then
-      array=( "${!param}" )
-      printf '%b ' "${param%\[@\]}=(${array[@]@Q})"
-    # color
-    elif [[ ${!param} =~ ^\\e\[[0-9][^m]*m ]]; then
-      printf '%b ' "$param='${!param}${NC}'"
+      value=( $(printf '%q ' "${value[@]}") )
+      printf '%b ' "${param%\[@\]}=(${value[@]@Q})"
     else
-      printf '%b ' "$param='${!param}'"
+      value=$(printf '%q' "$value")
+      printf '%b ' "$param='$value'"
     fi
   done
 }
