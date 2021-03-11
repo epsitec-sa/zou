@@ -421,7 +421,7 @@ repo_update_submodule()
   local smPaths
   smPaths=( $(io_buffered_eval "git submodule update --init \"$1\" 2>&1" _repo_submodule_selector ${DarkGray}) )
   # io_trace "@@@ repo_update_submodule -2- $(print_vars smPaths[@]) PWD=$PWD"
-  [ ${#smPaths[@]} -ne 0 ] && repo_raise_submodule_changed_event "${smPaths[@]}"
+  [ ${#smPaths[@]} -ne 0 ] && repo_raise_submodule_changed_event "${smPaths[@]}" || return 0
 }
 repo_discard_submodule()
 {
