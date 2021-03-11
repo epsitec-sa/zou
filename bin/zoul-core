@@ -580,18 +580,18 @@ visit_async()
   [[ -z $jobsCount ]] && jobsCount=0  # no parallel jobs limit
 
   for path in $(array_sort _zouVisitPaths[@]); do
-    ( $2 "$path" "${@:3}" || exit $? )&
+    ( $2 "$path" "${@:3}" || io_trace_error "visit_async >> $2 "$path" "${@:3}"" || exit $? )&
     pids+=($!)
     if (( "$jobsCount" > 0 )) && (( $(process_job_count) % "$jobsCount" == 0 )); then
       for pid in "${pids[@]}"; do
-        wait $pid &>/dev/null || io_trace_error 'visit_async' || ec=$?
+        wait $pid &>/dev/null || ec=$?
       done
       pids=()
       [[ $ec -ne 0 && $stopOnError == true ]] && break
     fi
   done
   for pid in "${pids[@]}"; do
-    wait $pid &>/dev/null || io_trace_error 'visit_async' || ec=$?
+    wait $pid &>/dev/null || ec=$?
   done
   wait
   return $ec
