@@ -577,7 +577,7 @@ visit_async()
   [[ "$1" =~ \[@\]$ ]] && _zouVisitPaths=("${!1}") || ( [[ -n $1 ]] && _zouVisitPaths=("$($1)") )
   [ ${#_zouVisitPaths[@]} -eq 0 ] && return 0
   
-  [[ -z $jobsCount ]] && jobsCount=0  # no parallel jobs limit
+  [[ -z $jobsCount ]] && jobsCount=12
 
   for path in $(array_sort _zouVisitPaths[@]); do
     ( $2 "$path" "${@:3}" || io_trace_error "visit_async >> $2 "$path" "${@:3}"" || exit $? )&
