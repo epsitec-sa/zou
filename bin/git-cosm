@@ -42,13 +42,13 @@ cosm_command()
 }
 cosm_do_select()
 {
-  local submodules=("${!1}") gitmodulesPath
+  local submodules=("${!1}")
   # io_trace "cosm_do_select -- $(print_vars submodules[@])"
+ 
   # visit only submodules that contains submodules
   for sm in ${submodules[@]}; do
     [[ -f "$PWD/$sm/.gitmodules" ]] && echo $sm
   done
-  # printf '%s\n' "${submodules[@]}"
 }
 cosm_do_prolog()
 {
