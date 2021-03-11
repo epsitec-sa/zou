@@ -21,6 +21,7 @@ enter:
     --dev                   enter developement - checkout DEV branches
 
 config:
+    -l|--list               list included/excluded submodules
     -i|--include [SM1,...]  include specific submodules (default to all) in current SKU
     -x|--exclude [SM1,...]  exclude specific submodules (default to all) from current SKU
     -m|--pmid PMID          override principal module ID default
@@ -43,9 +44,10 @@ example:
     git sku info                  # display SKU info of bundle and current module
     git sku info -- ../m1         # display SKU info of bundle and sibling module 'm1'
 
-    git sku config                # display [in]active submodules
-    git sku config -r             # display [in]active submodules recursively
+    git sku config                # display submodules state (included|excluded)
+    git sku config -r -x -l       # display excluded submodules recursively
     git sku config -i             # include all submodules in current SKU (default)
     git sku config -x             # exclude all submodules from current SKU
     git sku config -x sm1 sm2     # exclude submodules sm1 and sm2 from current SKU
-    git sku config -m sm2         # override principal module ID default
+
+    git sku config -m sm2         # change principal module ID (default to bundle ID without '-dev' suffix)

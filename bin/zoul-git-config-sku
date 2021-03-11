@@ -19,81 +19,160 @@ ZOUL_GIT_CONFIG_SKU=true
 #   exclude = sync-client
 #   exclude = sync-server
 
+config_sku_include()
+{
+  # io_trace "config_sku_include ${*@Q}"
+  case $# in
+    0) config_sku_include_all;;
+    1) config_sku_include_single "$1";;
+    *) config_sku_include_many "$@"
+  esac
+}
 config_sku_exclude()
 {
-  local path=$1
-  [[ -z $path ]] && path=$(repo_path_relative_to_module_root)
-  local rePath=$(wildcard_to_regex_match_whole "$path")
-  git config --file "$moduleConfigFile" --get-all "sku.exclude" "$rePath" >/dev/null \
-  || git config --file "$moduleConfigFile" --add "sku.exclude" "$path"
-
-  git update-index --add -- "$moduleConfigFile" &>/dev/null \
-  && git_commit "exclude submodule '$path' from SKU '$moduleHead'" "$moduleConfigFile"
+  io_trace "config_sku_exclude ${*@Q}"
+  case $# in
+    0) config_sku_exclude_all;;
+    1) config_sku_exclude_single "$1";;
+    *) config_sku_exclude_many "$@"
+  esac
 }
-config_sku_exclude_all()
+
+config_sku_include_single()
 {
-  config_sku_exclude_many $(repo_list_submodule_paths)
+  # remove path from excluded list
+
+  local path=$1 rePath configFile="$(_config_sku_file_path)"
+  [[ -z $path ]] && path=$(repo_path_relative_to_module_root)
+  _config_sku_check_path "$path" || return 1
+  rePath=$(wildcard_to_regex "$path")
+  # io_trace "config_sku_include_single ${*@Q} -- $(print_vars path rePath configFile)"
+
+  git config --file "$configFile" --unset-all 'sku.exclude' "$rePath" || io_trace_error 'config_sku_include_single -1-'
+
+  git update-index --add -- "$configFile" &>/dev/null \
+  && git_commit "include submodule '$path' in SKU" "$configFile" || io_trace_error 'config_sku_include_single -2-'
+}
+config_sku_exclude_single()
+{
+  # add path to excluded list
+
+  # io_trace "config_sku_exclude_single ${*@Q}"
+  local path=$1 rePath configFile="$(_config_sku_file_path)"
+  [[ -z $path ]] && path=$(repo_path_relative_to_module_root)
+  _config_sku_check_path "$path" || return 1
+  rePath=$(wildcard_to_regex_match_whole "$path")
+
+  git config --file "$configFile" --get-all "sku.exclude" "$rePath" >/dev/null \
+  || git config --file "$configFile" --add "sku.exclude" "$path"
+
+  git update-index --add -- "$configFile" &>/dev/null \
+  && git_commit "exclude submodule '$path' from SKU" "$configFile"
+}
+
+config_sku_include_many()
+{
+  # remove pathes from excluded list
+
+  # io_trace "config_sku_include_many ${*@Q}"
+  local path rePath configFile="$(_config_sku_file_path)"
+
+  for path in $(string_sort "$@"); do
+    _config_sku_check_path "$path" || return 1
+    rePath=$(wildcard_to_regex_match_whole "$path")
+    git config --file "$configFile" --unset-all "sku.exclude" "$rePath"
+  done
+
+  git update-index --add -- "$configFile" &>/dev/null && \
+  git_commit "include submodules '$(string_join ', ' $@)' in SKU" "$configFile"
 }
 config_sku_exclude_many()
 {
-  local path rePath
+  # include pathes in excluded list
+
+  # io_trace "config_sku_exclude_many ${*@Q}"
+  local path rePath configFile="$(_config_sku_file_path)"
+
   for path in $(string_sort "$@"); do
+    _config_sku_check_path "$path" || return 1
     rePath=$(wildcard_to_regex_match_whole "$path")
-    git config --file "$moduleConfigFile" --get-all "sku.exclude" "$rePath" >/dev/null \
-    || git config --file "$moduleConfigFile" --add "sku.exclude" "$path"
+    git config --file "$configFile" --get-all "sku.exclude" "$rePath" >/dev/null \
+    || git config --file "$configFile" --add "sku.exclude" "$path"
   done
 
-  git update-index --add -- "$moduleConfigFile" &>/dev/null && \
-  git_commit "exclude submodules '$(string_join ', ' $@)' from SKU '$moduleHead'" "$moduleConfigFile"
+  git update-index --add -- "$configFile" &>/dev/null && \
+  git_commit "exclude submodules '$(string_join ', ' $@)' from SKU" "$configFile"
 }
-config_sku_include()
-{
-  local path=$1
-  [[ -z $path ]] && path=$(repo_path_relative_to_module_root)
-  local rePath=$(wildcard_to_regex "$path")
-  git config --file "$moduleConfigFile" --unset-all "sku.exclude" "$rePath"
 
-  git update-index --add -- "$moduleConfigFile" &>/dev/null \
-  && git_commit "include submodule '$path' in SKU '$moduleHead'" "$moduleConfigFile"
-}
 config_sku_include_all()
 {
-  git config --file "$moduleConfigFile" --remove-section "sku" &>/dev/null
+  # remove excluded list
+  
+  # io_trace "config_sku_include_all ${*@Q}"
+  local configFile="$(_config_sku_file_path)"
+  git config --file "$configFile" --remove-section "sku" &>/dev/null
 
-  git update-index --add -- "$moduleConfigFile" &>/dev/null \
-  && git_commit "include all submodules in SKU '$moduleHead'" "$moduleConfigFile"
+  git update-index --add -- "$configFile" &>/dev/null \
+  && git_commit 'include all submodules in SKU' "$configFile"
 }
-config_sku_include_many()
+config_sku_exclude_all()
 {
-  local path rePath
-  for path in $(string_sort "$@"); do
-    rePath=$(wildcard_to_regex_match_whole "$path")
-    git config --file "$moduleConfigFile" --unset-all "sku.exclude" "$rePath"
-  done
-
-  git update-index --add -- "$moduleConfigFile" &>/dev/null && \
-  git_commit "include submodules '$(string_join ', ' $@)' in SKU '$moduleHead'" "$moduleConfigFile"
+  # include all sub-modules in excluded list
+  local smpaths=( "${moduleSubmodulePaths[@]}" )
+  [ ${#smpaths[@]} -eq 0 ] && smpaths=( $(repo_list_submodule_paths) )
+  config_sku_exclude_many "${smpaths[@]}"
 }
+
+config_sku_update()
+{
+  # remove unexisting sub-modules from excluded list
+
+  local smpaths existing configFile="$(_config_sku_file_path)" path smlist s
+  smpaths=( $(git config --file "$configFile" --get-all "sku.exclude") )
+  [ ${#smpaths[@]} -eq 0 ] && return 0
+
+  existing=( "${moduleSubmodulePaths[@]}" )
+  [ ${#existing[@]} -eq 0 ] && existing=( $(repo_list_submodule_paths) )
+  # io_trace "config_sku_update -1- $(print_vars smpaths[@] existing[@])"
+
+  smpaths=($(array_remove_array 'smpaths[@]' 'existing[@]'))
+  [ ${#smpaths[@]} -eq 0 ] && return 0
+  # io_trace "config_sku_update -2- $(print_vars smpaths[@] existing[@])"
+
+  [ ${#smpaths[@]} -gt 1 ] && s='s'
+  smlist=$(string_join ', ' "${smpaths[@]}")
+  io_message "Unconfiguring ${VC}$smlist" "$moduleTracePrefix"
+
+  for path in "${smpaths[@]}"; do
+    # io_trace "config_sku_update -3- $(print_vars path)"
+    git config --file "$configFile" --unset-all "sku.exclude" "$path" || io_trace_error 'config_sku_update -3-'
+  done
+  
+  git update-index --add -- "$configFile" &>/dev/null && \
+  git_commit "unconfigure submodule$s '$smlist'" "$configFile"
+}
+
 config_sku_is_included() { ! config_sku_is_excluded "$@"; }
 config_sku_is_excluded()
 {
-  local path=$1
+  local path=$1 rePath
   [[ -z $path ]] && path=$(repo_path_relative_to_module_root)
-  local rePath=$(wildcard_to_regex_match_whole "$path")
-  git config --file "$moduleConfigFile" --get-all "sku.exclude" "$rePath" >/dev/null
-}
-config_sku_list_excluded()
-{
-  git config --file "$moduleConfigFile" --get-all "sku.exclude" || true
+  rePath=$(wildcard_to_regex_match_whole "$path")
+
+  git config --file "$(_config_sku_file_path)" --get-all "sku.exclude" "$rePath" >/dev/null
 }
 config_sku_list_included()
 {
-  local submodules
+  local submodules skuExclude
   [[ -n $1 ]] && submodules=( "${!1}" ) || submodules=( $(repo_list_submodule_paths) )
-  local skuExclude
   [[ -n $2 ]] && skuExclude=( "${!2}" ) || skuExclude=( $(config_sku_list_excluded) )
   array_remove_array submodules[@] skuExclude[@]
 }
+config_sku_list_excluded()
+{
+  git config --file "$(_config_sku_file_path)" --get-all "sku.exclude" || true
+}
+
 config_sku_set_principal_module_id()
 {
   local pid=$1
@@ -106,19 +185,31 @@ config_sku_get_principal_module_id()
 {
   git config --file "$bundleConfigFile" "sku.principalModuleId"
 }
+
 config_sku_status()
 {
+  local mode=$1
+
   io_lock_enter
-  if [[ -n "$principalModuleId" ]]; then
-    io_message_unsafe "principal module = $principalModuleId" "$moduleTracePrefix" ${White}
-  else
-    io_warning_unsafe "no principal module ${Cyan}(use ${VC}git sku config -m PMID${Cyan} to define one)" "$moduleTracePrefix"
- fi
-  for path in $(config_sku_list_included | sort); do
-    io_success_unsafe "  $path" "$moduleTracePrefix"
-  done
-  for path in $(config_sku_list_excluded | sort); do
-    io_message_unsafe "x $path" "$moduleTracePrefix" ${Purple}
-  done
+  if module_is_bundle; then
+    if [[ -n "$principalModuleId" ]]; then
+      io_message_unsafe "  principal module = $principalModuleId" "$moduleTracePrefix" ${White}
+    else
+      io_warning_unsafe "  no principal module ${LightCyan}(use ${VC}git sku config -m PMID${LightCyan} to define one)" "$moduleTracePrefix"
+    fi
+  fi
+  if [[ -z $mode || $mode == 'include' ]]; then
+    for path in $(config_sku_list_included | sort); do
+      io_success_unsafe "  $path" "$moduleTracePrefix"
+    done
+  fi
+  if [[ -z $mode || $mode == 'exclude' ]]; then
+    for path in $(config_sku_list_excluded | sort); do
+      io_message_unsafe "x $path" "$moduleTracePrefix" ${Purple}
+    done
+  fi
   io_lock_exit
 }
+
+_config_sku_file_path() { [[ -n $moduleConfigFile ]] && echo "$moduleConfigFile" || echo "$PWD/.zou-flow"; }
+_config_sku_check_path(){ [ -d "$1" ] || { io_error "Submodule ${VC}$1${Red} does not exist" "$moduleTracePrefix"; return 1; }; }

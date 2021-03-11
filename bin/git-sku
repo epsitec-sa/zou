@@ -21,21 +21,27 @@ sku_parse()
     enter)          subcommand=$1;;
     info)           subcommand=$1;;
     config)         subcommand=$1;;
-    -i|--include)   [[ $configMode == 'configExclude' ]] && { io_error 'options conflict'; exit 1; } || configMode='configInclude';;
-    -x|--exclude)   [[ $configMode == 'configInclude' ]] && { io_error 'options conflict'; exit 1; } || configMode='configExclude';;
+    -l|--list)      skuConfigListOnly=true;;
+    -i|--include)   [[ $skuConfigMode == 'skuConfigExclude' ]] && { io_error 'options conflict'; exit 1; } || skuConfigMode='include';;
+    -x|--exclude)   [[ $skuConfigMode == 'skuConfigInclude' ]] && { io_error 'options conflict'; exit 1; } || skuConfigMode='exclude';;
     -m|--pmid)      shift; configPrincipalModuleId=$1;;
     --)             shift; break;;
     -*) io_error "unknown option '$1'"; return 1;;
     *)
-      case "$configMode" in
-        configInclude) configInclude+=($1);;
-        configExclude) configExclude+=($1);;
+      case "$skuConfigMode" in
+        include) skuConfigInclude+=($1);;
+        exclude) skuConfigExclude+=($1);;
         *) args+=( "$1" );;
       esac
   esac; shift; done
 
   cmd_check_subcommand 'enter' 'info' 'config'
-  
+  if [[ -n $recursive && -n $skuConfigMode && -z $skuConfigListOnly ]]; then
+    io_error 'recursive option cannot be used when modifying configuration'
+    io_message " use ${VC}-l${LightCyan} or ${VC}--list${LightCyan} to list configuration"
+    exit 1
+  fi
+
   skuModulePaths=( "$@" )
   sku_parse_sku "${args[@]}"
   cmd_check_args "${args[@]:1}"
@@ -50,9 +56,9 @@ sku_parse_sku()
 sku_run()
 {
   # parse command line
-  local jobsCount recursive=false command='sku' subcommand \
+  local jobsCount recursive command='sku' subcommand \
         cmdScopes=( prod_scope config_scope cosm_scope ) \
-        configMode='status' configInclude=() configExclude=() configPrincipalModuleId \
+        skuConfigListOnly skuConfigMode skuConfigInclude=() skuConfigExclude=() configPrincipalModuleId \
         noSkuFilter skuSpec skuModulePaths=() \
         checkoutType='dev'
 
@@ -74,6 +80,18 @@ sku_startup_message()
       startupMessage="Entering ${Brown}$what${White} on ${Brown}${skuSpec:-current SKU}${White}, please wait...";;
     info)
       startupMessage="Getting SKU info, please wait...";;
+    config)
+      local kindOf
+      case $skuConfigMode in
+        include) kindOf="${Green}included${White}";;
+        exclude) kindOf="${Purple}excluded${White}";;
+        *)       kindOf="${Green}included${White} and ${Purple}excluded${White}";;
+      esac
+      if [[ -n $skuConfigListOnly || -z $skuConfigMode ]]; then
+        startupMessage="Displaying $kindOf submodules, please wait..."
+      else
+        startupMessage="Configuring $kindOf submodules, please wait..."
+      fi
   esac
 }
 sku_command()
@@ -99,18 +117,7 @@ sku_command()
   cmd_visit_modules
 }
 
-_prod_on_preinit()
-{
-  prodCheckoutType=$checkoutType
-  # if module_is_bundle; then
-  #   # vlast does not apply to bundle
-  #   [[ $checkoutType == 'vlast' ]] && prodCheckoutType='vnext'
-  #   # io_trace "_prod_on_preinit BUNDLE -- $(print_vars checkoutType prodCheckoutType)"
-  # else
-  #   prodCheckoutType=$checkoutType
-  #   # io_trace "_prod_on_preinit CHILD -- $(print_vars checkoutType prodCheckoutType)"
-  # fi
-}
+_prod_on_preinit() { prodCheckoutType=$checkoutType; }
 
 #######
 # ENTER
@@ -168,27 +175,24 @@ sku_info_epilog() { branch_show_status; }
 # CONFIG
 ########
 
+sku_config_select()
+{
+  local submodules=("${!1}")
+  # io_trace "sku_config_select -- $(print_vars submodules[@])"
+
+  # visit only submodules that contains submodules
+  for sm in ${submodules[@]}; do
+    [[ -f "$PWD/$sm/.gitmodules" ]] && echo $sm
+  done
+}
 sku_config_prolog()
 {
-  if [ ${#configInclude[@]} -ne 0 ]; then
-    if [ ${#configInclude[@]} -eq 1 ]; then
-      config_sku_include "${configInclude[0]}"
-    else
-      config_sku_include_many "${configInclude[@]}"
-    fi
+  if [ -z $skuConfigListOnly ]; then
+    case "$skuConfigMode" in
+      include) config_sku_include "${skuConfigInclude[@]}";;
+      exclude) config_sku_exclude "${skuConfigExclude[@]}";;
+    esac
   fi
-  if [ ${#configExclude[@]} -ne 0 ]; then
-    if [ ${#configExclude[@]} -eq 1 ]; then
-      config_sku_exclude "${configExclude[0]}"
-    else
-      config_sku_exclude_many "${configExclude[@]}"
-    fi
-  fi
-
-  case "$configMode" in
-    configInclude) [ ${#configInclude[@]} -eq 0 ] && config_sku_include_all;;
-    configExclude) [ ${#configExclude[@]} -eq 0 ] && config_sku_exclude_all;;
-  esac
 
   if [[ -n $configPrincipalModuleId ]]; then
     if [ -d "$bundleRoot/$configPrincipalModuleId" ]; then
@@ -199,8 +203,8 @@ sku_config_prolog()
       exit 1
     fi
   fi
-
-  config_sku_status
+  config_sku_update
+  config_sku_status "$skuConfigMode"
 }
 
 #########
