@@ -10,9 +10,8 @@ ZOUL_GIT_CONFIG=true
 [[ -z $ZOUL_GIT_BRANCH_SYNC ]]   && . zoul-git-branch-sync
 
 # global options
-#   excludedSmOnly   -- process excluded level 1 submodules
-#   noSkuFilter      -- process all level 1 submodules
-#   noSelectFilter   -- process all level>1 submodules
+#   noSkuFilter      -- process all level 0 submodules
+#   noSelectFilter   -- process all level>0 submodules
 
 # io_trace "headChangedEvent+=( _config_reset_scope )"
 # io_trace "branchSyncEvent+=( _config_on_sync )"
@@ -95,7 +94,7 @@ _config_trace()
   [[ $zouTraceScope == true ]] || return 0
 
   io_lock_enter
-  [[ -n $1 ]] && io_trace_unsafe "_config_reset_scope -- $(print_vars excludedSmOnly noSkuFilter noSelectFilter)"
+  [[ -n $1 ]] && io_trace_unsafe "_config_reset_scope -- $(print_vars noSkuFilter noSelectFilter)"
   [[ -n $1 ]] && io_trace_unsafe "_config_reset_scope -- $(print_vars configSkuInclude[@])"
   [[ -n $1 ]] && io_trace_unsafe "_config_reset_scope -- $(print_vars configSkuExclude[@])"
   io_trace_unsafe "_config_reset_scope -- $(print_vars configSelectInclude[@])"
