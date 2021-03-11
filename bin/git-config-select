@@ -1,6 +1,6 @@
 #!/bin/bash
 
-[[ -z $ZOUL_GIT_MODULE ]]        && . zoul-git-module
+[[ -z $ZOUL_GIT_CMD ]]           && . zoul-git-cmd
 [[ -z $ZOUL_GIT_CONFIG_SELECT ]] && . zoul-git-config-select
 
 csel_parse()
@@ -8,51 +8,85 @@ csel_parse()
   while [[ "$#" > 0 ]]; do case "$1" in
     -h|--help) zou-help $0; exit 0;;
     -r|--recursive) recursive=true;;
-    -i|--include)   [[ $mode == 'exclude' ]] && { io_error 'options conflict'; exit 1; } || mode='include';;
-    -x|--exclude)   [[ $mode == 'include' ]] && { io_error 'options conflict'; exit 1; } || mode='exclude';;
-    -*)             forOpts+=($1);;
+    -a|--all)       noSkuFilter=true;;
+    -l|--list)      cselListOnly=true;;
+    -i|--include)   [[ $cselMode == 'exclude' ]] && { io_error 'options conflict'; exit 1; } || cselMode='include';;
+    -x|--exclude)   [[ $cselMode == 'include' ]] && { io_error 'options conflict'; exit 1; } || cselMode='exclude';;
+    --)             shift; break;;
+    -*) io_error "unknown option '$1'"; return 1;;
     *)
-      case "$mode" in
-        include) include+=($1);;
-        exclude) exclude+=($1);;
+      case "$cselMode" in
+        include) cselInclude+=($1);;
+        exclude) cselExclude+=($1);;
       esac
   esac; shift; done
+
+  # io_trace "csel_parse -- $(print_vars cselMode cselListOnly cselInclude[@] cselExclude[@])"
+
+  if [[ -n $recursive && -n $cselMode && -z $cselListOnly ]]; then
+    io_error 'recursive option cannot be used when modifying configuration'
+    io_message " use ${VC}-l${LightCyan} or ${VC}--list${LightCyan} to list configuration"
+    exit 1
+  fi
+
+  cselModulePaths=( "$@" )
 }
 csel_run()
 {
-  local recursive forOpts=() \
-        mode='status' include=() exclude=()
-  csel_parse "$@" || return $?
+  local recursive command='csel' subcommand='do' \
+        cmdScopes=( config_scope ) \
+        cselListOnly cselMode cselInclude=() cselExclude=() \
+        noSkuFilter cselModulePaths=()
 
-  if [[ $recursive = true ]]; then
-    . git-for "${forOpts[@]}" -- 'config_select_status'
+  csel_parse "$@" || return $?
+  csel_startup_message
+
+  bundle_scope csel_command
+}
+csel_startup_message()
+{
+  local kindOf
+  case $cselMode in
+    include) kindOf="${Green}internal${White}";;
+    exclude) kindOf="${Purple}external${White}";;
+    *)       kindOf="${Green}internal${White} and ${Purple}external${White}";;
+  esac
+  if [[ -n $cselListOnly || -z $cselMode ]]; then
+    startupMessage="Displaying $kindOf submodules, please wait..."
   else
-    module_run csel_main
+    startupMessage="Configuring $kindOf submodules, please wait..."
   fi
 }
-csel_main()
+csel_command()
 {
-  if [ ${#include[@]} -ne 0 ]; then
-    if [ ${#include[@]} -eq 1 ]; then
-      config_select_include "${include[0]}"
-    else
-      config_select_include_many "${include[@]}"
-    fi
-  fi
-  if [ ${#exclude[@]} -ne 0 ]; then
-    if [ ${#exclude[@]} -eq 1 ]; then
-      config_select_exclude "${exclude[0]}"
-    else
-      config_select_exclude_many "${exclude[@]}"
-    fi
+  [ ${#cselModulePaths[@]} -eq 0 ] && cselModulePaths+=( './' )
+
+  cmd_register_module_paths "$recursive" "${cselModulePaths[@]}"
+
+  cmd_visit_modules
+}
+
+csel_do_select()
+{
+  local submodules=("${!1}")
+  # io_trace "csel_do_select -- $(print_vars submodules[@])"
+
+  # visit only submodules that contains submodules
+  for sm in ${submodules[@]}; do
+    [[ -f "$PWD/$sm/.gitmodules" ]] && echo $sm
+  done
+}
+csel_do_prolog()
+{
+  if [ -z $cselListOnly ]; then
+    case "$cselMode" in
+      include) config_select_include "${cselInclude[@]}";;
+      exclude) config_select_exclude "${cselExclude[@]}";;
+    esac
   fi
 
-  case "$mode" in
-    include) [ ${#include[@]} -eq 0 ] && config_select_include_all;;
-    exclude) [ ${#exclude[@]} -eq 0 ] && config_select_exclude_all;;
-  esac
-
-  config_select_status
+  config_select_update
+  config_select_status "$cselMode"
 }
 
 csel_run "$@"

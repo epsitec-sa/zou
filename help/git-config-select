@@ -1,18 +1,20 @@
 usage: git-config-select --recursive
    or: git-config-select [<options>] [--] [<branch>...]
 
-Configure submodule selection.
+Make submodules internal or external.
 
     -h|--help               display help
     -r|--recursive          traverse submodules recursively
-    -i|--include [SM1,...]  enable  select for specific submodules (default to all) on current branch
-    -x|--exclude [SM1,...]  disable select for specific submodules (default to all) on current branch
+    -l|--list               list internal/external submodules
+    -i|--include [SM1,...]  make specified submodules internal (default to all)
+    -x|--exclude [SM1,...]  make specified submodules external (default to all)
 
 remarks:    
-    By default, level 0 submodules are enabled, others are disabled.
+    By default, level 0 submodules are internal, others are external.
 
 example:
-    git-config-select               # display status
+    git-config-select               # display status (internal|external)
     git-config-select -r            # display status recursively
-    git-config-select -i            # enable select for all submodules on current branch
-    git-config-select -i sm1 sm2    # enable select for submodules sm1 and sm2 on current branch
+    git-config-select -r -x -l      # display external modules recursively
+    git-config-select -i            # make all submodules internal
+    git-config-select -i sm1 sm2    # make submodules sm1 and sm2 internal

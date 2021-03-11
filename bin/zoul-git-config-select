@@ -9,113 +9,200 @@ ZOUL_GIT_CONFIG_SELECT=true
 
 # WARNING: we work with submodule paths relative to bundle, not with submodule IDs
 
-# configure select submodules
+# make submodules internal or external
 # modify .zou-flow configuration file
 #
-# submodule level 0: all included by default
+# submodule level 0: all internal by default
 #
 # [select]
 #   exclude = fact
 #   exclude = compta
 #
-# submodule level > 0: all excluded by default
+# submodule level > 0: all external by default
 #
 # [select]
 #   include = sm1
 #   include = sm2
 #
 
-_config_select_default_verb() { (( $(repo_module_level "$@") == 0 )) && echo 'include' || echo 'exclude'; }
-_config_select_anti_verb()    { [[ $1 == 'exclude' ]] && echo 'include' || echo 'exclude'; }
-
 config_select_include()
 {
-  local path=$1
-  [[ -z $path ]] && path=$(repo_path_relative_to_module_root)
-  local rePath=$(wildcard_to_regex_match_whole "$path")
-  local defaultVerb=$(_config_select_default_verb)
-  if [[ $defaultVerb == 'include' ]]; then
-    git config --file "$moduleConfigFile" --unset-all "select.exclude" "$rePath"
-  else
-    git config --file "$moduleConfigFile" --get-all "select.include" "$rePath" >/dev/null \
-    || git config --file "$moduleConfigFile" --add "select.include" "$path"
-  fi
-
-  git update-index --add -- "$moduleConfigFile" &>/dev/null \
-  && git_commit "enable select for submodule '$path' on branch '$moduleHead'" "$moduleConfigFile"
-}
-config_select_include_all()
-{
-  local defaultVerb=$(_config_select_default_verb)
-  if [[ $defaultVerb == 'include' ]]; then
-    git config --file "$moduleConfigFile" --remove-section "select" &>/dev/null
-
-    git update-index --add -- "$moduleConfigFile" &>/dev/null \
-    && git_commit "enable select for all submodules on branch '$moduleHead'" "$moduleConfigFile"
-  else
-    config_select_include_many $(repo_list_submodule_paths)
-  fi
-}
-config_select_include_many()
-{
-  local path rePath defaultVerb=$(_config_select_default_verb)
-  for path in $@; do
-    rePath=$(wildcard_to_regex_match_whole "$path")
-    if [[ $defaultVerb == 'include' ]]; then
-      git config --file "$moduleConfigFile" --unset-all "select.exclude" "$rePath"
-    else
-      git config --file "$moduleConfigFile" --get-all "select.include" "$rePath" >/dev/null \
-      || git config --file "$moduleConfigFile" --add "select.include" "$path"
-    fi
-  done
-
-  git update-index --add -- "$moduleConfigFile" &>/dev/null && \
-  git_commit "enable select for submodules '$(string_join ', ' $@)' on branch '$moduleHead'" "$moduleConfigFile"
+  # io_trace "config_select_include ${*@Q}"
+  case $# in
+    0) config_select_include_all;;
+    1) config_select_include_single "$1";;
+    *) config_select_include_many "$@"
+  esac
 }
 config_select_exclude()
 {
-  local path=$1
+  # io_trace "config_sku_exclude ${*@Q}"
+  case $# in
+    0) config_select_exclude_all;;
+    1) config_select_exclude_single "$1";;
+    *) config_select_exclude_many "$@"
+  esac
+}
+
+config_select_include_single()
+{
+  # make submodule internal
+
+  local path=$1 rePath configFile="$(_config_select_file_path)"
   [[ -z $path ]] && path=$(repo_path_relative_to_module_root)
-  local rePath=$(wildcard_to_regex_match_whole "$path")
-  local defaultVerb=$(_config_select_default_verb)
-  if [[ $defaultVerb == 'exclude' ]]; then
-    git config --file "$moduleConfigFile" --unset-all "select.include" "$rePath"
+  _config_select_check_path "$path" || return 1
+  rePath=$(wildcard_to_regex_match_whole "$path")
+  if _config_select_level0; then
+    # remove path from excluded list
+    git config --file "$configFile" --unset-all "select.exclude" "$rePath"
   else
-    git config --file "$moduleConfigFile" --get-all "select.exclude" "$rePath" >/dev/null \
-    || git config --file "$moduleConfigFile" --add "select.exclude" "$path"
+    # add path to included list
+    git config --file "$configFile" --get-all "select.include" "$rePath" >/dev/null \
+    || git config --file "$configFile" --add "select.include" "$path"
   fi
 
-  git update-index --add -- "$moduleConfigFile" &>/dev/null \
-  && git_commit "disable select for submodule '$path' on moduleHead '$moduleHead'" "$moduleConfigFile"
+  git update-index --add -- "$configFile" &>/dev/null \
+  && git_commit "make submodule '$path' internal" "$configFile"
 }
-config_select_exclude_all()
+config_select_exclude_single()
 {
-  local defaultVerb=$(_config_select_default_verb)
-  if [[ $defaultVerb == 'exclude' ]]; then
-    git config --file "$moduleConfigFile" --remove-section "select" &>/dev/null
+  # make submodule external
 
-    git update-index --add -- "$moduleConfigFile" &>/dev/null \
-    && git_commit "disable select for all submodules on moduleHead '$moduleHead'" "$moduleConfigFile"
+  local path=$1 rePath configFile="$(_config_select_file_path)"
+  [[ -z $path ]] && path=$(repo_path_relative_to_module_root)
+  _config_select_check_path "$path" || return 1
+  rePath=$(wildcard_to_regex_match_whole "$path")
+  if _config_select_level0; then
+    # add path to excluded list
+    git config --file "$configFile" --get-all "select.exclude" "$rePath" >/dev/null \
+    || git config --file "$configFile" --add "select.exclude" "$path"
   else
-    config_select_exclude_many $(repo_list_submodule_paths)
+    # remove path from included list
+    git config --file "$configFile" --unset-all "select.include" "$rePath"
   fi
+
+  git update-index --add -- "$configFile" &>/dev/null \
+  && git_commit "make submodule '$path' external" "$configFile"
 }
-config_select_exclude_many()
+
+config_select_include_many()
 {
-  local path rePath defaultVerb=$(_config_select_default_verb)
+  # make submodules internal
+
+  local path rePath configFile="$(_config_select_file_path)"
   for path in $@; do
+    _config_select_check_path "$path" || return 1
     rePath=$(wildcard_to_regex_match_whole "$path")
-    if [[ $defaultVerb == 'exclude' ]]; then
-      git config --file "$moduleConfigFile" --unset-all "select.include" "$rePath"
+    if _config_select_level0; then
+      # remove path from excluded list
+      git config --file "$configFile" --unset-all "select.exclude" "$rePath"
     else
-      git config --file "$moduleConfigFile" --get-all "select.exclude" "$rePath" >/dev/null \
-      || git config --file "$moduleConfigFile" --add "select.exclude" "$path"
+      # add path to included list
+      git config --file "$configFile" --get-all "select.include" "$rePath" >/dev/null \
+      || git config --file "$configFile" --add "select.include" "$path"
     fi
   done
 
-  git update-index --add -- "$moduleConfigFile" &>/dev/null \
-  && git_commit "disable select for submodules '$(string_join ', ' $@)' on moduleHead '$moduleHead'" "$moduleConfigFile"
+  git update-index --add -- "$configFile" &>/dev/null && \
+  git_commit "make submodules '$(string_join ', ' $@)' internal" "$configFile"
 }
+config_select_exclude_many()
+{
+  # make submodules external
+
+  local path rePath configFile="$(_config_select_file_path)"
+  for path in $@; do
+    _config_select_check_path "$path" || return 1
+    rePath=$(wildcard_to_regex_match_whole "$path")
+    if _config_select_level0; then
+      # add path to excluded list
+      git config --file "$configFile" --get-all "select.exclude" "$rePath" >/dev/null \
+      || git config --file "$configFile" --add "select.exclude" "$path"
+    else
+      # remove path from included list
+      git config --file "$configFile" --unset-all "select.include" "$rePath"
+    fi
+  done
+
+  git update-index --add -- "$configFile" &>/dev/null \
+  && git_commit "make submodules '$(string_join ', ' $@)' external" "$configFile"
+}
+
+config_select_include_all()
+{
+  # make all submodules internal
+
+  local configFile="$(_config_select_file_path)"
+  if _config_select_level0; then
+    # remove excluded list (full section)
+    git config --file "$configFile" --remove-section "select" &>/dev/null
+
+    git update-index --add -- "$configFile" &>/dev/null \
+    && git_commit 'make all submodules internal' "$configFile"
+  else
+    # add all submodules to included list
+    config_select_include_many $(repo_list_submodule_paths)
+  fi
+}
+config_select_exclude_all()
+{
+  # make all submodules external
+
+  local configFile="$(_config_select_file_path)"
+  if _config_select_level0; then
+    config_select_exclude_many $(repo_list_submodule_paths)
+  else
+    git config --file "$configFile" --remove-section "select" &>/dev/null
+
+    git update-index --add -- "$configFile" &>/dev/null \
+    && git_commit 'make all submodules external' "$configFile"
+  fi
+}
+
+config_select_update()
+{
+  # remove unexisting sub-modules from internal or external list
+  local smpaths existing configFile="$(_config_select_file_path)" path smpaths s
+  [ ${#existing[@]} -eq 0 ] && existing=( $(repo_list_submodule_paths) )
+
+  if _config_select_level0; then
+    # update excluded list
+    smpaths=( $(git config --file "$configFile" --get-all "select.exclude") )
+  else
+    # update included list
+    smpaths=( $(git config --file "$configFile" --get-all "select.include") )
+  fi
+    [ ${#smpaths[@]} -eq 0 ] && return 0
+  
+  existing=( "${moduleSubmodulePaths[@]}" )
+  [ ${#existing[@]} -eq 0 ] && existing=( $(repo_list_submodule_paths) )
+  # io_trace "config_select_update -1- $(print_vars smpaths[@] existing[@])"
+
+  smpaths=($(array_remove_array 'smpaths[@]' 'existing[@]'))
+  [ ${#smpaths[@]} -eq 0 ] && return 0
+  # io_trace "config_select_update -2- $(print_vars smpaths[@] existing[@])"
+  [ ${#smpaths[@]} -gt 1 ] && s='s'
+  smlist=$(string_join ', ' "${smpaths[@]}")
+  io_message "Unconfiguring ${VC}$smlist" "$moduleTracePrefix"
+
+  if _config_select_level0; then
+    # update excluded list
+    for path in "${smpaths[@]}"; do
+      # io_trace "config_select_update -3- $(print_vars path)"
+      git config --file "$configFile" --unset-all "select.exclude" "$path" || io_trace_error 'config_select_update -3-'
+    done
+  else
+    # update included list
+    for path in "${smpaths[@]}"; do
+      # io_trace "config_select_update -3- $(print_vars path)"
+      git config --file "$configFile" --unset-all "select.include" "$path" || io_trace_error 'config_select_update -3-'
+    done
+  fi
+  
+  git update-index --add -- "$configFile" &>/dev/null && \
+  git_commit "unconfigure submodule$s '$smlist'" "$configFile"
+}
+
 config_select_is_excluded() { ! config_select_is_included "$@"; }
 config_select_is_included()
 {
@@ -128,36 +215,47 @@ config_select_is_included()
 }
 config_select_list_included()
 {
-  local defaultVerb=$(_config_select_default_verb) 
-  if [[ $defaultVerb == 'include' ]]; then
-    local submodules
+  local configFile="$(_config_select_file_path)" submodules excluded
+  if _config_select_level0; then
     [[ -n $1 ]] && submodules=( "${!1}" ) || submodules=( $(repo_list_submodule_paths) )
-    local excluded=( $(git config --file "$moduleConfigFile" --get-all "select.exclude") )
+    excluded=( $(git config --file "$configFile" --get-all "select.exclude") )
     array_remove_array submodules[@] excluded[@]
   else
-    git config --file "$moduleConfigFile" --get-all "select.include" || true
+    git config --file "$configFile" --get-all "select.include" || true
   fi
 }
 config_select_list_excluded()
 {
-  local defaultVerb=$(_config_select_default_verb)
-  if [[ $defaultVerb == 'exclude' ]]; then
-    local submodules
-    [[ -n $1 ]] && submodules=( "${!1}" ) || submodules=( $(repo_list_submodule_paths) )
-    local included=( $(git config --file "$moduleConfigFile" --get-all "select.include") )
-    array_remove_array submodules[@] included[@]
+  local configFile="$(_config_select_file_path)" submodules included
+  if _config_select_level0; then
+    git config --file "$configFile" --get-all "select.exclude" || true
   else
-    git config --file "$moduleConfigFile" --get-all "select.exclude" || true
+    [[ -n $1 ]] && submodules=( "${!1}" ) || submodules=( $(repo_list_submodule_paths) )
+    included=( $(git config --file "$configFile" --get-all "select.include") )
+    array_remove_array submodules[@] included[@]
   fi
 }
 config_select_status()
 {
+  # io_trace "config_select_status ${*@Q}"
+  
+  local mode=$1
   io_lock_enter
-  for path in $(config_select_list_included | sort); do
-    mio_success_unsafe "  $path"
-  done
-  for path in $(config_select_list_excluded | sort); do
-    mio_message_unsafe "x $path" ${Purple}
-  done
+  if [[ -z $mode || $mode == 'include' ]]; then
+    for path in $(config_select_list_included | sort); do
+      mio_success_unsafe "  $path"
+    done
+  fi
+  if [[ -z $mode || $mode == 'exclude' ]]; then
+    for path in $(config_select_list_excluded | sort); do
+      mio_message_unsafe "x $path" ${Purple}
+    done
+  fi
   io_lock_exit
 }
+
+# submodules level  0 are internal by default
+# submodules level >0 are external by default
+_config_select_level0()     { (( $(repo_module_level "$@") == 0 )); }
+_config_select_file_path()  { [[ -n $moduleConfigFile ]] && echo "$moduleConfigFile" || echo "$PWD/.zou-flow"; }
+_config_select_check_path() { [ -d "$1" ] || { io_error "Submodule ${VC}$1${Red} does not exist" "$moduleTracePrefix"; return 1; }; }
