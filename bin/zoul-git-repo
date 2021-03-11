@@ -387,22 +387,13 @@ repo_commit_submodules()
 
   # do not commit on detached head
   [[ -z $moduleHeadType ]] && moduleHeadType=$(ref_type)
-  if [[ $moduleHeadType != 'branch' ]]; then
-    mio_warning "Cannot commit submodules on detached head"
-    return 0
-  fi
-
-  # for sm; do
-  #   cd "$sm"
-  #   repo_remove_dangling_submodules
-  #   cd - &>/dev/null
-  # done
+  [[ $moduleHeadType == 'branch' ]] || return 0
 
   local branch=${moduleHead:-$(branch_current)}
   # io_trace "repo_commit_submodules -2- $(print_vars branch)"
   if git_commit 'update submodules' "$@"; then
     for sm; do
-      io_message "  Commited submodules '$sm' on branch '$branch'" "$moduleTracePrefix" ${DarkGray}
+      io_message "  Commited submodules ${VC}$sm${DarkGray} on branch ${VC}$branch${DarkGray}" "$moduleTracePrefix" ${DarkGray}
     done
   fi
   repo_raise_submodule_changed_event "$@"
@@ -413,28 +404,46 @@ repo_commit_submodules()
 repo_sync_submodule()
 {
   # io_trace "repo_sync_submodule ${*@Q}"
-  io_buffered_eval "git submodule sync \"$1\" 2>&1" _repo_submodule_selector ${DarkGray}
+  io_buffered_eval "git submodule sync \"$1\" 2>&1" '_repo_submodule_line_selector' ${DarkGray} >/dev/null
 }
 repo_update_submodule()
 {
-  # io_trace "@@@ repo_update_submodule ${*@Q} -1- PWD=$PWD"
+  # io_trace "repo_update_submodule ${*@Q} -1- PWD=$PWD"
   local smPaths
-  smPaths=( $(io_buffered_eval "git submodule update --init \"$1\" 2>&1" _repo_submodule_selector ${DarkGray}) )
-  # io_trace "@@@ repo_update_submodule -2- $(print_vars smPaths[@]) PWD=$PWD"
+  smPaths=( $(io_buffered_eval "git submodule update --init \"$1\" 2>&1" '_repo_submodule_line_selector' ${DarkGray}) )
+  # io_trace "repo_update_submodule -2- $(print_vars smPaths[@] PWD)"
   [ ${#smPaths[@]} -ne 0 ] && repo_raise_submodule_changed_event "${smPaths[@]}" || return 0
 }
 repo_discard_submodule()
 {
   # io_trace "repo_discard_submodule ${*@Q}"
   local smPaths
-  smPaths=( $(io_eval "git submodule update --recursive \"$1\" 2>&1" _repo_submodule_selector ${DarkGray}) )
+  smPaths=( $(io_eval "git submodule update --recursive \"$1\" 2>&1" '_repo_submodule_line_selector' ${DarkGray}) )
   # io_trace "repo_discard_submodule -- $(print_vars smPaths[@])"
   [ ${#smPaths[@]} -ne 0 ] && repo_raise_submodule_changed_event "${smPaths[@]}"
 }
-_repo_submodule_selector()
+repo_ensure_submodule()
 {
-  [[ $line =~ ^Submodule[[:blank:]]+path[[:blank:]]+\'([^\']+)\' ]] && echo "${BASH_REMATCH[1]}" || :
+  local moduleRoot=$1 smPath=$2
+  # io_trace "repo_ensure_submodule ${*@Q} -- PWD=$PWD"
+  [[ -f "$smPath/.git" || -d "$smPath/.git" ]] && return 0
+  io_buffered_eval "git submodule update --init "$smPath" 2>&1" '_repo_submodule_line_selector' ${DarkGray} >/dev/null
 }
+_repo_submodule_line_selector()
+{
+  unset skipCurrentLine
+  if [[ $line =~ ^Submodule[[:blank:]]+path[[:blank:]]+\'([^\']+)\' ]]; then
+    local smpath="${BASH_REMATCH[1]}"
+    echo "$smpath"
+    # io_trace_unsafe "_repo_submodule_line_selector -1- ${*@Q} -- $(print_vars smpath)"
+    skipCurrentLine=true
+  elif [[ $line =~ ^((Cloning|Synchronizing)[^\']+)\'([^\']+)\'(.*) ]]; then
+    line="${BASH_REMATCH[1]}${VC}${BASH_REMATCH[3]}${color}${BASH_REMATCH[4]}"
+  else
+    skipCurrentLine=true
+  fi
+}
+
 repo_discard_internal_ignore_list()
 {
   local discarded=0 path
@@ -465,24 +474,6 @@ repo_remove_dangling_submodules_async()
   local dangling=($(repo_list_dangling_submodules))
   # io_trace "repo_remove_dangling_submodules ${*@Q} -1- $(print_vars dangling[@] PWD)"
   visit_async 'dangling[@]' repo_remove_dangling_submodule
-}
-repo_ensure_submodule()
-{
-  local moduleRoot=$1 smPath=$2
-  # io_trace "repo_ensure_submodule ${*@Q} -- PWD=$PWD"
-  [[ -f "$smPath/.git" || -d "$smPath/.git" ]] && return 0
-  io_buffered_eval "git submodule update --init "$smPath" 2>&1" '_repo_ensure_submodule_line_selector' ${DarkGray} # || {  mio_error "Not a git submodule ${VC}$smPath"; return 1; }
-}
-_repo_ensure_submodule_line_selector()
-{
-  if [[ $line =~ ^([Cc]loning[^\']+)\'([^\']+)\'(.*) ]]; then
-    unset skipCurrentLine
-    color=${DarkGray}
-    line="${BASH_REMATCH[1]}${VC}${BASH_REMATCH[2]}${color}${BASH_REMATCH[3]}"
-    return 1
-  else
-    skipCurrentLine=true
-  fi
 }
 repo_prune_tags()
 {
