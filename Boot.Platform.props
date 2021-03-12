@@ -3,6 +3,10 @@
 <Project InitialTargets="TraceBootPlatform;ZouCheckPlatform" 
          TreatAsLocalProperty="RuntimeIdentifier;RuntimePlatform;Platform">
 
+  <PropertyGroup>
+    <Platforms>AnyCPU;x86;x64</Platforms>
+  </PropertyGroup>
+  
   <Choose>
     <When Condition="'$(RuntimeIdentifier)' == ''">
       <PropertyGroup>
@@ -11,7 +15,9 @@
 
         <ForwardPlatform Condition="'$(ForwardPlatform)' == '' And '$(RuntimePlatform)' == 'x86'">Win32</ForwardPlatform>
         <ForwardPlatform Condition="'$(ForwardPlatform)' == ''">x64</ForwardPlatform>
-
+      </PropertyGroup>
+      <!--  Do not modify RuntimeIdentifier when building inside VisualStudio or with the MSBuild CLI (MSBuildRuntimeType == Full) -->
+      <PropertyGroup Condition="'$(MSBuildRuntimeType)' == 'Core'">
         <RuntimeIdentifier Condition="$([MSBuild]:: IsOsPlatform(Windows))">win-$(RuntimePlatform)</RuntimeIdentifier>
         <RuntimeIdentifier Condition="$([MSBuild]:: IsOsPlatform(OSX))">osx-$(RuntimePlatform)</RuntimeIdentifier>
         <RuntimeIdentifier Condition="$([MSBuild]:: IsOsPlatform(Linux))">linux-$(RuntimePlatform)</RuntimeIdentifier>
@@ -40,11 +46,13 @@
   </Target>
   
   <Target Name="TraceBootPlatform" Condition="'$(ZouTraceProps)' == 'true'">
-    <Message Importance="high" Text="Platform          = $(Platform)" />
-    <Message Importance="high" Text="PlatformSpecified = $(PlatformSpecified)" />
-    <Message Importance="high" Text="ForwardPlatform   = $(ForwardPlatform)" />
-    <Message Importance="high" Text="RuntimePlatform   = $(RuntimePlatform)" />
-    <Message Importance="high" Text="RuntimeIdentifier = $(RuntimeIdentifier)" />
+    <Message Importance="high" Text="MSBuildRuntimeType = $(MSBuildRuntimeType)" />
+    <Message Importance="high" Text="Platform           = $(Platform)" />
+    <Message Importance="high" Text="Platforms          = $(Platforms)" />
+    <Message Importance="high" Text="PlatformSpecified  = $(PlatformSpecified)" />
+    <Message Importance="high" Text="ForwardPlatform    = $(ForwardPlatform)" />
+    <Message Importance="high" Text="RuntimePlatform    = $(RuntimePlatform)" />
+    <Message Importance="high" Text="RuntimeIdentifier  = $(RuntimeIdentifier)" />
   </Target>
 
 </Project>

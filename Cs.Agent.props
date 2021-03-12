@@ -38,10 +38,6 @@ Summary
   <Import Project="Cs.Boot.props" Condition="'$(ZouVersion)' == ''"/>
   <Import Project="Agent.props" />
 
-  <PropertyGroup Condition="'$(MSBuildRuntimeType)' == 'Core'">
-    <Platform Condition="'$(Platform)' == ''">Any CPU</Platform>
-  </PropertyGroup>
-  
   <PropertyGroup>
     <!-- A C# agent builds external projects/solutions into a C# container (uses the C# standard settings for platform, output path, ...) -->
     <!-- Normally, external components are C# based, because C++ components should be imported via interop build action (cf Cs.Interop.targets) -->
@@ -49,7 +45,10 @@ Summary
     <ForwardPlatform Condition="'$(Platform)' == 'Win32'">Any CPU</ForwardPlatform>
   </PropertyGroup>
 
-
+  <PropertyGroup Condition="'$(MSBuildRuntimeType)' == 'Core'">
+    <Platform Condition="'$(Platform)' == ''">Any CPU</Platform>
+  </PropertyGroup>
+  
   <Import Project="Boot.Platform.props" Condition="'$(RuntimePlatform)' == ''" />
 
   <ImportGroup Label="PropertySheets">
