@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <!-- The ImportProject.targets can be used to build and import the output of one or many projects or solutions. -->
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
@@ -46,9 +46,6 @@
     <ItemGroup>
       <ProjectsToBuild>
         <MSBuildCmd>"$(MSBuildToolsPath)\msbuild"</MSBuildCmd>
-      </ProjectsToBuild>
-      <ProjectsToBuild>
-        <MSBuildCmd Condition="'%(RuntimeType)' != 'Full'">dotnet msbuild</MSBuildCmd>
         <MSBuildOptions>/nologo</MSBuildOptions>
       </ProjectsToBuild>
       <ProjectsToBuild>
@@ -85,12 +82,12 @@
           Command='"$(ZouBinDir)nuget" restore "%(ProjectsToBuild.RootDir)%(Directory)packages.config" -Verbosity quiet -PackagesDirectory "$(NugetPackagesDir)."'/>
 
     <!--
-	  The MSBuild task does not determine the build order but MSBuild.exe and Visual Studio do:
+    The MSBuild task does not determine the build order but MSBuild.exe and Visual Studio do:
     https://maximelabelle.wordpress.com/2011/11/29/building-multiple-projects-in-order-with-msbuild/
     We cannot use the following MSBuild task:
         <MSBuild Projects="%(ProjectsToBuild.Identity)" Targets="Build" Properties="OutDir=%(OutDir);Configuration=%(Configuration);Platform=%(Platform) " />
     Instead with use the Exec task which starts the MSBuild process.
-	  -->
+    -->
 
     <!--<Message Importance="high" Text='%(MSBuildCmd) %(MSBuildOptions) "%(ProjectsToBuild.Identity)"' />-->
     <Exec Command='%(MSBuildCmd) %(MSBuildOptions) "%(ProjectsToBuild.Identity)"' />
