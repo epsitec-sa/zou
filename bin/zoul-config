@@ -8,6 +8,12 @@ ZOUL_CONFIG=true
 
 config_setup()
 {
+  # setup credential manager on WSL2
+  if sys_wsl && [[ -z $(git config --global --get credential.helper) ]]; then
+    local credentialManagerPath="/mnt/c/Program\ Files/Git/mingw64/libexec/git-core/git-credential-manager.exe"
+    [[ -f "$credentialManagerPath" ]] && git config --global credential.helper "$credentialManagerPath"
+  fi
+
   # remove obsolete value
   git config --global --unset 'zou.initialized'
 
