@@ -9,3 +9,7 @@ real_path()
   # TODO: adapt for Mac
   realpath "$1"
 }
+
+sys_linux()   { [ $(uname) = 'Linux' ]; }
+sys_winbash() { [[ $(uname) =~ ^MINGW ]]; }
+sys_wsl()     { sys_linux && [[ "$(< /proc/version)" =~ .*-microsoft- ]]; }
