@@ -10,14 +10,17 @@
   <Choose>
     <When Condition="'$(RuntimeIdentifier)' == ''">
       <PropertyGroup>
-        <RuntimePlatform Condition="'$(Platform)' == 'Win32' Or '$(Platform)' == 'x86' Or $(RuntimeIdentifier.EndsWith('x86'))">x86</RuntimePlatform>
+        <!--<DebugBootPlatform>1</DebugBootPlatform>-->
+
+        <RuntimePlatform Condition="'$(Platform)' == 'Win32' Or '$(Platform)' == 'x86'">x86</RuntimePlatform>
         <RuntimePlatform Condition="'$(RuntimePlatform)' == ''">x64</RuntimePlatform>
 
         <ForwardPlatform Condition="'$(ForwardPlatform)' == '' And '$(RuntimePlatform)' == 'x86'">Win32</ForwardPlatform>
         <ForwardPlatform Condition="'$(ForwardPlatform)' == ''">x64</ForwardPlatform>
       </PropertyGroup>
-      <!--  Do not modify RuntimeIdentifier when building inside VisualStudio or with the MSBuild CLI (MSBuildRuntimeType == Full) -->
-      <PropertyGroup Condition="'$(MSBuildRuntimeType)' == 'Core'">
+      
+      <!--  Do not modify RuntimeIdentifier when building inside VisualStudio -->
+      <PropertyGroup Condition="'$(BuildingInsideVisualStudio)' == ''">
         <RuntimeIdentifier Condition="$([MSBuild]:: IsOsPlatform(Windows))">win-$(RuntimePlatform)</RuntimeIdentifier>
         <RuntimeIdentifier Condition="$([MSBuild]:: IsOsPlatform(OSX))">osx-$(RuntimePlatform)</RuntimeIdentifier>
         <RuntimeIdentifier Condition="$([MSBuild]:: IsOsPlatform(Linux))">linux-$(RuntimePlatform)</RuntimeIdentifier>
@@ -25,14 +28,18 @@
     </When>
     <When Condition="$(RuntimeIdentifier.EndsWith('x86'))">
       <PropertyGroup>
-        <ForwardPlatform>x86</ForwardPlatform>
-        <RuntimePlatform>x86</RuntimePlatform>
+        <!--<DebugBootPlatform>2</DebugBootPlatform>-->
+        
+        <ForwardPlatform Condition="'$(ForwardPlatform)' == ''">Win32</ForwardPlatform>
+        <RuntimePlatform Condition="'$(RuntimePlatform)' == ''">x86</RuntimePlatform>
       </PropertyGroup>
     </When>
     <Otherwise>
       <PropertyGroup>
-        <ForwardPlatform>x64</ForwardPlatform>
-        <RuntimePlatform>x64</RuntimePlatform>
+        <!--<DebugBootPlatform>3</DebugBootPlatform>-->
+
+        <ForwardPlatform Condition="'$(ForwardPlatform)' == ''">x64</ForwardPlatform>
+        <RuntimePlatform Condition="'$(RuntimePlatform)' == ''">x64</RuntimePlatform>
       </PropertyGroup>
     </Otherwise>
   </Choose>
@@ -42,10 +49,11 @@
       <ErrorMessage>"Platform ($(ForwardPlatform)) and RuntimePlatform ($(RuntimePlatform)) are not compatibles"</ErrorMessage>
     </PropertyGroup>
     <Error Text="$(ErrorMessage)" Condition="('$(ForwardPlatform)' == 'Win32' Or '$(ForwardPlatform)' == 'x86') And '$(RuntimePlatform)' != 'x86'" />
-    <Error Text="$(ErrorMessage)" Condition="('$(ForwardPlatform)' == '' Or '$(ForwardPlatform)' == 'x64') And '$(RuntimePlatform)' != 'x64'" />
+    <Error Text="$(ErrorMessage)" Condition="('$(ForwardPlatform)' == ''      Or '$(ForwardPlatform)' == 'x64') And '$(RuntimePlatform)' != 'x64'" />
   </Target>
   
   <Target Name="TraceBootPlatform" Condition="'$(ZouTraceProps)' == 'true'">
+    <!--<Message Importance="high" Text="DebugBootPlatform  = $(DebugBootPlatform)" />-->
     <Message Importance="high" Text="MSBuildRuntimeType = $(MSBuildRuntimeType)" />
     <Message Importance="high" Text="Platform           = $(Platform)" />
     <Message Importance="high" Text="Platforms          = $(Platforms)" />
