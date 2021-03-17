@@ -77,19 +77,22 @@ dev_command()
   cmd_visit_modules
 }
 
+dev_attach_finally()  { branch_show_status; }
+dev_enter_finally()   { branch_show_status; }
+dev_release_finally() { branch_show_status; }
+dev_vupdate_finally() { branch_show_status; }
+
 ########
 # ATTACH
 ########
 
-dev_attach_prolog() { module_dev_attach true || io_trace_error 'dev_attach_prolog'; }
-dev_attach_epilog() { branch_show_status     || io_trace_error 'dev_attach_epilog'; }
+dev_attach_prolog()  { module_dev_attach true || io_trace_error 'dev_attach_prolog'; }
 
 #######
 # ENTER
 #######
 
-dev_enter_prolog() { dev_checkout true  || io_trace_error 'dev_enter_prolog'; }
-dev_enter_epilog() { branch_show_status || io_trace_error 'dev_enter_epilog'; }
+dev_enter_prolog()  { dev_checkout true  || io_trace_error 'dev_enter_prolog'; }
 
 #########
 # RELEASE
@@ -124,12 +127,6 @@ dev_release_epilog()
     branch_merge "$moduleDevBranchPath" "$prodBranchPath" '-Xtheirs' \
     && branch_merge_ff "$prodBranchPath" "$moduleDevBranchPath" \
     || io_trace_error 'dev_release_epilog'
-  elif cosm_has_unstaged_dirty_submodules; then
-    mio_error "error : ${VC}$moduleId${Red} still contains dirty submodules"
-    for sm in "${unstagedDirtyIncludedSubmodules[@]}"; do
-      mio_message "  it seems that the head of ${VC}$sm${LightCyan} is a lost commit"
-    done
-    branch_show_status
   else
     mio_message "Already released" ${LightBlue}
   fi
@@ -156,8 +153,6 @@ dev_vupdate_epilog()
 
   prod_increment_update_version "$vbranch" "$prerelPrefix" "$vcommit" # -> vtag vnext
   # io_trace "dev_vupdate_epilog -2- -- $(print_vars vtag vnext)"
-
-  branch_show_status
 }
 _dev_check_in_dev_mode()
 {
