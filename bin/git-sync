@@ -50,6 +50,9 @@ sync_command()
   cmd_visit_modules
 }
 
+sync_do_finally()  { branch_show_status; }
+sync_do_xfinally() { branch_show_status; }
+
 sync_do_scope()
 {
   # io_trace "sync_do_scope ${*@Q}"
@@ -70,7 +73,6 @@ sync_do_epilog()
 {
   # io_trace ">>> sync_do_epilog ${*@Q} -- $(print_vars branchSyncVisitInfo[@]) PWD=$PWD"
   _sync_commit "${branchSyncVisitInfo[@]}"
-  branch_show_status
   # io_trace "<<< sync_do_epilog ${*@Q} -- $(print_vars branchSyncVisitInfo[@]) PWD=$PWD"
 }
 sync_do_xprolog()
@@ -78,10 +80,6 @@ sync_do_xprolog()
   # io_trace "sync_do_xprolog ${*@Q} -- PWD=$PWD"
   # local syncNoRaiseEvent='true' # syncNoPush=true
   sync_do_prolog
-}
-sync_do_xepilog()
-{
-  branch_show_status
 }
 _sync_commit()
 {

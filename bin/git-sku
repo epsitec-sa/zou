@@ -119,6 +119,10 @@ sku_command()
 
 _prod_on_preinit() { prodCheckoutType=$checkoutType; }
 
+sku_enter_finally()  { branch_show_status; }
+sku_info_finally()   { branch_show_status; }
+sku_config_finally() { branch_show_status; }
+
 #######
 # ENTER
 #######
@@ -138,7 +142,6 @@ sku_enter_prolog()
   # io_trace "sku_enter_prolog -- $(print_vars moduleSku)"
   sku_checkout "$moduleSku" "$prodCheckoutType" true
 }
-sku_enter_epilog() { branch_show_status; }
 
 ######
 # INFO
@@ -169,7 +172,6 @@ sku_info_prolog()
 
   mio_message "[${skuList}]" "${bcolor}"
 }
-sku_info_epilog() { branch_show_status; }
 
 ########
 # CONFIG
