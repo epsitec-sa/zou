@@ -8,8 +8,8 @@ ZOUL_GIT_SANDBOX_UTILS=true
 
 file_change_commit()
 {
-  local file=$1; shift
-  local change="$*"
+  local file=${1:-readme.md}; shift
+  local change="${*:-some work}"
   local prefix=${PWD##*/}; prefix=${prefix^^}
   local message="$prefix: $file: $change"
   echo "$change" >> "$file"
@@ -19,8 +19,8 @@ file_change_commit()
 }
 file_change()
 {
-  local file=$1; shift
-  local change="$*"
+  local file=${1:-readme.md}; shift
+  local change="${*:-some work}"
   local dir=$(dirname "$file")
   [[ -d $dir ]] || mkdir "$dir"
 
