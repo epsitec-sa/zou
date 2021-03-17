@@ -541,7 +541,7 @@ _branch_checkout_selector()
 }
 branch_show_status()
 {
-  io_buffered_eval 'git status -s --porcelain | sort' _branch_show_status_line_selector ${Gray} "$1"
+  io_buffered_eval "git status -s --porcelain "$@" | sort" _branch_show_status_line_selector ${Gray}
 }
 _branch_show_status_line_selector()
 {
