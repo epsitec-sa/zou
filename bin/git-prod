@@ -109,14 +109,25 @@ _prod_on_preinit()
   fi
 }
 
+prod_attach_finally()   { branch_show_status; }
+prod_attach_xfinally()  { branch_show_status; }
+prod_select_finally()   { branch_show_status; }
+prod_select_xfinally()  { branch_show_status; }
+prod_enter_finally()    { branch_show_status; }
+prod_release_xfinally() { branch_show_status; }
+prod_release_finally()
+{
+  # io_trace "prod_release_finally ${*@Q} -- $(print_vars prodBranch)"
+  [[ $dryRun == true ]] || ([ $wasInDevMode -eq 0 ] && dev_checkout)
+  branch_show_status '--ignore-submodules'
+}
+
 ########
 # ATTACH
 ########
 
 prod_attach_prolog()  { module_prod_attach "$attachMode" || io_trace_error 'prod_attach_prolog'; }
-prod_attach_epilog()  { branch_show_status               || io_trace_error 'prod_attach_epilog'; }
 prod_attach_xprolog() { module_prod_attach "$attachMode" || io_trace_error 'prod_attach_xprolog'; }
-prod_attach_xepilog() { branch_show_status               || io_trace_error 'prod_attach_xepilog'; }
 
 ########
 # SELECT
@@ -160,7 +171,6 @@ _prod_select_epilog()
 #######
 
 prod_enter_prolog() { prod_checkout "$checkoutType" true || io_trace_error 'prod_enter_prolog'; }
-prod_enter_epilog() { branch_show_status || io_trace_error 'prod_enter_epilog'; }
 
 #########
 # RELEASE
@@ -217,10 +227,6 @@ prod_release_scope()
   $1 "${@:2}"
 }
 
-################
-# Release prolog
-################
-
 prod_release_prolog()
 {
   # io_trace "prod_release_prolog -1- $(print_vars prodBranch)"
@@ -232,33 +238,25 @@ prod_release_prolog()
   esac
   if [[ $dryRun == true ]]; then
     _rstatus_init || io_trace_error 'prod_release_prolog 1'
-  else
+  elif repo_is_clean_ignore_submodules && ! cosm_has_unstaged_dirty_submodules; then
     prod_checkout "$prodCheckoutType" true "$moduleDevBranch" true || io_trace_error 'prod_release_prolog -2-'
   fi
 }
-
-################
-# Release epilog
-################
-
 prod_release_epilog()
 {
   # io_trace "prod_release_epilog ${*@Q} -- $(print_vars prodBranch)"
-  _prod_fix_release_status
-  _prod_release || io_trace_error 'prod_release_epilog 1' || return $?
-  _vtable_update || io_trace_error 'prod_release_epilog 2' || return $?
+  if repo_is_clean_ignore_submodules && ! cosm_has_unstaged_dirty_submodules; then
+    _prod_fix_release_status
+    _prod_release || io_trace_error 'prod_release_epilog 1' || return $?
+    _vtable_update || io_trace_error 'prod_release_epilog 2' || return $?
+  elif ! cosm_has_unstaged_dirty_submodules; then
+    # io_trace "prod_release_epilog -2- $(print_vars unstagedDirtyIncludedSubmodules[@])"
+    mio_error  "Branch ${VC}$moduleDevBranch${Red} cannot be released."
+    io_warning "  commit or stash your changes ${DarkGray}--${Gray} do not commit submodules references." "$moduleTracePrefix"
+  fi
   return 0
 }
-prod_release_finally()
-{
-  # io_trace "prod_release_finally ${*@Q} -- $(print_vars prodBranch)"
-  [[ $dryRun == true ]] && return 0
-  [ $wasInDevMode -eq 0 ] && module_dev_attach
-}
-prod_release_xepilog()
-{
-  _vtable_update
-}
+prod_release_xepilog() { _vtable_update; }
 
 #################
 # Release helpers
