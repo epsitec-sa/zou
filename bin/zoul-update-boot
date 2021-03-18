@@ -11,18 +11,18 @@ zou_setup()
   message="${Cyan}[zou]${NC} : ${Cyan}Downloading, please wait...${NC}"
   printf '\n%b' "$message"
   if [[ -z $zouFakeUpdate ]]; then
-    git fetch --prune --all &>"$stdallRedir"
-    git fetch --tags --force &>"$stdallRedir"
-    git checkout master &>"$stdallRedir"
-    git pull &>"$stdallRedir"
+    git fetch --prune --all &>/dev/null
+    git fetch --tags --force &>/dev/null
+    git checkout master &>/dev/null
+    git pull &>/dev/null
   else
     _zou_create_fake_version_props
   fi
 
   message="${Cyan}[zou]${NC} : ${Cyan}Making a copy, please wait...${NC}"
   printf '\n%b' "$message"
-  find . -maxdepth 1 -type f -iname 'zoul-*' -exec cp --preserve '{}' "$setupDir/{}" ';'
-  find . -maxdepth 1 -type f -iname 'git-* ' -exec cp --preserve '{}' "$setupDir/{}" ';'
+  find . -maxdepth 1 -type f -iname 'zoul-*' -exec cp -P '{}' "$setupDir/{}" ';'
+  find . -maxdepth 1 -type f -iname 'git-* ' -exec cp -P '{}' "$setupDir/{}" ';'
   cp ../Version.props "$setupDir"
   
   printf '\n'
@@ -47,7 +47,7 @@ zou_clean()
   rm -rf "$setupDir"
   # clean fake version.props
   if [[ -n $zouFakeUpdate ]]; then
-    git checkout "$zouBinDir/../Version.props" &>"$stdallRedir"
+    git checkout "$zouBinDir/../Version.props" &>/dev/null
   fi
 }
 
