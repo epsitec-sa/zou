@@ -231,7 +231,14 @@ prod_release_prolog()
 {
   # io_trace "prod_release_prolog -1- $(print_vars prodBranch)"
   case "$releaseStatus" in
-    error|unreleasable)
+    unreleasable)
+      dev_checkout false "$moduleDevBranch"
+      prod_ensure_vbranch
+      branch_merge "$moduleDevBranchPath" "$prodBranchPath" '-Xtheirs' \
+      && branch_merge_ff "$prodBranchPath" "$moduleDevBranchPath" \
+      || io_trace_error 'prod_release_prolog';;
+      # return 1;;
+    error)
       mio_error "Branch ${VC}$moduleDevBranch${Red} cannot be released."
       mio_info "  use ${VC}git dev release${Cyan} to release some development code."
       return 1;;
