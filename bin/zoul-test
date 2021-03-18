@@ -9,7 +9,7 @@ ZOUL_TEST=true
 zou_bundle_root()
 {
   local dir
-  dir=$(real_path "${1:-.}") || return $?
+  dir=$(abspath "${1:-.}") || return $?
   while [[ -n "$dir" && ! -d "$dir/.git" ]]; do
     dir="${dir%/*}"
   done
@@ -18,7 +18,7 @@ zou_bundle_root()
 }
 
 # create test-results folder
-zouTestRoot=$(real_path "$(zou_bundle_root "$zouBinDir")/../zou.test")
+zouTestRoot=$(abspath "$(zou_bundle_root "$zouBinDir")/../zou.test")
 [[ -d "$zouTestRoot" ]] || mkdir -p "$zouTestRoot"
 
 # io_debug zouTestRoot
