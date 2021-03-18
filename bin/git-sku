@@ -77,21 +77,28 @@ sku_startup_message()
         vnext) what='next version';;
         vlast) what='last version';;
       esac
-      startupMessage="Entering ${Brown}$what${White} on ${Brown}${skuSpec:-current SKU}${White}, please wait...";;
+      startupMessage="Entering ${Brown}$what${White} on ${Brown}${skuSpec:-current SKU}${White}, please wait..."
+      ;;
     info)
-      startupMessage="Getting SKU info, please wait...";;
+      startupMessage="Getting SKU info, please wait..."
+      ;;
     config)
       local kindOf
-      case $skuConfigMode in
-        include) kindOf="${Green}included${White}";;
-        exclude) kindOf="${Purple}excluded${White}";;
-        *)       kindOf="${Green}included${White} and ${Purple}excluded${White}";;
-      esac
-      if [[ -n $skuConfigListOnly || -z $skuConfigMode ]]; then
-        startupMessage="Displaying $kindOf submodules, please wait..."
+      if [[ -n $configPrincipalModuleId ]]; then
+          startupMessage="Setting ${Brown}$configPrincipalModuleId${White} as principal module, please wait..."
       else
-        startupMessage="Configuring $kindOf submodules, please wait..."
+        case $skuConfigMode in
+          include) kindOf="${Green}included${White}";;
+          exclude) kindOf="${Purple}excluded${White}";;
+          *)       kindOf="${Green}included${White} and ${Purple}excluded${White}";;
+        esac
+        if [[ -n $skuConfigListOnly || -z $skuConfigMode ]]; then
+          startupMessage="Displaying $kindOf submodules, please wait..."
+        else
+          startupMessage="Configuring $kindOf submodules, please wait..."
+        fi
       fi
+      ;;
   esac
 }
 sku_command()
@@ -102,7 +109,8 @@ sku_command()
 
   case "$subcommand" in
     enter)
-      cmd_register_module_paths true  "$bundleRoot";;
+      cmd_register_module_paths true  "$bundleRoot"
+      ;;
     info)
       [ ${#skuModulePaths[@]} -eq 0 ] && skuModulePaths+=( './' )
       cmd_register_module_paths false "$bundleRoot"
@@ -119,9 +127,14 @@ sku_command()
 
 _prod_on_preinit() { prodCheckoutType=$checkoutType; }
 
-sku_enter_finally()  { branch_show_status; }
-sku_info_finally()   { branch_show_status; }
-sku_config_finally() { branch_show_status; }
+sku_enter_finally()  { _sku_any_finally; }
+sku_info_finally()   { _sku_any_finally; }
+sku_config_finally() { _sku_any_finally; }
+_sku_any_finally()
+{
+  config_sku_update
+  branch_show_status
+}
 
 #######
 # ENTER
@@ -204,9 +217,10 @@ sku_config_prolog()
       io_error "module not found: '$configPrincipalModuleId'"
       exit 1
     fi
+    config_sku_status 'pmid'
+  else
+    config_sku_status "$skuConfigMode"
   fi
-  config_sku_update
-  config_sku_status "$skuConfigMode"
 }
 
 #########
