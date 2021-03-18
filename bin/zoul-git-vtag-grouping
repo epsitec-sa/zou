@@ -12,7 +12,7 @@ vtag_group_by_version()
 {
   declare -A lookup
   local vtag vbranch
-  for vtag in $(git tag -l --sort=-v:refname); do
+  for vtag in $(git tag -l --sort=-v:refname 2>/dev/null); do
     # skip other tags
     # ref_is_other $vtag && continue
     # skip non semver tags

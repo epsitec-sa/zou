@@ -82,16 +82,16 @@ branch_is_archived()
   [[ -z $remote ]] && remote=$(git_remote)
   [[ -n $remote ]] && ref_exists "$remote/other/archive/$branch"
 }
-branch_list_local()     { git for-each-ref --format='%(refname:short)' refs/heads; }
+branch_list_local()     { git for-each-ref --format='%(refname:short)' refs/heads 2>/dev/null; }
 branch_list_local_at()
 {
   # io_trace "branch_list_local_at ${*@Q}"
-  git show-ref --heads | grep $(git_get_commit $1) | cut -d ' ' -f2 | sed 's,^refs/[^/]*/,,';
+  git show-ref --heads 2>/dev/null | grep $(git_get_commit $1) | cut -d ' ' -f2 | sed 's,^refs/[^/]*/,,';
 }
-branch_list_remote()    { git for-each-ref --format='%(refname:short)' refs/remotes | grep -v '/HEAD$'; }
-branch_list_remote_at() { git show-ref | grep $(git_get_commit $1) | cut -d ' ' -f2 | grep 'refs/remotes' | grep -v '/HEAD$' | sed 's,^refs/[^/]*/,,'; }
-branch_list_all()       { git for-each-ref --format='%(refname:short)' refs/heads refs/remotes | grep -v '/HEAD$'; }
-branch_list_all_at()    { git show-ref | grep $(git_get_commit $1) | cut -d ' ' -f2 | grep -v '^refs/tags/' | grep -v '/HEAD$' | sed 's,^refs/[^/]*/,,'; }
+branch_list_remote()    { git for-each-ref --format='%(refname:short)' refs/remotes 2>/dev/null | grep -v '/HEAD$'; }
+branch_list_remote_at() { git show-ref 2>/dev/null | grep $(git_get_commit $1) | cut -d ' ' -f2 | grep 'refs/remotes' | grep -v '/HEAD$' | sed 's,^refs/[^/]*/,,'; }
+branch_list_all()       { git for-each-ref --format='%(refname:short)' refs/heads refs/remotes 2>/dev/null | grep -v '/HEAD$'; }
+branch_list_all_at()    { git show-ref 2>/dev/null | grep $(git_get_commit $1) | cut -d ' ' -f2 | grep -v '^refs/tags/' | grep -v '/HEAD$' | sed 's,^refs/[^/]*/,,'; }
 branch_is_attached()    { git symbolic-ref --short -q HEAD &>/dev/null; }
 branch_is_local()       { git show-ref -s --verify "refs/heads/$1" &>/dev/null; }
 branch_is_remote()      { git show-ref -s --verify "refs/remotes/$1" &>/dev/null; }
@@ -110,7 +110,7 @@ branch_is_head()
 }
 branch_current()
 {
-  local ref=$(git rev-parse --abbrev-ref HEAD)
+  local ref=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
   echo "$ref"
   branch_is_local "$ref"
 }
@@ -126,7 +126,7 @@ branch_is_ancestor_of()
 {
   local ref=${1:-HEAD} branch ec; shift
   for branch; do
-    git merge-base --is-ancestor "$ref" "$branch"; ec=$?
+    git merge-base --is-ancestor "$ref" "$branch" 2>/dev/null; ec=$?
     # io_trace "branch_is_ancestor_of -- $(print_vars ref branch ec) PWD='$PWD'"
     [ $ec -eq 0 ] && return 0
   done
@@ -153,7 +153,7 @@ branch_sync_info()
     done
   fi
   # io_trace "branch_sync_info -- $(print_vars patterns[@])"
-  git for-each-ref --format="%(refname:short) %(upstream:short) %(upstream:trackshort)" "${patterns[@]}"
+  git for-each-ref --format="%(refname:short) %(upstream:short) %(upstream:trackshort)" "${patterns[@]}" 2>/dev/null
 }
 branch_list_local_tracked()
 {
@@ -191,10 +191,10 @@ branch_list_local_can_delete()
     # tracking branches
     #   that are merged into tracked branches...
     #   or that have the tracking info broken but are merged in another remote
-    if [[ -n $l && -n $r ]] && ([[ $i =~ (=|<) ]] || [[ -z $i && -n $(git branch -r --contains $l) ]]); then
+    if [[ -n $l && -n $r ]] && ([[ $i =~ (=|<) ]] || [[ -z $i && -n $(git branch -r --contains $l 2>/dev/null) ]]); then
       echo $l
     # archived branches merged in another remote
-    elif [[ -n $l ]] && branch_is_archived "$l" "$remote" && [[ -n $(git branch -r --contains $l) ]]; then
+    elif [[ -n $l ]] && branch_is_archived "$l" "$remote" && [[ -n $(git branch -r --contains $l 2>/dev/null) ]]; then
       echo $l
     fi
   done < <(branch_sync_info)
@@ -359,7 +359,7 @@ branch_without_remote_prefix() { branch_is_remote $1 && echo ${1#*/} || echo $1;
 branch_ensure_local()
 {
   if ! branch_is_local $1; then
-    git branch "$1" "$(branch_upstream $1)" >/dev/null
+    git branch "$1" "$(branch_upstream $1)" &>/dev/null
   fi
 }
 branch_ensure_local_vbranch()
@@ -373,8 +373,10 @@ branch_ensure_local_vbranch()
      while read -r line; do
        [[ -z $line ]] && continue
        mio_message "  $line" ${DarkGray}
-     done;;
-  *) git branch "$vbranch" "$vtag";;
+     done
+     ;;
+  *) git branch "$vbranch" "$vtag" 2>/dev/null
+  ;;
   esac
 }
 # usage:
@@ -541,7 +543,7 @@ _branch_checkout_selector()
 }
 branch_show_status()
 {
-  io_buffered_eval "git status -s --porcelain "$@" | sort" _branch_show_status_line_selector ${Gray}
+  io_buffered_eval "git status -s --porcelain "$@" 2>/dev/null | sort" _branch_show_status_line_selector ${Gray}
 }
 _branch_show_status_line_selector()
 {

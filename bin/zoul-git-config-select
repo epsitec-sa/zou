@@ -54,11 +54,11 @@ config_select_include_single()
   rePath=$(wildcard_to_regex_match_whole "$path")
   if _config_select_level0; then
     # remove path from excluded list
-    git config --file "$configFile" --unset-all "select.exclude" "$rePath"
+    git config --file "$configFile" --unset-all "select.exclude" "$rePath" &>/dev/null
   else
     # add path to included list
-    git config --file "$configFile" --get-all "select.include" "$rePath" >/dev/null \
-    || git config --file "$configFile" --add "select.include" "$path"
+    git config --file "$configFile" --get-all "select.include" "$rePath" &>/dev/null \
+    || git config --file "$configFile" --add "select.include" "$path" &>/dev/null
   fi
 
   git update-index --add -- "$configFile" &>/dev/null \
@@ -74,11 +74,11 @@ config_select_exclude_single()
   rePath=$(wildcard_to_regex_match_whole "$path")
   if _config_select_level0; then
     # add path to excluded list
-    git config --file "$configFile" --get-all "select.exclude" "$rePath" >/dev/null \
-    || git config --file "$configFile" --add "select.exclude" "$path"
+    git config --file "$configFile" --get-all "select.exclude" "$rePath"  &>/dev/null \
+    || git config --file "$configFile" --add "select.exclude" "$path" &>/dev/null
   else
     # remove path from included list
-    git config --file "$configFile" --unset-all "select.include" "$rePath"
+    git config --file "$configFile" --unset-all "select.include" "$rePath" &>/dev/null
   fi
 
   git update-index --add -- "$configFile" &>/dev/null \
@@ -95,11 +95,11 @@ config_select_include_many()
     rePath=$(wildcard_to_regex_match_whole "$path")
     if _config_select_level0; then
       # remove path from excluded list
-      git config --file "$configFile" --unset-all "select.exclude" "$rePath"
+      git config --file "$configFile" --unset-all "select.exclude" "$rePath" &>/dev/null
     else
       # add path to included list
-      git config --file "$configFile" --get-all "select.include" "$rePath" >/dev/null \
-      || git config --file "$configFile" --add "select.include" "$path"
+      git config --file "$configFile" --get-all "select.include" "$rePath" &>/dev/null \
+      || git config --file "$configFile" --add "select.include" "$path" &>/dev/null
     fi
   done
 
@@ -116,11 +116,11 @@ config_select_exclude_many()
     rePath=$(wildcard_to_regex_match_whole "$path")
     if _config_select_level0; then
       # add path to excluded list
-      git config --file "$configFile" --get-all "select.exclude" "$rePath" >/dev/null \
-      || git config --file "$configFile" --add "select.exclude" "$path"
+      git config --file "$configFile" --get-all "select.exclude" "$rePath"  &>/dev/null \
+      || git config --file "$configFile" --add "select.exclude" "$path" &>/dev/null
     else
       # remove path from included list
-      git config --file "$configFile" --unset-all "select.include" "$rePath"
+      git config --file "$configFile" --unset-all "select.include" "$rePath" &>/dev/null
     fi
   done
 
@@ -167,10 +167,10 @@ config_select_update()
 
   if _config_select_level0; then
     # update excluded list
-    smpaths=( $(git config --file "$configFile" --get-all "select.exclude") )
+    smpaths=( $(git config --file "$configFile" --get-all "select.exclude" 2>/dev/null) )
   else
     # update included list
-    smpaths=( $(git config --file "$configFile" --get-all "select.include") )
+    smpaths=( $(git config --file "$configFile" --get-all "select.include" 2>/dev/null) )
   fi
     [ ${#smpaths[@]} -eq 0 ] && return 0
   
@@ -189,13 +189,13 @@ config_select_update()
     # update excluded list
     for path in "${smpaths[@]}"; do
       # io_trace "config_select_update -3- $(print_vars path)"
-      git config --file "$configFile" --unset-all "select.exclude" "$path" || io_trace_error 'config_select_update -3-'
+      git config --file "$configFile" --unset-all "select.exclude" "$path" &>/dev/null || io_trace_error 'config_select_update -3-'
     done
   else
     # update included list
     for path in "${smpaths[@]}"; do
       # io_trace "config_select_update -3- $(print_vars path)"
-      git config --file "$configFile" --unset-all "select.include" "$path" || io_trace_error 'config_select_update -3-'
+      git config --file "$configFile" --unset-all "select.include" "$path" &>/dev/null || io_trace_error 'config_select_update -3-'
     done
   fi
   
@@ -218,20 +218,20 @@ config_select_list_included()
   local configFile="$(_config_select_file_path)" submodules excluded
   if _config_select_level0; then
     [[ -n $1 ]] && submodules=( "${!1}" ) || submodules=( $(repo_list_submodule_paths) )
-    excluded=( $(git config --file "$configFile" --get-all "select.exclude") )
+    excluded=( $(git config --file "$configFile" --get-all "select.exclude" 2>/dev/null) )
     array_remove_array submodules[@] excluded[@]
   else
-    git config --file "$configFile" --get-all "select.include" || true
+    git config --file "$configFile" --get-all "select.include" 2>/dev/null || true
   fi
 }
 config_select_list_excluded()
 {
   local configFile="$(_config_select_file_path)" submodules included
   if _config_select_level0; then
-    git config --file "$configFile" --get-all "select.exclude" || true
+    git config --file "$configFile" --get-all "select.exclude" &>/dev/null || true
   else
     [[ -n $1 ]] && submodules=( "${!1}" ) || submodules=( $(repo_list_submodule_paths) )
-    included=( $(git config --file "$configFile" --get-all "select.include") )
+    included=( $(git config --file "$configFile" --get-all "select.include" 2>/dev/null) )
     array_remove_array submodules[@] included[@]
   fi
 }

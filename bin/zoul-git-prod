@@ -214,9 +214,9 @@ _prod_init_prod()
   vtag_format_alias "$vtag" "$delta"
   prodAlias=$alias
 
-  prod2dev=$(( $(git rev-list --count $prodBranchPath..$moduleDevBranchPath) ))
+  prod2dev=$(( $(git rev-list --count $prodBranchPath..$moduleDevBranchPath 2>/dev/null) ))
   if [ $prod2dev -eq 0 ]; then
-    prod2dev=$(( -$(git rev-list --count $moduleDevBranchPath..$prodBranchPath) ))
+    prod2dev=$(( -$(git rev-list --count $moduleDevBranchPath..$prodBranchPath 2>/dev/null) ))
   fi
   # io_trace "_prod_init_prod 2 -- $(print_vars prodBranchPath moduleDevBranchPath prod2dev)"
   vtag_format_alias "$prodBranch" "$prod2dev"
@@ -251,7 +251,7 @@ _prod_set_prod_info()
   # io_trace "_prod_set_prod_info 1 -- $(print_vars prodBranch prodBranchPath vbranch vtag htag delta)"
   if [[ $htag != $vtag ]]; then
     vtag=$htag
-    delta=$(( $(git rev-list --count $vtag..$prodBranchPath) ))
+    delta=$(( $(git rev-list --count $vtag..$prodBranchPath 2>/dev/null) ))
     # io_trace "_prod_set_prod_info 2 -- $(print_vars prodBranch vbranch vtag htag delta)"
   fi
   [[ -z $strict ]] && htag=$(vtag_highest "$vbranch" false) # in all folders

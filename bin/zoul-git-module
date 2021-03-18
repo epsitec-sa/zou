@@ -501,7 +501,7 @@ _module_set_principal_module_id()
   # if the bundle branch name starts with 'sku/', use the following part as the principal module ID
   # else use the bundle name without '-*' suffix
 
-  principalModuleId=$(git config --file "$bundleConfigFile" "sku.principalModuleId")
+  principalModuleId=$(git config --file "$bundleConfigFile" "sku.principalModuleId" 2>/dev/null)
   [ -n "$principalModuleId" ] && [ -d "$bundleRoot/$principalModuleId" ] && return 0
 
   if [[ $bundleDevBranch =~ ^sku/([^/]+) ]]; then

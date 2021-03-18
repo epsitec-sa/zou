@@ -11,15 +11,15 @@ ZOUL_GIT_TAG=true
 # global options
 #   noTagPush
 
-tagger_name()  { git show $1 -q | grep Tagger: | sed -E 's,Tagger:s+(.*)s+<(.*)>,1,'; }
-tagger_email() { git show $1 -q | grep Tagger: | sed -E 's,Tagger:s+(.*)s+<(.*)>,2,'; }
-tag_date()     { git show $1 -q | grep Date: | sed -E 's,Date:s+(.*),1,' | head -n 1; }
-tag_comment()  { git tag -l -n1 $1 | sed -E "s,^[^']+'([^']*).*$,\1,"; }
+tagger_name()  { git show $1 -q 2>/dev/null | grep Tagger: | sed -E 's,Tagger:s+(.*)s+<(.*)>,1,'; }
+tagger_email() { git show $1 -q 2>/dev/null | grep Tagger: | sed -E 's,Tagger:s+(.*)s+<(.*)>,2,'; }
+tag_date()     { git show $1 -q 2>/dev/null | grep Date: | sed -E 's,Date:s+(.*),1,' | head -n 1; }
+tag_comment()  { git tag -l -n1 $1 2>/dev/null | sed -E "s,^[^']+'([^']*).*$,\1,"; }
 
 tag_exists()         { git show-ref -s --verify "refs/tags/$1" &>/dev/null || return 1; }
-tag_is_lightweight() { [[ $(git rev-parse $1) == $(git rev-parse $1^{}) ]]; }
-tag_is_annotated()   { [[ $(git rev-parse $1) != $(git rev-parse $1^{}) ]]; }
-commit_is_pushed()   { [[ -n $(git branch -r --contains $1) ]]; }
+tag_is_lightweight() { [[ $(git rev-parse $1 2>/dev/null) == $(git rev-parse $1^{} 2>/dev/null) ]]; }
+tag_is_annotated()   { [[ $(git rev-parse $1 2>/dev/null) != $(git rev-parse $1^{} 2>/dev/null) ]]; }
+commit_is_pushed()   { [[ -n $(git branch -r --contains $1 2>/dev/null) ]]; }
 
 tag_push_not_followed()
 {
@@ -71,7 +71,7 @@ tag_move_to_commit()
   local tagger=$(tagger_name $tag)
   if [[ -z "$tagger" ]]; then
     tag_delete $tag &>/dev/null
-    git tag $tagOpt "$tag" "$commit^{}" \
+    git tag $tagOpt "$tag" "$commit^{} &>/dev/null" \
     && mio_info "Moved lightweight tag '$tag' to '$commit'"
   else
     local message=$(tag_comment "$tag")
@@ -80,7 +80,7 @@ tag_move_to_commit()
 
     tag_delete $tag &>/dev/null
     GIT_COMMITTER_NAME="$tagger" GIT_COMMITTER_EMAIL="$email" GIT_COMMITTER_DATE="$date" \
-    git tag $tagOpt -a -m "'$message'" "$tag" "$commit" \
+    git tag $tagOpt -a -m "'$message'" "$tag" "$commit" &>/dev/null \
     && mio_info "Moved annotated tag '$tag' to '$commit'"
   fi
   tag_push_not_followed $tag $commit
@@ -115,7 +115,7 @@ tag_delete_local_tags()
 {
   [ $# -eq 0 ] && return 0
   local ltags tag IFS=$'\n'
-  ltags=( $(git tag -l "$@") )
+  ltags=( $(git tag -l "$@" 2>/dev/null) )
   [ ${#ltags[@]} -eq 0 ] && return 0
   # io_trace "tag_delete_local_tags -- $(print_vars ltags[@])"
   if [[ $dryRun == true ]]; then
@@ -132,8 +132,8 @@ tag_delete_local_tags()
 tag_delete_remote_tags()
 {
   [ $# -eq 0 ] && return 0
-  local remote=$(git remote) line rtags tag IFS=$'\n'
-  for line in $(git ls-remote "$remote" "$@"); do
+  local remote=$(git remote 2>/dev/null) line rtags tag IFS=$'\n'
+  for line in $(git ls-remote "$remote" "$@" 2>/dev/null); do
     [[ $line =~ \^\{\}$ ]] && continue
     [[ $line =~ refs/tags/(.*) ]] && rtags+=(${BASH_REMATCH[1]})
   done
@@ -185,7 +185,7 @@ tag_move()
       if ref_equals $tag1 $tag2; then
         tag_rename "$@"
       else
-        local hash1=$(git rev-parse --short $tag1^{}) hash2=$(git rev-parse --short $tag2^{})
+        local hash1=$(git rev-parse --short $tag1^{} 2>/dev/null) hash2=$(git rev-parse --short $tag2^{} 2>/dev/null)
         mio_warning "Cannot move ${VC}$tag1 ($hash1)${Brown} to ${VC}$tag2 ($hash2)"
         local refPath stowFolder stowType refType refStowType stowPath
         stow_set_info "$tag1" # -> refPath stowFolder stowType

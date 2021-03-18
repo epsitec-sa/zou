@@ -48,7 +48,7 @@ branch_merge()
   esac
   # io_trace "branch_merge -2- -- $(print_vars toMerge intoBranch toMergeAlias needCheckout mergeOpts[@])"
 
-  local message="zou-flow: merge '$toMergeAlias' into '$intoBranch' ($(git rev-parse --short "$toMerge") -> $(git rev-parse --short "$intoBranch"))"
+  local message="zou-flow: merge '$toMergeAlias' into '$intoBranch' ($(git rev-parse --short "$toMerge" 2>/dev/null) -> $(git rev-parse --short "$intoBranch" 2>/dev/null))"
   if [[ $needCheckout == true ]] && git checkout $intoBranchName &>/dev/null; then
     # io_trace "branch_merge -3- -- $(print_vars toMerge intoBranch toMergeAlias needCheckout mergeOpts[@])"
     _branch_merge "$message" "$toMerge" "${mergeOpts[@]}" || ec=$?
@@ -149,7 +149,7 @@ _branch_merge_ff()
     if [[ $hashMergeBase != "$hashMergeInto" ]]; then
       return 1
     fi
-    if git update-ref -m "merge $toMerge into $intoBranch (fast forward)" "$intoRef" "$hashToMerge" "$hashMergeInto"; then
+    if git update-ref -m "merge $toMerge into $intoBranch (fast forward)" "$intoRef" "$hashToMerge" "$hashMergeInto" 2>/dev/null; then
       branch_raise_merged_event "$toMerge" "$intoBranch"
       [[ $quiet == true ]] || mio_success "Merged ${VC}$toMergeAlias${Green} into ${VC}$intoBranchName${Green} (fast-forward)"
     else
@@ -231,7 +231,7 @@ _branch_merge_resolve_submodule_conflicts()
   [[ -z "$broot" ]] && broot=$(repo_bundle_root)
   # io_trace "_branch_merge_resolve_submodule_conflicts 1 -- $(print_vars broot)"
 
-  IFS=$'\n' lines=($(git status -s --porcelain)); IFS=$OIFS
+  IFS=$'\n' lines=($(git status -s --porcelain 2>/dev/null)); IFS=$OIFS
   for line in "${lines[@]}"; do
     if [[ $line =~ ^[[:blank:]]*([A-Z]+)[[:blank:]]+(.+)$ ]]; then
       status=${BASH_REMATCH[1]}
@@ -240,7 +240,7 @@ _branch_merge_resolve_submodule_conflicts()
       if [[ -f "$path/.git" || -d "$broot/.git/modules/$path" ]]; then
         # ignore submodules - keep local one
         # git add -- "$path"
-        git reset -q -- "$path"
+        git reset -q -- "$path" &>/dev/null
       else
         # still unmerged files
         ec=1

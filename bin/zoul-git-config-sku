@@ -48,7 +48,7 @@ config_sku_include_single()
   rePath=$(wildcard_to_regex "$path")
   # io_trace "config_sku_include_single ${*@Q} -- $(print_vars path rePath configFile)"
 
-  git config --file "$configFile" --unset-all 'sku.exclude' "$rePath" || io_trace_error 'config_sku_include_single -1-'
+  git config --file "$configFile" --unset-all 'sku.exclude' "$rePath" &>/dev/null || io_trace_error 'config_sku_include_single -1-'
 
   git update-index --add -- "$configFile" &>/dev/null \
   && git_commit "include submodule '$path' in SKU" "$configFile" || io_trace_error 'config_sku_include_single -2-'
@@ -63,8 +63,8 @@ config_sku_exclude_single()
   _config_sku_check_path "$path" || return 1
   rePath=$(wildcard_to_regex_match_whole "$path")
 
-  git config --file "$configFile" --get-all "sku.exclude" "$rePath" >/dev/null \
-  || git config --file "$configFile" --add "sku.exclude" "$path"
+  git config --file "$configFile" --get-all "sku.exclude" "$rePath" &>/dev/null \
+  || git config --file "$configFile" --add "sku.exclude" "$path" &>/dev/null
 
   git update-index --add -- "$configFile" &>/dev/null \
   && git_commit "exclude submodule '$path' from SKU" "$configFile"
@@ -80,7 +80,7 @@ config_sku_include_many()
   for path in $(string_sort "$@"); do
     _config_sku_check_path "$path" || return 1
     rePath=$(wildcard_to_regex_match_whole "$path")
-    git config --file "$configFile" --unset-all "sku.exclude" "$rePath"
+    git config --file "$configFile" --unset-all "sku.exclude" "$rePath" &>/dev/null
   done
 
   git update-index --add -- "$configFile" &>/dev/null && \
@@ -96,7 +96,7 @@ config_sku_exclude_many()
   for path in $(string_sort "$@"); do
     _config_sku_check_path "$path" || return 1
     rePath=$(wildcard_to_regex_match_whole "$path")
-    git config --file "$configFile" --get-all "sku.exclude" "$rePath" >/dev/null \
+    git config --file "$configFile" --get-all "sku.exclude" "$rePath" &>/dev/null \
     || git config --file "$configFile" --add "sku.exclude" "$path"
   done
 
@@ -128,7 +128,7 @@ config_sku_update()
   # remove unexisting sub-modules from excluded list
 
   local smpaths existing configFile="$(_config_sku_file_path)" path smlist s
-  smpaths=( $(git config --file "$configFile" --get-all "sku.exclude") )
+  smpaths=( $(git config --file "$configFile" --get-all "sku.exclude" 2>/dev/null) )
   [ ${#smpaths[@]} -eq 0 ] && return 0
 
   existing=( "${moduleSubmodulePaths[@]}" )
@@ -145,7 +145,7 @@ config_sku_update()
 
   for path in "${smpaths[@]}"; do
     # io_trace "config_sku_update -3- $(print_vars path)"
-    git config --file "$configFile" --unset-all "sku.exclude" "$path" || io_trace_error 'config_sku_update -3-'
+    git config --file "$configFile" --unset-all "sku.exclude" "$path" &>/dev/null || io_trace_error 'config_sku_update -3-'
   done
   
   git update-index --add -- "$configFile" &>/dev/null && \
@@ -159,7 +159,7 @@ config_sku_is_excluded()
   [[ -z $path ]] && path=$(repo_path_relative_to_module_root)
   rePath=$(wildcard_to_regex_match_whole "$path")
 
-  git config --file "$(_config_sku_file_path)" --get-all "sku.exclude" "$rePath" >/dev/null
+  git config --file "$(_config_sku_file_path)" --get-all "sku.exclude" "$rePath" &>/dev/null
 }
 config_sku_list_included()
 {
@@ -170,20 +170,20 @@ config_sku_list_included()
 }
 config_sku_list_excluded()
 {
-  git config --file "$(_config_sku_file_path)" --get-all "sku.exclude" || true
+  git config --file "$(_config_sku_file_path)" --get-all "sku.exclude" 2>/dev/null || true
 }
 
 config_sku_set_principal_module_id()
 {
   local pid=$1
-  git config --file "$bundleConfigFile" "sku.principalModuleId" "$pid" >/dev/null
+  git config --file "$bundleConfigFile" "sku.principalModuleId" "$pid" &>/dev/null
 
   git update-index --add -- "$bundleConfigFile" &>/dev/null \
   && git_commit "modify principal module to '$pid'" "$bundleConfigFile"
 }
 config_sku_get_principal_module_id()
 {
-  git config --file "$bundleConfigFile" "sku.principalModuleId"
+  git config --file "$bundleConfigFile" "sku.principalModuleId" 2>/dev/null
 }
 
 config_sku_status()

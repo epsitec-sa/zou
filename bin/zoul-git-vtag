@@ -79,7 +79,7 @@ vtag_highest()
       regex="^(.*/)?v$(wildcard_to_regex $version)"
     fi
     local tags=() tag
-    for tag in $(git tag -l "*v${version}*"); do
+    for tag in $(git tag -l "*v${version}*" 2>/dev/null); do
       [[ $tag =~ ^other/ ]] && continue
       [[ $skipVNodes == true && $tag =~ -@$ ]] && continue
       if [[ $tag =~ $regex ]]; then
@@ -134,7 +134,7 @@ vtag_set_describe()
     # io_trace "vtag_set_describe -2- $(print_vars branch lbranch skipVNodes match ltag)"
     if [[ -n $ltag ]]; then
       stag=${ltag%-*-g*}
-      if git merge-base --is-ancestor $stag^{} $branch; then
+      if git merge-base --is-ancestor $stag^{} $branch &>/dev/null; then
         _vtag_set_info "$ltag" "$stag" "$match" # -> vbranch vtag delta alias
         # io_trace "vtag_set_describe 3 -- $(print_vars vbranch vtag delta alias)"
         return 0
@@ -218,7 +218,7 @@ vtag_match_vtags_at()
 {
   # io_trace "vtag_match_vtags_at ${*@Q}"
   local ref=$1 regex=$2 tags tag
-  for tag in $(git tag --sort=-v:refname -l --points-at "$ref"); do
+  for tag in $(git tag --sort=-v:refname -l --points-at "$ref" 2>/dev/null); do
     # io_trace "vtag_match_vtags_at -- $(print_vars ref regex tag)"
     [[ $tag == $ref ]] && continue
     [[ $tag =~ $regex ]] && echo $tag

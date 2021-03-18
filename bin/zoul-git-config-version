@@ -228,22 +228,22 @@ EOF
 
 version_list_all_files()
 {
-  git config --file "$moduleConfigFile" --get-regexp update-version | grep -v 'freezed'
+  git config --file "$moduleConfigFile" --get-regexp update-version 2>/dev/null | grep -v 'freezed'
 }
 version_list_files_of_type()
 {
-  git config --file "$moduleConfigFile" --get-all update-version.$1
+  git config --file "$moduleConfigFile" --get-all update-version.$1 2>/dev/null
 }
 version_add_file_spec()
 {
   local type=$1 files=( $(version_list_files_of_type $1) ) spec file
   shift
-  git config --file "$moduleConfigFile" update-version.freezed true
+  git config --file "$moduleConfigFile" update-version.freezed true &>/dev/null
   for spec in "$@"; do
     for file in $(version_list_resources "$spec"); do
       if ! array_contains_element "$file" "${files[@]}"; then
         if ieval "grep -qE '${versionFilters[$type]}'" "$file"; then
-          git config --file "$moduleConfigFile" --add update-version.$type "$file"
+          git config --file "$moduleConfigFile" --add update-version.$type "$file" &>/dev/null
         fi
       fi
     done
@@ -291,7 +291,7 @@ version_update()
 version_list_resources()
 {
   # skip directories beginning with a dot, modules and Mono folders
-  git ls-files "$@" | grep -vE -e '(^\.|/\.)[^/]+/' -e '^modules/' -e '^Mono/'
+  git ls-files "$@" 2>/dev/null | grep -vE -e '(^\.|/\.)[^/]+/' -e '^modules/' -e '^Mono/'
 }
 version_config_reset()
 {
@@ -328,9 +328,9 @@ version_config_auto()
       if ieval "grep -qE '${versionFilters[$type]}'" "$file"; then
         if [[ -z $freezed ]]; then
           freezed=true
-          git config --file "$moduleConfigFile" update-version.freezed true
+          git config --file "$moduleConfigFile" update-version.freezed true &>/dev/null
         fi
-        git config --file "$moduleConfigFile" --add update-version.$type "$file"
+        git config --file "$moduleConfigFile" --add update-version.$type "$file" &>/dev/null
         files+=( "$file" )
       fi
     done

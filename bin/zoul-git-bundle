@@ -15,8 +15,8 @@ bundle_register()
   local url=$1 path=$2 config=$3
   # io_trace "bundle_register -- $(print_vars url path)"
   lock_enter "$gitConfigGate"
-  if ! git config --file "$zouConfigFile" --get-regexp "zou.$url.path" "$path" >/dev/null; then
-    git config --file "$zouConfigFile" --add "zou.$url.path" "$path"
+  if ! git config --file "$zouConfigFile" --get-regexp "zou.$url.path" "$path" &>/dev/null; then
+    git config --file "$zouConfigFile" --add "zou.$url.path" "$path" &>/dev/null
   fi
   lock_exit "$gitConfigGate"
 }
@@ -24,7 +24,7 @@ bundle_unregister()
 {
   local url=$1 path=$2
   lock_enter "$gitConfigGate"
-  git config --file "$zouConfigFile" --unset "zou.$url.path" "$path" 2>/dev/null
+  git config --file "$zouConfigFile" --unset "zou.$url.path" "$path" &>/dev/null
   lock_exit "$gitConfigGate"
 }
 # out:
@@ -46,7 +46,7 @@ bundle_set_registered_paths()
     if [ -d "$path/.git" ]; then
       bundleRegisteredPaths+=( $path )
     else
-      git config --file "$zouConfigFile" --unset "zou.$url.path" "$path" 2>/dev/null
+      git config --file "$zouConfigFile" --unset "zou.$url.path" "$path" &>/dev/null
     fi
   done
   lock_exit "$gitConfigGate"
