@@ -100,14 +100,14 @@ _branch_oreset_visitor()
   # reset to upstream
   if [[ $l == "$current" ]]; then
     # io_trace "### _branch_reset_visitor -4- $(print_vars l r i current)"
-    git reset --hard '@{u}' &>/dev/null
+    git reset --hard '@{u}' &>"$stdallRedir"
     _branch_raise_branch_sync_event "$r" "$l" "$i"
   else
     # reset ref
     # io_trace "### _branch_reset_visitor -5- $(print_vars l r i current)"
     git update-ref "refs/heads/$l" "$r" >/dev/null
-    git reset . &>/dev/null
-    git checkout . &>/dev/null
+    git reset . &>"$stdallRedir"
+    git checkout . &>"$stdallRedir"
   fi
   # io_trace "<<< _branch_reset_visitor -6- $(print_vars l r i current)"
 }
@@ -164,7 +164,7 @@ _branch_sync_fix_tracking_core()
     fi
     local deleteOption
     [[ $deleteBrokenTrackingInfoBranches == true ]] && deleteOption='-D' || deleteOption='-d'
-    if git branch "$deleteOption" "$l" &>/dev/null; then
+    if git branch "$deleteOption" "$l" &>"$stdallRedir"; then
       mio_warning "Deleted branch ${VC}$l${Brown} (remote branch was deleted or renamed)"
     fi
   else
@@ -181,8 +181,8 @@ branch_sync_all()
 {
   local deleteBrokenTrackingInfoBranches=$1; shift
 
-  git fetch --prune --all &>/dev/null
-  git fetch --tags --force &>/dev/null
+  git fetch --prune --all &>"$stdallRedir"
+  git fetch --tags --force &>"$stdallRedir"
 
   _branch_sync_fix_tracking "$deleteBrokenTrackingInfoBranches"
   _branch_sync_visit _branch_sync_visitor "$@"
@@ -191,13 +191,13 @@ branch_oreset_all()
 {
   local forceReset=$1 pruneBranches=$2; shift 2
   
-  git fetch --prune --all &>/dev/null
-  git fetch --tags --force &>/dev/null
+  git fetch --prune --all &>"$stdallRedir"
+  git fetch --tags --force &>"$stdallRedir"
 
   branch_merge_abort
   if [[ $forceReset == true ]]; then
-    git reset . &>/dev/null
-    git checkout . &>/dev/null
+    git reset . &>"$stdallRedir"
+    git checkout . &>"$stdallRedir"
     repo_list_untracked | xargs --no-run-if-empty rm
   else
     repo_require_clean_work_tree 'Cannot reset' || return 1

@@ -9,4 +9,4 @@ while [[ "$#" > 0 ]]; do case "$1" in
   *) commit=$1;
 esac; shift; done
 
-git describe ${opts[@]} --first-parent --tags --match 'v[0-9]*' $commit 2>/dev/null || true
+git describe ${opts[@]} --first-parent --tags --match 'v[0-9]*' $commit 2>"$stderrRedir" || true

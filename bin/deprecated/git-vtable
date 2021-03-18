@@ -17,7 +17,7 @@ row()
 {
   local vminor vmajor module=$1
   local head=$(git curbranch)
-  local hash=$(git rev-parse --short HEAD 2>/dev/null)
+  local hash=$(git rev-parse --short HEAD 2>"$stderrRedir")
   local tag=$(git vcommit2tag | sed -E 's,(.*)-g[[:alnum:]]*$,\1,')
   if [[ $tag =~ (.*)-([0-9]+)$ ]]; then
     local version=${BASH_REMATCH[1]}

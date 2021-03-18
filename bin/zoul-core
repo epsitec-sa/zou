@@ -16,12 +16,16 @@ ZOUL_CORE=true
 IFS=$' \t\n'
 OIFS=$IFS
 
+stderrRedir='/dev/null'
+stdallRedir='/dev/null'
+
 # force git to use invariant language
 export LANGUAGE=en_US
 export LANG="$LANGUAGE.UTF-8"
 
 # declare startup constants
 zouStartupPath=$(real_path "${BASH_SOURCE[-1]}")
+zouStartupPath=$BASH_SOURCE
 zouStartupFileName="${zouStartupPath##*/}"
 if [[ "$zouStartupFileName" == bashdb ]]; then
   zouStartupPath=$(real_path "${BASH_SOURCE[-2]}")
@@ -482,7 +486,7 @@ get_file_encoding()
 }
 _locale_encoding()
 {
-  if command -v locale &>/dev/null; then
+  if command -v locale &>"$stdallRedir"; then
     _lang_to_encoding "$(locale | grep -0 'LANG=')"
   else
     _lang_to_encoding "LANG=$LANG"
@@ -541,7 +545,7 @@ ieval()
   if [[ $fEncoding == $zouEncoding || $fEncoding == 'us-ascii' || $fEncoding == 'utf-8' || $fEncoding == 'iso-8859-1' ]]; then
     eval "$command "$(cl_escape "$file")""
   else
-    iconv -f "$fEncoding" -t "$zouEncoding" "$file" 2>/dev/null \
+    iconv -f "$fEncoding" -t "$zouEncoding" "$file" 2>"$stderrRedir" \
     | eval "$command" \
     | iconv -f "$zouEncoding" -t "$fEncoding"
     return ${PIPESTATUS[1]}
@@ -587,14 +591,14 @@ visit_async()
     pids+=($!)
     if (( "$jobsCount" > 0 )) && (( $(process_job_count) % "$jobsCount" == 0 )); then
       for pid in "${pids[@]}"; do
-        wait $pid &>/dev/null || ec=$?
+        wait $pid &>"$stdallRedir" || ec=$?
       done
       pids=()
       [[ $ec -ne 0 && $stopOnError == true ]] && break
     fi
   done
   for pid in "${pids[@]}"; do
-    wait $pid &>/dev/null || ec=$?
+    wait $pid &>"$stdallRedir" || ec=$?
   done
   wait
   return $ec
@@ -718,3 +722,5 @@ declare_exec()
 }
 _declare_stdin() { printf -v "$1" "%s" "$(cat)"; declare -p "$1"; }
 _declare_xcode() { printf -v "$1" "%s" "$?";     declare -p "$1"; }
+
+# io_trace "zoul-core $0 -- $(print_vars zouStartupDir zouStartupFileName zouStartupPath BASH_SOURCE[@])"

@@ -49,7 +49,7 @@ sandbox_clone()
   # SAT2 <- HUB
   mio_info "Cloning into ${VC}sat2"
   cd "$zouTestRoot"
-  git clone "$satHubDir" 'sat2' &>/dev/null
+  git clone "$satHubDir" 'sat2' &>"$stdallRedir"
 }
 sandbox_create_submodules()
 {
@@ -64,21 +64,21 @@ sandbox_create_submodules()
 
   # SM1.SM3
   cd "$sm1Dir"
-  git submodule add "$sm3HubDir" 'sm3' &>/dev/null
+  git submodule add "$sm3HubDir" 'sm3' &>"$stdallRedir"
   mio_info "Added submodule ${VC}sm3${Cyan} to ${VC}sm1"
-  git commit -m'SM1: add submodule' &>/dev/null
-  git submodule update --init --recursive &>/dev/null
-  git push -u origin master &>/dev/null
+  git commit -m'SM1: add submodule' &>"$stdallRedir"
+  git submodule update --init --recursive &>"$stdallRedir"
+  git push -u origin master &>"$stdallRedir"
 
   # SAT1.SM1, SAT1.SM2
   cd "$sat1Dir"
-  git submodule add "$sm1HubDir" 'sm1' &>/dev/null
+  git submodule add "$sm1HubDir" 'sm1' &>"$stdallRedir"
   mio_info "Added submodule ${VC}sm1${Cyan} to ${VC}sat1"
-  git submodule add "$sm2HubDir" 'sm2' &>/dev/null
+  git submodule add "$sm2HubDir" 'sm2' &>"$stdallRedir"
   mio_info "Added submodule ${VC}sm2${Cyan} to ${VC}sat1"
-  git commit -m'SAT1: add submodules' &>/dev/null
+  git commit -m'SAT1: add submodules' &>"$stdallRedir"
 
-  git submodule update --init --recursive &>/dev/null
+  git submodule update --init --recursive &>"$stdallRedir"
 }
 sandbox_create_skus()
 {
@@ -121,19 +121,19 @@ sandbox_create_sku_with_work()
   local sku=$1 startPoint=${2:-master}
   # io_trace "sandbox_create_sku_with_work ${*@Q} pwd=$PWD"
   if ref_exists "$sku"; then
-    git checkout "$sku" &>/dev/null
+    git checkout "$sku" &>"$stdallRedir"
   else
-    git checkout -b "$sku" "$startPoint" &>/dev/null
+    git checkout -b "$sku" "$startPoint" &>"$stdallRedir"
   fi
   sandbox_commit_work
-  git checkout - &>/dev/null
+  git checkout - &>"$stdallRedir"
 }
 sandbox_commit_work()
 {
   local file=${1:-$(file_create_name)}
   # ensure to commit on a branch
-  [[ $(git rev-parse --abbrev-ref HEAD) == 'HEAD' ]] && git checkout master &>/dev/null
-  file_change_commit "$file" "some work @ $(date +%T) on $(git symbolic-ref --short HEAD 2>/dev/null)"
+  [[ $(git rev-parse --abbrev-ref HEAD) == 'HEAD' ]] && git checkout master &>"$stdallRedir"
+  file_change_commit "$file" "some work @ $(date +%T) on $(git symbolic-ref --short HEAD 2>"$stderrRedir")"
 }
 # example:
 #   sandbox_visit_commit_work "$sat1Dir" "$sat1Dir/sm1" "$sat1Dir/sm2"
@@ -170,13 +170,13 @@ _sandbox_create_local_and_remote_repo()
   git remote add origin "$remoteDir"
   # - readme
   file_change_commit 'readme.md' 'initial version'
-  git push -u origin master &>/dev/null
+  git push -u origin master &>"$stdallRedir"
 }
 _sandbox_create_empty_repo()
 {
   [[ -d "$1" ]] || mkdir -p "$1"
   cd "$1"
-  git init "${@:2}" &>/dev/null
+  git init "${@:2}" &>"$stdallRedir"
   mio_info "Created repo at ${VC}$1"
 }
 _sandbox_create_sm_repo()

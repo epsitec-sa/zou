@@ -18,7 +18,7 @@ config_setup()
   git config --global --unset 'zou.initialized'
 
   # zou-flow semantic versioning
-  git config --global --remove-section versionsort &>/dev/null
+  git config --global --remove-section versionsort &>"$stdallRedir"
   git config --global --add versionsort.suffix -@
   git config --global --add versionsort.suffix -alpha
   git config --global --add versionsort.suffix -beta
@@ -53,17 +53,17 @@ config_setup()
 config_migrate_registered_bundles()
 {
   local kv kvs key value
-  IFS=$'\n' kvs=( $(git config --global --get-regexp '^zou\..*\.path$' 2>/dev/null) ); IFS=$OIFS
+  IFS=$'\n' kvs=( $(git config --global --get-regexp '^zou\..*\.path$' 2>"$stderrRedir") ); IFS=$OIFS
   for kv in "${kvs[@]}"; do
     [[ $kv =~ ^([^\ ]+)[[:blank:]]+(.*)$ ]]
     key=${BASH_REMATCH[1]}
     value=${BASH_REMATCH[2]}
     # io_trace "config_migrate_registered_bundles -- $(print_vars key value)"
-    if git config --global --unset "$key" "$value" &>/dev/null; then
+    if git config --global --unset "$key" "$value" &>"$stdallRedir"; then
       if ! git config --file "$zouConfigFile" --get-regexp "$key" "$value" >/dev/null; then
         git config --file "$zouConfigFile" --add "$key" "$value"
         cd "$value"
-        git config --local --unset zou.bundle.registered &>/dev/null
+        git config --local --unset zou.bundle.registered &>"$stdallRedir"
         cd - >/dev/null
       fi
     fi

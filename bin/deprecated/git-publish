@@ -314,8 +314,8 @@ publish_commit_vtable()
     if [[ $dryRun == true ]]; then
       mio_message "Created version table for ${VC}$lbranch${DarkGray} at ${VC}$vnext" ${DarkGray}
     else
-      branch_merge_sync $lbranch $vbranch &>/dev/null
-      tag_move "$vnext" "$lbranch" &>/dev/null
+      branch_merge_sync $lbranch $vbranch &>"$stdallRedir"
+      tag_move "$vnext" "$lbranch" &>"$stdallRedir"
       mio_success "Created version table for ${VC}$lbranch${Green} at ${VC}$vnext"
     fi
   fi

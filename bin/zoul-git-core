@@ -19,12 +19,12 @@ ref_is_archive() { [[ $1 =~ ^other/archive/(.*)$ ]]; }
 ref_is_orphan()  { [[ $1 =~ ^other/orphan(.*)$ ]]; }
 ref_is_marker()  { [[ $1 =~ ^other/marker/(.*)$ ]]; }
 ref_is_oldver()  { [[ $1 =~ ^other/oldver/(.*)$ ]]; }     # non semver version tag + big patch (more than 3 digits)
-ref_exists()     { git rev-parse --quiet --verify $1 &>/dev/null; }
-ref_equals()     { [[ $(git rev-parse $1^{} 2>/dev/null) == $(git rev-parse $2^{} 2>/dev/null) ]]; }
-ref_is_head()    { [[ $(git rev-parse $1^{} 2>/dev/null) == $(git rev-parse HEAD 2>/dev/null) ]]; }
-ref_is_current() { [[ $1 == $(git rev-parse --abbrev-ref HEAD 2>/dev/null) ]]; }
+ref_exists()     { git rev-parse --quiet --verify $1 &>"$stdallRedir"; }
+ref_equals()     { [[ $(git rev-parse $1^{} 2>"$stderrRedir") == $(git rev-parse $2^{} 2>"$stderrRedir") ]]; }
+ref_is_head()    { [[ $(git rev-parse $1^{} 2>"$stderrRedir") == $(git rev-parse HEAD 2>"$stderrRedir") ]]; }
+ref_is_current() { [[ $1 == $(git rev-parse --abbrev-ref HEAD 2>"$stderrRedir") ]]; }
 ref_rename()     { [[ $1 =~ ^(.*/)? ]] && echo "${BASH_REMATCH[1]}$2"; }
-ref_list_all_at(){ git show-ref --dereference 2>/dev/null | grep $(git_get_commit $1) | cut -d ' ' -f2 | grep -v '/HEAD$' | sed 's,^refs/[^/]*/,,; s,\^{}$,,'; }
+ref_list_all_at(){ git show-ref --dereference 2>"$stderrRedir" | grep $(git_get_commit $1) | cut -d ' ' -f2 | grep -v '/HEAD$' | sed 's,^refs/[^/]*/,,; s,\^{}$,,'; }
 
 # usage:
 #   local refSymbol refType
@@ -39,11 +39,11 @@ ref_set_symbol()
   local commit=${1:-HEAD}
   refType='branch'
   # io_trace "ref_set_symbol 1 -- $(print_vars commit)"
-  refSymbol=$(git rev-parse --abbrev-ref "$commit" 2>/dev/null)
+  refSymbol=$(git rev-parse --abbrev-ref "$commit" 2>"$stderrRedir")
   if [ $? -ne 0 ] || [[ -z $refSymbol || $refSymbol == 'HEAD' ]]; then
-    local tags=( $(git tag --points-at "$commit" 2>/dev/null) )
+    local tags=( $(git tag --points-at "$commit" 2>"$stderrRedir") )
     if [ ${#tags[@]} -eq 0 ]; then
-      refSymbol="$(git rev-parse --short "$commit" 2>/dev/null)"
+      refSymbol="$(git rev-parse --short "$commit" 2>"$stderrRedir")"
       refType='sha'
     else
       refSymbol=${tags[-1]}
@@ -70,32 +70,32 @@ ref_timespan()
 }
 ref_time()
 {
-  echo $(git show -s --format=%ct $1^{} 2>/dev/null)
+  echo $(git show -s --format=%ct $1^{} 2>"$stderrRedir")
 }
 
-git_remote()     { git remote 2>/dev/null | head -n1; }
+git_remote()     { git remote 2>"$stderrRedir" | head -n1; }
 
 git_get_commit()
 {
   # io_trace "git_get_commit ${*@Q}"
   local rev=${1:-HEAD}
-  git rev-parse "${rev}^{commit}" 2>/dev/null
+  git rev-parse "${rev}^{commit}" 2>"$stderrRedir"
 }
 git_symbolic_ref()
 {
   # io_trace "git_symbolic_ref ${*@Q}"
   if [[ -z $1 || $1 == 'HEAD' ]]; then
-    git symbolic-ref --short HEAD 2>/dev/null || echo 'HEAD'
+    git symbolic-ref --short HEAD 2>"$stderrRedir" || echo 'HEAD'
   else
     echo $1
   fi
 }
-git_object_exists() { git cat-file -e "$1" &>/dev/null; }
-git_object_type()   { git cat-file -t "$1" 2>/dev/null; }
+git_object_exists() { git cat-file -e "$1" &>"$stdallRedir"; }
+git_object_type()   { git cat-file -t "$1" 2>"$stderrRedir"; }
 
 git_user_abbrev()
 {
-  local user=${1:-$(git config user.name 2>/dev/null)} atom abbrev
+  local user=${1:-$(git config user.name 2>"$stderrRedir")} atom abbrev
   for atom in ${user//-/ }; do 
     abbrev="${abbrev}${atom:0:1}"
   done
@@ -132,6 +132,6 @@ git_commit()
   content+=( "- zou-flow (v$version)" )
   printf -v footer '%s \n' "${content[@]}"
   # io_trace "git_commit -- $(print_vars header content[@] footer)"
-  git add -- "$@" &>/dev/null \
-  && git commit -m "$header" -m "$footer" "${options[@]}" &>/dev/null
+  git add -- "$@" &>"$stdallRedir" \
+  && git commit -m "$header" -m "$footer" "${options[@]}" &>"$stdallRedir"
 }

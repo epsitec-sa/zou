@@ -107,8 +107,8 @@ _zou_setup_chicken()
     io_warning "This can take a while, please be patient..." "$tracePrefix"
     cd "$develDir"
     git clone 'https://git.epsitec.ch/Build/zou.chicken.git'
-    nuget sources remove -name chicken &>/dev/null
-    nuget sources add -name chicken -source "$(cygpath -w "$chickenDir")" &>/dev/null
+    nuget sources remove -name chicken &>"$stdallRedir"
+    nuget sources add -name chicken -source "$(cygpath -w "$chickenDir")" &>"$stdallRedir"
   fi
 }
 _zou_update_epilog()

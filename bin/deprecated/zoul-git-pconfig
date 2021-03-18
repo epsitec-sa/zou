@@ -16,7 +16,7 @@ pconfig_create()
   local branch configFile
   branch=${1:-$(branch_ensure_current)} || return 1
   configFile=${2:-$(repo_zouflow_path)} || return 1
-  _pconfig_get_all "$branch" "$configFile" &>/dev/null \
+  _pconfig_get_all "$branch" "$configFile" &>"$stdallRedir" \
   || _pconfig_init "$branch" "$configFile"
 }
 pconfig_reset()
@@ -84,26 +84,26 @@ _pconfig_init()
   for path in $(repo_list_submodule_paths); do
     git config --file "$configFile" --add "publish.$branch.disable" "$path"
   done
-  git update-index --add -- "$configFile" &>/dev/null && \
-  git commit -m "zou-flow: init publish on branch '$branch'" -- "$configFile" &>/dev/null
+  git update-index --add -- "$configFile" &>"$stdallRedir" && \
+  git commit -m "zou-flow: init publish on branch '$branch'" -- "$configFile" &>"$stdallRedir"
 }
 _pconfig_delete()
 {
   local branch=$1 configFile=$2
-  git config --file "$configFile" --remove-section "publish.$branch" &>/dev/null
+  git config --file "$configFile" --remove-section "publish.$branch" &>"$stdallRedir"
 }
 _pconfig_set_all()
 {
   local verb=$1 path branch configFile
   branch=${2:-$(branch_ensure_current)} || return 1
   configFile=${3:-$(repo_zouflow_path)} || return 1
-  git config --file "$configFile" --remove-section "publish.$branch" &>/dev/null
+  git config --file "$configFile" --remove-section "publish.$branch" &>"$stdallRedir"
   git config --file "$configFile" --add "publish.$branch.$verb" '.'
   for path in $(repo_list_submodule_paths); do
     git config --file "$configFile" --add "publish.$branch.$verb" "$path"
   done
-  git update-index --add -- "$configFile" &>/dev/null && \
-  git commit -m "zou-flow: $verb publish on branch '$branch'" -- "$configFile" &>/dev/null
+  git update-index --add -- "$configFile" &>"$stdallRedir" && \
+  git commit -m "zou-flow: $verb publish on branch '$branch'" -- "$configFile" &>"$stdallRedir"
 }
 _pconfig_set()
 {
@@ -112,14 +112,14 @@ _pconfig_set()
   branch=${3:-$(branch_ensure_current)} || return 1
   configFile=${4:-$(repo_zouflow_path)} || return 1
   local rePath=$(regex_escape "$path")
-  git config --file "$configFile" --get-all "publish.$branch.$verb" "$rePath" &>/dev/null
+  git config --file "$configFile" --get-all "publish.$branch.$verb" "$rePath" &>"$stdallRedir"
   if [ $? -ne 0 ]; then
     local overb; [[ $verb == 'enable' ]] && overb='disable' || overb='enable'
     git config --file "$configFile" --unset-all "publish.$branch.$overb" "$rePath"
     git config --file "$configFile" --add "publish.$branch.$verb" "$path"
   fi
-  git update-index --add -- "$configFile" &>/dev/null && \
-  git commit -m "zou-flow: $verb publish for path '$path' on branch '$branch'" -- "$configFile" &>/dev/null
+  git update-index --add -- "$configFile" &>"$stdallRedir" && \
+  git commit -m "zou-flow: $verb publish for path '$path' on branch '$branch'" -- "$configFile" &>"$stdallRedir"
 }
 _pconfig_list_verb()
 {

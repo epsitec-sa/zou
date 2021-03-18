@@ -416,12 +416,12 @@ _vtable_commit()
   elif [[ $vtableCreate == true ]]; then
     # io_trace "_vtable_commit -- $(print_vars releaseStatus prodBranch moduleDevBranch checkoutType)"
     local tmpBranch="_zou_$(date +%y%V)"
-    git checkout -b "$tmpBranch" &>/dev/null
+    git checkout -b "$tmpBranch" &>"$stdallRedir"
     vtable_update "$vtableRoot" "$moduleId" "$vtableLookupPath" "$vtableGate" true
     mio_message "Created version table for ${VC}$prodBranch${Green} at ${VC}$releaseVTag" ${Green}
     _prod_merge_into_dev "$tmpBranch" "$prodBranch"
-    git checkout "$prodBranch" &>/dev/null
-    git branch -D "$tmpBranch" &>/dev/null
+    git checkout "$prodBranch" &>"$stdallRedir"
+    git branch -D "$tmpBranch" &>"$stdallRedir"
   else
     _prod_merge_into_dev "$prodBranch"
   fi

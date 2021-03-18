@@ -48,9 +48,9 @@ process_get_parent_id()
 process_list_group()
 {
   if [[ $(uname) == Linux ]]; then
-    pgrep -g "$1" 2>/dev/null
+    pgrep -g "$1" 2>"$stderrRedir"
   else
-    ps -a 2>/dev/null | sed s/^[[:space:]]*// | tr -s ' ' | cut -d ' ' -f1,3 | grep "$1" | cut -d ' ' -f1
+    ps -a 2>"$stderrRedir" | sed s/^[[:space:]]*// | tr -s ' ' | cut -d ' ' -f1,3 | grep "$1" | cut -d ' ' -f1
   fi
 }
 process_list_group_for_kill ()
@@ -72,7 +72,7 @@ process_kill_group_descendants()
   pids=( $(process_list_group_for_kill "$rootPid" "$bashPid") )
   
   # echo "[$bashPid] killing ${pids[@]}" >&2
-  kill -- "${pids[@]}" &>/dev/null
+  kill -- "${pids[@]}" &>"$stdallRedir"
 }
 process_kill_group()
 {
@@ -82,12 +82,12 @@ process_kill_group()
   pids=( $(process_list_group_for_kill "$rootPid" "$bashPid" | grep -v '^1$') )
 
   # echo "[$bashPid] killing ${pids[@]}" >&2
-  kill -- "${pids[@]}" &>/dev/null
+  kill -- "${pids[@]}" &>"$stdallRedir"
 }
 process_wait()
 {
   local pid=$1 ec=0
-  wait $pid &>/dev/null || ec=$?
+  wait $pid &>"$stdallRedir" || ec=$?
   # echo "[$BASHPID] process_wait $pid: ec=$ec" >&2
   # skip already terminated process
   [ $ec -eq 127 ] && return 0
@@ -97,6 +97,6 @@ process_wait_many()
 {
   # echo "[$BASHPID] process_wait_many ${*@Q}" >&2
   local ec=0
-  wait "$@" &>/dev/null || ec=$?
+  wait "$@" &>"$stdallRedir" || ec=$?
   echo "[$BASHPID] process_wait_many ec=$ec" >&2
 }

@@ -17,7 +17,7 @@ lock_init()
 }
 lock_enter()
 {
-  while ! mkdir "$1" &>/dev/null; do
+  while ! mkdir "$1" &>"$stdallRedir"; do
     sleep ${2:-0}
   done
 }
@@ -28,7 +28,7 @@ lock_exit()
 lock_enter_trace()
 {
   local count=0
-  while ! mkdir "$1" &>/dev/null; do
+  while ! mkdir "$1" &>"$stdallRedir"; do
     (( count += 1 ))
     sleep ${2:-0}
   done

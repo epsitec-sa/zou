@@ -36,7 +36,7 @@ tags_node()
   tags_fill_map 'ltags' "${rows[@]}"
 
   declare -A rtags
-  IFS=$'\n' rows=( $(git ls-remote --tags --refs 2>/dev/null | tr -s [:blank:] ' ') ); IFS=$OIFS
+  IFS=$'\n' rows=( $(git ls-remote --tags --refs 2>"$stderrRedir" | tr -s [:blank:] ' ') ); IFS=$OIFS
   tags_fill_map 'rtags' "${rows[@]}"
 
   local ltag rtag tag lrTags lrKeys lotags rotags prtags mitags sytags
@@ -78,7 +78,7 @@ tags_node()
     # mio_info "Skipped local only tag '$tag' (underlying commit has not yet been pushed)."
   done
   for tag in $(array_sort_descending 'prTags[@]'); do
-    git tag --delete $tag &>/dev/null
+    git tag --delete $tag &>"$stdallRedir"
     mio_warning "Deleted local tag '$tag'."
   done
   for tag in $(array_sort_descending 'loTags[@]'); do
@@ -102,11 +102,11 @@ tags_node()
   done
 
   for tag in $(array_sort_descending 'miTags[@]'); do
-    git push --delete origin $tag &>/dev/null
+    git push --delete origin $tag &>"$stdallRedir"
     mio_info "Deleted remote tag '$tag'."
   done
   for rtag in $(array_sort_descending 'syTags[@]'); do
-    git fetch origin +$rtag:$rtag &>/dev/null
+    git fetch origin +$rtag:$rtag &>"$stdallRedir"
     mio_info "Fetched remote tag '${rtag#refs/tags/}'."
   done
   for tag in $(array_sort_descending 'roTags[@]'); do

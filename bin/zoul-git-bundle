@@ -15,8 +15,8 @@ bundle_register()
   local url=$1 path=$2 config=$3
   # io_trace "bundle_register -- $(print_vars url path)"
   lock_enter "$gitConfigGate"
-  if ! git config --file "$zouConfigFile" --get-regexp "zou.$url.path" "$path" &>/dev/null; then
-    git config --file "$zouConfigFile" --add "zou.$url.path" "$path" &>/dev/null
+  if ! git config --file "$zouConfigFile" --get-regexp "zou.$url.path" "$path" &>"$stdallRedir"; then
+    git config --file "$zouConfigFile" --add "zou.$url.path" "$path" &>"$stdallRedir"
   fi
   lock_exit "$gitConfigGate"
 }
@@ -24,7 +24,7 @@ bundle_unregister()
 {
   local url=$1 path=$2
   lock_enter "$gitConfigGate"
-  git config --file "$zouConfigFile" --unset "zou.$url.path" "$path" &>/dev/null
+  git config --file "$zouConfigFile" --unset "zou.$url.path" "$path" &>"$stdallRedir"
   lock_exit "$gitConfigGate"
 }
 # out:
@@ -35,7 +35,7 @@ bundle_set_registered_paths()
   
   lock_enter "$gitConfigGate"
   local kv kvs path url
-  IFS=$'\n' kvs=( $(git config --file "$zouConfigFile" --get-regexp '^zou\..*\.path$' 2>/dev/null) ); IFS=$OIFS
+  IFS=$'\n' kvs=( $(git config --file "$zouConfigFile" --get-regexp '^zou\..*\.path$' 2>"$stderrRedir") ); IFS=$OIFS
   for kv in "${kvs[@]}"; do
     # zou.https://git.epsitec.ch/Build/zou-dev.git.path C:/devel/zou-dev
     # zou.https://git.epsitec.ch/cresus-suite/cresus-dev.git.path C:/devel/cresus-dev
@@ -46,7 +46,7 @@ bundle_set_registered_paths()
     if [ -d "$path/.git" ]; then
       bundleRegisteredPaths+=( $path )
     else
-      git config --file "$zouConfigFile" --unset "zou.$url.path" "$path" &>/dev/null
+      git config --file "$zouConfigFile" --unset "zou.$url.path" "$path" &>"$stdallRedir"
     fi
   done
   lock_exit "$gitConfigGate"
@@ -63,7 +63,7 @@ bundle_visit_async()
 _bundle_visitor()
 {
   # io_trace "bundle_visitor ${*@Q}"
-  cd "$1" &>/dev/null || {
+  cd "$1" &>"$stdallRedir" || {
     mio_error "No such bundle directory '$1'"
     return 1
   }

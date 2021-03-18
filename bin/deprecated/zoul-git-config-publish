@@ -11,15 +11,15 @@ config_publish_disable()
 {
   git config --file "$moduleConfigFile" "publish.disable" 'true'
 
-  git update-index --add -- "$moduleConfigFile" &>/dev/null \
-  && git commit -m "zou-flow: disable publish for moduleBranch '$moduleBranch'" -- "$moduleConfigFile" &>/dev/null 
+  git update-index --add -- "$moduleConfigFile" &>"$stdallRedir" \
+  && git commit -m "zou-flow: disable publish for moduleBranch '$moduleBranch'" -- "$moduleConfigFile" &>"$stdallRedir" 
 }
 config_publish_enable()
 {
-  git config --file "$moduleConfigFile" --remove-section "publish" &>/dev/null
+  git config --file "$moduleConfigFile" --remove-section "publish" &>"$stdallRedir"
 
-  git update-index --add -- "$moduleConfigFile" &>/dev/null \
-  && git commit -m "zou-flow: enable publish for moduleBranch '$moduleBranch'" -- "$moduleConfigFile" &>/dev/null
+  git update-index --add -- "$moduleConfigFile" &>"$stdallRedir" \
+  && git commit -m "zou-flow: enable publish for moduleBranch '$moduleBranch'" -- "$moduleConfigFile" &>"$stdallRedir"
 }
 config_publish_is_disabled()
 {

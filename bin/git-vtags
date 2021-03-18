@@ -19,7 +19,7 @@ vtag_list()
     io_error "vtag invalid format : '$1'"
     return 1
   fi
-  git tag -l --sort=-v:refname 2>/dev/null | grep -E $regex | grep -v '^other/' || true
+  git tag -l --sort=-v:refname 2>"$stderrRedir" | grep -E $regex | grep -v '^other/' || true
 }
 
 vtag_list "$@"
