@@ -9,8 +9,8 @@ sys_mac()     { [[ $(uname -s) =~ ^Darwin ]]; }
 sys_windows() { [[ $(uname -s) =~ ^(MINGW|MSYS|CYGWIN) ]]; }
 sys_wsl()     { sys_linux && [[ "$(< /proc/version)" =~ .*-microsoft- ]]; }
 
-zouAbsPathFunc='_readlink'
-# sys_mac && zouAbsPathFunc='_abspath'
+zouAbsPathFunc='realpath'
+# sys_mac && zouAbsPathFunc='realpath'
 
 abspath()   { "$zouAbsPathFunc" "$@"; }
 _readlink() { readlink -f "$@"; }
