@@ -27,6 +27,15 @@ ref_rename()     { [[ $1 =~ ^(.*/)? ]] && echo "${BASH_REMATCH[1]}$2"; }
 ref_list_all_at(){ git show-ref --dereference 2>"$stderrRedir" | grep $(git_get_commit $1) | cut -d ' ' -f2 | grep -v '/HEAD$' | sed 's,^refs/[^/]*/,,; s,\^{}$,,'; }
 
 # usage:
+#   cd <submodule-parent>
+#   local smref=$(ref_submodule_ref <submodule-name> [<parent-commish>])
+# in:
+#   $1: submodule name
+#   $2: submodule parent commish (default to HEAD)
+# out:
+#   submodule SHA1
+ref_get_submodule_ref() { git rev-parse ${2:-HEAD}^{commit}:"$1" 2>"$stderrRedir"; }
+# usage:
 #   local refSymbol refType
 #   ref_set_symbol REF
 # in:
