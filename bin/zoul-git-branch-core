@@ -475,8 +475,8 @@ _branch_raise_checked_out_events()
 }
 _branch_checkout_core()
 {
-  local ref=$1 skipNextLines skipCurrentLine ec line lines color alias
-  # io_trace ">>>> _branch_checkout_core ${*@Q}"
+  local ref=$1 skipNextLines skipCurrentLine showNextLines ec line lines color alias
+  # io_trace "_branch_checkout_core -1- ${*@Q}"
 
   IFS=$'\n' lines=( $(git checkout "$ref" 2>&1) ); ec=$?; IFS=$OIFS
   if [[ $ec -eq 0 ]]; then
@@ -488,7 +488,10 @@ _branch_checkout_core()
   #   io_message_unsafe "--$line" "$moduleTracePrefix" "${DarkGray}"
   # done
   for line in "${lines[@]}"; do
+    # io_trace_unsafe "_branch_checkout_core -2- '$line'"
+    unset skipNextLines skipCurrentLine indent alias
     _branch_checkout_selector
+    # io_trace_unsafe "_branch_checkout_core -3- $(print_vars skipCurrentLine skipNextLines showNextLines)"
     [[ $skipCurrentLine == true ]] && continue
     io_message_unsafe "${indent}$line" "$moduleTracePrefix" "$color"
     [[ $skipNextLines == true ]] && break
@@ -499,10 +502,20 @@ _branch_checkout_core()
 }
 _branch_checkout_selector()
 {
-  # io_trace_unsafe "_branch_checkout_selector 1 -- $(print_vars ioType ioRef alias line)"
-  unset skipNextLines skipCurrentLine skipAllLines indent alias
+  # skipNextLines=''; skipCurrentLine=''; indent=''; alias=''
+  # io_trace_unsafe "_branch_checkout_selector -1- $(print_vars skipCurrentLine skipNextLines showNextLines)"
   # [[ -z $line ]] && continue
-  if [[ $line =~ ^Switched ]]; then
+  if [[ $showNextLines == true ]]; then
+    indent='  '
+  elif [[ $line =~ ^([wW]arning:)(.*) ]]; then
+    line="${Brown}${BASH_REMATCH[1]}${DarkGray}${BASH_REMATCH[2]}"
+    color=${DarkGray}
+    showNextLines=true
+  elif [[ $line =~ ^(error|fatal)(:[[:blank:]]*)(.*) ]]; then
+    line="${Red}${BASH_REMATCH[1]}${BASH_REMATCH[2]}${BASH_REMATCH[3],}"
+    color=${Cyan}
+    showNextLines=true
+  elif [[ $line =~ ^Switched ]]; then
     line="Switched to $ioType ${VC}$ioRef"
     color=${Green}
     alias=$moduleAlias
@@ -522,12 +535,6 @@ _branch_checkout_selector()
     color=${LightBlue}
     alias=$moduleAlias
     skipNextLines=true
-  elif [[ $line =~ ^([wW]arning:)(.*) ]]; then
-    line="${Brown}${BASH_REMATCH[1]}${DarkGray}${BASH_REMATCH[2]}"
-    color=${DarkGray}
-  elif [[ $line =~ ^(error|fatal)(:[[:blank:]]*)(.*) ]]; then
-    line="${Red}${BASH_REMATCH[1]}${BASH_REMATCH[2]}${BASH_REMATCH[3],}"
-    color=${Cyan}
   elif [[ $line =~ ^M[[:space:]]+ ]]; then
     skipCurrentLine=true
   elif [[ -z $color ]]; then
@@ -535,6 +542,7 @@ _branch_checkout_selector()
     # color=${DarkGray}
     # indent='  '
   fi
+
   if [[ -n $alias ]]; then
     line="${color}$line${DarkGray} -- $alias"
   else
@@ -681,7 +689,7 @@ branch_create()
   if ! ref_exists $branch; then
     git branch "$branch" "$commit"
     branch_raise_branch_created_event "$branch"
-    mio_success "Created branch ${VC}$branch"
+    mio_warning "Created branch ${VC}$branch"
   fi
 }
 # in:
