@@ -27,7 +27,7 @@ cmd_register_module_paths()
 
   for path; do
     path=$(abspath "$path")
-    # io_trace "cmd_register_module_paths 1 -- $(print_vars path)"
+    # io_trace "cmd_register_module_paths -1- $(print_vars path)"
     if [[ ${cmdRecursiveMap["$path"]:-false} == false ]]; then
       cmdRecursiveMap["$path"]=$recursive
     fi
@@ -36,7 +36,7 @@ cmd_register_module_paths()
     fi
   done
 
-  # io_trace "cmd_register_module_paths 2 -- $(print_vars cmdModulePaths[@])"
+  # io_trace "cmd_register_module_paths -2- $(print_vars cmdModulePaths[@])"
   local rpaths=()
   for path in "${cmdModulePaths[@]}"; do
     if [[ ${cmdRecursiveMap["$path"]} == true ]]; then
@@ -49,11 +49,12 @@ cmd_register_module_paths()
     fi
   done
   cmdModulePaths=( $(array_remove_array 'cmdModulePaths[@]' 'rpaths[@]') )
-  # io_trace "cmd_register_module_paths 3 -- $(print_vars cmdModulePaths[@] rpaths[@])"
+  # io_trace "cmd_register_module_paths -3- $(print_vars cmdModulePaths[@] rpaths[@])"
 
   for rpath in "${rpaths[@]}"; do
     unset cmdRecursiveMap["$rpath"]
   done
+  
   # declare -p cmdRecursiveMap
 }
 cmd_registered_paths() { echo ${!cmdRecursiveMap[@]}; }
@@ -74,9 +75,9 @@ cmd_is_single_root()
 }
 cmd_is_child()
 {
-  local mpath=${1:-$moduleRoot} path
-  for path in "${!cmdRecursiveMap[@]}"; do
-    [[ -n ${mpath#$path} ]] && return 0
+  local mpath=${1:-$moduleRoot} key
+  for key in "${!cmdRecursiveMap[@]}"; do
+    [[ -n ${mpath#$key} ]] && return 0
   done
   return 1
 }

@@ -13,7 +13,6 @@ ZOUL_GIT_PROD=true
 prodPreinitEvent=()
 prod_raise_preinit_event() { raise_event 'prodPreinitEvent[@]' "$@"; }
 
-# io_trace "headChangedEvent+=( prod_reset_scope )"
 headChangedEvent+=( _prod_on_head_changed )
 headNameChangedEvent+=( _prod_on_head_name_changed )
 branchCreatedEvent+=( _prod_on_branch_created )
@@ -150,7 +149,7 @@ _prod_init_scope()
   else
     status='vtagMissing'
     _prod_init_vars
-    _prod_init_dev
+    _prod_init_dev false
   fi
   _prod_init_release_status "$delta" "$status"
 
@@ -343,7 +342,6 @@ sku_checkout()
 #   $2:forceCheckout      -- ...
 #   $3:devFallback        -- ...
 #   $4:vnodeCheckoutProd  -- ...
-
 prod_checkout()
 {
   local prodCheckoutType=$1 forceCheckout=$2 devFallback=$3 vnodeCheckoutProd=$4
