@@ -129,15 +129,16 @@ _prod_init_vars()
 }
 _prod_init_scope()
 {
-  # io_trace ">>> _prod_init_scope ${*@Q}"
-  local devBranchPath=$1 devBranch=${2:-$1} \
+  local devBranchPath=$1 devBranch=${2:-$1} vbranchCreate=$3 \
         vbranch vtag htag delta=0 status strict
 
   # 1. Retrieve vtag and vbranch info starting from dev branch
   module_is_bundle && strict=true
   vtag_set_describe "$devBranchPath" "$devBranch" "$vtagResolveMode" "$strict" # -> vbranch vtag delta
+
+  # io_trace "_prod_init_scope ${*@Q} -- $(print_vars devBranchPath devBranch vbranchCreate vbranch vtag delta strict)"
   if [[ -n $vtag ]]; then
-    _prod_init_dev true
+    _prod_init_dev "$vbranchCreate"
 
     # 2. Retrieve vtag and vbranch info starting from prod branch
     if [[ -z $prodBranchPath ]]; then
@@ -324,54 +325,72 @@ _prod_init_release_status()
 sku_checkout()
 {
   # io_trace "sku_checkout ${*@Q}"
-  local sku=$1 prodCheckoutType=${2:-vlast} forceCheckout=$3 branch lbranch ec=0
+  local sku=$1 prodCheckoutType=${2:-dev} forceCheckout=$3 branch lbranch
   branch_set_best_match_dev "$sku"  # -> branch lbranch
   # io_trace "sku_checkout -- $(print_vars branch lbranch)"
-  _prod_init_scope "$branch" "$lbranch"
 
   case $prodCheckoutType in
-    vlast)  prod_checkout 'vlast' "$forceCheckout" "$lbranch" || ec=$?;;
-    vnext)  prod_checkout 'vnext' "$forceCheckout" "$lbranch" || ec=$?;;
-    dev)    dev_checkout          "$forceCheckout" "$lbranch" || ec=$?;;
+    vlast)  prod_checkout 'vlast' "$forceCheckout" "$lbranch";;
+    vnext)  prod_checkout 'vnext' "$forceCheckout" "$lbranch";;
+    dev)    dev_checkout          "$forceCheckout" "$lbranch";;
   esac
-
-  return $ec
 }
 # in:
 #   $1:prodCheckoutType   -- (vlast|vnext|dev)
-#   $2:forceCheckout      -- ...
-#   $3:devFallback        -- ...
-#   $4:vnodeCheckoutProd  -- ...
+#   $2:forceCheckout      -- force branch checkout even if head does not change
+#   $3:devFallback        -- fallback to this dev branch if neither prod branch nor vtag exist 
+#   $4:vnodeCheckoutProd  -- checkout production branch if vtag is a vnode
 prod_checkout()
 {
-  local prodCheckoutType=$1 forceCheckout=$2 devFallback=$3 vnodeCheckoutProd=$4
+  local prodCheckoutType=$1 forceCheckout=$2 devFallback=$3 vnodeCheckoutProd=${4:-true}
   # io_trace "prod_checkout -- $(print_vars prodCheckoutType forceCheckout devFallback vnodeCheckoutProd vtagStatus prodBranch prodVTag moduleHead moduleDevBranch )"
 
   case $prodCheckoutType in
-    vnext)
-      if [[ -n $devFallback && $moduleDevBranch != $devFallback ]]; then
-        local branch lbranch bref
-        branch_set_realize "$devFallback"
-        _prod_init_scope "$branch" "$lbranch"
-      elif [[ $moduleHead != $moduleDevBranch ]]; then
-        _prod_init_scope "$moduleDevBranchPath" "$moduleDevBranch"
-      fi
-      if [[ -n $prodBranch ]]; then
-        branch_checkout "$prodBranch" "$forceCheckout"
-      else
-        dev_checkout "$forceCheckout" "$devFallback"
-      fi;;
-    vlast)
-      if [[ $vtagStatus == 'vtag' ]]; then
-        branch_checkout "$prodVTag" "$forceCheckout"
-      elif [[ $vtagStatus == 'vnode' && $vnodeCheckoutProd == true ]]; then
-        branch_checkout "$prodBranch" "$forceCheckout"
-      else
-        dev_checkout "$forceCheckout" "$devFallback"
-      fi;;
-    *)
-      dev_checkout "$forceCheckout" "$devFallback";;
+    vnext) _prod_checkout_vnext "$forceCheckout" "$devFallback" "$vnodeCheckoutProd";;
+    vlast) _prod_checkout_vlast "$forceCheckout" "$devFallback" "$vnodeCheckoutProd";;
+    *)     dev_checkout "$forceCheckout" "$devFallback";;
   esac
+}
+_prod_checkout_vnext()
+{
+  local forceCheckout=$1 devFallback=$2 vnodeCheckoutProd=$3
+  # io_trace "_prod_checkout_vnext -1- $(print_vars forceCheckout devFallback vnodeCheckoutProd )"
+
+  if [[ -n $devFallback && $moduleDevBranch != $devFallback ]]; then
+    local branch lbranch bref
+    branch_set_realize "$devFallback"
+    # io_trace "_prod_checkout_vnext -2- $(print_vars devFallback moduleDevBranch branch lbranch )"
+    _prod_init_scope "$branch" "$lbranch" true
+  # elif [[ $moduleHead != $moduleDevBranch ]]; then
+  else
+    # io_trace "_prod_checkout_vnext -3- $(print_vars moduleHead moduleDevBranch )"
+    _prod_init_scope "$moduleDevBranchPath" "$moduleDevBranch" true
+  fi
+
+  if [[ -n $prodBranch ]]; then
+    # io_trace "_prod_checkout_vnext -4- $(print_vars prodBranch )"
+    branch_checkout "$prodBranch" "$forceCheckout"
+  else
+    # io_trace "_prod_checkout_vnext -5- $(print_vars devFallback )"
+    _prod_checkout_vlast "$forceCheckout" "$devFallback" "$vnodeCheckoutProd"
+    # dev_checkout "$forceCheckout" "$devFallback"
+  fi
+}
+_prod_checkout_vlast()
+{
+  local forceCheckout=$1 devFallback=$2 vnodeCheckoutProd=$3
+  # io_trace "_prod_checkout_vlast -1- $(print_vars forceCheckout devFallback vnodeCheckoutProd )"
+
+  if [[ $vtagStatus == 'vtag' ]]; then
+    # io_trace "_prod_checkout_vlast -2- $(print_vars prodVTag vtagStatus )"
+    branch_checkout "$prodVTag" "$forceCheckout"
+  elif [[ $vtagStatus == 'vnode' && $vnodeCheckoutProd == true ]]; then
+    # io_trace "_prod_checkout_vlast -3- $(print_vars profBranch vtagStatus )"
+    branch_checkout "$prodBranch" "$forceCheckout"
+  else
+    # io_trace "_prod_checkout_vlast -4- $(print_vars devFallback )"
+    dev_checkout "$forceCheckout" "$devFallback"
+  fi
 }
 dev_checkout()
 {
