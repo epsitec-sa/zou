@@ -85,6 +85,9 @@ module_is_included_in_sku() { array_contains_element "$1" "${configSkuInclude[@]
 ########################################################
 # ATTACH
 
+# return:
+#   0 : dev attach succeeds
+#   1 : dev attach fails
 module_dev_attach()
 {
   local forceCheckout=$1 ref=${2:-$moduleHead} devBranchPath=$3 devBranch
@@ -99,9 +102,13 @@ module_dev_attach()
   fi
   # io_trace "module_dev_attach ${*@Q} -- $(print_vars ref devBranchPath)"
   if module_is_bundle || ref_equals "$ref" "$devBranchPath"; then
+    # io_trace "module_dev_attach ${*@Q} -1- $(print_vars ref devBranchPath)"
     branch_checkout "$devBranch" "$forceCheckout"
+    return 0
   else
+    # io_trace "module_dev_attach ${*@Q} -2- $(print_vars ref devBranchPath)"
     branch_checkout "$ref" "$forceCheckout"
+    return 1
   fi
 }
 
