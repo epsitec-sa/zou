@@ -18,6 +18,7 @@ prod_parse()
     -r|--recursive) recursive=true;;
     -a|--all)       noSkuFilter=true;;
     -n|--dry-run)   dryRun=true;;
+    -o|--prod)      stayInProd=true;;
     --merge)        mergeIntoDev=true;;
     --vnext)        checkoutType='vnext';;
     --vlast)        checkoutType='vlast';;
@@ -55,7 +56,7 @@ prod_run()
         cmdScopes=( prod_scope config_scope cosm_scope ) \
         mergeIntoDev vtable prerelPrefix dryRun prodModulePaths=() \
         checkoutType='vnext' attachMode='auto' forcePrincipalRelease \
-        prodSelectSpec
+        prodSelectSpec stayInProd
 
   prod_parse "$@" || return $?
   prod_startup_message
@@ -115,12 +116,6 @@ prod_select_finally()   { branch_show_status; }
 prod_select_xfinally()  { branch_show_status; }
 prod_enter_finally()    { branch_show_status; }
 prod_release_xfinally() { branch_show_status; }
-prod_release_finally()
-{
-  # io_trace "prod_release_finally ${*@Q} -- $(print_vars prodBranch)"
-  [[ $dryRun == true ]] || ([ $wasInDevMode -eq 0 ] && dev_checkout)
-  branch_show_status '--ignore-submodules'
-}
 
 ########
 # ATTACH
@@ -191,7 +186,7 @@ prod_release_root_scope()
     # dry run scope
     local rstatusParentGate rstatusLookupPath rstatusParentLookupPath principalReleaseStatus
 
-    # io_trace "prod_release_root_scope -- $(print_vars forcePrincipalRelease checkoutType prodCheckoutType prodBranch moduleMergeIntoDev modulePrerelPrefix)"
+    # io_trace "prod_release_root_scope -1- $(print_vars forcePrincipalRelease checkoutType prodCheckoutType prodBranch moduleMergeIntoDev modulePrerelPrefix)"
   fi
 
   # execute next russian doll
@@ -199,28 +194,49 @@ prod_release_root_scope()
 }
 prod_release_scope()
 {
-  local moduleMergeIntoDev=$mergeIntoDev modulePrerelPrefix=$prerelPrefix wasInDevMode hasBeenReleased forceRelease
-  module_in_strict_dev_mode; wasInDevMode=$?
+  local moduleMergeIntoDev=$mergeIntoDev modulePrerelPrefix=$prerelPrefix \
+        wasInDevMode=1 hasBeenReleased forceRelease cmdIsTopLevel
+
+  [[ -z $stayInProd ]] && module_in_strict_dev_mode && wasInDevMode=0
+  cmd_is_top_level; cmdIsTopLevel=$?
   
-  # io_trace "prod_release_scope -- $(print_vars checkoutType prodCheckoutType prodBranch moduleMergeIntoDev modulePrerelPrefix)"
+  # io_trace "prod_release_scope -- $(print_vars wasInDevMode cmdIsTopLevel releaseStatus devEqualsProd checkoutType prodCheckoutType prodBranch)"
 
   if module_is_bundle; then
     # always merge prod into dev in bundle
     moduleMergeIntoDev=true
-    # io_trace "_prod_on_preinit BUNDLE -- $(print_vars prodCheckoutType modulePrerelPrefix moduleMergeIntoDev)"
+    # io_trace "prod_release_scope BUNDLE -- $(print_vars prodCheckoutType modulePrerelPrefix moduleMergeIntoDev)"
   elif module_is_principal; then
     # vlast does not apply to principal module if force release is specified
     if [[ $forcePrincipalRelease == true ]]; then
       forceRelease=true
       prodCheckoutType='vnext'
     fi
-    # io_trace "_prod_on_preinit PRINCIPAL -- $(print_vars prodCheckoutType modulePrerelPrefix forceRelease)"
-  elif cmd_is_child; then
-    # prerelease does not apply to child modules (excepting principal module)
+    # io_trace "prod_release_scope PRINCIPAL -- $(print_vars prodCheckoutType modulePrerelPrefix forceRelease)"
+  elif [ $cmdIsTopLevel -ne 0 ]; then
+    # prerelease does not apply to non top level submodules (excepting principal module)
     if [[ $prerelPrefix != 'rtm' ]]; then
       modulePrerelPrefix=''
     fi
-    # io_trace "_prod_on_preinit CHILD -- $(print_vars prodCheckoutType modulePrerelPrefix forceRelease)"
+    # io_trace "prod_release_scope CHILD -- $(print_vars prodCheckoutType modulePrerelPrefix forceRelease)"
+  fi
+
+  if module_has_submodules; then
+    if [ $cmdIsTopLevel -eq 0 ]; then
+      # setup permanent array of child submodules still in prod mode
+      # io_trace "prod_release_scope TOP LEVEL -- $(print_vars wasInDevMode)"
+      local smInProd smInProdGate smInProdPath
+      _sm_in_prod_init || return $?
+    fi
+  elif [[ $releaseStatus == 'released' ]]; then
+    # no submodules and released
+    _prod_release_released
+    # it's terminated if dev == prod
+    # io_trace "prod_release_scope COMPLETED -- $(print_vars moduleDevBranchPath prodBranchPath)"
+    if ref_equals "$moduleDevBranchPath" "$prodBranchPath"; then
+      # [[ $stayInProd == true ]] && prod_checkout "$prodCheckoutType" true "$moduleDevBranch" || io_trace_error 'prod_release_scope'
+      return 0
+    fi
   fi
 
   # execute next russian doll
@@ -236,17 +252,18 @@ prod_release_prolog()
       prod_ensure_vbranch
       branch_merge "$moduleDevBranchPath" "$prodBranchPath" '-Xtheirs' \
       && branch_merge_ff "$prodBranchPath" "$moduleDevBranchPath" \
-      || io_trace_error 'prod_release_prolog';;
-      # return 1;;
+      || io_trace_error 'prod_release_prolog'
+      ;;
     error)
       mio_error "Branch ${VC}$moduleDevBranch${Red} cannot be released."
       mio_info "  use ${VC}git dev release${Cyan} to release some development code."
-      return 1;;
+      return 1
+      ;;
   esac
   if [[ $dryRun == true ]]; then
     _rstatus_init || io_trace_error 'prod_release_prolog 1'
   elif repo_is_clean_ignore_submodules && ! cosm_has_unstaged_dirty_submodules; then
-    prod_checkout "$prodCheckoutType" true "$moduleDevBranch" true || io_trace_error 'prod_release_prolog -2-'
+    prod_checkout "$prodCheckoutType" true "$moduleDevBranch" || io_trace_error 'prod_release_prolog -2-'
   fi
 }
 prod_release_epilog()
@@ -263,12 +280,35 @@ prod_release_epilog()
   fi
   return 0
 }
+prod_release_finally()
+{
+  [[ $dryRun == true ]] && { branch_show_status; return 0; }
+
+  if [ $cmdIsTopLevel -eq 0 ]; then
+    if config_has_submodules; then
+      # checkout dev branch for registerd child submodules
+      . "$smInProdPath" # deserialize
+      # io_trace "prod_release_finally TOP LEVEL -- $(print_vars smInProd[@] smInProdPath)"
+      module_visit_submodules_async 'smInProd[@]' module_scope _prod_dev_checkout
+    fi
+    [ $wasInDevMode -eq 0 ] && dev_checkout false "$moduleDevBranch"
+  elif [ $wasInDevMode -eq 0 ] && ! module_dev_attach; then
+    # defer dev checkout to top level module
+    # io_trace "prod_release_finally NON TOP LEVEL -- $(print_vars moduleBundlePath moduleHead smInProdPath)"
+    _sm_in_prod_update "$moduleBundlePath"
+  fi
+  branch_show_status
+}
 prod_release_xepilog() { _vtable_update; }
 
 #################
 # Release helpers
 #################
 
+_prod_dev_checkout()
+{
+  dev_checkout false "$moduleDevBranch"
+}
 _prod_fix_release_status()
 {
   prod_fix_release_status "$modulePrerelPrefix" "$forceRelease" "$prodCheckoutType"
@@ -280,7 +320,7 @@ _prod_release()
   case $releaseStatus in
     unreleased) _prod_release_unreleased;;
     ffRelease)  _prod_release_ff;;
-    released)   _prod_release_released;;
+    released)   ;;
     *)          _prod_release_unimplemented;;
   esac
   # io_trace "_prod_release 2 -- $(print_vars modulePrerelPrefix releaseStatus hasBeenReleased)"
@@ -366,6 +406,36 @@ _prod_can_merge_into_dev()
     # io_trace "_prod_can_merge_into_dev -- $(print_vars mergeBase comment)"
     [[ $comment =~ ^zou-flow: ]] || return 1
   done
+}
+
+##########################
+# Submodules still in prod
+##########################
+
+_sm_in_prod_init()
+{
+  [[ $dryRun == true ]] && return 0
+  smInProdGate=$(lock_init)
+  smInProdPath="$(mktemp)"
+  local smInProd=()
+  # serialize empty array
+  declare -p smInProd >"$smInProdPath"
+  # remove file when the script finishes
+  trap "rm \"$smInProdPath\"" 0
+
+  # io_trace "_sm_in_prod_init -- $(print_vars smInProdPath)"
+}
+_sm_in_prod_update()
+{
+  [[ $dryRun == true ]] && return 0
+  local smInProd
+  lock_enter "$smInProdGate"
+  . "$smInProdPath"                     # deserialize
+  smInProd+=( "$1" )                    # modify
+  declare -p smInProd >"$smInProdPath"  # serialize
+  lock_exit "$smInProdGate"
+
+  # io_trace "_sm_in_prod_update -- $(print_vars smInProdPath)"
 }
 
 ###############

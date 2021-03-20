@@ -11,6 +11,7 @@ ZOUL_GIT_CMD=true
 # MODULE REGISTRATION
 #####################
 
+unset cmdRecursiveMap
 declare -A cmdRecursiveMap
 cmdModulePaths=()
 
@@ -57,8 +58,9 @@ cmd_register_module_paths()
   
   # declare -p cmdRecursiveMap
 }
-cmd_registered_paths() { echo ${!cmdRecursiveMap[@]}; }
+cmd_registered_paths() { local IFS=$'\n'; printf '%s\n' "${!cmdRecursiveMap[@]}"; }
 cmd_is_registered()    { [[ -n ${cmdRecursiveMap[$1]} ]]; }
+cmd_is_recursive()     { [[ ${cmdRecursiveMap[$1]} == true ]]; }
 
 cmd_single_root()
 {
@@ -80,6 +82,18 @@ cmd_is_child()
     [[ -n ${mpath#$key} ]] && return 0
   done
   return 1
+}
+cmd_is_top_level()
+{
+  local mpath=${1:-$moduleRoot} key
+  cmd_is_registered "$mpath" || return 1
+  for key in ${!cmdRecursiveMap[@]}; do
+    [[ "$mpath" == "$key" ]] && continue
+    # io_trace "cmd_is_top_level -1- $(print_vars key mpath)"
+    [[ $mpath == $key* ]] && return 1
+  done
+  # io_trace "cmd_is_top_level -2- $(print_vars mpath)"
+  return 0
 }
 
 cmd_set_recursive_if_registered()
