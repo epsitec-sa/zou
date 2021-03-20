@@ -228,27 +228,27 @@ EOF
 
 version_list_all_files()
 {
-  git config --file "$moduleConfigFile" --get-regexp update-version 2>"$stderrRedir" | grep -v 'freezed'
+  gitx config --file "$moduleConfigFile" --get-regexp update-version 2>"$stderrRedir" | grep -v 'freezed'
 }
 version_list_files_of_type()
 {
-  git config --file "$moduleConfigFile" --get-all update-version.$1 2>"$stderrRedir"
+  gitx config --file "$moduleConfigFile" --get-all update-version.$1 2>"$stderrRedir"
 }
 version_add_file_spec()
 {
   local type=$1 files=( $(version_list_files_of_type $1) ) spec file
   shift
-  git config --file "$moduleConfigFile" update-version.freezed true &>"$stdallRedir"
+  gitx config --file "$moduleConfigFile" update-version.freezed true &>"$stdallRedir"
   for spec in "$@"; do
     for file in $(version_list_resources "$spec"); do
       if ! array_contains_element "$file" "${files[@]}"; then
         if ieval "grep -qE '${versionFilters[$type]}'" "$file"; then
-          git config --file "$moduleConfigFile" --add update-version.$type "$file" &>"$stdallRedir"
+          gitx config --file "$moduleConfigFile" --add update-version.$type "$file" &>"$stdallRedir"
         fi
       fi
     done
   done
-  git update-index --add -- "$moduleConfigFile" &>"$stdallRedir" && \
+  gitx update-index --add -- "$moduleConfigFile" &>"$stdallRedir" && \
   git_commit "register version resources" "$moduleConfigFile"
 }
 version_remove_file_spec()
@@ -257,7 +257,7 @@ version_remove_file_spec()
   shift
   for spec in "$@"; do
     for file in $(version_list_resources "$spec"); do
-      git config --file "$moduleConfigFile" --unset update-version.$type $file
+      gitx config --file "$moduleConfigFile" --unset update-version.$type $file
     done
   done
   git_commit "unregister version resources" "$moduleConfigFile"
@@ -291,12 +291,12 @@ version_update()
 version_list_resources()
 {
   # skip directories beginning with a dot, modules and Mono folders
-  git ls-files "$@" 2>"$stderrRedir" | grep -vE -e '(^\.|/\.)[^/]+/' -e '^modules/' -e '^Mono/'
+  gitx ls-files "$@" 2>"$stderrRedir" | grep -vE -e '(^\.|/\.)[^/]+/' -e '^modules/' -e '^Mono/'
 }
 version_config_reset()
 {
   version_verify_context 'version_config_reset'
-  [ -f "$moduleConfigFile" ] && git config --file "$moduleConfigFile" --remove-section update-version &>"$stdallRedir"
+  [ -f "$moduleConfigFile" ] && gitx config --file "$moduleConfigFile" --remove-section update-version &>"$stdallRedir"
 }
 declare -A versionFilters=( \
   [version-props]='(<Version>|<AssemblyVersion>)' \
@@ -316,7 +316,7 @@ declare -A versionAutoSpecs=( \
 version_config_auto()
 {
   version_verify_context 'version_config_auto'
-  git config --file "$moduleConfigFile" update-version.freezed &>"$stdallRedir" && return 0
+  gitx config --file "$moduleConfigFile" update-version.freezed &>"$stdallRedir" && return 0
 
   local type specs file files=() resources freezed
   for type in "${!versionAutoSpecs[@]}"; do
@@ -328,16 +328,16 @@ version_config_auto()
       if ieval "grep -qE '${versionFilters[$type]}'" "$file"; then
         if [[ -z $freezed ]]; then
           freezed=true
-          git config --file "$moduleConfigFile" update-version.freezed true &>"$stdallRedir"
+          gitx config --file "$moduleConfigFile" update-version.freezed true &>"$stdallRedir"
         fi
-        git config --file "$moduleConfigFile" --add update-version.$type "$file" &>"$stdallRedir"
+        gitx config --file "$moduleConfigFile" --add update-version.$type "$file" &>"$stdallRedir"
         files+=( "$file" )
       fi
     done
   done
   if [ ${#files[@]} -gt 0 ]; then
     # io_trace "version_config_auto -- $(print_vars files[@])"
-    git update-index --add -- "$moduleConfigFile" &>"$stdallRedir" \
+    gitx update-index --add -- "$moduleConfigFile" &>"$stdallRedir" \
     && git_commit 'register version resources' "$moduleConfigFile"
   fi
 }

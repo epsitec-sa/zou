@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+gitx() { git -c core.longpaths=true "$@"; }
+
 zou_setup()
 {
   local NC='\e[0m' Red='\e[0;31m' Brown='\e[0;33m' Cyan='\e[0;36m' message
@@ -11,10 +13,10 @@ zou_setup()
   message="${Cyan}[zou]${NC} : ${Cyan}Downloading, please wait...${NC}"
   printf '\n%b' "$message"
   if [[ -z $zouFakeUpdate ]]; then
-    git fetch --prune --all &>/dev/null
-    git fetch --tags --force &>/dev/null
-    git checkout master &>/dev/null
-    git pull &>/dev/null
+    gitx fetch --prune --all &>/dev/null
+    gitx fetch --tags --force &>/dev/null
+    gitx checkout master &>/dev/null
+    gitx pull &>/dev/null
   else
     _zou_create_fake_version_props
   fi
@@ -51,7 +53,7 @@ zou_clean()
   rm -rf "$setupDir"
   # clean fake version.props
   if [[ -n $zouFakeUpdate ]]; then
-    git checkout "$zouBinDir/../Version.props" &>/dev/null
+    gitx checkout "$zouBinDir/../Version.props" &>/dev/null
   fi
 }
 

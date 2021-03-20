@@ -92,7 +92,7 @@ stow_remove_promoted_vbranches()
     [[ $branch =~ ^(.*/)?([0-9]+\.[0-9]+) ]] || continue
     version=${BASH_REMATCH[2]}
     rbranch=$(branch_realize $branch)
-    hash=$(git rev-parse "$rbranch^{} 2>"$stderrRedir"")
+    hash=$(gitx rev-parse "$rbranch^{} 2>"$stderrRedir"")
     hashMap[$hash]="${hashMap[$hash]} "$branch""
   done
 
@@ -232,7 +232,7 @@ stow_remove_promoted_vtags()
   for tag; do
     [[ $tag =~ ^(.*/)?v([0-9]+\.[0-9]+(\.[0-9]+|-@)) ]] || continue
     version=${BASH_REMATCH[2]}
-    hash=$(git rev-parse "$tag^{} 2>"$stderrRedir"")
+    hash=$(gitx rev-parse "$tag^{} 2>"$stderrRedir"")
     hashMap[$hash]="${hashMap[$hash]} "$tag""
   done
 
@@ -395,7 +395,7 @@ stow_promote_vtags()
         local deltaMin=0xFFFF
         for vbranchPair in "${vbranchTagPairs[@]}"; do
           vbranch=${rvbranchMap[${vbranchPair#*:}]}
-          delta=$(( $(git rev-list --count "$vtag".."$vbranch" 2>"$stderrRedir") ))
+          delta=$(( $(gitx rev-list --count "$vtag".."$vbranch" 2>"$stderrRedir") ))
           (( delta == deltaMin )) && break
           if (( delta < deltaMin )); then
             deltaMin=$delta
@@ -433,12 +433,12 @@ _stow_check_stowed()
 #   rvbranchMap -- realized vbranch map ([vbranch]=rvbranch)
 _stow_check_ancestry()
 {
-  git merge-base --is-ancestor "$vtag" "${rvbranchMap[$vbranch]}" &>"$stdallRedir"
+  gitx merge-base --is-ancestor "$vtag" "${rvbranchMap[$vbranch]}" &>"$stdallRedir"
 }
 _stow_show_ancestry_warnings()
 {
   # vtag is not an ancestor of vbranch
-  if git merge-base --is-ancestor "${rvbranchMap[$vbranch]}" "$vtag" &>"$stdallRedir"; then
+  if gitx merge-base --is-ancestor "${rvbranchMap[$vbranch]}" "$vtag" &>"$stdallRedir"; then
     if _stow_promoted_versions_equals; then
       mio_info "Branch ${VC}$vbranch${Cyan} could be fast forwarded to tag ${VC}$vtag${Cyan}"
     # else

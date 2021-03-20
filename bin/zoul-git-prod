@@ -214,9 +214,9 @@ _prod_init_prod()
   vtag_format_alias "$vtag" "$delta"
   prodAlias=$alias
 
-  prod2dev=$(( $(git rev-list --count $prodBranchPath..$moduleDevBranchPath 2>"$stderrRedir") ))
+  prod2dev=$(( $(gitx rev-list --count $prodBranchPath..$moduleDevBranchPath 2>"$stderrRedir") ))
   if [ $prod2dev -eq 0 ]; then
-    prod2dev=$(( -$(git rev-list --count $moduleDevBranchPath..$prodBranchPath 2>"$stderrRedir") ))
+    prod2dev=$(( -$(gitx rev-list --count $moduleDevBranchPath..$prodBranchPath 2>"$stderrRedir") ))
   fi
   # io_trace "_prod_init_prod 2 -- $(print_vars prodBranchPath moduleDevBranchPath prod2dev)"
   vtag_format_alias "$prodBranch" "$prod2dev"
@@ -251,7 +251,7 @@ _prod_set_prod_info()
   # io_trace "_prod_set_prod_info 1 -- $(print_vars prodBranch prodBranchPath vbranch vtag htag delta)"
   if [[ $htag != $vtag ]]; then
     vtag=$htag
-    delta=$(( $(git rev-list --count $vtag..$prodBranchPath 2>"$stderrRedir") ))
+    delta=$(( $(gitx rev-list --count $vtag..$prodBranchPath 2>"$stderrRedir") ))
     # io_trace "_prod_set_prod_info 2 -- $(print_vars prodBranch vbranch vtag htag delta)"
   fi
   [[ -z $strict ]] && htag=$(vtag_highest "$vbranch" false) # in all folders
@@ -568,7 +568,7 @@ prod_commit_release()
     # update technical version
     _prod_commit_release_core 'version_update'
     local comment="publish branch '$prodBranch' as '$releaseVTag'"
-    io_buffered_eval "git tag -a -m 'zou-flow: $comment' "$releaseVTag" "$prodBranch" 2>&1"
+    io_buffered_eval "gitx tag -a -m 'zou-flow: $comment' "$releaseVTag" "$prodBranch" 2>&1"
     # io_trace "prod_commit_release -2- -- $(print_vars releasePrerelPrefix releaseVTag prodBranch)"
   fi
 }

@@ -13,8 +13,8 @@ file_change_commit()
   local prefix=${PWD##*/}; prefix=${prefix^^}
   local message="$prefix: $file: $change"
   echo "$change" >> "$file"
-  git update-index --add -- "$file" &>"$stdallRedir" \
-  && git commit -m "$message" -- "$file" &>"$stdallRedir" \
+  gitx update-index --add -- "$file" &>"$stdallRedir" \
+  && gitx commit -m "$message" -- "$file" &>"$stdallRedir" \
   && mio_info "Commited $file -- $change"
 }
 file_change()
@@ -34,8 +34,8 @@ file_commit()
   local change="$*"
   local prefix=${PWD##*/}; prefix=${prefix^^}
   local message="$prefix: $file: $change"
-  git update-index --add -- "$file" &>"$stdallRedir" \
-  && git commit -m "$message" -- "$file" &>"$stdallRedir" \
+  gitx update-index --add -- "$file" &>"$stdallRedir" \
+  && gitx commit -m "$message" -- "$file" &>"$stdallRedir" \
   && mio_info "Commited $file -- $change"
 }
 file_commit_all()
@@ -47,7 +47,7 @@ file_commit_all()
 }
 file_create_name()
 {
-  local extension=${1:-.txt} folder=${PWD##*/} sku=$(git symbolic-ref --short HEAD 2>"$stderrRedir")
+  local extension=${1:-.txt} folder=${PWD##*/} sku=$(gitx symbolic-ref --short HEAD 2>"$stderrRedir")
   sku=${sku%/dev}   # remove '/dev' suffix
   sku=${sku#sku/}   # remove 'sku/' prefix
   sku=${sku:-master}
@@ -80,7 +80,7 @@ commit_version_props()
 </Project>
 EOF
   file_commit Version.props 'initial version'
-  [[ $register == true ]] && git config-version --version-props
+  [[ $register == true ]] && gitx config-version --version-props
 }
 commit_assembly_info()
 {
@@ -127,7 +127,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyFileVersion("1.0.0.0")]
 EOF
   file_commit Properties/AssemblyInfo.cs 'initial version'
-  [[ $register == true ]] && git config-version --assembly-info
+  [[ $register == true ]] && gitx config-version --assembly-info
 }
 commit_compta_version()
 {

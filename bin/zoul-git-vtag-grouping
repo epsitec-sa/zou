@@ -12,7 +12,7 @@ vtag_group_by_version()
 {
   declare -A lookup
   local vtag vbranch
-  for vtag in $(git tag -l --sort=-v:refname 2>"$stderrRedir"); do
+  for vtag in $(gitx tag -l --sort=-v:refname 2>"$stderrRedir"); do
     # skip other tags
     # ref_is_other $vtag && continue
     # skip non semver tags
@@ -45,7 +45,7 @@ _vtag_list_by_date_visitor()
 _vtag_visit_by_date()
 {
   local visitor=$1 filter=$2 line atoms vtags item lines
-  IFS=$'\n' lines=( $(git log --date-order --tags --simplify-by-decoration --pretty=format:'%d') ); IFS=$OIFS
+  IFS=$'\n' lines=( $(gitx log --date-order --tags --simplify-by-decoration --pretty=format:'%d') ); IFS=$OIFS
   for line in "${lines[@]}"; do
     # look only for lines with a tag label
     [[ $line =~ tag: ]] || continue

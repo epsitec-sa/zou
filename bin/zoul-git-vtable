@@ -29,8 +29,8 @@ vtable_row()
         md_moduleId md_vtag IFS=' '
   dev=${moduleDevBranch}
   prod=${prodBranch}
-  hash=$(git rev-parse --short "${prodVTag:-$moduleHead}^{}" 2>"$stderrRedir")
-  tags=$(git tag -l --sort=-v:refname 2>"$stderrRedir")
+  hash=$(gitx rev-parse --short "${prodVTag:-$moduleHead}^{}" 2>"$stderrRedir")
+  tags=$(gitx tag -l --sort=-v:refname 2>"$stderrRedir")
   if [[ $prodVTag =~ ^(.*/)?v([0-9]+)\.([0-9]+) ]]; then
     folder=${BASH_REMATCH[1]}
     major=${BASH_REMATCH[2]}
@@ -87,7 +87,7 @@ vtable_update()
     rm "$lookupPath"
 
     if [[ $commitVTable == true ]]; then
-      git update-index --add -- "$file" &>"$stdallRedir" \
+      gitx update-index --add -- "$file" &>"$stdallRedir" \
       && git_commit "update version table" "$file"
     fi
   else

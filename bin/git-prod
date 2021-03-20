@@ -401,8 +401,8 @@ _prod_merge_into_dev_core()
 _prod_can_merge_into_dev()
 {
   local toMerge=$1 mergeInto=$2 mergeBase comment IFS=$'\n'
-  mergeBase=$(git merge-base "$toMerge" "$mergeInto")
-  for comment in $(git log --format=%s "$mergeBase..$toMerge"); do
+  mergeBase=$(gitx merge-base "$toMerge" "$mergeInto")
+  for comment in $(gitx log --format=%s "$mergeBase..$toMerge"); do
     # io_trace "_prod_can_merge_into_dev -- $(print_vars mergeBase comment)"
     [[ $comment =~ ^zou-flow: ]] || return 1
   done
@@ -486,12 +486,12 @@ _vtable_commit()
   elif [[ $vtableCreate == true ]]; then
     # io_trace "_vtable_commit -- $(print_vars releaseStatus prodBranch moduleDevBranch checkoutType)"
     local tmpBranch="_zou_$(date +%y%V)"
-    git checkout -b "$tmpBranch" &>"$stdallRedir"
+    gitx checkout -b "$tmpBranch" &>"$stdallRedir"
     vtable_update "$vtableRoot" "$moduleId" "$vtableLookupPath" "$vtableGate" true
     mio_message "Created version table for ${VC}$prodBranch${Green} at ${VC}$releaseVTag" ${Green}
     _prod_merge_into_dev "$tmpBranch" "$prodBranch"
-    git checkout "$prodBranch" &>"$stdallRedir"
-    git branch -D "$tmpBranch" &>"$stdallRedir"
+    gitx checkout "$prodBranch" &>"$stdallRedir"
+    gitx branch -D "$tmpBranch" &>"$stdallRedir"
   else
     _prod_merge_into_dev "$prodBranch"
   fi

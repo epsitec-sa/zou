@@ -53,12 +53,12 @@ vcheck_node()
     fi
     if [ $? -le 1 ]; then
       for vtag in ${byVersion[$vbranch]}; do
-        if ! git merge-base --is-ancestor "$vtag" "$branch"; then
+        if ! gitx merge-base --is-ancestor "$vtag" "$branch"; then
           mio_message "  vtag '$vtag' is not inside vbranch '$vbranch'" ${Magenta}
           (( ec = $ec + 1 ))
         fi
         if [[ -n $pvtag ]]; then
-          if ! git merge-base --is-ancestor "$vtag" "$pvtag"; then
+          if ! gitx merge-base --is-ancestor "$vtag" "$pvtag"; then
             mio_message "  vtag '$vtag' is not an ancestor of '$pvtag'" ${Magenta}
             (( ec = $ec + 1 ))
           fi

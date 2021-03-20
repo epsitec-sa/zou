@@ -107,7 +107,7 @@ _branch_oreset_visitor()
     # io_trace "### _branch_reset_visitor -5- $(print_vars l r i current)"
     git update-ref "refs/heads/$l" "$r" >/dev/null
     git reset . &>"$stdallRedir"
-    git checkout . &>"$stdallRedir"
+    gitx checkout . &>"$stdallRedir"
   fi
   # io_trace "<<< _branch_reset_visitor -6- $(print_vars l r i current)"
 }
@@ -197,7 +197,7 @@ branch_oreset_all()
   branch_merge_abort
   if [[ $forceReset == true ]]; then
     git reset . &>"$stdallRedir"
-    git checkout . &>"$stdallRedir"
+    gitx checkout . &>"$stdallRedir"
     repo_list_untracked | xargs --no-run-if-empty rm
   else
     repo_require_clean_work_tree 'Cannot reset' || return 1

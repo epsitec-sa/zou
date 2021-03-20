@@ -25,7 +25,7 @@ branch_merge_sync()
 branch_merge_abort()
 {
   if repo_is_merging; then
-    git merge --abort
+    gitx merge --abort
     _branch_remove_temp_merge_files
   fi
 }
@@ -48,8 +48,8 @@ branch_merge()
   esac
   # io_trace "branch_merge -2- -- $(print_vars toMerge intoBranch toMergeAlias needCheckout mergeOpts[@])"
 
-  local message="zou-flow: merge '$toMergeAlias' into '$intoBranch' ($(git rev-parse --short "$toMerge" 2>"$stderrRedir") -> $(git rev-parse --short "$intoBranch" 2>"$stderrRedir"))"
-  if [[ $needCheckout == true ]] && git checkout $intoBranchName &>"$stdallRedir"; then
+  local message="zou-flow: merge '$toMergeAlias' into '$intoBranch' ($(gitx rev-parse --short "$toMerge" 2>"$stderrRedir") -> $(gitx rev-parse --short "$intoBranch" 2>"$stderrRedir"))"
+  if [[ $needCheckout == true ]] && gitx checkout $intoBranchName &>"$stdallRedir"; then
     # io_trace "branch_merge -3- -- $(print_vars toMerge intoBranch toMergeAlias needCheckout mergeOpts[@])"
     _branch_merge "$message" "$toMerge" "${mergeOpts[@]}" || ec=$?
     if [ $ec -ne 0 ] && repo_is_merging; then
@@ -62,7 +62,7 @@ branch_merge()
       io_lock_exit
       branch_merge_abort
     fi
-    git checkout - &>"$stdallRedir"
+    gitx checkout - &>"$stdallRedir"
   else
     # io_trace "branch_merge -4- -- $(print_vars toMerge intoBranch toMergeAlias needCheckout mergeOpts[@] ec)"
     _branch_merge "$message" "$toMerge" "${mergeOpts[@]}" || ec=$?
@@ -81,11 +81,11 @@ branch_is_merged()
 
   # io_trace "branch_is_merged -- $(print_vars toMerge intoBranch intoRef intoBranchName)"
 
-  hashToMerge=$(git rev-parse --verify "$toMerge^{}" 2>"$stderrRedir") || return 128
-  hashMergeInto=$(git rev-parse --verify "$mergeInto^{}" 2>"$stderrRedir") || return 128
+  hashToMerge=$(gitx rev-parse --verify "$toMerge^{}" 2>"$stderrRedir") || return 128
+  hashMergeInto=$(gitx rev-parse --verify "$mergeInto^{}" 2>"$stderrRedir") || return 128
 
   [[ $hashToMerge == $hashMergeInto ]] && return 0
-  hashMergeBase=$(git merge-base "$hashMergeInto" "$hashToMerge")
+  hashMergeBase=$(gitx merge-base "$hashMergeInto" "$hashToMerge")
   [[ $hashToMerge == $hashMergeBase ]]
 }
 # usage
@@ -119,37 +119,37 @@ _branch_merge_ff()
     intoRef=$bref
   fi
 
-  hashToMerge="$(git rev-parse --verify "$toMerge^{}" 2>"$stderrRedir")"
+  hashToMerge="$(gitx rev-parse --verify "$toMerge^{}" 2>"$stderrRedir")"
   if [ $? -ne 0 ]; then
     toMerge=$(branch_realize "$toMerge")
     if [ $? -gt 1 ]; then
       mio_error "Invalid commish '$toMerge'"
       return 128
     fi
-    hashToMerge="$(git rev-parse --verify "$toMerge" 2>"$stderrRedir")"
+    hashToMerge="$(gitx rev-parse --verify "$toMerge" 2>"$stderrRedir")"
     if [ $? -ne 0 ]; then
       mio_error "Invalid commish '$toMerge'"
       return 128
     fi
   fi
-  hashMergeInto=$(git show-ref -s --verify "$intoRef" 2>"$stderrRedir")
+  hashMergeInto=$(gitx show-ref -s --verify "$intoRef" 2>"$stderrRedir")
   if [ $? -ne 0 ]; then
     mio_error "Invalid reference '$intoRef'"
     return 128
   fi
 
   [[ $hashToMerge == $hashMergeInto ]] && return 0
-  hashMergeBase=$(git merge-base $hashMergeInto $hashToMerge)
+  hashMergeBase=$(gitx merge-base $hashMergeInto $hashToMerge)
   [[ $hashToMerge == $hashMergeBase ]] && return 0
 
-  if [[ "$(git symbolic-ref HEAD 2>"$stderrRedir")" == "$intoRef" ]]; then
+  if [[ "$(gitx symbolic-ref HEAD 2>"$stderrRedir")" == "$intoRef" ]]; then
     _branch_merge_ff_only || return 1
   else
     needCheckout=true
     if [[ $hashMergeBase != "$hashMergeInto" ]]; then
       return 1
     fi
-    if git update-ref -m "merge $toMerge into $intoBranch (fast forward)" "$intoRef" "$hashToMerge" "$hashMergeInto" 2>"$stderrRedir"; then
+    if gitx update-ref -m "merge $toMerge into $intoBranch (fast forward)" "$intoRef" "$hashToMerge" "$hashMergeInto" 2>"$stderrRedir"; then
       branch_raise_merged_event "$toMerge" "$intoBranch"
       [[ $quiet == true ]] || mio_success "Merged ${VC}$toMergeAlias${Green} into ${VC}$intoBranchName${Green} (fast-forward)"
     else
@@ -160,7 +160,7 @@ _branch_merge_ff()
 }
 _branch_merge_ff_only()
 {
-  if git merge --ff-only "$toMerge" &>"$stdallRedir"; then
+  if gitx merge --ff-only "$toMerge" &>"$stdallRedir"; then
     branch_raise_merged_event "$toMerge" "$intoBranch"
     [[ $quiet == true ]] || mio_success "Merged ${VC}$toMergeAlias${Green} into ${VC}$intoBranchName${Green} (fast-forward)"
   else
@@ -170,7 +170,7 @@ _branch_merge_ff_only()
 _branch_merge()
 {
   local message=$1 toMerge=$2; shift 2
-  if git merge -m "$message" "$@" "$toMerge" &>"$stdallRedir"; then
+  if gitx merge -m "$message" "$@" "$toMerge" &>"$stdallRedir"; then
     # io_trace "_branch_merge -1- -- $(print_vars toMerge intoBranch)" ${Green}
     branch_raise_merged_event "$toMerge" "$intoBranch"
     return 0
@@ -189,7 +189,7 @@ _branch_merge()
     (( $toMergeTime >= $intoBranchTime )) && strategy='-Xtheirs'
     # io_trace "_branch_merge -3.1- -- $(print_vars toMergeTime intoBranchTime strategy)" ${Green}
 
-    if io_buffered_eval "git merge -m '$message' "$@" '$toMerge' '$strategy' 2>&1" _branch_merge_selector; then
+    if io_buffered_eval "gitx merge -m '$message' "$@" '$toMerge' '$strategy' 2>&1" _branch_merge_selector; then
       branch_raise_merged_event "$toMerge" "$intoBranch"
       return 0
     else
@@ -198,7 +198,7 @@ _branch_merge()
     fi
   elif ! _branch_merge_interactive; then
     # io_trace "_branch_merge -4- -- $(print_vars toMerge intoBranch)" ${Green}
-    # git diff
+    # gitx diff
     return 1
   fi
 }
@@ -211,7 +211,7 @@ _branch_merge_selector()
 _branch_merge_interactive()
 {
   local ec=0
-  _branch_merge_tool &>"$stdallRedir" && git commit --no-edit &>"$stdallRedir" || ec=$?
+  _branch_merge_tool &>"$stdallRedir" && gitx commit --no-edit &>"$stdallRedir" || ec=$?
   _branch_remove_temp_merge_files
   [ $ec -eq 0 ] && branch_raise_merged_event "$toMerge" "$intoBranch"
   return $ec
@@ -223,7 +223,7 @@ _branch_remove_temp_merge_files()
 }
 _branch_merge_tool()
 {
-  io_locked_eval 'git mergetool 2>&1' : ${DarkGray}
+  io_locked_eval 'gitx mergetool 2>&1' : ${DarkGray}
 }
 _branch_merge_resolve_submodule_conflicts()
 {
@@ -231,7 +231,7 @@ _branch_merge_resolve_submodule_conflicts()
   [[ -z "$broot" ]] && broot=$(repo_bundle_root)
   # io_trace "_branch_merge_resolve_submodule_conflicts 1 -- $(print_vars broot)"
 
-  IFS=$'\n' lines=($(git status -s --porcelain 2>"$stderrRedir")); IFS=$OIFS
+  IFS=$'\n' lines=($(gitx status -s --porcelain 2>"$stderrRedir")); IFS=$OIFS
   for line in "${lines[@]}"; do
     if [[ $line =~ ^[[:blank:]]*([A-Z]+)[[:blank:]]+(.+)$ ]]; then
       status=${BASH_REMATCH[1]}
@@ -239,8 +239,8 @@ _branch_merge_resolve_submodule_conflicts()
       # io_trace "_branch_merge_resolve_submodule_conflicts 2 -- $(print_vars status path)"
       if [[ -f "$path/.git" || -d "$broot/.git/modules/$path" ]]; then
         # ignore submodules - keep local one
-        # git add -- "$path"
-        git reset -q -- "$path" &>"$stdallRedir"
+        # gitx add -- "$path"
+        gitx reset -q -- "$path" &>"$stdallRedir"
       else
         # still unmerged files
         ec=1
