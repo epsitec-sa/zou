@@ -263,14 +263,8 @@ repo_is_all_clean()    { test -z "$(git status -s --porcelain 2>"$stderrRedir")"
 repo_is_bundle_root()  { [[ -d "${1:-.}/.git" ]]; }
 repo_is_module_root()  { [[ -f "${1:-.}/.git" ]]; }
 
-repo_is_clean()
-{
-  if ! git diff-index --quiet HEAD --; then
-    # io_trace "repo '$PWD' is not clean"
-    return 1
-  fi
-}
-repo_is_clean_ignore_submodules() { git diff-index --ignore-submodules --quiet HEAD -- &>"$stdallRedir"; } # no unstaged
+repo_is_clean()                   { git diff-index --quiet HEAD -- &>"$stdallRedir"; }
+repo_is_clean_ignore_submodules() { git diff-index --ignore-submodules --quiet HEAD -- &>"$stdallRedir"; }
 
 repo_has_submodules()
 {
@@ -284,39 +278,28 @@ repo_list_submodule_paths()
   [[ -z $mroot ]] && { mroot=$(repo_module_root) || return 1; }
   git config --file "$mroot/.gitmodules" --get-regexp '^submodule\..*\.path$' 2>"$stderrRedir" | cut -d' ' -f2
 }
-repo_list_unstaged_submodules()
-{
-  local mroot=$1 smid smpath
-  [[ -z $mroot ]] && { mroot=$(repo_module_root) || return 1; }
-  for smid in $(git diff-files --name-only -r 2>"$stderrRedir"); do
-    smpath=$(repo_submodule_path "$smid" "$mroot")
-    [[ -z $smpath ]] && continue
-    if repo_is_module_root "$mroot/$smpath"; then
-      echo $smid
-    fi
-  done
-}
-repo_list_unstaged_clean_submodules()
-{
-  local mroot=$1 smid smpath smroot opwd=$PWD
-  [[ -z $mroot ]] && { mroot=$(repo_module_root) || return 1; }
-  for smid in $(git diff-files --name-only -r 2>"$stderrRedir"); do
-    smpath=$(repo_submodule_path "$smid" "$mroot")
-    [[ -z $smpath ]] && continue
-    smroot="$mroot/$smpath"
-    if repo_is_module_root "$smroot"; then
-      cd "$smroot"
-      repo_is_clean && branch_is_ancestor_of_local && echo $smid
-      cd "$opwd"
-    fi
-  done
-}
+repo_list_unstaged_submodules()       { repo_visit_submodules "$1" _repo_list_unstaged_submodules_visitor; }
+repo_list_unstaged_clean_submodules() { repo_visit_submodules "$1" _repo_list_unstaged_clean_submodules_visitor; }
 # usage:
 #   local unstagedCleanSubmodules=() unstagedDirtySubmodules=()
 #   repo_split_unstaged_submodules "$moduleRoot"
-repo_split_unstaged_submodules()
+repo_split_unstaged_submodules() { repo_visit_submodules "$1" _repo_split_unstaged_submodules_visitor; }
+
+_repo_list_unstaged_submodules_visitor() { echo "$1"; }
+_repo_list_unstaged_clean_submodules_visitor() { repo_is_clean && branch_is_ancestor_of_local && echo "$1"; }
+_repo_split_unstaged_submodules_visitor()
 {
-  local mroot=$1 smid smpath smroot opwd=$PWD
+  if repo_is_clean && branch_is_ancestor_of_local; then
+    unstagedCleanSubmodules+=( $1 )
+  else
+    unstagedDirtySubmodules+=( $1 )
+  fi
+}
+
+repo_visit_submodules()
+{
+  local mroot=$1 smid smref smpath smroot opwd=$PWD; shift
+  [[ -n $1 ]] || io_trace_error "repo_visit_submodules: missing visitor" || return 1
   [[ -z $mroot ]] && mroot=$moduleRoot
   [[ -z $mroot ]] && { mroot=$(repo_module_root) || return 1; }
   for smid in $(git diff-files --name-only -r 2>"$stderrRedir"); do
@@ -324,13 +307,11 @@ repo_split_unstaged_submodules()
     [[ -z $smpath ]] && continue
     smroot="$mroot/$smpath"
     if repo_is_module_root "$smroot"; then
+      smref=$(ref_get_submodule_ref "$smpath")
       cd "$smroot"
-      # io_trace "repo_split_unstaged_submodules - $(print_vars smroot)"
-      if repo_is_clean && branch_is_ancestor_of_local; then
-        unstagedCleanSubmodules+=( $smid )
-      else
-        unstagedDirtySubmodules+=( $smid )
-      fi
+      # io_trace "repo_visit_submodules ${*@Q} -1- $(print_vars smid smref PWD)"
+      # execute visitor in submodule directory
+      $1 "${@:2}" "$smid" "$smref"
       cd "$opwd"
     fi
   done
