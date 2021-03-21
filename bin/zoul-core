@@ -561,7 +561,13 @@ ieval()
 visit()
 {
   local ec=0 _zouVisitPaths path
-  [[ $1 =~ \[@\]$ ]] && _zouVisitPaths=("${!1}") || ( [[ -n $1 ]] && _zouVisitPaths=("$($1)") )
+  if [[ "$1" =~ \[@\]$ ]]; then
+    _zouVisitPaths=("${!1}")
+    # io_trace "visit -1- $(print_vars _zouVisitPaths[@])"
+  elif [[ -n $1 ]]; then
+    _zouVisitPaths=("$($1)")
+    # io_trace "visit -2- $(print_vars _zouVisitPaths[@])"
+  fi
   [ ${#_zouVisitPaths[@]} -eq 0 ] && return 0
 
   for path in "${_zouVisitPaths[@]}"; do
@@ -580,7 +586,13 @@ visit()
 visit_async()
 {
   local ec=0 _zouVisitPaths path pid pids=()
-  [[ "$1" =~ \[@\]$ ]] && _zouVisitPaths=("${!1}") || ( [[ -n $1 ]] && _zouVisitPaths=("$($1)") )
+  if [[ "$1" =~ \[@\]$ ]]; then
+    _zouVisitPaths=("${!1}")
+    # io_trace "visit_async -1- $(print_vars _zouVisitPaths[@])"
+  elif [[ -n $1 ]]; then
+    _zouVisitPaths=("$($1)")
+    # io_trace "visit_async -2- $(print_vars _zouVisitPaths[@])"
+  fi
   [ ${#_zouVisitPaths[@]} -eq 0 ] && return 0
   
   [[ -z $jobsCount ]] && jobsCount=12
@@ -605,7 +617,13 @@ visit_async()
 visit_async_fast()
 {
   local _zouVisitPaths path
-  [[ $1 =~ \[@\]$ ]] && _zouVisitPaths=("${!1}") || _zouVisitPaths=("$($1)")
+  if [[ "$1" =~ \[@\]$ ]]; then
+    _zouVisitPaths=("${!1}")
+    # io_trace "visit_async_fast -1- $(print_vars _zouVisitPaths[@])"
+  elif [[ -n $1 ]]; then
+    _zouVisitPaths=("$($1)")
+    # io_trace "visit_async_fast -2- $(print_vars _zouVisitPaths[@])"
+  fi
   [ ${#_zouVisitPaths[@]} -eq 0 ] && return 0
 
   for path in $(array_sort _zouVisitPaths[@]); do
