@@ -108,7 +108,8 @@ _zou_setup_chicken()
     cd "$develDir"
     gitx_clone 'https://git.epsitec.ch/Build/zou.chicken.git'
     nuget sources remove -name chicken &>"$stdallRedir"
-    nuget sources add -name chicken -source "$(cygpath -w "$chickenDir")" &>"$stdallRedir"
+    sys_windows && chickenDir="$(cygpath -w "$chickenDir")"
+    nuget sources add -name chicken -source "$chickenDir" &>"$stdallRedir"
   fi
 }
 _zou_update_epilog()
