@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+. zoul-git-core
+
+# Get the current branch name
+branch=$(gitx rev-parse --abbrev-ref HEAD 2>>"$stderrRedir")
+
+# Get the name of the branch that was just merged
+mergedBranch=$(git reflog -1 | cut -d" " -f 4 | sed "s/://")
+
+echo "$PWD @ '$mergedBranch' -> '$branch'" &>>"$stdallRedir"
