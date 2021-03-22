@@ -55,6 +55,9 @@ config_setup()
 }
 config_migrate_registered_bundles()
 {
+  # reset registered bundles
+  [ -f "$zouConfigFile" ] && rm "$zouConfigFile"
+
   local kv kvs key value
   IFS=$'\n' kvs=( $(git config --global --get-regexp '^zou\..*\.path$' 2>>"$stderrRedir") ); IFS=$OIFS
   for kv in "${kvs[@]}"; do
