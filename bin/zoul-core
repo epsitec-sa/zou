@@ -607,7 +607,10 @@ visit_async()
   fi
   [ ${#_zouVisitPaths[@]} -eq 0 ] && return 0
   
-  [[ -z $jobsCount ]] && jobsCount=12
+  if [[ -z $jobsCount ]]; then
+    jobsCount=12
+    ( sys_linux || sys_mac ) && jobsCount=128
+  fi
 
   for path in $(array_sort _zouVisitPaths[@]); do
     ( $2 "$path" "${@:3}" || io_trace_error "visit_async >> $2 "$path" "${@:3}"" || exit $? )&
