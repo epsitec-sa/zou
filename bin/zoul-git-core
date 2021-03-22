@@ -6,16 +6,6 @@ ZOUL_GIT_CORE=true
 
 [[ -z $ZOUL_CORE ]] && . zoul-core
 
-# ZOU_GIT_LOG_PATH="$TMP/_zou/gitlog.txt"
-if [[ -n $ZOU_GIT_LOG_PATH ]]; then
-  [ -d $(dirname "$ZOU_GIT_LOG_PATH") ] || mkdir "$(dirname "$ZOU_GIT_LOG_PATH")"
-fi
-
-gitx()
-{
-  [[ -n $ZOU_GIT_LOG_PATH ]] && echo "git -c core.longpaths=true ${*@Q}" >> "$ZOU_GIT_LOG_PATH"
-  git -c core.longpaths=true "$@"
-}
 gitx_clone()     { local IFS=$'\n'; gitx clone $(gitx_cache_option) "$@"; }
 gitx_sm_update() { local IFS=$'\n'; gitx submodule update $(gitx_cache_option) "$@"; }
 gitx_sm_add()    { local IFS=$'\n'; gitx submodule add $(gitx_cache_option) "$@"; }
