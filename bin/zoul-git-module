@@ -154,7 +154,7 @@ module_update_init()
   if [[ -n "$moduleParent" ]]; then
     cd "$moduleParent"
     io_buffered_eval "gitx_sm_update --init "$modulePath" 2>&1" '' ${DarkGray}
-    cd - &>"$stdallRedir"
+    cd - &>>"$stdallRedir"
 
     _module_reset_scope
   fi
@@ -396,11 +396,11 @@ _module_set_bundle_dev_branch()
   if [[ $bundleHead == 'HEAD' || ( $(git_object_type $bundleHead) == 'tag' && ! $bundleHead =~ (.*/)?v[0-9]+\.[0-9]+ ) ]]; then
     # we are in detached HEAD : infer dev branch from vtag name
     local ltag stag folder
-    ltag=$(gitx describe --tags --match '*v[0-9]*' 2>"$stderrRedir" | head -n1)
+    ltag=$(gitx describe --tags --match '*v[0-9]*' 2>>"$stderrRedir" | head -n1)
     stag=${ltag%-*-g*}
     _bundle_vref_to_dev "$stag" || bundleDevBranch='master'
     # io_trace "_module_set_bundle_dev_branch -1- $(print_vars bundleHead bundleDevBranch)"
-  elif [[ $bundleHead == $(gitx rev-parse --abbrev-ref "$bundleHead" 2>"$stderrRedir") ]]; then
+  elif [[ $bundleHead == $(gitx rev-parse --abbrev-ref "$bundleHead" 2>>"$stderrRedir") ]]; then
     _bundle_vref_to_dev "$bundleHead" || bundleDevBranch=$bundleHead
     # io_trace "_module_set_bundle_dev_branch -2- $(print_vars bundleHead bundleDevBranch)"
   elif ! _bundle_vref_to_dev "$bundleHead"; then
@@ -474,7 +474,7 @@ _module_submodule_visitor()
 #   _module_enter "$moduleDir" || return $?
 _module_enter()
 {
-  cd "$1" &>"$stdallRedir" || {
+  cd "$1" &>>"$stdallRedir" || {
     io_error "No such [sub]module directory '$1'" "$moduleTracePrefix"
     return 1
   }
@@ -508,7 +508,7 @@ _module_set_principal_module_id()
   # if the bundle branch name starts with 'sku/', use the following part as the principal module ID
   # else use the bundle name without '-*' suffix
 
-  principalModuleId=$(gitx config --file "$bundleConfigFile" "sku.principalModuleId" 2>"$stderrRedir")
+  principalModuleId=$(gitx config --file "$bundleConfigFile" "sku.principalModuleId" 2>>"$stderrRedir")
   [ -n "$principalModuleId" ] && [ -d "$bundleRoot/$principalModuleId" ] && return 0
 
   if [[ $bundleDevBranch =~ ^sku/([^/]+) ]]; then
@@ -634,7 +634,7 @@ _module_set_bundle_trace_prefix()
     _module_set_smart_id2 42 "$mid" ${White} "$bid" $bcolor
     bundleTracePrefix=$sid
     
-    cd - &>"$stdallRedir"
+    cd - &>>"$stdallRedir"
   else
     local len; (( len = ${submodulePathMaxLength} + 2 ))
     printf -v bundleTracePrefix "%-${len}s" "[$bundleId]"

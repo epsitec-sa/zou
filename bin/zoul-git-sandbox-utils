@@ -13,8 +13,8 @@ file_change_commit()
   local prefix=${PWD##*/}; prefix=${prefix^^}
   local message="$prefix: $file: $change"
   echo "$change" >> "$file"
-  gitx update-index --add -- "$file" &>"$stdallRedir" \
-  && gitx commit -m "$message" -- "$file" &>"$stdallRedir" \
+  gitx update-index --add -- "$file" &>>"$stdallRedir" \
+  && gitx commit -m "$message" -- "$file" &>>"$stdallRedir" \
   && mio_info "Commited $file -- $change"
 }
 file_change()
@@ -34,8 +34,8 @@ file_commit()
   local change="$*"
   local prefix=${PWD##*/}; prefix=${prefix^^}
   local message="$prefix: $file: $change"
-  gitx update-index --add -- "$file" &>"$stdallRedir" \
-  && gitx commit -m "$message" -- "$file" &>"$stdallRedir" \
+  gitx update-index --add -- "$file" &>>"$stdallRedir" \
+  && gitx commit -m "$message" -- "$file" &>>"$stdallRedir" \
   && mio_info "Commited $file -- $change"
 }
 file_commit_all()
@@ -47,7 +47,7 @@ file_commit_all()
 }
 file_create_name()
 {
-  local extension=${1:-.txt} folder=${PWD##*/} sku=$(gitx symbolic-ref --short HEAD 2>"$stderrRedir")
+  local extension=${1:-.txt} folder=${PWD##*/} sku=$(gitx symbolic-ref --short HEAD 2>>"$stderrRedir")
   sku=${sku%/dev}   # remove '/dev' suffix
   sku=${sku#sku/}   # remove 'sku/' prefix
   sku=${sku:-master}

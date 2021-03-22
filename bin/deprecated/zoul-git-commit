@@ -33,9 +33,9 @@ commit_sync_submodules()
   for k in ${!a[@]}; do
     if [[ ${a[$k]} != ${b[$k]} ]]; then
       # io_info "Synchronized '$1' with '$2'" "$moduleTracePrefix"
-      git checkout "$2" &>"$stdallRedir"
+      git checkout "$2" &>>"$stdallRedir"
       repo_commit_clean_submodules
-      git checkout - &>"$stdallRedir"
+      git checkout - &>>"$stdallRedir"
       return 0
     fi
   done

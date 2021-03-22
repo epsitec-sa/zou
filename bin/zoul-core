@@ -16,8 +16,6 @@ ZOUL_CORE=true
 IFS=$' \t\n'
 OIFS=$IFS
 
-stderrRedir='/dev/null'
-stdallRedir='/dev/null'
 
 # force git to use invariant language
 export LANGUAGE=en_US
@@ -35,6 +33,20 @@ zouBinDir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 zouCommand="${zouStartupFileName##git-}"
 zouConfigFile="$(abspath ~)/.zou-flow"
 
+zouTmpDir=${TMPDIR:-/tmp}/_zou
+[ -d "$zouTmpDir" ] || mkdir -p "$zouTmpDir"
+
+zouLogPath=${ZOU_LOG_PATH:-$zouTmpDir/zou-flow.log}
+[ -d $(dirname "$zouLogPath") ] || mkdir "$(dirname "$zouLogPath")"
+
+if [[ $ZOU_LOG == true ]]; then
+  [[ -f "$zouLogPath" ]] && rm "$zouLogPath"
+  stderrRedir="$zouLogPath"
+  stdallRedir="$zouLogPath"
+else
+  stderrRedir='/dev/null'
+  stdallRedir='/dev/null'
+fi
 
 # colors usage
 #   colors="${Red}Red ${Green}Green${NC}"
@@ -485,7 +497,7 @@ get_file_encoding()
 }
 _locale_encoding()
 {
-  if command -v locale &>"$stdallRedir"; then
+  if command -v locale &>>"$stdallRedir"; then
     _lang_to_encoding "$(locale | grep -0 'LANG=')"
   else
     _lang_to_encoding "LANG=$LANG"
@@ -544,7 +556,7 @@ ieval()
   if [[ $fEncoding == $zouEncoding || $fEncoding == 'us-ascii' || $fEncoding == 'utf-8' || $fEncoding == 'iso-8859-1' ]]; then
     eval "$command "$(cl_escape "$file")""
   else
-    iconv -f "$fEncoding" -t "$zouEncoding" "$file" 2>"$stderrRedir" \
+    iconv -f "$fEncoding" -t "$zouEncoding" "$file" 2>>"$stderrRedir" \
     | eval "$command" \
     | iconv -f "$zouEncoding" -t "$fEncoding"
     return ${PIPESTATUS[1]}
@@ -602,14 +614,14 @@ visit_async()
     pids+=($!)
     if (( "$jobsCount" > 0 )) && (( $(process_job_count) % "$jobsCount" == 0 )); then
       for pid in "${pids[@]}"; do
-        wait $pid &>"$stdallRedir" || ec=$?
+        wait $pid &>>"$stdallRedir" || ec=$?
       done
       pids=()
       [[ $ec -ne 0 && $stopOnError == true ]] && break
     fi
   done
   for pid in "${pids[@]}"; do
-    wait $pid &>"$stdallRedir" || ec=$?
+    wait $pid &>>"$stdallRedir" || ec=$?
   done
   wait
   return $ec

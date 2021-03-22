@@ -48,9 +48,9 @@ config_sku_include_single()
   rePath=$(wildcard_to_regex "$path")
   # io_trace "config_sku_include_single ${*@Q} -- $(print_vars path rePath configFile)"
 
-  gitx config --file "$configFile" --unset-all 'sku.exclude' "$rePath" &>"$stdallRedir" || io_trace_error 'config_sku_include_single -1-'
+  gitx config --file "$configFile" --unset-all 'sku.exclude' "$rePath" &>>"$stdallRedir" || io_trace_error 'config_sku_include_single -1-'
 
-  gitx update-index --add -- "$configFile" &>"$stdallRedir" \
+  gitx update-index --add -- "$configFile" &>>"$stdallRedir" \
   && git_commit "include submodule '$path' in SKU" "$configFile" || io_trace_error 'config_sku_include_single -2-'
 }
 config_sku_exclude_single()
@@ -63,10 +63,10 @@ config_sku_exclude_single()
   _config_sku_check_path "$path" || return 1
   rePath=$(wildcard_to_regex_match_whole "$path")
 
-  gitx config --file "$configFile" --get-all "sku.exclude" "$rePath" &>"$stdallRedir" \
-  || gitx config --file "$configFile" --add "sku.exclude" "$path" &>"$stdallRedir"
+  gitx config --file "$configFile" --get-all "sku.exclude" "$rePath" &>>"$stdallRedir" \
+  || gitx config --file "$configFile" --add "sku.exclude" "$path" &>>"$stdallRedir"
 
-  gitx update-index --add -- "$configFile" &>"$stdallRedir" \
+  gitx update-index --add -- "$configFile" &>>"$stdallRedir" \
   && git_commit "exclude submodule '$path' from SKU" "$configFile"
 }
 
@@ -80,10 +80,10 @@ config_sku_include_many()
   for path in $(string_sort "$@"); do
     _config_sku_check_path "$path" || return 1
     rePath=$(wildcard_to_regex_match_whole "$path")
-    gitx config --file "$configFile" --unset-all "sku.exclude" "$rePath" &>"$stdallRedir"
+    gitx config --file "$configFile" --unset-all "sku.exclude" "$rePath" &>>"$stdallRedir"
   done
 
-  gitx update-index --add -- "$configFile" &>"$stdallRedir" && \
+  gitx update-index --add -- "$configFile" &>>"$stdallRedir" && \
   git_commit "include submodules '$(string_join ', ' $@)' in SKU" "$configFile"
 }
 config_sku_exclude_many()
@@ -96,11 +96,11 @@ config_sku_exclude_many()
   for path in $(string_sort "$@"); do
     _config_sku_check_path "$path" || return 1
     rePath=$(wildcard_to_regex_match_whole "$path")
-    gitx config --file "$configFile" --get-all "sku.exclude" "$rePath" &>"$stdallRedir" \
+    gitx config --file "$configFile" --get-all "sku.exclude" "$rePath" &>>"$stdallRedir" \
     || gitx config --file "$configFile" --add "sku.exclude" "$path"
   done
 
-  gitx update-index --add -- "$configFile" &>"$stdallRedir" && \
+  gitx update-index --add -- "$configFile" &>>"$stdallRedir" && \
   git_commit "exclude submodules '$(string_join ', ' $@)' from SKU" "$configFile"
 }
 
@@ -110,9 +110,9 @@ config_sku_include_all()
   
   # io_trace "config_sku_include_all ${*@Q}"
   local configFile="$(_config_sku_file_path)"
-  gitx config --file "$configFile" --remove-section "sku" &>"$stdallRedir"
+  gitx config --file "$configFile" --remove-section "sku" &>>"$stdallRedir"
 
-  gitx update-index --add -- "$configFile" &>"$stdallRedir" \
+  gitx update-index --add -- "$configFile" &>>"$stdallRedir" \
   && git_commit 'include all submodules in SKU' "$configFile"
 }
 config_sku_exclude_all()
@@ -128,7 +128,7 @@ config_sku_update()
   # remove unexisting sub-modules from excluded list
 
   local smpaths existing configFile="$(_config_sku_file_path)" path smlist s
-  smpaths=( $(gitx config --file "$configFile" --get-all "sku.exclude" 2>"$stderrRedir") )
+  smpaths=( $(gitx config --file "$configFile" --get-all "sku.exclude" 2>>"$stderrRedir") )
   [ ${#smpaths[@]} -eq 0 ] && return 0
 
   existing=( "${moduleSubmodulePaths[@]}" )
@@ -145,10 +145,10 @@ config_sku_update()
 
   for path in "${smpaths[@]}"; do
     # io_trace "config_sku_update -3- $(print_vars path)"
-    gitx config --file "$configFile" --unset-all "sku.exclude" "$path" &>"$stdallRedir" || io_trace_error 'config_sku_update -3-'
+    gitx config --file "$configFile" --unset-all "sku.exclude" "$path" &>>"$stdallRedir" || io_trace_error 'config_sku_update -3-'
   done
   
-  gitx update-index --add -- "$configFile" &>"$stdallRedir" && \
+  gitx update-index --add -- "$configFile" &>>"$stdallRedir" && \
   git_commit "unconfigure submodule$s '$smlist'" "$configFile"
 }
 
@@ -159,7 +159,7 @@ config_sku_is_excluded()
   [[ -z $path ]] && path=$(repo_path_relative_to_module_root)
   rePath=$(wildcard_to_regex_match_whole "$path")
 
-  gitx config --file "$(_config_sku_file_path)" --get-all "sku.exclude" "$rePath" &>"$stdallRedir"
+  gitx config --file "$(_config_sku_file_path)" --get-all "sku.exclude" "$rePath" &>>"$stdallRedir"
 }
 config_sku_list_included()
 {
@@ -170,20 +170,20 @@ config_sku_list_included()
 }
 config_sku_list_excluded()
 {
-  gitx config --file "$(_config_sku_file_path)" --get-all "sku.exclude" 2>"$stderrRedir" || true
+  gitx config --file "$(_config_sku_file_path)" --get-all "sku.exclude" 2>>"$stderrRedir" || true
 }
 
 config_sku_set_principal_module_id()
 {
   local pid=$1
-  gitx config --file "$bundleConfigFile" "sku.principalModuleId" "$pid" &>"$stdallRedir"
+  gitx config --file "$bundleConfigFile" "sku.principalModuleId" "$pid" &>>"$stdallRedir"
 
-  gitx update-index --add -- "$bundleConfigFile" &>"$stdallRedir" \
+  gitx update-index --add -- "$bundleConfigFile" &>>"$stdallRedir" \
   && git_commit "modify principal module to '$pid'" "$bundleConfigFile"
 }
 config_sku_get_principal_module_id()
 {
-  gitx config --file "$bundleConfigFile" "sku.principalModuleId" 2>"$stderrRedir"
+  gitx config --file "$bundleConfigFile" "sku.principalModuleId" 2>>"$stderrRedir"
 }
 
 config_sku_status()

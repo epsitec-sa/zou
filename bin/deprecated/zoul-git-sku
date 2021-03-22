@@ -125,7 +125,7 @@ _sku_describe_vtag()
   local branch=$1 fhint=$2 ftag
   delta=0
   for ftag in $(ref_tag_fallback $fhint 'v[0-9]*'); do
-    ltag=$(git describe --tags --match "$ftag" --exclude 'other/*' "$branch" 2>"$stderrRedir")
+    ltag=$(git describe --tags --match "$ftag" --exclude 'other/*' "$branch" 2>>"$stderrRedir")
     if [[ -n $ltag ]]; then
       stag=${ltag%-*-g*}
       lsuf=${ltag#$stag}
@@ -165,17 +165,17 @@ _sku_set_vbranch_name()
 _sku_realize_branch()
 {
   io_trace "_sku_realize_branch ${*@Q}" Purple
-  if git show-ref -s --verify "refs/heads/$1" &>"$stdallRedir"; then
+  if git show-ref -s --verify "refs/heads/$1" &>>"$stdallRedir"; then
     # local branch
     lbranch=$1
-    rbranch=$(git rev-parse --abbrev-ref --symbolic-full-name $1@{u} 2>"$stderrRedir")
-  elif git show-ref -s --verify "refs/remotes/$1" &>"$stdallRedir"; then
+    rbranch=$(git rev-parse --abbrev-ref --symbolic-full-name $1@{u} 2>>"$stderrRedir")
+  elif git show-ref -s --verify "refs/remotes/$1" &>>"$stdallRedir"; then
     # remote branch
     rbranch=$1
     lbranch=${rbranch#*/}
   else
     # assume its a deleted local branch with an existing remote branch
-    rbranch=$(git for-each-ref --format='%(refname:short)' refs/remotes 2>"$stderrRedir" | grep -E "^[^/]+/$1$")
+    rbranch=$(git for-each-ref --format='%(refname:short)' refs/remotes 2>>"$stderrRedir" | grep -E "^[^/]+/$1$")
     if [[ $? -eq 0 ]]; then
       lbranch=${rbranch#*/}
     else

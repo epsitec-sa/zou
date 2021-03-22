@@ -54,14 +54,14 @@ config_select_include_single()
   rePath=$(wildcard_to_regex_match_whole "$path")
   if _config_select_level0; then
     # remove path from excluded list
-    gitx config --file "$configFile" --unset-all "select.exclude" "$rePath" &>"$stdallRedir"
+    gitx config --file "$configFile" --unset-all "select.exclude" "$rePath" &>>"$stdallRedir"
   else
     # add path to included list
-    gitx config --file "$configFile" --get-all "select.include" "$rePath" &>"$stdallRedir" \
-    || gitx config --file "$configFile" --add "select.include" "$path" &>"$stdallRedir"
+    gitx config --file "$configFile" --get-all "select.include" "$rePath" &>>"$stdallRedir" \
+    || gitx config --file "$configFile" --add "select.include" "$path" &>>"$stdallRedir"
   fi
 
-  gitx update-index --add -- "$configFile" &>"$stdallRedir" \
+  gitx update-index --add -- "$configFile" &>>"$stdallRedir" \
   && git_commit "make submodule '$path' internal" "$configFile"
 }
 config_select_exclude_single()
@@ -74,14 +74,14 @@ config_select_exclude_single()
   rePath=$(wildcard_to_regex_match_whole "$path")
   if _config_select_level0; then
     # add path to excluded list
-    gitx config --file "$configFile" --get-all "select.exclude" "$rePath"  &>"$stdallRedir" \
-    || gitx config --file "$configFile" --add "select.exclude" "$path" &>"$stdallRedir"
+    gitx config --file "$configFile" --get-all "select.exclude" "$rePath"  &>>"$stdallRedir" \
+    || gitx config --file "$configFile" --add "select.exclude" "$path" &>>"$stdallRedir"
   else
     # remove path from included list
-    gitx config --file "$configFile" --unset-all "select.include" "$rePath" &>"$stdallRedir"
+    gitx config --file "$configFile" --unset-all "select.include" "$rePath" &>>"$stdallRedir"
   fi
 
-  gitx update-index --add -- "$configFile" &>"$stdallRedir" \
+  gitx update-index --add -- "$configFile" &>>"$stdallRedir" \
   && git_commit "make submodule '$path' external" "$configFile"
 }
 
@@ -95,15 +95,15 @@ config_select_include_many()
     rePath=$(wildcard_to_regex_match_whole "$path")
     if _config_select_level0; then
       # remove path from excluded list
-      gitx config --file "$configFile" --unset-all "select.exclude" "$rePath" &>"$stdallRedir"
+      gitx config --file "$configFile" --unset-all "select.exclude" "$rePath" &>>"$stdallRedir"
     else
       # add path to included list
-      gitx config --file "$configFile" --get-all "select.include" "$rePath" &>"$stdallRedir" \
-      || gitx config --file "$configFile" --add "select.include" "$path" &>"$stdallRedir"
+      gitx config --file "$configFile" --get-all "select.include" "$rePath" &>>"$stdallRedir" \
+      || gitx config --file "$configFile" --add "select.include" "$path" &>>"$stdallRedir"
     fi
   done
 
-  gitx update-index --add -- "$configFile" &>"$stdallRedir" && \
+  gitx update-index --add -- "$configFile" &>>"$stdallRedir" && \
   git_commit "make submodules '$(string_join ', ' $@)' internal" "$configFile"
 }
 config_select_exclude_many()
@@ -116,15 +116,15 @@ config_select_exclude_many()
     rePath=$(wildcard_to_regex_match_whole "$path")
     if _config_select_level0; then
       # add path to excluded list
-      gitx config --file "$configFile" --get-all "select.exclude" "$rePath"  &>"$stdallRedir" \
-      || gitx config --file "$configFile" --add "select.exclude" "$path" &>"$stdallRedir"
+      gitx config --file "$configFile" --get-all "select.exclude" "$rePath"  &>>"$stdallRedir" \
+      || gitx config --file "$configFile" --add "select.exclude" "$path" &>>"$stdallRedir"
     else
       # remove path from included list
-      gitx config --file "$configFile" --unset-all "select.include" "$rePath" &>"$stdallRedir"
+      gitx config --file "$configFile" --unset-all "select.include" "$rePath" &>>"$stdallRedir"
     fi
   done
 
-  gitx update-index --add -- "$configFile" &>"$stdallRedir" \
+  gitx update-index --add -- "$configFile" &>>"$stdallRedir" \
   && git_commit "make submodules '$(string_join ', ' $@)' external" "$configFile"
 }
 
@@ -135,9 +135,9 @@ config_select_include_all()
   local configFile="$(_config_select_file_path)"
   if _config_select_level0; then
     # remove excluded list (full section)
-    gitx config --file "$configFile" --remove-section "select" &>"$stdallRedir"
+    gitx config --file "$configFile" --remove-section "select" &>>"$stdallRedir"
 
-    gitx update-index --add -- "$configFile" &>"$stdallRedir" \
+    gitx update-index --add -- "$configFile" &>>"$stdallRedir" \
     && git_commit 'make all submodules internal' "$configFile"
   else
     # add all submodules to included list
@@ -152,9 +152,9 @@ config_select_exclude_all()
   if _config_select_level0; then
     config_select_exclude_many $(repo_list_submodule_paths)
   else
-    gitx config --file "$configFile" --remove-section "select" &>"$stdallRedir"
+    gitx config --file "$configFile" --remove-section "select" &>>"$stdallRedir"
 
-    gitx update-index --add -- "$configFile" &>"$stdallRedir" \
+    gitx update-index --add -- "$configFile" &>>"$stdallRedir" \
     && git_commit 'make all submodules external' "$configFile"
   fi
 }
@@ -167,10 +167,10 @@ config_select_update()
 
   if _config_select_level0; then
     # update excluded list
-    smpaths=( $(gitx config --file "$configFile" --get-all "select.exclude" 2>"$stderrRedir") )
+    smpaths=( $(gitx config --file "$configFile" --get-all "select.exclude" 2>>"$stderrRedir") )
   else
     # update included list
-    smpaths=( $(gitx config --file "$configFile" --get-all "select.include" 2>"$stderrRedir") )
+    smpaths=( $(gitx config --file "$configFile" --get-all "select.include" 2>>"$stderrRedir") )
   fi
     [ ${#smpaths[@]} -eq 0 ] && return 0
   
@@ -189,17 +189,17 @@ config_select_update()
     # update excluded list
     for path in "${smpaths[@]}"; do
       # io_trace "config_select_update -3- $(print_vars path)"
-      gitx config --file "$configFile" --unset-all "select.exclude" "$path" &>"$stdallRedir" || io_trace_error 'config_select_update -3-'
+      gitx config --file "$configFile" --unset-all "select.exclude" "$path" &>>"$stdallRedir" || io_trace_error 'config_select_update -3-'
     done
   else
     # update included list
     for path in "${smpaths[@]}"; do
       # io_trace "config_select_update -3- $(print_vars path)"
-      gitx config --file "$configFile" --unset-all "select.include" "$path" &>"$stdallRedir" || io_trace_error 'config_select_update -3-'
+      gitx config --file "$configFile" --unset-all "select.include" "$path" &>>"$stdallRedir" || io_trace_error 'config_select_update -3-'
     done
   fi
   
-  gitx update-index --add -- "$configFile" &>"$stdallRedir" && \
+  gitx update-index --add -- "$configFile" &>>"$stdallRedir" && \
   git_commit "unconfigure submodule$s '$smlist'" "$configFile"
 }
 
@@ -218,20 +218,20 @@ config_select_list_included()
   local configFile="$(_config_select_file_path)" submodules excluded
   if _config_select_level0; then
     [[ -n $1 ]] && submodules=( "${!1}" ) || submodules=( $(repo_list_submodule_paths) )
-    excluded=( $(gitx config --file "$configFile" --get-all "select.exclude" 2>"$stderrRedir") )
+    excluded=( $(gitx config --file "$configFile" --get-all "select.exclude" 2>>"$stderrRedir") )
     array_remove_array submodules[@] excluded[@]
   else
-    gitx config --file "$configFile" --get-all "select.include" 2>"$stderrRedir" || true
+    gitx config --file "$configFile" --get-all "select.include" 2>>"$stderrRedir" || true
   fi
 }
 config_select_list_excluded()
 {
   local configFile="$(_config_select_file_path)" submodules included
   if _config_select_level0; then
-    gitx config --file "$configFile" --get-all "select.exclude" &>"$stdallRedir" || true
+    gitx config --file "$configFile" --get-all "select.exclude" &>>"$stdallRedir" || true
   else
     [[ -n $1 ]] && submodules=( "${!1}" ) || submodules=( $(repo_list_submodule_paths) )
-    included=( $(gitx config --file "$configFile" --get-all "select.include" 2>"$stderrRedir") )
+    included=( $(gitx config --file "$configFile" --get-all "select.include" 2>>"$stderrRedir") )
     array_remove_array submodules[@] included[@]
   fi
 }

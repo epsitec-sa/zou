@@ -32,7 +32,7 @@ branch_raise_branch_deleted_event()      { raise_event 'branchDeletedEvent[@]' "
 #  rbranch    -- remote branch (even if lbranch does not exist)
 branch_upstream()
 {
-  gitx rev-parse --abbrev-ref $1@{upstream} 2>"$stderrRedir" && return 0
+  gitx rev-parse --abbrev-ref $1@{upstream} 2>>"$stderrRedir" && return 0
   local remote
   for remote in $(gitx remote); do
     branch_is_remote "$remote/$1" && { echo "$remote/$1"; return 0; }
@@ -51,7 +51,7 @@ branch_upstream()
 branch_set_upstream()
 {
   # io_trace "branch_set_upstream ${*@Q}"
-  rbranch=$(gitx rev-parse --abbrev-ref $1@{upstream} 2>"$stderrRedir")
+  rbranch=$(gitx rev-parse --abbrev-ref $1@{upstream} 2>>"$stderrRedir")
   [ $? -eq 0 ] && return 0
   local remote
   for remote in $(gitx remote); do
@@ -78,23 +78,23 @@ branch_is_remote_candidate()
 branch_is_archived()
 {
   local branch=$1 remote=$2
-  ref_exists "other/archive/$branch" &>"$stdallRedir" && return 0
+  ref_exists "other/archive/$branch" &>>"$stdallRedir" && return 0
   [[ -z $remote ]] && remote=$(git_remote)
   [[ -n $remote ]] && ref_exists "$remote/other/archive/$branch"
 }
-branch_list_local()     { gitx for-each-ref --format='%(refname:short)' refs/heads 2>"$stderrRedir"; }
+branch_list_local()     { gitx for-each-ref --format='%(refname:short)' refs/heads 2>>"$stderrRedir"; }
 branch_list_local_at()
 {
   # io_trace "branch_list_local_at ${*@Q}"
-  gitx show-ref --heads 2>"$stderrRedir" | grep $(git_get_commit $1) | cut -d ' ' -f2 | sed 's,^refs/[^/]*/,,';
+  gitx show-ref --heads 2>>"$stderrRedir" | grep $(git_get_commit $1) | cut -d ' ' -f2 | sed 's,^refs/[^/]*/,,';
 }
-branch_list_remote()    { gitx for-each-ref --format='%(refname:short)' refs/remotes 2>"$stderrRedir" | grep -v '/HEAD$'; }
-branch_list_remote_at() { gitx show-ref 2>"$stderrRedir" | grep $(git_get_commit $1) | cut -d ' ' -f2 | grep 'refs/remotes' | grep -v '/HEAD$' | sed 's,^refs/[^/]*/,,'; }
-branch_list_all()       { gitx for-each-ref --format='%(refname:short)' refs/heads refs/remotes 2>"$stderrRedir" | grep -v '/HEAD$'; }
-branch_list_all_at()    { gitx show-ref 2>"$stderrRedir" | grep $(git_get_commit $1) | cut -d ' ' -f2 | grep -v '^refs/tags/' | grep -v '/HEAD$' | sed 's,^refs/[^/]*/,,'; }
-branch_is_attached()    { gitx symbolic-ref --short -q HEAD &>"$stdallRedir"; }
-branch_is_local()       { gitx show-ref -s --verify "refs/heads/$1" &>"$stdallRedir"; }
-branch_is_remote()      { gitx show-ref -s --verify "refs/remotes/$1" &>"$stdallRedir"; }
+branch_list_remote()    { gitx for-each-ref --format='%(refname:short)' refs/remotes 2>>"$stderrRedir" | grep -v '/HEAD$'; }
+branch_list_remote_at() { gitx show-ref 2>>"$stderrRedir" | grep $(git_get_commit $1) | cut -d ' ' -f2 | grep 'refs/remotes' | grep -v '/HEAD$' | sed 's,^refs/[^/]*/,,'; }
+branch_list_all()       { gitx for-each-ref --format='%(refname:short)' refs/heads refs/remotes 2>>"$stderrRedir" | grep -v '/HEAD$'; }
+branch_list_all_at()    { gitx show-ref 2>>"$stderrRedir" | grep $(git_get_commit $1) | cut -d ' ' -f2 | grep -v '^refs/tags/' | grep -v '/HEAD$' | sed 's,^refs/[^/]*/,,'; }
+branch_is_attached()    { gitx symbolic-ref --short -q HEAD &>>"$stdallRedir"; }
+branch_is_local()       { gitx show-ref -s --verify "refs/heads/$1" &>>"$stdallRedir"; }
+branch_is_remote()      { gitx show-ref -s --verify "refs/remotes/$1" &>>"$stdallRedir"; }
 branch_is_prod()        { [[ $1 =~ ^(.*/)?([0-9]+\.[0-9]+)$ ]] && return 0 || return 1; }
 branch_is_dev()         { [[ $1 =~ (master|/dev)$ ]] && return 0 || return 1; }
 branch_is_wip()         { [[ $1 =~ ^(.*/)?wip/ ]] && return 0 || return 1; }
@@ -102,15 +102,15 @@ branch_is_hotfix()      { [[ $1 =~ ^(.*/)?hotfix/ ]] && return 0 || return 1; }
 branch_is_head()
 {
   local hash1 hash2
-  hash1=$(gitx rev-parse HEAD 2>"$stderrRedir")
+  hash1=$(gitx rev-parse HEAD 2>>"$stderrRedir")
   [ $? -ne 0 ] && return 1
-  hash2=$(git_get_commit $1 2>"$stderrRedir")
+  hash2=$(git_get_commit $1 2>>"$stderrRedir")
   [ $? -ne 0 ] && return 1
   [ $hash1 = $hash2 ]
 }
 branch_current()
 {
-  local ref=$(gitx rev-parse --abbrev-ref HEAD 2>"$stderrRedir")
+  local ref=$(gitx rev-parse --abbrev-ref HEAD 2>>"$stderrRedir")
   echo "$ref"
   branch_is_local "$ref"
 }
@@ -126,7 +126,7 @@ branch_is_ancestor_of()
 {
   local ref=${1:-HEAD} branch ec; shift
   for branch; do
-    gitx merge-base --is-ancestor "$ref" "$branch" 2>"$stderrRedir"; ec=$?
+    gitx merge-base --is-ancestor "$ref" "$branch" 2>>"$stderrRedir"; ec=$?
     # io_trace "branch_is_ancestor_of -- $(print_vars ref branch ec) PWD='$PWD'"
     [ $ec -eq 0 ] && return 0
   done
@@ -153,7 +153,7 @@ branch_sync_info()
     done
   fi
   # io_trace "branch_sync_info -- $(print_vars patterns[@])"
-  gitx for-each-ref --format="%(refname:short) %(upstream:short) %(upstream:trackshort)" "${patterns[@]}" 2>"$stderrRedir"
+  gitx for-each-ref --format="%(refname:short) %(upstream:short) %(upstream:trackshort)" "${patterns[@]}" 2>>"$stderrRedir"
 }
 branch_list_local_tracked()
 {
@@ -191,10 +191,10 @@ branch_list_local_can_delete()
     # tracking branches
     #   that are merged into tracked branches...
     #   or that have the tracking info broken but are merged in another remote
-    if [[ -n $l && -n $r ]] && ([[ $i =~ (=|<) ]] || [[ -z $i && -n $(gitx branch -r --contains $l 2>"$stderrRedir") ]]); then
+    if [[ -n $l && -n $r ]] && ([[ $i =~ (=|<) ]] || [[ -z $i && -n $(gitx branch -r --contains $l 2>>"$stderrRedir") ]]); then
       echo $l
     # archived branches merged in another remote
-    elif [[ -n $l ]] && branch_is_archived "$l" "$remote" && [[ -n $(gitx branch -r --contains $l 2>"$stderrRedir") ]]; then
+    elif [[ -n $l ]] && branch_is_archived "$l" "$remote" && [[ -n $(gitx branch -r --contains $l 2>>"$stderrRedir") ]]; then
       echo $l
     fi
   done < <(branch_sync_info)
@@ -277,7 +277,7 @@ branch_realize()
 {
   local ref=${1:-HEAD}
   if [[ $ref == 'HEAD' ]]; then
-    ref=$(gitx symbolic-ref --short HEAD 2>"$stderrRedir")
+    ref=$(gitx symbolic-ref --short HEAD 2>>"$stderrRedir")
     [ $? -ne 0 ] && return 2
   fi
   if branch_is_local "$ref"; then
@@ -343,8 +343,8 @@ branch_set_realize()
 
     if [[ $ensureLocal == 'true' ]]; then
       local remote=${branch%%/*}
-      gitx fetch "$remote" "$lbranch":"$lbranch" &>"$stdallRedir"
-      io_eval "gitx push "$remote" --set-upstream "$lbranch" 2>"$stderrRedir"" : ${DarkGray}
+      gitx fetch "$remote" "$lbranch":"$lbranch" &>>"$stdallRedir"
+      io_eval "gitx push "$remote" --set-upstream "$lbranch" 2>>"$stderrRedir"" : ${DarkGray}
       bref="refs/heads/$lbranch"
       # io_trace "branch_set_realize 4 -- $(print_vars ref branch lbranch bref)"
       return 0
@@ -359,7 +359,7 @@ branch_without_remote_prefix() { branch_is_remote $1 && echo ${1#*/} || echo $1;
 branch_ensure_local()
 {
   if ! branch_is_local $1; then
-    gitx branch "$1" "$(branch_upstream $1)" &>"$stdallRedir"
+    gitx branch "$1" "$(branch_upstream $1)" &>>"$stdallRedir"
   fi
 }
 branch_ensure_local_vbranch()
@@ -369,13 +369,13 @@ branch_ensure_local_vbranch()
   case $? in
   0) ;;
   1) local line
-     (gitx branch "$vbranch" "$rvbranch" 2>"$stderrRedir") | \
+     (gitx branch "$vbranch" "$rvbranch" 2>>"$stderrRedir") | \
      while read -r line; do
        [[ -z $line ]] && continue
        mio_message "  $line" ${DarkGray}
      done
      ;;
-  *) gitx branch "$vbranch" "$vtag" 2>"$stderrRedir"
+  *) gitx branch "$vbranch" "$vtag" 2>>"$stderrRedir"
   ;;
   esac
 }
@@ -392,22 +392,22 @@ branch_ensure_local_vbranch()
 #   4 other
 branch_ref_type()
 {
-  if gitx show-ref -s --verify "refs/heads/$1" &>"$stdallRedir"; then
+  if gitx show-ref -s --verify "refs/heads/$1" &>>"$stdallRedir"; then
     refSym=$1
     return 0
-  elif gitx show-ref -s --verify "refs/remotes/origin/$1" &>"$stdallRedir"; then
+  elif gitx show-ref -s --verify "refs/remotes/origin/$1" &>>"$stdallRedir"; then
     refSym=$1
     return 1
-  elif gitx show-ref -s --verify "refs/tags/$1" &>"$stdallRedir"; then
+  elif gitx show-ref -s --verify "refs/tags/$1" &>>"$stdallRedir"; then
     refSym=$1
     return 2
-  elif gitx show-ref -s --verify "refs/remotes/$1" &>"$stdallRedir"; then
+  elif gitx show-ref -s --verify "refs/remotes/$1" &>>"$stdallRedir"; then
     refSym=${1#*/}
     return 3
   else
-    local tags=( $(gitx tag --points-at "$1^{}" 2>"$stderrRedir") )
+    local tags=( $(gitx tag --points-at "$1^{}" 2>>"$stderrRedir") )
     if [ ${#tags[@]} -eq 0 ]; then
-      refSym="$(gitx rev-parse --short "$1^{}" 2>"$stderrRedir")"
+      refSym="$(gitx rev-parse --short "$1^{}" 2>>"$stderrRedir")"
       return 4
     else
       refSym=${tags[-1]}
@@ -423,7 +423,7 @@ branch_checkout()
 
   # checkout = force || !current
   # raise = !current || symChanged
-  if [[ $ref == $(gitx rev-parse --abbrev-ref HEAD 2>"$stderrRedir") ]]; then
+  if [[ $ref == $(gitx rev-parse --abbrev-ref HEAD 2>>"$stderrRedir") ]]; then
     # no sym change
     [[ $forceCheckout == true ]]; checkout=$?
     raiseEvent=1
@@ -551,7 +551,7 @@ _branch_checkout_selector()
 }
 branch_show_status()
 {
-  io_buffered_eval "gitx status -s --porcelain "$@" 2>"$stderrRedir" | sort" _branch_show_status_line_selector ${Gray}
+  io_buffered_eval "gitx status -s --porcelain "$@" 2>>"$stderrRedir" | sort" _branch_show_status_line_selector ${Gray}
 }
 _branch_show_status_line_selector()
 {
@@ -563,7 +563,7 @@ branch_ensure_remote()
 {
   local branch=$1 remote=${2:-origin}
   branch_upstream "$branch" >/dev/null && return 0
-  io_eval "gitx push "$remote" --set-upstream "$branch" 2>"$stderrRedir"" : ${DarkGray}
+  io_eval "gitx push "$remote" --set-upstream "$branch" 2>>"$stderrRedir"" : ${DarkGray}
 }
 branch_force_delete()
 {
@@ -596,7 +596,7 @@ branch_move()
       local tmpBranch
       if ref_is_current "$branch1"; then
         tmpBranch='zou/branch_move'
-        if ! gitx checkout -b "$tmpBranch" "$branch1" &>"$stdallRedir"; then
+        if ! gitx checkout -b "$tmpBranch" "$branch1" &>>"$stdallRedir"; then
           gitx branch -D "$tmpBranch" >/dev/null 2>&1
           repo_require_clean_work_tree 'Cannot move branch[es]'
           return 1

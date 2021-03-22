@@ -13,15 +13,15 @@ esac; shift; done
 
 for sm in "${args[@]}"; do
   mio_message "Removing ${VC}$sm${LightCyan} submodule..."
-  git config --file '.gitmodules' --remove-section "submodule.$sm" &>"$stdallRedir"
-  git update-index --add -- '.gitmodules' &>"$stdallRedir"
-  git submodule deinit -f -- "$sm" &>"$stdallRedir"
-  git rm --cached "$sm" &>"$stdallRedir"
+  git config --file '.gitmodules' --remove-section "submodule.$sm" &>>"$stdallRedir"
+  git update-index --add -- '.gitmodules' &>>"$stdallRedir"
+  git submodule deinit -f -- "$sm" &>>"$stdallRedir"
+  git rm --cached "$sm" &>>"$stdallRedir"
   if [[ $keepWork == true ]]; then
-    rm "$sm/.git" &>"$stdallRedir"
+    rm "$sm/.git" &>>"$stdallRedir"
   elif [ -d "$sm" ]; then
     mio_message "Removing ${VC}$sm${LightCyan} folder..."
-    rm -rf "$sm" &>"$stdallRedir"
+    rm -rf "$sm" &>>"$stdallRedir"
   fi
 done
 

@@ -119,10 +119,10 @@ wip_start_prolog()
   # io_trace "wip_start -- $(print_vars wipHotfix wipBranch devBranch moduleHead moduleDevBranch prodBranchPath)"
   if [[ $moduleHead != $wipBranch ]]; then
     if [[ $wipHotfix == true && -n $prodBranchPath ]]; then
-      git branch "$wipBranch" "$prodBranchPath" &>"$stdallRedir"
+      git branch "$wipBranch" "$prodBranchPath" &>>"$stdallRedir"
     elif module_in_dev_mode; then
-      git branch "$wipBranch" "$moduleHead" &>"$stdallRedir"
-      # git branch "$wipBranch" "$moduleDevBranchPath" &>"$stdallRedir"
+      git branch "$wipBranch" "$moduleHead" &>>"$stdallRedir"
+      # git branch "$wipBranch" "$moduleDevBranchPath" &>>"$stdallRedir"
     else
       mio_warning "Use ${VC}git dev enter${Brown} to switch to development"
       return 1

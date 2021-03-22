@@ -91,7 +91,7 @@ _sync_commit()
     else
       commitAction='cosm_commit_unstaged_external_submodules true'
     fi
-    $commitAction || gitx push --follow-tags ${r%%/*} $l &>"$stdallRedir"
+    $commitAction || gitx push --follow-tags ${r%%/*} $l &>>"$stdallRedir"
   fi
 }
 _sync_clean()
@@ -100,7 +100,7 @@ _sync_clean()
   local branch
   for branch in $(branch_list_local_can_delete); do
     local info
-    info=$(gitx branch -D "$branch" 2>"$stderrRedir")
+    info=$(gitx branch -D "$branch" 2>>"$stderrRedir")
     [[ -n $info ]] && mio_warning "$info"
   done
 }

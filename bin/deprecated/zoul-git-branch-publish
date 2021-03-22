@@ -42,7 +42,7 @@ branch_publish()
   released)
     mio_message "Already released at ${VC}$vtag" ${LightBlue};;
   ffRelease)
-    branch_merge "$vtag" "$moduleHead" &>"$stdallRedir" \
+    branch_merge "$vtag" "$moduleHead" &>>"$stdallRedir" \
       && mio_message "Already released at ${VC}$vnext${LightBlue} (${Brown}fast-forward${LightBlue})" ${LightBlue} \
       || { mio_error "Fast-forward publish of branch '$lbranch' failed"; return 1; };;
   unreleased)
@@ -153,5 +153,5 @@ _branch_set_publish_epilog()
   # io_trace "_branch_set_publish_epilog -- $(print_vars updater vresources[@])"
   # commit resources and clean submodules in dev branch
   version_commit_files "$vnext" "${vresources[@]}" $(repo_list_unstaged_clean_submodules)
-  branch_merge_sync $lbranch $vbranch '-Xtheirs' &>"$stdallRedir"
+  branch_merge_sync $lbranch $vbranch '-Xtheirs' &>>"$stdallRedir"
 }

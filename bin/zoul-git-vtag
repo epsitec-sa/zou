@@ -79,7 +79,7 @@ vtag_highest()
       regex="^(.*/)?v$(wildcard_to_regex $version)"
     fi
     local tags=() tag
-    for tag in $(gitx tag -l "*v${version}*" 2>"$stderrRedir"); do
+    for tag in $(gitx tag -l "*v${version}*" 2>>"$stderrRedir"); do
       [[ $tag =~ ^other/ ]] && continue
       [[ $skipVNodes == true && $tag =~ -@$ ]] && continue
       if [[ $tag =~ $regex ]]; then
@@ -134,7 +134,7 @@ vtag_set_describe()
     # io_trace "vtag_set_describe -2- $(print_vars branch lbranch skipVNodes match ltag)"
     if [[ -n $ltag ]]; then
       stag=${ltag%-*-g*}
-      if gitx merge-base --is-ancestor $stag^{} $branch &>"$stdallRedir"; then
+      if gitx merge-base --is-ancestor $stag^{} $branch &>>"$stdallRedir"; then
         _vtag_set_info "$ltag" "$stag" "$match" # -> vbranch vtag delta alias
         # io_trace "vtag_set_describe 3 -- $(print_vars vbranch vtag delta alias)"
         return 0
@@ -151,7 +151,7 @@ _vtag_describe()
   local exclude=() pattern
   for pattern; do exclude+=('--exclude' "$pattern"); done
   # io_trace "_vtag_describe -- $(print_vars exclude[@])"
-  gitx describe --tags --match "$match" --exclude 'other/*' --exclude '_*' ${exclude[@]} -- "$branch" 2>"$stderrRedir"  
+  gitx describe --tags --match "$match" --exclude 'other/*' --exclude '_*' ${exclude[@]} -- "$branch" 2>>"$stderrRedir"  
 }
 # Compute tag properties
 # in:
@@ -218,7 +218,7 @@ vtag_match_vtags_at()
 {
   # io_trace "vtag_match_vtags_at ${*@Q}"
   local ref=$1 regex=$2 tags tag
-  for tag in $(gitx tag --sort=-v:refname -l --points-at "$ref" 2>"$stderrRedir"); do
+  for tag in $(gitx tag --sort=-v:refname -l --points-at "$ref" 2>>"$stderrRedir"); do
     # io_trace "vtag_match_vtags_at -- $(print_vars ref regex tag)"
     [[ $tag == $ref ]] && continue
     [[ $tag =~ $regex ]] && echo $tag
@@ -233,7 +233,7 @@ vtag_highest_of()
   else
     local highest=$1 cc=0; shift
     while [[ -n $1 ]]; do
-      vtag_compare $1 $highest 2>"$stderrRedir"
+      vtag_compare $1 $highest 2>>"$stderrRedir"
       [ $? -eq 1 ] && highest=$1
       shift
     done

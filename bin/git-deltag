@@ -12,8 +12,8 @@ deltag_parse()
     -u|--no-push) noTagPush=true;;
     --debug) debug=true;;
     -*) io_error "unknown option: $1"; exit 1;;
-    .) args+=( $(git tag -l | grep -Ev '/') );;
-    *) args+=( $(git tag -l "$1") );;
+    .) args+=( $(gitx tag -l | grep -Ev '/') );;
+    *) args+=( $(gitx tag -l "$1") );;
   esac; shift; done
 }
 
@@ -26,9 +26,8 @@ deltag_run()
 }
 deltag_main()
 {
-  local tag=$1
-  [[ -z $tag ]] && { io_error "missing argument"; exit 1; }
-  tag_delete_tags "${args[@]}"
+  [[ $# -eq 0 ]] && return 0
+  tag_delete_tags "$@"
 }
 
 deltag_run "$@"

@@ -6,14 +6,9 @@ ZOUL_GIT_CORE=true
 
 [[ -z $ZOUL_CORE ]] && . zoul-core
 
-# ZOU_GIT_LOG_PATH="$TMP/_zou/gitlog.txt"
-if [[ -n $ZOU_GIT_LOG_PATH ]]; then
-  [ -d $(dirname "$ZOU_GIT_LOG_PATH") ] || mkdir "$(dirname "$ZOU_GIT_LOG_PATH")"
-fi
-
 gitx()
 {
-  [[ -n $ZOU_GIT_LOG_PATH ]] && echo "git -c core.longpaths=true ${*@Q}" >> "$ZOU_GIT_LOG_PATH"
+  echo "$PWD \$ git -c core.longpaths=true ${*@Q}" >> "$stdallRedir"
   git -c core.longpaths=true "$@"
 }
 gitx_clone()     { local IFS=$'\n'; gitx clone $(gitx_cache_option) "$@"; }
@@ -41,12 +36,12 @@ ref_is_archive() { [[ $1 =~ ^other/archive/(.*)$ ]]; }
 ref_is_orphan()  { [[ $1 =~ ^other/orphan(.*)$ ]]; }
 ref_is_marker()  { [[ $1 =~ ^other/marker/(.*)$ ]]; }
 ref_is_oldver()  { [[ $1 =~ ^other/oldver/(.*)$ ]]; }     # non semver version tag + big patch (more than 3 digits)
-ref_exists()     { gitx rev-parse --quiet --verify $1 &>"$stdallRedir"; }
-ref_equals()     { [[ $(gitx rev-parse $1^{} 2>"$stderrRedir") == $(gitx rev-parse $2^{} 2>"$stderrRedir") ]]; }
-ref_is_head()    { [[ $(gitx rev-parse $1^{} 2>"$stderrRedir") == $(gitx rev-parse HEAD 2>"$stderrRedir") ]]; }
-ref_is_current() { [[ $1 == $(gitx rev-parse --abbrev-ref HEAD 2>"$stderrRedir") ]]; }
+ref_exists()     { gitx rev-parse --quiet --verify $1 &>>"$stdallRedir"; }
+ref_equals()     { [[ $(gitx rev-parse $1^{} 2>>"$stderrRedir") == $(gitx rev-parse $2^{} 2>>"$stderrRedir") ]]; }
+ref_is_head()    { [[ $(gitx rev-parse $1^{} 2>>"$stderrRedir") == $(gitx rev-parse HEAD 2>>"$stderrRedir") ]]; }
+ref_is_current() { [[ $1 == $(gitx rev-parse --abbrev-ref HEAD 2>>"$stderrRedir") ]]; }
 ref_rename()     { [[ $1 =~ ^(.*/)? ]] && echo "${BASH_REMATCH[1]}$2"; }
-ref_list_all_at(){ gitx show-ref --dereference 2>"$stderrRedir" | grep $(git_get_commit $1) | cut -d ' ' -f2 | grep -v '/HEAD$' | sed 's,^refs/[^/]*/,,; s,\^{}$,,'; }
+ref_list_all_at(){ gitx show-ref --dereference 2>>"$stderrRedir" | grep $(git_get_commit $1) | cut -d ' ' -f2 | grep -v '/HEAD$' | sed 's,^refs/[^/]*/,,; s,\^{}$,,'; }
 
 # usage:
 #   cd <submodule-parent>
@@ -56,7 +51,7 @@ ref_list_all_at(){ gitx show-ref --dereference 2>"$stderrRedir" | grep $(git_get
 #   $2: submodule parent commish (default to HEAD)
 # out:
 #   submodule SHA1
-ref_get_submodule_ref() { gitx rev-parse ${2:-HEAD}^{commit}:"$1" 2>"$stderrRedir"; }
+ref_get_submodule_ref() { gitx rev-parse ${2:-HEAD}^{commit}:"$1" 2>>"$stderrRedir"; }
 # usage:
 #   local refSymbol refType
 #   ref_set_symbol REF
@@ -70,11 +65,11 @@ ref_set_symbol()
   local commit=${1:-HEAD}
   refType='branch'
   # io_trace "ref_set_symbol 1 -- $(print_vars commit)"
-  refSymbol=$(gitx rev-parse --abbrev-ref "$commit" 2>"$stderrRedir")
+  refSymbol=$(gitx rev-parse --abbrev-ref "$commit" 2>>"$stderrRedir")
   if [ $? -ne 0 ] || [[ -z $refSymbol || $refSymbol == 'HEAD' ]]; then
-    local tags=( $(gitx tag --points-at "$commit" 2>"$stderrRedir") )
+    local tags=( $(gitx tag --points-at "$commit" 2>>"$stderrRedir") )
     if [ ${#tags[@]} -eq 0 ]; then
-      refSymbol="$(gitx rev-parse --short "$commit" 2>"$stderrRedir")"
+      refSymbol="$(gitx rev-parse --short "$commit" 2>>"$stderrRedir")"
       refType='sha'
     else
       refSymbol=${tags[-1]}
@@ -101,32 +96,32 @@ ref_timespan()
 }
 ref_time()
 {
-  echo $(gitx show -s --format=%ct $1^{} 2>"$stderrRedir")
+  echo $(gitx show -s --format=%ct $1^{} 2>>"$stderrRedir")
 }
 
-git_remote()     { gitx remote 2>"$stderrRedir" | head -n1; }
+git_remote()     { gitx remote 2>>"$stderrRedir" | head -n1; }
 
 git_get_commit()
 {
   # io_trace "git_get_commit ${*@Q}"
   local rev=${1:-HEAD}
-  gitx rev-parse "${rev}^{commit}" 2>"$stderrRedir"
+  gitx rev-parse "${rev}^{commit}" 2>>"$stderrRedir"
 }
 git_symbolic_ref()
 {
   # io_trace "git_symbolic_ref ${*@Q}"
   if [[ -z $1 || $1 == 'HEAD' ]]; then
-    gitx symbolic-ref --short HEAD 2>"$stderrRedir" || echo 'HEAD'
+    gitx symbolic-ref --short HEAD 2>>"$stderrRedir" || echo 'HEAD'
   else
     echo $1
   fi
 }
-git_object_exists() { gitx cat-file -e "$1" &>"$stdallRedir"; }
-git_object_type()   { gitx cat-file -t "$1" 2>"$stderrRedir"; }
+git_object_exists() { gitx cat-file -e "$1" &>>"$stdallRedir"; }
+git_object_type()   { gitx cat-file -t "$1" 2>>"$stderrRedir"; }
 
 git_user_abbrev()
 {
-  local user=${1:-$(gitx config user.name 2>"$stderrRedir")} atom abbrev
+  local user=${1:-$(gitx config user.name 2>>"$stderrRedir")} atom abbrev
   for atom in ${user//-/ }; do 
     abbrev="${abbrev}${atom:0:1}"
   done
@@ -163,6 +158,6 @@ git_commit()
   content+=( "- zou-flow (v$version)" )
   printf -v footer '%s \n' "${content[@]}"
   # io_trace "git_commit -- $(print_vars header content[@] footer)"
-  gitx add -- "$@" &>"$stdallRedir" \
-  && gitx commit -m "$header" -m "$footer" "${options[@]}" &>"$stdallRedir"
+  gitx add -- "$@" &>>"$stdallRedir" \
+  && gitx commit -m "$header" -m "$footer" "${options[@]}" &>>"$stdallRedir"
 }
