@@ -127,7 +127,7 @@ repo_module_root()
 repo_module_parent()
 {
   local mroot
-  mroot=$(repo_module_root) || return $?
+  mroot="${1:-$(repo_module_root)}" || return $?
   if ! repo_is_bundle_root "$mroot"; then
     repo_module_root "$mroot/.."
     return 0
@@ -192,25 +192,80 @@ repo_module_and_bundle_roots()
   done
   return 1
 }
+# <bundle>/SM1/foo/SM2/SM3
+#   -> <bundle>/SM1/foo/SM2
+#   -> <bundle>/SM1
+#   -> <bundle>
 repo_ancestor_roots()
 {
   local mparent
   mparent=$(repo_module_parent "$1") || return $?
   repo_module_and_ancestor_roots "$mparent"
 }
+# <bundle>/SM1/foo/SM2/SM3
+#   -> <bundle>/SM1/foo/SM2/SM3
+#   -> <bundle>/SM1/foo/SM2
+#   -> <bundle>/SM1
+#   -> <bundle>
 repo_module_and_ancestor_roots()
 {
-  local dir=$(abspath ${1:-.})
-  while [[ -n "$dir" ]]; do
-    if [[ -f "$dir/.git" ]]; then
-      echo "$dir"
-    elif [[ -d "$dir/.git" ]]; then
-      echo "$dir"
+  local mroot=${1:-$moduleRoot}
+  [[ -z $mroot ]] && mroot="$(repo_module_root "$mroot")" || mroot="$(abspath "$mroot")"
+  while [[ -n "$mroot" ]]; do
+    if [[ -f "$mroot/.git" ]]; then
+      echo "$mroot"
+    elif [[ -d "$mroot/.git" ]]; then
+      echo "$mroot"
       return 0
     fi
-    dir=${dir%/*}
+    mroot=${mroot%/*}
   done
   return 1
+}
+# SM1/foo/SM2/SM3
+#   -> /SM3/
+#   -> /foo/SM2/
+#   -> /SM1/
+repo_module_and_ancestor_parts()
+{
+  local mroot=${1:-$moduleRoot} prevPath part
+  [[ -z $mroot ]] && mroot="$(repo_module_root "$mroot")" || mroot="$(abspath "$mroot")"
+  for path in $(repo_module_and_ancestor_roots "$mroot"); do
+    part="${prevPath#"$path"}"
+    [[ -n $part ]] && echo "$part"
+    # io_trace "_hooks_compute_parts -- $(print_vars mroot path prevPath part)"
+    prevPath="$path"
+  done
+}
+# in:
+#   $1:mroot  -- module root directory
+# stdout:
+#   mipath    -- module internal path (inside bundle .git directory)
+# exemple:
+#   <bundle>/SM1/foo/SM2/SM3 -> <bundle>/.git/modules/SM1/modules/foo/SM2/modules/SM3
+repo_module_internal_path()
+{
+  local mroot="${1:-$moduleRoot}" broot="$bundleRoot" dstPart
+  
+  [[ -z $mroot ]] && mroot="$(repo_module_root "$mroot")" || mroot="$(abspath "$mroot")"
+  [[ -z $broot ]] && broot="$(repo_bundle_root "$mroot")"
+  # io_trace "repo_module_internal_path -1- $(print_vars mroot broot)"
+
+  # compute submodules destination parts 
+  # SM1/SM2 -> /modules/SM1/modules/SM2/
+  if [[ "$broot" != "$mroot" ]]; then
+    local relParentPart parts part i
+    parts=( $(repo_module_and_ancestor_parts "$mroot") )
+    # loop in reverse order
+    for ((i=${#parts[@]}-1; i>=0; i--)); do
+      part="${parts[$i]}"
+      dstPart="${relParentPart}/modules$part"
+      # io_trace "repo_module_internal_path -2- $(print_vars part relParentPart dstPart)"
+      relParentPart="$dstPart"
+    done
+  fi
+  # io_trace "repo_module_internal_path -3- $(print_vars dstPart)"
+  echo "$broot/.git${dstPart}"
 }
 
 ######################
