@@ -52,15 +52,15 @@ cosm_do_select()
 }
 cosm_do_prolog()
 {
-  # io_trace "cosm_do_prolog -- $(print_vars submodules[@])"
+  # io_trace "cosm_do_prolog"
   [[ $removeDanglingSubmodules == true ]] && repo_remove_dangling_submodules_async
   return 0
 }
 cosm_do_epilog()
 {
-  # io_trace "cosm_do_epilog -- $(print_vars submodules[@])"
+  # io_trace "cosm_do_epilog)"
   cosm_commit_unstaged_submodules true
-  branch_show_status
 }
+cosm_do_finally() { branch_show_status; }
 
 cosm_run "$@"
