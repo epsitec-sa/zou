@@ -1,0 +1,121 @@
+#!/usr/bin/env bash
+
+# Use the following statement to include current lib only once
+#   [[ -z $ZOUL_GIT_HOOKS ]] && . zoul-git-hooks
+ZOUL_GIT_HOOKS=true
+
+[[ -z $ZOUL_GIT_REPO ]] && . zoul-git-repo
+
+# Update module hooks with zou template hooks
+# in:
+#   $1:mroot  -- module root directory
+#   $2:broot  -- bundle root directory
+#   $3:force  -- force update 
+# return code:
+#   0 : source hooks == destination hooks
+#   1 : source hooks != destination hooks || destination hooks do not exist
+# see also:
+#   https://stackoverflow.com/questions/26624368/handle-multiple-pre-commit-hooks
+hooks_update_module()
+{
+  local mroot="$1" force="$2" \
+        srcDir="$zouDir/git-hooks" \
+        dstDir mipath srcPath equals=0
+  
+  mipath=$(repo_module_internal_path "$mroot")
+  dstDir="$mipath/hooks"
+  # io_trace "hooks_update_module -1- $(print_vars srcDir dstDir)"
+
+  # setup multi-hooks
+  for srcPath in $srcDir/*; do
+    _hooks_update_hook "$srcPath" "$dstDir" "$force" || equals=1
+  done
+  
+  return $equals
+}
+
+# in:
+#   $1:srcPath  -- path of source hook   (ex: <bundle-dir>/zou/bin/git-hooks/pre-push)
+#   $2:dstDir   -- destination directory (ex: <bundle-dir>/.git/hooks)
+#   $3:force    -- force update 
+# return code:
+#   0 : source hook == destination hook
+#   1 : source hook != destination hook || destination hook does not exist
+_hooks_update_hook()
+{
+  local srcPath="$1" dstDir="$2" force=$3 hookName hookDir hookFolder original
+  hookName="$(basename "$srcPath")"
+  hookFolder="${hookName}.d"
+  hookDir="$dstDir/${hookFolder}"
+  original="$dstDir/$hookName"
+
+  # io_trace "_hooks_update_hook -1- $(print_vars srcPath dstDir force)"
+
+  if [ -d "$hookDir" ]; then
+    # 1. find zou hook (01-zou-pre-push)
+    #    compute max index (01, 02, 03...) -> 03
+    local index name zouHook
+    for path in $hookDir/*; do
+      path=$(basename "$path")
+      [[ $path =~ ^([0-9]+)?-?(.*) ]]
+      index=${BASH_REMATCH[1]}
+      name=${BASH_REMATCH[2]}
+      (( index = 10#$index )) # ensure we are in radix 10 (08 is interpreted as radix 8)
+      [[ $name == zou-$hookName ]] && zouHook="$path"
+      # io_trace "_hooks_update_hook -2- $(print_vars zouHook)" 
+    done
+
+    if [[ -z "$zouHook" ]]; then
+      (( index += 1 ))
+      printf -v zouHook '%02d-zou-%s' "$index" "$hookName"
+      # io_trace "_hooks_update_hook -3- $(print_vars zouHook)" 
+    fi
+
+    [[ $force == true ]] || { cmp -s "$srcPath" "$hookDir/$zouHook" && return 0; }
+    cp "$srcPath" "$hookDir/$zouHook" 2>>"$stderrRedir"
+    chmod a+x "$hookDir/$zouHook" 2>>"$stderrRedir"
+  else
+    # 1. create hook directory
+    # 2. move original hook to directory with index prefix
+    #    pre-push -> 01-pre-push
+    # 3. copy zou hook to directory with index and zou prefix
+    #    pre-push -> 01-zou-pre-push
+    # 4. create multi-hook script
+    mkdir "$hookDir" 2>>"$stderrRedir"
+    if [[ -f "$original" ]]; then
+      mv "$original" "$hookDir/01-$hookName" 2>>"$stderrRedir"
+      cp "$srcPath" "$hookDir/02-zou-$hookName" 2>>"$stderrRedir"
+      chmod a+x "$hookDir/01-$hookName" 2>>"$stderrRedir"
+      chmod a+x "$hookDir/02-zou-$hookName" 2>>"$stderrRedir"
+    else
+      cp "$srcPath" "$hookDir/01-zou-$hookName" 2>>"$stderrRedir"
+      chmod a+x "$hookDir/01-zou-$hookName" 2>>"$stderrRedir"
+    fi
+  fi
+
+  _hooks_create_multi_hook "$original" "$hookFolder"
+  return 1
+}
+_hooks_create_multi_hook()
+{
+  # #!/usr/bin/env bash
+  # cd "$(dirname "$0")/post-merge.d"
+  # for hook in *; do
+  #   test -x "$hook" && ( "./$hook" "$@" || exit 1 ) || exit 1
+  # done
+  # exit 0
+
+  local original=$1 hookFolder=$2
+  # io_trace "_hooks_create_multi_hook -1- $(print_vars original hookFolder)" 
+
+  cat 2>>"$stderrRedir" >"$original" << EOF
+#!/usr/bin/env bash
+cd "\$(dirname "\$0")/$hookFolder"
+for hook in *; do
+  test -x \"\$hook\" ( \"./\$hook\" "\$@" || exit 1 ) || exit 1
+done
+exit 0
+EOF
+
+  chmod a+x "$original" 2>>"$stderrRedir"
+}
