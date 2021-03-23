@@ -4,6 +4,7 @@
 [[ -z $ZOUL_GIT_REPO ]]   && . zoul-git-repo
 [[ -z $ZOUL_GIT_BUNDLE ]] && . zoul-git-bundle
 [[ -z $ZOUL_GIT_CMD ]]    && . zoul-git-cmd
+[[ -z $ZOUL_GIT_HOOKS ]]  && . zoul-git-hooks
 
 bundler_parse()
 {
@@ -12,9 +13,12 @@ bundler_parse()
     -h|--help) zou-help $0; exit 0;;
     -u|--unregister) unregister=true;;
     -s|--scan)       scanBundles=true;;
-    --config)        configBundles=true;;
-    --hooks)         updateHooks=true;;
-    --reset)         resetRegisteredBundles=true;
+    -k|--hooks)      updateHooks=true;;
+    -f|--force)      forceUpdate=true;;
+    -x|--external)   export noSelectFilter=true;;
+    -q|--quiet)      quiet=true;;
+    +)               scanBundles=true; updateHooks=true; forceUpdate=true;;
+    --reset)         resetRegisteredBundles=true;;
     -*) io_error "unknown option '$1'"; return 1;;
     *)  bundlePaths+=( "$(abspath $1)" )
   esac; shift; done
@@ -24,7 +28,9 @@ bundler_run()
   # avoid default registration
   doNotRegisterBundle=true
 
-  local unregister scanBundles configBundles updateHooks resetRegisteredBundles bundlePaths=()
+  local unregister scanBundles updateHooks forceUpdate quiet \
+        resetRegisteredBundles bundlePaths=()
+
   bundler_parse "$@"
   
   [[ $resetRegisteredBundles == true && -f "$zouConfigFile" ]] && rm "$zouConfigFile"
@@ -48,8 +54,10 @@ bundler_run()
 
   if [ ${#bundleRegisteredPaths[@]} -eq 0 ]; then
     mio_warning "No bundle registered."
-  elif [[ $configBundles == true || $updateHooks == true ]]; then
-    io_message "Configuring bundles, please wait..."
+    return 1
+  fi
+
+  if [[ $updateHooks == true ]]; then
     if [[ $scanBundles == true ]]; then
       bundle_visit_async 'bundleRegisteredPaths[@]' _bundler_config
     else
@@ -72,7 +80,7 @@ _bundler_scan()
 _bundler_register()
 {
   local url=$(gitx config remote.origin.url)
-  bundle_register "$url" "$bundleRoot" "$configBundles"
+  bundle_register "$url" "$bundleRoot" "$updateHooks"
 }
 _bundler_unregister()
 {
@@ -82,30 +90,48 @@ _bundler_unregister()
 
 _bundler_config()
 {
-  local command='_bundler' subcommand='config' noSkuFilter=true cmdScopes=( config_scope )
+  local command='_bundler' subcommand='config' \
+        noSkuFilter=true cmdScopes=( config_scope )
+
   bundle_scope _bundler_config_command
-  _bundler_status
 }
 _bundler_config_command()
 {
+
   cmd_register_module_paths true "$bundleRoot"
   cmd_visit_modules
 }
 _bundler_config_prolog()
 {
-  # io_trace '_bundler_config_prolog'
-  gitx config push.followTags true
-
-  # update hooks
-  if [[ $updateHooks == true ]]
-    rm -rf "$moduleRoot/.git/hooks"
-    gitx init
+  # io_trace '_bundler_config_prolog -- $(print_vars moduleRoot bundleRoot)'
+  if hooks_update_module "$moduleRoot" "$forceUpdate"; then
+    # already updated, abort
+    _bundler_message 'Git hooks already up to date'
+    return 1
+  elif module_is_bundle; then
+    _bundler_message 'Installing git hooks, please wait...'
+  else
+    _bundler_message 'Updated git hooks...'
   fi
+  gitx config push.followTags true
+  return 0
 }
 
 _bundler_status()
 {
   io_message "${LightBlue}$bundleUrl${White} -> ${VC}$bundleRoot${White}" "$bundleTracePrefix" ${White}
+}
+_bundler_update_hooks()
+{
+  hooks_update_module "$moduleRoot" "$bundleRoot"
+}
+_bundler_message()
+{
+  if module_is_bundle; then
+    io_message "$1" "$bundleTracePrefix" ${White}
+  else
+    [[ -z $quiet ]] && io_warning "$1" "$moduleTracePrefix"
+  fi
 }
 
 bundler_run "$@"
