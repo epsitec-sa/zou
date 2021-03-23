@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+
+[[ -z $ZOUL_GIT_CMD ]]   && . zoul-git-cmd
+[[ -z $ZOUL_GIT_HOOKS ]] && . zoul-git-hooks
+
+hooks_parse()
+{
+  local args=()
+  while [[ "$#" > 0 ]]; do case "$1" in
+    -h|--help) zou-help $0; exit 0;;
+    -r|--recursive) recursive=true;;
+    -a|--all)       noSkuFilter=true;;
+    -x|--external)  noSelectFilter=true;;
+    -f|--force)     forceUpdate=true;;
+    +)   recursive=true; noSkuFilter=true; noSelectFilter=true; forceUpdate=true;;
+    --)  shift; break;;
+    -*)  io_error "unknown option ${VC}$1${Red}\n"; io_help $0; return 1;;
+    *)   args+=( "$1" );;
+  esac; shift; done
+
+  cmd_check_args "${args[@]}"
+
+  hooksModulePaths=( "$@" )
+}
+
+hooks_run()
+{
+  local command='hooks' subcommand='do' hooksModulePaths=() \
+        cmdScopes=( config_scope ) noSkuFilter noSelectFilter \
+        forceUpdate hooksQuiet
+
+  hooks_parse "$@" || return $?
+
+  case $subcommand in
+    do) [[ $hooksQuiet == true ]] || startupMessage="Installing git hooks, please wait...";;
+  esac
+
+  bundle_scope hooks_command
+}
+hooks_command()
+{
+  [ ${#hooksModulePaths[@]} -eq 0 ] && hooksModulePaths+=( './' )
+  cmd_register_module_paths "$recursive" "${hooksModulePaths[@]}"
+
+  cmd_visit_modules
+}
+hooks_do_prolog()  { _hooks_update; }
+hooks_do_finally() { branch_show_status; }
+
+_hooks_update()
+{
+  if hooks_update_module "$moduleRoot" "$forceUpdate"; then
+    mio_message "Git hooks already up to date" ${LightBlue}
+    return 1
+  else
+    mio_warning "Updated git hooks"
+    return 0
+  fi
+}
+
+hooks_run "$@"
