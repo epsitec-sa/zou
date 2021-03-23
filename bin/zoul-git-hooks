@@ -112,7 +112,7 @@ _hooks_create_multi_hook()
 #!/usr/bin/env bash
 cd "\$(dirname "\$0")/$hookFolder"
 for hook in *; do
-  test -x \"\$hook\" ( \"./\$hook\" "\$@" || exit 1 ) || exit 1
+  test -x \"\$hook\" && ( \"./\$hook\" "\$@" || exit 1 ) || exit 1
 done
 exit 0
 EOF

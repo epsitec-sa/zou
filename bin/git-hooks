@@ -12,6 +12,7 @@ hooks_parse()
     -a|--all)       noSkuFilter=true;;
     -x|--external)  noSelectFilter=true;;
     -f|--force)     forceUpdate=true;;
+    --reset)        resetHooks=true;;
     +)   recursive=true; noSkuFilter=true; noSelectFilter=true; forceUpdate=true;;
     --)  shift; break;;
     -*)  io_error "unknown option ${VC}$1${Red}\n"; io_help $0; return 1;;
@@ -27,18 +28,25 @@ hooks_run()
 {
   local command='hooks' subcommand='do' hooksModulePaths=() \
         cmdScopes=( config_scope ) noSkuFilter noSelectFilter \
-        forceUpdate hooksQuiet
+        forceUpdate quiet resetHooks
 
   hooks_parse "$@" || return $?
 
-  case $subcommand in
-    do) [[ $hooksQuiet == true ]] || startupMessage="Installing git hooks, please wait...";;
-  esac
+  if [[ -z $quiet ]]; then
+    [[ $resetHooks == true ]] \
+    && startupMessage="Resetting git hooks, please wait..." \
+    || startupMessage="Installing git hooks, please wait..."
+  fi
 
   bundle_scope hooks_command
 }
 hooks_command()
 {
+  if [[ $resetHooks == true ]]; then
+    find "$bundleRoot/.git" -type d -name hooks -exec rm -r {} +
+    return 0
+  fi
+
   [ ${#hooksModulePaths[@]} -eq 0 ] && hooksModulePaths+=( './' )
   cmd_register_module_paths "$recursive" "${hooksModulePaths[@]}"
 
