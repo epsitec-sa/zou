@@ -11,44 +11,44 @@ config_setup()
   # setup credential manager on WSL2
   if sys_wsl && [[ -z $(git config --global --get credential.helper) ]]; then
     local credentialManagerPath="/mnt/c/Program\ Files/Git/mingw64/libexec/git-core/git-credential-manager.exe"
-    [[ -f "$credentialManagerPath" ]] && git config --global credential.helper "$credentialManagerPath"
+    [[ -f "$credentialManagerPath" ]] && gitx config --global credential.helper "$credentialManagerPath"
   fi
 
   # remove obsolete value
-  git config --global --unset 'zou.initialized'
+  gitx config --global --unset 'zou.initialized'
 
   # zou-flow semantic versioning
-  git config --global --remove-section versionsort &>>"$stdallRedir"
-  git config --global --add versionsort.suffix -@
-  git config --global --add versionsort.suffix -alpha
-  git config --global --add versionsort.suffix -beta
-  git config --global --add versionsort.suffix -rc
+  gitx config --global --remove-section versionsort &>>"$stdallRedir"
+  gitx config --global --add versionsort.suffix -@
+  gitx config --global --add versionsort.suffix -alpha
+  gitx config --global --add versionsort.suffix -beta
+  gitx config --global --add versionsort.suffix -rc
 
   # do not push tags pointing at un-pushed commits automatically
-  git config --global --unset push.followTags
+  gitx config --global --unset push.followTags
 
   # update zou aliases
   local alias
   for alias in hotfix zh sb sbx sbw csku csel cver cpub smaster spull sclean oprune publish select attach vbranch config-sku; do
-    git config --global --unset-all alias.$alias
+    gitx config --global --unset-all alias.$alias
   done
-  git config --global alias.hotfix 'wip --hotfix'
-  git config --global alias.zh 'zou-help'
-  git config --global alias.sb 'sandbox'
-  git config --global alias.sbx 'sandbox --reset --sm --skus --vr'
-  git config --global alias.sbw 'sandbox --work'
-  git config --global alias.csku 'sku config'
-  git config --global alias.csel 'config-select'
-  git config --global alias.cver 'config-version'
-  git config --global alias.smaster 'sku enter master --dev'
-  git config --global alias.spull 'sync -r -p'
-  git config --global alias.supdate 'submodule update --init --recursive'
-  git config --global alias.sclean 'cleanex -r'
-  git config --global alias.oprune 'fetch origin --prune'
-  git config --global alias.publish '!printf '"'"'%b\n'"'"' '"'"'\e[0;31mThis command is deprecated, use \e[0;37mgit prod release\e[0;31m instead\e[0m'"'"''
-  git config --global alias.select '!printf '"'"'%b\n'"'"' '"'"'\e[0;31mThis command is deprecated, use \e[0;37mgit (wip|dev|prod) enter\e[0;31m instead\e[0m'"'"''
-  git config --global alias.attach '!printf '"'"'%b\n'"'"' '"'"'\e[0;31mThis command is deprecated, use \e[0;37mgit dev attach\e[0;31m instead\e[0m'"'"''
-  git config --global alias.config-sku '!printf '"'"'%b\n'"'"' '"'"'\e[0;31mThis command is deprecated, use \e[0;37mgit sku config\e[0;31m instead\e[0m'"'"''
+  gitx config --global alias.hotfix 'wip --hotfix'
+  gitx config --global alias.zh 'zou-help'
+  gitx config --global alias.sb 'sandbox'
+  gitx config --global alias.sbx 'sandbox --reset --sm --skus --vr'
+  gitx config --global alias.sbw 'sandbox --work'
+  gitx config --global alias.csku 'sku config'
+  gitx config --global alias.csel 'config-select'
+  gitx config --global alias.cver 'config-version'
+  gitx config --global alias.smaster 'sku enter master --dev'
+  gitx config --global alias.spull 'sync -r -p'
+  gitx config --global alias.supdate 'submodule update --init --recursive'
+  gitx config --global alias.sclean 'cleanex -r'
+  gitx config --global alias.oprune 'fetch origin --prune'
+  gitx config --global alias.publish '!printf '"'"'%b\n'"'"' '"'"'\e[0;31mThis command is deprecated, use \e[0;37mgit prod release\e[0;31m instead\e[0m'"'"''
+  gitx config --global alias.select '!printf '"'"'%b\n'"'"' '"'"'\e[0;31mThis command is deprecated, use \e[0;37mgit (wip|dev|prod) enter\e[0;31m instead\e[0m'"'"''
+  gitx config --global alias.attach '!printf '"'"'%b\n'"'"' '"'"'\e[0;31mThis command is deprecated, use \e[0;37mgit dev attach\e[0;31m instead\e[0m'"'"''
+  gitx config --global alias.config-sku '!printf '"'"'%b\n'"'"' '"'"'\e[0;31mThis command is deprecated, use \e[0;37mgit sku config\e[0;31m instead\e[0m'"'"''
 }
 config_migrate_registered_bundles()
 {
@@ -56,17 +56,17 @@ config_migrate_registered_bundles()
   [ -f "$zouConfigFile" ] && rm "$zouConfigFile"
 
   local kv kvs key value
-  IFS=$'\n' kvs=( $(git config --global --get-regexp '^zou\..*\.path$' 2>>"$stderrRedir") ); IFS=$OIFS
+  IFS=$'\n' kvs=( $(gitx config --global --get-regexp '^zou\..*\.path$' 2>>"$stderrRedir") ); IFS=$OIFS
   for kv in "${kvs[@]}"; do
     [[ $kv =~ ^([^\ ]+)[[:blank:]]+(.*)$ ]]
     key=${BASH_REMATCH[1]}
     value=${BASH_REMATCH[2]}
     # io_trace "config_migrate_registered_bundles -- $(print_vars key value)"
-    if git config --global --unset "$key" "$value" &>>"$stdallRedir"; then
-      if ! git config --file "$zouConfigFile" --get-regexp "$key" "$value" >/dev/null; then
-        git config --file "$zouConfigFile" --add "$key" "$value"
+    if gitx config --global --unset "$key" "$value" &>>"$stdallRedir"; then
+      if ! gitx config --file "$zouConfigFile" --get-regexp "$key" "$value" >/dev/null; then
+        gitx config --file "$zouConfigFile" --add "$key" "$value"
         cd "$value"
-        git config --local --unset zou.bundle.registered &>>"$stdallRedir"
+        gitx config --local --unset zou.bundle.registered &>>"$stdallRedir"
         cd - >/dev/null
       fi
     fi
