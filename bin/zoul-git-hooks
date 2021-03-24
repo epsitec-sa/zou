@@ -81,7 +81,7 @@ _hooks_update_hook()
     # 3. copy zou hook to directory with index and zou prefix
     #    pre-push -> 01-zou-pre-push
     # 4. create multi-hook script
-    mkdir "$hookDir" 2>>"$stderrRedir"
+    mkdir -p "$hookDir" 2>>"$stderrRedir"
     if [[ -f "$original" ]]; then
       mv "$original" "$hookDir/01-$hookName" 2>>"$stderrRedir"
       cp "$srcPath" "$hookDir/02-zou-$hookName" 2>>"$stderrRedir"
@@ -112,7 +112,7 @@ _hooks_create_multi_hook()
 #!/usr/bin/env bash
 cd "\$(dirname "\$0")/$hookFolder"
 for hook in *; do
-  test -x \"\$hook\" && ( \"./\$hook\" "\$@" || exit 1 ) || exit 1
+  test -x "\$hook" && ( "./\$hook" "\$@" || exit 1 ) || exit 1
 done
 exit 0
 EOF
