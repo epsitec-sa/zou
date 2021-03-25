@@ -12,6 +12,7 @@ ZOUL_GIT_BRANCH_SYNC=true
 [[ -z $ZOUL_GIT_REPO ]]         && . zoul-git-repo
 [[ -z $ZOUL_GIT_BRANCH_CORE ]]  && . zoul-git-branch-core
 [[ -z $ZOUL_GIT_BRANCH_MERGE ]] && . zoul-git-branch-merge
+[[ -z $ZOUL_GIT_NOTES ]]        && . zoul-git-notes
 
 # global variables
 #   branchSyncVisitInfo = ( $r $l $i )
@@ -30,8 +31,9 @@ _branch_sync_push()
 {
   [[ $syncNoPush == true ]] && return 0
   # l > r -- move r
-  local r=$1 l=$2
-  io_buffered_eval "git push --follow-tags ${r%%/*} $l 2>&1" _branch_sync_filter_tags
+  local r=${1%%/*} l=$2
+  # io_trace "git push --follow-tags "$r" "$l""
+  io_buffered_eval "git push --follow-tags "$r" "$l" 2>&1" _branch_sync_filter_tags
 }
 _branch_sync_filter_tags()
 {
@@ -125,11 +127,11 @@ _branch_sync_visit()
     fi
     # io_trace "### _branch_sync_visit -- $(print_vars l r i current branchSyncVisitInfo[@])"
     case $i in
-      '>')  [[ $l == $current ]] && color=${Yellow}      || color=${Brown};;   # ahead
-      '<')  [[ $l == $current ]] && color=${Yellow}      || color=${Brown};;   # behind
-      '<>') [[ $l == $current ]] && color=${Magenta} || color=${Purple};;  # ahead and behind
-      '=')  [[ $l == $current ]] && color=${LightGreen}  || color=${Green};;
-      *)    [[ -n $r ]] && { i='?'; color=${Purple}; } || color=${LightBlue};;
+      '>')  [[ $l == $current ]] && color=${Yellow}     || color=${Brown};;   # ahead
+      '<')  [[ $l == $current ]] && color=${Yellow}     || color=${Brown};;   # behind
+      '<>') [[ $l == $current ]] && color=${Magenta}    || color=${Purple};;  # ahead and behind
+      '=')  [[ $l == $current ]] && color=${LightGreen} || color=${Green};;
+      *)    [[ -n $r ]] && { i='?'; color=${Purple}; }  || color=${LightBlue};;
     esac
     $visitor || return $?
     linfo=$(string_pad_right 18 "$l")
@@ -184,8 +186,13 @@ branch_sync_all()
   git fetch --prune --all &>>"$stdallRedir"
   git fetch --tags --force &>>"$stdallRedir"
 
+  notes_pull_all
+  notes_list_all --short
+
   _branch_sync_fix_tracking "$deleteBrokenTrackingInfoBranches"
   _branch_sync_visit _branch_sync_visitor "$@"
+
+  notes_push_all
 }
 branch_oreset_all()
 {
