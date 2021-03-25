@@ -5,6 +5,9 @@
 
 # Use '. zoul' to (re)load zoul-* libraries
 
+# io_trace "zoul ${*@Q}"
+
+zoulArgs=()
 while [[ "$#" > 0 ]]; do case "$1" in
   -h|--help)
     echo "zoul [<options>] - Load zou libraries.
@@ -94,6 +97,7 @@ fi
 # }
 zoul_eval()
 {
+  # io_trace "zoul_eval ${*@Q}"
   [ $# -eq 0 ] && return 0
   local zoulStdOut zoulStdErr zoulRetCode zoulRetLabel zoulMessage
   eval "$(declare_exec zoulStdOut zoulStdErr zoulRetCode "$@")"
