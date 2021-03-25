@@ -3,3 +3,233 @@
 # Use the following statement to include current lib only once
 #   [[ -z $ZOUL_GIT_NOTES ]] && . zoul-git-notes
 ZOUL_GIT_NOTES=true
+
+# https://gist.github.com/topheman/ec8cde7c54e24a785e5
+
+[[ -z $ZOUL_CORE ]] && . zoul-core
+
+zouNotesChannel='zou-flow'
+
+# Execute git notes for specified channel (--ref)
+# in:
+#   $1:channel  -- empty or '.' -> $zouNotesChannel
+#   ..:args     -- git notes arguments
+git_notes() { gitx notes --ref "$(notes_parse_channel "$1")" "${@:2}"; }
+
+# Configure fetch and merge strategy
+#   merge strategies: ours | theirs | union | cat_sort_uniq
+#   - union         for 'commits'  channel
+#   - cat_sort_uniq for 'zou*' channel
+notes_configure()
+{
+  # configure automatic notes fetching
+  local remote
+  for remote in $(git_remotes); do
+    gitx config --get-all "remote.$remote.fetch" 'notes' &>>"$stdallRedir" || \
+    gitx config --add "remote.$remote.fetch" "+refs/notes/*:refs/notes/$remote/*"
+  done
+
+  # configure notes merge strategies
+  gitx config notes.commits.mergeStrategy union
+  case "$zouNotesChannel" in
+    zou*) gitx config "notes.$zouNotesChannel.mergeStrategy" cat_sort_uniq
+  esac
+}
+
+# Add a channel note on object
+# in:
+#   $1:channel  -- default to "$zouNotesChannel"
+#   $2:note     -- the note
+#   $3:object   -- the object to annotate 
+notes_add() { git_notes "$1" add -m "$2" "${3:-HEAD}"; }
+
+# Append a channel note to object
+# in:
+#   $1:channel  -- default to "$zouNotesChannel"
+#   $2:note     -- the note
+#   $3:object   -- default to 'HEAD'
+notes_append() { git_notes "$1" append -m "$2" "${3:-HEAD}"; }
+
+# Remove a channel note
+# in:
+#   $1:channel  -- default to "$zouNotesChannel"
+#   $2:note     -- the note
+#   $3:object   -- default to 'HEAD'
+notes_remove() { git_notes "$1" remove --ignore-missing "${2:-HEAD}"; }
+
+# Display a channel note
+# in:
+#   $1:channel  -- default to "$zouNotesChannel"
+#   $2:object   -- default to 'HEAD'
+#   -*:option   -- git rev-parse option (--short)
+# out:
+#   <channel>/<object-SHA>:<note-line>
+notes_show()
+{
+  # io_trace "notes_show -1- ${*@Q}"
+
+  local opts=() args=()
+  while [[ "$#" > 0 ]]; do case "$1" in
+    -*)  opts+=("$1");;
+    *)   args+=("$1");;
+  esac; shift; done
+
+  local note channel="${args[0]}" object="${args[1]:-HEAD}" IFS=$'\n'
+  # io_trace "notes_show -2- $(print_vars opts[@] args[@] channel object)"
+  for note in $(git_notes "$channel" show "$object"); do
+    # skip blank lines
+    [[ $note =~ ^[[:blank:]]*$ ]] && continue
+    echo "$channel/$(gitx rev-parse ${opts[@]} "$object"):$note"
+  done
+}
+
+# List channel notes
+# in:
+#   $1:channel  -- default to "$zouNotesChannel"
+#   -*:option   -- git rev-parse option (--short)
+notes_list()
+{
+  # io_trace "notes_list ${*@Q}"
+  local opts=() channel
+  while [[ "$#" > 0 ]]; do case "$1" in
+    -*) opts+=("$1");;
+    *)  channel="$(notes_parse_channel "$1")";;
+  esac; shift; done
+  [[ -z $channel ]] && channel="$zouNotesChannel"
+
+  # io_trace "notes_list -2- $(print_vars opts[@] channel)"
+  for obj in $(notes_objects "$channel"); do
+    notes_show "${opts[@]}" "$channel" "$obj"
+  done
+}
+notes_list_all()
+{
+  # io_trace "notes_list_all ${*@Q}"
+  for channel in $(notes_channel_names); do
+    notes_list "$channel" "$@"
+  done
+}
+
+# List objects SHAs that have associated channel notes
+# in:
+#   $1:channel  -- default to "$zouNotesChannel"
+# out:
+#   object SHA
+notes_objects()
+{
+  local line IFS=$'\n'
+  for line in $(git_notes "$1" list); do
+    # 5716ca5 272d938 -> 272d938
+    if [[ $line =~ [[:blank:]]+([^[:blank:]]+)$ ]]; then
+      echo ${BASH_REMATCH[1]}
+    fi
+  done
+}
+
+# Push all channels to specified remote
+# in:
+#   $1:remote -- default to 'origin'
+notes_push()
+{
+  # io_trace "notes_push ${*@Q}"
+  gitx push ${1:-origin} 'refs/notes/*' &>>"$stdallRedir"
+}
+notes_push_all()
+{
+  # io_trace "notes_push_all"
+  local remote
+  for remote in $(git_remotes); do
+    notes_push "$remote"
+  done
+}
+
+# Fetch all channels from specified remote
+# in:
+#   $1:channel -- default to "$zouNotesChannel"
+#   $2:remote  -- default to 'origin'
+notes_fetch()
+{
+  # io_trace "notes_fetch ${*@Q}"
+  local channel="$(notes_parse_channel "$1")" remote="${2:-origin}"
+  # io_trace "notes_fetch -1- $(print_vars channel remote)"
+  gitx fetch "$remote" "refs/notes/$channel:refs/notes/$remote/$channel" &>>"$stdallRedir"
+}
+notes_fetch_all()
+{
+  # io_trace "notes_fetch_all"
+  local remote
+  for remote in $(git_remotes); do
+    gitx fetch "$remote" "refs/notes/*:refs/notes/$remote/*" &>>"$stdallRedir"
+  done
+}
+
+# Merge notes
+# in:
+#   $1:srcChannel     -- source channel
+#   $2:dstChannel     -- destination channel
+#   $3:mergeStrategy  -- ours | theirs | union | cat_sort_uniq
+#                     -- default are configured in notes_config
+#                     -- union         for 'commits' channel
+#                     -- cat_sort_uniq for 'zou*'    channel
+notes_merge()
+{
+  # io_trace "notes_pull ${*@Q}"
+  local srcChannel="$1" dstChannel="$2" mergeStrategy=$3 mergeOpt
+  [[ -n $mergeStrategy ]] && mergeOpt="-s $mergeStrategy"
+
+  # io_trace "notes_merge -1- $(print_vars srcChannel dstChannel mergeStrategy)"
+  git_notes "$srcChannel" merge -v $mergeOpt "$dstChannel" &>>"$stdallRedir"
+}
+
+# Pull notes
+# in:
+#   $1:channel        -- default to "$zouNotesChannel"
+#   $2:remote         -- default to 'origin'
+#   $3:mergeStrategy  -- see notes_merge
+notes_pull()
+{
+  # io_trace "notes_pull ${*@Q}"
+  local channel="$(notes_parse_channel "$1")" remote="${2:-origin}" mergeStrategy=$3
+  # io_trace "notes_pull -1- $(print_vars channel remote mergeStrategy)"
+  notes_fetch "$channel" "$remote"
+  notes_merge "$channel" "$remote/$channel" "$mergeStrategy"
+  # TODO : use ours or theirs depending on commits dates
+}
+notes_pull_all()
+{
+  # io_trace "notes_pull_all"
+  local remote channel names
+  notes_fetch_all
+  names=( $(notes_channel_names) )
+  for remote in $(git_remotes); do
+    for channel in ${names[@]}; do
+      notes_merge "$channel" "$remote/$channel"
+    done
+  done
+}
+
+# List channels names ('commits', ...)
+notes_channel_names()
+{
+  local names=()
+  for name in $(gitx for-each-ref --format="%(refname)" refs/notes); do
+    name=${name##*/}
+    array_contains_element "$name" "${names[@]}" || names+=("$name")
+  done
+  printf '%s\n' "${names[@]}"
+}
+
+# Parse git notes channel (git notes --ref <channel>)
+# in:
+#   $1:channel
+# out:
+#   $1: empty -> "$zouNotesChannel"
+#   $1: '.'   -> "$zouNotesChannel"
+#   $1: other -> other
+notes_parse_channel()
+{
+  case "$1" in
+    .) echo "$zouNotesChannel";;
+    *) echo "${1:-$zouNotesChannel}";;
+  esac
+}

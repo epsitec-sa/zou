@@ -14,10 +14,6 @@ config_setup()
     [[ -f "$credentialManagerPath" ]] && gitx config --global credential.helper "$credentialManagerPath"
   fi
 
-  # fetch notes please
-  gitx config --global --get-all remote.origin.fetch 'notes' &>>"$stdallRedir" || \
-  gitx config --global --add remote.origin.fetch '+refs/notes/*:refs/notes/*'
-
   # remove obsolete value
   gitx config --global --unset 'zou.initialized'
 
