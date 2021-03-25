@@ -13,11 +13,9 @@ bundler_parse()
     -h|--help) zou-help $0; exit 0;;
     -u|--unregister) unregister=true;;
     -s|--scan)       scanBundles=true;;
-    -k|--hooks)      updateHooks=true;;
-    -f|--force)      forceUpdate=true;;
     -x|--external)   export noSelectFilter=true;;
+    -f|--force)      forceUpdate=true;;
     -q|--quiet)      quiet=true;;
-    +)               scanBundles=true; updateHooks=true; forceUpdate=true;;
     --reset)         resetRegisteredBundles=true;;
     -*) io_error "unknown option '$1'"; return 1;;
     *)  bundlePaths+=( "$(abspath $1)" )
@@ -28,7 +26,7 @@ bundler_run()
   # avoid default registration
   doNotRegisterBundle=true
 
-  local unregister scanBundles updateHooks forceUpdate quiet \
+  local unregister scanBundles forceUpdate quiet \
         resetRegisteredBundles bundlePaths=()
 
   bundler_parse "$@"
@@ -57,21 +55,19 @@ bundler_run()
     return 1
   fi
 
-  if [[ $updateHooks == true ]]; then
-    if [[ $scanBundles == true ]]; then
-      bundle_visit_async 'bundleRegisteredPaths[@]' _bundler_config
-    else
-      bundle_visit_async 'bundlePaths[@]' _bundler_config
-    fi
+  if [[ $scanBundles == true ]]; then
+    # io_trace "bundler_run 3 -- $(print_vars bundleRegisteredPaths[@])"
+    bundle_visit_async 'bundleRegisteredPaths[@]' _bundler_config
   else
-    bundle_visit_async 'bundleRegisteredPaths[@]' _bundler_status
+    bundle_visit_async 'bundlePaths[@]' _bundler_config
   fi
 }
+
 _bundler_scan()
 {
   io_message "Scanning bundles, please wait..."
   local root="$(abspath $(repo_bundle_root)/..)"
-  for dir in $(ls -d $root/*); do
+  for dir in $(ls -d $root/*) ./; do
     [[ -d "$dir/.git" && -d "$dir/zou" ]] || continue
     bundlePaths+=( "$dir" )
   done
@@ -79,8 +75,9 @@ _bundler_scan()
 }
 _bundler_register()
 {
+  # io_trace "_bundler_register PWD=$PWD"
   local url=$(gitx config remote.origin.url)
-  bundle_register "$url" "$bundleRoot" "$updateHooks"
+  bundle_register "$url" "$bundleRoot"
 }
 _bundler_unregister()
 {
@@ -97,7 +94,6 @@ _bundler_config()
 }
 _bundler_config_command()
 {
-
   cmd_register_module_paths true "$bundleRoot"
   cmd_visit_modules
 }
@@ -106,14 +102,18 @@ _bundler_config_prolog()
   # io_trace '_bundler_config_prolog -- $(print_vars moduleRoot bundleRoot)'
   if hooks_update_module "$moduleRoot" "$forceUpdate"; then
     # already updated, abort
-    _bundler_message 'Git hooks already up to date'
+    _bundler_message 'Already configured'
     return 1
   elif module_is_bundle; then
-    _bundler_message 'Installing git hooks, please wait...'
+    _bundler_message 'Configuring bundle, please wait...'
   else
-    _bundler_message 'Updated git hooks...'
+    _bundler_message 'Configuration updated'
   fi
+  # configure notes
+  notes_configure
+  # TODO: check if it is still necessary with zou-flow notes
   gitx config push.followTags true
+  
   return 0
 }
 

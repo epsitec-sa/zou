@@ -7,17 +7,13 @@ Register/list/configure bundle
     -h|--help               display help
     -u|--unregister         unregister bundle path
     -s|--scan               scan and register bundles that are siblings of zou.
-    -k|--hooks              install git hooks in all submodules
-    -f|--force              force hooks update
     -x|--external           configure external submodules
+    -f|--force              force hooks update
     -q|--quiet              do not display submodules messages
-    +                       equivalent to --scan -hooks --force
     <bundle-path>...        bundle path
     
 example:
-    git bundler                     register current bundle
-    git bundler -s                  register zou's sibling bundles
+    git bundler                     register and configure current bundle
+    git bundler -s                  register and configure zou's sibling bundles
+    git bundler -- bundle1 bundle2  register and configure bundle1 and bundle2
     git bundler -u                  unregister current bundle
-    git bundler -- bundle1 bundle2  register bundle1 and bundle2 pathes
-    git bundler -k                  update git hooks in current bundle
-    git bundler +                   register and reconfigure all bundles
