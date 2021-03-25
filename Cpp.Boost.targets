@@ -71,10 +71,11 @@
 
     <!-- Commit packages.config if necessary -->
     <PropertyGroup>
+      <_GitCanCommit></_GitCanCommit>
       <_GitCommitMessage>zou-build: update boost $(BoostToolset) to v$(BoostVersion) in $(ModuleRelativeProjectDir)$(PackagesConfigFile)</_GitCommitMessage>
     </PropertyGroup>
-    <Exec Command='git add "$(PackagesConfigFile)"' ContinueOnError='true' />
-    <Exec Command='git diff-index --quiet HEAD "$(PackagesConfigFile)" || git commit "-m$(_GitCommitMessage)" "$(PackagesConfigFile)"' ContinueOnError='true' />
+    <Exec Condition="$(BundleIsGit)" Command='git add "$(PackagesConfigFile)"' ContinueOnError='true' />
+    <Exec Condition="$(BundleIsGit)" Command='git diff-index --quiet HEAD "$(PackagesConfigFile)" || git commit "-m$(_GitCommitMessage)" "$(PackagesConfigFile)"' ContinueOnError='true' />
   </Target>
 
   <!--
