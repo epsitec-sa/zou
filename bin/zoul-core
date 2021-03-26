@@ -276,19 +276,21 @@ print_vars()
 {
   local param value
   for param in "$@"; do
-    value=( $(io_remove_colors "${!param}") )
     if [[ $param =~ \[@\]$ ]]; then
+      value=( $(io_remove_colors "${!param}") )
       param="${param%\[@\]}"
       if [ ${#value[@]} -eq 0 ]; then
         printf '%b ' "$param=()"
       else
         printf '%b ' "$param=(${value[@]@Q})"
       fi
-    elif [[ -z $value ]]; then
-      printf '%b ' "$param=''"
     else
-      value=$(printf '%q' "$value")
-      printf '%b ' "$param='$value'"
+      value=$(io_remove_colors "${!param}")
+      if [[ -z $value ]]; then
+        printf '%b ' "$param=''"
+      else
+        printf '%b ' "$param='$value'"
+      fi
     fi
   done
 }
