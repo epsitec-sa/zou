@@ -551,7 +551,8 @@ _branch_checkout_selector()
 }
 branch_show_status()
 {
-  io_buffered_eval "gitx status -s --porcelain "$@" 2>>"$stderrRedir" | sort" _branch_show_status_line_selector ${Gray}
+  # io_trace "branch_show_status -- $PWD"
+  io_buffered_eval "gitx status -s --porcelain "${1:-$PWD}" 2>>"$stderrRedir" | sort" _branch_show_status_line_selector ${Gray}
 }
 _branch_show_status_line_selector()
 {
