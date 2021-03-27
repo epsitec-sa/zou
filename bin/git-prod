@@ -262,14 +262,14 @@ prod_release_prolog()
   esac
   if [[ $dryRun == true ]]; then
     _rstatus_init || io_trace_error 'prod_release_prolog 1'
-  elif repo_is_clean_ignore_submodules && ! cosm_has_unstaged_dirty_submodules; then
-    prod_checkout "$prodCheckoutType" true "$moduleDevBranch" || io_trace_error 'prod_release_prolog -2-'
+  elif repo_is_clean && ! cosm_has_unstaged_dirty_submodules; then
+    prod_checkout "$prodCheckoutType" false "$moduleDevBranch" || io_trace_error 'prod_release_prolog -2-'
   fi
 }
 prod_release_epilog()
 {
   # io_trace "prod_release_epilog ${*@Q} -- $(print_vars prodBranch)"
-  if repo_is_clean_ignore_submodules && ! cosm_has_unstaged_dirty_submodules; then
+  if repo_is_clean && ! cosm_has_unstaged_dirty_submodules; then
     _prod_fix_release_status
     _prod_release || io_trace_error 'prod_release_epilog 1' || return $?
     _vtable_update || io_trace_error 'prod_release_epilog 2' || return $?

@@ -313,13 +313,12 @@ repo_list_deleted()    { gitx ls-files --deleted; }
 repo_list_uncommited() { gitx diff-index --cached --name-only -r --ignore-submodules HEAD -- 2>>"$stderrRedir"; }
 repo_list_unmerged()   { gitx diff --name-only --diff-filter=U --ignore-submodules 2>>"$stderrRedir" | cut -f1; }
 repo_is_merging()      { gitx merge HEAD &>>"$stdallRedir" && return 1 || return 0; }
-repo_is_all_clean()    { test -z "$(gitx status -s --porcelain "${1:-$PWD}" &>>"$stdallRedir")"; }  # neither unstaged nor untracked
+repo_is_all_clean()    { test -z "$(gitx status -C "${1:-.}" -s --porcelain &>>"$stdallRedir")"; }  # neither unstaged nor untracked
 
 repo_is_bundle_root()  { [[ -d "${1:-.}/.git" ]]; }
 repo_is_module_root()  { [[ -f "${1:-.}/.git" ]]; }
 
-repo_is_clean()                   { gitx diff-index --quiet HEAD -- &>>"$stdallRedir"; }
-repo_is_clean_ignore_submodules() { gitx diff-index --ignore-submodules --quiet HEAD -- &>>"$stdallRedir"; }
+repo_is_clean()        { gitx diff-index --ignore-submodules --quiet HEAD -- &>>"$stdallRedir"; }
 
 repo_has_submodules()
 {
