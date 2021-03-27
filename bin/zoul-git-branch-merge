@@ -227,27 +227,26 @@ _branch_merge_tool()
 }
 _branch_merge_resolve_submodule_conflicts()
 {
-  local line status path lines broot="$bundleRoot" mroot="$moduleRoot" ec=0
-  [[ -z "$mroot" ]] && broot=$(repo_module_root)
-  [[ -z "$broot" ]] && broot=$(repo_bundle_root)
-  # io_trace "_branch_merge_resolve_submodule_conflicts 1 -- $(print_vars broot)"
+  local mroot="${moduleRoot:-$(repo_module_root)}"
+  # io_trace "_branch_merge_resolve_submodule_conflicts -1- $(print_vars mroot)"
 
-  IFS=$'\n' lines=($(gitx status -s --porcelain "$moduleRoot" 2>>"$stderrRedir")); IFS=$OIFS
-  for line in "${lines[@]}"; do
-    if [[ $line =~ ^[[:blank:]]*([A-Z]+)[[:blank:]]+(.+)$ ]]; then
-      status=${BASH_REMATCH[1]}
-      path=${BASH_REMATCH[2]}
-      # io_trace "_branch_merge_resolve_submodule_conflicts 2 -- $(print_vars status path)"
-      if [[ -f "$path/.git" || -d "$broot/.git/modules/$path" ]]; then
-        # ignore submodules - keep local one
-        # gitx add -- "$path"
-        gitx reset -q -- "$path" &>>"$stdallRedir"
-      else
-        # still unmerged files
-        ec=1
-        # io_trace "_branch_merge_resolve_submodule_conflicts 3 -- $(print_vars status path ec)"
+  gitx -C "$mroot" status -s --porcelain 2>>"$stderrRedir" | \
+  {
+    local line status path ec=0
+    while read -r line; do
+      if [[ $line =~ ^[[:blank:]]*([A-Z]+)[[:blank:]]+(.+)$ ]]; then
+        status=${BASH_REMATCH[1]}
+        path=${BASH_REMATCH[2]}
+        # io_trace "_branch_merge_resolve_submodule_conflicts -2- $(print_vars status path)"
+        if [[ -f "$mroot/$path/.git" ]]; then
+          # ignore submodules - keep local one
+          gitx reset -q -- "$path" &>>"$stdallRedir"
+        else
+          # still unmerged files
+          ec=1
+        fi
       fi
-    fi
-  done
-  return $ec
+    done
+    return $ec
+  }
 }
