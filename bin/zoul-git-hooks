@@ -21,10 +21,11 @@ hooks_update_module()
   local mroot="$1" force="$2" \
         srcDir="$zouDir/git-hooks" \
         dstDir mipath srcPath equals=0
+
+  # io_trace "hooks_update_module -1- $(print_vars mroot force)"
   
-  mipath=$(repo_module_internal_path "$mroot")
-  dstDir="$mipath/hooks"
-  # io_trace "hooks_update_module -1- $(print_vars srcDir dstDir)"
+  dstDir="$(git_dir "$mroot")/hooks"
+  # io_trace "hooks_update_module -2- $(print_vars srcDir dstDir)"
 
   # setup multi-hooks
   for srcPath in $srcDir/*; do

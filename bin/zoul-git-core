@@ -94,6 +94,8 @@ ref_time()
   echo $(gitx show -s --format=%ct $1^{} 2>>"$stderrRedir")
 }
 
+git_dir() { gitx -C "${1:-.}" rev-parse --absolute-git-dir; }
+
 git_remote()  { gitx remote 2>>"$stderrRedir" | head -n1; }
 git_remotes() { gitx remote 2>>"$stderrRedir"; }
 
