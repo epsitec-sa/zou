@@ -487,7 +487,7 @@ _module_enter()
 _module_init_submodules()
 {
   _module_list_uninitialized_submodules \
-  | xargs git sm update -C "${moduleRoot}" --init --
+  | xargs -d $'\n' --no-run-if-empty git sm update -C "${moduleRoot}" --init --
 }
 _module_list_uninitialized_submodules()
 {

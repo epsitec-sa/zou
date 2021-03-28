@@ -378,10 +378,8 @@ _repo_commit_submodule_enumerator()
 repo_commit_submodules()
 {
   # io_trace "repo_commit_submodules -1- ${*@Q}"
-  local mroot=$1; shift
+  local mroot=${1:-$moduleRoot}; shift
   [ $# -eq 0 ] && return 0
-  
-  [[ -z $mroot ]] && mroot=$moduleRoot
   [[ -z $mroot ]] && { mroot=$(repo_module_root) || return 1; }
 
   local opwd=$PWD sm
@@ -478,10 +476,10 @@ repo_prune_tags()
   [[ $showMessage == true ]] && mio_warning "Pruning tags..."
 
   if [[ $verbose == true ]]; then
-    gitx tag -l 2>>"$stderrRedir" | xargs gitx tag -d &>>"$stdallRedir"
+    gitx tag -l 2>>"$stderrRedir" | xargs --no-run-if-empty gitx tag -d &>>"$stdallRedir"
     io_buffered_eval 'gitx fetch --tags 2>&1' _repo_prune_tags_line_selector
   else
-    gitx tag -l 2>>"$stderrRedir" | xargs gitx tag -d &>>"$stdallRedir"
+    gitx tag -l 2>>"$stderrRedir" | xargs --no-run-if-empty gitx tag -d &>>"$stdallRedir"
     gitx fetch --tags &>>"$stdallRedir"
   fi
 }
