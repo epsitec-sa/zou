@@ -35,9 +35,6 @@ ZOUL_GIT_REPO=true
 [[ -z $ZOUL_CORE ]]     && . zoul-core
 [[ -z $ZOUL_GIT_CORE ]] && . zoul-git-core
 
-# global options
-#   showSubmoduleMessage
-
 internalIgnoreList=( 'versions.md' )
 
 submoduleChangedEvent=()
@@ -370,9 +367,9 @@ repo_list_dangling_submodules()
     [[ -d $path ]] && repo_is_module_root "$path" && echo "$path"
   done
 }
-repo_commit_clean_submodules() { repo_commit_submodule_enumerator 'repo_list_unstaged_clean_submodules' "$1"; }
-repo_commit_all_submodules()   { repo_commit_submodule_enumerator 'repo_list_unstaged_submodules' "$1"; }
-repo_commit_submodule_enumerator()
+repo_commit_clean_submodules() { _repo_commit_submodule_enumerator 'repo_list_unstaged_clean_submodules' "$1"; }
+repo_commit_all_submodules()   { _repo_commit_submodule_enumerator 'repo_list_unstaged_submodules' "$1"; }
+_repo_commit_submodule_enumerator()
 {
   local enumerator=$1 mroot=$2 submodules
   submodules=$($enumerator "$mroot") || return 1

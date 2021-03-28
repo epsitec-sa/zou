@@ -6,10 +6,6 @@ ZOUL_GIT_COSM=true
 
 [[ -z $ZOUL_GIT_MODULE ]]        && . zoul-git-module
 
-# global options
-#   showSubmoduleMessage
-#   synchronizeSubmoduleUrl
-
 headChangedEvent+=( _cosm_on_head_changed )
 submoduleChangedEvent+=( _cosm_on_submodule_changed )
 branchSyncEvent+=( _cosm_on_sync )
@@ -21,7 +17,7 @@ cosm_scope()
   # setup cosm context
   local unstagedCleanIncludedSubmodules unstagedDirtyIncludedSubmodules \
         unstagedCleanSubmodules unstagedDirtySubmodules \
-        showSubmoduleMessage=true cosmScopeInitialized=true
+        cosmScopeInitialized=true
   
   cosm_reset_scope
 
@@ -81,7 +77,7 @@ _cosm_on_head_changed()
   cosm_reset_scope
 
   [ ${#moduleSubmodulePaths[@]} -eq 0 ] && return 0
-  [[ $synchronizeSubmoduleUrl == true ]] && _cosm_sync_submodules
+  _cosm_sync_submodules
   _cosm_update_external_submodules
 }
 _cosm_on_sync()
