@@ -211,7 +211,7 @@ _branch_merge_selector()
 _branch_merge_interactive()
 {
   local ec=0
-  _branch_merge_tool &>>"$stdallRedir" && gitx commit --no-edit &>>"$stdallRedir" || ec=$?
+  _branch_merge_tool && gitx commit --no-edit &>>"$stdallRedir" || ec=$?
   _branch_remove_temp_merge_files
   [ $ec -eq 0 ] && branch_raise_merged_event "$toMerge" "$intoBranch"
   return $ec
@@ -223,14 +223,18 @@ _branch_remove_temp_merge_files()
 }
 _branch_merge_tool()
 {
-  io_locked_eval 'gitx mergetool 2>&1' : ${DarkGray}
+  local ec
+  io_lock_enter
+  gitx mergetool; ec=$?
+  io_lock_exit
+  return $ec
 }
 _branch_merge_resolve_submodule_conflicts()
 {
   local mroot="${moduleRoot:-$(repo_module_root)}"
   # io_trace "_branch_merge_resolve_submodule_conflicts -1- $(print_vars mroot)"
 
-  gitx -C "$mroot" status -s --porcelain 2>>"$stderrRedir" | \
+  gitx -C "$mroot" status -s --porcelain 2>&1 | \
   {
     local line status path ec=0
     while read -r line; do
@@ -249,4 +253,5 @@ _branch_merge_resolve_submodule_conflicts()
     done
     return $ec
   }
+  return ${PIPESTATUS[1]}
 }
