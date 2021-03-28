@@ -401,44 +401,6 @@ repo_commit_submodules()
   return 1
 }
 
-repo_sync_submodule()
-{
-  # io_trace "repo_sync_submodule ${*@Q}"
-  io_buffered_eval "gitx submodule sync \"$1\" 2>&1" '_repo_submodule_line_selector' ${DarkGray} >/dev/null
-}
-repo_update_submodule()
-{
-  # io_trace "repo_update_submodule ${*@Q} -1- PWD=$PWD"
-  local smPaths
-  smPaths=( $(io_buffered_eval "git sm update -C "$moduleRoot" --init \"$1\" 2>&1" '_repo_submodule_line_selector' ${DarkGray}) )
-  # io_trace "repo_update_submodule -2- $(print_vars smPaths[@] PWD)"
-  [ ${#smPaths[@]} -ne 0 ] && repo_raise_submodule_changed_event "${smPaths[@]}" || return 0
-}
-repo_discard_submodule()
-{
-  # io_trace "repo_discard_submodule ${*@Q}"
-  local smPaths
-  smPaths=( $(io_eval "git sm update -C "$moduleRoot" --recursive \"$1\" 2>&1" '_repo_submodule_line_selector' ${DarkGray}) )
-  # io_trace "repo_discard_submodule -- $(print_vars smPaths[@])"
-  [ ${#smPaths[@]} -ne 0 ] && repo_raise_submodule_changed_event "${smPaths[@]}"
-}
-_repo_submodule_line_selector()
-{
-  skipCurrentLine=''
-  if [[ $line =~ ^Submodule[[:blank:]]+path[[:blank:]]+\'([^\']+)\' ]]; then
-    local smpath="${BASH_REMATCH[1]}"
-    echo "$smpath"
-    # io_trace_unsafe "_repo_submodule_line_selector -1- $(print_vars smpath)"
-    skipCurrentLine=true
-  elif [[ $line =~ ^((Cloning|Synchronizing)[^\']+)\'([^\']+)\'(.*) ]]; then
-    line="${BASH_REMATCH[1]}${VC}${BASH_REMATCH[3]}${color}${BASH_REMATCH[4]}"
-    # io_trace_unsafe "_repo_submodule_line_selector -2- $(print_vars line)"
-  else
-    # io_trace_unsafe "_repo_submodule_line_selector -3- $(print_vars line)"
-    skipCurrentLine=true
-  fi
-}
-
 repo_discard_internal_ignore_list()
 {
   local discarded=0 path

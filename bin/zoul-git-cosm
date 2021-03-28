@@ -95,9 +95,8 @@ _cosm_on_sync()
 _cosm_sync_submodules()
 {
   # io_trace "_cosm_sync_submodules $(print_vars configSkuInclude[@])"
-  if [ ${#configSkuInclude[@]} -ne 0 ]; then
-    visit_async 'configSkuInclude[@]' 'repo_sync_submodule'
-  fi
+  [[ ${#configSkuInclude[@]} -eq 0 ]] || echo "${configSkuInclude[@]}" \
+  | xargs -d $'\n' --no-run-if-empty git sm sync -C "${moduleRoot}" --
 }
 
 ########
@@ -108,23 +107,8 @@ _cosm_sync_submodules()
 _cosm_update_external_submodules()
 {
   # io_trace "_cosm_update_external_submodules $(print_vars configSelectExclude[@])"
-  if [ ${#configSelectExclude[@]} -ne 0 ]; then
-    visit_async 'configSelectExclude[@]' 'repo_update_submodule'
-  fi
-}
-cosm_update_active_submodules()
-{
-  local toUpdate=( $(array_remove_array 'moduleSubmodulePaths[@]' 'configSkuExclude[@]') )
-  # io_trace "@@@ cosm_update_active_submodules -- $(print_vars toUpdate[@]) PWD=$PWD"
-  if [ ${#toUpdate[@]} -ne 0 ]; then
-    visit_async 'toUpdate[@]' '_cosm_update_submodule' "$@"
-  fi
-}
-_cosm_update_submodule()
-{
-  # io_trace "@@@ _cosm_update_submodule ${*@Q} -- PWD=$PWD"
-  [[ -f "$1/.git" || -d "$1/.git" ]] && return 0
-  repo_update_submodule "$@"
+  [[ ${#configSelectExclude[@]} -eq 0 ]] || echo "${configSelectExclude[@]}" \
+  | xargs -d $'\n' --no-run-if-empty git sm update -C "${moduleRoot}" --init --
 }
 
 #########
@@ -136,12 +120,10 @@ cosm_discard_unstaged_submodules()
   # discard unstaged clean submodules which are excluded from SKU
   local discard=( "${unstagedCleanIncludedSubmodules[@]}" "${unstagedDirtyIncludedSubmodules[@]}" )
   # io_trace "cosm_discard_unstaged_submodules -- $(print_vars discard[@])"
-  if [ ${#discard[@]} -ne 0 ]; then
-    visit_async 'discard[@]' 'repo_discard_submodule' || ec=$?
-    unstagedCleanIncludedSubmodules=()
-    unstagedDirtyIncludedSubmodules=()
-  fi
-  return $ec
+  [[ ${#discard[@]} -eq 0 ]] || echo "${discard[@]}" \
+  | xargs -d $'\n' --no-run-if-empty git sm update -C "${moduleRoot}" --
+  unstagedCleanIncludedSubmodules=()
+  unstagedDirtyIncludedSubmodules=()
 }
 
 ########
