@@ -1,64 +1,12 @@
 #!/usr/bin/env bash
 
-[[ -z $ZOUL_LOCK ]]               && . zoul-lock
-[[ -z $ZOUL_GIT_VTABLE ]]         && . zoul-git-vtable
-[[ -z $ZOUL_GIT_MODULE ]]         && . zoul-git-module
-[[ -z $ZOUL_GIT_PROD ]]           && . zoul-git-prod
-[[ -z $ZOUL_GIT_CONFIG_SKU ]]     && . zoul-git-config-sku
-[[ -z $ZOUL_GIT_CONFIG_SELECT ]]  && . zoul-git-config-select
+. zoul-core
 
-vtable_parse()
+vtable_show()
 {
-  while [[ "$#" > 0 ]]; do case "$1" in
-    -h|--help) zou-help $0; exit 0;;
-    -a|--all)             all=true;;
-    -j*)                  jobsCount=${1#-j};;
-    -c|--commit)          commitVTable=true;;
-    -*) io_error "unknown option '$1'"; return 1;;
-  esac; shift; done
-}
-vtable_run()
-{
-  local jobsCount all commitVTable
-  vtable_parse "$@" || return $?
-  
-  startupMessage="Creating version table, please wait..."
-
-  module_run prod_scope vtable_main
-}
-vtable_main()
-{
-  local vtableGate vtableLookupPath
-  vtableGate=$(lock_init)
-  vtableLookupPath="$(mktemp)"
-  vtable_init "$startupRoot" "$vtableLookupPath"
-  vtable_tree
-}
-vtable_tree()
-{
-  vtable_submodules
-  if [[ "$PWD" == "$startupRoot" ]]; then
-    vtable_commit_vtable
-  else
-    vtable_update_vtable
-  fi
-}
-vtable_commit_vtable()
-{
-  vtable_update "$startupRoot" "$moduleId" "$vtableLookupPath" "$vtableGate" "$commitVTable" \
-  && mio_success "Created version table" \
-  || mio_success "No change in the version table"
-}
-vtable_update_vtable()
-{
-  vtable_update "$startupRoot" "$moduleId" "$vtableLookupPath" "$vtableGate"
-  mio_info "Updated version table"
-}
-vtable_submodules()
-{
-  local vtableSkuInclude
-  [[ $all == true ]] && vtableSkuInclude="${moduleSubmodulePaths[@]}" || vtableSkuInclude=$(config_sku_list_included)
-  module_visit_submodules_async 'vtableSkuInclude[@]' prod_scope vtable_tree
+  local obj="${1:-HEAD}"
+  gitx notes --ref 'zou-vtable' show "$obj^{}" 2>/dev/null \
+  || io_message "No version table found at ${VC}$obj${Red}" '' ${Red}
 }
 
-vtable_run "$@"
+vtable_show "$@"

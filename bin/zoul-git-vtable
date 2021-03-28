@@ -7,6 +7,7 @@ ZOUL_GIT_VTABLE=true
 [[ -z $ZOUL_GIT_VTAG ]]        && . zoul-git-vtag
 [[ -z $ZOUL_GIT_BRANCH_CORE ]] && . zoul-git-branch-core
 [[ -z $ZOUL_GIT_REPO ]]        && . zoul-git-repo
+[[ -z $ZOUL_GIT_NOTES ]]       && . zoul-git-notes
 
 pad() { eval "printf '%.s-' {1..$1}"; }
 
@@ -15,42 +16,28 @@ print_row()
   # TODO: improve by computing the best width according to the longest string.
   # It needs to have two passes; the first one for computing, and the second
   # one for printing.
-  printf "_ %-40s _ %-20s _ %-10s _ %-20s _ %-20s _ %-20s _ %-20s _ %-20s _\n" "$@"
+  printf "_ %-40s _ %-20s _ %-10s _ %-20s _ %-20s _\n" "$@"
 }
 print_head()
 {
-  print_row Module Version Hash Dev Prod vminor vmajor vnext
-  print_row :$(pad 39) :$(pad 19) :$(pad 9) :$(pad 19) :$(pad 19) :$(pad 19) :$(pad 19) :$(pad 19)
+  print_row Module Version Hash Dev Prod
+  print_row :$(pad 39) :$(pad 19) :$(pad 9) :$(pad 19) :$(pad 19)
 }
 vtable_row()
 {
-  local moduleId=$1 vminor vmajor hash dev prod \
-        folder major minor refolder tags vnext \
+  local moduleId=$1 hash dev prod \
         md_moduleId md_vtag IFS=' '
   dev=${moduleDevBranch}
   prod=${prodBranch}
   hash=$(gitx rev-parse --short "${prodVTag:-$moduleHead}^{}" 2>>"$stderrRedir")
-  tags=$(gitx tag -l --sort=-v:refname 2>>"$stderrRedir")
-  if [[ $prodVTag =~ ^(.*/)?v([0-9]+)\.([0-9]+) ]]; then
-    folder=${BASH_REMATCH[1]}
-    major=${BASH_REMATCH[2]}
-    minor=${BASH_REMATCH[3]}
-    refolder=$(wildcard_to_regex $folder)
-    vminor=$(echo $tags | grep -m1 "^${refolder}v$major\.$minor")
-    vmajor=$(echo $tags | grep -m1 "^${refolder}v$major\.")
-  fi
-  vnext=$(echo $tags | grep -m1 "^${refolder}v[0-9]")
   md_moduleId=$moduleId
   md_vtag=${releaseVTag:-$prodVTag}
   if [[ -n $md_vtag ]]; then
     [[ $vtagStatus != 'vtag' || $vtag2prod -ne 0 ]] && md_moduleId="##$moduleId##"
     [[ $vtagStatus != 'vtag' ]] && md_vtag="##$prodVTag##"
-    [[ $prodVTag == $vminor ]] && vminor='' || vminor="#$vminor#"
-    [[ $prodVTag == $vmajor ]] && vmajor='' || vmajor="#$vmajor#"
-    [[ $prodVTag == $vnext  ]] && vnext=''  || vnext="#$vnext#"
   fi
-  # io_trace "vtable_row -- $(print_vars moduleId prodVTag hash dev prod vminor vmajor vnext)"
-  print_row "$md_moduleId" "$md_vtag" "$hash" "$dev" "$prod" "$vminor" "$vmajor" "$vnext"
+  # io_trace "vtable_row -- $(print_vars moduleId prodVTag hash dev prod)"
+  print_row "$md_moduleId" "$md_vtag" "$hash" "$dev" "$prod"
 }
 vtable_init()
 {
@@ -73,7 +60,10 @@ vtable_update()
     . "$lookupPath"
 
     # serialize header and root
-    local file="$root/versions.md"
+    local file="$(mktemp)"
+    # remove file when the script finishes
+    trap "rm \"$file\"" 0
+
     print_head >"$file"
     vtable_row $moduleId false >>"$file"
     
@@ -87,8 +77,9 @@ vtable_update()
     rm "$lookupPath"
 
     if [[ $commitVTable == true ]]; then
-      gitx update-index --add -- "$file" &>>"$stdallRedir" \
-      && git_commit "update version table" "$file"
+      local ec
+      notes_add_file 'zou-vtable' "$file" &>>"$stdallRedir"; ec=$?
+      return $ec
     fi
   else
     # create vtable row
