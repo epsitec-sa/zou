@@ -4,7 +4,6 @@
 [[ -z $ZOUL_GIT_REPO ]]   && . zoul-git-repo
 [[ -z $ZOUL_GIT_BUNDLE ]] && . zoul-git-bundle
 [[ -z $ZOUL_GIT_CMD ]]    && . zoul-git-cmd
-[[ -z $ZOUL_GIT_HOOKS ]]  && . zoul-git-hooks
 
 bundler_parse()
 {
@@ -97,41 +96,12 @@ _bundler_config_command()
   cmd_register_module_paths true "$bundleRoot"
   cmd_visit_modules
 }
-_bundler_config_prolog()
-{
-  # io_trace '_bundler_config_prolog -- $(print_vars moduleRoot bundleRoot)'
-  if hooks_update_module "$moduleRoot" "$forceUpdate"; then
-    # already updated, abort
-    _bundler_message 'Already configured'
-    return 1
-  elif module_is_bundle; then
-    _bundler_message 'Configuring bundle, please wait...'
-  else
-    _bundler_message 'Configuration updated'
-  fi
-  # configure notes
-  notes_configure
-  # TODO: check if it is still necessary with zou-flow notes
-  gitx config push.followTags true
-  
-  return 0
-}
+_bundler_config_prolog()  { module_configure "$forceUpdate" "$quiet"; }
+_bundler_config_finally() { branch_show_status; }
 
 _bundler_status()
 {
   io_message "${LightBlue}$bundleUrl${White} -> ${VC}$bundleRoot${White}" "$bundleTracePrefix" ${White}
-}
-_bundler_update_hooks()
-{
-  hooks_update_module "$moduleRoot" "$bundleRoot"
-}
-_bundler_message()
-{
-  if module_is_bundle; then
-    io_message "$1" "$bundleTracePrefix" ${White}
-  else
-    [[ -z $quiet ]] && io_warning "$1" "$moduleTracePrefix"
-  fi
 }
 
 bundler_run "$@"

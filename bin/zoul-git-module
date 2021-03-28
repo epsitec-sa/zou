@@ -10,6 +10,8 @@ ZOUL_GIT_MODULE=true
 [[ -z $ZOUL_GIT_BUNDLE ]]        && . zoul-git-bundle
 [[ -z $ZOUL_GIT_BRANCH_CORE ]]   && . zoul-git-branch-core
 [[ -z $ZOUL_GIT_BRANCH_SYNC ]]   && . zoul-git-branch-sync
+[[ -z $ZOUL_GIT_HOOKS ]]         && . zoul-git-hooks
+[[ -z $ZOUL_GIT_NOTES ]]         && . zoul-git-notes
 
 # global variables
 startupMessage=''
@@ -315,6 +317,7 @@ module_scope()
 
   _module_set_module_dev_branch
   _module_init_submodules
+  module_configure true
 
   _module_trace 'module_scope'
 
@@ -493,6 +496,35 @@ _module_list_uninitialized_submodules()
     [[ -f "$moduleRoot/$path/.git" ]] || echo $path
   done
 }
+
+###############
+# CONFIGURATION
+###############
+
+module_configure()
+{
+  local quiet=$1 forceUpdate=$2
+
+  [[ -z $forceUpdate ]] && module_is_configured && return 0
+
+  # io_trace "module_configure -- $(print_vars moduleId quiet forceUpdate)"
+  
+  # configure hooks and abort if already configured
+  if hooks_update_module "$moduleRoot" "$forceUpdate"; then
+    [[ -z $quiet ]] && mio_message "Already configured..." ${LightBlue}
+    return 1
+  fi
+  [[ -z $quiet ]] && mio_message "Configuring notes & hooks..."
+
+  # configure notes
+  notes_configure
+
+  # TODO: check if it is still necessary with zou-flow notes
+  gitx config push.followTags true
+
+  return 0
+}
+module_is_configured() { notes_is_configured; }
 
 #########
 # STARTUP

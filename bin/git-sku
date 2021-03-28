@@ -130,6 +130,7 @@ _prod_on_preinit() { prodCheckoutType=$checkoutType; }
 sku_enter_finally()  { _sku_any_finally; }
 sku_info_finally()   { _sku_any_finally; }
 sku_config_finally() { _sku_any_finally; }
+
 _sku_any_finally()
 {
   config_sku_update
@@ -143,8 +144,7 @@ _sku_any_finally()
 sku_enter_select()
 {
   # visit all submodules
-  printf '%s\n' "${configSkuInclude[@]}"
-  printf '%s\n' "${configSkuExclude[@]}"
+  printf '%s\n' "${moduleSubmodulePaths[@]}"
 }
 sku_enter_prolog()
 {
@@ -154,6 +154,7 @@ sku_enter_prolog()
   ( [[ $includedSkuModule == true ]] || module_is_bundle ) && moduleSku="$sku"
   # io_trace "sku_enter_prolog -- $(print_vars moduleSku)"
   sku_checkout "$moduleSku" "$prodCheckoutType" true
+  notes_pull_all
 }
 
 ######
