@@ -18,9 +18,8 @@ prod_parse()
     -r|--recursive) recursive=true;;
     -a|--all)       noSkuFilter=true;;
     -n|--dry-run)   dryRun=true;;
-    -o|--prod)      stayInProd=true;;
+    -)              unset stayInProd;;
     --merge)        mergeIntoDev=true;;
-    --vnext)        checkoutType='vnext';;
     --vlast)        checkoutType='vlast';;
     --vtag)         attachMode='vtag';;
     --vtable)       vtable=true;;
@@ -56,7 +55,7 @@ prod_run()
         cmdScopes=( prod_scope config_scope cosm_scope ) \
         mergeIntoDev vtable prerelPrefix dryRun prodModulePaths=() \
         checkoutType='vnext' attachMode='auto' forcePrincipalRelease \
-        prodSelectSpec stayInProd
+        prodSelectSpec stayInProd=true
 
   prod_parse "$@" || return $?
   prod_startup_message
@@ -186,7 +185,7 @@ prod_release_root_scope()
     # dry run scope
     local rstatusParentGate rstatusLookupPath rstatusParentLookupPath principalReleaseStatus
 
-    # io_trace "prod_release_root_scope -1- $(print_vars forcePrincipalRelease checkoutType prodCheckoutType prodBranch moduleMergeIntoDev modulePrerelPrefix)"
+    # io_trace "prod_release_root_scope -1- $(print_vars forcePrincipalRelease checkoutType prodCheckoutType prodBranch modulePrerelPrefix)"
   fi
 
   # execute next russian doll
@@ -194,7 +193,7 @@ prod_release_root_scope()
 }
 prod_release_scope()
 {
-  local moduleMergeIntoDev=$mergeIntoDev modulePrerelPrefix=$prerelPrefix \
+  local modulePrerelPrefix=$prerelPrefix \
         wasInDevMode=1 hasBeenReleased forceRelease cmdIsTopLevel
 
   [[ -z $stayInProd ]] && module_in_strict_dev_mode && wasInDevMode=0
@@ -203,9 +202,8 @@ prod_release_scope()
   # io_trace "prod_release_scope -- $(print_vars wasInDevMode cmdIsTopLevel releaseStatus devEqualsProd checkoutType prodCheckoutType prodBranch)"
 
   if module_is_bundle; then
-    # always merge prod into dev in bundle
-    moduleMergeIntoDev=true
-    # io_trace "prod_release_scope BUNDLE -- $(print_vars prodCheckoutType modulePrerelPrefix moduleMergeIntoDev)"
+    # io_trace "prod_release_scope BUNDLE -- $(print_vars prodCheckoutType modulePrerelPrefix)"
+    :
   elif module_is_principal; then
     # vlast does not apply to principal module if force release is specified
     if [[ $forcePrincipalRelease == true ]]; then
@@ -229,12 +227,12 @@ prod_release_scope()
       _sm_in_prod_init || return $?
     fi
   elif [[ $releaseStatus == 'released' ]]; then
-    # no submodules and released
-    _prod_release_released
     # it's terminated if dev == prod
     # io_trace "prod_release_scope COMPLETED -- $(print_vars moduleDevBranchPath prodBranchPath)"
     if ref_equals "$moduleDevBranchPath" "$prodBranchPath"; then
-      # [[ $stayInProd == true ]] && prod_checkout "$prodCheckoutType" true "$moduleDevBranch" || io_trace_error 'prod_release_scope'
+      # no submodules and released
+      _prod_release_released
+      _vtable_update || io_trace_error 'prod_release_scope' || return $?
       return 0
     fi
   fi
@@ -292,6 +290,11 @@ prod_release_finally()
       module_visit_submodules_async 'smInProd[@]' module_scope _prod_dev_checkout
     fi
     [ $wasInDevMode -eq 0 ] && dev_checkout false "$moduleDevBranch"
+    # if [[ $stayInProd == true ]]; then
+    #   io_warning "WARNING: you are in PROD mode" "$moduleTracePrefix"
+    #   io_message "  don't forget to ${VC}git dev enter${Cyan} before commiting again" "$moduleTracePrefix"
+    #   io_message "  or use ${VC}git prod release -${Cyan} to restore previous mode after release" "$moduleTracePrefix"
+    # fi
   elif [ $wasInDevMode -eq 0 ] && ! module_dev_attach; then
     # defer dev checkout to top level module
     # io_trace "prod_release_finally NON TOP LEVEL -- $(print_vars moduleBundlePath moduleHead smInProdPath)"
@@ -320,7 +323,7 @@ _prod_release()
   case $releaseStatus in
     unreleased) _prod_release_unreleased;;
     ffRelease)  _prod_release_ff;;
-    released)   ;;
+    released)   _prod_release_released;;
     *)          _prod_release_unimplemented;;
   esac
   # io_trace "_prod_release 2 -- $(print_vars modulePrerelPrefix releaseStatus hasBeenReleased)"
@@ -353,6 +356,7 @@ _prod_release_unreleased()
 _prod_release_released()
 {
   if [[ $dryRun != true && $vtableCreate == true ]]; then
+    # disable vtable creation if already released 
     [[ $moduleRoot == $vtableRoot ]] && vtableCreate=false
   fi
   mio_message "Already released" ${LightBlue}
@@ -387,13 +391,10 @@ _prod_merge_into_dev_core()
   [[ $hasBeenReleased == true ]] || return 0
 
   local toMerge=$1 mergeInto=$2 toMergeAlias=${3:-$1}
-  # io_trace "_prod_merge_into_dev_core -- $(print_vars toMerge mergeInto toMergeAlias moduleMergeIntoDev)"
+  # io_trace "_prod_merge_into_dev_core -- $(print_vars toMerge mergeInto toMergeAlias)"
 
   if _prod_can_merge_into_dev "$toMerge" "$mergeInto"; then
     branch_merge "$toMerge" "$mergeInto" "$toMergeAlias" '-Xtheirs'
-  elif [[ $moduleMergeIntoDev == true ]]; then
-    # if merge option is specified, we need to resolve conflicts manually
-    branch_merge "$toMerge" "$mergeInto" "$toMergeAlias"
   else
     branch_merge_ff "$toMerge" "$mergeInto" "$toMergeAlias" || true
   fi
@@ -422,7 +423,6 @@ _sm_in_prod_init()
   declare -p smInProd >"$smInProdPath"
   # remove file when the script finishes
   trap "rm \"$smInProdPath\"" 0
-
   # io_trace "_sm_in_prod_init -- $(print_vars smInProdPath)"
 }
 _sm_in_prod_update()
@@ -434,7 +434,6 @@ _sm_in_prod_update()
   smInProd+=( "$1" )                    # modify
   declare -p smInProd >"$smInProdPath"  # serialize
   lock_exit "$smInProdGate"
-
   # io_trace "_sm_in_prod_update -- $(print_vars smInProdPath)"
 }
 
@@ -457,7 +456,6 @@ _vtable_init()
       mio_error "Version table cannot be created when distinct modules are specified (${VC}$(cmd_registered_paths)${Red})"
       return 1
     fi
-
     vtableGate=$(lock_init)
     vtableLookupPath="$(mktemp)"
     vtable_init "$vtableRoot" "$vtableLookupPath"
@@ -495,18 +493,6 @@ _vtable_commit()
     && mio_message "Created version table for ${VC}$prodBranch${Green} at ${VC}$releaseVTag" ${Green}
   fi
 }
-# _vtable_commit()
-# {
-#   _prod_merge_into_dev "$prodBranch"
-#   if [[ $vtableCreate == true ]]; then
-#     # io_trace "_vtable_commit -- $(print_vars releaseStatus prodBranch moduleDevBranch checkoutType)"
-#     vtable_update "$vtableRoot" "$moduleId" "$vtableLookupPath" "$vtableGate" true \
-#     && mio_message "Created version table for ${VC}$prodBranch${Green} at ${VC}$releaseVTag" ${Green}
-#     _prod_merge_into_dev "$tmpBranch" "$prodBranch"
-#     gitx checkout "$prodBranch" &>>"$stdallRedir"
-#     gitx branch -D "$tmpBranch" &>>"$stdallRedir"
-#   fi
-# }
 
 ################################
 # Release status in dry run mode

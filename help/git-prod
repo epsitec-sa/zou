@@ -1,5 +1,5 @@
 usage: git prod attach [-r] [--vtag] [-- <module-paths>]
-   or: git prod select [--vtag] [<spec>] [-- <module-paths>]
+   or: git prod select [--vtag] [<ref>] [-- <module-paths>]
    or: git prod enter [-r] [--vnext] [-- <module-paths>]
    or: git prod release [-n] [--vlast] [--vtable] [--merge] [--force]
        [--(reuse|alpha|beta|rc|rtm)] [-- <module-paths>]
@@ -25,19 +25,17 @@ attach:
 
 select:
     --vtag                  select VTAG in priority (default to PROD branch)
-    <spec>                  PROD branch / VTAG (default to VNEXT / VLAST)
+    <ref>                   PROD branch / VTAG (default to VNEXT / VLAST)
 
 enter:
     --vlast                 enter last version - checkout version tag (default)
     --vnext                 enter next version - checkout production branch
 
 release:
-    -o|--prod               stay on production branch after release (default is to restore development branch)
-    --vlast                 release last version of current module recursively
-    --vnext                 release next version of current module recursively (default)
-    --merge                 merge released production branch into development branch (default in bundle)
+    -                       restore previous mode after release
+    --vlast                 release module changes with last version of submodules (default to vnext)
     --vtable                force creation of a vtable when current module is a composite submodule
-                            (default is to create a vtable only when the current module is a bundle
+                            (default is to create a vtable only when the current module is a bundle)
     --force                 force release of principal module
     --reuse                 reuse last version of current module (move version tag)
     --alpha                 release current module as alpha version
