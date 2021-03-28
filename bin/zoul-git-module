@@ -154,7 +154,7 @@ module_update_init()
 {
   # io_trace "module_update_init ${*@Q} -- $(print_vars moduleParent)" ${Green}
   if [[ -n "$moduleParent" ]]; then
-    io_buffered_eval "git sm update -C "$moduleParent" --init "$modulePath" 2>&1" '' ${DarkGray}
+    io_locked_eval "git sm update -C "$moduleParent" --init "$modulePath" 2>&1" '' ${DarkGray}
     _module_reset_scope
   fi
 }

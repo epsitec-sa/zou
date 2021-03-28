@@ -547,7 +547,7 @@ branch_show_status()
 {
   local mroot="${moduleRoot:-$PWD}"
   # io_trace "branch_show_status -- $(print_vars mroot)"
-  io_buffered_eval "gitx -C "$mroot" status -s 2>>"$stderrRedir"" _branch_show_status_line_selector ${Gray}
+  io_locked_eval "gitx -C "$mroot" status -s 2>>"$stderrRedir"" _branch_show_status_line_selector ${Gray}
 }
 _branch_show_status_line_selector()
 {

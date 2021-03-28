@@ -496,51 +496,42 @@ error()
 #   color=$3    -- default color
 io_eval()
 {
-  local selector=${2:-:} color=${3:-$NC} indent=${4:-  } isLastLine=0 skipCurrentLine line
-  # io_trace "io_eval ${*@Q} -- $(print_vars selector color)"
-  IFS=$'\n' eval "$1" | \
-  while read -r line; do
-    $selector "$line" "$color"; isLastLine=$?
-    [[ $skipCurrentLine == true ]] && continue
-    io_message "${indent}$line" "$moduleTracePrefix" "$color"
-    [ $isLastLine -ne 0 ] && break
-  done; IFS=$OIFS
+  local selector=${2:-:} color=${3:-$NC} indent=${4:-  }
+  # io_trace "io_eval ${*@Q} -- $(print_vars selector color indent)"
+  eval "$1" | \
+  {
+    local isLastLine=0 skipCurrentLine line IFS=$'\n'
+    while read -r line; do
+      $selector "$line" "$color"; isLastLine=$?
+      [[ $skipCurrentLine == true ]] && continue
+      io_message "${indent}$line" "$moduleTracePrefix" "$color"
+      [ $isLastLine -ne 0 ] && break
+    done
+    while read line; do :; done
+  }
   return ${PIPESTATUS[0]}
 }
 io_locked_eval()
 {
-  local selector=${2:-:} color=${3:-$NC} indent=${4:-  } isLastLine=0 skipCurrentLine line
-  # io_trace "io_locked_eval ${*@Q} -- $(print_vars selector color)"
-  io_lock_enter
-  IFS=$'\n' eval "$1" | \
-  while read -r line; do
-    $selector "$line" "$color"; isLastLine=$?
-    [[ $skipCurrentLine == true ]] && continue
-    io_message_unsafe "${indent}$line" "$moduleTracePrefix" "$color"
-    [ $isLastLine -ne 0 ] && break
-  done; IFS=$OIFS
-  io_lock_exit
+  # io_trace "io_locked_eval ${*@Q}"
+  local selector=${2:-:} color=${3:-$NC} indent=${4:-  }
+  # io_trace "io_locked_eval 1 -- $(print_vars selector color indent)"
+  eval "$1" | \
+  {
+    local isLastLine=0 skipCurrentLine line IFS=$'\n'
+    io_lock_enter
+    # printf '%b\n' "$moduleTracePrefix -- $PWD $ $1"
+    while read -r line; do
+      [[ $line =~ error ]] && color=${Red}
+      $selector "$line" "$color"; isLastLine=$?
+      [[ $skipCurrentLine == true ]] && continue
+      io_message_unsafe "${indent}$line" "$moduleTracePrefix" "$color"
+      [ $isLastLine -ne 0 ] && break
+    done
+    io_lock_exit
+    while read line; do :; done
+  }
   return ${PIPESTATUS[0]}
-}
-io_buffered_eval()
-{
-  # io_trace "io_buffered_eval ${*@Q}"
-  local selector=${2:-:} color=$3 indent=${4:-  } isLastLine=0 skipCurrentLine line lines ec
-  # io_trace "io_buffered_eval 1 -- $(print_vars selector color indent)"
-  IFS=$'\n' lines=( $(eval "$1") ); ec=$?; IFS=$OIFS
-  if [[ -z $color ]]; then
-    [ $ec -eq 0 ] && color=${NC} || color=${Red}
-  fi
-  io_lock_enter
-  # printf '%b\n' "$moduleTracePrefix -- $PWD $ $1"
-  for line in "${lines[@]}"; do
-    $selector "$line" "$color"; isLastLine=$?
-    [[ $skipCurrentLine == true ]] && continue
-    io_message_unsafe "${indent}$line" "$moduleTracePrefix" "$color"
-    [ $isLastLine -ne 0 ] && break
-  done
-  io_lock_exit
-  return $ec
 }
 cd_eval() { cd "$1"; eval "$2"; cd - >/dev/null; }
 

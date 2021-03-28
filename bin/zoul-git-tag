@@ -46,7 +46,7 @@ tag_rename()
 
   local tagger=$(tagger_name $tag1)
   if [[ -z "$tagger" ]]; then
-    io_buffered_eval "gitx tag ${tagOpts[@]} "$tag2" "$tag1^{}"" : ${DarkGray} \
+    io_locked_eval "gitx tag ${tagOpts[@]} "$tag2" "$tag1^{}"" : ${DarkGray} \
     && mio_info "Renamed lightweight tag ${VC}$tag1${Cyan} to ${VC}$tag2" \
     || return $?
   else
@@ -54,7 +54,7 @@ tag_rename()
     GIT_COMMITTER_NAME="$tagger" \
     GIT_COMMITTER_EMAIL=$(tagger_email "$tag1") \
     GIT_COMMITTER_DATE=$(tag_date "$tag1") \
-    io_buffered_eval "gitx tag -m '$message' ${tagOpts[@]} "$tag2" "$tag1^{}"" : ${DarkGray} \
+    io_locked_eval "gitx tag -m '$message' ${tagOpts[@]} "$tag2" "$tag1^{}"" : ${DarkGray} \
     && mio_info "Renamed annotated tag ${VC}$tag1${Cyan} to ${VC}$tag2" \
     || return $?
   fi
@@ -97,7 +97,7 @@ tag_delete()
 {
   if tag_exists "$1"; then
     tag_push_not_followed $1 $1^{} '--delete'
-    io_buffered_eval "gitx tag --delete "$1"" : ${Green}
+    io_locked_eval "gitx tag --delete "$1"" : ${Green}
   else
     mio_error "Tag '$tag' does not exist"
     if gitx push --delete origin "$tag" &>>"$stdallRedir"; then
@@ -126,7 +126,7 @@ tag_delete_local_tags()
     io_lock_exit
   else
     IFS=' '
-    io_buffered_eval "gitx tag -d ${ltags[*]} 2>&1" _tag_delete_local_tags_line_selector
+    io_locked_eval "gitx tag -d ${ltags[*]} 2>&1" _tag_delete_local_tags_line_selector
   fi
 }
 tag_delete_remote_tags()
@@ -148,7 +148,7 @@ tag_delete_remote_tags()
     io_lock_exit
   elif [[ $noTagPush != true ]]; then
     IFS=' '
-    io_buffered_eval "gitx push --delete $remote ${rtags[*]} 2>&1" _tag_delete_remote_tags_line_selector
+    io_locked_eval "gitx push --delete $remote ${rtags[*]} 2>&1" _tag_delete_remote_tags_line_selector
   fi
 }
 _tag_delete_local_tags_line_selector()
@@ -214,7 +214,7 @@ tag_mirror()
   [[ $dryRun == true ]] && return 0
   if [[ $verbose == true ]]; then
     local line
-    io_buffered_eval 'gitx push --tags --prune -f 2>&1' _tag_mirror_line_selector
+    io_locked_eval 'gitx push --tags --prune -f 2>&1' _tag_mirror_line_selector
   else
     gitx push --tags --prune -f &>>"$stdallRedir"
   fi

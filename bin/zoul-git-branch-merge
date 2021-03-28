@@ -189,7 +189,7 @@ _branch_merge()
     (( $toMergeTime >= $intoBranchTime )) && strategy='-Xtheirs'
     # io_trace "_branch_merge -3.1- -- $(print_vars toMergeTime intoBranchTime strategy)" ${Green}
 
-    if io_buffered_eval "gitx merge -m '$message' "$@" '$toMerge' '$strategy' 2>&1" _branch_merge_selector; then
+    if io_locked_eval "gitx merge -m '$message' "$@" '$toMerge' '$strategy' 2>&1" _branch_merge_selector; then
       branch_raise_merged_event "$toMerge" "$intoBranch"
       return 0
     else
