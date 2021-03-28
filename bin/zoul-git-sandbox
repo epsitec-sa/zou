@@ -48,8 +48,7 @@ sandbox_clone()
 {
   # SAT2 <- HUB
   mio_info "Cloning into ${VC}sat2"
-  cd "$zouTestRoot"
-  gitx_clone "$satHubDir" 'sat2' &>>"$stdallRedir"
+  git clonex -C "$zouTestRoot" "$satHubDir" 'sat2' &>>"$stdallRedir"
 }
 sandbox_create_submodules()
 {
@@ -64,21 +63,21 @@ sandbox_create_submodules()
 
   # SM1.SM3
   cd "$sm1Dir"
-  gitx_sm_add "$sm3HubDir" 'sm3' &>>"$stdallRedir"
+  git sm add -C "$sm1Dir" "$sm3HubDir" 'sm3' &>>"$stdallRedir"
   mio_info "Added submodule ${VC}sm3${Cyan} to ${VC}sm1"
   gitx commit -m'SM1: add submodule' &>>"$stdallRedir"
-  gitx_sm_update --init --recursive &>>"$stdallRedir"
+  git sm update -C "$sm1Dir" --init --recursive &>>"$stdallRedir"
   gitx push -u origin master &>>"$stdallRedir"
 
   # SAT1.SM1, SAT1.SM2
   cd "$sat1Dir"
-  gitx_sm_add "$sm1HubDir" 'sm1' &>>"$stdallRedir"
+  git sm add -C "$sat1Dir" "$sm1HubDir" 'sm1' &>>"$stdallRedir"
   mio_info "Added submodule ${VC}sm1${Cyan} to ${VC}sat1"
-  gitx_sm_add "$sm2HubDir" 'sm2' &>>"$stdallRedir"
+  git sm add -C "$sat1Dir" "$sm2HubDir" 'sm2' &>>"$stdallRedir"
   mio_info "Added submodule ${VC}sm2${Cyan} to ${VC}sat1"
-  gitx commit -m'SAT1: add submodules' &>>"$stdallRedir"
+  gitx -C "$sat1Dir" commit -m'SAT1: add submodules' &>>"$stdallRedir"
 
-  gitx_sm_update --init --recursive &>>"$stdallRedir"
+  git sm update -C "$sat1Dir" --init --recursive &>>"$stdallRedir"
 }
 sandbox_create_skus()
 {

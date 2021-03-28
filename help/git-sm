@@ -1,0 +1,27 @@
+usage: git sm clone  [<options>] [<clone-arguments>]
+   or: git sm update [<options>] [<submodule-update-arguments>]
+   or: git sm add    [<options>] [<submodule-add-arguments>]
+
+Manage submodules.
+
+commands:
+    clone                   same as 'git clone --recurse-submodules' command (use cache and jobs)
+    update                  same as 'git submodule update' command (use cache and jobs)
+    add                     same as 'git submodule add' command (use cache)
+
+environment:
+    GIT_CACHE_DIR           path to 'git cache' repository
+
+options:
+    -h|--help               display help
+    -C <work-dir>           same as git '-C' option
+
+clone:
+    -j<jobs-count>          same as 'git clone' '-j' option (default depends on system)
+
+update:
+    -j<jobs-count>          same as 'git submodule update' '--jobs' option (default depends on system)
+
+example:
+    git sm clone            clone submodules recursively using cache and default jobs count
+    git sm update --init    initialize submodules using cache and default jobs count

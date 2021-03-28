@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+
+# Use the following statement to include current lib only once
+#   [[ -z $ZOUL_LOG ]] && . zoul-log
+ZOUL_LOG=true
+
+# Environment variables
+# ZOU_LOG=true
+# ZOU_LOG_PATH
+
+if [[ $ZOU_LOG == true ]]; then
+  zouTmpDir=${TMPDIR:-/tmp}/_zou
+  [ -d "$zouTmpDir" ] || mkdir -p "$zouTmpDir"
+
+  zouLogPath=${ZOU_LOG_PATH:-$zouTmpDir/zou-flow.log}
+  [ -d $(dirname "$zouLogPath") ] || mkdir "$(dirname "$zouLogPath")"
+
+  if [[ -n $(find "$zouLogPath" -size +100k 2>/dev/null) ]]; then
+    # backup log file
+    mv -f "$zouLogPath" "$zouLogPath.$(date +%m-%d-%T | tr \: \-)"
+    # delete backup files older than one month
+    find "$zouTmpDir" -name 'zou-flow.log.*' -mtime +30 -exec rm -f {} \;
+  fi
+  stderrRedir="$zouLogPath"
+  stdallRedir="$zouLogPath"
+  printf '=%.0s' {1..80} &>>"$zouLogPath"
+  printf '\n%s\n' "$zouStartupDir \$ $zouStartupFileName $*" &>>"$zouLogPath"
+else
+  stderrRedir='/dev/null'
+  stdallRedir='/dev/null'
+fi

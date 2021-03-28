@@ -1,12 +1,11 @@
 #!/usr/bin/env bash
 
-if [[ $ZOU_LOG == true ]]; then
-  stderrRedir="$zouLogPath"
-  stdallRedir="$zouLogPath"
-else
-  stderrRedir='/dev/null'
-  stdallRedir='/dev/null'
-fi
-echo "$PWD @ git -c core.longpaths=true "$@"" &>>"$stdallRedir"
+. zoul-log
 
-git -c core.longpaths=true "$@"
+gitx()
+{
+  echo "$PWD @ git -c core.longpaths=true "$@"" &>>"$stdallRedir"
+  git -c core.longpaths=true "$@"
+}
+
+gitx "$@"

@@ -135,14 +135,6 @@ _cosm_update_submodule()
 # DISCARD
 #########
 
-_cosm_discard_inactive_submodules()
-{
-  # io_trace "_cosm_discard_inactive_submodules -- $(print_vars unstagedCleanSubmodules[@])"
-  if [ ${#unstagedCleanSubmodules[@]} -ne 0 ]; then
-    visit_async 'unstagedCleanSubmodules[@]' 'repo_discard_submodule'
-    unstagedCleanSubmodules=()
-  fi
-}
 cosm_discard_unstaged_submodules()
 {
   # discard unstaged clean submodules which are excluded from SKU

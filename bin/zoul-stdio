@@ -1,0 +1,171 @@
+#!/usr/bin/env bash
+
+# Use the following statement to include current lib only once
+#   [[ -z $ZOUL_STDIO ]] && . zoul-stdio
+ZOUL_STDIO=true
+
+[[ -z $ZOUL_LOCK ]]    && . zoul-lock
+
+# Environment variables
+# zouTraceError=true
+
+########
+# COLORS
+########
+
+# colors usage
+#   colors="${Red}Red ${Green}Green${NC}"
+#   printf '%b\n' "$colors"
+
+NC='\e[0m'  # No Color
+Black='\e[0;30m'  DarkGray='\e[1;30m'
+Red='\e[0;31m'    LightRed='\e[1;31m'
+Green='\e[0;32m'  LightGreen='\e[1;32m'
+Brown='\e[0;33m'  Yellow='\e[1;33m'
+Blue='\e[0;34m'   LightBlue='\e[1;34m'
+Purple='\e[0;35m' Magenta='\e[1;35m'
+Cyan='\e[0;36m'   LightCyan='\e[1;36m'
+Gray='\e[0;37m'   White='\e[1;37m'
+
+# specific message colors
+VC=${Gray}  # variable
+EC=${Red}   # error
+IC=${Cyan}  # info
+WC=${Brown} # warning
+
+io_print_colors()
+{
+  local color colors=()
+  for color in Black DarkGray Red LightRed Green LightGreen Brown Yellow Blue LightBlue Purple Magenta Cyan LightCyan Gray White; do
+    colors+=( ${!color}$color )
+  done
+  printf '%15b%20b\n' "${colors[@]}"
+}
+io_remove_colors()
+{
+  printf '%s\n' "$@" | sed -E 's/\\e\[[[:digit:]][^m]*m//g'
+}
+
+#########
+# LOCKING
+#########
+
+[[ -z $ioGate ]] && { ioGate=$(lock_init); export ioGate; }
+
+io_lock()       { lock "$ioGate" 0 "$@"; }
+io_lock_enter() { lock_enter "$ioGate"; }
+io_lock_exit()  { lock_exit "$ioGate"; }
+
+###########
+# DEBUGGING
+###########
+
+io_trace()
+{
+  local message=${1//$'\n'/'\\n'}
+  message=${message//$'\t'/'\\t'}
+  mio_message "  $message" ${2:-$DarkGray}
+}
+io_trace_unsafe()
+{
+  local message=${1//$'\n'/'\\n'}
+  message=${message//$'\t'/'\\t'}
+  mio_message_unsafe "  $message" ${2:-$DarkGray}
+}
+io_trace_error()
+{
+  local ec=$?
+  [[ $zouTraceError == true ]] || return $ec
+  [ $ec -eq 0 ] && return 0
+  io_trace "$1 (error code=$ec)" ${Red}
+  return $ec
+}
+io_debug() { [[ $debug == 'true' ]] && io_message "$1 = ${!1}" "${2:-debug}" ${3:-$Purple} || true; }
+
+print_vars()
+{
+  local param value
+  for param in "$@"; do
+    if [[ $param =~ \[@\]$ ]]; then
+      value=( $(io_remove_colors "${!param}") )
+      param="${param%\[@\]}"
+      if [ ${#value[@]} -eq 0 ]; then
+        printf '%b ' "$param=()"
+      else
+        printf '%b ' "$param=(${value[@]@Q})"
+      fi
+    else
+      value=$(io_remove_colors "${!param}")
+      if [[ -z $value ]]; then
+        printf '%b ' "$param=''"
+      else
+        printf '%b ' "$param='$value'"
+      fi
+    fi
+  done
+}
+
+########
+# STDOUT
+########
+
+# usage: io_message <message> [<label> [<color=${LightCyan}>]]
+# example:
+#   $ io_message 'message' 'info' ${Cyan}
+#   -> info: message
+#   $ io_message 'message' '' ${Gray}
+#   -> message
+io_info()    { io_message "$1" "${2:-info}"; }
+io_success() { io_message "$1" "${2:-info}"    ${Green}; }
+io_warning() { io_message "$1" "${2:-warning}" ${Brown}; }
+io_error()   { io_message "$1" "${2:-error}"   ${Red}; }
+io_message() { io_lock io_message_unsafe "$@"; }
+
+io_info_unsafe()     { io_message_unsafe "$1" "${2:-info}"; }
+io_success_unsafe()  { io_message_unsafe "$1" "${2:-info}"    ${Green}; }
+io_warning_unsafe()  { io_message_unsafe "$1" "${2:-warning}" ${Brown}; }
+io_error_unsafe()    { io_message_unsafe "$1" "${2:-error}"   ${Red}; }
+io_message_unsafe()
+{
+  local message=$1 label=$2 color=${3:-${Cyan}}
+  if [[ -n $label ]]; then
+    if [[ $label =~ ^\\e\[ ]]; then
+      # colored label 
+      message="$label : ${color}$message${NC}"
+    else
+      # no label color
+      message="${color}$label${NC} : ${color}$message${NC}"
+    fi
+  else
+    message="${color}$message${NC}"
+  fi
+  printf "%b\n" "$message" 1>&2
+}
+
+mio_info()    { mio_message "$1"; }
+mio_success() { mio_message "$1" "${Green}"; }
+mio_warning() { mio_message "$1" "${Brown}"; }
+mio_error()   { mio_message "$1" "${Red}"; }
+mio_message() { io_lock mio_message_unsafe "$@"; }
+
+mio_info_unsafe()    { mio_message_unsafe "$1"; }
+mio_success_unsafe() { mio_message_unsafe "$1" "${Green}"; }
+mio_warning_unsafe() { mio_message_unsafe "$1" "${Brown}"; }
+mio_error_unsafe()   { mio_message_unsafe "$1" "${Red}"; }
+mio_message_unsafe()
+{
+  local message=$1 color=${2:-$Cyan}
+  [[ -n $moduleAlias ]] && message="$message${DarkGray} -- $moduleAlias"
+  io_message_unsafe "$message" "$moduleTracePrefix" "$color"
+}
+
+#######
+# STDIN
+#######
+
+io_pause()
+{
+  local label=$(mio_warning "Press any key to continue..." "$@" 2>&1)
+  read -n1 -s -r -p "${label:0:-1}"
+  echo $'\n'
+}

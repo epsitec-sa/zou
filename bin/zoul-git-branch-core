@@ -551,12 +551,13 @@ _branch_checkout_selector()
 }
 branch_show_status()
 {
-  # io_trace "branch_show_status -- $PWD"
-  io_buffered_eval "gitx status -s --porcelain "${1:-$PWD}" 2>>"$stderrRedir" | sort" _branch_show_status_line_selector ${Gray}
+  local mroot="${moduleRoot:-$PWD}"
+  # io_trace "branch_show_status -- $(print_vars mroot)"
+  io_buffered_eval "gitx -C "$mroot" status -s 2>>"$stderrRedir"" _branch_show_status_line_selector ${Gray}
 }
 _branch_show_status_line_selector()
 {
-  if [[ $line =~ ^([[:blank:]]*[A-Z\?]+[[:blank:]]+)(.+)$ ]]; then
+  if [[ $line =~ ^([[:blank:]]*[A-Z\?a-z]+[[:blank:]]+)(.+)$ ]]; then
     line=${Red}${BASH_REMATCH[1]}${Gray}${BASH_REMATCH[2]}
   fi
 }

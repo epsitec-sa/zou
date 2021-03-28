@@ -6,18 +6,6 @@ ZOUL_GIT_CORE=true
 
 [[ -z $ZOUL_CORE ]] && . zoul-core
 
-gitx_clone()     { local IFS=$'\n'; gitx clone $(gitx_cache_option) "$@"; }
-gitx_sm_update() { local IFS=$'\n'; gitx submodule update $(gitx_cache_option) "$@"; }
-gitx_sm_add()    { local IFS=$'\n'; gitx submodule add $(gitx_cache_option) "$@"; }
-
-gitx_cache_option()
-{ 
-  if [[ -n $GIT_CACHE_DIR ]]; then
-    echo '--reference'
-    echo "$GIT_CACHE_DIR"
-  fi
-}
-
 # Tokenize other refs
 # in:
 #   $1:ref

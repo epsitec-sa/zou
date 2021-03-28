@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+
+[[ -z $ZOUL_SYSTEM ]]      && . zoul-system
+[[ -z $ZOUL_STD_IO ]]      && . zoul-stdio
+[[ -z $ZOUL_LOG ]]         && . zoul-log
+[[ -z $ZOUL_GIT_OPTIONS ]] && . zoul-git-options
+
+# [[ -z $ZOUL_CORE ]] && . zoul-core
+
+sm_parse()
+{
+  while [[ "$#" > 0 ]]; do case "$1" in
+    -h|--help) zou-help $0; exit 0;;
+    -j*)    jobsCount=${1#-j};;
+    clone)  subcommand=$1;;
+    update) subcommand=$1;;
+    add)    subcommand=$1;;
+    -C)     shift; workDir="$1";;
+    *)      args+=( "$1" );;
+  esac; shift; done
+}
+sm_run()
+{
+  # io_trace "sm_run ${*@Q}"
+
+  local jobsCount="$zouJobsCount" subcommand workDir="$PWD" args=()
+  sm_parse "$@" || return $?
+  
+  local IFS=$'\n'
+  case "$subcommand" in
+    clone)  _sm_clone  "${args[@]}";;
+    update) _sm_update "${args[@]}";;
+    add)    _sm_add    "${args[@]}";;
+    *)
+      local verb='invalid'
+      [[ -z $subcommand ]] && verb='missing'
+      printf '%b\n' "${Red}$verb subcommand: use one of (${Gray}add, update, clone${Red})${NC}"; io_help $0; exit 1;;
+  esac
+}
+
+_sm_clone()  { gitx -C "$workDir" clone $(gitx_cache_option) --recurse-submodules -j"$jobsCount" "$@" 2>&1 | _sm_out_filter; }
+_sm_update() { gitx -C "$workDir" submodule update $(gitx_cache_option) --jobs "$jobsCount" "$@" 2>&1 | _sm_out_filter; }
+_sm_add()    { gitx -C "$workDir" submodule add $(gitx_cache_option) "$@"; }
+
+_sm_out_filter()
+{
+  local line indent
+  [[ -z $moduleTracePrefix ]] || indent='  '
+  while read -r line; do
+    if [[ $line =~ ^(Cloning[^\']+)\'([^\']+)\'(.*) ]]; then
+      line="${DarkGray}${BASH_REMATCH[1]}${VC}${BASH_REMATCH[2]}${DarkGray}${BASH_REMATCH[3]}"
+      io_message_unsafe "${indent}$line" "$moduleTracePrefix"
+    fi
+  done
+}
+
+sm_run "$@"

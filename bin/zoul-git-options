@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+# Use the following statement to include current lib only once
+#   [[ -z $ZOUL_GIT_OPTIONS ]] && . zoul-git-options
+ZOUL_GIT_OPTIONS=true
+
+gitx_cache_option()
+{ 
+  if [[ -n $GIT_CACHE_DIR ]]; then
+    echo '--reference'
+    echo "$GIT_CACHE_DIR"
+  fi
+}

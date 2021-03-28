@@ -24,10 +24,13 @@ while [[ "$#" > 0 ]]; do case "$1" in
 esac; shift; done
 
 unset ZOUL_SYSTEM
+unset ZOUL_LOG
+unset ZOUL_STDIO
 unset ZOUL_CORE
 unset ZOUL_LOCK
 unset ZOUL_CONFIG
 unset ZOUL_PROCESS
+unset ZOUL_GIT_OPTIONS
 unset ZOUL_GIT_CORE
 unset ZOUL_GIT_STOW
 unset ZOUL_GIT_REPO
@@ -54,10 +57,13 @@ unset ZOUL_GIT_NOTES
 unset ZOUL_GIT_SANDBOX
 
 [[ -z $ZOUL_SYSTEM ]]             && . zoul-system
+[[ -z $ZOUL_LOG ]]                && . zoul-log
+[[ -z $ZOUL_STDIO ]]              && . zoul-stdio
 [[ -z $ZOUL_CORE ]]               && . zoul-core
 [[ -z $ZOUL_LOCK ]]               && . zoul-lock
 [[ -z $ZOUL_CONFIG ]]             && . zoul-config
 [[ -z $ZOUL_PROCESS ]]            && . zoul-process
+[[ -z $ZOUL_GIT_OPTIONS ]]        && . zoul-git-options
 [[ -z $ZOUL_GIT_CORE ]]           && . zoul-git-core
 [[ -z $ZOUL_GIT_STOW ]]           && . zoul-git-stow
 [[ -z $ZOUL_GIT_REPO ]]           && . zoul-git-repo
@@ -89,12 +95,6 @@ if [[ $showZouVars == true ]]; then
   done
 fi
 
-# banana()
-# {
-#   echo 'banana to stdout'
-#   echo >&2 'banana to stderr'
-#   return 2
-# }
 zoul_eval()
 {
   # io_trace "zoul_eval ${*@Q}"
@@ -112,6 +112,7 @@ zoul_eval()
   _zoul_eval_message "$zoulStdErr" ${Red}
   printf '%b\n' "$zoulMessage${NC}"
 }
+
 _zoul_eval_message()
 {
   [[ -z "$1" ]] && return 0

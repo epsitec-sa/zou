@@ -152,10 +152,7 @@ module_update_init()
 {
   # io_trace "module_update_init ${*@Q} -- $(print_vars moduleParent)" ${Green}
   if [[ -n "$moduleParent" ]]; then
-    cd "$moduleParent"
-    io_buffered_eval "gitx_sm_update --init "$modulePath" 2>&1" '' ${DarkGray}
-    cd - &>>"$stdallRedir"
-
+    io_buffered_eval "git sm update -C "$moduleParent" --init "$modulePath" 2>&1" '' ${DarkGray}
     _module_reset_scope
   fi
 }
@@ -284,7 +281,7 @@ bundle_scope()
 # run a function in the module root folder with module scope defined
 module_scope()
 {
-  # io_trace "module_scope $*"
+  # io_trace "module_scope $PWD $ $*"
   # setup module context
   local moduleRoot moduleConfigFile moduleId moduleSubmodulePaths \
         moduleParent modulePath moduleBundlePath \
@@ -317,6 +314,7 @@ module_scope()
   fi
 
   _module_set_module_dev_branch
+  _module_init_submodules
 
   _module_trace 'module_scope'
 
@@ -462,7 +460,6 @@ _module_infer_dev_from_bundle()
 _module_submodule_visitor()
 {
   local smPath=$1 option; shift
-  repo_ensure_submodule "$moduleRoot" "$smPath"
   _module_enter "$smPath" || return $?
 
   module_is_included_in_sku "$smPath" && option='-i'
@@ -478,6 +475,23 @@ _module_enter()
     io_error "No such [sub]module directory '$1'" "$moduleTracePrefix"
     return 1
   }
+}
+
+################
+# INITIALIZATION
+################
+
+_module_init_submodules()
+{
+  _module_list_uninitialized_submodules \
+  | xargs git sm update -C "${moduleRoot}" --init --
+}
+_module_list_uninitialized_submodules()
+{
+  local path
+  for path in ${moduleSubmodulePaths[@]}; do
+    [[ -f "$moduleRoot/$path/.git" ]] || echo $path
+  done
 }
 
 #########
@@ -604,7 +618,6 @@ _module_set_smart_id2()
 }
 _module_set_trace_prefix()
 {
-
   if module_is_bundle; then
     moduleTracePrefix=$bundleTracePrefix;
   else
@@ -620,6 +633,7 @@ _module_set_trace_prefix()
       moduleTracePrefix="${mcolor}$moduleTracePrefix${NC}"
     fi
   fi
+  export moduleTracePrefix
 }
 _module_set_bundle_trace_prefix()
 {

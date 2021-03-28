@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+
+[[ -z $ZOUL_SYSTEM ]]      && . zoul-system
+[[ -z $ZOUL_STD_IO ]]      && . zoul-stdio
+[[ -z $ZOUL_LOG ]]         && . zoul-log
+[[ -z $ZOUL_GIT_OPTIONS ]] && . zoul-git-options
+
+clonex_run()
+{
+  local workDir="$PWD" jobsCount=$zouJobsCount recurseOpt args=() IFS=$'\n'
+
+  while [[ "$#" > 0 ]]; do case "$1" in
+    -h|--help)      zou-help $0; exit 0;;
+    -j*)            jobsCount=${1#-j};;
+    -r|--recursive) recurseOpt='--recurse-submodules';;
+    -C)             shift; workDir="$1";;
+    *)              args+=("$1");;
+  esac; shift; done
+
+  gitx -C "$workDir" clone $(gitx_cache_option) $recurseOpt -j"$jobsCount" "${args[@]}" 2>&1 | _clonex_out_filter
+}
+
+_clonex_out_filter()
+{
+  local line indent
+  [[ -z $moduleTracePrefix ]] || indent='  '
+  while read -r line; do
+    if [[ $line =~ ^(Cloning[^\']+)\'([^\']+)\'(.*) ]]; then
+      line="${BASH_REMATCH[1]}${VC}${BASH_REMATCH[2]}${DarkGray}${BASH_REMATCH[3]}"
+      io_message_unsafe "${indent}$line" "$moduleTracePrefix" ${DarkGray}
+    fi
+  done
+}
+
+
+clonex_run "$@"
