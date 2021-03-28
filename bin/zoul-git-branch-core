@@ -11,9 +11,6 @@ ZOUL_GIT_BRANCH_CORE=true
 [[ -z $ZOUL_GIT_CORE ]]   && . zoul-git-core
 [[ -z $ZOUL_GIT_REPO ]]   && . zoul-git-repo
 
-# global options
-#   showSwitchingMessage
-
 headChangedEvent=()
 headNameChangedEvent=()
 checkoutNoChangeEvent=()
@@ -417,9 +414,8 @@ branch_ref_type()
 }
 branch_checkout()
 {
-  # io_trace "branch_checkout ${*@Q}"
   local ref=$1 forceCheckout=$2 refType refSym checkout raiseEvent isCurrent=0
-  # io_trace "branch_checkout 1 -- $(print_vars ref forceCheckout)"
+  # io_trace "branch_checkout -1- $(print_vars ref forceCheckout)"
 
   # checkout = force || !current
   # raise = !current || symChanged
@@ -427,20 +423,20 @@ branch_checkout()
     # no sym change
     [[ $forceCheckout == true ]]; checkout=$?
     raiseEvent=1
-    # io_trace "branch_checkout 2.1 -- $(print_vars ref refSym forceCheckout checkout raiseEvent isCurrent)"
+    # io_trace "branch_checkout -2.1- $(print_vars checkout raiseEvent isCurrent)"
   elif ref_is_head "$ref"; then
     # no hash change
     checkout=0
     raiseEvent=1
-    # io_trace "branch_checkout 2.2 -- $(print_vars ref refSym forceCheckout checkout raiseEvent isCurrent)"
+    # io_trace "branch_checkout -2.2- $(print_vars checkout raiseEvent isCurrent)"
   else
     checkout=0
     raiseEvent=0
     isCurrent=1
-    # io_trace "branch_checkout 2.3 -- $(print_vars ref refSym forceCheckout checkout raiseEvent isCurrent)"
+    # io_trace "branch_checkout -2.3- $(print_vars checkout raiseEvent isCurrent)"
   fi
   branch_ref_type $ref; refType=$?
-  # io_trace "branch_checkout 2 -- $(print_vars ref forceCheckout ref refSym refType)"
+  # io_trace "branch_checkout -3- $(print_vars refSym refType)"
   if [ $checkout -eq 0 ]; then
     # compute symbols
     local ioType ioRef=$refSym ec=0
@@ -451,34 +447,36 @@ branch_checkout()
       3) ioType='new branch';;
       4) ioType='commit'; ioRef="($ioRef)";;
     esac
-    # io_trace "branch_checkout 3 -- $(print_vars ref forceCheckout checkout raiseEvent isCurrent refType refSym ioType ioRef)"
+    # io_trace "branch_checkout -4- $(print_vars ioType ioRef)"
 
-    # switching message
-    [[ $showSwitchingMessage == true ]] && mio_info "Switching to $ioType $ioRef"
     # checkout
     [ $isCurrent -ne 0 ] && repo_discard_internal_ignore_list
     _branch_checkout_core "$refSym"; ec=$?
     return $ec
   else
+    # io_trace "branch_checkout -5- $(print_vars refType refSym)"
     branch_raise_checkout_no_change_event "$refSym"
   fi
 }
 _branch_raise_checked_out_events()
 {
   if [[ $raiseEvent -eq 0 ]]; then
+    # io_trace_unsafe "_branch_raise_checked_out_events -1- $(print_vars raiseEvent refSym moduleHead)"
     branch_raise_head_changed_event "$refSym"
   elif [[ $moduleHead != $refSym ]]; then
+    # io_trace_unsafe "_branch_raise_checked_out_events -2- $(print_vars raiseEvent refSym moduleHead)"
     branch_raise_head_name_changed_event "$refSym"
   else
+    # io_trace_unsafe "_branch_raise_checked_out_events -3- $(print_vars raiseEvent refSym moduleHead)"
     branch_raise_checkout_no_change_event "$refSym"
   fi
 }
 _branch_checkout_core()
 {
-  local ref=$1 skipNextLines skipCurrentLine showNextLines ec line lines color alias
+  local ref=$1 IFS=$'\n' ec lines line
   # io_trace "_branch_checkout_core -1- ${*@Q}"
 
-  IFS=$'\n' lines=( $(gitx checkout "$ref" 2>&1) ); ec=$?; IFS=$OIFS
+  lines=( $(gitx checkout "$ref" 2>&1) ); ec=$?
   if [[ $ec -eq 0 ]]; then
     _branch_raise_checked_out_events
   fi
@@ -489,7 +487,7 @@ _branch_checkout_core()
   # done
   for line in "${lines[@]}"; do
     # io_trace_unsafe "_branch_checkout_core -2- '$line'"
-    unset skipNextLines skipCurrentLine indent alias
+    local skipNextLines skipCurrentLine showNextLines color alias
     _branch_checkout_selector
     # io_trace_unsafe "_branch_checkout_core -3- $(print_vars skipCurrentLine skipNextLines showNextLines)"
     [[ $skipCurrentLine == true ]] && continue
@@ -497,19 +495,18 @@ _branch_checkout_core()
     [[ $skipNextLines == true ]] && break
   done
   io_lock_exit
-  # io_trace "<<<< _branch_checkout_core ${*@Q}"
+  # io_trace "_branch_checkout_core -4- ${*@Q}"
   return $ec
 }
 _branch_checkout_selector()
 {
-  # skipNextLines=''; skipCurrentLine=''; indent=''; alias=''
-  # io_trace_unsafe "_branch_checkout_selector -1- $(print_vars skipCurrentLine skipNextLines showNextLines)"
-  # [[ -z $line ]] && continue
+  skipCurrentLine=''; indent=''; alias=''
   if [[ $showNextLines == true ]]; then
     indent='  '
   elif [[ $line =~ ^([wW]arning:)(.*) ]]; then
     line="${Brown}${BASH_REMATCH[1]}${DarkGray}${BASH_REMATCH[2]}"
     color=${DarkGray}
+    indent='  '
   elif [[ $line =~ ^(error|fatal)(:[[:blank:]]*)(.*) ]]; then
     line="${Red}${BASH_REMATCH[1]}${BASH_REMATCH[2]}${BASH_REMATCH[3],}"
     color=${Cyan}
@@ -538,8 +535,6 @@ _branch_checkout_selector()
     skipCurrentLine=true
   elif [[ -z $color ]]; then
     skipCurrentLine=true
-    # color=${DarkGray}
-    # indent='  '
   fi
 
   if [[ -n $alias ]]; then
