@@ -504,6 +504,23 @@ io_eval()
   }
   return ${PIPESTATUS[0]}
 }
+io_eval_unsafe()
+{
+  local selector=${2:-:} color=${3:-$NC} indent=${4:-  }
+  # io_trace "io_eval ${*@Q} -- $(print_vars selector color indent)"
+  eval "$1" | \
+  {
+    local isLastLine=0 skipCurrentLine line IFS=$'\n'
+    while read -r line; do
+      $selector "$line" "$color"; isLastLine=$?
+      [[ $skipCurrentLine == true ]] && continue
+      io_message_unsafe "${indent}$line" "$moduleTracePrefix" "$color"
+      [ $isLastLine -ne 0 ] && break
+    done
+    while read line; do :; done
+  }
+  return ${PIPESTATUS[0]}
+}
 io_locked_eval()
 {
   # io_trace "io_locked_eval ${*@Q}"
@@ -541,7 +558,7 @@ raise_event()
   # io_trace "raise_event -- $(print_vars $1)"
   local event=${1%'[@]'} handlers=( ${!1} ) handler; shift
   for handler in "${handlers[@]}"; do
-    # io_trace "raise_event $event -- $handler $*"
+    # io_trace_unsafe "raise_event $event -- $handler $*"
     $handler "$@"
   done
   return 0
