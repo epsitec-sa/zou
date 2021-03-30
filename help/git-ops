@@ -1,0 +1,18 @@
+usage: git ops [list] [-v]
+   or: git ops show [-v] [<object>]
+   or: git ops add [-f]  [<object>] -- <operation>
+   or: git ops append [<object>] -- <operation>
+   or: git ops remove [<object>]
+
+Manage attached operations
+
+    -h|--help               display help
+    -v|--verbose            use long format (zou-ops/<object-sha>:<operation>)
+    -f|--force              replace existing operations
+    <object>                the object to manage (default to 'HEAD')
+    <operation>             the operation to add or to append
+    
+example:
+    git ops append -- 'git tag -d v1.0.0'   # append 'git tag -d v1.0.0' operation to HEAD
+    git ops                                 # list all operations
+    git ops -v                              # list all operations in long format (zou-ops/<SHA>:<operation>)

@@ -10,7 +10,7 @@ ZOUL_GIT_NOTES=true
 
 # Available zou channels
 # - zou-vtable
-# - zou-tags
+# - zou-ops
 
 # Configure fetch and merge strategy
 #   merge strategies: ours | theirs | union | cat_sort_uniq
@@ -26,7 +26,7 @@ notes_configure()
   # configure notes merge strategies
   gitx config notes.commits.mergeStrategy union
   gitx config notes.zou-vtable.mergeStrategy ours
-  gitx config notes.zou-tags.mergeStrategy cat_sort_uniq
+  gitx config notes.zou-ops.mergeStrategy cat_sort_uniq
 }
 notes_is_configured()
 {
@@ -37,9 +37,10 @@ notes_is_configured()
 # in:
 #   $1:channel  -- notes channel (--ref)
 #   $2:note     -- the note
-#   $3:object   -- the object to annotate 
-notes_add()      { gitx notes --ref "$1" add -m "$2" "${3:-HEAD}"; }
-notes_add_file() { gitx notes --ref "$1" add -F "$2" "${3:-HEAD}"; }
+#   $3:object   -- the object to annotate
+#   ${@:4}      -- additional options (-f)
+notes_add()      { io_trace "notes_add ${*@Q}"; gitx notes --ref "$1" add -m "$2" "${3:-HEAD}" ${*:4}; }
+notes_add_file() { gitx notes --ref "$1" add -F "$2" "${3:-HEAD}" "${@:5}"; }
 
 # Append a channel note to object
 # in:

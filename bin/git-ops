@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+
+[[ -z $ZOUL_GIT_OPS ]] && . zoul-git-ops
+[[ -z $ZOUL_GIT_CMD ]] && . zoul-git-cmd
+
+ops_parse()
+{
+  while [[ "$#" > 0 ]]; do case "$1" in
+    -h|--help) zou-help $0; exit 0;;
+    add)          subcommand=$1;;
+    append)       subcommand=$1;;
+    remove)       subcommand=$1;;
+    show)         subcommand=$1;;
+    list)         subcommand=$1;;
+    -v|--verbose) verbose=true;;
+    -f|--force)   forceOption="$1";;
+    --)           shift; break;;
+    -*)           options+=("$1");;
+    *)            object="$1";;
+  esac; shift; done
+
+  cmd_check_subcommand 'add' 'append' 'remove' 'show' 'list'
+  operation=$*
+  
+  # io_trace "ops_parse -- $(print_vars subcommand operation object options[@])"
+}
+ops_run()
+{
+  # parse command line
+  local command='ops' subcommand='list' cmdScopes=() \
+        verbose operation object='HEAD' forceOption
+
+  ops_parse "$@" || return $?
+  
+  case $subcommand in
+    add)    startupMessage="Adding ${Brown}$operation${White} operation to ${Brown}$object${White}...";;
+    append) startupMessage="Appending ${Brown}$operation${White} operation to ${Brown}$object${White}, please wait...";;
+    remove) startupMessage="Removing operations for object ${Brown}$object${White}...";;
+    list)   startupMessage="Listing registered operations...";;
+  esac
+
+  bundle_scope ops_command
+}
+ops_command()
+{
+  cmd_register_module_paths false './'
+  cmd_visit_modules
+}
+
+ops_add_finally()    { branch_show_status; }
+ops_append_finally() { branch_show_status; }
+ops_remove_finally() { branch_show_status; }
+ops_show_finally()   { branch_show_status; }
+ops_list_finally()   { branch_show_status; }
+
+ops_add_prolog()    { ops_add "$operation" "$object" "$forceOption"; }
+ops_append_prolog() { ops_append "$operation" "$object"; }
+ops_remove_prolog() { ops_remove "$operation" "$object"; }
+ops_show_prolog()   { [[ $verbose == true ]] && ops_show "$object" || ops_show_ops "$object"; }
+ops_list_prolog()   { [[ $verbose == true ]] && ops_list || ops_list_ops; }
+
+ops_run  "$@"

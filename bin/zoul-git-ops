@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+
+# Use the following statement to include current lib only once
+#   [[ -z $ZOUL_GIT_OPS ]] && . zoul-git-ops
+ZOUL_GIT_OPS=true
+
+[[ -z $ZOUL_GIT_NOTES ]] && . zoul-git-notes
+
+# Available zou channels
+# - zou-vtable
+# - zou-ops
+
+# Add an operation
+# in:
+#   $1:command  -- the command
+#   $2:object   -- default to 'HEAD'
+#   ${@:3}      -- additional options (-f)
+ops_add()
+{
+  # do not add an existing operation
+  ops_list_ops "$2" | grep -m 1 "$1" >/dev/null
+  [ $? -eq 0 ] || notes_add 'zou-ops' "$@"
+}
+
+# Append an operation
+# in:
+#   $1:command  -- the command
+#   $2:object   -- default to 'HEAD'
+ops_append()
+{
+  ops_list_ops "$2" | grep -m 1 "$1" >/dev/null
+  [ $? -eq 0 ] || notes_append 'zou-ops' "$@"
+}
+
+# Remove an operation
+# in:
+#   $1:command  -- the command
+#   $2:object   -- default to 'HEAD'
+ops_remove() { notes_remove 'zou-ops' "$@" 2>>"$stderrRedir"; }
+
+# Display operations at specified object 
+# in:
+#   $1:object   -- default to 'HEAD'
+#   -*:option   -- git rev-parse option (--short)
+# out:
+#   zou-ops/<object-SHA>:<operation>
+ops_show_ops() { notes_show 'zou-ops' "$@" 2>>"$stderrRedir" | cut -d':' -f2-; }
+ops_show()     { notes_show 'zou-ops' "$@" 2>>"$stderrRedir"; }
+
+# List all operations
+# in:
+#   -*:option   -- git rev-parse option (--short)
+ops_list_ops() { notes_list 'zou-ops' "$@" | cut -d':' -f2- | uniq; }
+ops_list()     { notes_list 'zou-ops' "$@" | uniq; }
