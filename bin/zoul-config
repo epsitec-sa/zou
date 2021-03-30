@@ -8,11 +8,7 @@ ZOUL_CONFIG=true
 
 config_setup()
 {
-  # setup credential manager on WSL2
-  if sys_wsl && [[ -z $(git config --global --get credential.helper) ]]; then
-    local credentialManagerPath="/mnt/c/Program\ Files/Git/mingw64/libexec/git-core/git-credential-manager.exe"
-    [[ -f "$credentialManagerPath" ]] && gitx config --global credential.helper "$credentialManagerPath"
-  fi
+  config_git_tools
 
   # remove obsolete value
   gitx config --global --unset 'zou.initialized'
@@ -49,6 +45,38 @@ config_setup()
   gitx config --global alias.select '!printf '"'"'%b\n'"'"' '"'"'\e[0;31mThis command is deprecated, use \e[0;37mgit (wip|dev|prod) enter\e[0;31m instead\e[0m'"'"''
   gitx config --global alias.attach '!printf '"'"'%b\n'"'"' '"'"'\e[0;31mThis command is deprecated, use \e[0;37mgit dev attach\e[0;31m instead\e[0m'"'"''
   gitx config --global alias.config-sku '!printf '"'"'%b\n'"'"' '"'"'\e[0;31mThis command is deprecated, use \e[0;37mgit sku config\e[0;31m instead\e[0m'"'"''
+}
+config_git_tools()
+{
+  # configure credential manager and Beyond Compare 4 for WSL2 and Windows
+  local drive
+  sys_wsl && drive='/mnt/c'
+  sys_windows && drive='C:'
+  if [[ -n "$drive" ]]; then
+    # credential manager
+    local credentialManagerPath="$drive/Program\ Files/Git/mingw64/libexec/git-core/git-credential-manager.exe"
+    if [[ -f "$credentialManagerPath" ]]; then
+      [[ -z $(git config --global --get credential.helper) ]] && gitx config --global credential.helper "$credentialManagerPath"
+    fi
+    # bc4 tools
+    local bc4Path="$drive/Program Files/Beyond Compare 4/BComp.exe"
+    if [[ -f "$bc4Path" ]]; then
+      # bc4 merge tool
+      if [[ -z $(git config --global --get mergetool.bc4) ]]; then
+        local cmd; printf -v cmd '%q %s %s %s %s' "$bc4Path" '"$LOCAL"' '"$REMOTE"' '"$BASE"' '"$MERGED"'
+        gitx config --global mergetool.bc4.cmd "$cmd"
+        gitx config --global mergetool.bc4.trustExitCode 'true'
+      fi
+      # bc4 diff tool
+      if [[ -z $(git config --global --get difftool.bc4) ]]; then
+        local cmd; printf -v cmd '%q %s %s' "$bc4Path" '"$LOCAL"' '"$REMOTE"'
+        gitx config --global difftool.bc4.cmd "$cmd"
+        gitx config --global difftool.bc4.prompt false
+      fi
+      [[ -z $(git config --global --get merge.tool) ]] && gitx config --global merge.tool bc4
+      [[ -z $(git config --global --get diff.tool) ]]  && gitx config --global diff.tool bc4
+    fi
+  fi
 }
 config_migrate_registered_bundles()
 {
