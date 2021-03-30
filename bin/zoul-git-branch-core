@@ -549,6 +549,12 @@ branch_show_status()
   # io_trace "branch_show_status -- $(print_vars mroot)"
   io_locked_eval "gitx -C "$mroot" status -s 2>>"$stderrRedir"" _branch_show_status_line_selector ${Gray}
 }
+branch_show_file_status_unsafe()
+{
+  local mroot="${moduleRoot:-$PWD}"
+  # io_trace "branch_show_status -- $(print_vars mroot)"
+  io_eval_unsafe "gitx -C "$mroot" status -s --ignore-submodules 2>>"$stderrRedir"" _branch_show_status_line_selector ${Gray}
+}
 _branch_show_status_line_selector()
 {
   if [[ $line =~ ^([[:blank:]]*[A-Z\?a-z]+[[:blank:]]+)(.+)$ ]]; then

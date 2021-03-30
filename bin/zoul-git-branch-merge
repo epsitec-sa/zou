@@ -10,8 +10,10 @@ ZOUL_GIT_BRANCH_MERGE=true
 [[ -z $ZOUL_GIT_REPO ]]        && . zoul-git-repo
 [[ -z $ZOUL_GIT_BRANCH_CORE ]] && . zoul-git-branch-core
 
-mergedEvent=()
-branch_raise_merged_event() { raise_event 'mergedEvent[@]' "$@"; }
+mergingEvent=()
+mergeSuccessEvent=()
+branch_raise_merging_event() { raise_event 'mergingEvent[@]' "$@"; }
+branch_raise_merge_success_event() { raise_event 'mergeSuccessEvent[@]' "$@"; }
 
 branch_merge_ff()
 {
@@ -25,6 +27,7 @@ branch_merge_sync()
 branch_merge_abort()
 {
   if repo_is_merging; then
+    # io_trace_unsafe "branch_merge_abort -1-"
     gitx merge --abort
     _branch_remove_temp_merge_files
   fi
@@ -39,38 +42,39 @@ branch_merge()
     *)  toMergeAlias=$1;;
   esac; shift; done
   toMergeAlias=${toMergeAlias:-$toMerge}
-  # io_trace "branch_merge -1- -- $(print_vars toMerge intoBranch toMergeAlias mergeOpts[@])"
+  # io_trace "branch_merge -1- $(print_vars toMerge intoBranch toMergeAlias mergeOpts[@])"
 
   _branch_merge_ff || ec=$?
   case $ec in
     0|128) return $ec;;
     *) ec=0;;
   esac
-  # io_trace "branch_merge -2- -- $(print_vars toMerge intoBranch toMergeAlias needCheckout mergeOpts[@])"
+  # io_trace "branch_merge -2- $(print_vars toMerge intoBranch toMergeAlias needCheckout mergeOpts[@])"
 
   local message="zou-flow: merge '$toMergeAlias' into '$intoBranch' ($(gitx rev-parse --short "$toMerge" 2>>"$stderrRedir") -> $(gitx rev-parse --short "$intoBranch" 2>>"$stderrRedir"))"
   if [[ $needCheckout == true ]] && gitx checkout $intoBranchName &>>"$stdallRedir"; then
-    # io_trace "branch_merge -3- -- $(print_vars toMerge intoBranch toMergeAlias needCheckout mergeOpts[@])"
+    # io_trace "branch_merge -3- $(print_vars toMerge intoBranch toMergeAlias needCheckout mergeOpts[@])"
     _branch_merge "$message" "$toMerge" "${mergeOpts[@]}" || ec=$?
     if [ $ec -ne 0 ] && repo_is_merging; then
       mio_error "Merging ${VC}$toMergeAlias${Red} into ${VC}$intoBranch${Red} will cause merge conflicts."
       branch_show_status '  '
       io_lock_enter
       mio_message_unsafe "You have to merge these branches manually." ${Cyan}
-      mio_message_unsafe "  Your merge tool is probably not configured." ${DarkGray}
-      mio_message_unsafe "  See 'git mergetool --tool-help' or 'git help config' for more details." ${DarkGray}
+      if [[ -z $(git config merge.tool) ]]; then
+        mio_message_unsafe "  Your merge tool is not configured." ${DarkGray}
+        mio_message_unsafe "  See 'git mergetool --tool-help' or 'git help config' for more details." ${DarkGray}
+      fi
       io_lock_exit
-      branch_merge_abort
     fi
     gitx checkout - &>>"$stdallRedir"
   else
-    # io_trace "branch_merge -4- -- $(print_vars toMerge intoBranch toMergeAlias needCheckout mergeOpts[@] ec)"
+    # io_trace "branch_merge -4- $(print_vars toMerge intoBranch toMergeAlias needCheckout mergeOpts[@] ec)"
     _branch_merge "$message" "$toMerge" "${mergeOpts[@]}" || ec=$?
   fi
   if [ $ec -eq 0 ]; then
     [[ $quiet == true ]] || mio_success "Merged ${VC}$toMergeAlias${Green} into ${VC}$intoBranchName${Green}"
   else
-    repo_require_clean_work_tree "Cannot merge '$toMergeAlias' into '$intoBranch'"
+    repo_require_clean_work_tree "Cannot merge ${VC}$toMergeAlias${Brown} into ${VC}$intoBranch${Brown}"
   fi
   return $ec
 }
@@ -109,7 +113,7 @@ _branch_merge_ff()
 
   local hashToMerge hashMergeInto hashMergeBase intoRef branch lbranch bref ec=0
   branch_set_realize "$intoBranch" 'true' || ec=$?
-  # io_trace "_branch_merge_ff -1- -- $(print_vars branch lbranch bref ec)"
+  # io_trace "_branch_merge_ff -1- $(print_vars branch lbranch bref ec)"
   if [ $ec -eq 2 ]; then
     mio_error "Invalid branch name '$intoBranch' (error code = $ec)"
     return 128
@@ -150,35 +154,45 @@ _branch_merge_ff()
       return 1
     fi
     if gitx update-ref -m "merge $toMerge into $intoBranch (fast forward)" "$intoRef" "$hashToMerge" "$hashMergeInto" 2>>"$stderrRedir"; then
-      branch_raise_merged_event "$toMerge" "$intoBranch"
+      # io_trace "_branch_merge_ff -2- $(print_vars toMerge intoBranch ref)"
+      branch_raise_merge_success_event "$toMerge" "$intoBranch"
       [[ $quiet == true ]] || mio_success "Merged ${VC}$toMergeAlias${Green} into ${VC}$intoBranchName${Green} (fast-forward)"
+      return 0
     else
+      # io_trace "_branch_merge_ff -3- $(print_vars toMerge intoBranch ref)"
       return 1
     fi
   fi
-  # io_trace "_branch_merge_ff -2- -- $(print_vars toMerge intoBranch ref)"
+  # io_trace "_branch_merge_ff -4- $(print_vars toMerge intoBranch ref)"
 }
 _branch_merge_ff_only()
 {
+  # io_trace "_branch_merge_ff_only -1- $(print_vars toMerge intoBranch ref)"
+  # branch_raise_merging_event "$toMerge" "$intoBranch"
   if gitx merge --ff-only "$toMerge" &>>"$stdallRedir"; then
-    branch_raise_merged_event "$toMerge" "$intoBranch"
+    # io_trace "_branch_merge_ff_only -2- $(print_vars toMerge intoBranch ref)"
+    branch_raise_merge_success_event "$toMerge" "$intoBranch"
     [[ $quiet == true ]] || mio_success "Merged ${VC}$toMergeAlias${Green} into ${VC}$intoBranchName${Green} (fast-forward)"
+    return 0
   else
+    # io_trace "_branch_merge_ff_only -3- $(print_vars toMerge intoBranch ref)"
     return 1
   fi
 }
 _branch_merge()
 {
   local message=$1 toMerge=$2; shift 2
+  # io_trace "_branch_merge -1- $(print_vars toMerge intoBranch)" ${Green}
+  # branch_raise_merging_event "$toMerge" "$intoBranch"
   if gitx merge -m "$message" "$@" "$toMerge" &>>"$stdallRedir"; then
-    # io_trace "_branch_merge -1- -- $(print_vars toMerge intoBranch)" ${Green}
-    branch_raise_merged_event "$toMerge" "$intoBranch"
+    # io_trace "_branch_merge -2- $(print_vars toMerge intoBranch)" ${Green}
+    branch_raise_merge_success_event "$toMerge" "$intoBranch"
     return 0
   fi
-  # io_trace "_branch_merge -2- -- $(print_vars toMerge intoBranch)" ${Green}
+  # io_trace "_branch_merge -3- $(print_vars toMerge intoBranch)" ${Green}
 
   if _branch_merge_resolve_submodule_conflicts; then
-    # io_trace "_branch_merge -3- -- $(print_vars toMerge intoBranch)" ${Green}
+    # io_trace "_branch_merge -4.1- $(print_vars toMerge intoBranch)" ${Green}
 
     # no files to merge, just submodules
     # all conflicts should be resolved
@@ -187,17 +201,22 @@ _branch_merge()
     # detect most recent commmit to define the merge strategy
     local toMergeTime=$(ref_time "$toMerge") intoBranchTime=$(ref_time "$intoBranch") strategy='-sours'
     (( $toMergeTime >= $intoBranchTime )) && strategy='-Xtheirs'
-    # io_trace "_branch_merge -3.1- -- $(print_vars toMergeTime intoBranchTime strategy)" ${Green}
+    # io_trace "_branch_merge -4.2- $(print_vars toMergeTime intoBranchTime strategy)" ${Green}
 
     if io_locked_eval "gitx merge -m '$message' "$@" '$toMerge' '$strategy' 2>&1" _branch_merge_selector; then
-      branch_raise_merged_event "$toMerge" "$intoBranch"
+      # io_trace "_branch_merge -4.2.1- $(print_vars toMerge intoBranch)" ${Green}
+      branch_raise_merge_success_event "$toMerge" "$intoBranch"
       return 0
     else
-      # io_trace "_branch_merge -3.2- -- $(print_vars toMerge intoBranch)" ${Green}
+      # io_trace "_branch_merge -4.2.2- $(print_vars toMerge intoBranch)" ${Green}
       return 1
     fi
-  elif ! _branch_merge_interactive; then
-    # io_trace "_branch_merge -4- -- $(print_vars toMerge intoBranch)" ${Green}
+  elif _branch_merge_interactive; then
+    # io_trace "_branch_merge -5.1- $(print_vars toMerge intoBranch)" ${Green}
+    branch_raise_merge_success_event "$toMerge" "$intoBranch"
+    return 0
+  else
+    # io_trace "_branch_merge -5.2- $(print_vars toMerge intoBranch)" ${Green}
     # gitx diff
     return 1
   fi
@@ -213,7 +232,6 @@ _branch_merge_interactive()
   local ec=0
   _branch_merge_tool && gitx commit --no-edit &>>"$stdallRedir" || ec=$?
   _branch_remove_temp_merge_files
-  [ $ec -eq 0 ] && branch_raise_merged_event "$toMerge" "$intoBranch"
   return $ec
 }
 _branch_remove_temp_merge_files()
@@ -223,10 +241,28 @@ _branch_remove_temp_merge_files()
 }
 _branch_merge_tool()
 {
-  local ec
+  # io_locked_eval 'gitx mergetool 2>&1' : ${DarkGray}
+  local mergeTool="$(git config merge.tool)" ec
+  branch_raise_merging_event "$toMerge" "$intoBranch"
+
   io_lock_enter
-  gitx mergetool; ec=$?
+  {
+    mio_warning_unsafe "Merging ${VC}$toMergeAlias${Brown} into ${VC}$intoBranchName${Brown} with conflicts" ''
+    branch_show_file_status_unsafe '  '
+    # mio_message_unsafe "  Fix conflict before proceeding."
+    mio_message_unsafe "  Starting ${VC}$mergeTool${Cyan} merge tool, please wait..."
+    gitx mergetool &>/dev/null; ec=$?
+    # io_trace_unsafe "_branch_merge_tool -1- $(print_vars ec)"
+
+    if [ $ec -eq 0 ]; then
+      branch_raise_merge_success_event "$toMerge" "$intoBranch"
+      mio_success_unsafe "Merged ${VC}$toMergeAlias${Green} into ${VC}$intoBranchName${Green}"
+    else
+      mio_warning_unsafe "Merge of ${VC}$toMergeAlias${Brown} into ${VC}$intoBranchName${Brown} has been canceled" ''
+    fi
+  }
   io_lock_exit
+
   return $ec
 }
 _branch_merge_resolve_submodule_conflicts()

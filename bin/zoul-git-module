@@ -17,14 +17,14 @@ ZOUL_GIT_MODULE=true
 startupMessage=''
 
 # global options
-useLongModuleTracePrefix=true
-showVisitModuleMessage=false
 doNotRegisterBundle=false
 
 # events registration
 headChangedEvent+=( _bundle_reset_scope _module_reset_scope )
 headNameChangedEvent+=( _bundle_reset_scope _module_reset_scope )
 branchSyncEvent+=( _module_on_sync )
+mergingEvent+=( _module_on_merging )
+mergeSuccessEvent+=( _module_on_merge_success )
 
 # run a function in the startup module root folder with startup, bundle and module scopes defined
 module_run()
@@ -265,7 +265,7 @@ bundle_scope()
   cd - >/dev/null
   
   repo_set_bundle_url_info "$bundleRoot"  # -> bundleUrl bundleUrlName
-  _module_set_bundle_trace_prefix
+  repo_is_merging "$bundleRoot"; _module_set_bundle_trace_prefix $?
   _module_startup_message
 
   _module_set_bundle_dev_branch
@@ -308,12 +308,7 @@ module_scope()
   fi
 
   _module_set_head
-  _module_set_trace_prefix
-
-  if [[ $showVisitModuleMessage == true ]]; then
-    local startupRelativeDir=$(path_make_relative '.' "$startupDir")
-    mio_message "Entering '$startupRelativeDir'" ${Gray}
-  fi
+  repo_is_merging; _module_set_trace_prefix $?
 
   _module_set_module_dev_branch
   _module_init_submodules
@@ -333,7 +328,7 @@ _bundle_reset_scope()
 
   if [[ "$PWD" == "$bundleRoot" ]]; then
     _bundle_set_head $1
-    _module_set_bundle_trace_prefix
+    repo_is_merging "$bundleRoot"; _module_set_bundle_trace_prefix $?
     _module_set_bundle_dev_branch
     _module_set_principal_module_id
 
@@ -348,7 +343,7 @@ _module_reset_scope()
   module_update_submodules
   
   _module_set_head $1
-  _module_set_trace_prefix
+  repo_is_merging; _module_set_trace_prefix $?
   _module_set_module_dev_branch
   
   _module_trace '_module_reset_scope'
@@ -363,6 +358,18 @@ _module_on_sync()
   [[ $3 =~ ^\< ]] || return 0
   module_update_submodules
   # io_trace "_module_on_sync -- $(print_vars moduleSubmodulePaths[@])"
+}
+_module_on_merging()
+{
+  # io_trace_unsafe ">>>> _module_on_merging ${*@Q} -- $moduleTracePrefix"
+  repo_is_merging; _module_set_trace_prefix $?
+  # io_trace_unsafe "<<<< _module_on_merging ${*@Q} -- $moduleTracePrefix"
+}
+_module_on_merge_success()
+{
+  # io_trace_unsafe ">>>> _module_on_merge_success ${*@Q} -- $moduleTracePrefix"
+  _module_set_trace_prefix 1
+  # io_trace_unsafe "<<<<< _module_on_merge_success ${*@Q} -- $moduleTracePrefix"
 }
 
 ##############
@@ -652,38 +659,33 @@ _module_set_trace_prefix()
 {
   if module_is_bundle; then
     moduleTracePrefix=$bundleTracePrefix;
+    # io_trace_unsafe "_module_set_trace_prefix -1- $(print_vars moduleTracePrefix)"
   else
+    local repoIsMerging=$1
     local mcolor=${LightCyan}
-    if [[ $useLongModuleTracePrefix == true ]]; then
-      local sid bcolor bid mid=$moduleId bid=$moduleHead
-      _module_set_bcolor 'module' "$moduleHeadType"
-      _module_set_smart_id2 42 "$mid" "$mcolor" "$bid" "$bcolor"
-      moduleTracePrefix=$sid
-    else
-      local len; (( len = ${submodulePathMaxLength} + 2 ))
-      printf -v moduleTracePrefix "%-${len}s" "[$moduleId]"
-      moduleTracePrefix="${mcolor}$moduleTracePrefix${NC}"
-    fi
+    local sid bcolor mid=$moduleId bid=$moduleHead
+    [ $repoIsMerging -eq 0 ] && bid="$bid|MERGING"
+    _module_set_bcolor 'module' "$moduleHeadType"
+    _module_set_smart_id2 42 "$mid" "$mcolor" "$bid" "$bcolor"
+    moduleTracePrefix=$sid
+    # io_trace_unsafe "_module_set_trace_prefix -2- $(print_vars repoIsMerging mid bid moduleHead)"
   fi
   export moduleTracePrefix
 }
 _module_set_bundle_trace_prefix()
 {
-  if [[ $useLongModuleTracePrefix == true ]]; then
-    local sid bcolor bid mid=$bundleId
-    cd "$bundleRoot"
-    
-    bid=$bundleHead
-    _module_set_bcolor 'bundle' "$bundleHeadType"
-    _module_set_smart_id2 42 "$mid" ${White} "$bid" $bcolor
-    bundleTracePrefix=$sid
-    
-    cd - &>>"$stdallRedir"
-  else
-    local len; (( len = ${submodulePathMaxLength} + 2 ))
-    printf -v bundleTracePrefix "%-${len}s" "[$bundleId]"
-    bundleTracePrefix="${White}$bundleTracePrefix${NC}"
-  fi
+  local repoIsMerging=$1
+  local sid bcolor bid mid=$bundleId
+  cd "$bundleRoot"
+
+  bid="$bundleHead"
+  [ $repoIsMerging -eq 0 ] && bid="$bid|MERGING"
+  _module_set_bcolor 'bundle' "$bundleHeadType"
+  _module_set_smart_id2 42 "$mid" ${White} "$bid" $bcolor
+  bundleTracePrefix=$sid
+  
+  cd - &>>"$stdallRedir"
+  # io_trace_unsafe "_module_set_bundle_trace_prefix -1- $(print_vars repoIsMerging mid bid bundleHead)"
 }
 _module_set_bcolor()
 {
