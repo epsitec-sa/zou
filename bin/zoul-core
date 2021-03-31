@@ -495,6 +495,7 @@ io_eval()
   {
     local isLastLine=0 skipCurrentLine line IFS=$'\n'
     while read -r line; do
+      skipCurrentLine=''
       $selector "$line" "$color"; isLastLine=$?
       [[ $skipCurrentLine == true ]] && continue
       io_message "${indent}$line" "$moduleTracePrefix" "$color"
@@ -512,6 +513,7 @@ io_eval_unsafe()
   {
     local isLastLine=0 skipCurrentLine line IFS=$'\n'
     while read -r line; do
+      skipCurrentLine=''
       $selector "$line" "$color"; isLastLine=$?
       [[ $skipCurrentLine == true ]] && continue
       io_message_unsafe "${indent}$line" "$moduleTracePrefix" "$color"
@@ -532,6 +534,7 @@ io_locked_eval()
     io_lock_enter
     # printf '%b\n' "$moduleTracePrefix -- $PWD $ $1"
     while read -r line; do
+      skipCurrentLine=''
       [[ $line =~ error ]] && color=${Red}
       $selector "$line" "$color"; isLastLine=$?
       [[ $skipCurrentLine == true ]] && continue
