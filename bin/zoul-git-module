@@ -512,6 +512,8 @@ module_configure()
 {
   local quiet=$1 forceUpdate=$2
 
+  # reapir previous zou installation
+  hooks_repair || forceUpdate=true
   [[ -z $forceUpdate ]] && module_is_configured && return 0
 
   # io_trace "module_configure -- $(print_vars moduleId quiet forceUpdate)"
