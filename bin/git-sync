@@ -70,6 +70,7 @@ sync_do_prolog()
 sync_do_epilog()
 {
   # io_trace ">>> sync_do_epilog ${*@Q} -- $(print_vars branchSyncVisitInfo[@]) PWD=$PWD"
+  cosm_discard_unstaged_clean_external_submodules
   _sync_commit "${branchSyncVisitInfo[@]}"
   # io_trace "<<< sync_do_epilog ${*@Q} -- $(print_vars branchSyncVisitInfo[@]) PWD=$PWD"
 }
@@ -77,15 +78,13 @@ sync_do_xprolog() { sync_do_prolog; }
 
 _sync_commit()
 {
-  local r=$1 l=$2 i=$3 commitAction
+  local r=$1 l=$2 i=$3 ec=0
   # io_trace ">>> _sync_commit ${*@Q} -- $(print_vars r l i syncSubmodules) PWD=$PWD"
   if [[ $i == '' || $i =~ (\=|\>)$ ]]; then
     if [[ $syncSubmodules == true ]]; then
-      commitAction='cosm_commit_unstaged_submodules true'
-    else
-      commitAction='cosm_commit_unstaged_external_submodules true'
+      cosm_commit_unstaged_submodules true; ec=$?
     fi
-    $commitAction || gitx push --follow-tags ${r%%/*} $l &>>"$stdallRedir"
+    [ $ec -eq 0 ] || gitx push --follow-tags ${r%%/*} $l &>>"$stdallRedir"
   fi
 }
 _sync_clean()

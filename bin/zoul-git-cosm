@@ -16,6 +16,7 @@ cosm_scope()
 {
   # setup cosm context
   local unstagedCleanIncludedSubmodules unstagedDirtyIncludedSubmodules \
+        unstagedCleanExternalSubmodules unstagedDirtyExternalSubmodules \
         unstagedCleanSubmodules unstagedDirtySubmodules \
         cosmScopeInitialized=true
   
@@ -45,10 +46,14 @@ cosm_reset_scope()
   unstagedDirtySubmodules=()
   unstagedCleanIncludedSubmodules=()
   unstagedDirtyIncludedSubmodules=()
+  unstagedCleanExternalSubmodules=()
+  unstagedDirtyExternalSubmodules=()
   [ ${#moduleSubmodulePaths[@]} -eq 0 ] && return 0
   repo_split_unstaged_submodules "$moduleRoot"
   unstagedCleanIncludedSubmodules=( $(array_remove_array 'unstagedCleanSubmodules[@]' 'configSkuExclude[@]') )
   unstagedDirtyIncludedSubmodules=( $(array_remove_array 'unstagedDirtySubmodules[@]' 'configSkuExclude[@]') )
+  unstagedCleanExternalSubmodules=( $(array_intersect_array 'unstagedCleanSubmodules[@]' 'configSelectExclude[@]') )
+  unstagedDirtyExternalSubmodules=( $(array_intersect_array 'unstagedDirtySubmodules[@]' 'configSelectExclude[@]') )
 
   _cosm_trace
 }
@@ -61,6 +66,8 @@ _cosm_trace()
   io_trace_unsafe "cosm_reset_scope -- $(print_vars unstagedDirtySubmodules[@])"
   io_trace_unsafe "cosm_reset_scope -- $(print_vars unstagedCleanIncludedSubmodules[@])"
   io_trace_unsafe "cosm_reset_scope -- $(print_vars unstagedDirtyIncludedSubmodules[@])"
+  io_trace_unsafe "cosm_reset_scope -- $(print_vars unstagedCleanExternalSubmodules[@])"
+  io_trace_unsafe "cosm_reset_scope -- $(print_vars unstagedDirtyExternalSubmodules[@])"
   io_lock_exit
 }
 
@@ -70,15 +77,23 @@ _cosm_trace()
 
 _cosm_on_submodule_changed()
 {
+  # io_trace "_cosm_on_submodule_changed ${*@Q}"
   cosm_reset_scope
+  [ ${#moduleSubmodulePaths[@]} -eq 0 ] && return 0
+
+  cosm_discard_unstaged_clean_external_submodules
+  _cosm_sync_submodules "$@"
 }
 _cosm_on_head_changed()
 {
   cosm_reset_scope
-
   [ ${#moduleSubmodulePaths[@]} -eq 0 ] && return 0
-  _cosm_sync_submodules
-  _cosm_update_external_submodules
+
+  local internal=( $(array_remove_array configSkuInclude[@] unstagedCleanExternalSubmodules[@]) )
+  # io_trace "_cosm_on_head_changed ${*@Q} -1- $(print_vars internal[@] unstagedCleanExternalSubmodules[@])"
+  cosm_discard_unstaged_clean_external_submodules
+  # io_trace "_cosm_on_head_changed  ${*@Q} -2- $(print_vars internal[@]  unstagedCleanExternalSubmodules[@])"
+  _cosm_sync_submodules "${internal[@]}"
 }
 _cosm_on_sync()
 {
@@ -94,36 +109,22 @@ _cosm_on_sync()
 
 _cosm_sync_submodules()
 {
-  # io_trace "_cosm_sync_submodules $(print_vars configSkuInclude[@])"
-  [[ ${#configSkuInclude[@]} -eq 0 ]] || echo "${configSkuInclude[@]}" \
-  | xargs -d $'\n' --no-run-if-empty git sm sync -C "${moduleRoot}" --
-}
-
-########
-# UPDATE
-########
-
-# Update active submodules that are excluded from select
-_cosm_update_external_submodules()
-{
-  # io_trace "_cosm_update_external_submodules $(print_vars configSelectExclude[@])"
-  [[ ${#configSelectExclude[@]} -eq 0 ]] || echo "${configSelectExclude[@]}" \
-  | xargs -d $'\n' --no-run-if-empty git sm update -C "${moduleRoot}" --init --
+  [[ $# -eq 0 ]] && return 0
+  # io_trace "_cosm_sync_submodules ${*@Q}"
+  echo "$@" | xargs git sm sync -C "${moduleRoot}" --
 }
 
 #########
 # DISCARD
 #########
 
-cosm_discard_unstaged_submodules()
+cosm_discard_unstaged_all_submodules()
 {
-  # discard unstaged clean submodules which are excluded from SKU
-  local discard=( "${unstagedCleanIncludedSubmodules[@]}" "${unstagedDirtyIncludedSubmodules[@]}" )
-  # io_trace "cosm_discard_unstaged_submodules -- $(print_vars discard[@])"
-  [[ ${#discard[@]} -eq 0 ]] || echo "${discard[@]}" \
-  | xargs -d $'\n' --no-run-if-empty git sm update -C "${moduleRoot}" --
-  unstagedCleanIncludedSubmodules=()
-  unstagedDirtyIncludedSubmodules=()
+  repo_discard_submodules "${unstagedCleanIncludedSubmodules[@]}" "${unstagedDirtyIncludedSubmodules[@]}"
+}
+cosm_discard_unstaged_clean_external_submodules()
+{
+  repo_discard_submodules "${unstagedCleanExternalSubmodules[@]}"
 }
 
 ########
@@ -142,20 +143,5 @@ cosm_commit_unstaged_submodules()
     clean=( ${unstagedCleanIncludedSubmodules[@]} )
   fi
   # io_trace "cosm_commit_unstaged_submodules $(print_vars commitAll clean[@])"
-  repo_commit_submodules "$moduleRoot" "${clean[@]}"
-}
-cosm_commit_unstaged_external_submodules()
-{
-  [ ${#moduleSubmodulePaths[@]} -eq 0 ] && return 0
-  
-  local commitAll=$1 clean
-  if [[ $commitAll == true ]]; then
-    clean=( ${unstagedCleanSubmodules[@]} )
-  else
-    clean=( ${unstagedCleanIncludedSubmodules[@]} )
-  fi
-
-  clean=( $(array_intersect_array 'clean[@]' 'configSelectExclude[@]') )
-  # io_trace "cosm_commit_unstaged_external_submodules $(print_vars commitAll clean[@])"
   repo_commit_submodules "$moduleRoot" "${clean[@]}"
 }

@@ -396,9 +396,15 @@ repo_commit_submodules()
       io_message "  Commited submodule ${VC}$sm${DarkGray} on branch ${VC}$branch${DarkGray}" "$moduleTracePrefix" ${DarkGray}
     done
   fi
-  repo_raise_submodule_changed_event "$@"
   cd "$opwd" || io_trace_error "repo_commit_submodules: cd $opwd" || exit 1
   return 1
+}
+repo_discard_submodules()
+{
+  [[ $# -eq 0 ]] && return 0
+  # io_trace "repo_discard_submodules ${*@Q}"
+  echo "$@" | xargs git sm update -C "${moduleRoot}" --
+  repo_raise_submodule_changed_event "$@"
 }
 
 repo_discard_internal_ignore_list()
