@@ -69,11 +69,6 @@ _branch_sync_visitor()
     '=')  _branch_sync_push  "$r" "$l" || return 1;; # push tags
     *) return 0;;
   esac
-  if [[ $l == "$current" ]]; then
-    _branch_raise_branch_sync_event "$r" "$l" "$i"
-  elif [[ $current ==  $(git rev-parse --short "$r") ]]; then
-    branch_checkout "$l" false
-  fi
 }
 # scope:
 #   l r i current
@@ -134,10 +129,17 @@ _branch_sync_visit()
       *)    [[ -n $r ]] && { i='?'; color=${Purple}; }  || color=${LightBlue};;
     esac
     $visitor || return $?
+    
     linfo=$(string_pad_right 18 "$l")
     [[ $l == "$current" ]] && linfo="* $linfo" || linfo="  $linfo"
     [[ $syncNoPush == true && $i =~ '>' ]] && color=${DarkGray}
     mio_message "$linfo $(string_pad_right 2 $i) $r" $color
+
+    if [[ $l == "$current" ]]; then
+      _branch_raise_branch_sync_event "$r" "$l" "$i"
+    elif [[ $current ==  $(git rev-parse --short "$r") ]]; then
+      branch_checkout "$l" false
+    fi
   done < <(branch_sync_info "$@")
   return 0
 }

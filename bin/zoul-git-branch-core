@@ -477,9 +477,6 @@ _branch_checkout_core()
   # io_trace "_branch_checkout_core -1- ${*@Q}"
 
   lines=( $(gitx checkout "$ref" 2>&1) ); ec=$?
-  if [[ $ec -eq 0 ]]; then
-    _branch_raise_checked_out_events
-  fi
   
   io_lock_enter
   # for line in "${lines[@]}"; do
@@ -495,7 +492,13 @@ _branch_checkout_core()
     [[ $skipNextLines == true ]] && break
   done
   io_lock_exit
+
   # io_trace "_branch_checkout_core -4- ${*@Q}"
+
+  if [[ $ec -eq 0 ]]; then
+    _branch_raise_checked_out_events
+  fi
+
   return $ec
 }
 _branch_checkout_selector()
