@@ -101,7 +101,7 @@ tag_delete()
   else
     mio_error "Tag '$tag' does not exist"
     if gitx push --delete origin "$tag" &>>"$stdallRedir"; then
-      mio_success "Deleted tag ${VC}$tag${Brown} from ${VC}origin"
+      mio_warning "Deleted tag ${VC}$tag${Brown} from ${VC}origin"
     fi
   fi
 }
@@ -131,9 +131,8 @@ tag_delete_local_tags()
 }
 tag_delete_remote_tags()
 {
-  [ $# -eq 0 ] && return 0
   local remote=$(gitx remote 2>>"$stderrRedir") line rtags tag IFS=$'\n'
-  for line in $(gitx ls-remote "$remote" "$@" 2>>"$stderrRedir"); do
+  for line in $(gitx ls-remote --tags "$remote" "$@" 2>>"$stderrRedir"); do
     [[ $line =~ \^\{\}$ ]] && continue
     [[ $line =~ refs/tags/(.*) ]] && rtags+=(${BASH_REMATCH[1]})
   done
@@ -158,15 +157,17 @@ _tag_delete_local_tags_line_selector()
   elif [[ $line =~ ^([^\']+)\'([^\']+)\'(.*) ]]; then
     line="${BASH_REMATCH[1]}${VC}${BASH_REMATCH[2]}${Brown}${BASH_REMATCH[3]}"
     color=${Brown}
+  else
+    skipCurrentLine=true
   fi
 }
 _tag_delete_remote_tags_line_selector()
 {
   if [[ $line =~ \[deleted\][[:blank:]]+(.*) ]]; then
-    line="Deleted remote tag ${VC}${BASH_REMATCH[1]}"
     color=${Brown}
+    line="Deleted remote tag ${VC}${BASH_REMATCH[1]}${color} from ${VC}$remote"
   else
-    color=${DarkGray}
+    skipCurrentLine=true
   fi
 }
 tag_move()
