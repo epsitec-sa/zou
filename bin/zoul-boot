@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+
+# Use the following statement to include current lib only once
+#   [[ -z $ZOUL_BOOT ]] && . zoul-boot
+ZOUL_BOOT=true
+
+[[ -z $ZOUL_SYSTEM ]]  && . zoul-system
+
+# work with default IFS
+IFS=$' \t\n'
+OIFS=$IFS
+
+# force git to use invariant language
+export LANGUAGE=en_US
+export LANG="$LANGUAGE.UTF-8"
+
+if [[ -z "$zouStartupPath" ]]; then
+  # declare startup constants
+  export zouStartupPath=$(abspath "${BASH_SOURCE[-1]}")
+  export zouStartupFileName="${zouStartupPath##*/}"
+  if [[ "$zouStartupFileName" == bashdb ]]; then
+    zouStartupPath=$(abspath "${BASH_SOURCE[-2]}")
+    zouStartupFileName="${zouStartupPath##*/}"
+  fi
+  export zouStartupDir="${zouStartupPath%/*}"
+  export zouBinDir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+  export zouDir="$(abspath "$zouBinDir/..")"
+  export zouCommand="${zouStartupFileName##git-}"
+  export zouConfigFile="$(abspath ~)/.zou-flow"
+  export zouArguments="$*"
+fi

@@ -4,7 +4,7 @@
 #   [[ -z $ZOUL_CORE ]] && . zoul-core
 ZOUL_CORE=true
 
-[[ -z $ZOUL_SYSTEM ]]  && . zoul-system
+[[ -z $ZOUL_BOOT ]]    && . zoul-boot
 [[ -z $ZOUL_STD_IO ]]  && . zoul-stdio
 [[ -z $ZOUL_LOG ]]     && . zoul-log
 [[ -z $ZOUL_PROCESS ]] && . zoul-process
@@ -13,26 +13,8 @@ ZOUL_CORE=true
 # zouTraceError=true
 # zouTraceScope=true
 
-# work with default IFS
-IFS=$' \t\n'
-OIFS=$IFS
-
-# force git to use invariant language
-export LANGUAGE=en_US
-export LANG="$LANGUAGE.UTF-8"
-
-# declare startup constants
-zouStartupPath=$(abspath "${BASH_SOURCE[-1]}")
-zouStartupFileName="${zouStartupPath##*/}"
-if [[ "$zouStartupFileName" == bashdb ]]; then
-  zouStartupPath=$(abspath "${BASH_SOURCE[-2]}")
-  zouStartupFileName="${zouStartupPath##*/}"
-fi
-zouStartupDir="${zouStartupPath%/*}"
-zouBinDir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
-zouDir="$(abspath "$zouBinDir/..")"
-zouCommand="${zouStartupFileName##git-}"
-zouConfigFile="$(abspath ~)/.zou-flow"
+# startup logging
+log_enter_zou
 
 # out:
 #   version

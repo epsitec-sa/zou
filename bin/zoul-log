@@ -1,31 +1,64 @@
 #!/usr/bin/env bash
 
+# https://www.linuxjournal.com/content/bash-co-processes
+
 # Use the following statement to include current lib only once
 #   [[ -z $ZOUL_LOG ]] && . zoul-log
-ZOUL_LOG=true
 
 # Environment variables
 # ZOU_LOG=true
-# ZOU_LOG_PATH
+# ZOU_LOG_HOOKS=true
 
-if [[ $ZOU_LOG == true ]]; then
+log_enter_zou()   { [[ -z $ZOU_LOG ]] || _log_enter "$zouLogPath"; }
+log_enter_hooks() { [[ -z $ZOU_LOG_HOOKS ]] || _log_enter "$hooksLogPath"; }
+
+log_reset()
+{
+  log_reset_zou
+  log_reset_hooks
+}
+log_reset_zou()   { _log_reset "$zouLogPath"; }
+log_reset_hooks() { _log_reset "$hooksLogPath"; }
+
+log_cat_zou()   { cat "$zouLogPath" 2>/dev/null; }
+log_cat_hooks() { cat "$hooksLogPath" 2>/dev/null; }
+
+_log_enter()
+{
+  _log_backup "$1"
+  export stderrRedir="$1"
+  export stdallRedir="$1"
+  # print original command
+  printf '=%.0s' {1..80} &>>"$stdallRedir"
+  printf '\n%s\n' "$zouStartupDir \$ $zouStartupFileName $zouArguments" &>>"$stdallRedir"
+}
+_log_backup()
+{
+  local logPath="$1"
+  if [[ -n $(find "$logPath" -size +100k 2>/dev/null) ]]; then
+    # backup log file
+    mv -f "$logPath" "$logPath.$(date +%m-%d-%T | tr \: \-)"
+    # delete backup files older than one month
+    find "$zouTmpDir" -name "$(basename "$logPath")"'.*' -mtime +30 -exec rm -f {} \;
+  fi
+}
+_log_reset()
+{
+  # backup log file
+  if [[ -f "$1" ]]; then
+    mv -f "$1" "$1.$(date +%m-%d-%T | tr \: \-)"
+    rm -f "$1"
+  fi
+}
+
+stderrRedir='/dev/null'
+stdallRedir='/dev/null'
+
+# ensure temp directory exist
+if [[ -z "$zouTmpDir" ]]; then
   zouTmpDir=${TMPDIR:-/tmp}/_zou
   [ -d "$zouTmpDir" ] || mkdir -p "$zouTmpDir"
-
-  zouLogPath=${ZOU_LOG_PATH:-$zouTmpDir/zou-flow.log}
-  [ -d $(dirname "$zouLogPath") ] || mkdir "$(dirname "$zouLogPath")"
-
-  if [[ -n $(find "$zouLogPath" -size +100k 2>/dev/null) ]]; then
-    # backup log file
-    mv -f "$zouLogPath" "$zouLogPath.$(date +%m-%d-%T | tr \: \-)"
-    # delete backup files older than one month
-    find "$zouTmpDir" -name 'zou-flow.log.*' -mtime +30 -exec rm -f {} \;
-  fi
-  stderrRedir="$zouLogPath"
-  stdallRedir="$zouLogPath"
-  printf '=%.0s' {1..80} &>>"$zouLogPath"
-  printf '\n%s\n' "$zouStartupDir \$ $zouStartupFileName $*" &>>"$zouLogPath"
-else
-  stderrRedir='/dev/null'
-  stdallRedir='/dev/null'
 fi
+
+zouLogPath="$zouTmpDir/zou-flow.log"
+hooksLogPath="$zouTmpDir/git-hooks.log"
