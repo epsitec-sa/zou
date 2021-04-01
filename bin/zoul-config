@@ -54,9 +54,9 @@ config_git_tools()
   sys_windows && drive='C:'
   if [[ -n "$drive" ]]; then
     # credential manager
-    local credentialManagerPath="$drive/Program\ Files/Git/mingw64/libexec/git-core/git-credential-manager.exe"
+    local credentialManagerPath="$drive/Program Files/Git/mingw64/libexec/git-core/git-credential-manager.exe"
     if [[ -f "$credentialManagerPath" ]]; then
-      [[ -z $(git config --global --get credential.helper) ]] && gitx config --global credential.helper "$credentialManagerPath"
+      [[ -z $(git config --global --get credential.helper) ]] && gitx config --global credential.helper "$(printf '%q' "$credentialManagerPath")"
     fi
     # bc4 tools
     local bc4Path="$drive/Program Files/Beyond Compare 4/BComp.exe"
