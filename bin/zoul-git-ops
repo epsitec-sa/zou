@@ -52,3 +52,19 @@ ops_show()     { notes_show 'zou-ops' "$@" 2>>"$stderrRedir"; }
 #   -*:option   -- git rev-parse option (--short)
 ops_list_ops() { notes_list 'zou-ops' "$@" | cut -d':' -f2- | uniq; }
 ops_list()     { notes_list 'zou-ops' "$@" | uniq; }
+
+ops_push()
+{
+  local remote
+  for remote in $(git_remotes); do
+    gitx push "$remote" 'refs/notes/zou-ops' &>>"$stdallRedir"
+  done
+}
+ops_execute()
+{
+  local op IFS=$'\n'
+  for op in $(ops_list_ops); do
+    echo "$PWD $ $op" 2>>"$stderrRedir"
+    eval "$op"
+  done
+}
