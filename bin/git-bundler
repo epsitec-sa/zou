@@ -89,6 +89,7 @@ _bundler_config()
   local command='_bundler' subcommand='config' \
         noSkuFilter=true cmdScopes=( config_scope )
 
+  _bundler_status
   bundle_scope _bundler_config_command
 }
 _bundler_config_command()
@@ -97,7 +98,7 @@ _bundler_config_command()
   cmd_visit_modules
 }
 _bundler_config_prolog()  { module_configure "$quiet" "$forceUpdate"; }
-_bundler_config_finally() { branch_show_status; }
+_bundler_config_finally() { [[ -z $quiet ]] && branch_show_status; }
 
 _bundler_status()
 {
