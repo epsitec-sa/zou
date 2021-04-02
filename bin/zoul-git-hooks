@@ -30,7 +30,7 @@ hooks_update_module()
   # setup multi-hooks
   set +f # enable file name expansion
   for srcPath in "$srcDir"/*; do
-    [ -e $srcPath ] || continue
+    [ -f $srcPath ] || continue
     _hooks_update_hook "$srcPath" "$dstDir" "$force" || equals=1
   done
   set -f
@@ -119,21 +119,14 @@ _hooks_update_hook()
 }
 _hooks_create_multi_hook()
 {
-  # #!/usr/bin/env bash
-  # cd "$(dirname "$0")/post-merge.d"
-  # for hook in *; do
-  #   test -x "$hook" && ( "./$hook" "$@" || exit 1 ) || exit 1
-  # done
-  # exit 0
-
   local original=$1 hookFolder=$2
   # io_trace "_hooks_create_multi_hook -1- $(print_vars original hookFolder)" 
 
   cat 2>>"$stderrRedir" >"$original" << EOF
 #!/usr/bin/env bash
-cd "\$(dirname "\$0")/$hookFolder"
-for hook in *; do
-  test -x "\$hook" && ( "./\$hook" "\$@" || exit 1 ) || exit 1
+hookDir="\$(dirname "\$0")/$hookFolder"
+for hook in "\$hookDir"/*; do
+  test -x "\$hook" && ( "\$hook" "\$@" || exit 1 ) || exit 1
 done
 exit 0
 EOF
