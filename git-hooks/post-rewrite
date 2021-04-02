@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+[[ -z $ZOUL_LOG ]] && . zoul-log
+
+log_enter_hooks
+echo "$PWD @ ${*@Q}" &>>"$stdallRedir"
+
+while read oldSha newSha extraInfo
+do
+  echo "$PWD @ oldSha=${oldSha::7} newSha=${newSha::7}" extraInfo=$extraInfo &>>"$stdallRedir"
+done
+
+exit 0
