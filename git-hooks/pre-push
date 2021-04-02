@@ -23,18 +23,18 @@
 [[ -z $ZOUL_GIT_OPS ]]  && . zoul-git-ops
 [[ -z $ZOUL_LOG ]]      && . zoul-log
 
-
 pre_push_run()
 {
 	log_enter_hooks
+	echo "$PWD @ ${*@Q}" &>>"$stdallRedir"
 
 	local remote="$1" url="$2"
 	local localRef localSha remoteRef remoteSha
 
 	# echo "$PWD @ remote=$remote url=$url" &>>"$stdallRedir"
 
-	while read localRef localSha remoteRef remoteSha
-	do
+	while read localRef localSha remoteRef remoteSha;	do
+
 		echo "$PWD @ localRef=$localRef remoteRef=$remoteRef localSha=${localSha::7} remoteSha=${remoteSha::7}" &>>"$stdallRedir"
 
 		case "$remoteRef" in
@@ -82,8 +82,9 @@ pre_push_run()
 		# 	# fi
 		# fi
 	done
-	exit 0
 }
+
 log_enter_hooks
 pre_push_run "$@"
+exit 0
 
