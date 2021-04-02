@@ -80,8 +80,14 @@ csel_do_prolog()
 {
   if [ -z $cselListOnly ]; then
     case "$cselMode" in
-      include) config_select_include "${cselInclude[@]}";;
-      exclude) config_select_exclude "${cselExclude[@]}";;
+      include)
+        config_select_include "${cselInclude[@]}"
+        # configure internal modules
+        module_visit_submodules_async config_select_list_included
+        ;;
+      exclude)
+        config_select_exclude "${cselExclude[@]}"
+        ;;
     esac
   fi
 
