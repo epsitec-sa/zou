@@ -4,10 +4,23 @@
 #   [[ -z $ZOUL_STDIO ]] && . zoul-stdio
 ZOUL_STDIO=true
 
-[[ -z $ZOUL_LOCK ]]    && . zoul-lock
-
 # Environment variables
 # zouTraceError=true
+
+#########
+# LOCKING
+#########
+
+[[ -z $ZOUL_LOCK ]] && . zoul-lock
+
+if [[ -z $ioGate ]]; then
+  ioGate=$(lock_init)
+  export ioGate
+fi
+
+io_lock()       { lock "$ioGate" 0 "$@"; }
+io_lock_enter() { lock_enter "$ioGate"; }
+io_lock_exit()  { lock_exit "$ioGate"; }
 
 ########
 # COLORS
@@ -45,16 +58,6 @@ io_remove_colors()
 {
   printf '%s\n' "$@" | sed -E 's/\\e\[[[:digit:]][^m]*m//g'
 }
-
-#########
-# LOCKING
-#########
-
-[[ -z $ioGate ]] && { ioGate=$(lock_init); export ioGate; }
-
-io_lock()       { lock "$ioGate" 0 "$@"; }
-io_lock_enter() { lock_enter "$ioGate"; }
-io_lock_exit()  { lock_exit "$ioGate"; }
 
 ###########
 # DEBUGGING

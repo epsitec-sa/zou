@@ -4,6 +4,8 @@
 #   [[ -z $ZOUL_LOCK ]] && . zoul-lock
 ZOUL_LOCK=true
 
+[[ -z $ZOUL_TRAP ]] && . zoul-trap
+
 # flock is not distributed with git-bash
 # MSYS2 has a version of flock but it creates a conflict with cygwin.dll
 # use atomic mkdir
@@ -11,15 +13,31 @@ ZOUL_LOCK=true
 lock_init()
 {
   local gate=${1:-$(mktemp -u)}
-  # Remove lockdir when the script finishes, or when it receives a signal
-  trap "rm -rf \"$gate\"" 0
+  # Remove gate when the script finishes, or when it receives a signal
+  trap_add "rm -rf \"$gate\"" 0
   echo $gate
 }
+# in:
+#   $1:lock  -- lock=$(lock_init)
+#   $2:delay -- loop delay
+#   $3:count -- timeout = count * delay (default to infinite)
+# return code:
+#   0: if lock acquired
+#   1: if timeout
 lock_enter()
 {
-  while ! mkdir "$1" &>/dev/null; do
-    sleep ${2:-0}
-  done
+  if [[ -z $3 ]]; then
+    while ! mkdir "$1" &>/dev/null; do
+      sleep ${2:-0.1}
+    done
+    return 0
+  else
+    for (( c=1; c<=$3; c++ )); do
+      mkdir "$1" &>/dev/null && return 0
+      sleep ${2:-0.1}
+    done
+    return 1
+  fi
 }
 lock_exit()
 {

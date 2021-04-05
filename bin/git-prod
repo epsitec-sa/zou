@@ -422,7 +422,7 @@ _sm_in_prod_init()
   # serialize empty array
   declare -p smInProd >"$smInProdPath"
   # remove file when the script finishes
-  trap "rm \"$smInProdPath\"" 0
+  trap_add "rm \"$smInProdPath\"" 0
   # io_trace "_sm_in_prod_init -- $(print_vars smInProdPath)"
 }
 _sm_in_prod_update()
@@ -506,7 +506,7 @@ _rstatus_init()
   # io_trace "_rstatus_init 1 -- $(print_vars moduleId rstatusParentLookupPath rstatusLookupPath)"
   if config_has_submodules; then
     rstatusLookupPath="$(mktemp)"
-    trap "rm \"$rstatusLookupPath\"" EXIT
+    trap_add "rm \"$rstatusLookupPath\"" 0
     _rstatus_init_core "$rstatusLookupPath"
     # io_trace "_rstatus_init 2 -- $(print_vars moduleId rstatusParentLookupPath rstatusLookupPath)"
   fi

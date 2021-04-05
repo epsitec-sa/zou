@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+
+# Use the following statement to include current lib only once
+#   [[ -z $ZOUL_TRAP ]] && . zoul-trap
+ZOUL_TRAP=true
+
+# Appends a command to a trap
+# in:
+#   $1:command  code to add
+#   $..:        names of traps to modify
+trap_add()
+{
+  local command=$1 trapName; shift
+  for trapName in "$@"; do
+    trap -- "$(
+      # helper fn to get existing trap command from output of trap -p
+      extract_trap_cmd() { printf '%s\n' "$3"; }
+      # print existing trap command with newline
+      eval "extract_trap_cmd $(trap -p "$trapName")"
+      # print the new trap command
+      printf '%s\n' "$command"
+    )" "$trapName"
+  done
+}
