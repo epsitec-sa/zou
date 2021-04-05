@@ -44,19 +44,16 @@ repo_raise_submodule_changed_event() { raise_event 'submoduleChangedEvent[@]' "$
 # Bundle
 repo_bundle_id()
 {
-  local dir
-  dir=$(repo_bundle_root "$@")
-  [ $? -ne 0 ] && return 1
-  echo ${dir##*/}
+  local dir="${1:-$bundleRoot}"
+  [[ -z "$dir" ]] && { dir="$(repo_bundle_root)" || return $?; }
+  echo "${dir##*/}"
 }
 repo_bundle_root()
 {
-
-  local dir
-  dir=$(abspath "${1:-.}") || return $?
+  local dir="${1:-$moduleRoot}"
+  [[ -z "$dir" ]] && { dir="$(repo_module_root)" || return $?; }
   while [[ -n "$dir" && ! -d "$dir/.git" ]]; do
     dir="${dir%/*}"
-    [[ $dir =~ \:$ ]] && return 1
   done
   [[ -z $dir ]] && return 1
   echo "$dir"
@@ -75,24 +72,21 @@ repo_bundle_root()
 #  -> bundleUrlName = zou-dev
 repo_set_bundle_url_info()
 {
-  local broot=${1:-$bundleRoot}
-  [[ -z $broot ]] && broot=$(repo_bundle_root)
-  cd "$broot"
-  bundleUrl=$(gitx config remote.origin.url 2>>"$stderrRedir")
-  cd - &>>"$stdallRedir"
+  local broot="${1:-$bundleRoot}"
+  [[ -z "$broot" ]] && { broot=$(repo_bundle_root) || return $?; }
+  bundleUrl=$(gitx -C "$broot" config remote.origin.url 2>>"$stderrRedir")
   bundleUrlName=${bundleUrl##*/}
   bundleUrlName=${bundleUrlName%.git}
 }
-# return the path relative to the bundle root of any bundle folder
+# return the path of any bundle folder relative to the bundle root
 # input:
 #  $1 : the path to compute the relative path
-#  $2 : any folder path inside the reference bundle
+#  $2 : any path inside the bundle
 repo_path_relative_to_bundle_root()
 {
-  local path bdir
-  path=$(abspath "${1:-.}") || return $?
-  bdir=$(repo_bundle_root "${2:-.}") || return $?
-  abspath --relative-to="$bdir" "$path"
+  local path="$(abspath "${1:-.}")" broot="${2:-$bundleRoot}"
+  [[ -z "$broot" ]] && { broot=$(repo_bundle_root) || return $?; }
+  abspath --relative-to="$broot" "$path"
 }
 
 ######################
@@ -156,7 +150,7 @@ repo_module_level()
 repo_module_root_relative_to_path()
 {
   local dir=$(abspath "${1:-.}") mdir
-  mdir=$(repo_module_root "${2:-.}") || return $?
+  mdir=$(repo_module_root "$2") || return $?
   abspath --relative-to="$dir" "$mdir"
 }
 # return the path relative to the module root of any module folder
@@ -166,12 +160,13 @@ repo_module_root_relative_to_path()
 repo_path_relative_to_module_root()
 {
   local dir=$(abspath "${1:-.}") mdir
-  mdir=$(repo_module_root "${2:-.}") || return $?
+  mdir=$(repo_module_root "$2") || return $?
   abspath --relative-to="$mdir" "$dir"
 }
 repo_module_and_bundle_roots()
 {
-  local dir=$(abspath ${1:-.}) mdir bdir
+  local dir mdir bdir
+  dir=$(repo_module_root "$1") || return $?
   while [[ -n "$dir" ]]; do
     if [[ -z "$mdir" && -f "$dir/.git" ]]; then
       mdir=$dir
@@ -261,14 +256,7 @@ repo_submodule_path()
 
 ######################
 
-repo_url_from_path()
-{
-  local pwd=$PWD url
-  cd "${1:-.}"
-  url=$(gitx config remote.origin.url 2>>"$stderrRedir")
-  cd $pwd
-  echo $url
-}
+repo_url_from_path() { gitx -C "${1:-.}" config remote.origin.url 2>>"$stderrRedir"; }
 
 repo_gitmodules_path()
 {
