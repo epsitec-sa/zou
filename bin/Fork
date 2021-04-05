@@ -1,0 +1,106 @@
+#!/usr/bin/env bash
+
+[[ -z $ZOUL_LOCK ]]   && . zoul-lock
+# [[ -z $ZOUL_STDIO ]]  && . zoul-stdio
+[[ -z $ZOUL_BOOT ]]   && . zoul-boot
+[[ -z $ZOUL_WSL  ]]   && . zoul-wsl
+
+fork_parse()
+{
+  while [[ "$#" > 0 ]]; do case "$1" in
+    -h|--help) zou-help $0; exit 0;;
+    --win) settingsType='win';;
+    --wsl) settingsType='wsl';;
+    -*)    io_error "unknown option '$1'"; return 1;;
+    *)     io_error "invalid argument '$1'"; return 1;;
+  esac; shift; done
+}
+fork_main()
+{
+  local settingsType
+  fork_parse "$@" || exit 1
+
+  ( _fork_scope _fork_run "$settingsType" & )
+}
+
+_fork_scope()
+{
+  local forkLauncher forkRootDir forkAppDir forkExe \
+        settingsName='settings.json' winSettingsName wslSettingsName \
+        settingsPath winSettingsPath wslSettingsPath \
+        settingsLock tmpDir sys
+  
+  winSettingsName="win-$settingsName"
+  wslSettingsName="wsl-$settingsName"
+  
+  if sys_wsl; then
+    sys='wsl'
+    forkLauncher='_fork_wsl_launcher'
+    forkRootDir="$(wsl_get_win_env_path LOCALAPPDATA)/Fork"
+    tmpDir="$(wsl_get_win_env_path TMP)"
+  elif sys_windows; then
+    sys='win'
+    forkLauncher='_fork_win_launcher'
+    forkRootDir=$(cygpath "$LOCALAPPDATA\\Fork")
+    tmpDir="$TMP"
+  else
+    return 1
+  fi
+
+  forkAppDir=$(find "$forkRootDir" -maxdepth 1 -type d -iname 'app-*' | sort | tail -n1)
+  forkExe="$forkAppDir/Fork.exe"
+  settingsPath="$forkRootDir/$settingsName"
+  winSettingsPath="$forkRootDir/$winSettingsName"
+  wslSettingsPath="$forkRootDir/$wslSettingsName"
+
+  tmpDir="$tmpDir/_zou"; mkdir "$tmpDir" &>/dev/null
+  settingsLock=$(lock_init "$tmpDir/fork-settings.lock")
+
+  # io_trace "fork_scope -- $(print_vars forkExe)"
+  # io_trace "fork_scope -- $(print_vars settingsPath)"
+  # io_trace "fork_scope -- $(print_vars winSettingsPath)"
+  # io_trace "fork_scope -- $(print_vars wslSettingsPath)"
+  # io_trace "fork_scope -- $(print_vars settingsLock)"
+
+  "$1" "${@:2}"
+}
+_fork_run()
+{
+  local settingsType="${1:-$sys}"
+  local sysSettingsPath="$forkRootDir/$settingsType-$settingsName"
+  # io_trace "fork_run -- $(print_vars settingsLock)"
+
+  lock_enter "$settingsLock"
+  if [[ -f $sysSettingsPath ]]; then
+    # specific settings exist, activate them
+    # io_trace "cp -f "$sysSettingsPath" "$settingsPath""
+    cp -f "$sysSettingsPath" "$settingsPath"
+  else
+    # specific settings do not exist, create them
+    # io_trace "cp -f "$settingsPath" "$sysSettingsPath""
+    cp -f "$settingsPath" "$sysSettingsPath"
+  fi
+  lock_exit "$settingsLock"
+
+  "$forkLauncher" "$forkExe"
+
+  lock_enter "$settingsLock"
+  if grep -E -m1 'GitInstancePath.*wslgit' <"$settingsPath" &>/dev/null; then
+    # io_trace "cp -f "$settingsPath" "$wslSettingsPath""
+    cp -f "$settingsPath" "$wslSettingsPath"
+  else
+    # io_trace "cp -f "$settingsPath" "$winSettingsPath""
+    cp -f "$settingsPath" "$winSettingsPath"
+  fi
+  lock_exit "$settingsLock"
+}
+
+_fork_win_launcher() { "$1" "${@:2}"; }
+_fork_wsl_launcher()
+{
+  # export zou bin dir to support hooks in Fork
+  export ZOU_BIN_DIR="$zouBinDir"
+  WSLENV=$WSLENV:ZOU_BIN_DIR/p "$1" "${@:2}"
+}
+
+fork_main "$@"
