@@ -4,10 +4,9 @@
 #   [[ -z $ZOUL_CORE ]] && . zoul-core
 ZOUL_CORE=true
 
-[[ -z $ZOUL_BOOT ]]    && . zoul-boot
-[[ -z $ZOUL_STD_IO ]]  && . zoul-stdio
-[[ -z $ZOUL_LOG ]]     && . zoul-log
-[[ -z $ZOUL_PROCESS ]] && . zoul-process
+[[ -z $ZOUL_BOOT ]]  && . zoul-boot
+[[ -z $ZOUL_LOG ]]   && . zoul-log
+[[ -z $ZOUL_STDIO ]] && . zoul-stdio
 
 # Environment variables
 # zouTraceError=true
@@ -291,6 +290,7 @@ array_contains_element()
   for e; do [[ "$e" == "$match" ]] && return 0; done
   return 1
 }
+
 path_make_relative()
 {
   local path=$(abspath "$1")
@@ -415,7 +415,7 @@ visit_async()
   for path in $(array_sort _zouVisitPaths[@]); do
     ( $2 "$path" "${@:3}" || io_trace_error "visit_async >> $2 "$path" "${@:3}"" || exit $? )&
     pids+=($!)
-    if (( "$jobsCount" > 0 )) && (( $(process_job_count) % "$jobsCount" == 0 )); then
+    if (( "$jobsCount" > 0 )) && (( $(wc -w <<<$(jobs -p)) % "$jobsCount" == 0 )); then
       for pid in "${pids[@]}"; do
         wait $pid &>>"$stdallRedir" || ec=$?
       done

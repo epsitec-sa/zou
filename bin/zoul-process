@@ -10,8 +10,6 @@ ZOUL_PROCESS=true
 # https://coderwall.com/p/q-ovnw/killing-all-child-processes-in-a-shell-script
 # https://stackoverflow.com/questions/5789642/how-to-send-controlc-from-a-bash-script
 
-[[ -z $ZOUL_CORE ]] && . zoul-core
-
 process_job_count() { wc -w <<<$(jobs -p); }
 
 process_list()
@@ -67,12 +65,12 @@ process_list_group_for_kill ()
 process_kill_group_descendants()
 {
   local rootPid=$1 pid pids bashPid=$BASHPID
-  echo "[$bashPid] process_kill_group_descendants of ${*@Q}" >&2
+  # echo "[$bashPid] process_kill_group_descendants of ${*@Q}" >&2
   
   pids=( $(process_list_group_for_kill "$rootPid" "$bashPid") )
   
   # echo "[$bashPid] killing ${pids[@]}" >&2
-  kill -- "${pids[@]}" &>>"$stdallRedir"
+  kill -- "${pids[@]}" &>/dev/null
 }
 process_kill_group()
 {
@@ -82,21 +80,14 @@ process_kill_group()
   pids=( $(process_list_group_for_kill "$rootPid" "$bashPid" | grep -v '^1$') )
 
   # echo "[$bashPid] killing ${pids[@]}" >&2
-  kill -- "${pids[@]}" &>>"$stdallRedir"
+  kill -- "${pids[@]}" &>/dev/null
 }
 process_wait()
 {
   local pid=$1 ec=0
-  wait $pid &>>"$stdallRedir" || ec=$?
+  wait $pid &>/dev/null || ec=$?
   # echo "[$BASHPID] process_wait $pid: ec=$ec" >&2
   # skip already terminated process
   [ $ec -eq 127 ] && return 0
   return $ec
-}
-process_wait_many()
-{
-  # echo "[$BASHPID] process_wait_many ${*@Q}" >&2
-  local ec=0
-  wait "$@" &>>"$stdallRedir" || ec=$?
-  echo "[$BASHPID] process_wait_many ec=$ec" >&2
 }

@@ -23,15 +23,18 @@ while [[ "$#" > 0 ]]; do case "$1" in
   *) zoulArgs+=( "$1" );;
 esac; shift; done
 
-unset ZOUL_SYSTEM
-unset ZOUL_BOOT
 unset ZOUL_LOG
-unset ZOUL_STDIO
-unset ZOUL_CORE
-unset ZOUL_LOCK
-unset ZOUL_TRAP
-unset ZOUL_CONFIG
 unset ZOUL_PROCESS
+unset ZOUL_SYSTEM
+unset ZOUL_TRAP
+unset ZOUL_WSL
+
+unset ZOUL_BOOT     # ZOUL_SYSTEM
+unset ZOUL_LOCK     # ZOUL_TRAP
+unset ZOUL_STDIO    # ZOUL_LOCK
+unset ZOUL_CORE     # ZOUL_BOOT ZOUL_LOG ZOUL_STDIO
+unset ZOUL_CONFIG   # ZOUL_CORE
+
 unset ZOUL_GIT_OPTIONS
 unset ZOUL_GIT_CORE
 unset ZOUL_GIT_STOW
@@ -59,15 +62,18 @@ unset ZOUL_GIT_NOTES
 unset ZOUL_GIT_OPS
 unset ZOUL_GIT_SANDBOX
 
-[[ -z $ZOUL_SYSTEM ]]             && . zoul-system
-[[ -z $ZOUL_BOOT ]]               && . zoul-boot
 [[ -z $ZOUL_LOG ]]                && . zoul-log
+[[ -z $ZOUL_PROCESS ]]            && . zoul-process
+[[ -z $ZOUL_SYSTEM ]]             && . zoul-system
+[[ -z $ZOUL_TRAP ]]               && . zoul-trap
+[[ -z $ZOUL_WSL ]]                && . zoul-wsl
+
+[[ -z $ZOUL_BOOT ]]               && . zoul-boot
+[[ -z $ZOUL_LOCK ]]               && . zoul-lock
 [[ -z $ZOUL_STDIO ]]              && . zoul-stdio
 [[ -z $ZOUL_CORE ]]               && . zoul-core
-[[ -z $ZOUL_LOCK ]]               && . zoul-lock
-[[ -z $ZOUL_TRAP ]]               && . zoul-trap
 [[ -z $ZOUL_CONFIG ]]             && . zoul-config
-[[ -z $ZOUL_PROCESS ]]            && . zoul-process
+
 [[ -z $ZOUL_GIT_OPTIONS ]]        && . zoul-git-options
 [[ -z $ZOUL_GIT_CORE ]]           && . zoul-git-core
 [[ -z $ZOUL_GIT_STOW ]]           && . zoul-git-stow

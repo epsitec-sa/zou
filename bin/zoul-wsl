@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+# Use the following statement to include current lib only once
+#   [[ -z $ZOUL_WSL ]] && . zoul-wsl
+ZOUL_WSL=true
+
+# Read Windows environment variable from WSL side
+# in:
+#   $1:varName   Windows environment variable name
+# out:
+#   Windows environment variable content
+wsl_get_win_env()
+{
+  local value="$(cmd.exe /c echo %$1% 2>/dev/null)"
+  # trim carriage return added by Windows echo command
+  printf '%s' "${value//$'\r'}"
+}
+# Read Windows environment variable and convert its value to WSL path
+wsl_get_win_env_path() { wslpath "$(wsl_get_win_env "$1")"; }
