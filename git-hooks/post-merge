@@ -4,15 +4,16 @@
 
 log_enter_hooks
 echo "$PWD @ $0 ${*@Q}" &>>"$stdallRedir"
+flag="$1"
+if [[ -n "$2" ]]; then
+  # specific zou call (see zoul-git-branch-merge._branch_call_post_merge_hook)
+  mergedBranch="$2"
+  branch="$3"
+else
+  # Get the current branch name
+  branch=$(gitx rev-parse --abbrev-ref HEAD )
+  # Get the name of the branch that was just merged
+  mergedBranch=$(gitx reflog -1 | cut -d" " -f 4 | sed "s/://")
+fi
 
-exit 0
-
-# # Get the current branch name
-# branch=$(gitx rev-parse --abbrev-ref HEAD 2>>"$stderrRedir")
-
-# # Get the name of the branch that was just merged
-# mergedBranch=$(gitx reflog -1 | cut -d" " -f 4 | sed "s/://")
-
-# echo "$PWD @ '$mergedBranch' -> '$branch'" &>>"$stdallRedir"
-
-# exit 0
+echo "$PWD @ flag=$flag '$mergedBranch' -> '$branch'" &>>"$stdallRedir"
