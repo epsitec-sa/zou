@@ -74,7 +74,11 @@ sync_do_epilog()
   _sync_commit "${branchSyncVisitInfo[@]}"
   # io_trace "<<< sync_do_epilog ${*@Q} -- $(print_vars branchSyncVisitInfo[@]) PWD=$PWD"
 }
-sync_do_xprolog() { sync_do_prolog; }
+sync_do_xprolog()
+{
+  syncNoPush=true
+  sync_do_prolog
+}
 
 _sync_commit()
 {
