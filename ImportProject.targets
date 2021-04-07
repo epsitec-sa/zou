@@ -2,10 +2,14 @@
 <!-- The ImportProject.targets can be used to build and import the output of one or many projects or solutions. -->
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
+  <Import Project="Boot.Platform.props" Condition="'$(RuntimePlatform)' == ''" />
+
   <!-- Define imported projects default metadata -->
   <ItemDefinitionGroup>
     <ImportProject>
       <RuntimeType>$(MSBuildRuntimeType)</RuntimeType>
+      <RuntimeIdentifier Condition="'%(RuntimeType)' == 'Core'">$(RuntimeIdentifier)</RuntimeIdentifier>
+      <PublishDir Condition="'%(RuntimeType)' == 'Core'">$(OutDir)/publish</PublishDir>
       <BuildInParallel>false</BuildInParallel>
       <Verbosity>minimal</Verbosity>
       <Configuration>$(Configuration)</Configuration>
