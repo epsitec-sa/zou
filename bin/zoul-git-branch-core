@@ -122,6 +122,7 @@ branch_is_ancestor_of_local()
 branch_is_ancestor_of()
 {
   local ref=${1:-HEAD} branch ec; shift
+  [ $# -eq 0 ] && return 0
   for branch; do
     gitx merge-base --is-ancestor "$ref" "$branch" 2>>"$stderrRedir"; ec=$?
     # io_trace "branch_is_ancestor_of -- $(print_vars ref branch ec) PWD='$PWD'"
