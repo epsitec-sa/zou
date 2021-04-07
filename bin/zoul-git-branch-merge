@@ -11,12 +11,23 @@ ZOUL_GIT_BRANCH_MERGE=true
 [[ -z $ZOUL_GIT_BRANCH_CORE ]] && . zoul-git-branch-core
 
 mergingEvent=()
-mergeSuccessEvent=()
 mergeAbortEvent=()
+mergeSuccessEvent=( _branch_on_merge_success )
 branch_raise_merging_event() { raise_event 'mergingEvent[@]' "$@"; }
 branch_raise_merge_success_event() { raise_event 'mergeSuccessEvent[@]' "$@"; }
 branch_raise_merge_abort_event() { raise_event 'mergeAbortEvent[@]' "$@"; }
 
+_branch_on_merge_success()
+{
+  # io_trace "_branch_on_merge_success ${*@Q}"
+  :
+}
+_branch_call_post_merge_hook()
+{
+  # io_trace "_branch_call_post_merge_hook ${*@Q}"
+  local hook="$(git_dir)/hooks/post-merge"
+  test -x "$hook" && ( "$hook" "$@" )
+}
 branch_merge_ff()
 {
   local toMerge=$1 intoBranch=$2 toMergeAlias=${3:-$1} intoBranchName needCheckout
@@ -158,6 +169,8 @@ _branch_merge_ff()
       return 1
     fi
     if gitx update-ref -m "merge $toMerge into $intoBranch (fast forward)" "$intoRef" "$hashToMerge" "$hashMergeInto" 2>>"$stderrRedir"; then
+      # io_trace "_branch_merge_ff -2- $(print_vars toMerge intoBranch ref)"
+      _branch_call_post_merge_hook '0' "$toMerge" "$intoBranch"
       branch_raise_merge_success_event "$toMerge" "$intoBranch"
       [[ $quiet == true ]] || mio_success "Merged ${VC}$toMergeAlias${Green} into ${VC}$intoBranchName${Green} (fast-forward)"
       # io_trace "<<<< _branch_merge_ff -2- $(print_vars toMerge intoBranch ref)"
@@ -259,6 +272,7 @@ _branch_merge_tool()
     # io_trace_unsafe "_branch_merge_tool -1- $(print_vars ec)"
 
     if [ $ec -eq 0 ]; then
+      # io_trace_unsafe "_branch_merge_tool -2- $(print_vars toMerge intoBranch)"
       branch_raise_merge_success_event "$toMerge" "$intoBranch"
       mio_success_unsafe "Merged ${VC}$toMergeAlias${Green} into ${VC}$intoBranchName${Green}"
     else
