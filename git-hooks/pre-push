@@ -19,19 +19,24 @@
 # This sample shows how to prevent push of commits where the log message starts
 # with "WIP" (work in progress).
 
+
 [[ -z $ZOUL_GIT_CORE ]] && . zoul-git-core
 [[ -z $ZOUL_GIT_OPS ]]  && . zoul-git-ops
 [[ -z $ZOUL_LOG ]]      && . zoul-log
 
+log_enter_hooks
+echo "$PWD @ $0 ${*@Q}" &>>"$stdallRedir"
+
 pre_push_run()
 {
-	log_enter_hooks
-	echo "$PWD @ ${*@Q}" &>>"$stdallRedir"
+
+	# echo "$PWD @ ${*@Q}" &>>"$stdallRedir"
 
 	local remote="$1" url="$2"
 	local localRef localSha remoteRef remoteSha
 
-	# echo "$PWD @ remote=$remote url=$url" &>>"$stdallRedir"
+	echo "$PWD @ remote=$remote url=$url" &>>"$stdallRedir"
+
 
 	while read localRef localSha remoteRef remoteSha;	do
 
@@ -52,6 +57,7 @@ pre_push_run()
 				ops_execute &>>"$stdallRedir"
 				;;
 		esac
+
 		# if [[ "$remoteRef" == */tags/* ]]; then
 		# 	if [[ "$localSha" == "$z40" ]]; then
 		# 		# Handle tag delete
@@ -84,7 +90,7 @@ pre_push_run()
 	done
 }
 
-log_enter_hooks
 pre_push_run "$@"
+
 exit 0
 

@@ -3,15 +3,16 @@
 [[ -z $ZOUL_LOG ]] && . zoul-log
 
 log_enter_hooks
-echo "$PWD @ ${*@Q}" &>>"$stdallRedir"
-exit 0
-
-# Get the current branch name
-branch=$(gitx rev-parse --abbrev-ref HEAD 2>>"$stderrRedir")
-
-# Get the name of the branch that was just merged
-mergedBranch=$(gitx reflog -1 | cut -d" " -f 4 | sed "s/://")
-
-echo "$PWD @ '$mergedBranch' -> '$branch'" &>>"$stdallRedir"
+echo "$PWD @ $0 ${*@Q}" &>>"$stdallRedir"
 
 exit 0
+
+# # Get the current branch name
+# branch=$(gitx rev-parse --abbrev-ref HEAD 2>>"$stderrRedir")
+
+# # Get the name of the branch that was just merged
+# mergedBranch=$(gitx reflog -1 | cut -d" " -f 4 | sed "s/://")
+
+# echo "$PWD @ '$mergedBranch' -> '$branch'" &>>"$stdallRedir"
+
+# exit 0

@@ -23,13 +23,13 @@
 [[ -z $ZOUL_LOG ]] && . zoul-log
 
 log_enter_hooks
-echo "$PWD @ ${*@Q}" &>>"$stdallRedir"
+echo "$PWD @ $(basename "$0") ${*@Q}" &>>"$stdallRedir"
 
-COMMIT_MSG_FILE=$1
-COMMIT_SOURCE=$2
-SHA1=$3
+commitMsgFile=$1
+commitSource=$2
+sha=$3
 
-echo "$PWD @ COMMIT_MSG_FILE=$COMMIT_MSG_FILE COMMIT_SOURCE=$COMMIT_SOURCE SHA1=$SHA1" &>>"$stdallRedir"
+echo "$PWD @ commitMsgFile=$commitMsgFile commitSource=$commitSource sha=${sha::7}" &>>"$stdallRedir"
 
 exit 0
 # /usr/bin/perl -i.bak -ne 'print unless(m/^. Please enter the commit message/..m/^#$/)' "$COMMIT_MSG_FILE"

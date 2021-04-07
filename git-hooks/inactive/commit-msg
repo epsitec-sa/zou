@@ -20,8 +20,9 @@
 [[ -z $ZOUL_LOG ]] && . zoul-log
 
 log_enter_hooks
-echo "$PWD @ ${*@Q}" &>>"$stdallRedir"
+echo "$PWD @ $(basename "$0") ${*@Q}" &>>"$stdallRedir"
 cat "$1" &>>"$stdallRedir"
+echo &>>"$stdallRedir"
 exit 0
 
 # test "" = "$(grep '^Signed-off-by: ' "$1" |
