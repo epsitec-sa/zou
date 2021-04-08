@@ -4,7 +4,10 @@
 #   [[ -z $ZOUL_GIT_SANDBOX_DATA ]] && . zoul-git-sandbox-data
 ZOUL_GIT_SANDBOX_DATA=true
 
-[[ -z $ZOUL_TEST ]] && . zoul-test
+[[ -z $ZOUL_GIT_REPO ]] && . zoul-git-repo
+
+zouTestRoot=$(abspath "$(repo_bundle_root "$zouBinDir")/../zou.test")
+[[ -d "$zouTestRoot" ]] || mkdir -p "$zouTestRoot"
 
 originDir="$zouTestRoot/origin"
 sm1HubDir="$originDir/sm1Hub"
