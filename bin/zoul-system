@@ -4,13 +4,40 @@
 #   [[ -z $ZOUL_SYSTEM ]] && . zoul-system
 ZOUL_SYSTEM=true
 
+zouLin=1
+zouMac=1
+zouWin=1
+zouWsl=1
+
+zouJobsCount=12
+
 sys_linux()   { [[ $(uname -s) =~ ^Linux ]]; }
 sys_mac()     { [[ $(uname -s) =~ ^Darwin ]]; }
 sys_windows() { [[ $(uname -s) =~ ^(MINGW|MSYS|CYGWIN) ]]; }
 sys_wsl()     { sys_linux && [[ "$(< /proc/version)" =~ .*-microsoft- ]]; }
 
-abspath() { realpath "$@"; }
+sys_init()
+{
+  if sys_linux; then
+    zouLin=0
+    sys_wsl && zouWsl=0
+    zouJobsCount=64
+  elif sys_windows; then
+    zouWin=0
+    zouJobsCount=12
+  elif sys_mac; then
+    zouMac=0
+    zouJobsCount=64
+  fi
+}
 
-zouJobsCount=12
-( sys_linux || sys_mac ) && zouJobsCount=64
+abspath()
+{
+  local path
+  path="$(realpath "$@")" || return $?
+  [ $zouWin -eq 0 ] && path="$(cygpath "$path")"
+  printf '%s\n' $path
+}
+
+sys_init
 

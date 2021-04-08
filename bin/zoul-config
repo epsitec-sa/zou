@@ -50,8 +50,8 @@ config_git_tools()
 {
   # configure credential manager and Beyond Compare 4 for WSL2 and Windows
   local drive
-  sys_wsl && drive='/mnt/c'
-  sys_windows && drive='C:'
+  [ $zouWsl -eq 0 ] && drive='/mnt/c'
+  [ $zouWin -eq 0 ] && drive='C:'
   if [[ -n "$drive" ]]; then
     # credential manager
     local credentialManagerPath="$drive/Program Files/Git/mingw64/libexec/git-core/git-credential-manager.exe"

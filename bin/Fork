@@ -33,12 +33,12 @@ _fork_scope()
   winSettingsName="win-$settingsName"
   wslSettingsName="wsl-$settingsName"
   
-  if sys_wsl; then
+  if [ $zouWsl -eq 0 ]; then
     sys='wsl'
     forkLauncher='_fork_wsl_launcher'
     forkRootDir="$(wsl_get_win_env_path LOCALAPPDATA)/Fork"
     tmpDir="$(wsl_get_win_env_path TMP)"
-  elif sys_windows; then
+  elif $zouWin -eq 0; then
     sys='win'
     forkLauncher='_fork_win_launcher'
     forkRootDir=$(cygpath "$LOCALAPPDATA\\Fork")
