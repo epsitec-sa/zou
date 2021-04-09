@@ -248,9 +248,11 @@ prod_release_prolog()
     unreleasable)
       dev_checkout false "$moduleDevBranch"
       prod_ensure_vbranch
-      branch_merge "$moduleDevBranchPath" "$prodBranchPath" '-Xtheirs' \
-      && branch_merge_ff "$prodBranchPath" "$moduleDevBranchPath" \
-      || io_trace_error 'prod_release_prolog'
+      if ! repo_is_merging ; then
+        branch_merge "$moduleDevBranchPath" "$prodBranchPath" '-Xtheirs' \
+        && branch_merge_ff "$prodBranchPath" "$moduleDevBranchPath" \
+        || io_trace_error 'prod_release_prolog'
+      fi
       ;;
     error)
       mio_error "Branch ${VC}$moduleDevBranch${Red} cannot be released."
@@ -260,22 +262,30 @@ prod_release_prolog()
   esac
   if [[ $dryRun == true ]]; then
     _rstatus_init || io_trace_error 'prod_release_prolog 1'
-  elif repo_is_clean && ! cosm_has_unstaged_dirty_submodules; then
+  elif repo_is_clean && ! repo_is_merging && ! cosm_has_unstaged_dirty_submodules; then
     prod_checkout "$prodCheckoutType" false "$moduleDevBranch" || io_trace_error 'prod_release_prolog -2-'
     # io_trace "prod_release_prolog -3- $(print_vars prodBranch releaseStatus)"
   fi
 }
 prod_release_epilog()
 {
-  # io_trace "prod_release_epilog ${*@Q} -- $(print_vars prodBranch)"
-  if repo_is_clean && ! cosm_has_unstaged_dirty_submodules; then
+  # io_trace "prod_release_epilog ${*@Q} -- $(print_vars prodBranch releaseStatus)"
+  if repo_is_clean && ! repo_is_merging && ! cosm_has_unstaged_dirty_submodules; then
     _prod_fix_release_status
     _prod_release || io_trace_error 'prod_release_epilog 1' || return $?
     _vtable_update || io_trace_error 'prod_release_epilog 2' || return $?
-  elif ! cosm_has_unstaged_dirty_submodules; then
+  else
     # io_trace "prod_release_epilog -2- $(print_vars unstagedDirtyIncludedSubmodules[@])"
     mio_error  "Branch ${VC}$moduleDevBranch${Red} cannot be released."
-    io_warning "  commit or stash your changes ${DarkGray}--${Gray} do not commit submodules references." "$moduleTracePrefix"
+    if cosm_has_unstaged_dirty_submodules; then
+      io_warning "  Fix unstaged submodules." "$moduleTracePrefix"
+    elif repo_is_merging; then
+      io_warning "  Resolve or abort your merge conflicts." "$moduleTracePrefix"
+    else
+      io_warning "  Commit or stash your changes (do not commit submodules references)." "$moduleTracePrefix"
+    fi
+    io_warning "  When done, restart the ${VC}git prod release${Brown} command." "$moduleTracePrefix"
+    return 1
   fi
   return 0
 }
@@ -392,26 +402,13 @@ _prod_merge_into_dev()
 }
 _prod_merge_into_dev_core()
 {
-  # io_trace "_prod_merge_into_dev_core -- $(print_vars hasBeenReleased prodCheckoutType)"
+  # io_trace ">>>> _prod_merge_into_dev_core -- $(print_vars hasBeenReleased prodCheckoutType)"
   [[ $hasBeenReleased == true ]] || return 0
 
   local toMerge=$1 mergeInto=$2 toMergeAlias=${3:-$1}
-  # io_trace "_prod_merge_into_dev_core -- $(print_vars toMerge mergeInto toMergeAlias)"
 
-  if _prod_can_merge_into_dev "$toMerge" "$mergeInto"; then
-    branch_merge "$toMerge" "$mergeInto" "$toMergeAlias" '-Xtheirs'
-  else
-    branch_merge_ff "$toMerge" "$mergeInto" "$toMergeAlias" || true
-  fi
-}
-_prod_can_merge_into_dev()
-{
-  local toMerge=$1 mergeInto=$2 mergeBase comment IFS=$'\n'
-  mergeBase=$(gitx merge-base "$toMerge" "$mergeInto")
-  for comment in $(gitx log --format=%s "$mergeBase..$toMerge"); do
-    # io_trace "_prod_can_merge_into_dev -- $(print_vars mergeBase comment)"
-    [[ $comment =~ ^zou-flow: ]] || return 1
-  done
+  branch_merge "$toMerge" "$mergeInto" "$toMergeAlias" '-Xtheirs'
+  # io_trace "<<<< _prod_merge_into_dev_core -- $(print_vars toMerge mergeInto toMergeAlias)"
 }
 
 ##########################
