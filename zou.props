@@ -45,7 +45,7 @@ This script can be imported anywhere before first MS import (Microsoft.Cpp.Defau
 
   <!-- zou submodule -->
   <PropertyGroup>
-    <ZouDir>$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), '.git'))</ZouDir>
+    <ZouDir>$(MSBuildThisFileDirectory)</ZouDir>
     <ZouDir Condition="'$(ZouDir)' == ''">$(BundleDir)</ZouDir>
     <ZouDir>$(ZouDir.TrimEnd('\/'))</ZouDir>
     <ZouName>$([System.IO.Path]::GetFileName('$(ZouDir)'))</ZouName>
