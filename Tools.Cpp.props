@@ -7,14 +7,16 @@
     are executed during the second pass of msbuild and some scripts need VSRootDir during the first pass
     TODO: all properties which depends on VSRootDir should be encapsulated in tasks depending on this one
   -->
-  <!--<Target Name="SetVSRootDir">
+  <!--
+  <Target Name="SetVSRootDir">
     <PropertyGroup>
       <VsWherePath>$(MSBuildProgramFiles32)\Microsoft Visual Studio\Installer\vswhere.exe</VsWherePath>
     </PropertyGroup>
     <Exec Command='"$(VsWherePath)" -prerelease -latest -property InstallationPath' ConsoleToMSBuild="true">
       <Output TaskParameter="ConsoleOutput" PropertyName="VSRootDir" />
     </Exec>
-  </Target>-->
+  </Target>
+  -->
 
   <PropertyGroup>
     <EnableVS120 Condition="'$(EnableVS120)' == ''">false</EnableVS120>    <!-- VS 2013 -->
@@ -39,8 +41,8 @@
   </PropertyGroup>
   
   <PropertyGroup Label="VisualStudio" Condition="'$(EnableVS160)' == 'true'">
-    <!--<VS160RootDir Condition="'$(VS160RootDir)' == ''">$([MSBuild]::GetRegistryValue('HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\c3b85d66', 'InstallLocation'))</VS160RootDir>
-    <VS160RootDir Condition="'$(VS160RootDir)' != ''">$(VS160RootDir)\</VS160RootDir>-->
+    <VS160RootDir Condition="'$(VS160RootDir)' == ''">$([MSBuild]::GetRegistryValue('HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\c3b85d66', 'InstallLocation'))</VS160RootDir>
+    <VS160RootDir Condition="'$(VS160RootDir)' != ''">$(VS160RootDir)\</VS160RootDir>
     <VS160RootDir Condition="'$(VS160RootDir)' == ''">$(VSInstallDir)</VS160RootDir>
     <!-- VS Tools Dir -->
     <VS160ToolsDir Condition="'$(VS160COMNTOOLS)' != ''">$(VS160COMNTOOLS)</VS160ToolsDir>
