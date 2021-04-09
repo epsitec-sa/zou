@@ -12,8 +12,10 @@ ZOUL_GIT_BRANCH_MERGE=true
 
 mergingEvent=()
 mergeSuccessEvent=()
+mergeAbortEvent=()
 branch_raise_merging_event() { raise_event 'mergingEvent[@]' "$@"; }
 branch_raise_merge_success_event() { raise_event 'mergeSuccessEvent[@]' "$@"; }
+branch_raise_merge_abort_event() { raise_event 'mergeAbortEvent[@]' "$@"; }
 
 branch_merge_ff()
 {
@@ -30,6 +32,7 @@ branch_merge_abort()
     # io_trace_unsafe "branch_merge_abort -1-"
     gitx merge --abort
     _branch_remove_temp_merge_files
+    branch_raise_merge_abort_event
   fi
 }
 branch_merge()

@@ -25,6 +25,7 @@ headNameChangedEvent+=( _bundle_reset_scope _module_reset_scope )
 branchSyncEvent+=( _module_on_sync )
 mergingEvent+=( _module_on_merging )
 mergeSuccessEvent+=( _module_on_merge_success )
+mergeAbortEvent+=( _module_on_merge_abort )
 
 # run a function in the startup module root folder with startup, bundle and module scopes defined
 module_run()
@@ -371,6 +372,12 @@ _module_on_merge_success()
   # io_trace_unsafe ">>>> _module_on_merge_success ${*@Q} -- $moduleTracePrefix"
   _module_set_trace_prefix 1
   # io_trace_unsafe "<<<<< _module_on_merge_success ${*@Q} -- $moduleTracePrefix"
+}
+_module_on_merge_abort()
+{
+  # io_trace_unsafe ">>>> _module_on_merge_abort ${*@Q} -- $moduleTracePrefix"
+  _module_set_trace_prefix 1
+  # io_trace_unsafe "<<<<< _module_on_merge_abort ${*@Q} -- $moduleTracePrefix"
 }
 
 ##############
