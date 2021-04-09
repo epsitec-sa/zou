@@ -380,6 +380,7 @@ repo_commit_submodules()
   local branch=${moduleHead:-$(branch_current)}
   # io_trace "repo_commit_submodules -2- $(print_vars branch)"
   if git_commit 'update submodules' "$@"; then
+    repo_raise_submodule_changed_event "$@"
     for sm; do
       io_message "  Commited submodule ${VC}$sm${DarkGray} on branch ${VC}$branch${DarkGray}" "$moduleTracePrefix" ${DarkGray}
     done

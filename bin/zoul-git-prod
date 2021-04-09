@@ -583,8 +583,9 @@ _prod_commit_release_core()
   fi
   # io_trace "_prod_commit_release_core -- $(print_vars updater vresources[@])"
   # commit resources and clean submodules in dev branch
-  version_commit_files "$releaseVTag" "${vresources[@]}" ${unstagedCleanSubmodules[@]}
-  # branch_merge "$prodBranch" "$moduleDevBranchPath" &>>"$stdallRedir"
+  version_commit_files "$releaseVTag" "${vresources[@]}" "${unstagedCleanSubmodules[@]}"
+  [[ ${#unstagedCleanSubmodules[@]} -ne 0 ]] && repo_raise_submodule_changed_event "${unstagedCleanSubmodules[@]}"
+  # io_trace "_prod_commit_release_core -1- $(print_vars releaseVTag vresources[@])"
 }
 # return code
 #   127 -- principal module should be released
