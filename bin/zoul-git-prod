@@ -119,7 +119,7 @@ _prod_init_vars()
 {
   prodBranch=''; prodBranchPath=''; prodVTag=''; prodHTag=''
   vtagStatus='vtagMissing'; vtag2dev=0; vtag2prod=0; prod2dev=0
-  releaseVTag=''; releasePrerelPrefix=''; releaseStatus='error'
+  releasePrerelPrefix=''; releaseStatus='error'
   local alias; vtag_format_alias
   prodAlias=$alias; devAlias=$alias; prod2devAlias=$alias; dev2prodAlias=$alias; moduleAlias=$alias
 
@@ -206,7 +206,7 @@ _prod_init_prod()
   prodHTag=$htag
   vtag2prod=$delta
   vtagStatus=$status
-  releaseVTag=$vtag
+  [[ -z $releaseVTag ]] && releaseVTag=$vtag
   vtag_is_semver "$vtag" && releasePrerelPrefix=${BASH_REMATCH[7]#-}
   # io_trace "_prod_init_prod 1 -- $(print_vars prodVTag prodHTag releaseVTag)"
 
