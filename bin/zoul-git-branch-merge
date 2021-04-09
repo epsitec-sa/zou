@@ -112,6 +112,7 @@ _branch_merge_ff()
   # 'intoBranch' should be a local branch with a symbolic name
 
   local hashToMerge hashMergeInto hashMergeBase intoRef branch lbranch bref ec=0
+  # io_trace ">>>> _branch_merge_ff ${*@Q}"
   branch_set_realize "$intoBranch" 'true' || ec=$?
   # io_trace "_branch_merge_ff -1- $(print_vars branch lbranch bref ec)"
   if [ $ec -eq 2 ]; then
@@ -154,16 +155,16 @@ _branch_merge_ff()
       return 1
     fi
     if gitx update-ref -m "merge $toMerge into $intoBranch (fast forward)" "$intoRef" "$hashToMerge" "$hashMergeInto" 2>>"$stderrRedir"; then
-      # io_trace "_branch_merge_ff -2- $(print_vars toMerge intoBranch ref)"
       branch_raise_merge_success_event "$toMerge" "$intoBranch"
       [[ $quiet == true ]] || mio_success "Merged ${VC}$toMergeAlias${Green} into ${VC}$intoBranchName${Green} (fast-forward)"
+      # io_trace "<<<< _branch_merge_ff -2- $(print_vars toMerge intoBranch ref)"
       return 0
     else
-      # io_trace "_branch_merge_ff -3- $(print_vars toMerge intoBranch ref)"
+      # io_trace "<<<< _branch_merge_ff -3- $(print_vars toMerge intoBranch ref)"
       return 1
     fi
   fi
-  # io_trace "_branch_merge_ff -4- $(print_vars toMerge intoBranch ref)"
+  # io_trace "<<<< _branch_merge_ff -4- $(print_vars toMerge intoBranch ref)"
 }
 _branch_merge_ff_only()
 {

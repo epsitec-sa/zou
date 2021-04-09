@@ -577,11 +577,7 @@ _prod_commit_release_core()
   # io_trace "_prod_commit_release_core ${*@Q}"
   local updater=$1 vresources=()
   # update technical version - modify resources files
-  if [[ -n $updater ]]; then
-    # IFS=$'\n' vresources=( $($updater $releaseVTag) ); IFS=$OIFS
-    vresources=( $($updater $releaseVTag) )
-  fi
-  # io_trace "_prod_commit_release_core -- $(print_vars updater vresources[@])"
+  [[ -n $updater ]] && vresources=( $($updater $releaseVTag) )
   # commit resources and clean submodules in dev branch
   version_commit_files "$releaseVTag" "${vresources[@]}" "${unstagedCleanSubmodules[@]}"
   [[ ${#unstagedCleanSubmodules[@]} -ne 0 ]] && repo_raise_submodule_changed_event "${unstagedCleanSubmodules[@]}"

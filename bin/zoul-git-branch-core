@@ -298,8 +298,8 @@ branch_realize()
 #   local branch lbranch bref
 #   branch_set_realize BRANCH
 # in:
-#   ref=$1      -- local or remote branch ref
-#   ensureLocal -- if true and ref is remote only, fetch and create local branch
+#   $1:ref         -- local or remote branch ref
+#   $2:ensureLocal -- if true and ref is remote only, fetch and create local branch
 # var-out:
 #   branch    -- local branch name (0) if it exists || remote branch name (1) if it exists || empty (2) 
 #   lbranch   -- local branch name (even if it does not exist)
@@ -310,7 +310,7 @@ branch_realize()
 #   2 -- branch does not exists
 branch_set_realize()
 {
-  # io_trace "branch_set_realize ${*@Q}"
+  # io_trace ">>>> branch_set_realize ${*@Q}"
   branch=''; lbranch=''; bref=''
   local ref=${1:-HEAD} ensureLocal=${2:-false}
   if [[ $ref == 'HEAD' ]]; then
@@ -322,7 +322,7 @@ branch_set_realize()
     branch=$ref
     lbranch=$branch
     bref="refs/heads/$lbranch"
-    # io_trace "branch_set_realize 1 -- $(print_vars ref branch lbranch bref)"
+    # io_trace "<<<< branch_set_realize 1 -- $(print_vars ref branch lbranch bref)"
     return 0
   else
     if branch_is_remote "$ref"; then
@@ -344,10 +344,11 @@ branch_set_realize()
       gitx fetch "$remote" "$lbranch":"$lbranch" &>>"$stdallRedir"
       io_eval "gitx push "$remote" --set-upstream "$lbranch" 2>>"$stderrRedir"" : ${DarkGray}
       bref="refs/heads/$lbranch"
-      # io_trace "branch_set_realize 4 -- $(print_vars ref branch lbranch bref)"
+      # io_trace "<<<< branch_set_realize 4 -- $(print_vars ref branch lbranch bref)"
       return 0
     else
       # branch is remote
+      # io_trace "<<<< branch_set_realize 5 -- $(print_vars ref branch lbranch bref)"
       return 1
     fi
   fi
@@ -416,7 +417,7 @@ branch_ref_type()
 branch_checkout()
 {
   local ref=$1 forceCheckout=$2 refType refSym checkout raiseEvent isCurrent=0
-  # io_trace "branch_checkout -1- $(print_vars ref forceCheckout)"
+  # io_trace ">>>> branch_checkout -1- $(print_vars ref forceCheckout)"
 
   # checkout = force || !current
   # raise = !current || symChanged
@@ -453,10 +454,11 @@ branch_checkout()
     # checkout
     [ $isCurrent -ne 0 ] && repo_discard_internal_ignore_list
     _branch_checkout_core "$refSym"; ec=$?
+    # io_trace "<<<< branch_checkout -5- $(print_vars refType refSym ec)"
     return $ec
   else
-    # io_trace "branch_checkout -5- $(print_vars refType refSym)"
     branch_raise_checkout_no_change_event "$refSym"
+    # io_trace "<<<< branch_checkout -6- $(print_vars refType refSym)"
   fi
 }
 _branch_raise_checked_out_events()

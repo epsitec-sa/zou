@@ -243,7 +243,7 @@ prod_release_scope()
 
 prod_release_prolog()
 {
-  # io_trace "prod_release_prolog -1- $(print_vars prodBranch)"
+  # io_trace "prod_release_prolog -1- $(print_vars prodBranch releaseStatus)"
   case "$releaseStatus" in
     unreleasable)
       dev_checkout false "$moduleDevBranch"
@@ -262,6 +262,7 @@ prod_release_prolog()
     _rstatus_init || io_trace_error 'prod_release_prolog 1'
   elif repo_is_clean && ! cosm_has_unstaged_dirty_submodules; then
     prod_checkout "$prodCheckoutType" false "$moduleDevBranch" || io_trace_error 'prod_release_prolog -2-'
+    # io_trace "prod_release_prolog -3- $(print_vars prodBranch releaseStatus)"
   fi
 }
 prod_release_epilog()
@@ -319,14 +320,14 @@ _prod_fix_release_status()
 }
 _prod_release()
 {
-  # io_trace "_prod_release 1 -- $(print_vars modulePrerelPrefix releaseStatus)"
+  # io_trace ">>>> _prod_release 1 -- $(print_vars modulePrerelPrefix releaseStatus)"
   case $releaseStatus in
     unreleased) _prod_release_unreleased;;
     ffRelease)  _prod_release_ff;;
     released)   _prod_release_released;;
     *)          _prod_release_unimplemented;;
   esac
-  # io_trace "_prod_release 2 -- $(print_vars modulePrerelPrefix releaseStatus hasBeenReleased)"
+  # io_trace "<<<< _prod_release 2 -- $(print_vars modulePrerelPrefix releaseStatus hasBeenReleased)"
 }
 _prod_release_ff()
 {
@@ -340,18 +341,22 @@ _prod_release_ff()
 }
 _prod_release_unreleased()
 {
+  # io_trace ">>>> _prod_release_unreleased 1 -- $(print_vars modulePrerelPrefix releaseStatus)"
   # head will change
   prod_increment_release_version "$modulePrerelPrefix"
   [ $? -eq 127 ] && _prod_force_release_of_principal_module
+  # io_trace "#### _prod_release_unreleased 2 -- $(print_vars modulePrerelPrefix releaseStatus releaseVTag)"
 
   if [[ $dryRun == true ]]; then
     mio_success "Branch ${VC}$prodBranch${Green} will be released at ${VC}$releaseVTag" "$alias"
   else
+  # io_trace "#### _prod_release_unreleased 3 -- $(print_vars modulePrerelPrefix releaseStatus)"
     prod_commit_release \
     && branch_raise_head_changed_event "$prodBranch" \
     && { mio_success "Released branch ${VC}$prodBranch${Green} at ${VC}$releaseVTag"; hasBeenReleased=true; } \
     || { mio_error "Release of branch '$prodBranch' failed"; return 1; }
   fi
+  # io_trace "<<<< _prod_release_unreleased 4 -- $(print_vars modulePrerelPrefix releaseStatus)"
 }
 _prod_release_released()
 {
