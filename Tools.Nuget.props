@@ -4,7 +4,7 @@
 
   <!-- Nuget -->
   <PropertyGroup Condition="'$(NugetPackagesDir)' == ''" >
-    <NugetPackagesDir>$(BundleDir)..$(V).nuget$(V)packages$(V)</NugetPackagesDir>
+    <NugetPackagesDir>$([System.IO.Path]::GetFullPath('$(BundleDir)..\.nuget\packages\'))</NugetPackagesDir>
   </PropertyGroup>
 
   <Target Name="ZouSetupNuget" BeforeTargets="ResolveReferences"
