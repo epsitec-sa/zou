@@ -515,7 +515,7 @@ _module_init_submodules()
 {
   # io_trace ">>>> _module_init_submodules -- $(print_vars moduleSubmodulePaths[@])"
   _module_list_uninitialized_submodules \
-  | xargs -d $'\n' --no-run-if-empty git sm update -C "${moduleRoot}" --init --
+  | xargs -d $'\n' --no-run-if-empty git sm syncupd -C "${moduleRoot}"
   # io_trace "<<<< _module_init_submodules -- $(print_vars moduleSubmodulePaths[@])"
 }
 _module_list_uninitialized_submodules()
