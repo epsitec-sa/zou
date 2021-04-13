@@ -101,9 +101,8 @@
     <CallTarget Targets="_DeleteLastBuildState" />
   </Target>
 
-  <Target Name="_ImportProject">
+  <Target Name="_ImportProject" Condition="'$(ZouTrace)' == 'true'">
     <Message Importance="high" Text='$(MSBuildCmd) $(MSBuildOptions) "/t:%(MSBuildTarget.Identity)" "%(ProjectsToBuild.Identity)"' />
-
   </Target>
 
   </Project>
