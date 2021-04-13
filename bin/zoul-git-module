@@ -284,7 +284,7 @@ bundle_scope()
 # run a function in the module root folder with module scope defined
 module_scope()
 {
-  # io_trace "module_scope $PWD $ $*"
+  # io_trace ">>>> module_scope"
   # setup module context
   local moduleRoot moduleConfigFile moduleId moduleSubmodulePaths \
         moduleParent modulePath moduleBundlePath \
@@ -317,10 +317,12 @@ module_scope()
 
   _module_trace 'module_scope'
 
-  # io_trace "module_scope >> $*"
+  # io_trace "#### module_scope"
+
   # execute next russian doll
   $1 "${@:2}"
-  # io_trace "module_scope << $*"
+
+  # io_trace "<<<< module_scope"
 }
 _bundle_reset_scope()
 {
@@ -477,6 +479,7 @@ _module_infer_dev_from_bundle()
 #   ${@:2} -- next ...
 _module_submodule_visitor()
 {
+  # io_trace ">>>> _module_submodule_visitor -- $1"
   local smPath=$1 option; shift
   _module_enter "$smPath" || return $?
 
@@ -484,6 +487,8 @@ _module_submodule_visitor()
   # io_trace "_module_submodule_visitor $smPath -- $(print_vars configSkuInclude[@] configSkuExclude[@] option) >> $*"
   
   module_scope "$option" $* || io_trace_error '_module_submodule_visitor'
+
+  # io_trace "<<<< _module_submodule_visitor -- $1"
 }
 # usage:
 #   _module_enter "$moduleDir" || return $?
@@ -501,8 +506,10 @@ _module_enter()
 
 _module_init_submodules()
 {
+  # io_trace ">>>> _module_init_submodules -- $(print_vars moduleSubmodulePaths[@])"
   _module_list_uninitialized_submodules \
   | xargs -d $'\n' --no-run-if-empty git sm update -C "${moduleRoot}" --init --
+  # io_trace "<<<< _module_init_submodules -- $(print_vars moduleSubmodulePaths[@])"
 }
 _module_list_uninitialized_submodules()
 {

@@ -415,6 +415,8 @@ visit_async()
   for path in $(array_sort _zouVisitPaths[@]); do
     ( $2 "$path" "${@:3}" || io_trace_error "visit_async >> $2 "$path" "${@:3}"" || exit $? )&
     pids+=($!)
+    # io_trace "#### visit_async -- $(print_vars pids[@])"
+
     if (( "$jobsCount" > 0 )) && (( $(wc -w <<<$(jobs -p)) % "$jobsCount" == 0 )); then
       for pid in "${pids[@]}"; do
         wait $pid &>>"$stdallRedir" || ec=$?
@@ -514,7 +516,7 @@ io_locked_eval()
   {
     local isLastLine=0 skipCurrentLine line IFS=$'\n'
     io_lock_enter
-    # printf '%b\n' "$moduleTracePrefix -- $PWD $ $1"
+    # io_trace_unsafe ">>>> io_locked_eval $1"
     while read -r line; do
       skipCurrentLine=''
       [[ $line =~ error ]] && color=${Red}
@@ -523,6 +525,7 @@ io_locked_eval()
       io_message_unsafe "${indent}$line" "$moduleTracePrefix" "$color"
       [ $isLastLine -ne 0 ] && break
     done
+    # io_trace_unsafe "<<<< io_locked_eval $1"
     io_lock_exit
     while read line; do :; done
   }
