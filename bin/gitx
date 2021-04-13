@@ -4,8 +4,13 @@
 
 gitx()
 {
-  echo "$PWD @ git -c core.longpaths=true "$@"" &>>"$stdallRedir"
-  git -c core.longpaths=true "$@"
+  local ec
+  echo "[$PPID-$BASHPID] $PWD @ git -c core.longpaths=true ${*@Q}" &>>"$stdallRedir"
+  git -c core.longpaths=true "$@"; ec=$?
+  if [ ! $ec -eq 0 ] && [ "$1" != config ]; then
+     echo "[$PPID-$BASHPID] $PWD @ git -c core.longpaths=true ${*@Q} -> $ec" >&2
+  fi
+  return $ec
 }
 
 gitx "$@"
