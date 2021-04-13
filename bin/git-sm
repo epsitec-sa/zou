@@ -67,17 +67,21 @@ _sm_add()    { gitx -C "$workDir" submodule add $(gitx_cache_option) "$@"; }
 
 _sm_out_filter()
 {
-  local line indent
+  local line indent error
   [[ -z $moduleTracePrefix ]] || indent='  '
   while read -r line; do
-    if [[ $line =~ ^((Cloning|Synchronizing)[^\']+)\'([^\']+)\'(.*) ]]; then
-      line="${DarkGray}${BASH_REMATCH[1]}${VC}${BASH_REMATCH[3]}${DarkGray}${BASH_REMATCH[4]}"
-      io_message_unsafe "${indent}$line" "$moduleTracePrefix"
-    elif [[ $line == usage:* ]]; then
-      io_error_unsafe "wrong arguments for ${VC}git submodule $subcommand" "$moduleTracePrefix"
-      # read until command has completed
-      while read line; do :; done
-      return 1
+    if [[ $error == true ]]; then
+      io_message_unsafe "${indent}$line" "$moduleTracePrefix" ${Brown}
+    else
+      if [[ $line =~ ^((Cloning|Synchronizing)[^\']+)\'([^\']+)\'(.*) ]]; then
+        line="${DarkGray}${BASH_REMATCH[1]}${VC}${BASH_REMATCH[3]}${DarkGray}${BASH_REMATCH[4]}"
+        io_message_unsafe "${indent}$line" "$moduleTracePrefix"
+      elif [[ $line =~ ^\[[0-9]+ ]]; then
+        io_message_unsafe "${indent}$line" "$moduleTracePrefix" ${Brown}
+      elif [[ $line =~ (error|fatal) ]]; then
+        error=true
+        io_message_unsafe "${indent}$line" "$moduleTracePrefix" ${Brown}
+      fi
     fi
   done
 }
