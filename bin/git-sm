@@ -11,13 +11,14 @@ sm_parse()
 {
   while [[ "$#" > 0 ]]; do case "$1" in
     -h|--help) zou-help $0; exit 0;;
-    -j*)    jobsCount=${1#-j};;
-    clone)  subcommand=$1;;
-    update) subcommand=$1;;
-    sync)   subcommand=$1;;
-    add)    subcommand=$1;;
-    -C)     shift; workDir="$1";;
-    *)      args+=( "$1" );;
+    -j*)     jobsCount=${1#-j};;
+    clone)   subcommand=$1;;
+    update)  subcommand=$1;;
+    sync)    subcommand=$1;;
+    syncupd) subcommand=$1;;
+    add)     subcommand=$1;;
+    -C)      shift; workDir="$1";;
+    *)       args+=( "$1" );;
   esac; shift; done
 }
 sm_run()
@@ -29,10 +30,11 @@ sm_run()
   
   local IFS=$'\n'
   case "$subcommand" in
-    clone)  _sm_clone  "${args[@]}";;
-    update) _sm_update "${args[@]}";;
-    sync)   _sm_sync   "${args[@]}";;
-    add)    _sm_add    "${args[@]}";;
+    clone)   _sm_clone   "${args[@]}";;
+    update)  _sm_update  "${args[@]}";;
+    syncupd) _sm_syncupd "${args[@]}";;
+    sync)    _sm_sync    "${args[@]}";;
+    add)     _sm_add     "${args[@]}";;
     *)
       local verb='invalid'
       [[ -z $subcommand ]] && verb='missing'
@@ -41,8 +43,26 @@ sm_run()
 }
 
 _sm_clone()  { gitx -C "$workDir" clone $(gitx_cache_option) --recurse-submodules -j"$jobsCount" "$@" 2>&1 | _sm_out_filter; }
-_sm_update() { gitx -C "$workDir" submodule update $(gitx_cache_option) --jobs "$jobsCount" "$@" 2>&1 | _sm_out_filter; }
-_sm_sync()   { gitx -C "$workDir" submodule sync $(gitx_cache_option) "$@" 2>&1 | _sm_out_filter; }
+_sm_update()
+{
+  # io_trace ">>>> _sm_update -- $(print_vars workDir) ${*@Q}"
+  gitx -C "$workDir" submodule update $(gitx_cache_option) --jobs "$jobsCount" "$@" 2>&1 | _sm_out_filter
+  # io_trace "<<<< _sm_update -- $(print_vars workDir)"
+}
+_sm_sync()
+{
+  # io_trace_unsafe ">>>> _sm_sync -- $(print_vars workDir) ${*@Q}"
+  gitx -C "$workDir" submodule sync $(gitx_cache_option) "$@" 2>&1 | _sm_out_filter
+  # io_trace_unsafe "<<<< _sm_sync -- $(print_vars workDir)"
+}
+_sm_syncupd()
+{
+  # io_trace ">>>> _sm_syncupd -- $(print_vars workDir) ${*@Q}"
+  gitx -C "$workDir" submodule sync $(gitx_cache_option) -- "$@" 2>&1 | _sm_out_filter
+  gitx -C "$workDir" submodule update $(gitx_cache_option) --jobs "$jobsCount" --init -- "$@" 2>&1 | _sm_out_filter
+  gitx -C "$workDir" submodule sync $(gitx_cache_option) -- "$@" 2>&1 | _sm_out_filter
+  # io_trace "<<<< _sm_syncupd -- $(print_vars workDir)"
+}
 _sm_add()    { gitx -C "$workDir" submodule add $(gitx_cache_option) "$@"; }
 
 _sm_out_filter()
