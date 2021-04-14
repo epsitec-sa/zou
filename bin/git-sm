@@ -27,6 +27,9 @@ sm_run()
 
   local jobsCount="8" subcommand workDir="$PWD" args=()
   sm_parse "$@" || return $?
+
+  # ensure path is adapted for underlying system
+  workDir="$(abspath "$workDir")"
   
   local IFS=$'\n'
   case "$subcommand" in
