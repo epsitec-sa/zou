@@ -534,7 +534,8 @@ module_configure()
 {
   local quiet=$1 forceUpdate=$2
 
-  # reapir previous zou installation
+  # repair previous zou installation
+  notes_repair || forceUpdate=true
   hooks_repair || forceUpdate=true
   [[ -z $forceUpdate ]] && module_is_configured && return 0
 

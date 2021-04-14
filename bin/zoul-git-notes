@@ -8,6 +8,30 @@ ZOUL_GIT_NOTES=true
 
 [[ -z $ZOUL_CORE ]] && . zoul-core
 
+# Define remote notes ref directory
+# make remote notes appear as separate branches in git clients like Fork
+notes_remote_ref_dir() { echo "refs/remotes/${1:-origin}/notes"; }
+
+# BUGBUG: uncomment following function to create recursion issue 
+# notes_remote_ref_dir() { echo "refs/notes/${1:-origin}"; }
+
+# BUGBUG: repair recursion issue
+notes_repair()
+{
+  local remote ec=0 notesDir="$(git_dir)/refs/notes"
+  for remote in $(git_remotes); do
+    # io_trace "notes_repair -- $notesDir/$remote"
+    if [[ -d "$notesDir/$remote" ]]; then
+      rm -rf "$notesDir/$remote"
+      gitx config --unset "remote.$remote.fetch" "refs/notes"
+      gitx config --add "remote.$remote.fetch" "+refs/notes/*:$(notes_remote_ref_dir "$remote")/*"
+      ec=1
+    fi
+  done
+  # tree "$(git_dir)/refs"
+  return $ec
+}
+
 # Available zou channels
 # - zou-vtable
 # - zou-ops
@@ -20,7 +44,7 @@ notes_configure()
   local remote
   for remote in $(git_remotes); do
     gitx config --get-all "remote.$remote.fetch" 'notes' &>>"$stdallRedir" || \
-    gitx config --add "remote.$remote.fetch" "+refs/notes/*:refs/notes/$remote/*"
+    gitx config --add "remote.$remote.fetch" "+refs/notes/*:$(notes_remote_ref_dir "$remote")/*"
   done
 
   # configure notes merge strategies
@@ -39,8 +63,8 @@ notes_is_configured()
 #   $2:note     -- the note
 #   $3:object   -- the object to annotate
 #   ${@:4}      -- additional options (-f)
-notes_add()      { io_trace "notes_add ${*@Q}"; gitx notes --ref "$1" add -m "$2" "${3:-HEAD}" ${*:4}; }
-notes_add_file() { gitx notes --ref "$1" add -F "$2" "${3:-HEAD}" "${@:5}"; }
+notes_add()      { gitx notes --ref "$1" add -m "$2" "${3:-HEAD}" "${@:4}"; }
+notes_add_file() { gitx notes --ref "$1" add -F "$2" "${3:-HEAD}" "${@:4}"; }
 
 # Append a channel note to object
 # in:
@@ -131,16 +155,18 @@ notes_objects()
 #   $1:remote -- default to 'origin'
 notes_push()
 {
-  # io_trace "notes_push ${*@Q}"
+  # io_trace ">>>> notes_push -- ${*@Q}"
   gitx push ${1:-origin} 'refs/notes/*' &>>"$stdallRedir"
+  # io_trace "<<<< notes_push -- ${*@Q}"
 }
 notes_push_all()
 {
-  # io_trace "notes_push_all"
+  # io_trace ">>>> notes_push_all"
   local remote
   for remote in $(git_remotes); do
     notes_push "$remote"
   done
+  # io_trace "<<<< notes_push_all"
 }
 
 # Fetch all channels from specified remote
@@ -149,17 +175,17 @@ notes_push_all()
 #   $2:remote  -- default to 'origin'
 notes_fetch()
 {
-  # io_trace "notes_fetch ${*@Q}"
   local channel="$1" remote="${2:-origin}"
-  # io_trace "notes_fetch -1- $(print_vars channel remote)"
-  gitx fetch "$remote" "refs/notes/$channel:refs/notes/$remote/$channel" &>>"$stdallRedir"
+  # io_trace ">>>> notes_fetch -- ${*@Q} -- $(print_vars channel remote)"
+  gitx fetch "$remote" "refs/notes/$channel:$(notes_remote_ref_dir "$remote")/$channel" &>>"$stdallRedir"
+  # io_trace "<<<< notes_fetch -- ${*@Q} -- $(print_vars channel remote)"
 }
 notes_fetch_all()
 {
-  # io_trace "notes_fetch_all"
   local remote
   for remote in $(git_remotes); do
-    gitx fetch "$remote" "refs/notes/*:refs/notes/$remote/*" &>>"$stdallRedir"
+    # io_trace "#### notes_fetch_all-- $(print_vars remote)"
+    gitx fetch "$remote" "refs/notes/*:$(notes_remote_ref_dir "$remote")/*" &>>"$stdallRedir"
   done
 }
 
@@ -173,12 +199,13 @@ notes_fetch_all()
 #                     -- cat_sort_uniq for 'zou*'    channel
 notes_merge()
 {
-  # io_trace "notes_pull ${*@Q}"
   local srcChannel="$1" dstChannel="$2" mergeStrategy=$3 mergeOpt
   [[ -n $mergeStrategy ]] && mergeOpt="-s $mergeStrategy"
 
-  # io_trace "notes_merge -1- $(print_vars srcChannel dstChannel mergeStrategy)"
+  # io_trace ">>>> notes_merge -- ${*@Q}"
   gitx notes --ref "$srcChannel" merge -v $mergeOpt "$dstChannel" &>>"$stdallRedir"
+  # tree "$(git_dir)/refs"
+  # io_trace "<<<< notes_merge -- ${*@Q}"
 }
 
 # Pull notes
@@ -188,24 +215,25 @@ notes_merge()
 #   $3:mergeStrategy  -- see notes_merge
 notes_pull()
 {
-  # io_trace "notes_pull ${*@Q}"
   local channel="$1" remote="${2:-origin}" mergeStrategy=$3
-  # io_trace "notes_pull -1- $(print_vars channel remote mergeStrategy)"
+  # io_trace ">>>> notes_pull -- ${*@Q} -- $(print_vars channel remote mergeStrategy)"
   notes_fetch "$channel" "$remote"
-  notes_merge "$channel" "$remote/$channel" "$mergeStrategy"
+  notes_merge "$channel" "$(notes_remote_ref_dir "$remote")/$channel" "$mergeStrategy"
   # TODO : use ours or theirs depending on commits dates
+  # io_trace "<<<< notes_pull -- ${*@Q} -- $(print_vars channel remote mergeStrategy)"
 }
 notes_pull_all()
 {
-  # io_trace "notes_pull_all"
+  # io_trace ">>>> notes_pull_all"
   local remote channel names
   notes_fetch_all
   names=( $(notes_channel_names) )
   for remote in $(git_remotes); do
     for channel in ${names[@]}; do
-      notes_merge "$channel" "$remote/$channel"
+      notes_merge "$channel" "$(notes_remote_ref_dir "$remote")/$channel"
     done
   done
+  # io_trace "<<<< notes_pull_all"
 }
 
 # List channels names ('commits', ...)
