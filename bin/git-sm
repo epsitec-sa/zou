@@ -55,15 +55,15 @@ _sm_update()
 _sm_sync()
 {
   # io_trace_unsafe ">>>> _sm_sync -- $(print_vars workDir) ${*@Q}"
-  gitx -C "$workDir" submodule sync $(gitx_cache_option) "$@" 2>&1 | _sm_out_filter
+  gitx -C "$workDir" submodule sync "$@" 2>&1 | _sm_out_filter
   # io_trace_unsafe "<<<< _sm_sync -- $(print_vars workDir)"
 }
 _sm_syncupd()
 {
   # io_trace ">>>> _sm_syncupd -- $(print_vars workDir) ${*@Q}"
-  gitx -C "$workDir" submodule sync $(gitx_cache_option) -- "$@" 2>&1 | _sm_out_filter
+  gitx -C "$workDir" submodule sync -- "$@" 2>&1 | _sm_out_filter
   gitx -C "$workDir" submodule update $(gitx_cache_option) --jobs "$jobsCount" --init -- "$@" 2>&1 | _sm_out_filter
-  gitx -C "$workDir" submodule sync $(gitx_cache_option) -- "$@" 2>&1 | _sm_out_filter
+  gitx -C "$workDir" submodule sync -- "$@" 2>&1 | _sm_out_filter
   # io_trace "<<<< _sm_syncupd -- $(print_vars workDir)"
 }
 _sm_add()    { gitx -C "$workDir" submodule add $(gitx_cache_option) "$@"; }
