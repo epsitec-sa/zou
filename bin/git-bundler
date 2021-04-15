@@ -13,7 +13,7 @@ bundler_parse()
     -u|--unregister) unregister=true;;
     -s|--scan)       scanBundles=true;;
     -x|--external)   export noSelectFilter=true;;
-    -f|--force)      forceUpdate=true;;
+    -f|--force)      forceConfig=true;;
     -q|--quiet)      quiet=true;;
     --reset)         resetRegisteredBundles=true;;
     -*) io_error "unknown option '$1'"; return 1;;
@@ -25,7 +25,7 @@ bundler_run()
   # avoid default registration
   doNotRegisterBundle=true
 
-  local unregister scanBundles forceUpdate quiet \
+  local unregister scanBundles forceConfig quiet \
         resetRegisteredBundles bundlePaths=()
 
   bundler_parse "$@"
@@ -97,12 +97,28 @@ _bundler_config_command()
   cmd_register_module_paths true "$bundleRoot"
   cmd_visit_modules
 }
-_bundler_config_prolog()  { module_configure "$quiet" "$forceUpdate"; }
+_bundler_config_prolog() { _bundler_module_configure "$quiet" "$forceConfig"; }
 _bundler_config_finally() { [[ -z $quiet ]] && branch_show_status; }
 
 _bundler_status()
 {
   io_message "${LightBlue}$bundleUrl${White} -> ${VC}$bundleRoot${White}" "$bundleTracePrefix" ${White}
+}
+
+_bundler_module_configure()
+{
+  local quiet=$1 forceConfig=$2
+
+  [[ -z $quiet ]] && mio_message "Configuring notes & hooks..."
+
+  # TODO: check if it is still necessary with zou-flow notes operations
+  gitx config push.followTags true
+
+  # repair previous zou installation
+  notes_repair || forceConfig=true
+  hooks_repair || forceConfig=true
+
+  module_configure "$forceConfigure"
 }
 
 bundler_run "$@"
