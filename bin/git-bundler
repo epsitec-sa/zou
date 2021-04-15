@@ -37,7 +37,7 @@ bundler_run()
   fi
   
   [ ${#bundlePaths[@]} -eq 0 ] && bundlePaths+=("$(repo_bundle_root)")
-  # io_trace "bundler_run 1 -- $(print_vars bundlePaths[@])"
+  # io_trace "bundler_run -1- $(print_vars bundlePaths[@])"
 
   if [[ $unregister == true ]]; then
     bundle_visit_async 'bundlePaths[@]' _bundler_unregister
@@ -47,7 +47,7 @@ bundler_run()
 
   local bundleRegisteredPaths
   bundle_set_registered_paths
-  # io_trace "bundler_run 2 -- $(print_vars bundleRegisteredPaths[@])"
+  # io_trace "bundler_run -2- $(print_vars bundleRegisteredPaths[@])"
 
   if [ ${#bundleRegisteredPaths[@]} -eq 0 ]; then
     mio_warning "No bundle registered."
@@ -55,9 +55,10 @@ bundler_run()
   fi
 
   if [[ $scanBundles == true ]]; then
-    # io_trace "bundler_run 3 -- $(print_vars bundleRegisteredPaths[@])"
+    # io_trace "bundler_run -3- $(print_vars bundleRegisteredPaths[@])"
     bundle_visit 'bundleRegisteredPaths[@]' _bundler_config
   else
+    # io_trace "bundler_run -4- $(print_vars bundlePaths[@])"
     bundle_visit 'bundlePaths[@]' _bundler_config
   fi
 }
@@ -86,6 +87,7 @@ _bundler_unregister()
 
 _bundler_config()
 {
+  # io_trace "_bundler_config"
   local command='_bundler' subcommand='config' \
         noSkuFilter=true cmdScopes=( config_scope )
 
@@ -94,6 +96,7 @@ _bundler_config()
 }
 _bundler_config_command()
 {
+  # io_trace "_bundler_config -- $(print_vars bundleRoot)"
   cmd_register_module_paths true "$bundleRoot"
   cmd_visit_modules
 }
