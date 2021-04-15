@@ -21,10 +21,10 @@ notes_repair()
   local remote ec=0 notesDir="$(git_dir)/refs/notes"
   for remote in $(git_remotes); do
     # io_trace "notes_repair -- $notesDir/$remote"
+    gitx config --unset "remote.$remote.fetch" "refs/notes"
+    gitx config --add "remote.$remote.fetch" "+refs/notes/*:$(notes_remote_ref_dir "$remote")/*"
     if [[ -d "$notesDir/$remote" ]]; then
       rm -rf "$notesDir/$remote"
-      gitx config --unset "remote.$remote.fetch" "refs/notes"
-      gitx config --add "remote.$remote.fetch" "+refs/notes/*:$(notes_remote_ref_dir "$remote")/*"
       ec=1
     fi
   done
