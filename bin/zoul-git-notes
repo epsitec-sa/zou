@@ -239,10 +239,16 @@ notes_pull_all()
 # List channels names ('commits', ...)
 notes_channel_names()
 {
-  local names=()
+  local names=() remote
   for name in $(gitx for-each-ref --format="%(refname)" refs/notes); do
     name=${name##*/}
     array_contains_element "$name" "${names[@]}" || names+=("$name")
+  done
+  for remote in $(git_remotes); do
+    for name in $(gitx for-each-ref --format="%(refname)" $(notes_fetch_dir "$remote")); do
+      name=${name##*/}
+      array_contains_element "$name" "${names[@]}" || names+=("$name")
+    done
   done
   printf '%s\n' "${names[@]}"
 }
