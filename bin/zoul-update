@@ -18,20 +18,17 @@ zou_parse()
     -z|--zou-only)      zouOnly=true;;
     -u|--no-prune-tags) noPruneTags=true;;
     -c|--no-config)     noConfig=true;;
+    -f|--force)         bundlerOpts+=( $1 );;
     ---version)         actualVersion=$2; shift;;
     --vnext)            skuArgs+=($1);;
     --dev)              skuArgs+=($1);;
     -*) io_error "unknown option '$1'"; return 1;;
   esac; shift; done
-
-  if [[ -z $noConfig ]]; then
-    bundlerOpts+=( --external --quiet )
-  fi
 }
 
 zou_update()
 {
-  [[ -n $zouFakeUpdate ]] && io_trace "[FAKE UPDATE] zou_update -- \$0='$0' PWD='$PWD'"
+  [[ -n $zouFakeUpdate ]] && io_trace "[FAKE UPDATE] zou_update -- \$0='$0'"
   [[ -n $zouFakeUpdate ]] && io_trace "[FAKE UPDATE] zou_update -- ${*@Q}"
   module_run _zou_update_core "$@"
 }
@@ -42,11 +39,11 @@ _zou_update_core()
   zou_parse "$@" || return $?
   io_set_version
 
-  [[ -n $zouFakeUpdate ]] && io_trace "[FAKE UPDATE] zou_update -- $(print_vars zouOnly noPruneTags noConfig)"
-  [[ -n $zouFakeUpdate ]] && io_trace "[FAKE UPDATE] zou_update -- $(print_vars actualVersion version skuArgs)"
+  [[ -n $zouFakeUpdate ]] && io_trace "[FAKE UPDATE] _zou_update_core -- $(print_vars zouOnly noPruneTags noConfig)"
+  [[ -n $zouFakeUpdate ]] && io_trace "[FAKE UPDATE] _zou_update_core -- $(print_vars actualVersion version)"
+  [[ -n $zouFakeUpdate ]] && io_trace "[FAKE UPDATE] _zou_update_core -- $(print_vars skuArgs[@] bundlerOpts[@])"
 
-  config_setup
-  config_migrate_registered_bundles
+  config_setup  # global setup only
 
   if [[ -z $zouFakeUpdate ]]; then
     if [[ $zouOnly == true || "$bundleRoot" == "$PWD" ]]; then
@@ -56,12 +53,12 @@ _zou_update_core()
       # zou repo inside zou-dev bundle
       module_visit "$bundleRoot" _zou_update_bundle "${skuArgs[@]}"
     fi
-    _zou_register_bundles
+    _zou_configure_bundles
     _zou_prune_tags
     ( _zou_setup_chicken )
   else
     # FAKE UPDATE
-    io_trace "[FAKE UPDATE] zou_update -- $(print_vars zouBinDir) PWD='$PWD'"
+    io_trace "[FAKE UPDATE] _zou_update_core -- $(print_vars zouBinDir)"
     if [[ $zouOnly == true || "$bundleRoot" == "$PWD" ]]; then
       io_trace "[FAKE UPDATE] git-sync -r --pull --clean"
       io_trace "[FAKE UPDATE] git-sku enter ${skuArgs[*]@Q}"
@@ -69,6 +66,7 @@ _zou_update_core()
       # zou repo inside zou-dev bundle
       module_visit "$bundleRoot" _zou_update_bundle_fake "${skuArgs[@]}"
     fi
+    _zou_configure_bundles
   fi
   _zou_update_epilog
 }
@@ -84,8 +82,9 @@ _zou_update_bundle_fake()
   io_trace_unsafe "[FAKE UPDATE] git-sku enter ${*@Q}"
   io_lock_exit
 }
-_zou_register_bundles()
+_zou_configure_bundles()
 {
+  printf '\n'
   git-bundler "${bundlerOpts[@]}"
 }
 _zou_prune_tags()

@@ -78,25 +78,3 @@ config_git_tools()
     fi
   fi
 }
-config_migrate_registered_bundles()
-{
-  # reset registered bundles
-  [ -f "$zouConfigFile" ] && rm "$zouConfigFile"
-
-  local kv kvs key value
-  IFS=$'\n' kvs=( $(gitx config --global --get-regexp '^zou\..*\.path$' 2>>"$stderrRedir") ); IFS=$OIFS
-  for kv in "${kvs[@]}"; do
-    [[ $kv =~ ^([^\ ]+)[[:blank:]]+(.*)$ ]]
-    key=${BASH_REMATCH[1]}
-    value=${BASH_REMATCH[2]}
-    # io_trace "config_migrate_registered_bundles -- $(print_vars key value)"
-    if gitx config --global --unset "$key" "$value" &>>"$stdallRedir"; then
-      if ! gitx config --file "$zouConfigFile" --get-regexp "$key" "$value" >/dev/null; then
-        gitx config --file "$zouConfigFile" --add "$key" "$value"
-        cd "$value"
-        gitx config --local --unset zou.bundle.registered &>>"$stdallRedir"
-        cd - >/dev/null
-      fi
-    fi
-  done
-}
