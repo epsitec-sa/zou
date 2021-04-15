@@ -65,6 +65,20 @@ bundle_visit_async()
 
   visit_async '_bundleVisitPaths[@]' _bundle_visitor "${@:2}"
 }
+bundle_visit()
+{
+  local _bundleVisitPaths
+  if [[ "$1" =~ \[@\]$ ]]; then
+    _bundleVisitPaths=("${!1}")
+    # io_trace "bundle_visit -1- $(print_vars _bundleVisitPaths[@])"
+  elif [[ -n $1 ]]; then
+    _bundleVisitPaths=("$($1)")
+    # io_trace "bundle_visit -2- $(print_vars _bundleVisitPaths[@])"
+  fi
+  [ ${#_bundleVisitPaths[@]} -eq 0 ] && return 0
+
+  visit '_bundleVisitPaths[@]' _bundle_visitor "${@:2}"
+}
 _bundle_visitor()
 {
   # io_trace "bundle_visitor ${*@Q}"

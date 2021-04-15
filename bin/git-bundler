@@ -56,15 +56,15 @@ bundler_run()
 
   if [[ $scanBundles == true ]]; then
     # io_trace "bundler_run 3 -- $(print_vars bundleRegisteredPaths[@])"
-    bundle_visit_async 'bundleRegisteredPaths[@]' _bundler_config
+    bundle_visit 'bundleRegisteredPaths[@]' _bundler_config
   else
-    bundle_visit_async 'bundlePaths[@]' _bundler_config
+    bundle_visit 'bundlePaths[@]' _bundler_config
   fi
 }
 
 _bundler_scan()
 {
-  io_message "Scanning bundles, please wait..."
+  io_message "${Cyan}[zou]${White} : ${Brown}Configuring bundles, please wait..."
   local root="$(abspath $(repo_bundle_root)/..)"
   for dir in $(ls -d $root/*) ./; do
     [[ -d "$dir/.git" && -d "$dir/zou" ]] || continue
