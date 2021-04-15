@@ -10,25 +10,40 @@ ZOUL_GIT_NOTES=true
 
 # Define remote notes ref directory
 # make remote notes appear as separate branches in git clients like Fork
-notes_remote_ref_dir() { echo "refs/remotes/${1:-origin}/notes"; }
+notes_fetch_dir() { echo "refs/remotes/${1:-origin}/notes"; }
 
 # BUGBUG: uncomment following function to create recursion issue 
-# notes_remote_ref_dir() { echo "refs/notes/${1:-origin}"; }
+# notes_fetch_dir() { echo "refs/notes/${1:-origin}"; }
 
 # BUGBUG: repair recursion issue
 notes_repair()
 {
-  local remote ec=0 notesDir="$(git_dir)/refs/notes"
+  # io_trace ">>>> notes_repair -- \$0=$0"
+  local remote dir ec=0 gitDir="$(git_dir)"
+
   for remote in $(git_remotes); do
-    # io_trace "notes_repair -- $notesDir/$remote"
-    gitx config --unset "remote.$remote.fetch" "refs/notes"
-    gitx config --add "remote.$remote.fetch" "+refs/notes/*:$(notes_remote_ref_dir "$remote")/*"
-    if [[ -d "$notesDir/$remote" ]]; then
-      rm -rf "$notesDir/$remote"
+    gitx config --unset "remote.$remote.fetch" "refs/.*notes" &>>"$stdallRedir"
+    gitx config --add "remote.$remote.fetch" "+refs/notes/*:$(notes_fetch_dir "$remote")/*" &>>"$stdallRedir"
+
+    for dir in $(find "$gitDir" -type d -path */refs/notes/* | grep -v '/logs/'); do
+      # io_trace "notes_repair -- rm -rf $dir"
+      rm -rf "$dir" &>>"$stdallRedir"
+      ec=1
+    done
+    for dir in $(find "$gitDir" -type d -path */refs/remotes/$remote/notes/* | grep -v '/logs/'); do
+      # io_trace "notes_repair -- rm -rf $dir"
+      rm -rf "$dir" &>>"$stdallRedir"
+      ec=1
+    done
+    if [[ -d "$gitDir/refs/remote-notes" ]]; then
+      # io_trace "notes_repair -- rm -rf $gitDir/refs/remote-notes"
+      rm -rf "$gitDir/refs/remote-notes" &>>"$stdallRedir"
       ec=1
     fi
   done
+  [ $ec -eq 0 ] || mio_warning "Notes repaired."
   # tree "$(git_dir)/refs"
+  # io_trace "<<<< notes_repair ec=$ec"
   return $ec
 }
 
@@ -179,7 +194,7 @@ notes_fetch()
 {
   local channel="$1" remote="${2:-origin}"
   # io_trace ">>>> notes_fetch -- ${*@Q} -- $(print_vars channel remote)"
-  gitx fetch "$remote" "refs/notes/$channel:$(notes_remote_ref_dir "$remote")/$channel" &>>"$stdallRedir"
+  gitx fetch "$remote" "refs/notes/$channel:$(notes_fetch_dir "$remote")/$channel" &>>"$stdallRedir"
   # io_trace "<<<< notes_fetch -- ${*@Q} -- $(print_vars channel remote)"
 }
 notes_fetch_all()
@@ -187,7 +202,7 @@ notes_fetch_all()
   local remote
   for remote in $(git_remotes); do
     # io_trace "#### notes_fetch_all-- $(print_vars remote)"
-    gitx fetch "$remote" "refs/notes/*:$(notes_remote_ref_dir "$remote")/*" &>>"$stdallRedir"
+    gitx fetch "$remote" "refs/notes/*:$(notes_fetch_dir "$remote")/*" &>>"$stdallRedir"
   done
 }
 
@@ -220,7 +235,7 @@ notes_pull()
   local channel="$1" remote="${2:-origin}" mergeStrategy=$3
   # io_trace ">>>> notes_pull -- ${*@Q} -- $(print_vars channel remote mergeStrategy)"
   notes_fetch "$channel" "$remote"
-  notes_merge "$channel" "$(notes_remote_ref_dir "$remote")/$channel" "$mergeStrategy"
+  notes_merge "$channel" "$(notes_fetch_dir "$remote")/$channel" "$mergeStrategy"
   # TODO : use ours or theirs depending on commits dates
   # io_trace "<<<< notes_pull -- ${*@Q} -- $(print_vars channel remote mergeStrategy)"
 }
@@ -232,7 +247,7 @@ notes_pull_all()
   names=( $(notes_channel_names) )
   for remote in $(git_remotes); do
     for channel in ${names[@]}; do
-      notes_merge "$channel" "$(notes_remote_ref_dir "$remote")/$channel"
+      notes_merge "$channel" "$(notes_fetch_dir "$remote")/$channel"
     done
   done
   # io_trace "<<<< notes_pull_all"
