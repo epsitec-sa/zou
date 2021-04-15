@@ -40,14 +40,16 @@ notes_repair()
 #   merge strategies: ours | theirs | union | cat_sort_uniq
 notes_configure()
 {
-  # configure automatic notes fetching
+  # configure fetch
   local remote
   for remote in $(git_remotes); do
-    gitx config --get-all "remote.$remote.fetch" 'notes' &>>"$stdallRedir" || \
-    gitx config --add "remote.$remote.fetch" "+refs/notes/*:$(notes_remote_ref_dir "$remote")/*"
+    # remove previous configuration
+    gitx config --unset "remote.$remote.fetch" "refs/.*notes" &>>"$stdallRedir"
+    # configure fetch inside refs/remotes folder
+    gitx config --add "remote.$remote.fetch" "+refs/notes/*:$(notes_fetch_dir "$remote")/*" &>>"$stdallRedir"
   done
 
-  # configure notes merge strategies
+  # configure merge strategies
   gitx config notes.commits.mergeStrategy union
   gitx config notes.zou-vtable.mergeStrategy ours
   gitx config notes.zou-ops.mergeStrategy cat_sort_uniq
