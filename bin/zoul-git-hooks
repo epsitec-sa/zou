@@ -16,16 +16,16 @@ ZOUL_GIT_HOOKS=true
 #   1 : source hooks != destination hooks || destination hooks do not exist
 # see also:
 #   https://stackoverflow.com/questions/26624368/handle-multiple-pre-commit-hooks
-hooks_update_module()
+hooks_configure()
 {
   local mroot="$1" force="$2" \
         srcDir="$zouDir/git-hooks" \
         dstDir mipath srcPath equals=0
 
-  # io_trace "hooks_update_module -1- $(print_vars mroot force)"
+  # io_trace "hooks_configure -1- $(print_vars mroot force)"
   
   dstDir="$(git_dir "$mroot")/hooks"
-  # io_trace "hooks_update_module -2- $(print_vars srcDir dstDir)"
+  # io_trace "hooks_configure -2- $(print_vars srcDir dstDir)"
 
   # setup multi-hooks
   set +f # enable file name expansion
