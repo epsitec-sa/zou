@@ -13,7 +13,7 @@ bundler_parse()
     -u|--unregister) unregister=true;;
     -s|--scan)       scanBundles=true;;
     -x|--external)   export noSelectFilter=true;;
-    -f|--force)      forceConfig=true;;
+    -f|--force)      export forceConfig=true;;
     -q|--quiet)      quiet=true;;
     --reset)         resetRegisteredBundles=true;;
     -*) io_error "unknown option '$1'"; return 1;;
@@ -92,7 +92,7 @@ _bundler_config()
         noSkuFilter=true cmdScopes=( config_scope )
 
   _bundler_status
-  bundle_scope _bundler_config_command
+  _bundler_config_command
 }
 _bundler_config_command()
 {
@@ -121,7 +121,7 @@ _bundler_module_configure()
   notes_repair || forceConfig=true
   hooks_repair || forceConfig=true
 
-  module_configure "$forceConfigure"
+  module_configure "$forceConfig"
 }
 
 bundler_run "$@"
