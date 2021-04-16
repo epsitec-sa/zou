@@ -12,11 +12,11 @@ bundler_parse()
   while [[ "$#" > 0 ]]; do case "$1" in
     --) shift; paths+=("$@"); break;;
     -h|--help) zou-help $0; exit 0;;
-    -s|--scan)       scanBundles=true;;
-    -u|--unregister) export unregister=true;;
-    -x|--external)   export noSelectFilter=true;;
-    -f|--force)      export forceConfig=true;;
+    -a|--all)        allBundles=true;;
     -q|--quiet)      export quiet=true;;
+    -f|--force)      export forceConfig=true;;
+    -t|--prune-tags) export pruneTags=true;;
+    -u|--unregister) export unregister=true;;
     --reset)         resetRegisteredBundles=true;;
     -*) io_error "unknown option '$1'"; return 1;;
     *)  paths+=("$1")
@@ -30,8 +30,8 @@ bundler_run()
   # avoid default registration
   doNotRegisterBundle=true
 
-  local unregister scanBundles forceConfig quiet \
-        resetRegisteredBundles \
+  local unregister allBundles forceConfig quiet \
+        resetRegisteredBundles pruneTags \
         bundlePaths=() bundleRegisteredPaths=()
 
   bundler_parse "$@"
@@ -43,7 +43,7 @@ bundler_run()
   fi
 
   io_message "${Cyan}[zou]${White} : ${Brown}Configuring bundles, please wait..."
-  if [[ $scanBundles == true ]]; then
+  if [[ $allBundles == true ]]; then
     # io_trace "bundler_run -3- $(print_vars bundleRegisteredPaths[@])"
     bundle_visit 'bundleRegisteredPaths[@]' _bundler_config
   else
@@ -72,7 +72,7 @@ _bundler_add_bundle_paths()
 
 # in:
 #   resetRegisteredBundles
-#   scanBundles
+#   allBundles
 #   unregister
 # in-out:
 #   bundlePaths
@@ -84,22 +84,21 @@ _bundler_process_registration()
   # process registration
   [[ $resetRegisteredBundles == true ]] && bundle_unregister_all
 
-  if [[ $scanBundles == true ]]; then
+  if [[ $allBundles == true ]]; then
     # get sibling bundles
     local root="$(abspath $broot/..)" path
     _bundler_add_bundle_paths $(ls -d $root/*) "$PWD"
   fi
   [ ${#bundlePaths[@]} -eq 0 ] && bundlePaths+=("$broot")
-  io_trace "_bundler_process_registration -1- $(print_vars bundlePaths[@])"
+  # io_trace "_bundler_process_registration -1- $(print_vars bundlePaths[@])"
 
   for path in "${bundlePaths[@]}"; do
     _bundler_register "$path" "$unregister"
   done
 
   bundle_set_registered_paths # -> bundleRegisteredPaths
-  io_trace "_bundler_process_registration -2- $(print_vars bundleRegisteredPaths[@])"
+  # io_trace "_bundler_process_registration -2- $(print_vars bundleRegisteredPaths[@])"
 }
-
 _bundler_register()
 {
   local bundlePath="$1" unregister=$2 url
@@ -121,23 +120,18 @@ _bundler_config()
         noSkuFilter=true cmdScopes=( config_scope )
 
   io_message "${LightBlue}$bundleUrl${White} -> ${VC}$bundleRoot${White}" "$bundleTracePrefix" ${White}
-  _bundler_config_command
-}
-_bundler_config_command()
-{
   # io_trace "_bundler_config -- $(print_vars bundleRoot)"
   cmd_register_module_paths true "$bundleRoot"
   cmd_visit_modules
 }
-_bundler_config_prolog() { _bundler_module_configure "$quiet" "$forceConfig"; }
-
-
-_bundler_module_configure()
+_bundler_config_scope()
 {
-  local quiet=$1 forceConfig=$2
-
-  [[ -z $quiet ]] && mio_message "Configuring notes & hooks..."
-
+  local abort=0 stopConfig
+  # execute next russian doll
+  $1 "${@:2}"
+}
+_bundler_config_prolog()
+{
   # TODO: check if it is still necessary with zou-flow notes operations
   gitx config push.followTags true
 
@@ -145,7 +139,26 @@ _bundler_module_configure()
   notes_repair &>>"$stdallRedir" || forceConfig=true
   hooks_repair &>>"$stdallRedir" || forceConfig=true
 
-  module_configure "$forceConfig"
+  # io_lock_enter
+  if [[ -z $stopConfig ]] && module_configure "$forceConfig"; then
+    # module was not configured or configuration is forced
+    if [[ -z $quiet ]]; then
+      local moduleType
+      module_is_bundle && moduleType='bundle' || moduleType='submodule'
+      mio_message_unsafe "Configuring $moduleType..."
+    fi
+  else
+    # already configured : do not abort if prune tags is asked
+    stopConfig=true
+    [[ $pruneTags == true ]] || abort=1
+  fi
+  if [[ $pruneTags == true ]]; then
+    [[ -z $quiet ]] && mio_warning_unsafe 'Pruning tags...'
+    repo_prune_tags
+  fi
+  # io_lock_exit
+
+  return $abort
 }
 
 bundler_run "$@"

@@ -1,19 +1,24 @@
 usage: git bundler [<options>] [--] [<bundle-path>...]
 
-Register/list/configure bundle
-- registration is done in in global zou-flow config file (~/.zou-flow)
-- install git hooks
+Configure bundles
+
+- if the '--all' option is specified, the command will scan the parent folder
+  of the zou-flow bundle to detect those to configure
+  (only bundles containing a zou folder are taken into account)
+- registration is done in global zou-flow config file (~/.zou-flow)
+- install git hooks & configure notes
 
     -h|--help               display help
-    -u|--unregister         unregister bundle path
-    -s|--scan               scan and register bundles that are siblings of zou.
-    -x|--external           configure external submodules
-    -f|--force              force hooks update
     -q|--quiet              do not display submodules messages
+    -a|--all                configure all bundles
+    -f|--force              force configuration
+    -t|--prune-tags         prune tags
+    -u|--unregister         unregister bundle
+    --reset                 reset registered bundles
     <bundle-path>...        bundle path
     
 example:
     git bundler                     register and configure current bundle
-    git bundler -s                  register and configure zou's sibling bundles
+    git bundler -a                  register and configure zou-flow's sibling bundles
     git bundler -- bundle1 bundle2  register and configure bundle1 and bundle2
     git bundler -u                  unregister current bundle
