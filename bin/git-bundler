@@ -7,53 +7,42 @@
 
 bundler_parse()
 {
+  local paths=() path
+
   while [[ "$#" > 0 ]]; do case "$1" in
-    --) shift; bundlePaths+=("$@"); break;;
+    --) shift; paths+=("$@"); break;;
     -h|--help) zou-help $0; exit 0;;
-    -u|--unregister) unregister=true;;
     -s|--scan)       scanBundles=true;;
+    -u|--unregister) export unregister=true;;
     -x|--external)   export noSelectFilter=true;;
     -f|--force)      export forceConfig=true;;
-    -q|--quiet)      quiet=true;;
+    -q|--quiet)      export quiet=true;;
     --reset)         resetRegisteredBundles=true;;
     -*) io_error "unknown option '$1'"; return 1;;
-    *)  bundlePaths+=( "$(abspath $1)" )
+    *)  paths+=("$1")
   esac; shift; done
+
+  _bundler_add_bundle_paths "${paths[@]}"
 }
+
 bundler_run()
 {
   # avoid default registration
   doNotRegisterBundle=true
 
   local unregister scanBundles forceConfig quiet \
-        resetRegisteredBundles bundlePaths=()
+        resetRegisteredBundles \
+        bundlePaths=() bundleRegisteredPaths=()
 
   bundler_parse "$@"
   
-  [[ $resetRegisteredBundles == true && -f "$zouConfigFile" ]] && rm "$zouConfigFile"
-
-  if [[ $scanBundles == true ]]; then
-    _bundler_scan
-  fi
-  
-  [ ${#bundlePaths[@]} -eq 0 ] && bundlePaths+=("$(repo_bundle_root)")
-  # io_trace "bundler_run -1- $(print_vars bundlePaths[@])"
-
-  if [[ $unregister == true ]]; then
-    bundle_visit_async 'bundlePaths[@]' _bundler_unregister
-  else
-    bundle_visit_async 'bundlePaths[@]' _bundler_register
-  fi
-
-  local bundleRegisteredPaths
-  bundle_set_registered_paths
-  # io_trace "bundler_run -2- $(print_vars bundleRegisteredPaths[@])"
-
+  _bundler_process_registration
   if [ ${#bundleRegisteredPaths[@]} -eq 0 ]; then
     mio_warning "No bundle registered."
     return 1
   fi
 
+  io_message "${Cyan}[zou]${White} : ${Brown}Configuring bundles, please wait..."
   if [[ $scanBundles == true ]]; then
     # io_trace "bundler_run -3- $(print_vars bundleRegisteredPaths[@])"
     bundle_visit 'bundleRegisteredPaths[@]' _bundler_config
@@ -63,26 +52,66 @@ bundler_run()
   fi
 }
 
-_bundler_scan()
+# Filter and normalize bundle paths
+#
+# in:
+#   $@:paths
+# in-out:
+#   bundlePaths
+_bundler_add_bundle_paths()
 {
-  io_message "${Cyan}[zou]${White} : ${Brown}Configuring bundles, please wait..."
-  local root="$(abspath $(repo_bundle_root)/..)"
-  for dir in $(ls -d $root/*) ./; do
-    [[ -d "$dir/.git" && -d "$dir/zou" ]] || continue
-    bundlePaths+=( "$dir" )
+  local path ec=0
+  for path; do
+    path="$(repo_bundle_root "$path")"; ec=$?
+    if [ $ec -eq 0 ] && [ -d "$path/zou" ] && ! array_contains_element "$path" "${bundlePaths[@]}"; then
+      bundlePaths+=( "$(abspath "$path")" )
+    fi
   done
-  # io_trace "_bundler_scan -- $(print_vars root bundlePaths[@])"
+  return $ec
 }
+
+# in:
+#   resetRegisteredBundles
+#   scanBundles
+#   unregister
+# in-out:
+#   bundlePaths
+#   bundleRegisteredPaths
+_bundler_process_registration()
+{
+  local broot=$(repo_bundle_root) path
+
+  # process registration
+  [[ $resetRegisteredBundles == true ]] && bundle_unregister_all
+
+  if [[ $scanBundles == true ]]; then
+    # get sibling bundles
+    local root="$(abspath $broot/..)" path
+    _bundler_add_bundle_paths $(ls -d $root/*) "$PWD"
+  fi
+  [ ${#bundlePaths[@]} -eq 0 ] && bundlePaths+=("$broot")
+  io_trace "_bundler_process_registration -1- $(print_vars bundlePaths[@])"
+
+  for path in "${bundlePaths[@]}"; do
+    _bundler_register "$path" "$unregister"
+  done
+
+  bundle_set_registered_paths # -> bundleRegisteredPaths
+  io_trace "_bundler_process_registration -2- $(print_vars bundleRegisteredPaths[@])"
+}
+
 _bundler_register()
 {
-  # io_trace "_bundler_register PWD=$PWD"
-  local url=$(gitx config remote.origin.url)
-  bundle_register "$url" "$bundleRoot"
-}
-_bundler_unregister()
-{
-  local url=$(gitx config remote.origin.url)
-  bundle_unregister "$url" "$bundleRoot"
+  local bundlePath="$1" unregister=$2 url
+
+  url=$(gitx -C "$bundlePath" config remote.origin.url)
+  if [[ $unregister == true ]]; then
+    # io_trace "_bundler_register -1- $(print_vars url bundlePath unregister)"
+    bundle_unregister "$url" "$bundlePath"
+  else
+    # io_trace "_bundler_register -2- $(print_vars url bundlePath)"
+    bundle_register "$url" "$bundlePath"
+  fi
 }
 
 _bundler_config()
@@ -91,7 +120,7 @@ _bundler_config()
   local command='_bundler' subcommand='config' \
         noSkuFilter=true cmdScopes=( config_scope )
 
-  _bundler_status
+  io_message "${LightBlue}$bundleUrl${White} -> ${VC}$bundleRoot${White}" "$bundleTracePrefix" ${White}
   _bundler_config_command
 }
 _bundler_config_command()
@@ -101,12 +130,7 @@ _bundler_config_command()
   cmd_visit_modules
 }
 _bundler_config_prolog() { _bundler_module_configure "$quiet" "$forceConfig"; }
-_bundler_config_finally() { [[ -z $quiet ]] && branch_show_status; }
 
-_bundler_status()
-{
-  io_message "${LightBlue}$bundleUrl${White} -> ${VC}$bundleRoot${White}" "$bundleTracePrefix" ${White}
-}
 
 _bundler_module_configure()
 {

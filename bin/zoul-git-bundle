@@ -27,6 +27,19 @@ bundle_unregister()
   gitx config --file "$zouConfigFile" --unset "zou.$url.path" "$path" &>>"$stdallRedir"
   lock_exit "$gitConfigGate"
 }
+bundle_unregister_all()
+{
+  gitx config --file "$zouConfigFile" --get-regexp 'zou\..*\..*' | \
+  while read -r name value; do
+    gitx config --file "$zouConfigFile" --unset "$name" "$value"
+  done
+  lock_exit "$gitConfigGate"
+}
+# Clean and return registered bundle paths
+# - unregister folders without a '.git' folder
+# - unregister folders without a 'zou'  folder
+# - add registered bundle directory to 'bundleRegisteredPaths' array
+#
 # out:
 #   bundleRegisteredPaths
 bundle_set_registered_paths()
