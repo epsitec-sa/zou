@@ -12,41 +12,6 @@ ZOUL_GIT_NOTES=true
 # make remote notes appear as separate branches in git clients like Fork
 notes_fetch_dir() { echo "refs/remotes/${1:-origin}/notes"; }
 
-# BUGBUG: uncomment following function to create recursion issue 
-# notes_fetch_dir() { echo "refs/notes/${1:-origin}"; }
-
-# BUGBUG: repair recursion issue
-notes_repair()
-{
-  # io_trace ">>>> notes_repair -- \$0=$0"
-  local remote dir ec=0 gitDir="$(git_dir)"
-
-  for remote in $(git_remotes); do
-    gitx config --unset "remote.$remote.fetch" "refs/.*notes" &>>"$stdallRedir"
-    gitx config --add "remote.$remote.fetch" "+refs/notes/*:$(notes_fetch_dir "$remote")/*" &>>"$stdallRedir"
-
-    for dir in $(find "$gitDir" -type d -path */refs/notes/* | grep -v '/logs/'); do
-      # io_trace "notes_repair -- rm -rf $dir"
-      rm -rf "$dir" &>>"$stdallRedir"
-      ec=1
-    done
-    for dir in $(find "$gitDir" -type d -path */refs/remotes/$remote/notes/* | grep -v '/logs/'); do
-      # io_trace "notes_repair -- rm -rf $dir"
-      rm -rf "$dir" &>>"$stdallRedir"
-      ec=1
-    done
-    if [[ -d "$gitDir/refs/remote-notes" ]]; then
-      # io_trace "notes_repair -- rm -rf $gitDir/refs/remote-notes"
-      rm -rf "$gitDir/refs/remote-notes" &>>"$stdallRedir"
-      ec=1
-    fi
-  done
-  [ $ec -eq 0 ] || mio_warning "Notes repaired."
-  # tree "$(git_dir)/refs"
-  # io_trace "<<<< notes_repair ec=$ec"
-  return $ec
-}
-
 # Available zou channels
 # - zou-vtable
 # - zou-ops
@@ -268,4 +233,57 @@ notes_channel_names()
     done
   done
   printf '%s\n' "${names[@]}"
+}
+
+# Repair recursion issue
+notes_repair()
+{
+  # io_trace ">>>> notes_repair -- \$0=$0"
+  local remote dir gitDir="$(git_dir)" ec=0
+
+  for remote in $(git_remotes); do
+    # reset fetch directory
+    gitx config --unset "remote.$remote.fetch" "refs/.*notes"
+    gitx config --add "remote.$remote.fetch" "+refs/notes/*:$(notes_fetch_dir "$remote")/*"
+
+    _notes_repair_list_remote_file_refs "$gitDir" "$remote" | xargs -d $'\n' --no-run-if-empty git push --delete "$remote"
+    _notes_repair_list_remote_dir_refs  "$gitDir" "$remote" | xargs -d $'\n' --no-run-if-empty -n1 rm -rf 
+  done
+  _notes_repair_list_local_dir_refs "$gitDir" | xargs -d $'\n' --no-run-if-empty -n1 rm -rf 
+  # tree "$gitDir/refs"
+  # io_trace "<<<< notes_repair ec=$ec"
+  return $ec
+}
+_notes_repair_list_remote_file_refs()
+{
+  local gitDir="$1" remote="$2" file
+  # for file in $(find "$gitDir" -type f -path */refs/notes/*/* | grep -v '/logs/'); do
+  #   echo ${file#$gitDir/}
+  # done
+  for file in $(find "$gitDir" -type f -path */refs/remotes/$remote/notes/*/* | grep -v '/logs/'); do
+    echo ${file#$gitDir/refs/remotes/origin/}
+    ec=1
+  done
+}
+_notes_repair_list_remote_dir_refs()
+{
+  local gitDir="$1" remote="$2" dir
+  for dir in $(find "$gitDir" -type d -path */refs/remotes/$remote/notes/* | grep -v '/logs/'); do
+    echo $dir
+    ec=1
+  done
+  return $ec
+}
+_notes_repair_list_local_dir_refs()
+{
+  local gitDir="$1" dir
+  for dir in $(find "$gitDir" -type d -path */refs/notes/* | grep -v '/logs/'); do
+    echo $dir
+    ec=1
+  done
+  if [[ -d "$gitDir/refs/remote-notes" ]]; then
+    echo "$gitDir/refs/remote-notes"
+    ec=1
+  fi
+  return $ec
 }
