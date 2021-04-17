@@ -18,8 +18,8 @@ zou_parse()
     -u|--no-prune-tags) noPruneTags=true;;
     -c|--no-config)     noConfig=true;;
     ---version)         actualVersion=$2; shift;;
-    --vnext)            skuArgs+=($1);;
-    --dev)              skuArgs+=($1);;
+    --vnext)            checkoutType='vnext';;
+    --dev)              checkoutType='dev';;
     -*) io_error "unknown option '$1'"; return 1;;
   esac; shift; done
 
@@ -38,24 +38,23 @@ zou_update()
 
 _zou_update_core()
 {
-  local actualVersion version \
-        skuArgs=() bundlerOpts=( '--all' )
+  local actualVersion version checkoutType='vlast' bundlerOpts=( '--all' )
   
   zou_parse "$@" || return $?
   io_set_version
 
   [[ -n $zouFakeUpdate ]] && io_trace "[FAKE UPDATE] _zou_update_core -- $(print_vars actualVersion version)"
-  [[ -n $zouFakeUpdate ]] && io_trace "[FAKE UPDATE] _zou_update_core -- $(print_vars skuArgs[@] bundlerOpts[@] zouOnly)"
+  [[ -n $zouFakeUpdate ]] && io_trace "[FAKE UPDATE] _zou_update_core -- $(print_vars checkoutType bundlerOpts[@] zouOnly)"
 
   config_setup  # global setup only
 
   if [[ -z $zouFakeUpdate ]]; then
     if [[ "$bundleRoot" == "$PWD" ]]; then
       git-sync -r --pull --clean
-      git-sku enter "${skuArgs[@]}"
+      git-sku enter "--$checkoutType"
     else
       # zou repo inside zou-dev bundle
-      module_visit "$bundleRoot" _zou_update_bundle "${skuArgs[@]}"
+      module_visit "$bundleRoot" _zou_update_bundle "$checkoutType"
     fi
     _zou_configure_bundles
     ( _zou_setup_chicken )
@@ -64,10 +63,10 @@ _zou_update_core()
     io_trace "[FAKE UPDATE] _zou_update_core -- $(print_vars zouBinDir)"
     if [[ "$bundleRoot" == "$PWD" ]]; then
       io_trace "[FAKE UPDATE] git-sync -r --pull --clean"
-      io_trace "[FAKE UPDATE] git-sku enter ${skuArgs[*]@Q}"
+      io_trace "[FAKE UPDATE] git-sku enter $checkoutType"
     else
       # zou repo inside zou-dev bundle
-      module_visit "$bundleRoot" _zou_update_bundle_fake "${skuArgs[@]}"
+      module_visit "$bundleRoot" _zou_update_bundle_fake "$checkoutType"
     fi
     _zou_configure_bundles
   fi
@@ -75,14 +74,16 @@ _zou_update_core()
 }
 _zou_update_bundle()
 {
+  local checkoutType=${1:-vlast}
   git-sync -r --pull --clean
-  git-sku enter "$@"
+  git-sku enter "--$checkoutType"
 }
 _zou_update_bundle_fake()
 {
+  local checkoutType=${1:-vlast}
   io_lock_enter
   io_trace_unsafe "[FAKE UPDATE] git-sync -r --pull --clean"
-  io_trace_unsafe "[FAKE UPDATE] git-sku enter ${*@Q}"
+  io_trace_unsafe "[FAKE UPDATE] git-sku enter --$checkoutType"
   io_lock_exit
 }
 _zou_configure_bundles()
