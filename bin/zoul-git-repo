@@ -44,11 +44,31 @@ repo_raise_submodule_changed_event() { raise_event 'submoduleChangedEvent[@]' "$
 # Bundle
 repo_bundle_id()
 {
+  local bundleId
+  repo_set_bundle_root "$@" || return $?
+  echo "$bundleId"
+}
+# in:
+#   $1:broot  -- bundle root
+# out:
+#   bundleId
+repo_set_bundle_id()
+{
   local dir="${1:-$bundleRoot}"
   [[ -z "$dir" ]] && { dir="$(repo_bundle_root)" || return $?; }
-  echo "${dir##*/}"
+  bundleId="${dir##*/}"
 }
 repo_bundle_root()
+{
+  local bundleRoot
+  repo_set_bundle_root "$@" || return $?
+  echo "$bundleRoot"
+}
+# in:
+#   $1:mroot  -- module root
+# out:
+#   bundleRoot
+repo_set_bundle_root()
 {
   local dir="${1:-$moduleRoot}"
   [[ -z "$dir" ]] && { dir="$(repo_module_root)" || return $?; }
@@ -56,7 +76,7 @@ repo_bundle_root()
     dir="${dir%/*}"
   done
   [[ -z $dir ]] && return 1
-  echo "$dir"
+  bundleRoot="$dir"
 }
 # usage:
 #  local bundleUrl bundleUrlName
@@ -91,25 +111,47 @@ repo_path_relative_to_bundle_root()
 
 ######################
 # Module
+
+# in:
+#   $1:mroot  -- module root (optional)
 repo_module_id()
 {
-  local dirs
-  dirs=( $(repo_module_and_bundle_roots "$@") )
-  [ $? -ne 0 ] && return 1
+  local moduleId
+  repo_set_module_id "$@" || return $?
+  echo "$moduleId"
+}
+# in:
+#   $1:mroot  -- module root (optional)
+# out:
+#   moduleId  -- module ID
+repo_set_module_id()
+{
+  local mdir bdir
+  repo_set_module_and_bundle_roots "$1" || return $?
   local mdir=${dirs[0]} bdir=${dirs[1]}
   if [[ $mdir == $bdir ]]; then
-    echo ${bdir##*/}
+    moduleId="${bdir##*/}"
   else
-    echo ${mdir#$bdir/}
+    moduleId="${mdir#$bdir/}"
   fi
 }
 repo_module_root()
+{
+  local moduleRoot
+  repo_set_module_root "$@" || return $?
+  echo "$moduleRoot"
+}
+# in:
+#   $1:path -- default to current directory
+# out:
+#   moduleRoot
+repo_set_module_root()
 {
   local dir
   dir=$(abspath "${1:-.}") || return $?
   while [[ -n "$dir" ]]; do
     if [[ -f "$dir/.git" || -d "$dir/.git" ]]; then
-      echo "$dir"
+      moduleRoot="$dir"
       return 0
     fi
     dir="${dir%/*}"
@@ -163,22 +205,26 @@ repo_path_relative_to_module_root()
   mdir=$(repo_module_root "$2") || return $?
   abspath --relative-to="$mdir" "$dir"
 }
-repo_module_and_bundle_roots()
+#   local mdir bdir
+#   repo_set_module_and_bundle_roots "$moduleRoot"
+# in:
+#   $1:mroot  -- module root
+# out:
+#   mdir  -- module directory
+#   bdir  -- bundle directory
+repo_set_module_and_bundle_roots()
 {
-  local dir mdir bdir
-  dir=$(repo_module_root "$1") || return $?
+  local dir=${1:-$moduleRoot} mdir bdir
+  [[ -z $dir ]] && dir="$(repo_module_root "$dir")" || dir="$(abspath "$dir")"
   while [[ -n "$dir" ]]; do
     if [[ -z "$mdir" && -f "$dir/.git" ]]; then
       mdir=$dir
-      echo "$mdir"
     fi
     if [[ -d "$dir/.git" ]]; then
       if [[ -z "$mdir" ]]; then
         mdir=$dir
-        echo "$mdir"
       fi
       bdir=$dir
-      echo "$bdir"
       return 0
     fi
     dir=${dir%/*}

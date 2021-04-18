@@ -50,7 +50,7 @@ module_visit()
 #   ${@:2} -- next ...
 module_visit_submodules()
 {
-  visit $1 _module_submodule_visitor "${@:2}"
+  visit "$1" _module_submodule_visitor "${@:2}"
 }
 # usage:
 #   module_visit_submodules_async enumerator next ...
@@ -61,7 +61,7 @@ module_visit_submodules()
 module_visit_submodules_async()
 {
   # io_trace "module_visit_submodules_async ${*@Q}"
-  visit_async $1 _module_submodule_visitor "${@:2}"
+  visit "$1" _module_submodule_visitor "${@:2}"
 }
 module_visit_submodules_async_fast()
 {
@@ -249,7 +249,7 @@ bundle_scope()
         submodulePathMaxLength \
         moduleStartupScopeInitialized=true
 
-  startupRoot=$(repo_module_root)
+  startupRoot=$(repo_module_root "$PWD")
   [[ -z $startupRoot ]] && {
     io_error "Not a git repository ${VC}$PWD${Red} (or any of the parent directories)"
     return 1
@@ -257,8 +257,8 @@ bundle_scope()
   # enter startup module
   _module_enter "$startupRoot" || return $?
 
-  bundleId=$(repo_bundle_id)
-  bundleRoot=$(repo_bundle_root)
+  repo_set_bundle_root "$startupRoot"
+  repo_set_bundle_id "$bundleRoot"
   bundleConfigFile="$bundleRoot/.zou-flow"
 
   cd "$bundleRoot"
@@ -266,13 +266,14 @@ bundle_scope()
   cd - >/dev/null
   
   repo_set_bundle_url_info "$bundleRoot"  # -> bundleUrl bundleUrlName
-  repo_is_merging "$bundleRoot"; _module_set_bundle_trace_prefix $?
+  repo_is_merging "$bundleRoot"
+  _module_set_bundle_trace_prefix $?
   _module_startup_message
 
   _module_set_bundle_dev_branch
   _module_set_principal_module_id
 
-  _module_register_bundle
+  # _module_register_bundle
 
   _module_trace 'bundle_scope'
 
@@ -295,10 +296,10 @@ module_scope()
 
   moduleRoot="$PWD"
   moduleConfigFile="$moduleRoot/.zou-flow"
-  moduleId=$(repo_module_id)
-  module_update_submodules "$moduleRoot"
+  repo_set_module_id "$moduleRoot"
+  _module_set_submodule_paths "$moduleRoot"
 
-  moduleParent=$(repo_module_parent)
+  moduleParent=$(repo_module_parent "$moduleRoot")
   [[ -n $moduleParent ]] && modulePath=${moduleRoot#$moduleParent/}
   moduleBundlePath=${moduleRoot#$bundleRoot}
   moduleBundlePath=${moduleBundlePath#/}
@@ -343,15 +344,16 @@ _module_reset_scope()
   [[ $moduleScopeInitialized == true ]] || return 0
   # io_trace_unsafe "_module_reset_scope -- ${*@Q}" ${Green}
 
-  module_update_submodules
+  _module_set_submodule_paths
   
   _module_set_head $1
-  repo_is_merging; _module_set_trace_prefix $?
+  repo_is_merging
+  _module_set_trace_prefix $?
   _module_set_module_dev_branch
   
   _module_trace '_module_reset_scope'
 }
-module_update_submodules()
+_module_set_submodule_paths()
 {
   moduleSubmodulePaths=( $(repo_list_submodule_paths "${1:-$PWD}") )
 }
@@ -359,14 +361,15 @@ module_update_submodules()
 _module_on_sync()
 {
   [[ $3 =~ ^\< ]] || return 0
-  module_update_submodules
+  _module_set_submodule_paths
   # io_trace "_module_on_sync -- $(print_vars moduleSubmodulePaths[@])"
   _module_init_submodules
 }
 _module_on_merging()
 {
   # io_trace_unsafe ">>>> _module_on_merging ${*@Q} -- $moduleTracePrefix"
-  repo_is_merging; _module_set_trace_prefix $?
+  repo_is_merging
+  _module_set_trace_prefix $?
   # io_trace_unsafe "<<<< _module_on_merging ${*@Q} -- $moduleTracePrefix"
 }
 _module_on_merge_success()
