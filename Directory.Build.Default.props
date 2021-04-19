@@ -14,6 +14,15 @@
     <Company>Epsitec</Company>
   </PropertyGroup>
   
+  <!-- TargetFrameworks -->
+  <!--   Visual Studio                 needs TargetFrameworks to be empty (MSBuildRuntimeType==Full) - empty      -->
+  <!--   MSBuild (CLI)                 needs TargetFrameworks to be set   (MSBuildRuntimeType==Full) - set        -->
+  <!--   dotnet [ms]build x64          needs TargetFrameworks to be set   (MSBuildRuntimeType==Core) - set        -->
+  <!--   dotnet [ms]build x86 does not need  TargetFrameworks to be set   (MSBuildRuntimeType==Core) - don't care -->
+  <PropertyGroup Condition="'$(TargetFrameworks)' == '' And '$(BuildingInsideVisualStudio)' == ''">
+    <TargetFrameworks>$(FullTargetFramework);$(CoreTargetFramework);netstandard2.0;netstandard2.1</TargetFrameworks>
+  </PropertyGroup>
+
   <!-- Debug info-->
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugType>full</DebugType>
