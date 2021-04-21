@@ -223,19 +223,20 @@ _module_trace()
     ;;
   module_scope)
     io_trace_unsafe "$1 -- $(print_vars moduleId)"
+    io_trace_unsafe "$1 -- $(print_vars moduleInSku moduleIsExternal)"
     io_trace_unsafe "$1 -- $(print_vars moduleSubmodulePaths[@])"
     io_trace_unsafe "$1 -- $(print_vars moduleHead moduleHeadType)"
     io_trace_unsafe "$1 -- $(print_vars moduleDevBranch moduleDevBranchPath)"
     io_trace_unsafe "$1 -- $(print_vars modulePath moduleBundlePath moduleRoot)"
-    io_trace_unsafe "$1 -- $(print_vars moduleInSku)"
+    io_trace_unsafe "$1 -- $(print_vars moduleParent noSubmodulesInit)"
     # io_trace_unsafe "$1 -- $(print_vars moduleTracePrefix)"
     ;;
   _module_reset_scope)
     io_trace_unsafe "$1 -- $(print_vars moduleId)"
+    io_trace_unsafe "$1 -- $(print_vars moduleInSku moduleIsExternal)"
     io_trace_unsafe "$1 -- $(print_vars moduleHead moduleHeadType)"
     io_trace_unsafe "$1 -- $(print_vars moduleDevBranch moduleDevBranchPath)"
     io_trace_unsafe "$1 -- $(print_vars moduleSubmodulePaths[@])"
-    io_trace_unsafe "$1 -- $(print_vars moduleInSku)"
     # io_trace_unsafe "$1 -- $(print_vars moduleTracePrefix)"
     ;;
   *)
@@ -255,12 +256,13 @@ _module_trace()
     io_trace_unsafe "$1 -- $(print_vars modulePath)"
     io_trace_unsafe "$1 -- $(print_vars moduleBundlePath)"
     io_trace_unsafe "$1 -- $(print_vars moduleId)"
+    io_trace_unsafe "$1 -- $(print_vars moduleInSku)"
+    io_trace_unsafe "$1 -- $(print_vars moduleIsExternal)"
     io_trace_unsafe "$1 -- $(print_vars moduleSubmodulePaths[@])"
     io_trace_unsafe "$1 -- $(print_vars moduleHead)"
     io_trace_unsafe "$1 -- $(print_vars moduleHeadType)"
     io_trace_unsafe "$1 -- $(print_vars moduleDevBranch)"
     io_trace_unsafe "$1 -- $(print_vars moduleDevBranchPath)"
-    io_trace_unsafe "$1 -- $(print_vars moduleInSku)"
     # io_trace_unsafe "$1 -- $(print_vars moduleTracePrefix)"
   esac
   io_lock_exit
@@ -324,7 +326,7 @@ module_scope()
   local moduleRoot moduleConfigFile moduleId moduleSubmodulePaths \
         moduleParent modulePath moduleBundlePath \
         moduleHead moduleHeadType moduleDevBranch moduleDevBranchPath moduleTracePrefix \
-        moduleInSku moduleScopeInitialized=true
+        moduleInSku moduleScopeInitialized=true moduleIsExternal
   
   [[ "$1" == '-i' ]] && { moduleInSku=true; shift; }
 
@@ -347,6 +349,8 @@ module_scope()
   repo_is_merging
   _module_set_trace_prefix $?
   _module_set_module_dev_branch
+  _module_set_is_external
+
   module_configure true
 
   _module_trace 'module_scope'
@@ -381,12 +385,29 @@ _module_reset_scope()
   _module_set_head $1
   repo_is_merging; _module_set_trace_prefix $?
   _module_set_module_dev_branch
+  _module_set_is_external
   
   _module_trace '_module_reset_scope'
 }
 _module_set_submodule_paths()
 {
   moduleSubmodulePaths=( $(repo_list_submodule_paths "${1:-$PWD}") )
+}
+_module_set_is_external()
+{
+  [[ -z $moduleParent ]] && return 1
+  local parentConfigFile="$moduleParent/.zou-flow" parentLevel=$(repo_module_level "$moduleParent")
+  # io_trace "_module_set_is_external -1- $(print_vars parentConfigFile parentLevel)"
+  if (( $parentLevel == 0 )); then
+    # io_trace "_module_set_is_external -2- $(print_vars parentConfigFile)"
+    gitx config --file "$parentConfigFile" --get "select.exclude" "$modulePath" &>>"$stdallRedir"
+    [ $? -eq 0 ] && moduleIsExternal=true
+  else
+    # io_trace "_module_set_is_external -3- $(print_vars parentConfigFile)"
+    gitx config --file "$parentConfigFile" --get "select.include" "$modulePath" &>>"$stdallRedir"
+    [ $? -ne 0 ] && moduleIsExternal=true
+  fi
+  return 0
 }
 
 ##############

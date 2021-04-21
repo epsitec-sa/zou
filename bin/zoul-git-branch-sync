@@ -186,6 +186,8 @@ branch_sync_all()
   git fetch --prune --all &>>"$stdallRedir"
   git fetch --tags --force &>>"$stdallRedir"
 
+  [[ $moduleIsExternal == true ]] && return 0
+  
   notes_pull_all
   # notes_list_all --short
 
