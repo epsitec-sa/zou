@@ -385,7 +385,7 @@ visit()
   fi
   [ ${#_zouVisitPaths[@]} -eq 0 ] && return 0
 
-  for path in "${_zouVisitPaths[@]}"; do
+  for path in ${_zouVisitPaths[@]}; do
     ( $2 "$path" "${@:3}" || exit $? ) || ec=$?
     [[ $ec -ne 0 && $stopOnError == true ]] && break
   done
@@ -412,7 +412,7 @@ visit_async()
   
   jobsCount=${jobsCount:-$zouJobsCount}
 
-  for path in $(array_sort _zouVisitPaths[@]); do
+  for path in ${_zouVisitPaths[@]}; do
     ( $2 "$path" "${@:3}" || io_trace_error "visit_async >> $2 "$path" "${@:3}"" || exit $? ) &
     pids+=($!)
     # io_trace "#### visit_async -- $(print_vars pids[@])"
