@@ -464,13 +464,13 @@ branch_checkout()
 _branch_raise_checked_out_events()
 {
   if [[ $raiseEvent -eq 0 ]]; then
-    # io_trace_unsafe "_branch_raise_checked_out_events -1- $(print_vars raiseEvent refSym moduleHead)"
+    # io_trace "_branch_raise_checked_out_events -1- $(print_vars raiseEvent refSym moduleHead)"
     branch_raise_head_changed_event "$refSym"
   elif [[ $moduleHead != $refSym ]]; then
-    # io_trace_unsafe "_branch_raise_checked_out_events -2- $(print_vars raiseEvent refSym moduleHead)"
+    # io_trace "_branch_raise_checked_out_events -2- $(print_vars raiseEvent refSym moduleHead)"
     branch_raise_head_name_changed_event "$refSym"
   else
-    # io_trace_unsafe "_branch_raise_checked_out_events -3- $(print_vars raiseEvent refSym moduleHead)"
+    # io_trace "_branch_raise_checked_out_events -3- $(print_vars raiseEvent refSym moduleHead)"
     branch_raise_checkout_no_change_event "$refSym"
   fi
 }
@@ -489,10 +489,10 @@ _branch_checkout_core()
   #   io_message_unsafe "--$line" "$moduleTracePrefix" "${DarkGray}"
   # done
   for line in "${lines[@]}"; do
-    # io_trace_unsafe "_branch_checkout_core -2- '$line'"
+    # io_trace "_branch_checkout_core -2- '$line'"
     local skipNextLines skipCurrentLine showNextLines color alias
     _branch_checkout_selector
-    # io_trace_unsafe "_branch_checkout_core -3- $(print_vars skipCurrentLine skipNextLines showNextLines)"
+    # io_trace "_branch_checkout_core -3- $(print_vars skipCurrentLine skipNextLines showNextLines)"
     [[ $skipCurrentLine == true ]] && continue
     io_message_unsafe "${indent}$line" "$moduleTracePrefix" "$color"
     [[ $skipNextLines == true ]] && break

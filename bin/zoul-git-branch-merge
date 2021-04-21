@@ -29,7 +29,7 @@ branch_merge_sync()
 branch_merge_abort()
 {
   if repo_is_merging; then
-    # io_trace_unsafe "branch_merge_abort -1-"
+    # io_trace "branch_merge_abort -1-"
     gitx merge --abort
     _branch_remove_temp_merge_files
     branch_raise_merge_abort_event
@@ -251,7 +251,7 @@ _branch_merge_tool()
     # mio_message_unsafe "  Fix conflict before proceeding."
     mio_message_unsafe "  Starting ${VC}$mergeTool${Cyan} merge tool, please wait..."
     gitx mergetool &>/dev/null; ec=$?
-    # io_trace_unsafe "_branch_merge_tool -1- $(print_vars ec)"
+    # io_trace "_branch_merge_tool -1- $(print_vars ec)"
 
     if [ $ec -eq 0 ]; then
       branch_raise_merge_success_event "$toMerge" "$intoBranch"

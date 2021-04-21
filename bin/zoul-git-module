@@ -40,22 +40,22 @@ _module_on_sync()
 }
 _module_on_merging()
 {
-  # io_trace_unsafe ">>>> _module_on_merging ${*@Q} -- $moduleTracePrefix"
+  # io_trace ">>>> _module_on_merging ${*@Q} -- $moduleTracePrefix"
   repo_is_merging
   _module_set_trace_prefix $?
-  # io_trace_unsafe "<<<< _module_on_merging ${*@Q} -- $moduleTracePrefix"
+  # io_trace "<<<< _module_on_merging ${*@Q} -- $moduleTracePrefix"
 }
 _module_on_merge_success()
 {
-  # io_trace_unsafe ">>>> _module_on_merge_success ${*@Q} -- $moduleTracePrefix"
+  # io_trace ">>>> _module_on_merge_success ${*@Q} -- $moduleTracePrefix"
   _module_set_trace_prefix 1
-  # io_trace_unsafe "<<<<< _module_on_merge_success ${*@Q} -- $moduleTracePrefix"
+  # io_trace "<<<<< _module_on_merge_success ${*@Q} -- $moduleTracePrefix"
 }
 _module_on_merge_abort()
 {
-  # io_trace_unsafe ">>>> _module_on_merge_abort ${*@Q} -- $moduleTracePrefix"
+  # io_trace ">>>> _module_on_merge_abort ${*@Q} -- $moduleTracePrefix"
   _module_set_trace_prefix 1
-  # io_trace_unsafe "<<<<< _module_on_merge_abort ${*@Q} -- $moduleTracePrefix"
+  # io_trace "<<<<< _module_on_merge_abort ${*@Q} -- $moduleTracePrefix"
 }
 
 #########
@@ -206,64 +206,64 @@ _module_trace()
   io_lock_enter
   case $1 in
   bundle_scope)
-    io_trace_unsafe "$1 -- $(print_vars startupDir startupRoot)"
-    io_trace_unsafe "$1 -- $(print_vars bundleId principalModuleId)"
-    io_trace_unsafe "$1 -- $(print_vars bundleHead bundleHeadType)"
-    io_trace_unsafe "$1 -- $(print_vars bundleDevBranch bundleDevBranchPath)"
-    io_trace_unsafe "$1 -- $(print_vars bundleUrl bundleUrlName bundleRoot)"
-    io_trace_unsafe "$1 -- $(print_vars moduleInSku)"
-    # io_trace_unsafe "$1 -- $(print_vars bundleTracePrefix)"
+    io_trace "$1 -- $(print_vars startupDir startupRoot)"
+    io_trace "$1 -- $(print_vars bundleId principalModuleId)"
+    io_trace "$1 -- $(print_vars bundleHead bundleHeadType)"
+    io_trace "$1 -- $(print_vars bundleDevBranch bundleDevBranchPath)"
+    io_trace "$1 -- $(print_vars bundleUrl bundleUrlName bundleRoot)"
+    io_trace "$1 -- $(print_vars moduleInSku)"
+    # io_trace "$1 -- $(print_vars bundleTracePrefix)"
     ;;
   _bundle_reset_scope)
-    io_trace_unsafe "$1 -- $(print_vars bundleId principalModuleId)"
-    io_trace_unsafe "$1 -- $(print_vars bundleHead bundleHeadType)"
-    io_trace_unsafe "$1 -- $(print_vars bundleDevBranch bundleDevBranchPath)"
-    io_trace_unsafe "$1 -- $(print_vars moduleInSku)"
-    # io_trace_unsafe "$1 -- $(print_vars bundleTracePrefix)"
+    io_trace "$1 -- $(print_vars bundleId principalModuleId)"
+    io_trace "$1 -- $(print_vars bundleHead bundleHeadType)"
+    io_trace "$1 -- $(print_vars bundleDevBranch bundleDevBranchPath)"
+    io_trace "$1 -- $(print_vars moduleInSku)"
+    # io_trace "$1 -- $(print_vars bundleTracePrefix)"
     ;;
   module_scope)
-    io_trace_unsafe "$1 -- $(print_vars moduleId)"
-    io_trace_unsafe "$1 -- $(print_vars moduleInSku moduleIsExternal)"
-    io_trace_unsafe "$1 -- $(print_vars moduleSubmodulePaths[@])"
-    io_trace_unsafe "$1 -- $(print_vars moduleHead moduleHeadType)"
-    io_trace_unsafe "$1 -- $(print_vars moduleDevBranch moduleDevBranchPath)"
-    io_trace_unsafe "$1 -- $(print_vars modulePath moduleBundlePath moduleRoot)"
-    io_trace_unsafe "$1 -- $(print_vars moduleParent noSubmodulesInit)"
-    # io_trace_unsafe "$1 -- $(print_vars moduleTracePrefix)"
+    io_trace "$1 -- $(print_vars moduleId)"
+    io_trace "$1 -- $(print_vars moduleInSku moduleIsExternal)"
+    io_trace "$1 -- $(print_vars moduleSubmodulePaths[@])"
+    io_trace "$1 -- $(print_vars moduleHead moduleHeadType)"
+    io_trace "$1 -- $(print_vars moduleDevBranch moduleDevBranchPath)"
+    io_trace "$1 -- $(print_vars modulePath moduleBundlePath moduleRoot)"
+    io_trace "$1 -- $(print_vars moduleParent noSubmodulesInit)"
+    # io_trace "$1 -- $(print_vars moduleTracePrefix)"
     ;;
   _module_reset_scope)
-    io_trace_unsafe "$1 -- $(print_vars moduleId)"
-    io_trace_unsafe "$1 -- $(print_vars moduleInSku moduleIsExternal)"
-    io_trace_unsafe "$1 -- $(print_vars moduleHead moduleHeadType)"
-    io_trace_unsafe "$1 -- $(print_vars moduleDevBranch moduleDevBranchPath)"
-    io_trace_unsafe "$1 -- $(print_vars moduleSubmodulePaths[@])"
-    # io_trace_unsafe "$1 -- $(print_vars moduleTracePrefix)"
+    io_trace "$1 -- $(print_vars moduleId)"
+    io_trace "$1 -- $(print_vars moduleInSku moduleIsExternal)"
+    io_trace "$1 -- $(print_vars moduleHead moduleHeadType)"
+    io_trace "$1 -- $(print_vars moduleDevBranch moduleDevBranchPath)"
+    io_trace "$1 -- $(print_vars moduleSubmodulePaths[@])"
+    # io_trace "$1 -- $(print_vars moduleTracePrefix)"
     ;;
   *)
-    io_trace_unsafe "$1 -- $(print_vars startupDir)"
-    io_trace_unsafe "$1 -- $(print_vars startupRoot)"
-    io_trace_unsafe "$1 -- $(print_vars bundleRoot)"
-    io_trace_unsafe "$1 -- $(print_vars bundleId)"
-    io_trace_unsafe "$1 -- $(print_vars principalModuleId)"
-    io_trace_unsafe "$1 -- $(print_vars bundleHead)"
-    io_trace_unsafe "$1 -- $(print_vars bundleHeadType)"
-    io_trace_unsafe "$1 -- $(print_vars bundleDevBranch)"
-    io_trace_unsafe "$1 -- $(print_vars bundleDevBranchPath)"
-    io_trace_unsafe "$1 -- $(print_vars bundleUrlName )"
-    io_trace_unsafe "$1 -- $(print_vars bundleUrl)"
-    # io_trace_unsafe "$1 -- $(print_vars bundleTracePrefix)"
-    io_trace_unsafe "$1 -- $(print_vars moduleRoot)"
-    io_trace_unsafe "$1 -- $(print_vars modulePath)"
-    io_trace_unsafe "$1 -- $(print_vars moduleBundlePath)"
-    io_trace_unsafe "$1 -- $(print_vars moduleId)"
-    io_trace_unsafe "$1 -- $(print_vars moduleInSku)"
-    io_trace_unsafe "$1 -- $(print_vars moduleIsExternal)"
-    io_trace_unsafe "$1 -- $(print_vars moduleSubmodulePaths[@])"
-    io_trace_unsafe "$1 -- $(print_vars moduleHead)"
-    io_trace_unsafe "$1 -- $(print_vars moduleHeadType)"
-    io_trace_unsafe "$1 -- $(print_vars moduleDevBranch)"
-    io_trace_unsafe "$1 -- $(print_vars moduleDevBranchPath)"
-    # io_trace_unsafe "$1 -- $(print_vars moduleTracePrefix)"
+    io_trace "$1 -- $(print_vars startupDir)"
+    io_trace "$1 -- $(print_vars startupRoot)"
+    io_trace "$1 -- $(print_vars bundleRoot)"
+    io_trace "$1 -- $(print_vars bundleId)"
+    io_trace "$1 -- $(print_vars principalModuleId)"
+    io_trace "$1 -- $(print_vars bundleHead)"
+    io_trace "$1 -- $(print_vars bundleHeadType)"
+    io_trace "$1 -- $(print_vars bundleDevBranch)"
+    io_trace "$1 -- $(print_vars bundleDevBranchPath)"
+    io_trace "$1 -- $(print_vars bundleUrlName )"
+    io_trace "$1 -- $(print_vars bundleUrl)"
+    # io_trace "$1 -- $(print_vars bundleTracePrefix)"
+    io_trace "$1 -- $(print_vars moduleRoot)"
+    io_trace "$1 -- $(print_vars modulePath)"
+    io_trace "$1 -- $(print_vars moduleBundlePath)"
+    io_trace "$1 -- $(print_vars moduleId)"
+    io_trace "$1 -- $(print_vars moduleInSku)"
+    io_trace "$1 -- $(print_vars moduleIsExternal)"
+    io_trace "$1 -- $(print_vars moduleSubmodulePaths[@])"
+    io_trace "$1 -- $(print_vars moduleHead)"
+    io_trace "$1 -- $(print_vars moduleHeadType)"
+    io_trace "$1 -- $(print_vars moduleDevBranch)"
+    io_trace "$1 -- $(print_vars moduleDevBranchPath)"
+    # io_trace "$1 -- $(print_vars moduleTracePrefix)"
   esac
   io_lock_exit
 }
@@ -365,7 +365,7 @@ module_scope()
 _bundle_reset_scope()
 {
   [[ $moduleStartupScopeInitialized == true ]] || return 0
-  # io_trace_unsafe "_bundle_reset_scope -- ${*@Q}"
+  # io_trace "_bundle_reset_scope -- ${*@Q}"
 
   if [[ "$PWD" == "$bundleRoot" ]]; then
     _bundle_set_head $1
@@ -379,7 +379,7 @@ _bundle_reset_scope()
 _module_reset_scope()
 {
   [[ $moduleScopeInitialized == true ]] || return 0
-  # io_trace_unsafe "_module_reset_scope -- ${*@Q}" ${Green}
+  # io_trace "_module_reset_scope -- ${*@Q}" ${Green}
 
   _module_set_submodule_paths
   _module_set_head $1
@@ -534,10 +534,10 @@ _module_enter()
 
 _module_sync_submodules()
 {
-  # io_trace_unsafe ">>>> _module_sync_submodules -- $(print_vars moduleSubmodulePaths[@])"
+  # io_trace ">>>> _module_sync_submodules -- $(print_vars moduleSubmodulePaths[@])"
   echo "${moduleSubmodulePaths[@]}" \
   | xargs --no-run-if-empty git-sm sync -C "${moduleRoot}" --
-  # io_trace_unsafe "<<<< _module_sync_submodules -- $(print_vars moduleSubmodulePaths[@])"
+  # io_trace "<<<< _module_sync_submodules -- $(print_vars moduleSubmodulePaths[@])"
 }
 module_init_submodules()
 {
@@ -705,7 +705,7 @@ _module_set_trace_prefix()
 {
   if module_is_bundle; then
     moduleTracePrefix=$bundleTracePrefix;
-    # io_trace_unsafe "_module_set_trace_prefix -1- $(print_vars moduleTracePrefix)"
+    # io_trace "_module_set_trace_prefix -1- $(print_vars moduleTracePrefix)"
   else
     local repoIsMerging=$1
     local mcolor=${LightCyan}
@@ -714,7 +714,7 @@ _module_set_trace_prefix()
     _module_set_bcolor 'module' "$moduleHeadType"
     _module_set_smart_id2 42 "$mid" "$mcolor" "$bid" "$bcolor"
     moduleTracePrefix=$sid
-    # io_trace_unsafe "_module_set_trace_prefix -2- $(print_vars repoIsMerging mid bid moduleHead)"
+    # io_trace "_module_set_trace_prefix -2- $(print_vars repoIsMerging mid bid moduleHead)"
   fi
   export moduleTracePrefix
 }
@@ -731,7 +731,7 @@ _module_set_bundle_trace_prefix()
   bundleTracePrefix=$sid
   
   cd - &>>"$stdallRedir"
-  # io_trace_unsafe "_module_set_bundle_trace_prefix -1- $(print_vars repoIsMerging mid bid bundleHead)"
+  # io_trace "_module_set_bundle_trace_prefix -1- $(print_vars repoIsMerging mid bid bundleHead)"
 }
 _module_set_bcolor()
 {

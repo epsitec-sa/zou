@@ -67,12 +67,6 @@ io_trace()
 {
   local message=${1//$'\n'/'\\n'}
   message=${message//$'\t'/'\\t'}
-  mio_message "  [$PPID-$BASHPID] $PWD $ $message" ${2:-$Gray}
-}
-io_trace_unsafe()
-{
-  local message=${1//$'\n'/'\\n'}
-  message=${message//$'\t'/'\\t'}
   mio_message_unsafe "  [$PPID-$BASHPID] $PWD $ $message" ${2:-$Gray}
 }
 io_trace_error()
@@ -83,7 +77,7 @@ io_trace_error()
   io_trace "$1 (error code=$ec)" ${Red}
   return $ec
 }
-io_debug() { [[ $debug == 'true' ]] && io_message "$1 = ${!1}" "${2:-debug}" ${3:-$Purple} || true; }
+io_debug() { [[ $debug == 'true' ]] && io_message_unsafe "$1 = ${!1}" "${2:-debug}" ${3:-$Purple} || true; }
 
 print_vars()
 {
