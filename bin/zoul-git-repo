@@ -299,6 +299,7 @@ _repo_list_unstaged_submodules_visitor() { echo "$1"; }
 _repo_list_unstaged_clean_submodules_visitor() { repo_is_clean && echo "$1"; }
 _repo_split_unstaged_submodules_visitor()
 {
+  # io_trace "_repo_split_unstaged_submodules_visitor ${*@Q}"
   if repo_is_clean; then
     unstagedCleanSubmodules+=( $1 )
   else
@@ -308,17 +309,19 @@ _repo_split_unstaged_submodules_visitor()
 
 repo_visit_unstaged_submodules()
 {
+  # io_trace "repo_visit_unstaged_submodules -1- ${*@Q}"
   local mroot=${1:-$moduleRoot} smid smref smpath smroot opwd=$PWD; shift
   [[ -n $1 ]] || io_trace_error "repo_visit_unstaged_submodules: missing visitor" || return 1
   [[ -z $mroot ]] && { mroot=$(repo_module_root) || return 1; }
   for smid in $(gitx diff-files --name-only -r 2>>"$stderrRedir"); do
+    # io_trace "repo_visit_unstaged_submodules ${*@Q} -2- $(print_vars smid smref)"
     smpath=$(repo_submodule_path "$smid" "$mroot")
     [[ -z $smpath ]] && continue
     smroot="$mroot/$smpath"
     if repo_is_module_root "$smroot"; then
       smref=$(ref_get_submodule_ref "$smpath")
       cd "$smroot"
-      # io_trace "repo_visit_unstaged_submodules ${*@Q} -1- $(print_vars smid smref PWD)"
+      # io_trace "repo_visit_unstaged_submodules ${*@Q} -3- $(print_vars smid smref)"
       # execute visitor in submodule directory
       $1 "${@:2}" "$smid" "$smref"
       cd "$opwd"

@@ -121,7 +121,7 @@ module_prod_attach()
 
   refs=( $(ref_list_all_at $ref) )
 
-  # io_trace "module_prod_attach ${*@Q} -1- $(print_vars attachMode ref refs[@])" ${Green}
+  # io_trace "module_prod_attach ${*@Q} -1- $(print_vars attachMode ref refs[@])"
   
   for i in ${!refs[@]}; do
     ref="${refs[i]}"
@@ -134,7 +134,7 @@ module_prod_attach()
     fi
   done
 
-  # io_trace "module_prod_attach ${*@Q} -2- $(print_vars vbranch vtag vnode)" ${Green}
+  # io_trace "module_prod_attach ${*@Q} -2- $(print_vars vbranch vtag vnode)"
 
   if [[ $attachMode == 'vtag' ]]; then
     vref="$vtag"
@@ -145,7 +145,7 @@ module_prod_attach()
   fi
 
   [[ -z $vref && -n $vnode ]] && vref=$vnode
-  # io_trace "module_prod_attach ${*@Q} -3- $(print_vars refs[@] vref vbranch vtag vnode)" ${Green}
+  # io_trace "module_prod_attach ${*@Q} -3- $(print_vars refs[@] vref vbranch vtag vnode)"
 
   [[ -n $vref ]] && branch_checkout "$vref" true
 
@@ -317,7 +317,7 @@ module_scope()
 
   _module_trace 'module_scope'
 
-  # io_trace "#### module_scope"
+  # io_trace "#### module_scope ${*@Q}"
 
   # execute next russian doll
   $1 "${@:2}"
@@ -479,7 +479,7 @@ _module_infer_dev_from_bundle()
 #   ${@:2} -- next ...
 _module_submodule_visitor()
 {
-  # io_trace ">>>> _module_submodule_visitor -- $1"
+  # io_trace ">>>> _module_submodule_visitor ${*@Q}"
   local smPath=$1 option; shift
   _module_enter "$smPath" || return $?
 
@@ -488,7 +488,7 @@ _module_submodule_visitor()
   
   module_scope "$option" $* || io_trace_error '_module_submodule_visitor'
 
-  # io_trace "<<<< _module_submodule_visitor -- $1"
+  # io_trace "<<<< _module_submodule_visitor ${*@Q}"
 }
 # usage:
 #   _module_enter "$moduleDir" || return $?

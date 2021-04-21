@@ -13,8 +13,6 @@ ZOUL_GIT_CONFIG=true
 #   noSkuFilter      -- process all level 0 submodules
 #   noSelectFilter   -- process all level>0 submodules
 
-# io_trace "headChangedEvent+=( _config_reset_scope )"
-# io_trace "branchSyncEvent+=( _config_on_sync )"
 headChangedEvent+=( _config_reset_scope )
 branchSyncEvent+=( _config_on_sync )
 
@@ -97,8 +95,8 @@ _config_trace()
   [[ -n $1 ]] && io_trace_unsafe "_config_reset_scope -- $(print_vars noSkuFilter noSelectFilter)"
   [[ -n $1 ]] && io_trace_unsafe "_config_reset_scope -- $(print_vars configSkuInclude[@])"
   [[ -n $1 ]] && io_trace_unsafe "_config_reset_scope -- $(print_vars configSkuExclude[@])"
-  io_trace_unsafe "_config_reset_scope -- $(print_vars configSelectInclude[@])"
-  io_trace_unsafe "_config_reset_scope -- $(print_vars configSelectExclude[@])"
+  [[ -n $1 ]] && io_trace_unsafe "_config_reset_scope -- $(print_vars configSelectInclude[@])"
+  [[ -n $1 ]] && io_trace_unsafe "_config_reset_scope -- $(print_vars configSelectExclude[@])"
   [[ -n $1 ]] && io_trace_unsafe "_config_reset_scope -- $(print_vars configSelectIncludeBundlePaths[@])"
   [[ -n $1 ]] && io_trace_unsafe "_config_reset_scope -- $(print_vars configSelectExcludeBundlePaths[@])"
   io_lock_exit
