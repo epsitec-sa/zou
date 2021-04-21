@@ -296,10 +296,10 @@ repo_list_unstaged_clean_submodules() { repo_visit_unstaged_submodules "$1" _rep
 repo_split_unstaged_submodules() { repo_visit_unstaged_submodules "$1" _repo_split_unstaged_submodules_visitor; }
 
 _repo_list_unstaged_submodules_visitor() { echo "$1"; }
-_repo_list_unstaged_clean_submodules_visitor() { repo_is_clean && branch_is_ancestor_of_local && echo "$1"; }
+_repo_list_unstaged_clean_submodules_visitor() { repo_is_clean && echo "$1"; }
 _repo_split_unstaged_submodules_visitor()
 {
-  if repo_is_clean && branch_is_ancestor_of_local; then
+  if repo_is_clean; then
     unstagedCleanSubmodules+=( $1 )
   else
     unstagedDirtySubmodules+=( $1 )
