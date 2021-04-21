@@ -6,6 +6,7 @@ using Microsoft.Build.Utilities;
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 
@@ -47,6 +48,8 @@ namespace Zou.Tasks
 
         public override bool            Execute()
         {
+            //Debugger.Launch();
+
             this.ProjectsOutput = this.Projects.SelectMany(project => this.AddOptions(project)).ToArray();
             return !this.Log.HasLoggedErrors;
         }
@@ -63,14 +66,13 @@ namespace Zou.Tasks
                 project.SetMetadata("_Target", target);
                 var names = project.CustomMetadataNames();
 
-
                 // Add Properties metadata
                 var properties = names
                     .Where(name => Mixins.IsBuildProperty(name))
-                    .Select(name => Tuple.Create(name, project.GetMetadata(name)))
-                    .Where(a => !string.IsNullOrWhiteSpace(a.Item2))
-                    .OrderBy(a => a, BuildPropertyComparer.Default)
-                    .Select(a => $"{a.Item1}={a.Item2}")
+                    .Select(name => (Key: name, Value: project.GetMetadata(name)))
+                    .Where(kv => !string.IsNullOrWhiteSpace(kv.Value))
+                    .OrderBy(kv => kv, BuildPropertyComparer.Default)
+                    .Select(kv => $"{kv.Key}={Quote(kv.Value)}")
                     .ToArray();
 
                 var propertiesValue = string.Join(";", properties);
@@ -78,10 +80,25 @@ namespace Zou.Tasks
                 {
                     propertiesValue += ";_=_";
                 }
+                if (propertiesValue.Contains(' '))
+                {
+                    propertiesValue = $"\"{propertiesValue}\"";
+                }
                 project.SetMetadata("Properties", propertiesValue);
 
                 yield return project;
+            }
 
+            static string Quote(string value)
+            {
+                // https://github.com/dotnet/sdk/issues/8792#issuecomment-393756980
+                return value.Contains(';')
+                    ? Environment.OSVersion.Platform switch
+                    {
+                        PlatformID.Win32NT => $"\\\"{value}\\\"",
+                        _ => $"'\"{value}\"'"
+                    }
+                    : value;
             }
         }
         private void                    ProcessOptions(ITaskItem project)
@@ -138,25 +155,25 @@ namespace Zou.Tasks
         }
     }
 
-    internal class BuildPropertyComparer : IComparer<Tuple<string, string>>
+    internal class BuildPropertyComparer : IComparer<(string Key, string Value)>
     {
         public static readonly BuildPropertyComparer Default = new BuildPropertyComparer();
 
-        public int Compare(Tuple<string, string> x, Tuple<string, string> y)
+        public int Compare((string Key, string Value) x, (string Key, string Value) y)
         {
-            var xEndsWithBackslash = x.Item2.EndsWith("\\");
-            var yEndsWithBackslash = y.Item2.EndsWith("\\");
+            var xEndsWithBackslash = x.Value.EndsWith("\\");
+            var yEndsWithBackslash = y.Value.EndsWith("\\");
             if (xEndsWithBackslash)
             {
-                return yEndsWithBackslash ? string.Compare(x.Item1, y.Item1) : -1;
+                return yEndsWithBackslash ? string.Compare(x.Key, y.Key) : -1;
             }
             else if (yEndsWithBackslash)
             {
-                return xEndsWithBackslash ? string.Compare(x.Item1, y.Item1) : 1;
+                return xEndsWithBackslash ? string.Compare(x.Key, y.Key) : 1;
             }
             else
             {
-                return string.Compare(x.Item1, y.Item1);
+                return string.Compare(x.Key, y.Key);
             }
         }
     }
