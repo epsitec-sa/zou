@@ -110,6 +110,7 @@ sku_command()
   case "$subcommand" in
     enter)
       cmd_register_module_paths true  "$bundleRoot"
+      noSubmodulesInit=true
       ;;
     info)
       [ ${#skuModulePaths[@]} -eq 0 ] && skuModulePaths+=( './' )
@@ -141,19 +142,13 @@ _sku_any_finally()
 # ENTER
 #######
 
-sku_enter_select()
-{
-  # visit all submodules
-  printf '%s\n' "${moduleSubmodulePaths[@]}"
-}
 sku_enter_prolog()
 {
-  # checkout specified SKU for bundle and included submodules
-  # checkout master for excluded submodules
   local moduleSku='master'
   ( [[ $includedSkuModule == true ]] || module_is_bundle ) && moduleSku="$sku"
   # io_trace "sku_enter_prolog -- $(print_vars moduleSku)"
   sku_checkout "$moduleSku" "$prodCheckoutType" true
+  module_init_submodules
   notes_pull_all
 }
 

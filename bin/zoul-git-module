@@ -17,6 +17,7 @@ ZOUL_GIT_MODULE=true
 startupMessage=''
 
 # global options
+noSubmodulesInit=false
 doNotRegisterBundle=false
 
 ########
@@ -354,7 +355,6 @@ module_scope()
   repo_is_merging; _module_set_trace_prefix $?
 
   _module_set_module_dev_branch
-  _module_init_submodules
   module_configure true
 
   _module_trace 'module_scope'
@@ -527,17 +527,18 @@ _module_sync_submodules()
   | xargs --no-run-if-empty git sm sync -C "${moduleRoot}" --
   # io_trace_unsafe "<<<< _module_sync_submodules -- $(print_vars moduleSubmodulePaths[@])"
 }
-_module_init_submodules()
+module_init_submodules()
 {
-  # io_trace ">>>> _module_init_submodules -- $(print_vars moduleSubmodulePaths[@])"
-  _module_list_uninitialized_submodules \
-  | xargs -d $'\n' --no-run-if-empty git sm syncupd -C "${moduleRoot}"
-  # io_trace "<<<< _module_init_submodules -- $(print_vars moduleSubmodulePaths[@])"
+  # io_trace ">>>> module_init_submodules -- $(print_vars moduleSubmodulePaths[@])"
+  _module_list_uninitialized_submodules "${configSkuInclude[@]}" \
+  | xargs -d $'\n' --no-run-if-empty git-sm syncupd -C "${moduleRoot}"
+  # io_trace "<<<< module_init_submodules -- $(print_vars moduleSubmodulePaths[@])"
 }
 _module_list_uninitialized_submodules()
 {
   local path
-  for path in "${moduleSubmodulePaths[@]}"; do
+  # io_trace "_module_list_uninitialized_submodules ${*@Q}"
+  for path; do
     [[ -f "$moduleRoot/$path/.git" ]] || echo $path
   done
 }
