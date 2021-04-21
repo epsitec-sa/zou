@@ -88,12 +88,7 @@ _cosm_on_head_changed()
 {
   cosm_reset_scope
   [ ${#moduleSubmodulePaths[@]} -eq 0 ] && return 0
-
-  local internal=( $(array_remove_array configSkuInclude[@] unstagedCleanExternalSubmodules[@]) )
-  # io_trace "_cosm_on_head_changed ${*@Q} -1- $(print_vars internal[@] unstagedCleanExternalSubmodules[@])"
   cosm_discard_unstaged_clean_external_submodules
-  # io_trace "_cosm_on_head_changed  ${*@Q} -2- $(print_vars internal[@]  unstagedCleanExternalSubmodules[@])"
-  _cosm_sync_submodules "${internal[@]}"
 }
 _cosm_on_sync()
 {
