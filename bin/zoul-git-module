@@ -194,14 +194,6 @@ module_prod_attach()
 
   return 0
 }
-module_update_init()
-{
-  # io_trace "module_update_init ${*@Q} -- $(print_vars moduleParent)" ${Green}
-  if [[ -n "$moduleParent" ]]; then
-    io_locked_eval "git sm update -C "$moduleParent" --init "$modulePath" 2>&1" '' ${DarkGray}
-    _module_reset_scope
-  fi
-}
 
 #########
 # TRACING
@@ -219,14 +211,14 @@ _module_trace()
     io_trace_unsafe "$1 -- $(print_vars bundleHead bundleHeadType)"
     io_trace_unsafe "$1 -- $(print_vars bundleDevBranch bundleDevBranchPath)"
     io_trace_unsafe "$1 -- $(print_vars bundleUrl bundleUrlName bundleRoot)"
-    io_trace_unsafe "$1 -- $(print_vars includedSkuModule)"
+    io_trace_unsafe "$1 -- $(print_vars moduleInSku)"
     # io_trace_unsafe "$1 -- $(print_vars bundleTracePrefix)"
     ;;
   _bundle_reset_scope)
     io_trace_unsafe "$1 -- $(print_vars bundleId principalModuleId)"
     io_trace_unsafe "$1 -- $(print_vars bundleHead bundleHeadType)"
     io_trace_unsafe "$1 -- $(print_vars bundleDevBranch bundleDevBranchPath)"
-    io_trace_unsafe "$1 -- $(print_vars includedSkuModule)"
+    io_trace_unsafe "$1 -- $(print_vars moduleInSku)"
     # io_trace_unsafe "$1 -- $(print_vars bundleTracePrefix)"
     ;;
   module_scope)
@@ -235,7 +227,7 @@ _module_trace()
     io_trace_unsafe "$1 -- $(print_vars moduleHead moduleHeadType)"
     io_trace_unsafe "$1 -- $(print_vars moduleDevBranch moduleDevBranchPath)"
     io_trace_unsafe "$1 -- $(print_vars modulePath moduleBundlePath moduleRoot)"
-    io_trace_unsafe "$1 -- $(print_vars includedSkuModule)"
+    io_trace_unsafe "$1 -- $(print_vars moduleInSku)"
     # io_trace_unsafe "$1 -- $(print_vars moduleTracePrefix)"
     ;;
   _module_reset_scope)
@@ -243,7 +235,7 @@ _module_trace()
     io_trace_unsafe "$1 -- $(print_vars moduleHead moduleHeadType)"
     io_trace_unsafe "$1 -- $(print_vars moduleDevBranch moduleDevBranchPath)"
     io_trace_unsafe "$1 -- $(print_vars moduleSubmodulePaths[@])"
-    io_trace_unsafe "$1 -- $(print_vars includedSkuModule)"
+    io_trace_unsafe "$1 -- $(print_vars moduleInSku)"
     # io_trace_unsafe "$1 -- $(print_vars moduleTracePrefix)"
     ;;
   *)
@@ -268,7 +260,7 @@ _module_trace()
     io_trace_unsafe "$1 -- $(print_vars moduleHeadType)"
     io_trace_unsafe "$1 -- $(print_vars moduleDevBranch)"
     io_trace_unsafe "$1 -- $(print_vars moduleDevBranchPath)"
-    io_trace_unsafe "$1 -- $(print_vars includedSkuModule)"
+    io_trace_unsafe "$1 -- $(print_vars moduleInSku)"
     # io_trace_unsafe "$1 -- $(print_vars moduleTracePrefix)"
   esac
   io_lock_exit
@@ -332,14 +324,14 @@ module_scope()
   local moduleRoot moduleConfigFile moduleId moduleSubmodulePaths \
         moduleParent modulePath moduleBundlePath \
         moduleHead moduleHeadType moduleDevBranch moduleDevBranchPath moduleTracePrefix \
-        includedSkuModule moduleScopeInitialized=true
+        moduleInSku moduleScopeInitialized=true
   
-  [[ "$1" == '-i' ]] && { includedSkuModule=true; shift; }
+  [[ "$1" == '-i' ]] && { moduleInSku=true; shift; }
 
   moduleRoot="$PWD"
   moduleConfigFile="$moduleRoot/.zou-flow"
   moduleId=$(repo_module_id)
-  module_update_submodules "$moduleRoot"
+  _module_set_submodule_paths "$moduleRoot"
 
   moduleParent=$(repo_module_parent)
   [[ -n $moduleParent ]] && modulePath=${moduleRoot#$moduleParent/}
@@ -352,8 +344,8 @@ module_scope()
   fi
 
   _module_set_head
-  repo_is_merging; _module_set_trace_prefix $?
-
+  repo_is_merging
+  _module_set_trace_prefix $?
   _module_set_module_dev_branch
   module_configure true
 
@@ -385,15 +377,14 @@ _module_reset_scope()
   [[ $moduleScopeInitialized == true ]] || return 0
   # io_trace_unsafe "_module_reset_scope -- ${*@Q}" ${Green}
 
-  module_update_submodules
-  
+  _module_set_submodule_paths
   _module_set_head $1
   repo_is_merging; _module_set_trace_prefix $?
   _module_set_module_dev_branch
   
   _module_trace '_module_reset_scope'
 }
-module_update_submodules()
+_module_set_submodule_paths()
 {
   moduleSubmodulePaths=( $(repo_list_submodule_paths "${1:-$PWD}") )
 }
