@@ -151,7 +151,7 @@ module_dev_attach()
 
 module_prod_attach()
 {
-  local attachMode=$1 ref=${2:-$moduleHead} refs vbranch vtag vnode vref
+  local attachMode=$1 ref=${2:-$moduleHead} refs branch vbranch vtag vnode vref
 
   refs=( $(ref_list_all_at $ref) )
 
@@ -165,6 +165,8 @@ module_prod_attach()
       vnode="$ref"
     elif [[ -z $vtag ]] && vtag_is_semver "$ref"; then
       vtag="$ref"
+    elif [[ -z $branch ]] && branch_is_dev "$ref"; then
+      branch="$ref"
     fi
   done
 
@@ -181,7 +183,13 @@ module_prod_attach()
   [[ -z $vref && -n $vnode ]] && vref=$vnode
   # io_trace "module_prod_attach ${*@Q} -3- $(print_vars refs[@] vref vbranch vtag vnode)"
 
-  [[ -n $vref ]] && branch_checkout "$vref" true
+  if [[ -n $vref ]]; then
+    branch_checkout "$vref" true
+  elif [[ -n $branch ]]; then
+    mio_warning "Still in development on ${VC}$branch"
+  else
+    mio_warning "Detached HEAD at ${VC}$ref"
+  fi
 
   return 0
 }
