@@ -186,41 +186,36 @@ _branch_merge_ff_only()
 _branch_merge()
 {
   local message=$1 toMerge=$2; shift 2
-  # io_trace "_branch_merge -1- $(print_vars toMerge intoBranch)" ${Green}
+  # io_trace "_branch_merge -1- $(print_vars toMerge intoBranch)"
   # branch_raise_merging_event "$toMerge" "$intoBranch"
   if gitx merge -m "$message" "$@" "$toMerge" &>>"$stdallRedir"; then
-    # io_trace "_branch_merge -2- $(print_vars toMerge intoBranch)" ${Green}
+    # io_trace "_branch_merge -2- $(print_vars toMerge intoBranch)"
     branch_raise_merge_success_event "$toMerge" "$intoBranch"
     return 0
   fi
-  # io_trace "_branch_merge -3- $(print_vars toMerge intoBranch)" ${Green}
+  # io_trace "_branch_merge -3- $(print_vars toMerge intoBranch)"
 
   if _branch_merge_resolve_submodule_conflicts; then
-    # io_trace "_branch_merge -4.1- $(print_vars toMerge intoBranch)" ${Green}
+    # io_trace "_branch_merge -4.1- $(print_vars toMerge intoBranch)"
 
     # no files to merge, just submodules
     # all conflicts should be resolved
     branch_merge_abort
 
-    # detect most recent commmit to define the merge strategy
-    local toMergeTime=$(ref_time "$toMerge") intoBranchTime=$(ref_time "$intoBranch") strategy='-sours'
-    (( $toMergeTime >= $intoBranchTime )) && strategy='-Xtheirs'
-    # io_trace "_branch_merge -4.2- $(print_vars toMergeTime intoBranchTime strategy)" ${Green}
-
-    if io_locked_eval "gitx merge -m '$message' "$@" '$toMerge' '$strategy' 2>&1" _branch_merge_selector; then
-      # io_trace "_branch_merge -4.2.1- $(print_vars toMerge intoBranch)" ${Green}
+    if io_locked_eval "gitx merge -m '$message' "$@" '$toMerge' '-sours' 2>&1" _branch_merge_selector; then
+      # io_trace "_branch_merge -4.1.1- $(print_vars toMerge intoBranch)"
       branch_raise_merge_success_event "$toMerge" "$intoBranch"
       return 0
     else
-      # io_trace "_branch_merge -4.2.2- $(print_vars toMerge intoBranch)" ${Green}
+      # io_trace "_branch_merge -4.1.2- $(print_vars toMerge intoBranch)"
       return 1
     fi
   elif _branch_merge_interactive; then
-    # io_trace "_branch_merge -5.1- $(print_vars toMerge intoBranch)" ${Green}
+    # io_trace "_branch_merge -5.1- $(print_vars toMerge intoBranch)"
     branch_raise_merge_success_event "$toMerge" "$intoBranch"
     return 0
   else
-    # io_trace "_branch_merge -5.2- $(print_vars toMerge intoBranch)" ${Green}
+    # io_trace "_branch_merge -5.2- $(print_vars toMerge intoBranch)"
     # gitx diff
     return 1
   fi
