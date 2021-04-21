@@ -19,13 +19,47 @@ startupMessage=''
 # global options
 doNotRegisterBundle=false
 
-# events registration
+########
+# EVENTS
+########
+
 headChangedEvent+=( _bundle_reset_scope _module_reset_scope _module_sync_submodules )
 headNameChangedEvent+=( _bundle_reset_scope _module_reset_scope )
 branchSyncEvent+=( _module_on_sync )
 mergingEvent+=( _module_on_merging )
 mergeSuccessEvent+=( _module_on_merge_success )
 mergeAbortEvent+=( _module_on_merge_abort )
+
+_module_on_sync()
+{
+  [[ $3 =~ ^\< ]] || return 0
+  _module_set_submodule_paths
+  # io_trace "_module_on_sync -- $(print_vars moduleSubmodulePaths[@])"
+  module_init_submodules
+}
+_module_on_merging()
+{
+  # io_trace_unsafe ">>>> _module_on_merging ${*@Q} -- $moduleTracePrefix"
+  repo_is_merging
+  _module_set_trace_prefix $?
+  # io_trace_unsafe "<<<< _module_on_merging ${*@Q} -- $moduleTracePrefix"
+}
+_module_on_merge_success()
+{
+  # io_trace_unsafe ">>>> _module_on_merge_success ${*@Q} -- $moduleTracePrefix"
+  _module_set_trace_prefix 1
+  # io_trace_unsafe "<<<<< _module_on_merge_success ${*@Q} -- $moduleTracePrefix"
+}
+_module_on_merge_abort()
+{
+  # io_trace_unsafe ">>>> _module_on_merge_abort ${*@Q} -- $moduleTracePrefix"
+  _module_set_trace_prefix 1
+  # io_trace_unsafe "<<<<< _module_on_merge_abort ${*@Q} -- $moduleTracePrefix"
+}
+
+#########
+# VISITOR
+#########
 
 # run a function in the startup module root folder with startup, bundle and module scopes defined
 module_run()
@@ -354,32 +388,6 @@ _module_reset_scope()
 module_update_submodules()
 {
   moduleSubmodulePaths=( $(repo_list_submodule_paths "${1:-$PWD}") )
-}
-
-_module_on_sync()
-{
-  [[ $3 =~ ^\< ]] || return 0
-  module_update_submodules
-  # io_trace "_module_on_sync -- $(print_vars moduleSubmodulePaths[@])"
-  _module_init_submodules
-}
-_module_on_merging()
-{
-  # io_trace_unsafe ">>>> _module_on_merging ${*@Q} -- $moduleTracePrefix"
-  repo_is_merging; _module_set_trace_prefix $?
-  # io_trace_unsafe "<<<< _module_on_merging ${*@Q} -- $moduleTracePrefix"
-}
-_module_on_merge_success()
-{
-  # io_trace_unsafe ">>>> _module_on_merge_success ${*@Q} -- $moduleTracePrefix"
-  _module_set_trace_prefix 1
-  # io_trace_unsafe "<<<<< _module_on_merge_success ${*@Q} -- $moduleTracePrefix"
-}
-_module_on_merge_abort()
-{
-  # io_trace_unsafe ">>>> _module_on_merge_abort ${*@Q} -- $moduleTracePrefix"
-  _module_set_trace_prefix 1
-  # io_trace_unsafe "<<<<< _module_on_merge_abort ${*@Q} -- $moduleTracePrefix"
 }
 
 ##############

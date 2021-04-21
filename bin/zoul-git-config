@@ -16,6 +16,12 @@ ZOUL_GIT_CONFIG=true
 headChangedEvent+=( _config_reset_scope )
 branchSyncEvent+=( _config_on_sync )
 
+_config_on_sync()
+{
+  [[ $3 =~ ^\< ]] || return 0
+  _config_reset_scope
+}
+
 # usage:
 #   module_run config_scope $*
 config_scope()
@@ -42,11 +48,6 @@ config_list_external()
   else
     printf '%s\n' "${configSelectExclude[@]}"
   fi
-}
-_config_on_sync()
-{
-  [[ $3 =~ ^\< ]] || return 0
-  _config_reset_scope
 }
 _config_reset_scope()
 {

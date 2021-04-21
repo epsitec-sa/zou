@@ -5,7 +5,7 @@
 [[ -z $ZOUL_GIT_COSM ]]          && . zoul-git-cosm
 [[ -z $ZOUL_GIT_CONFIG_SKU ]]    && . zoul-git-config-sku
 
-prodPreinitEvent+=( _prod_on_preinit )
+prodPreinitEvent+=( _sku_on_prod_preinit )
 
 sku_parse()
 {
@@ -125,7 +125,7 @@ sku_command()
   cmd_visit_modules
 }
 
-_prod_on_preinit() { prodCheckoutType=$checkoutType; }
+_sku_on_prod_preinit() { prodCheckoutType=$checkoutType; }
 
 sku_enter_finally()  { _sku_any_finally; }
 sku_info_finally()   { _sku_any_finally; }

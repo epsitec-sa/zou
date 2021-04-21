@@ -10,14 +10,29 @@ ZOUL_GIT_PROD=true
 [[ -z $ZOUL_GIT_BRANCH_MERGE ]]   && . zoul-git-branch-merge
 [[ -z $ZOUL_GIT_CONFIG_VERSION ]] && . zoul-git-config-version
 
+########################################################
+# EVENTS
+
 prodPreinitEvent=()
 prod_raise_preinit_event() { raise_event 'prodPreinitEvent[@]' "$@"; }
 
-headChangedEvent+=( _prod_on_head_changed )
-headNameChangedEvent+=( _prod_on_head_name_changed )
+headChangedEvent+=( prod_reset_scope )
+headNameChangedEvent+=( prod_reset_scope )
+mergeSuccessEvent+=( prod_reset_scope )
 branchCreatedEvent+=( _prod_on_branch_created )
 branchDeletedEvent+=( _prod_on_branch_deleted )
-mergeSuccessEvent+=( _prod_on_merge_success )
+
+_prod_on_branch_created()
+{
+  [[ $1 =~ ^(.*/)?[0-9]+\.[0-9]+ ]] && prod_reset_scope "$@"
+}
+_prod_on_branch_deleted()
+{
+  [[ $1 =~ ^(.*/)?[0-9]+\.[0-9]+ ]] && prod_reset_scope "$@"
+}
+
+########################################################
+# SCOPE
 
 prod_run() { module_run prod_scope "$@"; }
 
@@ -711,28 +726,4 @@ prod_increment_update_version()
   else
     mio_warning "Updated technical version to ${VC}$vnext${NC}"
   fi
-}
-
-########################################################
-# EVENTS
-
-_prod_on_merge_success()
-{
-   prod_reset_scope "$@"
-}
-_prod_on_head_changed()
-{
-   prod_reset_scope "$@"
-}
-_prod_on_head_name_changed()
-{
-  prod_reset_scope "$@"
-}
-_prod_on_branch_created()
-{
-  [[ $1 =~ ^(.*/)?[0-9]+\.[0-9]+ ]] && prod_reset_scope "$@"
-}
-_prod_on_branch_deleted()
-{
-  [[ $1 =~ ^(.*/)?[0-9]+\.[0-9]+ ]] && prod_reset_scope "$@"
 }
