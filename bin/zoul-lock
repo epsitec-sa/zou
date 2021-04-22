@@ -4,7 +4,31 @@
 #   [[ -z $ZOUL_LOCK ]] && . zoul-lock
 ZOUL_LOCK=true
 
+[[ -z $ZOUL_BOOT ]] && . zoul-boot
 [[ -z $ZOUL_TRAP ]] && . zoul-trap
+
+lock()
+{
+  local gate="$1" fd
+  exec {fd}>"$gate"
+  shift
+  (
+    "$zouSbinDir/flock" $fd || exit 1
+    $*
+  )
+  exec {fd}>&-
+}
+lock_wait()
+{
+  local gate="$1" delay="$2" fd
+  exec {fd}>"$gate"
+  shift 2
+  (
+    "$zouSbinDir/flock" -w "$delay" $fd || exit 1
+    $*
+  )
+  exec {fd}>&-
+}
 
 # flock is not distributed with git-bash
 # MSYS2 has a version of flock but it creates a conflict with cygwin.dll
@@ -12,9 +36,9 @@ ZOUL_LOCK=true
 
 lock_init()
 {
-  local gate=${1:-$(mktemp -u)}
+  local gate=${1:-$(mktemp)}
   # Remove gate when the script finishes, or when it receives a signal
-  trap_add "rm -rf \"$gate\"" 0
+  trap_add "rm \"$gate\"" 0
   echo $gate
 }
 # in:
@@ -57,11 +81,3 @@ lock_exit_trace()
   echo "lock_exit $1 -- $moduleId"
   rm -rf "$1"
 }
-lock()
-(
-  local gate=$1 delay=$2; shift 2
-  lock_enter "$gate" $delay
-  # execute next russian doll
-  $1 "${@:2}"
-  lock_exit "$gate"
-)
