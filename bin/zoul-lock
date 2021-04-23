@@ -4,80 +4,178 @@
 #   [[ -z $ZOUL_LOCK ]] && . zoul-lock
 ZOUL_LOCK=true
 
-[[ -z $ZOUL_BOOT ]] && . zoul-boot
-[[ -z $ZOUL_TRAP ]] && . zoul-trap
+[[ -z $ZOUL_BOOT ]]   && . zoul-boot
+[[ -z $ZOUL_TRAP ]]   && . zoul-trap
+[[ -z $ZOUL_SYSTEM ]] && . zoul-system
 
-lock()
-{
-  local gate="$1" fd
-  exec {fd}>"$gate"
-  shift
-  (
-    "$zouSbinDir/flock" $fd || exit 1
-    $*
-  )
-  exec {fd}>&-
-}
-lock_wait()
-{
-  local gate="$1" delay="$2" fd
-  exec {fd}>"$gate"
-  shift 2
-  (
-    "$zouSbinDir/flock" -w "$delay" $fd || exit 1
-    $*
-  )
-  exec {fd}>&-
-}
+# Initialize lock methods
+# default to mkdir methods
+
+_lockInit='_lock_init_mkdir'
+_lockEnter='_lock_enter_mkdir'
+_lockExit='_lock_exit_mkdir'
+_lock='_lock_mkdir'
+
+lock_init()  { $_lockInit "$@"; }
+# in:
+#   $1:gate         -- gate=$(lock_init)
+#   $2:milliseconds -- timeout in milliseconds (default to infinite)
+# return code:
+#   0: if lock acquired
+#   1: if timeout
+lock_enter() { $_lockEnter "$@"; }
+lock_exit()  { $_lockExit "$@"; }
+lock()       { $_lock "$@"; }
+
+###############
+# mkdir methods
 
 # flock is not distributed with git-bash
 # MSYS2 has a version of flock but it creates a conflict with cygwin.dll
 # use atomic mkdir
 
-lock_init()
+_lock_init_mkdir()
 {
-  local gate=${1:-$(mktemp)}
+  local gate=${1:-$(mktemp -u)}
   # Remove gate when the script finishes, or when it receives a signal
-  trap_add "rm \"$gate\"" 0
+  trap_add "rm -rf \"$gate\"" 0
   echo $gate
 }
-# in:
-#   $1:lock  -- lock=$(lock_init)
-#   $2:delay -- loop delay
-#   $3:count -- timeout = count * delay (default to infinite)
-# return code:
-#   0: if lock acquired
-#   1: if timeout
-lock_enter()
+_lock_enter_mkdir()
 {
-  if [[ -z $3 ]]; then
+  if [[ -z $2 ]]; then
     while ! mkdir "$1" &>/dev/null; do
-      sleep ${2:-0.1}
+      sleep 0.01
     done
     return 0
   else
-    for (( c=1; c<=$3; c++ )); do
+    local i count=$(( $2 / 10 ))
+    for (( i=1; i<=$count; i++ )); do
       mkdir "$1" &>/dev/null && return 0
-      sleep ${2:-0.1}
+      sleep 0.01
     done
     return 1
   fi
 }
-lock_exit()
+_lock_exit_mkdir()
 {
   rm -rf "$1"
 }
-lock_enter_trace()
+_lock_mkdir()
 {
-  local count=0
-  while ! mkdir "$1" &>/dev/null; do
-    (( count += 1 ))
-    sleep ${2:-0}
-  done
-  echo "lock_enter[$count] $1 -- $moduleId"
+  local gate="$1"
+  _lock_enter_mkdir "$gate"
+  $2 "${@:3}"
+  _lock_exit_mkdir "$gate"
 }
-lock_exit_trace()
+
+###############
+# flock methods
+
+_lock_init_flock()
 {
-  echo "lock_exit $1 -- $moduleId"
-  rm -rf "$1"
+  local gate=${1:-$(mktemp)}
+  # Remove gate when the script finishes, or when it receives a signal
+  trap_add "rm \"$gate\" &>/dev/null" 0
+  echo $gate
 }
+_lock_enter_flock()
+{
+  local gate="$1"
+  exec 9>$gate
+  if [[ -z $2 ]]; then
+    flock 9
+  else
+    local delay
+    printf -v delay '%.2f' "$(( 100 * $2/1000))e-2"
+    flock -w "$delay" 9
+  fi
+}
+_lock_exit_flock()
+{
+  exec 9>&-
+}
+_lock_flock()
+{
+  local gate="$1" fd
+  exec {fd}>$gate
+  flock $fd || return 1
+  { $2 "${@:3}"; } {fd}>&-
+}
+
+###############
+# wlock methods
+
+wlockPath="$zouSbinDir/wlock.exe"
+# wlockPath="/c/devel/zou-dev/zou.utils/wlock/x64/Debug/wlock.exe"
+
+_lock_init_wlock()
+{
+  local gate="$1"
+  if [[ -z $gate ]]; then
+    # do not use 'uuidgen' because of cygwin DLL conflicts
+    gate=$(mktemp -u)
+    gate="zou.${gate##*/}"
+  else
+    gate="zou.$gate"
+  fi
+  # Remove gate when the script finishes, or when it receives a signal
+  trap_add "\"$wlockPath\" -u \"$gate\"" 0
+  # echo "#### _lock_init_wlock ${*@Q}" >&2
+  echo $gate
+}
+_lock_enter_wlock()
+{
+  # echo ">>>> _lock_enter_wlock ${*@Q}" >&2
+  local gate="$1" ec
+  if [[ -z $2 ]]; then
+    "$wlockPath" "$gate"; ec=$?
+  else
+    "$wlockPath" -w "$2" "$gate"; ec=$?
+  fi
+  # echo "<<<< _lock_enter_wlock ${*@Q} -> $ec" >&2
+  return $ec
+}
+_lock_exit_wlock()
+{
+  # echo ">>>> _lock_exit_wlock ${*@Q}" >&2
+  local gate="$1" ec
+  "$wlockPath" -u "$gate"; ec=$?
+  # echo "<<<< _lock_exit_wlock ${*@Q} -> $ec" >&2
+  return $ec
+}
+_lock_wlock()
+{
+  # echo ">>>> _lock_wlock ${*@Q}" >&2
+  local gate="$1" ec1 ec2 ec3
+  "$wlockPath" "$gate"; ec1=$?
+  $2 "${@:3}"; ec2=$?
+  "$wlockPath" -u "$gate"; ec3=$?
+  # echo "<<<< _lock_wlock ${*@Q} -> $ec1, $ec2, $ec3" >&2
+  return $ec2
+}
+
+#########################
+# Initialize lock methods
+
+_lock_setup()
+{
+  if [ $zouLin -eq 0 ]; then
+    _lockInit='_lock_init_flock'
+    _lockEnter='_lock_enter_flock'
+    _lockExit='_lock_exit_flock'
+    _lock='_lock_flock'
+  elif [ $zouWin -eq 0 ]; then
+    _lockInit='_lock_init_wlock'
+    _lockEnter='_lock_enter_wlock'
+    _lockExit='_lock_exit_wlock'
+    _lock='_lock_wlock'
+  else
+    _lockInit='_lock_init_mkdir'
+    _lockEnter='_lock_enter_mkdir'
+    _lockExit='_lock_exit_mkdir'
+    _lock='_lock_mkdir'
+  fi
+}
+
+_lock_setup
