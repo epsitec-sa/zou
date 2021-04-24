@@ -23,6 +23,9 @@ This script can be imported anywhere before first MS import (Microsoft.Cpp.Defau
     <ZouTraceMSBuild Condition="'$(ZouTraceMSBuild)' == '' And '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">true</ZouTraceMSBuild>
     <IsDebug Condition="$(Configuration.StartsWith('Debug', StringComparison.OrdinalIgnoreCase))">true</IsDebug>
     <IsRelease Condition="$(Configuration.StartsWith('Release', StringComparison.OrdinalIgnoreCase))">true</IsRelease>
+    <ZouOs Condition="$([MSBuild]::IsOsPlatform(Windows))">win</ZouOs>
+    <ZouOs Condition="$([MSBuild]::IsOsPlatform(OSX))">osx</ZouOs>
+    <ZouOs Condition="$([MSBuild]::IsOsPlatform(Linux))">linux</ZouOs>
   </PropertyGroup>
 
   <!-- Bundle -->
@@ -50,8 +53,9 @@ This script can be imported anywhere before first MS import (Microsoft.Cpp.Defau
     <ZouDir>$(ZouDir.TrimEnd('\/'))</ZouDir>
     <ZouName>$([System.IO.Path]::GetFileName('$(ZouDir)'))</ZouName>
     <ZouDir>$(ZouDir)$(V)</ZouDir>
-    <ZouBinDir>$(ZouDir)bin$(V)</ZouBinDir>
     <ZouPrivateDir>$(ZouDir)private$(V)</ZouPrivateDir>
+    <ZouBinDir>$(ZouDir)bin$(V)</ZouBinDir>
+    <ZouBinzDir>$(ZouDir)binz$(V)$(ZouOs)$(V)</ZouBinzDir>
   </PropertyGroup>
   
   <PropertyGroup Condition="'$(BundleDir' == '' Or '$(ZouDir)' == ''">
@@ -212,9 +216,11 @@ This script can be imported anywhere before first MS import (Microsoft.Cpp.Defau
     <Message Importance="normal" Text="+ ModuleDir                  = $(ModuleDir)" />
     <Message Importance="normal" Text="+ ModuleIsShared             = $(ModuleIsShared)" />
     <Message Importance="normal" Text="+ Nul                        = $(Nul)" />
+    <Message Importance="normal" Text="+ ZouOs                      = $(ZouOs)" />
     <Message Importance="normal" Text="+ ZouName                    = $(ZouName)" />
     <Message Importance="normal" Text="+ ZouDir                     = $(ZouDir)" />
     <Message Importance="normal" Text="+ ZouBinDir                  = $(ZouBinDir)" />
+    <Message Importance="normal" Text="+ ZouBinzDir                 = $(ZouBinzDir)" />
     <Message Importance="normal" Text="+ ZouPrivateDir              = $(ZouPrivateDir)" />
     <Message Importance="normal" Text="+ ZouBundleDir               = $(ZouBundleDir)" />
     <Message Importance="normal" Text="+ ZouSolutionDir             = $(ZouSolutionDir)" />

@@ -21,9 +21,7 @@
       
       <!--  Do not modify RuntimeIdentifier when building inside VisualStudio -->
       <PropertyGroup Condition="'$(BuildingInsideVisualStudio)' == ''">
-        <RuntimeIdentifier Condition="$([MSBuild]:: IsOsPlatform(Windows))">win-$(RuntimePlatform)</RuntimeIdentifier>
-        <RuntimeIdentifier Condition="$([MSBuild]:: IsOsPlatform(OSX))">osx-$(RuntimePlatform)</RuntimeIdentifier>
-        <RuntimeIdentifier Condition="$([MSBuild]:: IsOsPlatform(Linux))">linux-$(RuntimePlatform)</RuntimeIdentifier>
+        <RuntimeIdentifier>$(ZouOs)-$(RuntimePlatform)</RuntimeIdentifier>
       </PropertyGroup>
     </When>
     <When Condition="$(RuntimeIdentifier.EndsWith('x86'))">
