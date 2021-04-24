@@ -161,21 +161,17 @@ _lock_wlock()
 
 _lock_setup()
 {
-  if [ $zouLin -eq 0 ]; then
-    _lockInit='_lock_init_flock'
-    _lockEnter='_lock_enter_flock'
-    _lockExit='_lock_exit_flock'
-    _lock='_lock_flock'
-  elif [ $zouWin -eq 0 ]; then
+  if [ $zouWin -eq 0 ]; then
     _lockInit='_lock_init_wlock'
     _lockEnter='_lock_enter_wlock'
     _lockExit='_lock_exit_wlock'
     _lock='_lock_wlock'
-  else
-    _lockInit='_lock_init_mkdir'
-    _lockEnter='_lock_enter_mkdir'
-    _lockExit='_lock_exit_mkdir'
-    _lock='_lock_mkdir'
+  # BUGBUG: there is still deadlocks with flock on linux / WSL2 - use default mkdir methods
+  # elif [ $zouLin -eq 0 ]; then
+  #   _lockInit='_lock_init_flock'
+  #   _lockEnter='_lock_enter_flock'
+  #   _lockExit='_lock_exit_flock'
+  #   _lock='_lock_flock'
   fi
 }
 
