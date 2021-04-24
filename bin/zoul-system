@@ -8,6 +8,7 @@ zouLin=1
 zouMac=1
 zouWin=1
 zouWsl=1
+zouOs='win'
 
 zouJobsCount=12
 
@@ -20,13 +21,16 @@ sys_init()
 {
   if sys_linux; then
     zouLin=0
+    zouOs='linux'
     sys_wsl && zouWsl=0
     zouJobsCount=64
   elif sys_windows; then
     zouWin=0
+    zouOs='win'
     zouJobsCount=12
   elif sys_mac; then
     zouMac=0
+    zouOs='osx'
     zouJobsCount=64
   fi
 }
