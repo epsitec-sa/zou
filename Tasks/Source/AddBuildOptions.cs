@@ -72,7 +72,7 @@ namespace Zou.Tasks
                     .Select(name => (Key: name, Value: project.GetMetadata(name)))
                     .Where(kv => !string.IsNullOrWhiteSpace(kv.Value))
                     .OrderBy(kv => kv, BuildPropertyComparer.Default)
-                    .Select(kv => $"{kv.Key}={Quote(kv.Value)}")
+                    .Select(kv => $"{kv.Key}={QuotePropertyValue(kv.Value)}")
                     .ToArray();
 
                 var propertiesValue = string.Join(";", properties);
@@ -80,25 +80,42 @@ namespace Zou.Tasks
                 {
                     propertiesValue += ";_=_";
                 }
-                if (propertiesValue.Contains(' '))
-                {
-                    propertiesValue = $"\"{propertiesValue}\"";
-                }
+                propertiesValue = QuotePropertiesValue(propertiesValue);
                 project.SetMetadata("Properties", propertiesValue);
 
                 yield return project;
             }
 
-            static string Quote(string value)
+            static string QuotePropertyValue(string value)
             {
                 // https://github.com/dotnet/sdk/issues/8792#issuecomment-393756980
-                return value.Contains(';')
-                    ? Environment.OSVersion.Platform switch
+                if (value.Contains(';'))
+                {
+                    value = Environment.OSVersion.Platform switch
                     {
                         PlatformID.Win32NT => $"\\\"{value}\\\"",
                         _ => $"'\"{value}\"'"
+                    };
+                }
+                return value;
+            }
+            string QuotePropertiesValue(string value)
+            {
+                if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+                {
+                    if (value.Contains(' '))
+                    {
+                        value = $"\\\"{value}\\\"";
                     }
-                    : value;
+                }
+                else
+                {
+                    if (value.Contains(';') || value.Contains(' '))
+                    {
+                        value = $"'{value}'";
+                    }
+                }
+                return value;
             }
         }
         private void                    ProcessOptions(ITaskItem project)
