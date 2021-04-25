@@ -181,20 +181,22 @@ _branch_sync_fix_tracking_core()
 }
 branch_sync_all()
 {
+  # io_trace ">>>> branch_sync_all ${*@Q}"
+
   local deleteBrokenTrackingInfoBranches=$1; shift
 
-  git fetch --prune --all &>>"$stdallRedir"
-  git fetch --tags --force &>>"$stdallRedir"
+  git fetch --all --prune --tags &>>"$stdallRedir"
 
   [[ $moduleIsExternal == true ]] && return 0
   
-  notes_pull_all
+  notes_merge_all
   # notes_list_all --short
 
   _branch_sync_fix_tracking "$deleteBrokenTrackingInfoBranches"
   _branch_sync_visit _branch_sync_visitor "$@"
 
   [[ $syncNoPush == true ]] || notes_push_all
+  # io_trace "<<<< branch_sync_all ${*@Q}"
 }
 branch_oreset_all()
 {

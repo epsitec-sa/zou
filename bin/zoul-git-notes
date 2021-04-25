@@ -189,6 +189,18 @@ notes_merge()
   # tree "$(git_dir)/refs"
   # io_trace "<<<< notes_merge -- ${*@Q}"
 }
+notes_merge_all()
+{
+  # io_trace ">>>> notes_merge_all"
+  local remote channel names
+  names=( $(notes_channel_names) )
+  for remote in $(git_remotes); do
+    for channel in ${names[@]}; do
+      notes_merge "$channel" "$(notes_fetch_dir "$remote")/$channel"
+    done
+  done
+  # io_trace "<<<< notes_merge_all"
+}
 
 # Pull notes
 # in:
