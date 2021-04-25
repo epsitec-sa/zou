@@ -10,7 +10,7 @@
       <RuntimeType>$(MSBuildRuntimeType)</RuntimeType>
       <RuntimeIdentifier Condition="'%(RuntimeType)' == 'Core'">$(RuntimeIdentifier)</RuntimeIdentifier>
       <PublishDir Condition="'%(RuntimeType)' == 'Core'">$(OutDir)/publish</PublishDir>
-      <BuildInParallel>false</BuildInParallel>
+      <MaxCpuCount>$(MaxCpuCount)</MaxCpuCount>
       <Verbosity>minimal</Verbosity>
       <Configuration>$(Configuration)</Configuration>
       <Targets>Build</Targets>
@@ -39,33 +39,39 @@
   <Target Name="ImportProjectClean"
           DependsOnTargets="AddBuildOptions"
           Returns="%(ProjectsToBuild.Identity)">
+    <!-- MSBuild task does not want quoting around Properties -->
+    <PropertyGroup>
+      <Properties>%(ProjectsToBuild.Properties)</Properties>
+      <Properties>$(Properties.Trim("'").Trim('"'))</Properties>
+    </PropertyGroup>
+
     <!-- The clean target does not care about project dependencies. This means that we can safely use the MSBuild task for solutions too. -->
-    <MSBuild Projects="@(ProjectsToBuild)" Targets="Clean" Properties="%(Properties)" BuildInParallel="%(BuildInParallel)" />
+    <MSBuild Projects="%(ProjectsToBuild.Identity)" Targets="Clean" Properties="$(Properties)" />
   </Target>
 
   <!-- ================ ImportProject ================ -->
 
   <Target Name="InitProjectsToBuild" DependsOnTargets="AddBuildOptions">
-    
     <ItemGroup>
       <ProjectsToBuild>
-        <MSBuildCmd>"$(MSBuildToolsPath)\msbuild"</MSBuildCmd>
+        <MSBuildCmd>"$(MSBuildToolsPath)/msbuild"</MSBuildCmd>
       </ProjectsToBuild>
       <ProjectsToBuild>
-        <MSBuildCmd Condition="'%(RuntimeType)' != 'Full'">dotnet msbuild</MSBuildCmd>
-        <MSBuildOptions>/nologo</MSBuildOptions>
+        <MSBuildCmd Condition="'%(RuntimeType)' != 'Full'">dotnet build</MSBuildCmd>
+        <!-- Do not reuse MSBuild nodes after a build -->
+        <MSBuildOptions>-nologo -nr:false</MSBuildOptions>
       </ProjectsToBuild>
       <ProjectsToBuild>
-        <MSBuildOptions Condition="'%(BuildInParallel)' == 'false'">%(MSBuildOptions) /m:1 /nr:false</MSBuildOptions>
+        <MSBuildOptions Condition="'%(MaxCpuCount)' != ''">%(MSBuildOptions) -m:%(MaxCpuCount)</MSBuildOptions>
       </ProjectsToBuild>
       <ProjectsToBuild>
-        <MSBuildOptions Condition="'%(Verbosity)' != ''">%(MSBuildOptions) /v:%(Verbosity)</MSBuildOptions>
+        <MSBuildOptions Condition="'%(Verbosity)' != ''">%(MSBuildOptions) -v:%(Verbosity)</MSBuildOptions>
       </ProjectsToBuild>
       <ProjectsToBuild>
-        <MSBuildOptions Condition="'%(_Target)' != ''">%(MSBuildOptions) /t:%(_Target)</MSBuildOptions>
+        <MSBuildOptions Condition="'%(_Target)' != ''">%(MSBuildOptions) -t:%(_Target)</MSBuildOptions>
       </ProjectsToBuild>
       <ProjectsToBuild>
-        <MSBuildOptions Condition="'%(Properties)' != ''">%(MSBuildOptions) /p:%(Properties)</MSBuildOptions>
+        <MSBuildOptions Condition="'%(Properties)' != ''">%(MSBuildOptions) -p:%(Properties)</MSBuildOptions>
       </ProjectsToBuild>
     </ItemGroup>
 
@@ -102,7 +108,7 @@
   </Target>
 
   <Target Name="_ImportProject" Condition="'$(ZouTrace)' == 'true'">
-    <Message Importance="high" Text='$(MSBuildCmd) $(MSBuildOptions) "/t:%(MSBuildTarget.Identity)" "%(ProjectsToBuild.Identity)"' />
+    <Message Importance="high" Text='$(MSBuildCmd) $(MSBuildOptions) "-t:%(MSBuildTarget.Identity)" "%(ProjectsToBuild.Identity)"' />
   </Target>
 
   </Project>
