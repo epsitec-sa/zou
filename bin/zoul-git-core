@@ -147,3 +147,15 @@ git_commit()
   gitx add -- "$@" &>>"$stdallRedir" \
   && gitx commit -m "$header" -m "$footer" "${options[@]}" &>>"$stdallRedir"
 }
+
+gitx()
+{
+  local ec
+  # echo "[$PPID-$BASHPID] $PWD @ git -c core.longpaths=true ${*@Q}" &>>"$stdallRedir"
+  git -c core.longpaths=true "$@"; ec=$?
+  if [ ! $ec -eq 0 ] && [ "$1" != config ]; then
+     echo "[$PPID-$BASHPID] $PWD @ git -c core.longpaths=true ${*@Q} -> $ec" >&2
+  fi
+  return $ec
+}
+
