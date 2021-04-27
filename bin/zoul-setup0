@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+
+[[ -z $ZOUL_STDIO ]] && . zoul-stdio
+
+zou_setup0_parse()
+{
+  while [[ "$#" > 0 ]]; do case "$1" in
+    ---vlast) zouCheckoutType='vlast';;
+    ---vnext) zouCheckoutType='vnext';;
+    ---dev)   zouCheckoutType='dev';;
+    --vlast)  checkoutType='vlast';;
+    --vnext)  checkoutType='vnext';;
+    --dev)    checkoutType='dev';;
+    *)        args+=("$1");;
+  esac; shift; done
+
+  # io_trace "zou_setup0_parse -- $(print_vars checkoutType args[@])"
+  return 0
+}
+zou_setup0()
+{
+  # io_trace "zou_setup0 ${*@Q}"
+
+  local zouCheckoutType checkoutType args=()
+  zou_setup0_parse "$@"
+
+  cd "$zouDir"
+  # synchronize zou with updated installer commands
+  git sync -r --pull --clean
+  git sku enter "--$zouCheckoutType"
+
+  # switch to updated zou
+  export PATH="$zouDir/bin:$PATH"
+
+  # launch setup in updated zou directory
+  ( zoul-setup1 "--$checkoutType" "---$zouCheckoutType" "${args[@]}" || exit $? )
+}
+
+zou_setup0 "$@"

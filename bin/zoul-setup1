@@ -1,0 +1,101 @@
+#!/usr/bin/env bash
+
+[[ -z $ZOUL_CONFIG ]]          && . zoul-config
+[[ -z $ZOUL_GIT_VTAG ]]        && . zoul-git-vtag
+[[ -z $ZOUL_GIT_PROD ]]        && . zoul-git-prod
+[[ -z $ZOUL_GIT_MODULE ]]      && . zoul-git-module
+[[ -z $ZOUL_GIT_BRANCH_CORE ]] && . zoul-git-branch-core
+[[ -z $ZOUL_GIT_BRANCH_SYNC ]] && . zoul-git-branch-sync
+
+zou_setup1_parse()
+{
+  local noConfig noPruneTags
+  while [[ "$#" > 0 ]]; do case "$1" in
+    -u|--no-prune-tags) noPruneTags=true;;
+    -c|--no-config)     noConfig=true;;
+    ---version)         actualVersion=$2; shift;;
+    ---vlast)           zouCheckoutType='vlast';;
+    ---vnext)           zouCheckoutType='vnext';;
+    ---dev)             zouCheckoutType='dev';;
+    --vlast)            checkoutType='vlast';;
+    --vnext)            checkoutType='vnext';;
+    --dev)              checkoutType='dev';;
+    -*) io_error "unknown option '$1'"; return 1;;
+  esac; shift; done
+
+  [[ -z $noPruneTags ]] && bundlerOpts+=( '--prune-tags' )
+  [[ -z $noConfig ]]    && bundlerOpts+=( '--force' )
+
+  # io_trace "zou_setup1_parse -- $(print_vars noConfig noPruneTags bundlerOpts[@])"
+  # io_trace "zou_setup1_parse -- $(print_vars checkoutType zouCheckoutType)"
+  return 0
+}
+
+zou_setup1()
+{
+  [[ -n $zouSetupDebug ]] && io_trace "[DEBUG] zou_setup1 -- \$0='$0'"
+  [[ -n $zouSetupDebug ]] && io_trace "[DEBUG] zou_setup1 -- ${*@Q}"
+  module_run _zou_setup1_core "$@"
+}
+
+_zou_setup1_core()
+{
+  local actualVersion version checkoutType zouCheckoutType bundlerOpts=( '--all' )
+
+  zou_setup1_parse "$@" || return $?
+  io_set_version
+
+  [[ -n $zouSetupDebug ]] && io_trace "[DEBUG] _zou_setup1_core -- $(print_vars actualVersion version)"
+  [[ -n $zouSetupDebug ]] && io_trace "[DEBUG] _zou_setup1_core -- $(print_vars checkoutType zouCheckoutType)"
+  [[ -n $zouSetupDebug ]] && io_trace "[DEBUG] _zou_setup1_core -- $(print_vars bundlerOpts[@])"
+
+  config_setup  # global setup only
+
+  if [[ -z $zouSetupDebug ]]; then
+    _zou_setup1_configure_bundles
+    ( _zou_setup1_chicken )
+  fi
+  [[ $checkoutType == $zouCheckoutType ]] || git sku enter "--$checkoutType"
+  _zou_setup1_epilog
+}
+_zou_setup1_configure_bundles()
+{
+  printf '\n'
+  git-bundler "${bundlerOpts[@]}"
+}
+_zou_setup1_chicken()
+{
+  local develDir=$(abspath "$bundleRoot/..")
+  local chickenDir=$develDir/zou.chicken
+  # io_trace "_zou_setup1_chicken -- $(print_vars chickenDir)"
+  if [ -d "$chickenDir" ]; then
+    cd "$chickenDir"
+    git sync
+  else
+    local tracePrefix="${Cyan}[zou.chicken]${NC}"
+    mio_warning "Installing zou.chicken into ${VC}$chickenDir${Brown}" "$tracePrefix"
+    mio_warning "This can take a while, please be patient..." "$tracePrefix"
+    git clonex -C "$develDir" 'https://git.epsitec.ch/Build/zou.chicken.git'
+    nuget sources remove -name chicken &>>"$stdallRedir"
+    [ $zouWin -eq 0 ] && chickenDir="$(cygpath -w "$chickenDir")"
+    nuget sources add -name chicken -source "$chickenDir" &>>"$stdallRedir"
+  fi
+}
+_zou_setup1_epilog()
+{
+  local vtag delta
+  vtag_set_describe $moduleHead
+  # io_trace "_zou_setup1_epilog -- $(print_vars vtag delta)"
+  if [[ $actualVersion == $version ]]; then
+    if [ $delta -eq 0 ]; then
+      mio_warning "No changes, still using version ${Green}$version${Brown}"
+    else
+      mio_warning "Switched to development version, ${Magenta}$delta${Brown} commit[s] ahead of ${Green}$version${Brown}"
+    fi
+  else
+    mio_warning "Switched to new version ${Green}$version${Brown}"
+  fi
+  mio_warning "Update finished."
+}
+
+zou_setup1 "$@"

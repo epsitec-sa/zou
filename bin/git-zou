@@ -1,65 +1,79 @@
 #!/usr/bin/env bash
 
-. zoul-system
+[[ -z $ZOUL_GIT_MODULE ]] && . zoul-git-module
 
-zou_banner()
-{
-  local line regex='Version>(.*)</'
-  while read -r line || [[ -n "$line" ]]; do
-    [[ "$line" =~ $regex ]] && {
-      version=${BASH_REMATCH[1]}
-      break
-    }
-  done < "$zouDir/Version.props"
-  printf "%b" "\e[1;34mZou tools [Version \e[0;32m$version\e[1;34m]
-Copyright © 2019-2020, EPSITEC SA, CH-1400 Yverdon-les-Bains, Switzerland\e[0m\n"
-}
-zou_help()
-{
-  local help=$(cat "$zouDir/help/git-zou")
-  printf "\n\n%b\n" "\e[0;36m$help\e[0m" 1>&2
-}
 zou_parse()
 {
   while [[ "$#" > 0 ]]; do case "$1" in
-    -h|--help) zou_help; exit 0;;
+    -h|--help) io_help $0; exit 0;;
     -v|--version) exit 0;;
-    --fake) export zouFakeUpdate=true;;
-    -*) args+=($1);;
+    --debug) export zouSetupDebug=true;;
+    --vnext) checkoutType='vnext';;
+    --dev)   checkoutType='dev';;
+    -*)      zouSetupOptions+=( "$1" );;
   esac; shift; done
 }
 zou_main()
 {
-  local args=() version zouBinDir zouDir setupDir boot='zoul-update-boot'
-  zouBinDir=$(dirname "${BASH_SOURCE[0]}")
-  zouDir=$(abspath "$zouBinDir/..")
-  cd "$zouDir"
+  local zouSetupOptions=() version checkoutType='vlast'
+  io_set_version
 
-  zou_banner
   zou_parse "$@"
-
-  if [[ -z $zouFakeUpdate ]] && test -n "$(git -c core.longpaths=true status --porcelain)"; then
-    printf -v zouDir %q "$zouDir"
-    printf '\n%b\n' "\e[0;36m[zou]\e[0m : \e[0;31mRepo \e[0;37m$zouDir\e[0;31m is not clean, aborting...\e[0m"
+  if [[ $zouSetupDebug == true ]]; then
+    checkoutType='dev'
+  elif test -n "$(gitx status --porcelain)"; then
+    io_error "${VC}$zouDir${Red} is not clean, aborting..."
     exit 1
   fi
 
-  args+=(---version $version)
+  zouSetupOptions+=( ---version $version)
 
-  setupDir=$(mktemp -d)
-  cp -P "$zouBinDir/$boot" "$setupDir"
+  # io_trace "zou_main ${*@Q} -- $(print_vars zouSetupOptions[@] version zouSetupDebug)"
 
-  # register for worker listening event
-  workerListening=1
-  trap "workerListening=0" USR1
+  startupMessage="Updating ${Brown}zou${White} setup, please wait..."
+  # export zouTraceScope=true
 
-  # start asynchronous worker
-  ("$setupDir/$boot" "$zouBinDir" "$setupDir" "${args[@]}") &
-
-  # worker can do the real work when launcher exits
-  trap "kill -USR1 $!" EXIT
-  # wait for worker to listen
-  while [ $workerListening -ne 0 ]; do sleep .1; done
+  cd "$zouDir"
+  module_run zou_run "${zouSetupOptions[@]}"
 }
+zou_run()
+{
+  # clone installer in temp directory
+
+  local setupDir zouCheckoutType="$checkoutType"
+  if [[ -z $zouSetupDebug ]]; then
+    setupDir=$(mktemp -d)
+    trap_add "rm -rf "$setupDir"" 0
+  else
+    setupDir='/home/roger/tmp'
+    rm -rf "$setupDir"
+  fi
+  setupDir="$setupDir/zou-setup"
+  # io_trace "zou_run -- $(print_vars setupDir) -- ${*@Q}"
+  
+  # clone installer
+  gitx clone 'https://git.epsitec.ch/Build/zou.git' "$setupDir" &>/dev/null
+  cd "$setupDir"
+
+  [[ -f "$setupDir/bin/zoul-setup0" ]] || zouCheckoutType='dev'
+
+  # activate installer
+  export PATH="$setupDir/bin:$PATH"
+
+  if [[ -z $zouSetupDebug ]]; then
+    git sku enter "--$zouCheckoutType"
+  else
+    # copy modified scripts to setup directory
+    find "$zouBinDir" -maxdepth 1 -type f -execdir cp -P -t "$setupDir/bin/" '{}' '+'
+    # activate development version of setup
+    git sku enter '--dev'
+  fi
+
+  # launch new setup in a subshell to take in account SKU mode
+  ( zoul-setup0 "--$checkoutType" "---$zouCheckoutType" "$@" || exit $? )
+}
+
+io_banner
+printf '\n'
 
 zou_main "$@"
