@@ -39,14 +39,8 @@
   <Target Name="ImportProjectClean"
           DependsOnTargets="AddBuildOptions"
           Returns="%(ProjectsToBuild.Identity)">
-    <!-- MSBuild task does not want quoting around Properties -->
-    <PropertyGroup>
-      <Properties>%(ProjectsToBuild.Properties)</Properties>
-      <Properties>$(Properties.Trim("'").Trim('"'))</Properties>
-    </PropertyGroup>
-
     <!-- The clean target does not care about project dependencies. This means that we can safely use the MSBuild task for solutions too. -->
-    <MSBuild Projects="%(ProjectsToBuild.Identity)" Targets="Clean" Properties="$(Properties)" />
+    <MSBuild Projects="%(ProjectsToBuild.Identity)" Targets="Clean" Properties="%(Properties)" />
   </Target>
 
   <!-- ================ ImportProject ================ -->
