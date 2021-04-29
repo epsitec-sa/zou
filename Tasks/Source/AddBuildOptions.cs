@@ -105,7 +105,7 @@ namespace Zou.Tasks
                 {
                     if (value.Contains(' '))
                     {
-                        value = $"\\\"{value}\\\"";
+                        value = $"\"{value}\"";
                     }
                 }
                 else
