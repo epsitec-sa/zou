@@ -48,7 +48,7 @@
           Outputs="%(PackCopyFile.ImportDir)%(RecursiveDir)%(FileName)%(Extension)">
 
     <Message Importance="high" Text="[+] %(PackCopyFile.Identity) =&gt; %(ImportDir)%(RecursiveDir)%(FileName)%(Extension)" />
-    <Copy SourceFiles="@(PackCopyFile)" DestinationFiles="%(ImportDir)%(RecursiveDir)%(FileName)%(Extension)"  />
+    <Copy SourceFiles="%(PackCopyFile.Identity)" DestinationFiles="%(ImportDir)%(RecursiveDir)%(FileName)%(Extension)"  />
   </Target>
 
   <Target Name="PackBuild" AfterTargets="Build"  DependsOnTargets="ImportProject;PackCopy">
