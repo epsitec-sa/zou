@@ -1,15 +1,17 @@
-// Copyright © 2013-2020, EPSITEC SA, CH-1400 Yverdon-les-Bains, Switzerland
+// Copyright © 2013-2021, EPSITEC SA, CH-1400 Yverdon-les-Bains, Switzerland
 // Author: Roger VUISTINER, Maintainer: Roger VUISTINER
 
-using Bcx.Linq;
-using Microsoft.Build.Framework;
-using Microsoft.Build.Utilities;
 using System.Collections.Generic;
 using System.Linq;
 
+using Bcx.Linq;
+
+using Microsoft.Build.Framework;
+using Microsoft.Build.Utilities;
+
 namespace Zou.Tasks
 {
-	public class GroupJoin : JoinTask
+    public class GroupJoin : JoinTask
 	{
 		protected override IEnumerable<ITaskItem> DoJoin()
 		{

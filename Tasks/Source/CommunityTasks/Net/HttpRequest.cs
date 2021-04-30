@@ -1,9 +1,10 @@
-﻿// https://github.com/loresoft/msbuildtasks/blob/36e644be15b367ef53cb82540bd1e6d5525ab419/Source/MSBuild.Community.Tasks/Net/HttpRequest.cs
+// https://github.com/loresoft/msbuildtasks/blob/36e644be15b367ef53cb82540bd1e6d5525ab419/Source/MSBuild.Community.Tasks/Net/HttpRequest.cs
+
+using System.IO;
+using System.Net;
 
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
-using System.IO;
-using System.Net;
 
 namespace Zou.Tasks
 {

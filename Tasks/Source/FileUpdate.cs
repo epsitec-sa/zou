@@ -36,11 +36,12 @@ Cf. http://msdn.microsoft.com/en-us/library/ms143375.aspx
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.IO;
-using Microsoft.Build.Utilities;
+
 using Microsoft.Build.Framework;
+using Microsoft.Build.Utilities;
 
 namespace Zou.Tasks
 {

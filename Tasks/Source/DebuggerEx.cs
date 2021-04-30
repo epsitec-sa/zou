@@ -1,4 +1,4 @@
-// Copyright © 2013-2020, EPSITEC SA, CH-1400 Yverdon-les-Bains, Switzerland
+// Copyright © 2013-2021, EPSITEC SA, CH-1400 Yverdon-les-Bains, Switzerland
 // Author: Roger VUISTINER, Maintainer: Roger VUISTINER
 
 using Microsoft.Build.Framework;

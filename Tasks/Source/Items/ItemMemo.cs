@@ -1,5 +1,9 @@
-// Copyright © 2013-2020, EPSITEC SA, CH-1400 Yverdon-les-Bains, Switzerland
+// Copyright © 2013-2021, EPSITEC SA, CH-1400 Yverdon-les-Bains, Switzerland
 // Author: Roger VUISTINER, Maintainer: Roger VUISTINER
+
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 
 using Bcx;
 using Bcx.IO;
@@ -7,10 +11,6 @@ using Bcx.Linq;
 
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
-
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 
 namespace Zou.Tasks
 {
