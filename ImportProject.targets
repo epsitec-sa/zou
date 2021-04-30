@@ -7,22 +7,27 @@
   <!-- Define imported projects default metadata -->
   <ItemDefinitionGroup>
     <ImportProject>
-      <RuntimeType>$(MSBuildRuntimeType)</RuntimeType>
-      <RuntimeIdentifier Condition="'%(RuntimeType)' == 'Core'">$(RuntimeIdentifier)</RuntimeIdentifier>
-      <PublishDir Condition="'%(RuntimeType)' == 'Core'">$(OutDir)/publish</PublishDir>
-      <MaxCpuCount>$(MaxCpuCount)</MaxCpuCount>
-      <Verbosity>minimal</Verbosity>
-      <Configuration>$(Configuration)</Configuration>
-      <Targets>Build</Targets>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <AssemblerOutput Condition="'$(AssemblerOutput)' != ''">$(AssemblerOutput)</AssemblerOutput>
-      <!-- Propagate the options specified on the command line -->
+      <!-- Override options specified on the command line for nested command lines -->
       <WorkDir         Condition="'$(ForwardWorkDir)'         != ''">$(ForwardWorkDir)</WorkDir>
       <PkgDir          Condition="'$(ForwardPkgDir)'          != ''">$(ForwardPkgDir)</PkgDir>
       <AsmDir          Condition="'$(ForwardAsmDir)'          != ''">$(ForwardAsmDir)</AsmDir>
       <OutDir          Condition="'$(ForwardOutDir)'          != ''">$(ForwardOutDir)</OutDir>
       <Platform        Condition="'$(ForwardPlatform)'        != ''">$(ForwardPlatform)</Platform>
       <PlatformToolset Condition="'$(ForwardPlatformToolset)' != ''">$(ForwardPlatformToolset)</PlatformToolset>
+    </ImportProject>
+
+    <ImportProject>
+      <Configuration Condition="'%(Configuration)' == '' And '$(Configuration)'      != ''">$(Configuration)</Configuration>
+      <RuntimeType   Condition="'%(RuntimeType)'   == '' And '$(MSBuildRuntimeType)' != ''">$(MSBuildRuntimeType)</RuntimeType>
+    </ImportProject>
+    
+    <ImportProject>
+      <RuntimeIdentifier     Condition="'%(RuntimeIdentifier)'     == '' And '$(RuntimeIdentifier)' != '' And '%(RuntimeType)' == 'Core'">$(RuntimeIdentifier)</RuntimeIdentifier>
+      <AssemblerOutput       Condition="'%(AssemblerOutput)'       == '' And '$(AssemblerOutput)'   != ''">$(AssemblerOutput)</AssemblerOutput>
+      <MaxCpuCount           Condition="'%(MaxCpuCount)'           == ''">$(MaxCpuCount)</MaxCpuCount>
+      <Verbosity             Condition="'%(Verbosity)'             == ''">minimal</Verbosity>
+      <Targets               Condition="'%(Targets)'               == ''">Build</Targets>
+      <CopyToOutputDirectory Condition="'%(CopyToOutputDirectory)' == ''">PreserveNewest</CopyToOutputDirectory>
     </ImportProject>
   </ItemDefinitionGroup>
 
@@ -48,7 +53,7 @@
   <Target Name="InitProjectsToBuild" DependsOnTargets="AddBuildOptions">
     <ItemGroup>
       <ProjectsToBuild>
-        <MSBuildCmd>"$(MSBuildToolsPath)/msbuild"</MSBuildCmd>
+        <MSBuildCmd>"$(MSBuildToolsPath)$(V)msbuild"</MSBuildCmd>
       </ProjectsToBuild>
       <ProjectsToBuild>
         <MSBuildCmd Condition="'%(RuntimeType)' != 'Full'">dotnet build</MSBuildCmd>
