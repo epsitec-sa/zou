@@ -1,5 +1,3 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- Resolves missing properties when using 'dotnet msbuild' command. -->
 <Project InitialTargets="TraceBootPlatform;ZouCheckPlatform" 
          TreatAsLocalProperty="RuntimeIdentifier;RuntimePlatform;Platform">
 
@@ -12,16 +10,18 @@
       <PropertyGroup>
         <!--<DebugBootPlatform>1</DebugBootPlatform>-->
 
-        <RuntimePlatform Condition="'$(Platform)' == 'Win32' Or '$(Platform)' == 'x86'">x86</RuntimePlatform>
+        <RuntimePlatform Condition="'$(Platform)' == 'Any CPU' Or '$(Platform)' == 'AnyCPU'">AnyCPU</RuntimePlatform>
+        <RuntimePlatform Condition="'$(Platform)' == 'Win32'   Or '$(Platform)' == 'x86'">x86</RuntimePlatform>
         <RuntimePlatform Condition="'$(RuntimePlatform)' == ''">x64</RuntimePlatform>
 
+        <ForwardPlatform Condition="'$(ForwardPlatform)' == '' And '$(RuntimePlatform)' == 'AnyCPU'">Any CPU</ForwardPlatform>
         <ForwardPlatform Condition="'$(ForwardPlatform)' == '' And '$(RuntimePlatform)' == 'x86'">Win32</ForwardPlatform>
         <ForwardPlatform Condition="'$(ForwardPlatform)' == ''">x64</ForwardPlatform>
       </PropertyGroup>
       
       <!--  Do not modify RuntimeIdentifier when building inside VisualStudio -->
       <PropertyGroup Condition="'$(BuildingInsideVisualStudio)' == ''">
-        <RuntimeIdentifier>$(ZouOs)-$(RuntimePlatform)</RuntimeIdentifier>
+        <RuntimeIdentifier Condition="'$(RuntimePlatform)' != 'AnyCPU'">$(ZouOs)-$(RuntimePlatform)</RuntimeIdentifier>
       </PropertyGroup>
     </When>
     <When Condition="$(RuntimeIdentifier.EndsWith('x86'))">
