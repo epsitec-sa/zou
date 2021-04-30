@@ -1,0 +1,28 @@
+<Project InitialTargets="TraceTasksRedist">
+
+  <ItemDefinitionGroup>
+    <ImportProject>
+      <RuntimeType>Core</RuntimeType>
+      <Targets>Publish</Targets>
+    </ImportProject>
+  </ItemDefinitionGroup>
+
+  <ItemGroup>
+    <ImportProject Include="$(MSBuildThisFileDirectory)Tasks.csproj">
+      <RuntimeIdentifier>win</RuntimeIdentifier>
+      <PublishDir>$(OutDir)win$(V)</PublishDir>
+    </ImportProject>
+    <ImportProject Include="$(MSBuildThisFileDirectory)Tasks.csproj">
+      <RuntimeIdentifier>linux</RuntimeIdentifier>
+      <PublishDir>$(OutDir)linux$(V)</PublishDir>
+    </ImportProject>
+    <ImportProject Include="$(MSBuildThisFileDirectory)Tasks.csproj">
+      <RuntimeIdentifier>osx</RuntimeIdentifier>
+      <PublishDir>$(OutDir)osx$(V)</PublishDir>
+    </ImportProject>
+  </ItemGroup>
+
+  <Target Name="TraceTasksRedist">
+    <LogItems Items="@(ImportProject)" />
+  </Target>
+</Project>

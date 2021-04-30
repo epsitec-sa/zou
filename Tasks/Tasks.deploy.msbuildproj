@@ -1,0 +1,20 @@
+<Project>
+  <PropertyGroup>
+    <Configuration>Release</Configuration>
+    <OutDir>$(MSBuildProjectDirectory)\bin\redist\</OutDir>
+  </PropertyGroup>
+  <Import Project="..\Cs.Pack.props" />
+
+  <Import Project="Tasks.redist.props" />
+  
+  <PropertyGroup>
+    <PkgBinDir>$(ZouBinzDir)tasks$(V)</PkgBinDir>
+  </PropertyGroup>
+
+  <Target Name="PackFilter">
+    <ItemGroup>
+      <ProdBinExclude Include="$(OutDir)*" />
+    </ItemGroup>
+  </Target>
+  <Import Project="$(ZouDir)Cs.Pack.targets" />
+</Project>
