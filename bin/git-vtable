@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
-. zoul-core
+. zoul-stdio
 
 vtable_show()
 {
   local obj="${1:-HEAD}"
-  gitx notes --ref 'zou-vtable' show "$obj^{}" 2>/dev/null \
+  git -c core.longpaths=true notes --ref 'zou-vtable' show "$obj^{}" \
   || io_message "No version table found at ${VC}$obj${Red}" '' ${Red}
 }
 
