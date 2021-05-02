@@ -233,19 +233,26 @@ branch_list_all_untracked()
   local tracked=( $(branch_list_all_tracked) )
   array_remove_array branches[@] tracked[@]
 }
-branch_list_remote_untracked_flatten()
+
+# Flattened lists
+branch_list_remote_untracked_flatten() { _branch_list_remote_untracked_flatten | sort | uniq; }
+branch_list_all_flatten()              { _branch_list_all_flatten              | sort | uniq; }
+branch_list_all_at_flatten()           { branch_list_all_at_flatten            | sort | uniq; }
+branch_list_tracked_flatten()          { branch_list_tracked_flatten           | sort | uniq; }
+
+_branch_list_remote_untracked_flatten()
 {
   local b
   for b in $(branch_list_remote_untracked); do
     echo ${b#*/}
   done
 }
-branch_list_all_flatten()
+_branch_list_all_flatten()
 {
   branch_list_local
-  branch_list_remote_untracked_flatten
+  _branch_list_remote_untracked_flatten
 }
-branch_list_all_at_flatten()
+_branch_list_all_at_flatten()
 {
   local b
   branch_list_local_at $1
@@ -253,10 +260,10 @@ branch_list_all_at_flatten()
     echo ${b#*/}
   done
 }
-branch_list_tracked_flatten()
+_branch_list_tracked_flatten()
 {
-  branch_list_local_tracked
-  branch_list_remote_untracked_flatten
+  _branch_list_local_tracked
+  _branch_list_remote_untracked_flatten
 }
 
 branch_remove_remote_tracked()
