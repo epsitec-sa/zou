@@ -21,9 +21,6 @@ zou_main()
   zou_parse "$@"
   if [[ $zouSetupDebug == true ]]; then
     checkoutType='dev'
-  elif test -n "$(gitx status --porcelain)"; then
-    io_error "${VC}$zouDir${Red} is not clean, aborting..."
-    exit 1
   fi
 
   zouSetupOptions+=( ---version $version)
