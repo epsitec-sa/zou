@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-[[ -z $ZOUL_STDIO ]] && . zoul-stdio
+[[ -z $ZOUL_GIT_REPO ]] && . zoul-git-repo
 
 zou_setup0_parse()
 {
@@ -19,13 +19,15 @@ zou_setup0_parse()
 }
 zou_setup0()
 {
-  # io_trace "zou_setup0 ${*@Q}"
+  # io_trace "zou_setup0 ${*@Q} -- $(print_vars zouDir)"
 
-  local zouCheckoutType checkoutType args=()
+  local zouCheckoutType checkoutType args=() bundleRoot
   zou_setup0_parse "$@"
 
-  cd "$zouDir"
-  # synchronize zou with updated installer commands
+  bundleRoot=$(repo_bundle_root "$zouDir")
+  cd "$bundleRoot"
+  # io_trace "zou_setup0 -1- \$0='$0' $(print_vars bundleRoot)"
+  # synchronize zou bundle with updated installer commands
   git sync -r --pull --clean
   git sku enter "--$zouCheckoutType"
 
