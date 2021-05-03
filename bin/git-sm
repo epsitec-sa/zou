@@ -9,14 +9,15 @@ sm_parse()
 {
   while [[ "$#" > 0 ]]; do case "$1" in
     -h|--help) zou-help $0; exit 0;;
-    -j*)     jobsCount=${1#-j};;
-    clone)   subcommand=$1;;
-    update)  subcommand=$1;;
-    sync)    subcommand=$1;;
-    syncupd) subcommand=$1;;
-    add)     subcommand=$1;;
-    -C)      shift; workDir="$1";;
-    *)       args+=( "$1" );;
+    -j*)         jobsCount=${1#-j};;
+    clone)       subcommand=$1;;
+    update)      subcommand=$1;;
+    sync)        subcommand=$1;;
+    syncupdsync) subcommand=$1;;
+    updsync)     subcommand=$1;;
+    add)         subcommand=$1;;
+    -C)          shift; workDir="$1";;
+    *)           args+=( "$1" );;
   esac; shift; done
 }
 sm_run()
@@ -31,11 +32,12 @@ sm_run()
   
   local IFS=$'\n'
   case "$subcommand" in
-    clone)   git_sm_clone   "$workDir" "${args[@]}";;
-    update)  git_sm_update  "$workDir" "${args[@]}";;
-    syncupd) git_sm_syncupd "$workDir" "${args[@]}";;
-    sync)    git_sm_sync    "$workDir" "${args[@]}";;
-    add)     git_sm_add     "$workDir" "${args[@]}";;
+    clone)       git_sm_clone         "$workDir" "${args[@]}";;
+    update)      git_sm_update        "$workDir" "${args[@]}";;
+    syncupdsync) git_sm_sync_upd_sync "$workDir" "${args[@]}";;
+    updsync)     git_sm_upd_sync      "$workDir" "${args[@]}";;
+    sync)        git_sm_sync          "$workDir" "${args[@]}";;
+    add)         git_sm_add           "$workDir" "${args[@]}";;
     *)
       local verb='invalid'
       [[ -z $subcommand ]] && verb='missing'

@@ -24,19 +24,34 @@ doNotRegisterBundle=false
 # EVENTS
 ########
 
-headChangedEvent+=( _bundle_reset_scope _module_reset_scope _module_sync_submodules )
-headNameChangedEvent+=( _bundle_reset_scope _module_reset_scope )
+headChangedEvent+=( _module_on_head_changed )
+headNameChangedEvent+=( _module_on_head_name_changed )
 branchSyncEvent+=( _module_on_sync )
 mergingEvent+=( _module_on_merging )
 mergeSuccessEvent+=( _module_on_merge_success )
 mergeAbortEvent+=( _module_on_merge_abort )
 
+_module_on_head_changed()
+{
+  # io_trace ">>>> _module_on_head_changed ${*@Q} -- $(print_vars moduleSubmodulePaths[@])"
+  _bundle_reset_scope _module_reset_scope _module_sync_all_submodules
+  # io_trace "<<<< _module_on_head_changed ${*@Q} -- $(print_vars moduleSubmodulePaths[@])"
+}
+_module_on_head_name_changed()
+{
+  # io_trace ">>>> _module_on_head_name_changed ${*@Q}"
+  _bundle_reset_scope _module_reset_scope
+  # io_trace "<<<< _module_on_head_name_changed ${*@Q}"
+}
 _module_on_sync()
 {
-  [[ $3 =~ ^\< ]] || return 0
-  _module_set_submodule_paths
-  # io_trace "_module_on_sync -- $(print_vars moduleSubmodulePaths[@])"
-  module_init_submodules
+  # io_trace ">>>> _module_on_sync ${*@Q} -- $(print_vars moduleSubmodulePaths[@])"
+  if [[ $3 =~ ^\< ]]; then
+    _module_set_submodule_paths
+    _module_sync_all_submodules
+    _module_upd_sync_unitialized_submodules
+  fi
+  # io_trace ">>>> _module_on_sync ${*@Q} -- $(print_vars moduleSubmodulePaths[@])"
 }
 _module_on_merging()
 {
@@ -532,19 +547,26 @@ _module_enter()
 # INITIALIZATION
 ################
 
-_module_sync_submodules()
+_module_sync_all_submodules()
 {
-  # io_trace ">>>> _module_sync_submodules -- $(print_vars moduleSubmodulePaths[@])"
+  # io_trace ">>>> _module_sync_all_submodules -- $(print_vars moduleSubmodulePaths[@])"
   echo "${moduleSubmodulePaths[@]}" \
   | xargs --no-run-if-empty git-sm sync -C "${moduleRoot}" --
-  # io_trace "<<<< _module_sync_submodules -- $(print_vars moduleSubmodulePaths[@])"
+  # io_trace "<<<< _module_sync_all_submodules -- $(print_vars moduleSubmodulePaths[@])"
+}
+_module_upd_sync_unitialized_submodules()
+{
+  # io_trace ">>>> _module_upd_sync_unitialized_submodules -- $(print_vars moduleSubmodulePaths[@])"
+  _module_list_uninitialized_submodules "${configSkuInclude[@]}" \
+  | xargs -d $'\n' --no-run-if-empty git-sm updsync -C "${moduleRoot}"
+  # io_trace "<<<< _module_upd_sync_unitialized_submodules -- $(print_vars moduleSubmodulePaths[@])"
 }
 module_init_submodules()
 {
-  # io_trace ">>>> module_init_submodules -- $(print_vars moduleSubmodulePaths[@])"
+  # io_trace ">>>> module_init_submodules -- $(print_vars configSkuInclude[@])"
   _module_list_uninitialized_submodules "${configSkuInclude[@]}" \
-  | xargs -d $'\n' --no-run-if-empty git-sm syncupd -C "${moduleRoot}"
-  # io_trace "<<<< module_init_submodules -- $(print_vars moduleSubmodulePaths[@])"
+  | xargs -d $'\n' --no-run-if-empty git-sm syncupdsync -C "${moduleRoot}"
+  # io_trace "<<<< module_init_submodules -- $(print_vars configSkuInclude[@])"
 }
 _module_list_uninitialized_submodules()
 {

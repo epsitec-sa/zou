@@ -6,9 +6,41 @@ ZOUL_GIT_COSM=true
 
 [[ -z $ZOUL_GIT_MODULE ]]        && . zoul-git-module
 
+################
+# EVENT HANDLERS
+################
+
 headChangedEvent+=( _cosm_on_head_changed )
 submoduleChangedEvent+=( _cosm_on_submodule_changed )
-branchSyncEvent+=( _cosm_on_sync )
+branchSyncEvent+=( _cosm_on_branch_sync )
+
+_cosm_on_submodule_changed()
+{
+  # io_trace ">>>> _cosm_on_submodule_changed ${*@Q}"
+  cosm_reset_scope
+  if [ ${#moduleSubmodulePaths[@]} -ne 0 ]; then
+    cosm_discard_unstaged_clean_external_submodules
+    _cosm_sync_submodules "$@"
+  fi
+  # io_trace "<<<< _cosm_on_submodule_changed ${*@Q}"
+}
+_cosm_on_head_changed()
+{
+  # io_trace ">>>> _cosm_on_head_changed ${*@Q}"
+  cosm_reset_scope
+  if [ ${#moduleSubmodulePaths[@]} -ne 0 ]; then
+    cosm_discard_unstaged_clean_external_submodules
+  fi
+  # io_trace "<<<< _cosm_on_head_changed ${*@Q}"
+}
+_cosm_on_branch_sync()
+{
+  # io_trace ">>>> _cosm_on_branch_sync ${*@Q}"
+  if [[ $3 =~ ^\< ]]; then
+    _cosm_on_head_changed "$@"
+  fi
+  # io_trace "<<<< _cosm_on_branch_sync ${*@Q}"
+}
 
 # usage:
 #   module_run config_scope cosm_scope $*
@@ -69,33 +101,6 @@ _cosm_trace()
   io_trace "cosm_reset_scope -- $(print_vars unstagedCleanExternalSubmodules[@])"
   io_trace "cosm_reset_scope -- $(print_vars unstagedDirtyExternalSubmodules[@])"
   io_lock_exit
-}
-
-################
-# EVENT HANDLERS
-################
-
-_cosm_on_submodule_changed()
-{
-  # io_trace "_cosm_on_submodule_changed ${*@Q}"
-  cosm_reset_scope
-  [ ${#moduleSubmodulePaths[@]} -eq 0 ] && return 0
-
-  cosm_discard_unstaged_clean_external_submodules
-  _cosm_sync_submodules "$@"
-}
-_cosm_on_head_changed()
-{
-  cosm_reset_scope
-  [ ${#moduleSubmodulePaths[@]} -eq 0 ] && return 0
-  cosm_discard_unstaged_clean_external_submodules
-}
-_cosm_on_sync()
-{
-  if [[ $3 =~ ^\< ]]; then
-    # io_trace "_cosm_on_sync ${*@Q}"
-    _cosm_on_head_changed "$@"
-  fi
 }
 
 #####################
