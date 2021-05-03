@@ -34,13 +34,16 @@ mergeAbortEvent+=( _module_on_merge_abort )
 _module_on_head_changed()
 {
   # io_trace ">>>> _module_on_head_changed ${*@Q} -- $(print_vars moduleSubmodulePaths[@])"
-  _bundle_reset_scope _module_reset_scope _module_sync_all_submodules
+  _bundle_reset_scope
+  _module_reset_scope
+  _module_sync_all_submodules
   # io_trace "<<<< _module_on_head_changed ${*@Q} -- $(print_vars moduleSubmodulePaths[@])"
 }
 _module_on_head_name_changed()
 {
   # io_trace ">>>> _module_on_head_name_changed ${*@Q}"
-  _bundle_reset_scope _module_reset_scope
+  _bundle_reset_scope
+  _module_reset_scope
   # io_trace "<<<< _module_on_head_name_changed ${*@Q}"
 }
 _module_on_sync()
@@ -383,8 +386,9 @@ _bundle_reset_scope()
   # io_trace "_bundle_reset_scope -- ${*@Q}"
 
   if [[ "$PWD" == "$bundleRoot" ]]; then
-    _bundle_set_head $1
-    repo_is_merging "$bundleRoot"; _module_set_bundle_trace_prefix $?
+    _bundle_set_head "$1"
+    repo_is_merging "$bundleRoot"
+    _module_set_bundle_trace_prefix $?
     _module_set_bundle_dev_branch
     _module_set_principal_module_id
 
@@ -397,8 +401,9 @@ _module_reset_scope()
   # io_trace "_module_reset_scope -- ${*@Q}" ${Green}
 
   _module_set_submodule_paths
-  _module_set_head $1
-  repo_is_merging; _module_set_trace_prefix $?
+  _module_set_head "$1"
+  repo_is_merging
+  _module_set_trace_prefix $?
   _module_set_module_dev_branch
   _module_set_is_external
   
