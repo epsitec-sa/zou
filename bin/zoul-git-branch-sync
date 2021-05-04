@@ -143,11 +143,14 @@ _branch_sync_visit()
 }
 _branch_sync_fix_tracking()
 {
+  # io_trace ">>>> _branch_sync_fix_tracking ${*@Q}"
   local deleteBrokenTrackingInfoBranches=$1 l r i
+  shift
   while read -r l r i; do
-    # io_trace "_branch_sync_fix_tracking -- $(print_vars l r i deleteBrokenTrackingInfoBranches)"
+    # io_trace "#### _branch_sync_fix_tracking -- $(print_vars l r i deleteBrokenTrackingInfoBranches)"
     [[ -z $i ]] && _branch_sync_fix_tracking_core
   done < <(branch_sync_info "$@")
+  # io_trace "<<<< _branch_sync_fix_tracking ${*@Q}"
 }
 # scope:
 #   l r i
@@ -177,7 +180,7 @@ _branch_sync_fix_tracking_core()
       branch_ensure_remote "$l" "$remote"
     fi
   fi
-  # io_trace "_branch_sync_fix_tracking -- $(print_vars l r i color)"
+  # io_trace "_branch_sync_fix_tracking_core -- $(print_vars l r i)"
 }
 branch_sync_all()
 {
@@ -192,8 +195,11 @@ branch_sync_all()
   notes_merge_all
   # notes_list_all --short
 
+  # io_trace "#### branch_sync_all -1-"
   _branch_sync_fix_tracking "$deleteBrokenTrackingInfoBranches"
+  # io_trace "#### branch_sync_all -2-"
   _branch_sync_visit _branch_sync_visitor "$@"
+  # io_trace "#### branch_sync_all -3-"
 
   [[ $syncNoPush == true ]] || notes_push_all
   # io_trace "<<<< branch_sync_all ${*@Q}"
