@@ -32,6 +32,12 @@
 
   </PropertyGroup>
   
+  <!-- TargetFrameworks -->
+  <PropertyGroup Condition="'$(TargetFrameworks)' == '*Undefined*'">
+    <TargetFrameworks Condition="'$(BuildingInsideVisualStudio)' != ''" />
+    <TargetFrameworks Condition="'$(BuildingInsideVisualStudio)' == ''">$(FullTargetFramework);$(CoreTargetFramework);netstandard2.0;netstandard2.1</TargetFrameworks>
+  </PropertyGroup>
+
   <!-- Exclude git metadata from project -->
   <ItemGroup>
     <None Remove=".git*" />
