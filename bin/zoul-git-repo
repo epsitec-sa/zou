@@ -35,8 +35,6 @@ ZOUL_GIT_REPO=true
 [[ -z $ZOUL_CORE ]]     && . zoul-core
 [[ -z $ZOUL_GIT_CORE ]] && . zoul-git-core
 
-internalIgnoreList=( 'versions.md' )
-
 submoduleChangedEvent=()
 repo_raise_submodule_changed_event() { raise_event 'submoduleChangedEvent[@]' "$@"; }
 
@@ -333,8 +331,7 @@ repo_list_untracked()
   local path smpath
   for path in $(gitx ls-files --exclude-standard --others 2>>"$stderrRedir"); do
     if [[ -f $path ]]; then
-      # skip internal ignore list
-      array_contains_element "$path" "${internalIgnoreList[@]}" || echo $path
+      echo $path
     else
       # skip dangling submodules
       repo_is_module_root "$path" || echo $path
@@ -346,8 +343,7 @@ repo_list_unstaged()
   local path
   for path in $(gitx diff-files --name-only -r --ignore-submodules 2>>"$stderrRedir"); do
     if [[ -f $path ]]; then
-      # skip internal ignore list
-      array_contains_element "$path" "${internalIgnoreList[@]}" || echo $path
+      echo $path
     fi
   done
 }
@@ -399,17 +395,6 @@ repo_discard_submodules()
   repo_raise_submodule_changed_event "$@"
 }
 
-repo_discard_internal_ignore_list()
-{
-  local discarded=0 path
-  for path in $(gitx diff-files --name-only -r --ignore-submodules 2>>"$stderrRedir"); do
-    if [[ -f $path ]] && array_contains_element "$path" "${internalIgnoreList[@]}"; then
-      gitx checkout -- "$path" &>>"$stdallRedir"
-      (( discarded += 1 ))
-    fi
-  done
-  return $discarded
-}
 repo_remove_dangling_submodule()
 {
   local smpath=$1 smid=${1%/}
