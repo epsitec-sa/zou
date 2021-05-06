@@ -202,7 +202,7 @@ _branch_merge()
     # all conflicts should be resolved
     branch_merge_abort
 
-    if io_locked_eval "gitx merge -m '$message' "$@" '$toMerge' '-sours' 2>&1" _branch_merge_selector; then
+    if io_buffered_eval "gitx merge -m '$message' "$@" '$toMerge' '-sours' 2>&1" _branch_merge_selector; then
       # io_trace "_branch_merge -4.1.1- $(print_vars toMerge intoBranch)"
       branch_raise_merge_success_event "$toMerge" "$intoBranch"
       return 0
@@ -240,7 +240,7 @@ _branch_remove_temp_merge_files()
 }
 _branch_merge_tool()
 {
-  # io_locked_eval 'gitx mergetool 2>&1' : ${DarkGray}
+  # io_buffered_eval 'gitx mergetool 2>&1' : ${DarkGray}
   local mergeTool="$(git config merge.tool)" ec
   branch_raise_merging_event "$toMerge" "$intoBranch"
 

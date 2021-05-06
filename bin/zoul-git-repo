@@ -437,7 +437,7 @@ repo_prune_tags()
 
   if [[ $verbose == true ]]; then
     gitx tag -l 2>>"$stderrRedir" | xargs --no-run-if-empty gitx tag -d &>>"$stdallRedir"
-    io_locked_eval 'gitx fetch --tags 2>&1' _repo_prune_tags_line_selector
+    io_buffered_eval 'gitx fetch --tags 2>&1' _repo_prune_tags_line_selector
   else
     gitx tag -l 2>>"$stderrRedir" | xargs --no-run-if-empty gitx tag -d &>>"$stdallRedir"
     gitx fetch --tags &>>"$stdallRedir"

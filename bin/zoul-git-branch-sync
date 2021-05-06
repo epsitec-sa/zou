@@ -33,7 +33,7 @@ _branch_sync_push()
   # l > r -- move r
   local r=${1%%/*} l=$2
   # io_trace "git push --follow-tags "$r" "$l""
-  io_locked_eval "git push --follow-tags "$r" "$l" 2>&1" _branch_sync_filter_tags
+  io_buffered_eval "git push --follow-tags "$r" "$l" 2>&1" _branch_sync_filter_tags
 }
 _branch_sync_filter_tags()
 {

@@ -581,7 +581,7 @@ prod_commit_release()
     # update technical version
     _prod_commit_release_core 'version_update'
     local comment="publish branch '$prodBranch' as '$releaseVTag'"
-    io_locked_eval "gitx tag -a -m 'zou-flow: $comment' "$releaseVTag" "$prodBranch" 2>&1"
+    io_buffered_eval "gitx tag -a -m 'zou-flow: $comment' "$releaseVTag" "$prodBranch" 2>&1"
     # io_trace "prod_commit_release -2- -- $(print_vars releasePrerelPrefix releaseVTag prodBranch)"
   fi
 }
