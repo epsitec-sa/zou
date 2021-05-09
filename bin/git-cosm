@@ -49,6 +49,7 @@ cosm_do_select()
   for sm in ${submodules[@]}; do
     [[ -f "$PWD/$sm/.gitmodules" ]] && echo $sm
   done
+  return 0
 }
 cosm_do_prolog()
 {
@@ -58,8 +59,9 @@ cosm_do_prolog()
 }
 cosm_do_epilog()
 {
-  # io_trace "cosm_do_epilog)"
+  # io_trace "cosm_do_epilog"
   cosm_commit_unstaged_submodules true
+  return 0
 }
 cosm_do_finally() { branch_show_status; }
 
