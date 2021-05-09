@@ -162,13 +162,13 @@ gitx()
 git_sm_clone()
 {
   [[ -z $ZOUL_GIT_OPTIONS ]] && . zoul-git-options
-  gitx -C "$1" clone $(gitx_cache_option) --recurse-submodules -j"$jobsCount" "${@:2}" 2>&1 | _git_sm_out_filter
+  gitx -C "$1" clone $(gitx_cache_option) --recurse-submodules -j"${jobsCount:-8}" "${@:2}" 2>&1 | _git_sm_out_filter
 }
 git_sm_update()
 {
   [[ -z $ZOUL_GIT_OPTIONS ]] && . zoul-git-options
   # io_trace ">>>> git_sm_update ${*@Q}"
-  gitx -C "$1" submodule update $(gitx_cache_option) --jobs "$jobsCount" "${@:2}" 2>&1 | _git_sm_out_filter
+  gitx -C "$1" submodule update $(gitx_cache_option) --jobs "${jobsCount:-8}" "${@:2}" 2>&1 | _git_sm_out_filter
   # io_trace "<<<< git_sm_update ${*@Q}"
 }
 git_sm_sync()
@@ -182,7 +182,7 @@ git_sm_sync_upd_sync()
   [[ -z $ZOUL_GIT_OPTIONS ]] && . zoul-git-options
   # io_trace ">>>> git_sm_sync_upd_sync ${*@Q}"
   gitx -C "$1" submodule sync -- "${@:2}" 2>&1 | _git_sm_out_filter
-  gitx -C "$1" submodule update $(gitx_cache_option) --jobs "$jobsCount" --init -- "${@:2}" 2>&1 | _git_sm_out_filter
+  gitx -C "$1" submodule update $(gitx_cache_option) --jobs "${jobsCount:-8}" --init -- "${@:2}" 2>&1 | _git_sm_out_filter
   gitx -C "$1" submodule sync -- "${@:2}" 2>&1 | _git_sm_out_filter
   # io_trace "<<<< git_sm_sync_upd_sync ${*@Q}"
 }
@@ -190,7 +190,7 @@ git_sm_upd_sync()
 {
   [[ -z $ZOUL_GIT_OPTIONS ]] && . zoul-git-options
   # io_trace ">>>> git_sm_upd_sync ${*@Q}"
-  gitx -C "$1" submodule update $(gitx_cache_option) --jobs "$jobsCount" --init -- "${@:2}" 2>&1 | _git_sm_out_filter
+  gitx -C "$1" submodule update $(gitx_cache_option) --jobs "${jobsCount:-8}" --init -- "${@:2}" 2>&1 | _git_sm_out_filter
   gitx -C "$1" submodule sync -- "${@:2}" 2>&1 | _git_sm_out_filter
   # io_trace "<<<< git_sm_upd_sync ${*@Q}"
 }
