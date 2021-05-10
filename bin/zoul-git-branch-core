@@ -396,6 +396,7 @@ branch_ensure_local_vbranch()
 #   2 tag
 #   3 remote branch
 #   4 other
+#   5 branch does not exist
 branch_ref_type()
 {
   if gitx show-ref -s --verify "refs/heads/$1" &>>"$stdallRedir"; then
@@ -414,6 +415,10 @@ branch_ref_type()
     local tags=( $(gitx tag --points-at "$1^{}" 2>>"$stderrRedir") )
     if [ ${#tags[@]} -eq 0 ]; then
       refSym="$(gitx rev-parse --short "$1^{}" 2>>"$stderrRedir")"
+      if [[ -z "$refSym" ]]; then
+        refSym="$1"
+        return 5
+      fi
       return 4
     else
       refSym=${tags[-1]}
@@ -423,7 +428,7 @@ branch_ref_type()
 }
 branch_checkout()
 {
-  local ref=$1 forceCheckout=$2 refType refSym checkout raiseEvent isCurrent=0
+  local ref=$1 forceCheckout=$2 checkoutOpt refType refSym checkout raiseEvent isCurrent=0
   # io_trace ">>>> branch_checkout -1- $(print_vars ref forceCheckout)"
 
   # checkout = force || !current
@@ -444,22 +449,22 @@ branch_checkout()
     isCurrent=1
     # io_trace "branch_checkout -2.3- $(print_vars checkout raiseEvent isCurrent)"
   fi
-  branch_ref_type $ref; refType=$?
+  branch_ref_type "$ref"; refType=$?
   # io_trace "branch_checkout -3- $(print_vars refSym refType)"
   if [ $checkout -eq 0 ]; then
     # compute symbols
     local ioType ioRef=$refSym ec=0
     case $refType in
       0) ioType='branch';;
-      1) ioType='new branch';;
+      1|3|5) ioType='new branch';;
       2) ioType='tag'; ioRef="($ioRef)";;
-      3) ioType='new branch';;
       4) ioType='commit'; ioRef="($ioRef)";;
     esac
     # io_trace "branch_checkout -4- $(print_vars ioType ioRef)"
 
     # checkout
-    _branch_checkout_core "$refSym"; ec=$?
+    [[ $refType -eq 5 ]] && checkoutOpt='-b'
+    _branch_checkout_core "$refSym" "$checkoutOpt"; ec=$?
     # io_trace "<<<< branch_checkout -5- $(print_vars refType refSym ec)"
     return $ec
   else
@@ -482,10 +487,10 @@ _branch_raise_checked_out_events()
 }
 _branch_checkout_core()
 {
-  local ref=$1 IFS=$'\n' ec lines line
+  local ref="$1" checkoutOpt="$2" IFS=$'\n' ec lines line
   # io_trace "_branch_checkout_core -1- ${*@Q}"
 
-  lines=( $(gitx checkout "$ref" 2>&1) ); ec=$?
+  lines=( $(gitx checkout $checkoutOpt "$ref" 2>&1) ); ec=$?
   if [[ $ec -eq 0 ]]; then
     _branch_raise_checked_out_events
   fi
