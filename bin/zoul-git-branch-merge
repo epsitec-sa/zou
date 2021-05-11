@@ -39,6 +39,13 @@ branch_merge_abort()
     branch_raise_merge_abort_event
   fi
 }
+branch_merge_continue()
+{
+  if repo_is_merging; then
+    # io_trace "branch_merge_continue -1-"
+    gitx -c core.editor=true merge --continue &>>"$stdallRedir"
+  fi
+}
 branch_merge()
 {
   branch_merge_abort
@@ -184,49 +191,89 @@ _branch_merge_ff_only()
   # io_trace "_branch_merge_ff_only -1- $(print_vars toMerge intoBranch ref)"
   if gitx merge --ff-only "$toMerge" &>>"$stdallRedir"; then
     # io_trace "_branch_merge_ff_only -2- $(print_vars toMerge intoBranch ref)"
-    branch_raise_merge_success_event "$toMerge" "$intoBranch"
-    [[ $quiet == true ]] || mio_success "Merged ${VC}$toMergeAlias${Green} into ${VC}$intoBranchName${Green} (fast-forward)"
-    return 0
+    :
+  elif gitx merge-base --is-ancestor "$hashMergeInto" "$hashToMerge" 2>>"$stderrRedir" && repo_is_all_clean; then
+    git reset --hard "$hashToMerge" &>>"$stderrRedir"
+    # io_trace "<<<< _branch_merge_ff -5- $(print_vars toMerge intoBranch ref)"
   else
     # io_trace "_branch_merge_ff_only -3- $(print_vars toMerge intoBranch ref)"
     return 1
   fi
+  branch_raise_merge_success_event "$toMerge" "$intoBranch"
+  [[ $quiet == true ]] || mio_success "Merged ${VC}$toMergeAlias${Green} into ${VC}$intoBranchName${Green} (fast-forward)"
+  return 0
 }
 _branch_merge()
 {
   local message=$1 toMerge=$2; shift 2
   # io_trace ">>>> _branch_merge $(print_vars toMerge intoBranch)"
-  if gitx merge -m "$message" "$@" "$toMerge" &>>"$stdallRedir"; then
+  if gitc merge -m "$message" "$@" "$toMerge" &>>"$stdallRedir"; then
     branch_raise_merge_success_event "$toMerge" "$intoBranch"
     # io_trace "<<<< _branch_merge -1- $(print_vars toMerge intoBranch) ec=0"
     return 0
   fi
-  # io_trace "_branch_merge -3- $(print_vars toMerge intoBranch)"
 
-  if _branch_merge_resolve_submodule_conflicts; then
-    # io_trace "_branch_merge -4.1- $(print_vars toMerge intoBranch)"
+  # resolve submodules conflicts
+  _branch_merge_resolve_submodule_conflicts
+  # continue merging since submodules conflicts have been resolved
+  branch_merge_continue
 
-    # no files to merge, just submodules
-    # all conflicts should be resolved
-    branch_merge_abort
-
-    if io_buffered_eval "gitx merge -m '$message' "$@" '$toMerge' '-sours' 2>&1" _branch_merge_selector; then
-      # io_trace "_branch_merge -4.1.1- $(print_vars toMerge intoBranch)"
+  if gitc merge -m "$message" "$@" "$toMerge" &>>"$stdallRedir"; then
+    branch_raise_merge_success_event "$toMerge" "$intoBranch"
+    # io_trace "<<<< _branch_merge -2- $(print_vars toMerge intoBranch) ec=0"
+    return 0
+  else
+    if ! _branch_merge_process_deleted_submodules "$toMerge" "$intoBranch"; then
+      # io_trace "#### _branch_merge -3- $(print_vars syncNoPush toMerge intoBranchh ec)"
+      local ec
+      if [[ $syncNoPush == true ]]; then
+        branch_merge "$toMerge" "$intoBranch"; ec=$?
+      else
+        branch_merge_sync "$toMerge" "$intoBranch"; ec=$?
+      fi
+      # io_trace "<<<< _branch_merge -3- $(print_vars syncNoPus toMerge intoBranchh ec)"
+      return $ec
+    elif _branch_merge_interactive; then
       branch_raise_merge_success_event "$toMerge" "$intoBranch"
+      # io_trace "<<<< _branch_merge -4- $(print_vars toMerge intoBranch) ec=0"
       return 0
     else
       # io_trace "<<<< _branch_merge -5- $(print_vars toMerge intoBranch) ec=1"
       return 1
     fi
-  elif _branch_merge_interactive; then
-    # io_trace "_branch_merge -5.1- $(print_vars toMerge intoBranch)"
-    branch_raise_merge_success_event "$toMerge" "$intoBranch"
-    return 0
-  else
-    # io_trace "_branch_merge -5.2- $(print_vars toMerge intoBranch)"
-    # gitx diff
-    return 1
   fi
+}
+_branch_merge_process_deleted_submodules()
+{
+  local toMerge="$1" intoBranch="$2"
+  # io_trace "_branch_merge_process_deleted_submodules -1- $(print_vars toMerge intoBranch)"
+  # check if submodules have been deleted
+  array_contains_element '.gitmodules' $(gitc diff --name-only "$intoBranch"..."$toMerge") || return 0
+
+  gitc diff "$intoBranch"..."$toMerge" -- .gitmodules | \
+  {
+    local smIds=() line smId
+    while read -r line; do
+      if [[ $line =~ ^-\[submodule[[:blank:]]+\"(.*)\"\]$ ]]; then
+        smId=${BASH_REMATCH[1]}
+        smIds+=("$smId")
+        # io_trace "_branch_merge_process_deleted_submodules -2- $(print_vars smId)"
+      fi
+    done
+    if [ ${#smIds[@]} -ne 0 ]; then
+      local s has='has'
+      (( ${#smIds[@]} > 1 )) && { s='s'; has='have'; }
+      mio_warning "Submodule$s ${VC}${smIds[@]}${Brown} $has been removed from ${VC}$(git_remote)"
+      local message=( \
+        "avoid merge conflicts with deleted submodule$s ${smIds[*]@Q}..." \
+        "submodule$s ${smIds[*]@Q} $has been removed from '$(git_remote)'" \
+        "without this empty commit the merge fails" \
+      )
+      git_commit --allow-empty 'message[@]'
+    fi
+    return ${#smIds[@]}
+  }
+  return ${PIPESTATUS[1]}
 }
 _branch_merge_selector()
 {
