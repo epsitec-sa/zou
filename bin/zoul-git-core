@@ -151,10 +151,12 @@ git_commit()
 gitx()
 {
   local ec
-  # echo "[$PPID-$BASHPID] $PWD @ git -c core.longpaths=true ${*@Q}" &>>"$stdallRedir"
+  # io_trace "gitx ${*@Q}"
   git -c core.longpaths=true "$@"; ec=$?
-  if [ ! $ec -eq 0 ] && [ "$1" != config ]; then
+  if [ $ec -ne 0 ] && [ "$1" != config ]; then
+     IFS=' '
      echo "[$PPID-$BASHPID] $PWD @ git -c core.longpaths=true ${*@Q} -> $ec" >&2
+     IFS=$OIFS
   fi
   return $ec
 }
