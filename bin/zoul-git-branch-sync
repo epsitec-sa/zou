@@ -126,17 +126,23 @@ _branch_sync_visit()
     fi
     # io_trace "### _branch_sync_visit -- $(print_vars l r i current branchSyncVisitInfo[@])"
     case $i in
-      '>')  [[ $l == $current ]] && color=${Yellow}     || color=${Brown};;   # ahead
-      '<')  [[ $l == $current ]] && color=${Yellow}     || color=${Brown};;   # behind
-      '<>') [[ $l == $current ]] && color=${Magenta}    || color=${Purple};;  # ahead and behind
-      '=')  [[ $l == $current ]] && color=${LightGreen} || color=${Green};;
-      *)    [[ -n $r ]] && { i='?'; color=${Purple}; }  || color=${LightBlue};;
+      '=')          [[ $l == $current ]] && color=${LightGreen} || color=${Green};;
+      '<'|'>'|'<>') [[ $l == $current ]] && color=${Yellow}     || color=${Brown};;
+      *)            [[ -n $r ]] && { i='?'; color=${Purple}; }  || color=${LightBlue};;
     esac
     $visitor || return $?
     linfo=$(string_pad_right 18 "$l")
     [[ $l == "$current" ]] && linfo="* $linfo" || linfo="  $linfo"
-    [[ $syncNoPush == true && $i =~ '>' ]] && color=${DarkGray}
-    mio_message "$linfo $(string_pad_right 2 $i) $r" $color
+    local i2="$(string_pad_right 2 $i)"
+    if [[ $syncNoPush == true && $i =~ '>' ]]; then
+      if [[ $i == '<>' ]]; then
+        mio_message "$linfo <${DarkGray}>$color $r" $color
+      else
+        mio_message "$linfo $i2 $r" ${DarkGray}
+      fi
+    else
+      mio_message "$linfo $i2 $r" $color
+    fi
   done < <(branch_sync_info "$@")
   return 0
 }
