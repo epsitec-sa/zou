@@ -111,7 +111,6 @@ dev_release_epilog()
     # io_trace "dev_release_epilog -2- $(print_vars forceRelease incrementKind moduleDevBranchPath prodBranchPath)"
     dev_checkout false "$moduleDevBranch"
     prod_ensure_vbranch "$defaultVersion" "$incrementKind"
-    cosm_commit_unstaged_submodules
     if [[ $forceRelease == true && -z $incrementKind ]] && ref_equals "$moduleDevBranchPath" "$prodBranchPath"; then
       local vbranch vtag delta graftPoint vnext releaseVTag
       vtag_set_describe "$moduleDevBranch" # -> vbranch vtag delta
