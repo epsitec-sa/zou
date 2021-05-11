@@ -347,9 +347,11 @@ branch_set_realize()
     fi
 
     if [[ $ensureLocal == 'true' ]]; then
-      local remote=${branch%%/*}
-      gitx fetch "$remote" "$lbranch":"$lbranch" &>>"$stdallRedir"
-      io_eval "gitx push "$remote" --set-upstream "$lbranch" 2>>"$stderrRedir"" : ${DarkGray}
+      if ! branch_is_local "$lbranch"; then
+        local remote=${branch%%/*}
+        gitx fetch "$remote" "$lbranch":"$lbranch" &>>"$stdallRedir"
+        io_eval "gitx push "$remote" --set-upstream "$lbranch" 2>>"$stderrRedir"" : ${DarkGray}
+      fi
       bref="refs/heads/$lbranch"
       # io_trace "<<<< branch_set_realize 4 -- $(print_vars ref branch lbranch bref)"
       return 0
