@@ -19,12 +19,16 @@ branch_raise_merge_abort_event() { raise_event 'mergeAbortEvent[@]' "$@"; }
 
 branch_merge_ff()
 {
+  # io_trace ">>>> branch_merge_ff ${*@Q}"
   local toMerge=$1 intoBranch=$2 toMergeAlias=${3:-$1} intoBranchName needCheckout
   _branch_merge_ff
+  # io_trace "<<<< branch_merge_ff ${*@Q}"
 }
 branch_merge_sync()
 {
+  # io_trace ">>>> branch_merge_sync ${*@Q}"
   branch_merge "$@" && branch_merge_ff "$2" "$1"
+  # io_trace "<<<< branch_merge_sync ${*@Q}"
 }
 branch_merge_abort()
 {
@@ -40,23 +44,24 @@ branch_merge()
   branch_merge_abort
 
   local toMerge=$1 intoBranch=$2 toMergeAlias intoBranchName needCheckout mergeOpts=() ec=0; shift 2
+  # io_trace ">>>> branch_merge $(print_vars toMerge intoBranch)"
   while [[ "$#" > 0 ]]; do case "$1" in
     -*) mergeOpts+=($1);;
     *)  toMergeAlias=$1;;
   esac; shift; done
   toMergeAlias=${toMergeAlias:-$toMerge}
-  # io_trace "branch_merge -1- $(print_vars toMerge intoBranch toMergeAlias mergeOpts[@])"
+  # io_trace "branch_merge -1- $(print_vars toMergeAlias mergeOpts[@])"
 
   _branch_merge_ff || ec=$?
   case $ec in
     0|128) return $ec;;
     *) ec=0;;
   esac
-  # io_trace "branch_merge -2- $(print_vars toMerge intoBranch toMergeAlias needCheckout mergeOpts[@])"
+  # io_trace "branch_merge -2- $(print_vars toMerge intoBranch)"
 
   local message="zou-flow: merge '$toMergeAlias' into '$intoBranch' ($(gitx rev-parse --short "$toMerge" 2>>"$stderrRedir") -> $(gitx rev-parse --short "$intoBranch" 2>>"$stderrRedir"))"
   if [[ $needCheckout == true ]] && gitx checkout $intoBranchName &>>"$stdallRedir"; then
-    # io_trace "branch_merge -3- $(print_vars toMerge intoBranch toMergeAlias needCheckout mergeOpts[@])"
+    # io_trace "branch_merge -3- $(print_vars toMerge intoBranch)"
     _branch_merge "$message" "$toMerge" "${mergeOpts[@]}" || ec=$?
     if [ $ec -ne 0 ] && repo_is_merging; then
       mio_error "Merging ${VC}$toMergeAlias${Red} into ${VC}$intoBranch${Red} will cause merge conflicts."
@@ -70,9 +75,10 @@ branch_merge()
       io_lock_exit
     fi
     gitx checkout - &>>"$stdallRedir"
+    # io_trace "<<<< branch_merge -4- $(print_vars toMerge intoBranch ec)"
   else
-    # io_trace "branch_merge -4- $(print_vars toMerge intoBranch toMergeAlias needCheckout mergeOpts[@] ec)"
     _branch_merge "$message" "$toMerge" "${mergeOpts[@]}" || ec=$?
+    # io_trace "<<<< branch_merge -5- $(print_vars toMerge intoBranch ec)"
   fi
   if [ $ec -eq 0 ]; then
     [[ $quiet == true ]] || mio_success "Merged ${VC}$toMergeAlias${Green} into ${VC}$intoBranchName${Green}"
@@ -117,7 +123,6 @@ _branch_merge_ff()
   local hashToMerge hashMergeInto hashMergeBase intoRef branch lbranch bref ec=0
   # io_trace ">>>> _branch_merge_ff ${*@Q}"
   branch_set_realize "$intoBranch" 'true' || ec=$?
-  # io_trace "_branch_merge_ff -1- $(print_vars branch lbranch bref ec)"
   if [ $ec -eq 2 ]; then
     mio_error "Invalid branch name '$intoBranch' (error code = $ec)"
     return 128
@@ -126,6 +131,7 @@ _branch_merge_ff()
     intoBranchName=$lbranch
     intoRef=$bref
   fi
+  # io_trace "_branch_merge_ff -1- $(print_vars intoBranch intoBranchName intoRef)"
 
   hashToMerge="$(gitx rev-parse --verify "$toMerge^{}" 2>>"$stderrRedir")"
   if [ $? -ne 0 ]; then
@@ -150,6 +156,10 @@ _branch_merge_ff()
   hashMergeBase=$(gitx merge-base $hashMergeInto $hashToMerge)
   [[ $hashToMerge == $hashMergeBase ]] && return 0
 
+  # io_trace "_branch_merge_ff -2- $(print_vars hashToMerge)"
+  # io_trace "_branch_merge_ff -2- $(print_vars hashMergeInto)"
+  # io_trace "_branch_merge_ff -2- $(print_vars hashMergeBase)"
+  
   if [[ "$(gitx symbolic-ref HEAD 2>>"$stderrRedir")" == "$intoRef" ]]; then
     _branch_merge_ff_only || return 1
   else
@@ -160,19 +170,18 @@ _branch_merge_ff()
     if gitx update-ref -m "merge $toMerge into $intoBranch (fast forward)" "$intoRef" "$hashToMerge" "$hashMergeInto" 2>>"$stderrRedir"; then
       branch_raise_merge_success_event "$toMerge" "$intoBranch"
       [[ $quiet == true ]] || mio_success "Merged ${VC}$toMergeAlias${Green} into ${VC}$intoBranchName${Green} (fast-forward)"
-      # io_trace "<<<< _branch_merge_ff -2- $(print_vars toMerge intoBranch ref)"
+      # io_trace "<<<< _branch_merge_ff -3- $(print_vars toMerge intoBranch ref)"
       return 0
     else
-      # io_trace "<<<< _branch_merge_ff -3- $(print_vars toMerge intoBranch ref)"
+      # io_trace "<<<< _branch_merge_ff -4- $(print_vars toMerge intoBranch ref)"
       return 1
     fi
   fi
-  # io_trace "<<<< _branch_merge_ff -4- $(print_vars toMerge intoBranch ref)"
+  # io_trace "<<<< _branch_merge_ff -5- $(print_vars toMerge intoBranch ref)"
 }
 _branch_merge_ff_only()
 {
   # io_trace "_branch_merge_ff_only -1- $(print_vars toMerge intoBranch ref)"
-  # branch_raise_merging_event "$toMerge" "$intoBranch"
   if gitx merge --ff-only "$toMerge" &>>"$stdallRedir"; then
     # io_trace "_branch_merge_ff_only -2- $(print_vars toMerge intoBranch ref)"
     branch_raise_merge_success_event "$toMerge" "$intoBranch"
@@ -186,11 +195,10 @@ _branch_merge_ff_only()
 _branch_merge()
 {
   local message=$1 toMerge=$2; shift 2
-  # io_trace "_branch_merge -1- $(print_vars toMerge intoBranch)"
-  # branch_raise_merging_event "$toMerge" "$intoBranch"
+  # io_trace ">>>> _branch_merge $(print_vars toMerge intoBranch)"
   if gitx merge -m "$message" "$@" "$toMerge" &>>"$stdallRedir"; then
-    # io_trace "_branch_merge -2- $(print_vars toMerge intoBranch)"
     branch_raise_merge_success_event "$toMerge" "$intoBranch"
+    # io_trace "<<<< _branch_merge -1- $(print_vars toMerge intoBranch) ec=0"
     return 0
   fi
   # io_trace "_branch_merge -3- $(print_vars toMerge intoBranch)"
@@ -207,7 +215,7 @@ _branch_merge()
       branch_raise_merge_success_event "$toMerge" "$intoBranch"
       return 0
     else
-      # io_trace "_branch_merge -4.1.2- $(print_vars toMerge intoBranch)"
+      # io_trace "<<<< _branch_merge -5- $(print_vars toMerge intoBranch) ec=1"
       return 1
     fi
   elif _branch_merge_interactive; then
