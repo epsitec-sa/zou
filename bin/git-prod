@@ -195,6 +195,10 @@ prod_release_root_scope()
 
     # io_trace "prod_release_root_scope ${*@Q}"
     local prodReleaseRootScopeInitialized=true
+    # principal module htag
+    # - used by '_prod_force_release_of_principal_module'
+    # - updated by '_prod_refresh_bundle_htag' (zoul-git-prod))
+    local pmProdHTagRoot
 
     # version table scope
     local vtableCreate vtableGate vtableLookupPath vtableRoot
@@ -211,8 +215,8 @@ prod_release_root_scope()
 }
 prod_release_scope()
 {
-  local modulePrerelPrefix=$prerelPrefix \
-        wasInDevMode=1 hasBeenReleased forceRelease cmdIsTopLevel
+  local modulePrerelPrefix=$prerelPrefix cmdIsTopLevel \
+        wasInDevMode=1 hasBeenReleased forceRelease pmProdHTag
 
   [[ -z $stayInProd ]] && module_in_strict_dev_mode && wasInDevMode=0
   cmd_is_top_level; cmdIsTopLevel=$?
@@ -226,9 +230,12 @@ prod_release_scope()
     # vlast does not apply to principal module if force release is specified
     if [[ $forcePrincipalRelease == true ]]; then
       forceRelease=true
+      if [[ -n "$pmProdHTagRoot" ]]; then
+        pmProdHTag="$pmProdHTagRoot"
+      fi
       prodCheckoutType='vnext'
     fi
-    # io_trace "prod_release_scope PRINCIPAL -- $(print_vars prodCheckoutType modulePrerelPrefix forceRelease)"
+    # io_trace "prod_release_scope PRINCIPAL -- $(print_vars pmProdHTag prodCheckoutType modulePrerelPrefix forceRelease)"
   elif [ $cmdIsTopLevel -ne 0 ]; then
     # prerelease does not apply to non top level submodules (excepting principal module)
     if [[ $prerelPrefix != 'rtm' ]]; then
@@ -348,14 +355,14 @@ _prod_fix_release_status()
 }
 _prod_release()
 {
-  # io_trace ">>>> _prod_release 1 -- $(print_vars modulePrerelPrefix releaseStatus)"
+  # io_trace ">>>> _prod_release -- $(print_vars modulePrerelPrefix releaseStatus)"
   case $releaseStatus in
     unreleased) _prod_release_unreleased;;
     ffRelease)  _prod_release_ff;;
     released)   _prod_release_released;;
     *)          _prod_release_unimplemented;;
   esac
-  # io_trace "<<<< _prod_release 2 -- $(print_vars modulePrerelPrefix releaseStatus hasBeenReleased)"
+  # io_trace "<<<< _prod_release -- $(print_vars modulePrerelPrefix releaseStatus hasBeenReleased)"
 }
 _prod_release_ff()
 {
@@ -378,7 +385,7 @@ _prod_release_unreleased()
   if [[ $dryRun == true ]]; then
     mio_success "Branch ${VC}$prodBranch${Green} will be released at ${VC}$releaseVTag" "$alias"
   else
-  # io_trace "#### _prod_release_unreleased 3 -- $(print_vars modulePrerelPrefix releaseStatus)"
+    # io_trace "#### _prod_release_unreleased 3 -- $(print_vars modulePrerelPrefix releaseStatus)"
     prod_commit_release \
     && branch_raise_head_changed_event "$prodBranch" \
     && { mio_success "Released branch ${VC}$prodBranch${Green} at ${VC}$releaseVTag"; hasBeenReleased=true; } \
@@ -401,8 +408,8 @@ _prod_release_unimplemented()
 }
 _prod_force_release_of_principal_module()
 {
-  [[ $releaseStatus == 'released' ]] && return 0 
-  mio_message "Forcing release of principal module ${VC}$principalModuleId" ${Magenta}
+  # io_trace "_prod_force_release_of_principal_module -- $(print_vars pmProdHTagRoot)"
+  mio_warning "Forcing release of principal module ${VC}$principalModuleId"
   local forcePrincipalRelease=true
   cmd_visit_module "$principalModuleId"
   cosm_reset_scope
