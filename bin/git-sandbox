@@ -4,6 +4,7 @@
 
 sandbox_parse()
 {
+  # io_trace "sandbox_parse ${*@Q}"
   while [[ "$#" > 0 ]]; do case "$1" in
     -h|--help) zou-help $0; exit 0;;
     --debug)   debug=true;;
@@ -13,17 +14,24 @@ sandbox_parse()
     --skus)    createSubmodules=true; createSkus=true;;
     --work)    createWork=true;;
     --vr)      createVResources=true;;
-    -*) io_error "unknown option ${VC}$1${Red}\n"; io_help $0; return 1;;
+    --)        shift; args+=("$@"); break;;
+    -*)        io_error "unknown option ${VC}$1${Red}\n"; io_help $0; return 1;;
+    *)         args+=("$1");;
   esac; shift; done
 }
 
 sandbox_run()
 {
-  # io_trace "sandbox_run $(print_vars satHubDir sat1Dir sat2Dir)"
+  # io_trace "sandbox_run ${*@Q}"
+  # io_trace "sandbox_run -- $(print_vars satHubDir)"
+  # io_trace "sandbox_run -- $(print_vars sat1Dir)"
+  # io_trace "sandbox_run -- $(print_vars sat2Dir)"
+  
   # CREATE SANDBOX
-  local debug sandboxReset sandboxClone createSubmodules createSkus createWork createVResources
+  local debug sandboxReset sandboxClone createSubmodules createSkus createWork createVResources args=()
 
   sandbox_parse "$@" || return $?
+  # io_trace "sandbox_run -- $(print_vars args[@])"
 
   [[ $sandboxReset == true ]] && sandbox_delete
   ( sandbox_create_bundle ) &
@@ -32,7 +40,7 @@ sandbox_run()
   
   [[ $createVResources == true ]] && sandbox_create_vresources
   [[ $createSkus == true ]] && sandbox_create_skus
-  [[ $createWork == true ]] && sandbox_create_work
+  [[ $createWork == true ]] && sandbox_create_work "${args[@]}"
   [[ $sandboxClone == true ]] && sandbox_clone
 }
 

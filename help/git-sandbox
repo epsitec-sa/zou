@@ -1,4 +1,5 @@
 usage: git sandbox [<options>]
+    or git sandbox [<options>] --work [--] [<module-id>...]
 
 Create and manage git sandboxes in folder 'zou.test' (sibling of zou bundle)
 
@@ -7,11 +8,13 @@ Create and manage git sandboxes in folder 'zou.test' (sibling of zou bundle)
     --clone                 clone 'sat1' to 'sat2'
     --sm                    create 'sm1', sm1/sm3' and 'sm2' submodules in 'sat1'
     --skus                  create 'sm1' and 'sm2' SKUs in 'sat1'
-    --work                  create some work in all modules of 'sat1'
-    --vr                    create version resources in 'sat1'
+    --vr                    create and commit version resources in 'sat1'
+    --work                  create and commit some work in specified modules (default to all)
+    <module-id>             module ID where work should be created (sm1, sm2, or sm1/sm3)
     
 example:
     git sandbox                         # create a sanbox in 'zou.test/sat1'
     git sandbox --clone                 # create a sanbox in 'zou.test/sat2'
     git sandbox --reset --sm --skus     # create a sandbox with submodules and SKUs
-    git sandbox --vr --work             # commit version resources and some work
+    git sandbox --vr --work             # create and commit version resources and some work
+    git sandbox --work sm1/sm3          # create and commit some work in 'sm1/sm3'
