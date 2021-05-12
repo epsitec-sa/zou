@@ -107,12 +107,18 @@ sandbox_create_vresources()
 }
 sandbox_create_work()
 {
+  # io_trace "sandbox_create_work ${*@Q}"
   local root
   root=$(repo_module_root)
   if [[ "$root" != "$sat1Dir" && "$root" != "$sat2Dir" ]]; then
     root="$sat1Dir"
   fi
-  sandbox_visit_commit_work "$root/sm1" "$root/sm1/sm3" "$root/sm2" "$root"
+  if [ $# -ne 0 ]; then
+    # io_trace "sandbox_create_work -1- ${@/#/$root\/}"
+    sandbox_visit_commit_work "${@/#/$root\/}"
+  else
+    sandbox_visit_commit_work "$root/sm1" "$root/sm1/sm3" "$root/sm2" "$root"
+  fi
 }
 
 sandbox_create_sku_with_work()
@@ -138,6 +144,7 @@ sandbox_commit_work()
 #   sandbox_visit_commit_work "$sat1Dir" "$sat1Dir/sm1" "$sat1Dir/sm2"
 sandbox_visit_commit_work()
 {
+  # io_trace "sandbox_visit_commit_work ${*@Q}"
   local path
   for path; do
     [[ -d "$path" && (-d "$path/.git" || -f "$path/.git") ]] || continue
