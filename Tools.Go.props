@@ -1,60 +1,113 @@
-﻿<Project InitialTargets="ToolsGoTrace">
+<Project InitialTargets="CheckGoEnv;ToolsGoTrace">
+
+  <Import Project="zou.props" Condition="'$(V)' == ''" />
+
+  <Choose>
+    <When Condition="$([MSBuild]::IsOSPlatform(Windows))">
+      <PropertyGroup>
+        <GOPATH Condition="'$(GOPATH)' == ''">$(USERPROFILE)$(V)go</GOPATH>
+        <GoOS   Condition="'$(GoOS)'   == ''">windows</GoOS>
+      </PropertyGroup>
+    </When>
+    <When Condition="$([MSBuild]::IsOSPlatform(OSX))">
+      <PropertyGroup>
+        <GOPATH Condition="'$(GOPATH)' == ''">$(HOME)$(V)go</GOPATH>
+        <GoOS   Condition="'$(GoOS)'   == ''">darwin</GoOS>
+      </PropertyGroup>
+    </When>
+    <When Condition="$([MSBuild]::IsOSPlatform(Linux))">
+      <PropertyGroup>
+        <GOPATH Condition="'$(GOPATH)' == ''">$(HOME)$(V)go</GOPATH>
+        <GoOS   Condition="'$(GoOS)'   == ''">linux</GoOS>
+      </PropertyGroup>
+    </When>
+  </Choose>
 
   <PropertyGroup>
-    <GoWorkspace Condition="'$(GoWorkspace)' == ''">$(ModuleDir)src\</GoWorkspace>
-    <GoWorkspace Condition="!Exists('$(GoWorkspace)')">$(ModuleDir)</GoWorkspace>
-    <GoResourceDir Condition="'$(GoResourceDir)' == ''">$(ProjectDir)resources\</GoResourceDir>
-    
     <GoBinDir>$([System.IO.Path]::Combine($(GOPATH),'bin'))</GoBinDir>
+
+    <GoWorkspace Condition="'$(GoWorkspace)' == ''">$(ModuleDir)src$(V)</GoWorkspace>
+    <GoWorkspace Condition="!Exists('$(GoWorkspace)')">$(ModuleDir)</GoWorkspace>
+    <GoResourceDir Condition="'$(GoResourceDir)' == ''">$(ProjectDir)resources$(V)</GoResourceDir>
     
-    <GoOS Condition="$([MSBuild]::IsOSPlatform(OSX))">darwin</GoOS>
-    <GoOS Condition="$([MSBuild]::IsOSPlatform(Linux))">linux</GoOS>
-    <GoOS Condition="'$(GoOS)' == ''">windows</GoOS>
+    
     <GoArch Condition="'$(Platform)' == 'Win32' Or '$(Platform)' == 'x86'">386</GoArch>
     <GoArch Condition="'$(GoArch)' == ''">amd64</GoArch>
-    <GoExecPath>$(GoBinDir);$(MSysPath);$(PATH)</GoExecPath>
+    <GoExecPath>$(GoBinDir);$(PATH)</GoExecPath>
     <GoExecPath>$(GoExecPath.Replace(';', '%3B'))</GoExecPath>
     
     <CGoEnabled Condition="'$(CGoEnabled)' == ''">1</CGoEnabled>
   </PropertyGroup>
+  
+  <Choose>
+    <When Condition="$([MSBuild]::IsOSPlatform(Windows))">
+      <PropertyGroup>
+        <GoRicePath>$(GoBinDir)/rice.exe</GoRicePath>
+        <GoVerInfoPath>$(GoBinDir)/goversioninfo.exe</GoVerInfoPath>
+        <GoSwagPath>$(GoBinDir)/swag.exe</GoSwagPath>
+      </PropertyGroup>
+    </When>
+    <Otherwise>
+      <PropertyGroup>
+        <GoRicePath>$(GoBinDir)/rice</GoRicePath>
+        <GoVerInfoPath>$(GoBinDir)/goversioninfo</GoVerInfoPath>
+        <GoSwagPath>$(GoBinDir)/swag</GoSwagPath>
+      </PropertyGroup>
+    </Otherwise>
+  </Choose>
 
   <ItemGroup>
     <GoBuildEnv Include="GOOS=$(GoOS)" />
     <GoBuildEnv Include="GOARCH=$(GoArch)" />
-    <GoBuildEnv Include="CGO_ENABLED=$(CGoEnabled)" />
-    <GoBuildEnv Include="CC=$(MSysGcc)" />
     <GoBuildEnv Include="PATH=$(GoExecPath)" />
   </ItemGroup>
 
-  <Target Name="CheckGoEnv" BeforeTargets="Build">
-    <Error Text="Go programming language not installed" Condition="'$(GOROOT)' == '' Or !$([System.IO.File]::Exists($(GOROOT)\bin\go.exe))" />
-    <Error Text="GOPATH environment variable not set" Condition="'$(GOPATH)' == ''" />
+  <Target Name='CheckGoEnv'>
+    <PropertyGroup>
+      <WhereCommand Condition="$([MSBuild]::IsOSPlatform(Windows))">where</WhereCommand>
+      <WhereCommand Condition="'$(WhereCommand)' == ''">which</WhereCommand>
+    </PropertyGroup>
+    <Exec Command="$(WhereCommand) go"
+          EchoOFF="true"
+          ConsoleToMSBuild="true"
+          StandardOutputImportance='low'
+          StandardErrorImportance='low'
+          IgnoreExitCode='true'>
+      <Output TaskParameter="ExitCode" PropertyName="WhereGoExitCode" />
+      <Output TaskParameter="ConsoleOutput" PropertyName="GOROOT" />
+    </Exec>
+    <!--<Message Importance="high" Text="WhereGoExitCode = $(WhereGoExitCode)" />
+    <Message Importance="high" Text="GOROOT          = $(GOROOT)" />-->
+    <Error Condition="'$(WhereGoExitCode)' != '0'" Text="The 'go' command was not found. Please install or add it to the path."  />
   </Target>
-  
+
   <!-- get some go tools -->
-  <Target Name="GoGetRice" Condition="!Exists('$(GoBinDir)/rice.exe')" BeforeTargets="Build">
+  <Target Name="GoGetRice" Condition="!Exists('$(GoRicePath)')">
     <Exec Command="go get -u github.com/GeertJohan/go.rice/rice" />
   </Target>
 
-  <Target Name="GoGetVersionInfo" Condition="!Exists('$(GoBinDir)/goversioninfo.exe')" BeforeTargets="Build">
+  <Target Name="GoGetVersionInfo" Condition="!Exists('$(GoVerInfoPath)')">
     <Exec Command="go get -u github.com/josephspurrier/goversioninfo/cmd/goversioninfo" />
   </Target>
 
-  <Target Name="GoGetSwag" Condition="!Exists('$(GoBinDir)\swag.exe')" BeforeTargets="Build">
+  <Target Name="GoGetSwag" Condition="!Exists('$(GoSwagPath)')">
     <Exec Command="go get -u github.com/swaggo/swag/cmd/swag" />
   </Target>
 
-  <Target Name="GoGetTools" DependsOnTargets="GoGetRice;GoGetVersionInfo" />
+  <Target Name="GoGetTools" DependsOnTargets="GoGetRice;GoGetVersionInfo;GoGetSwag" BeforeTargets="Build" />
 
   <Target Name="ToolsGoTrace" Condition="'$(ZouTraceProps)' == 'true'">
-    <Message Importance="normal" Text="GoWorkspace   = $(GoWorkspace)" />
-    <Message Importance="normal" Text="GoResourceDir = $(GoResourceDir)" />
-    <Message Importance="normal" Text="GoBinDir      = $(GoBinDir)" />
-    <Message Importance="normal" Text="GOROOT        = $(GOROOT)" />
-    <Message Importance="normal" Text="GOPATH        = $(GOPATH)" />
-    <Message Importance="normal" Text="GoOS          = $(GoOS)" />
-    <Message Importance="normal" Text="GoArch        = $(GoArch)" />
-    <Message Importance="normal" Text="CGoEnabled    = $(CGoEnabled)" />
-    <Message Importance="normal" Text="GoBuildEnv    = %(GoBuildEnv.Identity)" />
+    <Message Importance="high" Text="GoWorkspace   = $(GoWorkspace)" />
+    <Message Importance="high" Text="GoResourceDir = $(GoResourceDir)" />
+    <Message Importance="high" Text="GoBinDir      = $(GoBinDir)" />
+    <Message Importance="high" Text="GOROOT        = $(GOROOT)" />
+    <Message Importance="high" Text="GOPATH        = $(GOPATH)" />
+    <Message Importance="high" Text="GoOS          = $(GoOS)" />
+    <Message Importance="high" Text="GoArch        = $(GoArch)" />
+    <Message Importance="high" Text="CGoEnabled    = $(CGoEnabled)" />
+    <Message Importance="high" Text="GoBuildEnv    = %(GoBuildEnv.Identity)" />
+    <Message Importance="high" Text="GoRicePath    = $(GoRicePath)" />
+    <Message Importance="high" Text="GoSwagPath    = $(GoSwagPath)" />
+    <Message Importance="high" Text="GoVerInfoPath = $(GoVerInfoPath)" />
   </Target>
 </Project>
