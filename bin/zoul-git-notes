@@ -251,17 +251,20 @@ notes_channel_names()
 notes_repair()
 {
   # io_trace ">>>> notes_repair -- \$0=$0"
-  local remote dir gitDir="$(git_dir)" ec=0
+  local remote dir gitDir="$(git_dir)" data ec=0
 
   for remote in $(git_remotes); do
     # reset fetch directory
     gitx config --unset "remote.$remote.fetch" "refs/.*notes"
     gitx config --add "remote.$remote.fetch" "+refs/notes/*:$(notes_fetch_dir "$remote")/*"
 
-    _notes_repair_list_remote_file_refs "$gitDir" "$remote" | xargs -d $'\n' --no-run-if-empty git push --delete "$remote"
-    _notes_repair_list_remote_dir_refs  "$gitDir" "$remote" | xargs -d $'\n' --no-run-if-empty -n1 rm -rf 
+    data=$(_notes_repair_list_remote_file_refs "$gitDir" "$remote")
+    [[ -n $data ]] && xargs git push --delete "$remote" <<< "$data"
+    data=$(_notes_repair_list_remote_dir_refs  "$gitDir" "$remote")
+    [[ -n $data ]] && xargs rm -rf -- <<< "$data"
   done
-  _notes_repair_list_local_dir_refs "$gitDir" | xargs -d $'\n' --no-run-if-empty -n1 rm -rf 
+  data=$(_notes_repair_list_local_dir_refs "$gitDir")
+  [[ -n $data ]] && xargs rm -rf -- <<< "$data"
   # tree "$gitDir/refs"
   # io_trace "<<<< notes_repair ec=$ec"
   return $ec
