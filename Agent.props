@@ -46,8 +46,19 @@ Example: see Templates\Cs.Component.Pack.vcxproj
   <Target Name="Clean" Condition="'$(VCTargetsPath)' == ''" />
   <Target Name="PackFilter" />
 
+  <PropertyGroup>
+    <!-- 'Microsoft.Cpp.Default.props' overrides Platform value (Platform=Win32) -->
+    <_Agent_Platform0>$(Platform)</_Agent_Platform0>
+  </PropertyGroup>
+
   <!-- Default C++ properties -->
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" Condition="Exists('$(VCTargetsPath)\Microsoft.Cpp.Default.props')"/>
+
+  <!-- Restore Platform -->
+  <PropertyGroup>
+    <Platform Condition="'$(_Agent_Platform0)' == 'x86' Or '$(_Agent_Platform0)' == 'x64'">$(_Agent_Platform0)</Platform>
+    <_Agent_Platform0 />
+  </PropertyGroup>
 
   <!-- C++ utility project -->
   <PropertyGroup Label="Configuration">
