@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <!-- This property sheet defines the default debug settings for C++ projects. -->
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup  Condition="'$(IsDebug)'=='true'">
@@ -26,6 +26,10 @@
       <FunctionLevelLinking Condition="'$(IsRelease)'=='true'">true</FunctionLevelLinking>
       <IntrinsicFunctions   Condition="'$(IsRelease)'=='true'">true</IntrinsicFunctions>
       <AdditionalOptions    Condition="'$(IsRelease)'=='true'">/bigobj %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <ClCompile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      <!-- Disable type cast and conversion warnings in release|x64 project configuration  -->
+      <DisableSpecificWarnings>4244;4267;4302;4311;4312;4313;4477;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
