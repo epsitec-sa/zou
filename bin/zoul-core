@@ -300,7 +300,9 @@ path_make_relative()
 
 get_file_encoding()
 {
-  local info=$(file -i "$1")
+  local info iopt='i'
+  [[ $zouMac -eq 0 ]] && iopt='I'
+  info=$(file -$iopt "$1")
   info="${info##*charset=}"
   info="${info,,}"
   [[ $info == 'unknown-8bit' ]] && echo 'utf-8' || echo $info
