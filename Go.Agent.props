@@ -29,7 +29,7 @@
 
   <PropertyGroup>
     <ForceGoGet Condition="'$(ForceGoGet)' == ''">false</ForceGoGet>
-    <TargetExt Condition="'$(TargetExt)' == ''">.exe</TargetExt>
+    <TargetExt Condition="'$(TargetExt)' == '' And $([MSBuild]::IsOsPlatform('Windows'))">.exe</TargetExt>
     <TargetName Condition="'$(TargetName)' == ''">$(MSBuildProjectName)</TargetName>
     <TargetFileName>$(TargetName)$(TargetExt)</TargetFileName>
     <TargetPath>$(TargetDir)$(TargetFileName)</TargetPath>
