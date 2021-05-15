@@ -9,24 +9,29 @@
 
   <Target Name="GoBuildVersionInfo" DependsOnTargets="GoGetTools" BeforeTargets="Build">
     <PropertyGroup>
-      <GoVersionInfoFlags Condition="$(Platform.EndsWith('x64'))">-64</GoVersionInfoFlags>
-      <GoVersionInfoFlags Condition="Exists('$(TargetFileName).$(Configuration).manifest')">$(GoVersionInfoFlags) -manifest="$(TargetFileName).$(Configuration).manifest"</GoVersionInfoFlags>
+      <GoVerInfoFlags Condition="$(Platform.EndsWith('x64'))">-64</GoVerInfoFlags>
+      <GoVerInfoFlags Condition="Exists('$(TargetFileName).$(Configuration).manifest')">$(GoVerInfoFlags) -manifest="$(TargetFileName).$(Configuration).manifest"</GoVerInfoFlags>
     </PropertyGroup>
-    <Exec WorkingDirectory="$(ProjectDir)" EnvironmentVariables="@(GoBuildEnv)" Command="$(GoVerInfoPath) $(GoVersionInfoFlags)" />
+    <Exec Command="$(GoVerInfoPath) $(GoVerInfoFlags)"
+          WorkingDirectory="$(ProjectDir)"
+          EnvironmentVariables="@(GoBuildEnv)"
+          StandardOutputImportance='low' />
   </Target>
 
   <Target Name="Build" Inputs="@(GoBuild);@(GoResource)" Outputs="$(TargetPath)">
-    <ItemGroup>
-      <GoBuildCommand Include="go generate" />
-    </ItemGroup>
-
-    <Delete Files="$(TargetPath)" />
-    <Exec WorkingDirectory="$(ProjectDir)" EnvironmentVariables="@(GoBuildEnv);TARGETPATH=$(TargetPath)" Command="%(GoBuildCommand.Identity)" />
+    <Delete Files="$(TargetPath);@(TargetName->'$(TargetDir)%(Identity)$(TargetExt)')" />
+    <Message Importance="high" Text="go generate [$(ProjectPath)]" />
+    <Exec Command="go generate"
+          WorkingDirectory="$(ProjectDir)"
+          EnvironmentVariables="@(GoBuildEnv);TARGETPATH=$(TargetPath)"
+          StandardOutputImportance='low' />
+    <Message Condition="'@(TargetName->Count())'=='0'" Importance="high" Text="$(ProjectName) -> $(TargetPath)" />
+    <Message Condition="'@(TargetName->Count())'!='0'" Importance="high" Text="$(ProjectName) -> $(TargetDir)%(TargetName.Identity)$(TargetExt)" />
   </Target>
 
   <Target Name="Clean">
     <Exec WorkingDirectory="$(ProjectDir)" Command="go clean" />
-    <Delete Files="$(TargetPath)" />
+    <Delete Files="$(TargetPath);@(TargetName->'$(TargetDir)%(Identity)$(TargetExt)')" />
   </Target>
 
 </Project>
