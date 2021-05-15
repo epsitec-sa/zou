@@ -70,14 +70,14 @@ This script can be imported anywhere before first MS import (Microsoft.Cpp.Defau
   </PropertyGroup>
   <PropertyGroup Condition="'$(ModuleId)' != ''">
     <ModuleIsShared>true</ModuleIsShared>
-    <ModuleId>$([MSBuild]::MakeRelative(file://$(BundleDir), file://$(ModuleId)))</ModuleId>
+    <ModuleId>$([MSBuild]::MakeRelative($(BundleDir), $(ModuleId)))</ModuleId>
     <ModuleId>$(ModuleId.TrimEnd('\/'))</ModuleId>
     <ModuleName>$(ModuleId)</ModuleName>
     <ModuleDir>$(BundleDir)$(ModuleId)$(V)</ModuleDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(ModuleId)' == ''">
     <ModuleId>$(MSBuildProjectDirectory)$(V)</ModuleId>
-    <ModuleId>$([MSBuild]::MakeRelative(file://$(BundleDir), file://$(ModuleId)))</ModuleId>
+    <ModuleId>$([MSBuild]::MakeRelative($(BundleDir), $(ModuleId)))</ModuleId>
   </PropertyGroup>
   <PropertyGroup  Condition="'$(ModuleId)' != ''">
     <ModuleId>$(ModuleId.TrimEnd('\/'))</ModuleId>
@@ -89,12 +89,12 @@ This script can be imported anywhere before first MS import (Microsoft.Cpp.Defau
   <PropertyGroup>
     <!-- project/zou.cfg/ -->
     <ZouProjectDir Condition="'$(ZouProjectDir)' == ''">$(MSBuildProjectDirectory)$(V)$(ZouCfg)</ZouProjectDir>
-    <BundleRelativeProjectDir>$([MSBuild]::MakeRelative(file://$(BundleDir), file://$(MSBuildProjectDirectory)/))</BundleRelativeProjectDir>
-    <BundleRelativeProjectName>$([MSBuild]::MakeRelative(file://$(BundleDir), file://$(MSBuildProjectDirectory)/$(MSBuildProjectName)))</BundleRelativeProjectName>
-    <BundleRelativeProjectPath>$([MSBuild]::MakeRelative(file://$(BundleDir), file://$(MSBuildProjectDirectory)/$(MSBuildProjectFile)))</BundleRelativeProjectPath>
-    <ModuleRelativeProjectDir>$([MSBuild]::MakeRelative(file://$(ModuleDir), file://$(MSBuildProjectDirectory)/))</ModuleRelativeProjectDir>
-    <ModuleRelativeProjectName>$([MSBuild]::MakeRelative(file://$(ModuleDir), file://$(MSBuildProjectDirectory)/$(MSBuildProjectName)))</ModuleRelativeProjectName>
-    <ModuleRelativeProjectPath>$([MSBuild]::MakeRelative(file://$(ModuleDir), file://$(MSBuildProjectDirectory)/$(MSBuildProjectFile)))</ModuleRelativeProjectPath>
+    <BundleRelativeProjectDir>$([MSBuild]::MakeRelative($(BundleDir), $(MSBuildProjectDirectory)/))</BundleRelativeProjectDir>
+    <BundleRelativeProjectName>$([MSBuild]::MakeRelative($(BundleDir), $(MSBuildProjectDirectory)/$(MSBuildProjectName)))</BundleRelativeProjectName>
+    <BundleRelativeProjectPath>$([MSBuild]::MakeRelative($(BundleDir), $(MSBuildProjectDirectory)/$(MSBuildProjectFile)))</BundleRelativeProjectPath>
+    <ModuleRelativeProjectDir>$([MSBuild]::MakeRelative($(ModuleDir), $(MSBuildProjectDirectory)/))</ModuleRelativeProjectDir>
+    <ModuleRelativeProjectName>$([MSBuild]::MakeRelative($(ModuleDir), $(MSBuildProjectDirectory)/$(MSBuildProjectName)))</ModuleRelativeProjectName>
+    <ModuleRelativeProjectPath>$([MSBuild]::MakeRelative($(ModuleDir), $(MSBuildProjectDirectory)/$(MSBuildProjectFile)))</ModuleRelativeProjectPath>
     <ProjectId>$(BundleRelativeProjectName)</ProjectId>
   </PropertyGroup>
 
@@ -104,9 +104,9 @@ This script can be imported anywhere before first MS import (Microsoft.Cpp.Defau
       <PropertyGroup >
         <!-- solution/zou.cfg/ -->
         <ZouSolutionDir  Condition="'$(ZouSolutionDir)' == ''">$(SolutionDir)$(ZouCfg)</ZouSolutionDir>
-        <BundleRelativeSolutionDir>$([MSBuild]::MakeRelative(file://$(BundleDir), file://$(SolutionDir)))</BundleRelativeSolutionDir>
-        <BundleRelativeSolutionName>$([MSBuild]::MakeRelative(file://$(BundleDir), file://$(SolutionDir)$(SolutionName)))</BundleRelativeSolutionName>
-        <BundleRelativeSolutionPath>$([MSBuild]::MakeRelative(file://$(BundleDir), file://$(SolutionPath)))</BundleRelativeSolutionPath>
+        <BundleRelativeSolutionDir>$([MSBuild]::MakeRelative($(BundleDir), $(SolutionDir)))</BundleRelativeSolutionDir>
+        <BundleRelativeSolutionName>$([MSBuild]::MakeRelative($(BundleDir), $(SolutionDir)$(SolutionName)))</BundleRelativeSolutionName>
+        <BundleRelativeSolutionPath>$([MSBuild]::MakeRelative($(BundleDir), $(SolutionPath)))</BundleRelativeSolutionPath>
         
         <!-- Use the following property instead of SolutionDir when building a project without a solution (example: msbuild project.vcxproj) -->
         <SolutionOrProjectDir>$(SolutionDir)</SolutionOrProjectDir>
