@@ -219,7 +219,7 @@ branch_oreset_all()
   if [[ $forceReset == true ]]; then
     gitx reset . &>>"$stdallRedir"
     gitx checkout . &>>"$stdallRedir"
-    repo_list_untracked | xargs rm --
+    repo_list_untracked | xargs rm -- &>>"$stdallRedir"
   else
     repo_require_clean_work_tree 'Cannot reset' || return 1
   fi
