@@ -28,8 +28,8 @@ select:
     <ref>                   PROD branch / VTAG (default to VNEXT / VLAST)
 
 enter:
-    --vlast                 enter last version - checkout version tag (default)
-    --vnext                 enter next version - checkout production branch
+    --vlast                 enter last version - checkout version tag
+    --vnext                 enter next version - checkout production branch (default)
 
 release:
     -                       restore previous mode after release
@@ -47,13 +47,11 @@ example:
     git prod attach --vtag         # attach to VTAG in current module
     git prod select 0.1            # select PROD branch 0.1   in current module, update init and attach to children PROD branches
     git prod select v0.1.0         # select VTAG       v0.1.0 in current module, update init and attach to children VTAGS
-    git prod enter                 # enter last version of current module
-    git prod enter --vnext         # enter next version of current module
-    git prod enter -r              # enter last version of current module recursively
-    git prod enter -- m1 m2        # enter last version of child modules 'm1' and 'm2'
+    git prod enter                 # enter next version on current module
+    git prod enter -r              # enter next version on current module recursively
+    git prod enter -r -- m1 m2     # enter next version on child modules 'm1' and 'm2' recursively
+    git prod enter -r --vlast      # enter last version on current module recursively
     git prod release               # release next version of current module recursively
-    git prod release --vlast       # release last version of current module (can be used when all submodules are released)
     git prod release --alpha       # release next version as alpha version
     git prod release --rtm         # release next version as RTM version
-    git prod release --reuse       # release next version and reuse last version of current module
     git prod release --vtable      # force creation of a version table when current module is composite (even if it's not a bundle)
