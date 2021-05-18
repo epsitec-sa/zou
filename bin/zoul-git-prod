@@ -147,12 +147,11 @@ _prod_init_vars()
 _prod_init_scope()
 {
   local devBranchPath=$1 devBranch=${2:-$1} vbranchCreate=$3 \
-        vbranch vtag htag delta=0 status strict
+        vbranch vtag htag delta=0 status
 
   # 1. Retrieve vtag and vbranch info starting from dev branch
-  module_is_bundle && strict=true
-  vtag_set_describe "$devBranchPath" "$devBranch" "$vtagResolveMode" "$strict" # -> vbranch vtag delta
-  # io_trace "_prod_init_scope ${*@Q} -- $(print_vars devBranchPath devBranch vbranchCreate vbranch vtag delta strict pmProdHTag)"
+  vtag_set_describe "$devBranchPath" "$devBranch" "$vtagResolveMode" "true" # -> vbranch vtag delta
+  # io_trace "_prod_init_scope ${*@Q} -- $(print_vars devBranchPath devBranch vbranchCreate vbranch vtag delta pmProdHTag)"
   if [[ -n $pmProdHTag ]]; then
     vtag="$pmProdHTag"
     htag="$pmProdHTag"
@@ -177,16 +176,15 @@ _prod_init_scope()
   _prod_init_release_status "$delta" "$status"
 
   unset pmProdHTag
-  # io_trace "<<<< _prod_init_scope ${*@Q} -- $(print_vars devBranchPath devBranch vbranchCreate vbranch vtag delta strict pmProdHTag)"
+  # io_trace "<<<< _prod_init_scope ${*@Q} -- $(print_vars devBranchPath devBranch vbranchCreate vbranch vtag delta pmProdHTag)"
 
   _prod_trace '_prod_init_scope'
 }
 _prod_init_xscope()
 {
-  local vbranch vtag htag delta=0 status strict
+  local vbranch vtag htag delta=0 status
 
   # io_trace "_prod_init_xscope 1 -- $(print_vars moduleHead)"
-  module_is_bundle && strict=true
   vtag_set_describe "$moduleHead" "$moduleHead" # -> vbranch vtag delta
   if [[ -n $vtag ]]; then
     _prod_init_dev false
@@ -257,7 +255,7 @@ _prod_init_prod()
 #   local vbranch vtag htag delta status
 #   _prod_set_prod_info
 # scope:
-#   devBranch devBranchPath prodBranch prodBranchPath strict
+#   devBranch devBranchPath prodBranch prodBranchPath
 # out:
 #   vbranch   -- associated version branch
 #   vtag      -- nearest vtag (depends on skipVNodes value)
@@ -268,7 +266,7 @@ _prod_init_prod()
 #                vtagMissing -- no vtag found (branch was never released)
 _prod_set_prod_info()
 {
-  vtag_set_describe "$prodBranchPath" "$prodBranch" "$vtagResolveMode" "$strict" # -> vbranch vtag delta
+  vtag_set_describe "$prodBranchPath" "$prodBranch" "$vtagResolveMode" "true" # -> vbranch vtag delta
   if [[ $vbranch != $prodBranch ]]; then
     mio_message "${Magenta}Branches ${VC}$prodBranch${Magenta} and ${VC}$vbranch${Magenta} are both descendants of (${VC}$vtag${Magenta})"
     return 1
@@ -281,14 +279,16 @@ _prod_set_prod_info()
     delta=$(( $(gitx rev-list --count $vtag..$prodBranchPath 2>>"$stderrRedir") ))
     # io_trace "_prod_set_prod_info 2 -- $(print_vars prodBranch vbranch vtag htag delta)"
   fi
-  [[ -z $strict ]] && htag=${pmProdHTag:-$(vtag_highest "$vbranch" false)} # in all folders
+  if ! module_is_bundle; then
+    htag=${pmProdHTag:-$(vtag_highest "$vbranch" false)} # in all folders
+  fi
   # vnode or vtag
   vtag_is_vnode $vtag && status='vnode' || status='vtag'
   # io_trace "_prod_set_prod_info 3 -- $(print_vars prodBranch vbranch vtag htag status)"
 }
 _prod_set_xprod_info()
 {
-  vtag_set_describe "$prodBranchPath" "$prodBranch" "$vtagResolveMode" "$strict" # -> vbranch vtag delta
+  vtag_set_describe "$prodBranchPath" "$prodBranch" "$vtagResolveMode" "true" # -> vbranch vtag delta
   # io_trace "_prod_set_xprod_info 1 -- $(print_vars prodBranch vbranch vtag htag delta)"
   if module_is_bundle; then
     htag=$(vtag_highest $vbranch true)
