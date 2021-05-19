@@ -1,13 +1,21 @@
 <Project>
 
   <ItemGroup>
-    <GoBuild Include="$(GoWorkspace)**\*.go"  />
-    <GoBuild Include="$(GoWorkspace)**\*.h" />
-    <GoBuild Include="$(GoWorkspace)**\*.c" />
+    <GoSource   Include="$(GoSourceDir)**\*.go"  />
     <GoResource Include="$(GoResourceDir)**\*" />
+    <TargetPath Condition="'@(TargetName->Count())'!='0'" Include="@(TargetName->'$(TargetDir)%(Identity)$(TargetExt)')" />
+    <TargetPath Condition="'@(TargetName->Count())'=='0'" Include="$(TargetPath)" />
   </ItemGroup>
+  
+  <Target Name="GoInitSingleTargetPath">
+    <!-- multiple target support -->
+    <PropertyGroup>
+      <!-- Get last TargetPath item -->
+      <GoSingleTargetPath>%(TargetPath.Identity)</GoSingleTargetPath>
+    </PropertyGroup>
+  </Target>
 
-  <Target Name="GoBuildVersionInfo" DependsOnTargets="GoGetTools" BeforeTargets="Build">
+  <Target Name="GoBuildVersionInfo" DependsOnTargets="GoGetTools">
     <PropertyGroup>
       <GoVerInfoFlags Condition="$(Platform.EndsWith('x64'))">-64</GoVerInfoFlags>
       <GoVerInfoFlags Condition="Exists('$(TargetFileName).$(Configuration).manifest')">$(GoVerInfoFlags) -manifest="$(TargetFileName).$(Configuration).manifest"</GoVerInfoFlags>
@@ -18,20 +26,29 @@
           StandardOutputImportance='low' />
   </Target>
 
-  <Target Name="Build" Inputs="@(GoBuild);@(GoResource)" Outputs="$(TargetPath)">
-    <Delete Files="$(TargetPath);@(TargetName->'$(TargetDir)%(Identity)$(TargetExt)')" />
+  <Target Name="GoBuild" AfterTargets="Build" DependsOnTargets="GoInitSingleTargetPath;GoBuildVersionInfo" Inputs="@(GoSource);@(GoResource)" Outputs="$(GoSingleTargetPath)">
     <Message Importance="high" Text="go generate [$(ProjectPath)]" />
+    <Delete Files="@(TargetPath)" />
     <Exec Command="go generate"
           WorkingDirectory="$(ProjectDir)"
           EnvironmentVariables="@(GoBuildEnv);TARGETPATH=$(TargetPath)"
-          StandardOutputImportance='low' />
-    <Message Condition="'@(TargetName->Count())'=='0'" Importance="high" Text="$(ProjectName) -> $(TargetPath)" />
-    <Message Condition="'@(TargetName->Count())'!='0'" Importance="high" Text="$(ProjectName) -> $(TargetDir)%(TargetName.Identity)$(TargetExt)" />
+          StandardOutputImportance='low'
+          IgnoreExitCode='true' >
+      <Output TaskParameter="ExitCode" PropertyName="GoGenerateExitCode" />
+    </Exec>
+    <Message Condition="'$(GoGenerateExitCode)' == '0'" Importance="high" Text="$(ProjectName) -> %(TargetPath.Identity)" />
   </Target>
 
-  <Target Name="Clean">
-    <Exec WorkingDirectory="$(ProjectDir)" Command="go clean" />
-    <Delete Files="$(TargetPath);@(TargetName->'$(TargetDir)%(Identity)$(TargetExt)')" />
+  <Target Name="GoClean" AfterTargets="Clean">
+    <Message Importance="high" Text="go clean [$(ProjectPath)]" />
+    <Exec Command="go clean"
+          WorkingDirectory="$(ProjectDir)"
+          StandardOutputImportance='low'
+          ContinueOnError='true' />
+
+    <Delete Files="@(TargetPath)" />
   </Target>
+  
+  <Target Name="Rebuild" DependsOnTargets="Clean;Build" />
 
 </Project>

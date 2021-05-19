@@ -3,7 +3,7 @@
     https://gist.github.com/asukakenji/f15ba7e588ac42795f421b48b8aede63
     https://stackoverflow.com/questions/49078510/trouble-compiling-windows-dll-using-golang-1-10
 -->
-<Project>
+<Project InitialTargets="TraceGoAgent">
 
   <PropertyGroup>
     <_PropertySheetDisplayName>[zou] Go Agent</_PropertySheetDisplayName>
@@ -28,10 +28,20 @@
   <Import Project="Agent.targets" />
 
   <PropertyGroup>
-    <TargetExt Condition="'$(TargetExt)' == '' And $([MSBuild]::IsOsPlatform('Windows'))">.exe</TargetExt>
-    <TargetName Condition="'$(TargetName)' == ''">$(MSBuildProjectName)</TargetName>
+    <GoSourceDir   Condition="'$(GoSourceDir)'   == ''">$(ProjectDir)</GoSourceDir>
+    <GoResourceDir Condition="'$(GoResourceDir)' == ''">$(ProjectDir)resources\</GoResourceDir>
+    <TargetExt     Condition="'$(TargetExt)'     == '' And $([MSBuild]::IsOsPlatform('Windows'))">.exe</TargetExt>
+    <TargetName    Condition="'$(TargetName)'    == ''">$(MSBuildProjectName)</TargetName>
     <TargetFileName>$(TargetName)$(TargetExt)</TargetFileName>
     <TargetPath>$(TargetDir)$(TargetFileName)</TargetPath>
-    <GoResourceDir Condition="'$(GoResourceDir)' == ''">$(ProjectDir)resources</GoResourceDir>
   </PropertyGroup>
+
+  <Target Name="TraceGoAgent" Condition="'$(ZouTraceProps)' == 'true'">
+    <Message Importance="high" Text="GoSourceDir    = $(GoSourceDir)" />
+    <Message Importance="high" Text="GoResourceDir  = $(GoResourceDir)" />
+    <Message Importance="high" Text="TargetExt      = $(TargetExt)" />
+    <Message Importance="high" Text="TargetName     = $(TargetName)" />
+    <Message Importance="high" Text="TargetFileName = $(TargetFileName)" />
+    <Message Importance="high" Text="TargetPath     = $(TargetPath)" />
+  </Target>
 </Project>
