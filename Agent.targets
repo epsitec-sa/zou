@@ -1,5 +1,5 @@
 <!-- The Agent.targets is used to create a minimal zou agent (see Agent.props) -->
-<Project>
+<Project InitialTargets="TraceAgent">
 
   <!-- Resolves missing properties when using 'dotnet msbuild' command. -->
   <PropertyGroup Condition="'$(MSBuildRuntimeType)' == 'Core'" >
@@ -22,5 +22,15 @@
     <SourcePath />
     <ExcludePath />
   </PropertyGroup>
+
+  <Target Name="TraceAgent" Condition="'$(ZouTraceProps)' == 'true'">
+    <Message Importance="high" Text="Configuration          = $(Configuration)" />
+    <Message Importance="high" Text="Platform               = $(Platform)" />
+    <Message Importance="high" Text="OutDir                 = $(OutDir)" />
+    <Message Importance="high" Text="TargetDir              = $(TargetDir)" />
+    <Message Importance="high" Text="OutputPath             = $(OutputPath)" />
+    <Message Importance="high" Text="IntDir                 = $(IntDir)" />
+    <Message Importance="high" Text="IntermediateOutputPath = $(IntermediateOutputPath)" />
+  </Target>
 
 </Project>
