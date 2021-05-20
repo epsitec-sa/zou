@@ -552,6 +552,15 @@ _module_enter()
 # INITIALIZATION
 ################
 
+module_upd_sync_all_submodules()
+{
+  # io_trace ">>>> module_upd_sync_all_submodules -- $(print_vars moduleSubmodulePaths[@])"
+  [[ ${#moduleSubmodulePaths[@]} -eq 0 ]] && return 0
+
+  echo "${moduleSubmodulePaths[@]}" | xargs git-sm updsync -C "${moduleRoot}"
+  # io_trace "<<<< module_upd_sync_all_submodules -- $(print_vars moduleSubmodulePaths[@])"
+}
+
 _module_sync_all_submodules()
 {
   # io_trace ">>>> _module_sync_all_submodules -- $(print_vars moduleSubmodulePaths[@])"
