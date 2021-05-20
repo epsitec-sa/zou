@@ -560,6 +560,15 @@ module_upd_sync_all_submodules()
   echo "${moduleSubmodulePaths[@]}" | xargs git-sm updsync -C "${moduleRoot}"
   # io_trace "<<<< module_upd_sync_all_submodules -- $(print_vars moduleSubmodulePaths[@])"
 }
+module_sync_upd_sync_uninitialized_submodules()
+{
+  # io_trace ">>>> module_sync_upd_sync_uninitialized_submodules -- $(print_vars configSkuInclude[@])"
+  local data=$(_module_list_uninitialized_submodules "${configSkuInclude[@]}")
+  [[ -z $data ]] && return 0
+
+  xargs git-sm syncupdsync -C "${moduleRoot}" <<< "$data"
+  # io_trace "<<<< module_sync_upd_sync_uninitialized_submodules -- $(print_vars configSkuInclude[@])"
+}
 
 _module_sync_all_submodules()
 {
@@ -577,15 +586,6 @@ _module_upd_sync_unitialized_submodules()
 
   xargs git-sm updsync -C "${moduleRoot}" <<< "$data"
   # io_trace "<<<< _module_upd_sync_unitialized_submodules -- $(print_vars moduleSubmodulePaths[@])"
-}
-module_sync_upd_sync_uninitialized_submodules()
-{
-  # io_trace ">>>> module_sync_upd_sync_uninitialized_submodules -- $(print_vars configSkuInclude[@])"
-  local data=$(_module_list_uninitialized_submodules "${configSkuInclude[@]}")
-  [[ -z $data ]] && return 0
-
-  xargs git-sm syncupdsync -C "${moduleRoot}" <<< "$data"
-  # io_trace "<<<< module_sync_upd_sync_uninitialized_submodules -- $(print_vars configSkuInclude[@])"
 }
 _module_list_uninitialized_submodules()
 {
