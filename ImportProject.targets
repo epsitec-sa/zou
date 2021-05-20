@@ -103,7 +103,7 @@
 
     <!--<Message Importance="high" Text='%(MSBuildCmd) %(MSBuildOptions) "%(ProjectsToBuild.Identity)"' />-->
     <Exec Command='%(MSBuildCmd) %(MSBuildOptions) "%(ProjectsToBuild.Identity)"' />
-    <CallTarget Targets="_DeleteLastBuildState" />
+    <CallTarget Targets="_DeleteLastBuildState" Condition="'$(BuildingInsideVisualStudio)'=='true'" />
   </Target>
 
   <Target Name="_ImportProject" Condition="'$(ZouTrace)' == 'true'">
