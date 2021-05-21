@@ -479,7 +479,7 @@ lib0\help\helpmap.cpp: {$(IntDir)\lib0.xx.cpp}
       <_HhcWarning Include="$([System.Text.RegularExpressions.Regex]::Matches($(_SourceFile), 'HHC\w+:\s*Warning:[^;]*'))" />
     </ItemGroup>
     <!-- Fix for Visual Studio -->
-    <CallTarget Targets="_DeleteLastBuildState" Condition="'%(_HhcError.Identity)' != ''" />
+    <CallTarget Targets="_DeleteLastBuildState" Condition="'%(_HhcError.Identity)' != '' And '$(BuildingInsideVisualStudio)'=='true'" />
     <!-- Log MSBuild errors and warnings -->
     <Error File="$(_HhpPath)"
            Condition="'%(_HhcError.Identity)' != ''"
