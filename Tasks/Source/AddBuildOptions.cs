@@ -64,13 +64,17 @@ namespace Zou.Tasks
             var template = new TaskItem(projectItem);
             this.ProcessOptions(template);
 
-            foreach (var target in template.GetMetadata("Targets").Split(';'))
+            // create a specific project for clean target
+            var targetsValue  = template.GetMetadata("Targets");
+            var targetsGroups = IsolateCleanTarget(targetsValue);
+
+            foreach (var targets in targetsGroups)
             {
                 var project = new TaskItem(template);
-                project.RemoveMetadata("Targets");
-                project.SetMetadata("_Target", target);
-                var names = project.CustomMetadataNames();
+                // Add Targets metadata
+                project.SetMetadata("Targets", targets);
 
+                var names = project.CustomMetadataNames();
                 // Add Properties metadata
                 var properties = names
                     .Where(name => Mixins.IsBuildProperty(name))
@@ -85,12 +89,31 @@ namespace Zou.Tasks
                 {
                     propertiesValue += ";_=_";
                 }
-                propertiesValue = QuotePropertiesValue(propertiesValue);
+                propertiesValue = QuoteValue(propertiesValue);
                 project.SetMetadata("Properties", propertiesValue);
+
 
                 yield return project;
             }
 
+            static IEnumerable<string> IsolateCleanTarget(string targetsValue)
+            {
+                var targets = targetsValue.Split(';');
+                var cleanTarget = targets
+                    .Where(target => target.Equals("Clean", StringComparison.OrdinalIgnoreCase))
+                    .FirstOrDefault();
+
+                if (cleanTarget == null)
+                {
+                    yield return targetsValue;
+                }
+                else
+                {
+                    yield return cleanTarget;
+                    // group other targets
+                    yield return QuoteValue(string.Join(";", targets.Except(EnumerableEx.Return(cleanTarget))));
+                }
+            }
             static string QuotePropertyValue(string value)
             {
                 // https://github.com/dotnet/sdk/issues/8792#issuecomment-393756980
@@ -104,7 +127,7 @@ namespace Zou.Tasks
                 }
                 return value;
             }
-            string QuotePropertiesValue(string value)
+            static string QuoteValue(string value)
             {
                 if (Environment.OSVersion.Platform == PlatformID.Win32NT)
                 {
@@ -233,7 +256,6 @@ namespace Zou.Tasks
         {
             get
             {
-                yield return "_Target";
                 yield return "BuildInParallel";
                 yield return "Language";
                 yield return "Link";
