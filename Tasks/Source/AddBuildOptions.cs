@@ -15,6 +15,11 @@ namespace Zou.Tasks
     public enum ProjectType
     {
         Solution,
+        /// <summary>
+        /// set MSBuildEmitSolution=1
+        /// msbuild myapp.sln -> myapp.sln.metaproj
+        /// </summary>
+        MetaProj,
         CSharp,
         Cpp,
         PowerShell,
@@ -196,7 +201,7 @@ namespace Zou.Tasks
     }
     internal static partial class Mixins
     {
-        public static bool          IsBuildProperty(string name) => !Mixins.NonBuildProperties.Contains(name);
+        public static bool          IsBuildProperty(string name) => !NonBuildProperties.Contains(name);
         public static Platform      GetPlatform(this ITaskItem item)
         {
             var metadata = item.GetMetadata("Platform");
@@ -241,6 +246,7 @@ namespace Zou.Tasks
         private static readonly Dictionary<string, ProjectType> ProjectExtensionToType = new Dictionary<string, ProjectType>()
         {
             { ".sln",         ProjectType.Solution },
+            { ".metaproj",    ProjectType.MetaProj },
             { ".csproj",      ProjectType.CSharp },
             { ".vcxproj",     ProjectType.Cpp },
             { ".pssproj",     ProjectType.PowerShell },
