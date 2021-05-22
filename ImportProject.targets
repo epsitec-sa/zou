@@ -101,6 +101,15 @@
     Instead with use the Exec task which starts the MSBuild process.
     -->
 
+    <!--<Message Importance="high" Text='MSBuild "%(ProjectsToBuild.Identity)" "%(Properties)" "%(Targets)"' />
+    <MSBuild Projects="%(ProjectsToBuild.Identity)"
+             Properties="%(Properties)"
+             Targets="%(Targets)"
+             BuildInParallel="true">
+      <Output TaskParameter="TargetOutputs" ItemName="ImportProjectBuildOutput" />
+    </MSBuild>
+    <Message Importance="high" Text="BuildOutput: @(ImportProjectBuildOutput)" />-->
+
     <!--<Message Importance="high" Text='%(MSBuildCmd) %(MSBuildOptions) "%(ProjectsToBuild.Identity)"' />-->
     <Exec Command='%(MSBuildCmd) %(MSBuildOptions) "%(ProjectsToBuild.Identity)"' />
     <CallTarget Targets="_DeleteLastBuildState" Condition="'$(BuildingInsideVisualStudio)'=='true'" />
