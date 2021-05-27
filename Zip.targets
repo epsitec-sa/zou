@@ -72,7 +72,7 @@ Input parameters: $(ZipFolder)
   </Target>
 
   <Target Name="ZipFolderClean" DependsOnTargets="_InitZipFolder" AfterTargets="Clean">
-    <Message Condition="Exists('%(ZipFolder.ZipPath)')" Text="[-] %(ZipFolder.ZipPath)" Importance="high" />
+    <Message Importance="high" Condition="Exists('%(ZipFolder.ZipPath)')" Text="[-] %(ZipFolder.ZipPath)" />
     <Delete Files="@(ZipFolder->'%(ZipPath)')" ContinueOnError="true" />
   </Target>
 
@@ -85,7 +85,7 @@ Input parameters: $(ZipFolder)
   </Target>
 
   <Target Name="_ZipOneFolder" DependsOnTargets="_InitZipOneFolder" Inputs="@(_ZipFile)" Outputs="$(_ZipPath)">
-    <Message Text="[+] Compressing $(_ZipFolder) into $(_ZipPath)..." Importance="high" />
+    <Message Importance="high" Text="[+] Compressing $(_ZipFolder) into $(_ZipPath)..." />
     <Zip Files="@(_ZipFile)" FileName="$(_ZipPath)" />
   </Target>
 

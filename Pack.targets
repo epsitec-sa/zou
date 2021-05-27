@@ -39,7 +39,7 @@
           DependsOnTargets="PackCreate">
     
     <Delete  Files="%(PackCopyFile.ImportDir)%(RecursiveDir)%(FileName)%(Extension)" />
-    <Message Importance="high" Text="[-] %(PackCopyFile.ImportDir)%(RecursiveDir)%(FileName)%(Extension)" Condition="'%(FileName)%(Extension)' != ''"/>
+    <Message Importance="normal" Text="[-] %(PackCopyFile.ImportDir)%(RecursiveDir)%(FileName)%(Extension)" Condition="'%(FileName)%(Extension)' != ''"/>
   </Target>
 
   <Target Name="PackCopy"
@@ -48,7 +48,7 @@
           Outputs="%(PackCopyFile.ImportDir)%(RecursiveDir)%(FileName)%(Extension)">
 
     <CallTarget Targets="_DeleteLastBuildState" Condition="'$(BuildingInsideVisualStudio)'=='true'" />
-    <Message Importance="high" Text="[+] %(PackCopyFile.Identity) =&gt; %(ImportDir)%(RecursiveDir)%(FileName)%(Extension)" />
+    <Message Importance="normal" Text="[+] %(PackCopyFile.Identity) =&gt; %(ImportDir)%(RecursiveDir)%(FileName)%(Extension)" />
     <Copy SourceFiles="%(PackCopyFile.Identity)" DestinationFiles="%(ImportDir)%(RecursiveDir)%(FileName)%(Extension)"  />
   </Target>
 

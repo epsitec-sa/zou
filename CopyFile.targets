@@ -18,7 +18,7 @@ Input parameters:
   <Target Name="CopyClean" AfterTargets="Clean">
 
     <Delete  Files="%(CopyFile.TargetDir)%(RecursiveDir)%(TargetFile)" />
-    <Message Importance="high" Text="[-] %(CopyFile.TargetDir)%(RecursiveDir)%(TargetFile)" Condition="'%(TargetFile)' != ''"/>
+    <Message Importance="normal" Text="[-] %(CopyFile.TargetDir)%(RecursiveDir)%(TargetFile)" Condition="'%(TargetFile)' != ''"/>
   </Target>
 
   <Target Name="Copy"
@@ -26,7 +26,7 @@ Input parameters:
           Outputs="%(CopyFile.TargetDir)%(RecursiveDir)%(TargetFile)"
           BeforeTargets="Build">
 
-    <Message Importance="high" Text="[+] %(CopyFile.Identity) =&gt; %(TargetDir)%(RecursiveDir)%(TargetFile)" />
+    <Message Importance="normal" Text="[+] %(CopyFile.Identity) =&gt; %(TargetDir)%(RecursiveDir)%(TargetFile)" />
     <Copy SourceFiles="%(CopyFile.Identity)" DestinationFiles="%(CopyFile.TargetDir)%(RecursiveDir)%(TargetFile)" ContinueOnError="true" />
   </Target>
 
