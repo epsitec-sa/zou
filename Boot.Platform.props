@@ -8,7 +8,7 @@
   <Choose>
     <When Condition="'$(RuntimeIdentifier)' == ''">
       <PropertyGroup>
-        <!--<DebugBootPlatform>1</DebugBootPlatform>-->
+        <DebugBootPlatform>1</DebugBootPlatform>
 
         <Platform Condition="'$(Platform)' == '' And '$(ZouAgentType)' == 'Cpp'">Win32</Platform>
         <Platform Condition="'$(Platform)' == '' And '$(ZouAgentType)' == 'CSharp'">Any CPU</Platform>
@@ -17,7 +17,8 @@
         <RuntimePlatform Condition="'$(Platform)' == 'Any CPU' Or '$(Platform)' == 'AnyCPU'">AnyCPU</RuntimePlatform>
         <RuntimePlatform Condition="'$(Platform)' == 'Win32'   Or '$(Platform)' == 'x86'">x86</RuntimePlatform>
         <RuntimePlatform Condition="'$(RuntimePlatform)' == ''">x64</RuntimePlatform>
-
+        <!-- Fix runtime platform for linux and osx -->
+        <RuntimePlatform Condition="'$(RuntimePlatform)' == 'AnyCPU' And ! $([MSBuild]::IsOsPlatform(Windows))">x64</RuntimePlatform>
 
         <ForwardPlatform Condition="'$(ForwardPlatform)' == '' And '$(RuntimePlatform)' == 'AnyCPU'">Any CPU</ForwardPlatform>
         <ForwardPlatform Condition="'$(ForwardPlatform)' == '' And '$(RuntimePlatform)' == 'x86' And '$(Platform)' == 'Win32'">Win32</ForwardPlatform>
@@ -32,7 +33,7 @@
     </When>
     <When Condition="$(RuntimeIdentifier.EndsWith('x86'))">
       <PropertyGroup>
-        <!--<DebugBootPlatform>2</DebugBootPlatform>-->
+        <DebugBootPlatform>2</DebugBootPlatform>
 
         <Platform        Condition="'$(Platform)'        == ''">x86</Platform>
         <RuntimePlatform Condition="'$(RuntimePlatform)' == ''">x86</RuntimePlatform>
@@ -41,7 +42,7 @@
     </When>
     <Otherwise>
       <PropertyGroup>
-        <!--<DebugBootPlatform>3</DebugBootPlatform>-->
+        <DebugBootPlatform>3</DebugBootPlatform>
 
         <Platform        Condition="'$(Platform)'        == ''">x64</Platform>
         <RuntimePlatform Condition="'$(RuntimePlatform)' == ''">x64</RuntimePlatform>
@@ -59,7 +60,7 @@
   </Target>
   
   <Target Name="TraceBootPlatform" Condition="'$(ZouTraceProps)' == 'true'">
-    <!--<Message Importance="high" Text="DebugBootPlatform  = $(DebugBootPlatform)" />-->
+    <Message Importance="high" Text="DebugBootPlatform  = $(DebugBootPlatform)" />
     <Message Importance="high" Text="MSBuildRuntimeType = $(MSBuildRuntimeType)" />
     <Message Importance="high" Text="RuntimeIdentifier  = $(RuntimeIdentifier)" />
     <Message Importance="high" Text="Platforms          = $(Platforms)" />
