@@ -376,22 +376,22 @@ _prod_release_ff()
 }
 _prod_release_unreleased()
 {
-  # io_trace ">>>> _prod_release_unreleased 1 -- $(print_vars modulePrerelPrefix releaseStatus)"
+  # io_trace ">>>> _prod_release_unreleased -1- $(print_vars modulePrerelPrefix releaseStatus)"
   # head will change
   prod_increment_release_version "$modulePrerelPrefix"
   [ $? -eq 127 ] && _prod_force_release_of_principal_module
-  # io_trace "#### _prod_release_unreleased 2 -- $(print_vars modulePrerelPrefix releaseStatus releaseVTag)"
+  # io_trace "#### _prod_release_unreleased -2- $(print_vars modulePrerelPrefix releaseStatus releaseVTag pmProdHTag)"
 
   if [[ $dryRun == true ]]; then
     mio_success "Branch ${VC}$prodBranch${Green} will be released at ${VC}$releaseVTag" "$alias"
   else
-    # io_trace "#### _prod_release_unreleased 3 -- $(print_vars modulePrerelPrefix releaseStatus)"
+    # io_trace "#### _prod_release_unreleased -3- $(print_vars modulePrerelPrefix releaseStatus)"
     prod_commit_release \
     && branch_raise_head_changed_event "$prodBranch" \
     && { mio_success "Released branch ${VC}$prodBranch${Green} at ${VC}$releaseVTag"; hasBeenReleased=true; } \
     || { mio_error "Release of branch '$prodBranch' failed"; return 1; }
   fi
-  # io_trace "<<<< _prod_release_unreleased 4 -- $(print_vars modulePrerelPrefix releaseStatus)"
+  # io_trace "<<<< _prod_release_unreleased -4- $(print_vars modulePrerelPrefix releaseStatus)"
 }
 _prod_release_released()
 {

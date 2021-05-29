@@ -151,7 +151,7 @@ _prod_init_scope()
 
   # 1. Retrieve vtag and vbranch info starting from dev branch
   vtag_set_describe "$devBranchPath" "$devBranch" "$vtagResolveMode" "true" # -> vbranch vtag delta
-  # io_trace "_prod_init_scope ${*@Q} -- $(print_vars devBranchPath devBranch vbranchCreate vbranch vtag delta pmProdHTag)"
+  # io_trace "#### _prod_init_scope ${*@Q} -- $(print_vars devBranchPath devBranch vbranchCreate vbranch vtag delta pmProdHTag)"
   if [[ -n $pmProdHTag ]]; then
     vtag="$pmProdHTag"
     htag="$pmProdHTag"
@@ -720,7 +720,7 @@ _prod_increment_release_version()
 #   releaseVTag
 _prod_increment_release_version_core()
 {
-  # io_trace ">>>> _prod_increment_release_version_core $(print_vars noIncrement prodHTag releaseVTag)"
+  # io_trace ">>>> _prod_increment_release_version_core $(print_vars noIncrement prodHTag releaseVTag pmProdHTag)"
   local vnext
   if [[ $noIncrement == true ]]; then
     if vtag_is_vnode $prodHTag; then
