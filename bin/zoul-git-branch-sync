@@ -214,6 +214,7 @@ branch_oreset_all()
   local forceReset=$1 pruneBranches=$2; shift 2
   
   gitx fetch --all --prune --tags &>>"$stdallRedir"
+  notes_prune_all false true true # no fetch, verbose, showMessage
 
   branch_merge_abort
   if [[ $forceReset == true ]]; then

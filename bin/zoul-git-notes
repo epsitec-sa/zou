@@ -59,9 +59,45 @@ notes_append_file() { gitx notes --ref "$1" append -F "$2" "${3:-HEAD}"; }
 # Remove a channel note
 # in:
 #   $1:channel  -- notes channel (--ref)
-#   $2:note     -- the note
-#   $3:object   -- default to 'HEAD'
-notes_remove() { gitx notes --ref "$1" remove --ignore-missing "${2:-HEAD}"; }
+#   $2:object   -- default to 'HEAD'
+notes_remove()
+{
+  local channel="$1" obj="${2:-HEAD}" verbose="$3"
+  if [[ $verbose == 'true' ]]; then
+    io_buffered_eval 'gitx notes --ref "$channel" remove --ignore-missing "$obj" 2>&1' : ${DarkGray}
+  else
+    gitx notes --ref "$channel" remove --ignore-missing "$obj" &>>"$stdallRedir"
+  fi
+}
+notes_remove_channel()
+{
+  local channel="$1" verbose="$2"
+  # io_trace "notes_remove_channel -- ${*@Q} -- $(print_vars channel verbose)"
+  for obj in $(notes_objects "$channel"); do
+    notes_remove "$channel" "$obj" "$verbose"
+  done
+}
+notes_remove_all()
+{
+  # io_trace "notes_remove_all -- ${*@Q}"
+  for channel in $(notes_channel_names); do
+    notes_remove_channel "$channel" "$@"
+  done
+}
+notes_prune_all()
+{
+  local fetch="$1" verbose="$2" showMessage="$3" gitDir=$(git_dir)
+  local fetchDir="$gitDir/$(notes_fetch_dir "$remote")" \
+        localDir="$gitDir/refs/notes"
+  # io_trace "notes_prune_all -- ${*@Q} -- $(print_vars fetch verbose fetchDir localDir)"
+  [[ $showMessage == true ]] && mio_warning "Pruning notes..."
+  if [[ -d $localDir ]]; then
+    notes_remove_all "$verbose"
+    rm -rf "$localDir"
+  fi
+  [[ $fetch == 'true' ]] && notes_fetch_all
+  [[ -d $fetchDir ]] && cp -r "$fetchDir" "$localDir"
+}
 
 # Display a channel note
 # in:
