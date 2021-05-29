@@ -251,19 +251,32 @@ prod_release_scope()
       local smInProd smInProdGate smInProdPath
       _sm_in_prod_init || return $?
     fi
-  elif [[ $releaseStatus == 'released' ]]; then
-    # it's terminated if dev == prod
-    # io_trace "prod_release_scope COMPLETED -- $(print_vars moduleDevBranchPath prodBranchPath)"
-    if ref_equals "$moduleDevBranchPath" "$prodBranchPath"; then
-      # no submodules and released
-      _prod_release_released
-      _vtable_update || io_trace_error 'prod_release_scope' || return $?
-      return 0
-    fi
+  elif _prod_is_release_completed; then
+    _prod_release_released
+    _vtable_update || io_trace_error 'prod_release_scope' || return $?
+    return 0
   fi
 
   # execute next russian doll
   $1 "${@:2}"
+}
+_prod_is_release_completed()
+{
+  # it's not completed if status != released
+  [[ $releaseStatus == 'released' ]] || return 1
+  # it's not completed if dev != prod
+  ref_equals "$moduleDevBranchPath" "$prodBranchPath" || return 1
+  # status == released && dev == prod
+  # io_trace "_prod_is_release_completed -1- $(print_vars moduleDevBranchPath prodBranchPath)"
+
+  # check if a release of principal module is necessary
+  if module_is_principal; then
+    # io_trace "_prod_is_release_completed PRINCIPAL -2- $(print_vars pmProdHTag releaseVTag)"
+    # bundle and principal module versions are not synchronized
+    [[ -n $pmProdHTag && $pmProdHTag != $releaseVTag ]] && return 1
+  fi
+
+  return 0
 }
 
 prod_release_prolog()

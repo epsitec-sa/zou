@@ -369,9 +369,11 @@ sku_checkout()
 #   $4:vnodeCheckoutProd  -- checkout production branch if vtag is a vnode
 prod_checkout()
 {
-  local prodCheckoutType=$1 forceCheckout=$2 devFallback=$3 vnodeCheckoutProd=${4:-true}
-  # io_trace "prod_checkout -1- $(print_vars prodCheckoutType forceCheckout devFallback vnodeCheckoutProd vtagStatus prodBranch prodVTag moduleHead moduleDevBranch )"
+  local prodCheckoutType=$1 forceCheckout=$2 devFallback=$3 \
+        vnodeCheckoutProd=${4:-true} pmProdHTag0=$pmProdHTag
+  # io_trace ">>>> prod_checkout -- $(print_vars prodCheckoutType forceCheckout devFallback vnodeCheckoutProd vtagStatus prodBranch prodVTag moduleHead moduleDevBranch pmProdHTag)"
   
+
   if [[ -n $devFallback && $moduleDevBranch != $devFallback ]]; then
     local branch lbranch bref
     branch_set_realize "$devFallback"
@@ -387,6 +389,10 @@ prod_checkout()
     vlast) _prod_checkout_vlast "$forceCheckout" "$devFallback" "$vnodeCheckoutProd";;
     *)     dev_checkout "$forceCheckout" "$devFallback";;
   esac
+
+  pmProdHTag=$pmProdHTag0
+
+  # io_trace "<<<< prod_checkout -- $(print_vars pmProdHTag prodHTag)"
 }
 _prod_checkout_vnext()
 {
@@ -722,6 +728,8 @@ _prod_increment_release_version_core()
 {
   # io_trace ">>>> _prod_increment_release_version_core $(print_vars noIncrement prodHTag releaseVTag pmProdHTag)"
   local vnext
+  [[ -n $pmProdHTag ]] && prodHTag=$pmProdHTag
+
   if [[ $noIncrement == true ]]; then
     if vtag_is_vnode $prodHTag; then
       vtag_set_increment "$prodHTag" "$releasePrerelPrefix" || return 1
@@ -733,7 +741,10 @@ _prod_increment_release_version_core()
     vtag_set_increment "$prodHTag" "$releasePrerelPrefix" || return 1
     releaseVTag=$vnext
   fi
-  # io_trace "<<<< _prod_increment_release_version_core $(print_vars noIncrement prodHTag releaseVTag)"
+  
+  [[ -n $pmProdHTag ]] && pmProdHTag=$releaseVTag
+  # io_trace "<<<< _prod_increment_release_version_core $(print_vars noIncrement prodHTag releaseVTag pmProdHTag)"
+  return 0
 }
 
 ########################################################
