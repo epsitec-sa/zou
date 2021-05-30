@@ -387,7 +387,12 @@ visit()
   [ ${#_zouVisitPaths[@]} -eq 0 ] && return 0
 
   for path in ${_zouVisitPaths[@]}; do
-    ( $2 "$path" "${@:3}" || exit $? ) || ec=$?
+    (
+      # local _visitMessage="visit -- $path"
+      # io_trace ">>>> $_visitMessage"
+      $2 "$path" "${@:3}" || exit $?
+      # io_trace "<<<< $_visitMessage"
+    ) || ec=$?
     [[ $ec -ne 0 && $stopOnError == true ]] && break
   done
   return $ec
@@ -414,7 +419,12 @@ visit_async()
   jobsCount=${jobsCount:-$zouJobsCount}
 
   for path in ${_zouVisitPaths[@]}; do
-    ( $2 "$path" "${@:3}" || io_trace_error "visit_async >> $2 "$path" "${@:3}"" || exit $? ) &
+    (
+      # local _visitMessage="visit_async -- $path"
+      # io_trace ">>>> $_visitMessage"
+      $2 "$path" "${@:3}" || io_trace_error "visit_async >> $2 "$path" "${@:3}"" || exit $?
+      # io_trace "<<<< $_visitMessage"
+    ) &
     pids+=($!)
     # io_trace "#### visit_async -- $(print_vars pids[@])"
 
@@ -445,7 +455,12 @@ visit_async_fast()
   [ ${#_zouVisitPaths[@]} -eq 0 ] && return 0
 
   for path in $(array_sort _zouVisitPaths[@]); do
-    ( $2 "$path" "${@:3}" || exit $? ) &
+    (
+      # local _visitMessage="visit_async_fast -- $path"
+      # io_trace ">>>> $_visitMessage"
+      $2 "$path" "${@:3}" || exit $?
+      # io_trace "<<<< $_visitMessage"
+    ) &
   done
   wait
 }
