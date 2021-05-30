@@ -212,10 +212,9 @@ branch_sync_all()
 branch_oreset_all()
 {
   local forceReset=$1 pruneBranches=$2; shift 2
-  local current=$(branch_current)
 
   gitx fetch --all --prune --tags &>>"$stdallRedir"
-  notes_prune_all false true true # no fetch, verbose, showMessage
+  notes_prune_all false false true  # no fetch, no verbose, showMessage
 
   branch_merge_abort
   if [[ $forceReset == true ]]; then
@@ -227,9 +226,7 @@ branch_oreset_all()
   fi
 
   # prune tags asynchronously
-  ( repo_prune_tags false true ) &
+  ( repo_prune_tags false true ) &  # no verbose, showMessage
 
   syncNoPush=true _branch_sync_visit _branch_oreset_visitor "$@"
-
-  branch_checkout "$current"
 }
