@@ -10,7 +10,10 @@ ZOUL_TRAP=true
 #   $..:        names of traps to modify
 trap_add()
 {
-  local command=$1 trapName; shift
+  # local indent; printf -v indent '%.s ' {1..47}
+  # echo "$indent[$BASHPID] $PWD $ #### trap_add -- $*" >&2
+
+  local command="$1" _bashPid=$BASHPID trapName; shift
   for trapName in "$@"; do
     trap -- "$(
       # helper fn to get existing trap command from output of trap -p
@@ -21,4 +24,27 @@ trap_add()
       printf '%s\n' "$command"
     )" "$trapName"
   done
+}
+
+# Appends a command to trap EXIT
+# in:
+#   $1:command to execute on process/subshell exit
+# Remarks:
+# - do not use the 'trap_add' for EXIT signal because the trap handler is executed each time a subshell exits. 
+# - 'trap_exit' ensures that registered trap handlers are executed in the caller process context only.
+trap_exit()
+{
+  # local indent; printf -v indent '%.s ' {1..47}
+  # echo "$indent[$BASHPID] $PWD $ #### trap_exit -- $*" >&2
+
+  local command="$1" _bashPid=$BASHPID
+  trap -- "$(
+    # helper fn to get existing trap command from output of trap -p
+    extract_trap_cmd() { printf '%s\n' "$3"; }
+    # print existing trap command with newline
+    eval "extract_trap_cmd $(trap -p EXIT)"
+    # print the new trap command
+    # printf '%s\n' "[[ \$BASHPID == $_bashPid ]] && { echo \"$indent[\$BASHPID] \$PWD $ #### trap_run -- $command\" >&2; $command; }"
+    printf '%s\n' "[[ \$BASHPID == $_bashPid ]] && $command"
+  )" EXIT
 }

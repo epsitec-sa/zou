@@ -62,7 +62,7 @@ vtable_update()
     # serialize header and root
     local file="$(mktemp)"
     # remove file when the script finishes
-    trap_add "rm \"$file\"" 0
+    trap_exit "rm \"$file\""
 
     print_head >"$file"
     vtable_row $moduleId false >>"$file"

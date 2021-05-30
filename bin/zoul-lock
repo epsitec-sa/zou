@@ -38,7 +38,7 @@ _lock_init_mkdir()
 {
   local gate=${1:-$(mktemp -u)}
   # Remove gate when the script finishes, or when it receives a signal
-  trap_add "rm -rf \"$gate\"" 0
+  trap_exit "rm -rf \"$gate\""
   echo $gate
 }
 _lock_enter_mkdir()
@@ -76,7 +76,7 @@ _lock_init_flock()
 {
   local gate=${1:-$(mktemp)}
   # Remove gate when the script finishes, or when it receives a signal
-  trap_add "rm \"$gate\" &>/dev/null" 0
+  trap_exit "rm \"$gate\" &>/dev/null"
   echo $gate
 }
 _lock_enter_flock()
@@ -121,7 +121,7 @@ _lock_init_wlock()
     gate="zou.$gate"
   fi
   # Remove gate when the script finishes, or when it receives a signal
-  trap_add "\"$wlockPath\" -u \"$gate\"" 0
+  trap_exit "\"$wlockPath\" -u \"$gate\""
   # echo "#### _lock_init_wlock ${*@Q}" >&2
   echo $gate
 }

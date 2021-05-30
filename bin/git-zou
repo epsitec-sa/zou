@@ -40,7 +40,7 @@ zou_run()
   local setupDir zouCheckoutType="$checkoutType"
   if [[ -z $zouSetupDebug ]]; then
     setupDir=$(mktemp -d)
-    trap_add "rm -rf "$setupDir"" 0
+    trap_exit "rm -rf "$setupDir""
   else
     setupDir='/home/roger/tmp'
     rm -rf "$setupDir"
