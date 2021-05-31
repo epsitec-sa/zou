@@ -4,8 +4,9 @@
 
   <!-- Default properties (can be overloaded in bundle after importing this script) -->
   <PropertyGroup>
-    <FullTargetFramework Condition="'$(FullTargetFramework)' == ''">net48</FullTargetFramework>
-    <CoreTargetFramework Condition="'$(CoreTargetFramework)' == ''">net5</CoreTargetFramework>
+    <FullTargetFramework    Condition="'$(FullTargetFramework)'    == ''">net48</FullTargetFramework>
+    <CoreTargetFramework    Condition="'$(CoreTargetFramework)'    == ''">net5</CoreTargetFramework>
+    <WindowsTargetFramework Condition="'$(WindowsTargetFramework)' == ''">$(CoreTargetFramework)-windows</WindowsTargetFramework>
     <TargetFramework Condition="'$(TargetFramework)' == '' And '$(RuntimeType)' == 'Core'">$(CoreTargetFramework)</TargetFramework>
     <TargetFramework Condition="'$(TargetFramework)' == '' And '$(RuntimeType)' == 'Full'">$(FullTargetFramework)</TargetFramework>
     <TargetFramework Condition="'$(TargetFramework)' == ''">$(CoreTargetFramework)</TargetFramework>
@@ -50,13 +51,18 @@
   </PropertyGroup>
   
   <Target Name="TraceVersion" AfterTargets="GetAssemblyAttributes" Condition="'$(ZouTrace)' == 'true' Or '$(TraceVersion)' == 'true'">
-    <Message Importance="high" Text="VersionPrefix        = $(VersionPrefix)" />
-    <Message Importance="high" Text="VersionSuffix        = $(VersionSuffix)" />
-    <Message Importance="high" Text="Version              = $(Version)" />
-    <Message Importance="high" Text="AssemblyVersion      = $(AssemblyVersion)" />
-    <Message Importance="high" Text="FileVersion          = $(FileVersion)" />
-    <Message Importance="high" Text="InformationalVersion = $(InformationalVersion)" />
-    <Message Importance="high" Text="PackageVersion       = $(PackageVersion)" />
+    <Message Importance="high" Text="FullTargetFramework    = $(FullTargetFramework)" />
+    <Message Importance="high" Text="CoreTargetFramework    = $(CoreTargetFramework)" />
+    <Message Importance="high" Text="WindowsTargetFramework = $(WindowsTargetFramework)" />
+    <Message Importance="high" Text="RuntimeIdentifiers     = $(RuntimeIdentifiers)" />
+    <Message Importance="high" Text="RazorLangVersion       = $(RazorLangVersion)" />
+    <Message Importance="high" Text="VersionPrefix          = $(VersionPrefix)" />
+    <Message Importance="high" Text="VersionSuffix          = $(VersionSuffix)" />
+    <Message Importance="high" Text="Version                = $(Version)" />
+    <Message Importance="high" Text="AssemblyVersion        = $(AssemblyVersion)" />
+    <Message Importance="high" Text="FileVersion            = $(FileVersion)" />
+    <Message Importance="high" Text="InformationalVersion   = $(InformationalVersion)" />
+    <Message Importance="high" Text="PackageVersion         = $(PackageVersion)" />
   </Target>
 
 </Project>
