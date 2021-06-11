@@ -1,0 +1,83 @@
+<!--
+The Sign.targets can be used to sign folders.
+Input parameters:
+  $(ZouSignTest) :: use local test server (signtool/start-server)
+  $(SignFolder)
+  @(SignFolder)
+    %(Test) :: default to $(ZouSignTest)
+-->
+<Project>
+  <PropertyGroup>
+    <SignTargetsImported>true</SignTargetsImported>
+  </PropertyGroup>
+
+  <Import Project="zou.props" Condition="'$(ZouVersion)' == ''" />
+
+  <!-- Setup default -->
+  <ItemDefinitionGroup>
+    <SignFolder>
+      <Test Condition="'%(Test)' == '' And '$(ZouSignTest)' != ''">$(ZouSignTest)</Test>
+    </SignFolder>
+    <SignFolder>
+      <Test Condition="'%(Test)' == ''">false</Test>
+    </SignFolder>
+  </ItemDefinitionGroup>
+  
+  <Target Name="_InitSignFolder">
+    <!-- Preprocess @(SignFolder) items and $(SignFolder) property-->
+    <ItemGroup>
+      <!-- Merge $(SignFolder) (semi-colon separated) into @(SignFolder) -->
+      <SignFolder Include="$(SignFolder)" />
+      
+      <!-- Discriminate files from directories (CreatedTime metadata is empty for a directory) -->
+      <SignFolder>
+        <Folder Condition="'%(CreatedTime)' == ''">%(Identity)</Folder>
+        <Folder Condition="'%(CreatedTime)' != ''">%(RelativeDir)</Folder>
+      </SignFolder>
+      <!-- Normalize separators so that RemoveDuplicate task can do its job -->
+      <SignFolder>
+        <Folder>$([System.String]::new('%(Folder)').TrimEnd('\/').Replace('\', '/'))</Folder>
+      </SignFolder>
+
+      <!-- Make a copy with normalized paths for RemoveDuplicate -->
+      <_SignFolder Include="%(SignFolder.Folder)" Condition="Exists('%(Folder)')">
+        <Test>%(SignFolder.Test)</Test>
+      </_SignFolder>
+
+      <!-- Reset variable for reuse -->
+      <SignFolder Remove="@(SignFolder)" />
+    </ItemGroup>
+
+    <!-- Remove duplicates from _SignFolder items into SignFolder -->
+    <RemoveDuplicates Inputs="@(_SignFolder)">
+      <Output TaskParameter="Filtered" ItemName="SignFolder"/>
+    </RemoveDuplicates>
+
+    <!-- Clean temp vars -->
+    <ItemGroup>
+      <_SignFolder Remove="@(_SignFolder)" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <SignFolder>
+        <Command>esign --nologo -i "%(Identity)" -o "%(Identity)"</Command>
+      </SignFolder>
+      <SignFolder>
+        <Command Condition="%(Test)">%(Command) --test</Command>
+      </SignFolder>
+    </ItemGroup>
+
+    <!--<LogItems Items="@(SignFolder)" />-->
+  
+  </Target>
+
+  <Target Name="SignFolder"
+          DependsOnTargets="_InitSignFolder"
+          AfterTargets="Build;ImportProject"
+          Outputs="%(SignFolder.Identity)">
+
+    <!--<Message Text="%(SignFolder.Command)" Importance="high" />-->
+    <Exec Command="%(SignFolder.Command)" Condition="'%(Command)' != ''" />
+  </Target>
+
+</Project>
