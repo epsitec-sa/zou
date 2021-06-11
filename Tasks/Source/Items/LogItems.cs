@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 using Microsoft.Build.Framework;
@@ -14,10 +15,13 @@ namespace Zou.Tasks
     {
         public string                   Title       { get; set; }
         public bool                     AllMetadata { get; set; }
+        public string                   Importance  { get; set; }
         [Required] public ITaskItem[]   Items       { get; set; }
 
         public override bool Execute()
         {
+            //Debugger.Launch();
+
             this.Items.ForEach(item => this.LogItem(item));
             return !this.Log.HasLoggedErrors;
         }
@@ -38,9 +42,11 @@ namespace Zou.Tasks
         private void LogMetadata(System.Collections.ICollection names, string header, Func<string, string> getMetaData) => this.LogMetadata(names.Cast<string>(), header, getMetaData);
         private void LogMetadata(IEnumerable<string> names, string header, Func<string, string> getMetaData)
         {
+            var importance = string.IsNullOrEmpty(this.Importance) ? MessageImportance.High : (MessageImportance) Enum.Parse(typeof(MessageImportance), this.Importance, true);
+
             if (names.IsEmpty())
             {
-                this.Log.LogMessage(MessageImportance.Normal, header);
+                this.Log.LogMessage(importance, header);
             }
             else
             {
@@ -51,7 +57,7 @@ namespace Zou.Tasks
                   .Select(name => $"  {name.PadRight(maxNameLength)} = {getMetaData(name)}")
                   .StartWith($"{header}:");
 
-                this.Log.LogMessage(MessageImportance.Normal, string.Join("\n", lines));
+                this.Log.LogMessage(importance, string.Join("\n", lines));
             }
         }
     }

@@ -20,9 +20,11 @@
       <RuntimeIdentifier>osx</RuntimeIdentifier>
       <PublishDir>$(OutDir)osx$(V)</PublishDir>
     </ImportProject>
+    
+    <SignFolder Include="$(OutDir)win" />
   </ItemGroup>
 
-  <Target Name="TraceTasksRedist">
+  <Target Name="TraceTasksRedist" Condition="'$(ZouTrace)' == 'true'">
     <LogItems Items="@(ImportProject)" />
   </Target>
 </Project>
