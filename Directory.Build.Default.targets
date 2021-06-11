@@ -58,8 +58,8 @@
     </ItemGroup>
   </Target>
 
-  <Import Project="$(ZouDir)Zip.targets" />
-  
+  <Import Project="Zip.targets"  Condition="'$(ZipTargetsImported)'  == ''" />
+
   <Target Name="TraceDirectoryBuildDefaultTargets" Condition="'$(ZouTrace)' == 'true'">
     <Message Importance="high" Text=" ProjectName               = $(ProjectName)" />
     <Message Importance="high" Text=" MSBuildRuntimeType        = $(MSBuildRuntimeType)" />
