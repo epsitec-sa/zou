@@ -1,0 +1,47 @@
+<!--
+Input:
+  $(WimPath)      - full path of wim file to be created
+  @(WimMapping)   - source / destination mapping
+    %(Src)        - full path of source folder to capture
+    %(Dst)        - relative path of destination folder in wim file (use '/' for root folder)
+-->
+<Project>
+  <PropertyGroup>
+    <WimTargetsImported>true</WimTargetsImported>
+  </PropertyGroup>
+
+  <Target Name="CreateWimMapping">
+    <PropertyGroup>
+      <WimMappingPath>$([System.IO.Path]::GetTempFileName())</WimMappingPath>
+    </PropertyGroup>
+    <ItemGroup>
+      <WimMapping>
+        <Mapping>'%(Src)' '%(Dst)'</Mapping>
+      </WimMapping>
+    </ItemGroup>
+    <WriteLinesToFile File="$(WimMappingPath)" Lines="@(WimMapping->'%(Mapping)')" Overwrite="true" />
+  </Target>
+  
+  <Target Name="WimCapture" Condition="'$(WimPath)' != '' And '@(WimMapping)' != ''" AfterTargets="Build;ImportProject" DependsOnTargets="CreateWimMapping">
+    <Message Importance="high" Text=" " />
+    <Message Importance="high" Text="Capturing %(WimMapping.Src)..." />
+    
+    <PropertyGroup>
+      <_WimDir>$([System.IO.Path]::GetDirectoryName('$(WimPath)'))</_WimDir>
+    </PropertyGroup>
+    <MakeDir Directories="$(_WimDir)" />
+
+    <Exec Command='"$(wim)" capture "$(WimMappingPath)" "$(WimPath)" --source-list --compress=none'
+        StandardErrorImportance="low"
+        StandardOutputImportance="low" />
+    <Delete Files="$(WimMappingPath)" />
+    
+    <Message Importance="high" Text="  -> $(WimPath)::%(WimMapping.Dst)" />
+  </Target>
+  
+  <Target Name="WimClean" Condition="Exists('$(WimPath)')" AfterTargets="Clean">
+    <Message Importance="high" Text="[-] $(WimPath)" />
+    <Delete Files="$(WimPath)" />
+  </Target>
+
+</Project>
