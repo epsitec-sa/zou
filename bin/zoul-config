@@ -77,4 +77,6 @@ config_git_tools()
       [[ -z $(git config --global --get diff.tool) ]]  && gitx config --global diff.tool bc4
     fi
   fi
+  # avoid file mode changes in Fork on the WSL side
+  [ $zouWin -eq 0 ] && git config --global core.filemode false
 }
