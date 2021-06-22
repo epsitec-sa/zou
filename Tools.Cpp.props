@@ -29,19 +29,20 @@
       <VsWherePath>$(MSBuildProgramFiles32)\Microsoft Visual Studio\Installer\vswhere.exe</VsWherePath>
     </PropertyGroup>
     <Exec Command='"$(VsWherePath)" -prerelease -latest -property InstallationPath'
+          Condition="Exists('$(VsWherePath)')"
           EchoOFF="true"
           StandardOutputImportance="low"
           ConsoleToMSBuild="true">
       <Output TaskParameter="ConsoleOutput" PropertyName="_VSInstallDir" />
     </Exec>
     <PropertyGroup>
-      <VSInstallDir>$([MSBuild]::EnsureTrailingSlash('$(_VSInstallDir)'))</VSInstallDir>
+      <VSInstallDir Condition="'$(_VSInstallDir)' != '' And Exists('$(_VSInstallDir)')">$([MSBuild]::EnsureTrailingSlash('$(_VSInstallDir)'))</VSInstallDir>
       <_VSInstallDir />
     </PropertyGroup>
     
     <Error Condition="'$(VSRootDir)'  == ''" Text="VS not found" />
     <Error Condition="'$(VSToolsDir)' == ''" Text="VS Build Tools not found" />
-    <Error Condition="'$(VSRootDir)'  != '$(VSInstallDir)'" Text="Mismatch between VSInstallDir and VSRootDir" />
+    <Error Condition="'$(VSInstallDir)' != '*Undefined*' And '$(VSRootDir)' != '$(VSInstallDir)'" Text="Mismatch between VSInstallDir and VSRootDir" />
   </Target>
   
   <Target Name="TraceToolsCppRT" DependsOnTargets="InitVSInstallDir">
