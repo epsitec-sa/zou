@@ -1,52 +1,58 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003"
-         InitialTargets="TraceToolsMfc;ToolsMfcCheck">
+         InitialTargets="TraceToolsMfc;InitMFCIncludeDir">
 
-  <Import Project="Tools.Cpp.props"  Condition="'$(VSRootDir)' == ''" />
+  <Import Project="Tools.Cpp.props"  Condition="'$(VSRootDir)'  == ''" />
 
-  <PropertyGroup Label="VisualStudio" Condition="'$(EnableVS160)' == 'true' And '$(MFCIncludeDir)' == ''">
-    <MFCIncludeDir Condition="!Exists($(MFCIncludeDir))">$(VS160RootDir)VC\Tools\MSVC\14.29.30130\atlmfc\include\</MFCIncludeDir> <!-- VS 2019 16.11.0 Preview 2 -->
-    <MFCIncludeDir Condition="!Exists($(MFCIncludeDir))">$(VS160RootDir)VC\Tools\MSVC\14.29.30129\atlmfc\include\</MFCIncludeDir> <!-- VS 2019 16.11.0 Preview 1 -->
-    <MFCIncludeDir Condition="!Exists($(MFCIncludeDir))">$(VS160RootDir)VC\Tools\MSVC\14.29.30037\atlmfc\include\</MFCIncludeDir> <!-- VS 2019 16.10.x -->
-    <MFCIncludeDir Condition="!Exists($(MFCIncludeDir))">$(VS160RootDir)VC\Tools\MSVC\14.29.30037\atlmfc\include\</MFCIncludeDir> <!-- VS 2019 16.10.x -->
-    <MFCIncludeDir Condition="!Exists($(MFCIncludeDir))">$(VS160RootDir)VC\Tools\MSVC\14.28.29910\atlmfc\include\</MFCIncludeDir> <!-- VS 2019 16.9.x -->
-    <MFCIncludeDir Condition="!Exists($(MFCIncludeDir))">$(VS160RootDir)VC\Tools\MSVC\14.28.29333\atlmfc\include\</MFCIncludeDir> <!-- VS 2019 16.8.x -->
-    <MFCIncludeDir Condition="!Exists($(MFCIncludeDir))">$(VS160RootDir)VC\Tools\MSVC\14.27.29110\atlmfc\include\</MFCIncludeDir> <!-- VS 2019 16.7.x -->
-    <MFCIncludeDir Condition="!Exists($(MFCIncludeDir))">$(VS160RootDir)VC\Tools\MSVC\14.26.28801\atlmfc\include\</MFCIncludeDir> <!-- VS 2019 16.6.x -->
-    <MFCIncludeDir Condition="!Exists($(MFCIncludeDir))">$(VS160RootDir)VC\Tools\MSVC\14.25.28610\atlmfc\include\</MFCIncludeDir> <!-- VS 2019 16.5.x -->
-    <MFCIncludeDir Condition="!Exists($(MFCIncludeDir))">$(VS160RootDir)VC\Tools\MSVC\14.24.28314\atlmfc\include\</MFCIncludeDir> <!-- VS 2019 16.4.x -->
-    <MFCIncludeDir Condition="!Exists($(MFCIncludeDir))">$(VS160RootDir)VC\Tools\MSVC\14.23.28105\atlmfc\include\</MFCIncludeDir> <!-- VS 2019 16.3.x -->
-    <MFCIncludeDir Condition="!Exists($(MFCIncludeDir))">$(VS160RootDir)VC\Tools\MSVC\14.22.27905\atlmfc\include\</MFCIncludeDir> <!-- VS 2019 16.2.x -->
-    <MFCIncludeDir Condition="!Exists($(MFCIncludeDir))">$(VS160RootDir)VC\Tools\MSVC\14.21.27702\atlmfc\include\</MFCIncludeDir> <!-- VS 2019 16.1.x -->
-    <MFCIncludeDir Condition="!Exists($(MFCIncludeDir))">$(VS160RootDir)VC\Tools\MSVC\14.20.27508\atlmfc\include\</MFCIncludeDir> <!-- VS 2019 16.0.x -->
-    <MFCIncludeDir Condition="!Exists($(MFCIncludeDir))" /> <!-- NOT FOUND -->
+  <PropertyGroup>
+    <MFCIncludeDir Condition="'$(MFCIncludeDir)' == ''">*Undefined*</MFCIncludeDir>
   </PropertyGroup>
+  
+  <!-- MFCIncludeDir should be used in targets only -->
+  <Target Name="InitMFCIncludeDir" Condition="'$(MFCIncludeDir)' == '*Undefined*'">
+    <!-- List folders alphabetically -->
+    <Exec Command='dir /B /AD /ON "$(MSVCRootDir)"'
+          StandardOutputImportance="low"
+          EchoOFF="true"
+          ConsoleToMSBuild="true">
+      <Output TaskParameter="ConsoleOutput" PropertyName="MSVCVersion" />
+    </Exec>
+    <!-- Keep only folders with a name that matches a version format -->
+    <ItemGroup>
+      <_MSVCVersion Include="$(MSVCVersion)" />
+      <MSVCVersion Include="%(_MSVCVersion.Identity)" Condition="$([System.Text.RegularExpressions.Regex]::Match('%(Identity)', '^\d+\.\d+\.\d+$')) != ''"/>
+      <_MSVCVersion Remove="@(_MSVCVersion)" />
+    </ItemGroup>
+    
+    <PropertyGroup>
+      <!-- Get the highest version (the highest version is the last item because folders are listed alphabetically - dir /ON) -->
+      <MSVCVersion>%(MSVCVersion.Identity)</MSVCVersion>
+      <!-- Initialize MFCIncludeDir if folder exists -->
+      <_MFCIncludeDir>$(MSVCRootDir)$(MSVCVersion)\atlmfc\include\</_MFCIncludeDir>
+      <MFCIncludeDir Condition="Exists('$(_MFCIncludeDir)')">$(_MFCIncludeDir)</MFCIncludeDir>
+      <_MFCIncludeDir />
+    </PropertyGroup>
+    
+    <!-- Clean -->
+    <ItemGroup>
+      <MSVCVersion Remove="@(MSVCVersion)" />
+    </ItemGroup>
 
-  <PropertyGroup Label="VisualStudio" Condition="'$(EnableVS150)' == 'true' And '$(MFCIncludeDir)' == ''">
-    <MFCIncludeDir Condition="!Exists($(MFCIncludeDir))">$(VS150RootDir)VC\Tools\MSVC\14.16.27023\atlmfc\include\</MFCIncludeDir>
-    <MFCIncludeDir Condition="!Exists($(MFCIncludeDir))" /> <!-- NOT FOUND -->
-  </PropertyGroup>
-
-  <PropertyGroup Label="VisualStudio" Condition="'$(EnableVS140)' == 'true' And '$(MFCIncludeDir)' == ''">
-    <MFCIncludeDir Condition="!Exists($(MFCIncludeDir))">$(VS140ToolsDir)VC\atlmfc\include\</MFCIncludeDir>
-    <MFCIncludeDir Condition="!Exists($(MFCIncludeDir))">$(VC140RootDir)atlmfc\include\</MFCIncludeDir>
-    <MFCIncludeDir Condition="!Exists($(MFCIncludeDir))">$(VS140RootDir)VC\atlmfc\include\</MFCIncludeDir>
-    <MFCIncludeDir Condition="!Exists($(MFCIncludeDir))">$(VS140SharedRootDir)VC\atlmfc\include\</MFCIncludeDir>
-    <MFCIncludeDir Condition="!Exists($(MFCIncludeDir))">$(VSToolsDir)VC\atlmfc\include\</MFCIncludeDir>
-    <MFCIncludeDir Condition="!Exists($(MFCIncludeDir))">$(VCRootDir)atlmfc\include\</MFCIncludeDir>
-    <MFCIncludeDir Condition="!Exists($(MFCIncludeDir))">$(VSRootDir)VC\atlmfc\include\</MFCIncludeDir>
-    <MFCIncludeDir Condition="!Exists($(MFCIncludeDir))" /> <!-- NOT FOUND -->
-  </PropertyGroup>
-
-  <Target Name="ToolsMfcCheck">
-    <Error Condition="'$(MFCIncludeDir)' == ''" Text="MFC Include dir not found" />
+    <Error Condition="'$(MFCIncludeDir)' == '*Undefined*'" Text="MFC Include dir not found, please specify the 'MSVCVersion' property manually (ex: set MSVCVersion=14.29.30037)" />
   </Target>
 
-  <!-- Test produced props with 'msbuild zou.props' -->
+  <Target Name="TraceToolsMfcRT" DependsOnTargets="InitMFCIncludeDir">
+    <Message Importance="normal" Text="Runtime properties" />
+    <Message Importance="normal" Text="==================" />
+    <Message Importance="normal" Text="  MSVCVersion   = $(MSVCVersion)"/>
+    <Message Importance="normal" Text="  MFCIncludeDir = $(MFCIncludeDir)"/>
+  </Target>
+
   <Target Name="TraceToolsMfc" Condition="'$(ZouTrace)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
-    <Message Importance="normal" Text="MFC Tools" />
-    <Message Importance="normal" Text="===================" />
-    <Message Importance="normal" Text="  MFCIncludeDir = $(MFCIncludeDir)" Condition="'$(MFCIncludeDir)' != ''"/>
-    <Message Importance="normal" Text="  MFCIncludeDir = * NOT FOUND *"    Condition="'$(MFCIncludeDir)' == ''"/>
+    <Message Importance="normal" Text="Boot properties" />
+    <Message Importance="normal" Text="===============" />
+    <Message Importance="normal" Text="  MFCIncludeDir = $(MFCIncludeDir)"/>
+    
+    <CallTarget Targets="TraceToolsMfcRT" />
   </Target>
 </Project>

@@ -60,10 +60,12 @@ lib0\help\helpmap.cpp: {$(IntDir)\lib0.xx.cpp}
   _CreateHelpMapCpp
   
 -->
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003"
+         InitialTargets="TraceHelpProject">
 
+  <Import Project="zou.props"       Condition="'$(ZouVersion)'    == ''"/>
   <Import Project="Tools.Mfc.props" Condition="'$(MFCIncludeDir)' == ''"/>
-  
+
   <ItemGroup>
     <!-- Help Project Property Page -->
     <PropertyPageSchema Include="$(MSBuildThisFileDirectory)Cpp.HelpProject.xml" />
@@ -275,7 +277,9 @@ lib0\help\helpmap.cpp: {$(IntDir)\lib0.xx.cpp}
     </PropertyGroup>
   </Target>
 
-  <Target Name="_AssignHelpProjectHmFiles">
+  <Target Name="_AssignHelpProjectHmFiles" AfterTargets="InitMFCIncludeDir">
+    <Message Text=">>>> _AssignHelpProjectHmFiles" />
+    <Message Text="  MFCIncludeDir = $(MFCIncludeDir)" />
     <ItemGroup>
       <_HmFile Include="$(MFCIncludeDir)afxhelp.hm" Condition="'$(UseOfMfc)' != 'false' And '$(UseOfMfc)' != ''" />
       <HelpProject>
@@ -514,4 +518,9 @@ lib0\help\helpmap.cpp: {$(IntDir)\lib0.xx.cpp}
   <Target Name="_HcClean"   DependsOnTargets="_DeleteHhcFiles" AfterTargets="Clean" />
   <Target Name="_HcBuild"   DependsOnTargets="_HcCore;_HcErrorsAndWarnings" AfterTargets="Build" Condition="'@(HelpProject)' != ''"/>
   <Target Name="_HcRebuild" DependsOnTargets="_HcClean;_HcBuild" />
+
+  <Target Name="TraceHelpProject" Condition="'$(ZouTrace)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
+    <Message Importance="normal" Text="  MakeHm        = $(MakeHm)"/>
+    <Message Importance="normal" Text="  Hhc           = $(Hhc)"/>
+  </Target>
 </Project>

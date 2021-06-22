@@ -1,137 +1,63 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003"
-         InitialTargets="TraceToolsCpp;ToolsCppCheck">
-
-  <!--
-    This is the standard way to find VS installation path. Unfortunately we cannot use it because tasks
-    are executed during the second pass of msbuild and some scripts need VSRootDir during the first pass
-    TODO: all properties which depends on VSRootDir should be encapsulated in tasks depending on this one
-  -->
-  <!--
-  <Target Name="SetVSRootDir">
-    <PropertyGroup>
-      <VsWherePath>$(MSBuildProgramFiles32)\Microsoft Visual Studio\Installer\vswhere.exe</VsWherePath>
-    </PropertyGroup>
-    <Exec Command='"$(VsWherePath)" -prerelease -latest -property InstallationPath' ConsoleToMSBuild="true">
-      <Output TaskParameter="ConsoleOutput" PropertyName="VSRootDir" />
-    </Exec>
-  </Target>
-  -->
-
-  <PropertyGroup>
-    <EnableVS120 Condition="'$(EnableVS120)' == ''">false</EnableVS120>    <!-- VS 2013 -->
-    <EnableVS140 Condition="'$(EnableVS140)' == ''">false</EnableVS140>    <!-- VS 2015 -->
-    <EnableVS150 Condition="'$(EnableVS150)' == ''">false</EnableVS150>    <!-- VS 2017 -->
-    <EnableVS160 Condition="'$(EnableVS160)' == ''">true</EnableVS160>     <!-- VS 2019 -->
-  </PropertyGroup>
+         InitialTargets="TraceToolsCpp;InitVSInstallDir">
 
   <!--
   Compute Visual Studio installation directory based on MSBuild property VCTargetsPath
   Example:
     VCTargetsPath = C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\MSBuild\Microsoft\VC\v160\
-    VS160RootDir  = C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\
-    VS160ToolsDir = C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\Tools\
     VSRootDir     = C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\
     VSToolsDir    = C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\Tools\
   -->
   <PropertyGroup>
+    <!-- VSRootDir -->
     <_VCTargetsPathMSBuildIndex>$(VCTargetsPath.IndexOf('MSBuild'))</_VCTargetsPathMSBuildIndex>
-    <VSInstallDir>$(VCTargetsPath.Substring(0, $(_VCTargetsPathMSBuildIndex)))</VSInstallDir>
+    <VSRootDir>$(VCTargetsPath.Substring(0, $(_VCTargetsPathMSBuildIndex)))</VSRootDir>
     <_VCTargetsPathMSBuildIndex />
+    
+    <VSInstallDir Condition="'$(VSInstallDir)' == ''">*Undefined*</VSInstallDir>
+    <VSToolsDir   Condition="'$(VSToolsDir)'   == ''">$(VSRootDir)Common7\Tools\</VSToolsDir>
+    <MSVCRootDir  Condition="'$(MSVCRootDir)'  == ''">$(VSRootDir)VC\Tools\MSVC\</MSVCRootDir>
   </PropertyGroup>
-  
-  <PropertyGroup Label="VisualStudio" Condition="'$(EnableVS160)' == 'true'">
-    <VS160RootDir Condition="'$(VS160RootDir)' == ''">$([MSBuild]::GetRegistryValue('HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\c3b85d66', 'InstallLocation'))</VS160RootDir>
-    <VS160RootDir Condition="'$(VS160RootDir)' != ''">$(VS160RootDir)\</VS160RootDir>
-    <VS160RootDir Condition="'$(VS160RootDir)' == ''">$(VSInstallDir)</VS160RootDir>
-    <!-- VS Tools Dir -->
-    <VS160ToolsDir Condition="'$(VS160COMNTOOLS)' != ''">$(VS160COMNTOOLS)</VS160ToolsDir>
-    <VS160ToolsDir Condition="'$(VS160ToolsDir)' == '' And '$(VS160RootDir)' != ''">$(VS160RootDir)Common7\Tools\</VS160ToolsDir>
-  </PropertyGroup>
-
-  <PropertyGroup Label="VisualStudio" Condition="'$(EnableVS150)' == 'true'">
-    <VS150RootDir Condition="'$(VS150RootDir)' == ''">$([MSBuild]::GetRegistryValue('HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\VisualStudio\SxS\VS7', '15.0'))</VS150RootDir>
-    <VS150RootDir Condition="'$(VS150RootDir)' == ''">$([MSBuild]::GetRegistryValue('HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\VisualStudio\SxS\VS7', '15.0'))</VS150RootDir>
-    <!-- VS Tools Dir -->
-    <VS150ToolsDir Condition="'$(VS150COMNTOOLS)' != ''">$(VS150COMNTOOLS)</VS150ToolsDir>
-    <VS150ToolsDir Condition="'$(VS150ToolsDir)' == ''">$(VS150RootDir)Common7\Tools\</VS150ToolsDir>
-  </PropertyGroup>
-
-  <PropertyGroup Label="VisualStudio" Condition="'$(EnableVS140)' == 'true'">
-    <VS140RootDir Condition="'$(VS140RootDir)' == ''">$([MSBuild]::GetRegistryValue('HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Microsoft\VisualStudio\14.0', 'ShellFolder'))</VS140RootDir>
-    <VS140RootDir Condition="'$(VS140RootDir)' == ''">$([MSBuild]::GetRegistryValue('HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\VisualStudio\14.0', 'ShellFolder'))</VS140RootDir>
-    <VS140ToolsDir Condition="'$(VS140COMNTOOLS)' != ''">$(VS140COMNTOOLS)</VS140ToolsDir>
-    <!-- VS Tools Dir -->
-    <VS140ToolsDir Condition="'$(VS140ToolsDir)' == ''">$([MSBuild]::GetRegistryValue('HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Microsoft\VisualStudio\14.0', 'InstallDir'))</VS140ToolsDir>
-    <VS140ToolsDir Condition="'$(VS140ToolsDir)' == ''">$([MSBuild]::GetRegistryValue('HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\VisualStudio\14.0', 'InstallDir'))</VS140ToolsDir>
-    <!-- VC++ Root Dir -->
-    <VC140RootDir Condition="'$(VC140RootDir)' == ''">$([MSBuild]::GetRegistryValue('HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Microsoft\VisualStudio\14.0\Setup\VC', 'ProductDir'))</VC140RootDir>
-    <VC140RootDir Condition="'$(VC140RootDir)' == ''">$([MSBuild]::GetRegistryValue('HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\VisualStudio\14.0\Setup\VC', 'ProductDir'))</VC140RootDir>
-  </PropertyGroup>
-
-  <PropertyGroup Label="VisualStudio" Condition="'$(EnableVS120)' == 'true'">
-    <VS120RootDir Condition="'$(VS120RootDir)' == ''">$([MSBuild]::GetRegistryValue('HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Microsoft\VisualStudio\12.0', 'ShellFolder'))</VS120RootDir>
-    <VS120RootDir Condition="'$(VS120RootDir)' == ''">$([MSBuild]::GetRegistryValue('HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\VisualStudio\12.0', 'ShellFolder'))</VS120RootDir>
-    <!-- VS Tools Dir -->
-    <VS120ToolsDir Condition="'$(VS120COMNTOOLS)' != ''">$(VS120COMNTOOLS)</VS120ToolsDir>
-    <VS120ToolsDir Condition="'$(VS120ToolsDir)' == ''">$([MSBuild]::GetRegistryValue('HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Microsoft\VisualStudio\14.0', 'InstallDir'))</VS120ToolsDir>
-    <VS120ToolsDir Condition="'$(VS120ToolsDir)' == ''">$([MSBuild]::GetRegistryValue('HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\VisualStudio\14.0', 'InstallDir'))</VS120ToolsDir>
-  </PropertyGroup>
-
-  <PropertyGroup Label="VisualStudio">
-    <!-- VS Shared Root Dir -->
-    <VSSharedRootDir Condition="'$(VSSharedRootDir)' == ''">$([MSBuild]::GetRegistryValue('HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Policies\Microsoft\VisualStudio\Setup', 'SharedInstallationPath'))</VSSharedRootDir>
-    <VSSharedRootDir Condition="'$(VSSharedRootDir)' == ''">$([MSBuild]::GetRegistryValue('HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\VisualStudio\Setup', 'SharedInstallationPath'))</VSSharedRootDir>
-    <VSSharedRootDir Condition="'$(VSSharedRootDir)' == ''">$([MSBuild]::GetRegistryValue('HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Microsoft\VisualStudio\Setup', 'SharedInstallationPath'))</VSSharedRootDir>
-    <VSSharedRootDir Condition="'$(VSSharedRootDir)' == ''">$([MSBuild]::GetRegistryValue('HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\VisualStudio\Setup', 'SharedInstallationPath'))</VSSharedRootDir>
-    <VSSharedRootDir Condition="'$(VSSharedRootDir)' != ''">$(VSSharedRootDir)\</VSSharedRootDir>
-    <VS140SharedRootDir Condition="'$(EnableVS140)' == 'true' And '$(VS140SharedRootDir)' == '' And '$(VSSharedRootDir)' != ''">$(VSSharedRootDir)14.0\</VS140SharedRootDir>
-  </PropertyGroup>
-
-  <PropertyGroup Label="VisualStudio">
-    <!-- VS Root Dir -->
-    <VSRootDir Condition="'$(VSRootDir)' == ''">$(VS160RootDir)</VSRootDir>
-    <VSRootDir Condition="'$(VSRootDir)' == ''">$(VS150RootDir)</VSRootDir>
-    <VSRootDir Condition="'$(VSRootDir)' == ''">$(VS140RootDir)</VSRootDir>
-    <VSRootDir Condition="'$(VSRootDir)' == ''">$(VS120RootDir)</VSRootDir>
-    <VSRootDir Condition="'$(VSRootDir)' == ''">$(MSBuildToolsPath.Replace('MSBuild\Current\Bin', ''))</VSRootDir>
-    <!-- VS Tools Dir -->
-    <VSToolsDir Condition="'$(VSToolsDir)' == ''">$(VS160ToolsDir)</VSToolsDir>
-    <VSToolsDir Condition="'$(VSToolsDir)' == ''">$(VS150ToolsDir)</VSToolsDir>
-    <VSToolsDir Condition="'$(VSToolsDir)' == ''">$(VS140ToolsDir)</VSToolsDir>
-    <VSToolsDir Condition="'$(VSToolsDir)' == ''">$(VS120ToolsDir)</VSToolsDir>
-    <VSToolsDir Condition="'$(VSToolsDir)' == ''">$(VSRootDir)Common7\Tools\</VSToolsDir>
-  </PropertyGroup>
-
-  <Target Name="ToolsCppCheck">
+ 
+  <!--
+    This is the standard way to find VS installation path. Unfortunately we cannot use it during the 1st pass of msbuild
+    because targets are executed during the 2nd pass and some scripts need VSInstallDir / VSRootDir during the 1st pass
+  -->
+  <Target Name="InitVSInstallDir">
+    <PropertyGroup>
+      <VsWherePath>$(MSBuildProgramFiles32)\Microsoft Visual Studio\Installer\vswhere.exe</VsWherePath>
+    </PropertyGroup>
+    <Exec Command='"$(VsWherePath)" -prerelease -latest -property InstallationPath'
+          EchoOFF="true"
+          StandardOutputImportance="low"
+          ConsoleToMSBuild="true">
+      <Output TaskParameter="ConsoleOutput" PropertyName="_VSInstallDir" />
+    </Exec>
+    <PropertyGroup>
+      <VSInstallDir>$([MSBuild]::EnsureTrailingSlash('$(_VSInstallDir)'))</VSInstallDir>
+      <_VSInstallDir />
+    </PropertyGroup>
+    
     <Error Condition="'$(VSRootDir)'  == ''" Text="VS not found" />
     <Error Condition="'$(VSToolsDir)' == ''" Text="VS Build Tools not found" />
+    <Error Condition="'$(VSRootDir)'  != '$(VSInstallDir)'" Text="Mismatch between VSInstallDir and VSRootDir" />
+  </Target>
+  
+  <Target Name="TraceToolsCppRT" DependsOnTargets="InitVSInstallDir">
+    <Message Importance="normal" Text="Runtime properties" />
+    <Message Importance="normal" Text="==================" />
+    <Message Importance="normal" Text="  + VSInstallDir = $(VSInstallDir)" />
   </Target>
 
-  <!-- Test produced props with 'msbuild zou.props' -->
   <Target Name="TraceToolsCpp" Condition="'$(ZouTrace)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
-    <!--<PropertyGroup>
-      <_VCTargetsPathMSBuildIndex>$(VCTargetsPath.IndexOf('MSBuild'))</_VCTargetsPathMSBuildIndex>
-      <_VCTargetsPathRootDir>$(VCTargetsPath.Substring(0, $(_VCTargetsPathMSBuildIndex)))</_VCTargetsPathRootDir>
-    </PropertyGroup>
-    <Message Importance="normal" Text="_VCTargetsPathMSBuildIndex = $(_VCTargetsPathMSBuildIndex)"/>
-    <Message Importance="normal" Text="_VCTargetsPathRootDir      = $(_VCTargetsPathRootDir)"/>-->
+    <Message Importance="normal" Text="Boot properties" />
+    <Message Importance="normal" Text="===============" />
+    <Message Importance="normal" Text="  + VSRootDir     = $(VSRootDir)" />
+    <Message Importance="normal" Text="  + VSToolsDir    = $(VSToolsDir)" />
+    <Message Importance="normal" Text="  * VCTargetsPath = $(VCTargetsPath)" />
+    <Message Importance="normal" Text="  + MSVCRootDir   = $(MSVCRootDir)" />
 
-    <Message Importance="normal" Text="C++ Tools" />
-    <Message Importance="normal" Text="===================" />
-    <Message Importance="normal" Text="  * VCTargetsPath    = $(VCTargetsPath)"    Condition="'$(VCTargetsPath)' != ''"/>
-    <Message Importance="normal" Text="  + VS160RootDir     = $(VS160RootDir)"     Condition="'$(VS160RootDir)' != ''"/>
-    <Message Importance="normal" Text="  + VS150RootDir     = $(VS150RootDir)"     Condition="'$(VS150RootDir)' != ''"/>
-    <Message Importance="normal" Text="  + VS140RootDir     = $(VS140RootDir)"     Condition="'$(VS140RootDir)' != ''"/>
-    <Message Importance="normal" Text="  + VS120RootDir     = $(VS120RootDir)"     Condition="'$(VS120RootDir)' != ''"/>
-    <Message Importance="normal" Text="  + VS160ToolsDir    = $(VS160ToolsDir)"    Condition="'$(VS160ToolsDir)' != ''"/>
-    <Message Importance="normal" Text="  + VS150ToolsDir    = $(VS150ToolsDir)"    Condition="'$(VS150ToolsDir)' != ''"/>
-    <Message Importance="normal" Text="  + VS140ToolsDir    = $(VS140ToolsDir)"    Condition="'$(VS140ToolsDir)' != ''"/>
-    <Message Importance="normal" Text="  + VS120ToolsDir    = $(VS120ToolsDir)"    Condition="'$(VS120ToolsDir)' != ''"/>
-    <Message Importance="normal" Text="  + VC140RootDir     = $(VC140RootDir)"     Condition="'$(VC140RootDir)' != ''"/>
-    <Message Importance="normal" Text="  + VSInstallDir     = $(VSInstallDir)"     Condition="'$(VSInstallDir)' != ''"/>
-    <Message Importance="normal" Text="  + VSRootDir        = $(VSRootDir)"        Condition="'$(VSRootDir)' != ''"/>
-    <Message Importance="normal" Text="  + VSToolsDir       = $(VSToolsDir)"       Condition="'$(VSToolsDir)' != ''"/>
-    <Message Importance="normal" Text="  + VSSharedRootDir  = $(VSSharedRootDir)"  Condition="'$(VSSharedRootDir)' != ''"/>
+    <CallTarget Targets="TraceToolsCppRT" />
   </Target>
 </Project>
