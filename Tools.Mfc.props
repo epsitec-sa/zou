@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003"
-         InitialTargets="ToolsMfcTrace;ToolsMfcCheck">
+         InitialTargets="TraceToolsMfc;ToolsMfcCheck">
 
   <Import Project="Tools.Cpp.props"  Condition="'$(VSRootDir)' == ''" />
 
@@ -43,7 +43,7 @@
   </Target>
 
   <!-- Test produced props with 'msbuild zou.props' -->
-  <Target Name="ToolsMfcTrace" Condition="'$(ZouTrace)' == 'true'">
+  <Target Name="TraceToolsMfc" Condition="'$(ZouTrace)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
     <Message Importance="normal" Text="MFC Tools" />
     <Message Importance="normal" Text="===================" />
     <Message Importance="normal" Text="  MFCIncludeDir = $(MFCIncludeDir)" Condition="'$(MFCIncludeDir)' != ''"/>

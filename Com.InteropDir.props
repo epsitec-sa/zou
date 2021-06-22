@@ -27,7 +27,7 @@
     <InteropDir Condition="'$(InteropDirSpecified)' == 'true'">$([System.IO.Path]::Combine($(MSBuildStartupDirectory),$(InteropDir)))</InteropDir>
   </PropertyGroup>
 
-  <Target Name="ComInteropDirTrace" Condition="'$(ZouTraceProps)' == 'true'">
+  <Target Name="ComInteropDirTrace" Condition="'$(ZouTrace)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
     <Message Importance="normal" Text="InteropDirSpecified = $(InteropDirSpecified)" />
     <Message Importance="normal" Text="InteropDir          = $(InteropDir)" />
   </Target>

@@ -14,7 +14,7 @@
     <Copy SourceFiles="$(ZouDir).Templates$(V)nuget$(V)NuGet.config" DestinationFiles="$(BundleDir)NuGet.config" />
   </Target>
 
-  <Target Name="ToolsNugetTrace" Condition="'$(ZouTrace)' == 'true'">
+  <Target Name="ToolsNugetTrace" Condition="'$(ZouTrace)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
     <Message Importance="normal" Text="  NugetPackagesDir = $(NugetPackagesDir)" Condition="'$(NugetPackagesDir)' != ''" />
   </Target>
 </Project>

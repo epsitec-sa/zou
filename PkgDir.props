@@ -34,7 +34,7 @@
     <PkgDbgDir Condition="'$(PkgDbgDir)' == ''">$(PkgDir)dbg\</PkgDbgDir>
   </PropertyGroup>
   
-  <Target Name="PkgDirTrace" Condition="'$(ZouTraceProps)' == 'true'">
+  <Target Name="PkgDirTrace" Condition="'$(ZouTrace)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
     <Message Importance="normal" Text="PkgDirSpecified    = $(PkgDirSpecified)" />
     <Message Importance="normal" Text="PkgBinDirSpecified = $(PkgBinDirSpecified)" />
     <Message Importance="normal" Text="PkgDir             = $(PkgDir)" />

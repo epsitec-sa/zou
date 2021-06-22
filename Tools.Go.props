@@ -99,18 +99,18 @@
 
   <Target Name="GoGetTools" DependsOnTargets="GoGetRice;GoGetVersionInfo;GoGetSwag" BeforeTargets="Build" />
 
-  <Target Name="ToolsGoTrace" Condition="'$(ZouTraceProps)' == 'true'">
-    <Message Importance="high" Text="GoWorkspace   = $(GoWorkspace)" />
-    <Message Importance="high" Text="GoResourceDir = $(GoResourceDir)" />
-    <Message Importance="high" Text="GoBinDir      = $(GoBinDir)" />
-    <Message Importance="high" Text="GOPATH        = $(GOPATH)" />
-    <Message Importance="high" Text="GOROOT        = $(GOROOT)" />
-    <Message Importance="high" Text="GoExePath     = $(GoExePath)" />
-    <Message Importance="high" Text="GoRicePath    = $(GoRicePath)" />
-    <Message Importance="high" Text="GoSwagPath    = $(GoSwagPath)" />
-    <Message Importance="high" Text="GoVerInfoPath = $(GoVerInfoPath)" />
-    <Message Importance="high" Text="GoOS          = $(GoOS)" />
-    <Message Importance="high" Text="GoArch        = $(GoArch)" />
-    <Message Importance="high" Text="GoBuildEnv    = %(GoBuildEnv.Identity)" />
+  <Target Name="ToolsGoTrace" Condition="'$(ZouTrace)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
+    <Message Importance="normal" Text="GoWorkspace   = $(GoWorkspace)" />
+    <Message Importance="normal" Text="GoResourceDir = $(GoResourceDir)" />
+    <Message Importance="normal" Text="GoBinDir      = $(GoBinDir)" />
+    <Message Importance="normal" Text="GOPATH        = $(GOPATH)" />
+    <Message Importance="normal" Text="GOROOT        = $(GOROOT)" />
+    <Message Importance="normal" Text="GoExePath     = $(GoExePath)" />
+    <Message Importance="normal" Text="GoRicePath    = $(GoRicePath)" />
+    <Message Importance="normal" Text="GoSwagPath    = $(GoSwagPath)" />
+    <Message Importance="normal" Text="GoVerInfoPath = $(GoVerInfoPath)" />
+    <Message Importance="normal" Text="GoOS          = $(GoOS)" />
+    <Message Importance="normal" Text="GoArch        = $(GoArch)" />
+    <Message Importance="normal" Text="GoBuildEnv    = %(GoBuildEnv.Identity)" />
   </Target>
 </Project>

@@ -59,7 +59,7 @@
     <Error Text="$(ErrorMessage)" Condition="('$(ForwardPlatform)' == ''      Or '$(ForwardPlatform)' == 'x64') And '$(RuntimePlatform)' != 'x64'" />
   </Target>
   
-  <Target Name="TraceBootPlatform" Condition="'$(ZouTraceProps)' == 'true'">
+  <Target Name="TraceBootPlatform" Condition="'$(ZouTrace)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
     <Message Importance="high" Text="DebugBootPlatform  = $(DebugBootPlatform)" />
     <Message Importance="high" Text="MSBuildRuntimeType = $(MSBuildRuntimeType)" />
     <Message Importance="high" Text="RuntimeIdentifier  = $(RuntimeIdentifier)" />

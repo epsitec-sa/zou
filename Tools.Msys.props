@@ -1,4 +1,4 @@
-﻿<Project InitialTargets="ToolsMSysTrace">
+<Project InitialTargets="ToolsMSysTrace">
 
   <PropertyGroup>
     <MSysRoot Condition="'$(MSysRoot)' == ''">C:\msys64</MSysRoot>
@@ -21,7 +21,7 @@
     <Error Text="MSYS not installed" Condition="!$([System.IO.File]::Exists($(MSysRoot)\mingw32.exe))" />
   </Target>
 
-  <Target Name="ToolsMSysTrace" Condition="'$(ZouTraceProps)' == 'true'">
+  <Target Name="ToolsMSysTrace" Condition="'$(ZouTrace)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
     <Message Importance="normal" Text="MSysRoot = $(MSysRoot)" />
     <Message Importance="normal" Text="MSysGcc  = $(MSysGcc)" />
     <Message Importance="normal" Text="MSysPath = $(MSysPath)" />

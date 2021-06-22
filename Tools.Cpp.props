@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003"
-         InitialTargets="ToolsCppTrace;ToolsCppCheck">
+         InitialTargets="TraceToolsCpp;ToolsCppCheck">
 
   <!--
     This is the standard way to find VS installation path. Unfortunately we cannot use it because tasks
@@ -109,7 +109,7 @@
   </Target>
 
   <!-- Test produced props with 'msbuild zou.props' -->
-  <Target Name="ToolsCppTrace" Condition="'$(ZouTrace)' == 'true'">
+  <Target Name="TraceToolsCpp" Condition="'$(ZouTrace)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
     <!--<PropertyGroup>
       <_VCTargetsPathMSBuildIndex>$(VCTargetsPath.IndexOf('MSBuild'))</_VCTargetsPathMSBuildIndex>
       <_VCTargetsPathRootDir>$(VCTargetsPath.Substring(0, $(_VCTargetsPathMSBuildIndex)))</_VCTargetsPathRootDir>
