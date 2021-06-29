@@ -36,6 +36,8 @@ bundler_run()
 
   bundler_parse "$@"
   
+  [[ -z $allBundles ]] && ! repo_bundle_root && allBundles=true
+
   _bundler_process_registration
   if [ ${#bundleRegisteredPaths[@]} -eq 0 ]; then
     mio_warning "No bundle registered."
@@ -101,7 +103,9 @@ _bundler_process_registration()
 }
 _bundler_register()
 {
+  # io_trace "_bundler_register ${*@Q}"
   local bundlePath="$1" unregister=$2 url
+  [[ -z $bundlePath ]] && return 0
 
   url=$(gitx -C "$bundlePath" config remote.origin.url)
   if [[ $unregister == true ]]; then
@@ -115,14 +119,23 @@ _bundler_register()
 
 _bundler_config()
 {
-  # io_trace "_bundler_config"
   local command='_bundler' subcommand='config' \
         noSkuFilter=true cmdScopes=( config_scope )
 
-  io_message "${LightBlue}$bundleUrl${White} -> ${VC}$bundleRoot${White}" "$bundleTracePrefix" ${White}
-  # io_trace "_bundler_config -- $(print_vars bundleRoot)"
-  cmd_register_module_paths true "$bundleRoot"
-  cmd_visit_modules
+  local message="${LightBlue}$bundleUrl${White} -> ${VC}$bundleRoot${White}"
+
+  # check if bundle is already configured (exit code 1)
+  if module_configure; then
+    # bundle was not configured (now it is) - configure submodules
+    # io_trace "_bundler_config -1- $(print_vars bundleRoot)"
+    io_message "${Brown}┅ $message" "$bundleTracePrefix" ${White}
+    cmd_register_module_paths true "$bundleRoot"
+    cmd_visit_modules
+  else
+    # bundle is already configured
+    # io_trace "_bundler_config -1- $(print_vars bundleRoot)"
+    io_message "${Green}√ $message" "$bundleTracePrefix" ${White}
+  fi
 }
 _bundler_config_scope()
 {
@@ -132,6 +145,9 @@ _bundler_config_scope()
 }
 _bundler_config_prolog()
 {
+  # bundle is already configured in _bundler_config
+  module_is_bundle && return 0
+
   # TODO: check if it is still necessary with zou-flow notes operations
   gitx config push.followTags true
 
