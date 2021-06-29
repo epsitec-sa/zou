@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 [[ -z $ZOUL_GIT_VTAG ]]          && . zoul-git-vtag
-[[ -z $ZOUL_GIT_BRANCH_CORE ]]   && . zoul-git-branch_core
+[[ -z $ZOUL_GIT_BRANCH_CORE ]]   && . zoul-git-branch-core
 [[ -z $ZOUL_GIT_MODULE ]]        && . zoul-git-module
 
 zou_parse()
@@ -97,7 +97,8 @@ _zou_update_available()
   lbranch=$(branch_current)
   if [ $? -eq 0 ]; then
     rbranch=$(branch_upstream "$lbranch")
-    branch_is_ancestor_of "$lbranch" "$rbranch" && updateAvailable=0
+    ! ref_equals "$lbranch" "$rbranch" && branch_is_ancestor_of "$lbranch" "$rbranch" && updateAvailable=0
+    # io_trace "_zou_update_available -1- $(print_vars lbranch rbranch)"
   else
     local vbranch vtag delta alias
     vtag_set_describe 'HEAD'
@@ -109,7 +110,7 @@ _zou_update_available()
     lvtag="$vtag"
     [[ "$rvtag" == "$lvtag" ]] || updateAvailable=0
   fi
-  # io_trace "_zou_update_available -- $(print_vars updateAvailable)"
+  # io_trace "_zou_update_available -2- $(print_vars updateAvailable)"
   return $updateAvailable
 }
 _zou_epilog()
