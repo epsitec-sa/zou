@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+
+# Use the following statement to include current lib only once
+#   [[ -z $ZOUL_CHICKEN ]] && . zoul-chicken
+ZOUL_CHICKEN=true
+
+[[ -z $ZOUL_GIT_REPO ]] && . zoul-git-repo
+
+zou_chicken_setup()
+{
+  local broot="${1:-$bundleRoot}"
+  [[ -z "$broot" ]] && { broot=$(repo_bundle_root) || return $?; }
+
+  local develDir=$(abspath "$broot/..")
+  local chickenDir=$develDir/zou.chicken
+  # io_trace "zou_setup_chicken -- $(print_vars broot develDir chickenDir)"
+  
+  mio_message "Updating ${Brown}zou.chicken${Cyan} and ${Brown}esign${Cyan}, please wait..." "$tracePrefix"
+  if [ -d "$chickenDir" ]; then
+    cd "$chickenDir"
+    git sync -p
+  else
+    local tracePrefix="${Cyan}[zou.chicken]${NC}"
+    mio_warning "Installing zou.chicken into ${VC}$chickenDir${Brown}" "$tracePrefix"
+    mio_warning "This can take a while, please be patient..." "$tracePrefix"
+    git clonex -C "$develDir" 'https://git.epsitec.ch/Build/zou.chicken.git'
+  fi
+  
+  # register chicken as a nuget source
+  [ $zouWin -eq 0 ] && chickenDir="$(cygpath -w "$chickenDir")"
+  if command -v dotnet &>>"$stdallRedir"; then
+    if dotnet nuget list source | grep -q chicken; then
+      dotnet nuget update source 'chicken' --source "$chickenDir" &>>"$stdallRedir"
+    else
+      dotnet nuget add source "$chickenDir" --name 'chicken' &>>"$stdallRedir"
+    fi
+    # install signtool
+    if find "$develDir/zou.chicken" -maxdepth 1 -type f -iname "epsitec.signtool-$zouOs.*" &>>"$stdallRedir"; then
+      io_buffered_eval "dotnet tool update --global "epsitec.signtool-$zouOs"" : ${DarkGray}
+    fi
+  else
+    # use zou/binz/win/nuget
+    nuget sources remove -name chicken &>>"$stdallRedir"
+    nuget sources add -name chicken -source "$chickenDir" &>>"$stdallRedir"
+  fi
+}

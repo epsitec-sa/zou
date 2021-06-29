@@ -54,7 +54,10 @@ _zou_setup1_core()
   if [[ -z $zouSetupDebug ]]; then
     _zou_setup1_configure_bundles
   fi
-  ( _zou_setup1_chicken )
+  # fi
+  printf '\n'
+  zou_chicken_setup
+  printf '\n'
   [[ $checkoutType == $zouCheckoutType ]] || git sku enter "--$checkoutType"
   _zou_setup1_epilog
 }
@@ -62,40 +65,6 @@ _zou_setup1_configure_bundles()
 {
   printf '\n'
   git-bundler "${bundlerOpts[@]}"
-}
-_zou_setup1_chicken()
-{
-  local develDir=$(abspath "$bundleRoot/..")
-  local chickenDir=$develDir/zou.chicken
-  # io_trace "_zou_setup1_chicken -- $(print_vars chickenDir)"
-  if [ -d "$chickenDir" ]; then
-    cd "$chickenDir"
-    git sync
-  else
-    local tracePrefix="${Cyan}[zou.chicken]${NC}"
-    mio_warning "Installing zou.chicken into ${VC}$chickenDir${Brown}" "$tracePrefix"
-    mio_warning "This can take a while, please be patient..." "$tracePrefix"
-    git clonex -C "$develDir" 'https://git.epsitec.ch/Build/zou.chicken.git'
-  fi
-  
-  # register chicken as a nuget source
-  [ $zouWin -eq 0 ] && chickenDir="$(cygpath -w "$chickenDir")"
-  if command -v dotnet &>>"$stdallRedir"; then
-    if dotnet nuget list source | grep -q chicken; then
-      dotnet nuget update source 'chicken' --source "$chickenDir" &>>"$stdallRedir"
-    else
-      dotnet nuget add source "$chickenDir" --name 'chicken' &>>"$stdallRedir"
-    fi
-    # install signtool
-    if find "$develDir/zou.chicken" -maxdepth 1 -type f -iname "epsitec.signtool-$zouOs.*" &>>"$stdallRedir"; then
-      io_buffered_eval "dotnet tool update --global "epsitec.signtool-$zouOs"" : ${DarkGray}
-    fi
-  else
-    # use zou/binz/win/nuget
-    nuget sources remove -name chicken &>>"$stdallRedir"
-    nuget sources add -name chicken -source "$chickenDir" &>>"$stdallRedir"
-  fi
-
 }
 _zou_setup1_epilog()
 {
