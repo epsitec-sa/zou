@@ -4,7 +4,8 @@
 #   [[ -z $ZOUL_CHICKEN ]] && . zoul-chicken
 ZOUL_CHICKEN=true
 
-[[ -z $ZOUL_GIT_REPO ]] && . zoul-git-repo
+[[ -z $ZOUL_GIT_REPO ]]        && . zoul-git-repo
+[[ -z $ZOUL_GIT_BRANCH_CORE ]] && . zoul-git-branch-core
 
 zou_chicken_setup()
 {
@@ -15,10 +16,11 @@ zou_chicken_setup()
   local chickenDir=$develDir/zou.chicken
   # io_trace "zou_setup_chicken -- $(print_vars broot develDir chickenDir)"
   
-  mio_message "Updating ${Brown}zou.chicken${Cyan} and ${Brown}esign${Cyan}, please wait..." "$tracePrefix"
   if [ -d "$chickenDir" ]; then
     cd "$chickenDir"
-    git sync -p
+    mio_message "Updating ${Brown}zou.chicken${Cyan}, please wait..." "$tracePrefix"
+    gitx fetch --all --prune --tags &>>"$stdallRedir"
+    branch_needs_pull || return 0
   else
     local tracePrefix="${Cyan}[zou.chicken]${NC}"
     mio_warning "Installing zou.chicken into ${VC}$chickenDir${Brown}" "$tracePrefix"
