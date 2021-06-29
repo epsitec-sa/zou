@@ -153,6 +153,23 @@ branch_sync_info()
   # io_trace "branch_sync_info -- $(print_vars patterns[@])"
   gitx for-each-ref --format="%(refname:short) %(upstream:short) %(upstream:trackshort)" "${patterns[@]}" 2>>"$stderrRedir"
 }
+branch_needs_pull()
+{
+  local branch=${1:-$(branch_current)}
+  while read -r l r i; do
+    # io_trace "### branch_is_synchronized $(print_vars l r i branch)"
+    [[ "$branch" == "$l" && $i =~ '<' ]] && return 0
+  done < <(branch_sync_info "$@")
+  return 1
+}
+branch_any_needs_pull()
+{
+  while read -r l r i; do
+    # io_trace "### branch_is_synchronized $(print_vars l r i)"
+    [[ $i =~ '<' ]] && return 0
+  done < <(branch_sync_info "$@")
+  return 1
+}
 branch_list_local_tracked()
 {
   local l r i
