@@ -70,8 +70,8 @@ bundle_visit_async()
   if [[ "$1" =~ \[@\]$ ]]; then
     _bundleVisitPaths=("${!1}")
     # io_trace "bundle_visit_async -1- $(print_vars _bundleVisitPaths[@])"
-  elif [[ -n $1 ]]; then
-    _bundleVisitPaths=("$($1)")
+  elif [[ -n "$1" ]]; then
+    _bundleVisitPaths=("$1")
     # io_trace "bundle_visit_async -2- $(print_vars _bundleVisitPaths[@])"
   fi
   [ ${#_bundleVisitPaths[@]} -eq 0 ] && return 0
@@ -84,8 +84,8 @@ bundle_visit()
   if [[ "$1" =~ \[@\]$ ]]; then
     _bundleVisitPaths=("${!1}")
     # io_trace "bundle_visit -1- $(print_vars _bundleVisitPaths[@])"
-  elif [[ -n $1 ]]; then
-    _bundleVisitPaths=("$($1)")
+  elif [[ -n "$1" ]]; then
+    _bundleVisitPaths=("$1")
     # io_trace "bundle_visit -2- $(print_vars _bundleVisitPaths[@])"
   fi
   [ ${#_bundleVisitPaths[@]} -eq 0 ] && return 0
