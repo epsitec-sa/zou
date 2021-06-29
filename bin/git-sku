@@ -26,7 +26,7 @@ sku_parse()
     -x|--exclude)   [[ $skuConfigMode == 'skuConfigInclude' ]] && { io_error 'options conflict'; exit 1; } || skuConfigMode='exclude';;
     -m|--pmid)      shift; configPrincipalModuleId=$1;;
     --)             shift; break;;
-    -*) io_error "unknown option '$1'"; return 1;;
+    -*)             io_error "unknown option ${VC}$1${Red}\n"; io_help $0; return 1;;
     *)
       case "$skuConfigMode" in
         include) skuConfigInclude+=($1);;
