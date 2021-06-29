@@ -1,38 +1,51 @@
 #!/usr/bin/env bash
 
-[[ -z $ZOUL_GIT_MODULE ]] && . zoul-git-module
+[[ -z $ZOUL_GIT_VTAG ]]          && . zoul-git-vtag
+[[ -z $ZOUL_GIT_BRANCH_CORE ]]   && . zoul-git-branch_core
+[[ -z $ZOUL_GIT_MODULE ]]        && . zoul-git-module
 
 zou_parse()
 {
   while [[ "$#" > 0 ]]; do case "$1" in
     -h|--help) io_help $0; exit 0;;
     -v|--version) exit 0;;
-    --debug) export zouSetupDebug=true;;
-    --vnext) checkoutType='vnext';;
-    --dev)   checkoutType='dev';;
-    -*)      zouSetupOptions+=( "$1" );;
+    -c|--no-config)     io_warning "option ${VC}-c${Brown} is deprecated";;
+    -u|--no-prune-tags) io_warning "option ${VC}-u${Brown} is deprecated";;
+    -f|--force)         force=true;;
+    --debug)            export zouSetupDebug=true;;
+    --vnext)            checkoutType='vnext';;
+    --dev)              checkoutType='dev';;
+    -*)                 io_error "unknown option ${VC}$1${Red}\n"; io_help $0; exit 1;;
   esac; shift; done
 }
 zou_main()
 {
-  local zouSetupOptions=() version checkoutType='vlast'
+  local noConfig version checkoutType='vlast' force
   io_set_version
 
   zou_parse "$@"
-  if [[ $zouSetupDebug == true ]]; then
-    checkoutType='dev'
-  fi
-
-  zouSetupOptions+=( ---version $version)
-
-  # io_trace "zou_main ${*@Q} -- $(print_vars zouSetupOptions[@] version zouSetupDebug)"
-
-  startupMessage="Updating ${Brown}zou${White} setup, please wait..."
-  # export zouTraceScope=true
-
   cd "$zouDir"
-  module_run zou_run "${zouSetupOptions[@]}"
+
+  if [[ $force == true ]] || _zou_update_available; then
+    if [[ $zouSetupDebug == true ]]; then
+      checkoutType='dev'
+    fi
+    # io_trace "zou_main ${*@Q} -- $(print_vars version zouSetupDebug)"
+    startupMessage="Updating ${Brown}zou${White} setup, please wait..."
+    # export zouTraceScope=true
+    module_run zou_run
+  else
+    [[ -z $ZOUL_CHICKEN ]] && . zoul-chicken
+    module_run zou_chicken
+  fi
 }
+
+zou_chicken()
+{
+  zou_chicken_setup
+  _zou_epilog
+}
+
 zou_run()
 {
   # clone installer in temp directory
@@ -68,8 +81,60 @@ zou_run()
 
   # launch new setup in a subshell to take in account SKU mode
   ( zoul-setup0 "--$checkoutType" "---$zouCheckoutType" "$@" || exit $? )
+  
+  git bundler --all
+  # printf '\n'
+  # mio_warning "WARNING: bundles are not configured by default anymore" "$tracePrefix"
+  # mio_warning "         use the ${VC}git bundler --all${Brown} command to configure them" "$tracePrefix"
+
+  _zou_epilog
+}
+_zou_update_available()
+{
+  gitx fetch --all --prune --tags &>>"$stdallRedir"
+
+  local lbranch rbranch updateAvailable=1
+  lbranch=$(branch_current)
+  if [ $? -eq 0 ]; then
+    rbranch=$(branch_upstream "$lbranch")
+    branch_is_ancestor_of "$lbranch" "$rbranch" && updateAvailable=0
+  else
+    local vbranch vtag delta alias
+    vtag_set_describe 'HEAD'
+    lbranch="$vbranch"
+    rbranch=$(branch_upstream "$lbranch")
+    vtag_set_describe "$rbranch"
+    rvtag="$vtag"
+    vtag_set_describe "$lbranch"
+    lvtag="$vtag"
+    [[ "$rvtag" == "$lvtag" ]] || updateAvailable=0
+  fi
+  # io_trace "_zou_update_available -- $(print_vars updateAvailable)"
+  return $updateAvailable
+}
+_zou_epilog()
+{
+  cd "$zouBinDir"
+
+  local vtag delta previousVersion="$version"
+  io_set_version
+  [[ -n $zouSetupDebug ]] && io_trace "[DEBUG] _zou_epilog -- $(print_vars previousVersion version)"
+  [[ -n $zouSetupDebug ]] && io_trace "[DEBUG] _zou_epilog -- $(print_vars zouDir zouBinDir)"
+
+  vtag_set_describe $moduleHead
+  # io_trace "_zou_setup1_epilog -- $(print_vars vtag delta)"
+  if [[ $previousVersion == $version ]]; then
+    if [ $delta -eq 0 ]; then
+      mio_warning "No changes, still using version ${VC}$version${Brown}" "$tracePrefix"
+    else
+      mio_warning "Switched to development version, ${Magenta}$delta${Brown} commit[s] ahead of ${VC}$version${Brown}" "$tracePrefix"
+    fi
+  else
+    mio_warning "Switched to new version ${VC}$version${Brown}" "$tracePrefix"
+  fi
 }
 
+printf '\n'
 io_banner
 printf '\n'
 
