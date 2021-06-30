@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 
-[[ -z $ZOUL_GIT_VTAG ]]          && . zoul-git-vtag
-[[ -z $ZOUL_GIT_BRANCH_CORE ]]   && . zoul-git-branch-core
-[[ -z $ZOUL_GIT_MODULE ]]        && . zoul-git-module
+[[ -z $ZOUL_GIT_VTAG ]]   && . zoul-git-vtag
+[[ -z $ZOUL_GIT_MODULE ]] && . zoul-git-module
 
 zou_parse()
 {
@@ -93,25 +92,17 @@ _zou_update_available()
 {
   gitx fetch --all --prune --tags &>>"$stdallRedir"
 
-  local lbranch rbranch updateAvailable=1
-  lbranch=$(branch_current)
-  if [ $? -eq 0 ]; then
-    rbranch=$(branch_upstream "$lbranch")
-    ! ref_equals "$lbranch" "$rbranch" && branch_is_ancestor_of "$lbranch" "$rbranch" && updateAvailable=0
-    # io_trace "_zou_update_available -1- $(print_vars lbranch rbranch)"
-  else
+  local rbranch
+  rbranch=$(gitx rev-parse --abbrev-ref HEAD@{upstream} 2>/dev/null)
+  if [ $? -ne 0 ]; then
+    # we are in detached HEAD or remote branch does not exist
+    # get remote vbranch
     local vbranch vtag delta alias
     vtag_set_describe 'HEAD'
-    lbranch="$vbranch"
-    rbranch=$(branch_upstream "$lbranch")
-    vtag_set_describe "$rbranch"
-    rvtag="$vtag"
-    vtag_set_describe "$lbranch"
-    lvtag="$vtag"
-    [[ "$rvtag" == "$lvtag" ]] || updateAvailable=0
+    rbranch="origin/$vbranch"
   fi
-  # io_trace "_zou_update_available -2- $(print_vars updateAvailable)"
-  return $updateAvailable
+  # update available if HEAD < rbranch
+  ! ref_equals 'HEAD' "$rbranch" && gitx merge-base --is-ancestor 'HEAD' "$rbranch"
 }
 _zou_epilog()
 {
