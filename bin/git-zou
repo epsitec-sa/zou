@@ -25,12 +25,12 @@ zou_main()
   zou_parse "$@"
   cd "$zouDir"
 
+  startupMessage="Updating ${Brown}zou${White}, please wait..."
   if [[ $force == true ]] || _zou_update_available; then
     if [[ $zouSetupDebug == true ]]; then
       checkoutType='dev'
     fi
     # io_trace "zou_main ${*@Q} -- $(print_vars version zouSetupDebug)"
-    startupMessage="Updating ${Brown}zou${White} setup, please wait..."
     # export zouTraceScope=true
     module_run zou_run
   else
@@ -81,7 +81,8 @@ zou_run()
   # launch new setup in a subshell to take in account SKU mode
   ( zoul-setup0 "--$checkoutType" "---$zouCheckoutType" "$@" || exit $? )
   
-  git bundler --all
+  mio_message "Configuring ${Brown}bundles${Cyan}, please wait..."
+  git bundler --all --quiet
   # printf '\n'
   # mio_warning "WARNING: bundles are not configured by default anymore" "$tracePrefix"
   # mio_warning "         use the ${VC}git bundler --all${Brown} command to configure them" "$tracePrefix"

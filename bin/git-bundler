@@ -40,11 +40,11 @@ bundler_run()
 
   _bundler_process_registration
   if [ ${#bundleRegisteredPaths[@]} -eq 0 ]; then
-    mio_warning "No bundle registered."
+    [[ -z $quiet ]] && io_warning "No bundle registered."
     return 1
   fi
 
-  io_message "${Cyan}[zou]${White} : ${Brown}Configuring bundles, please wait..."
+  [[ -z $quiet ]] && io_message "${Cyan}[zou]${White} : ${Brown}Configuring bundles, please wait..."
   if [[ $allBundles == true ]]; then
     # io_trace "bundler_run -3- $(print_vars bundleRegisteredPaths[@])"
     bundle_visit 'bundleRegisteredPaths[@]' _bundler_config

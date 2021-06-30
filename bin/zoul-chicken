@@ -18,13 +18,13 @@ zou_chicken_setup()
   
   if [ -d "$chickenDir" ]; then
     cd "$chickenDir"
-    mio_message "Updating ${Brown}zou.chicken${Cyan}, please wait..." "$tracePrefix"
+    mio_message "Updating ${Brown}zou.chicken${Cyan}, please wait..."
     gitx fetch --all --prune --tags &>>"$stdallRedir"
     branch_needs_pull || return 0
   else
     local tracePrefix="${Cyan}[zou.chicken]${NC}"
-    mio_warning "Installing zou.chicken into ${VC}$chickenDir${Brown}" "$tracePrefix"
-    mio_warning "This can take a while, please be patient..." "$tracePrefix"
+    mio_warning "Installing zou.chicken into ${VC}$chickenDir${Brown}"
+    mio_warning "This can take a while, please be patient..."
     git clonex -C "$develDir" 'https://git.epsitec.ch/Build/zou.chicken.git'
   fi
   
