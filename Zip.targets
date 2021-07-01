@@ -1,96 +1,87 @@
 <!--
-The Zip.targets can be used to zip folders.
-Input parameters: $(ZipFolder)
+The Zip.targets can be used to zip files and/or folders.
+
+Exemples:
+  
+  <PropertyGroup>
+    <ZipFolder>Foo;Bar1;Bar2</ZipFolder>
+  </PropertyGroup>
+  
+  <PropertyGroup>
+    <ZipFolder>Foo;Bar*/*</ZipFolder>
+  </PropertyGroup>
+  
+  <ItemGroup>
+    <ZipFolder Include="Data/mail-template-qrtest-de" />
+    <ZipFolder Include="Data/mail-template-qrtest-en" />
+    <ZipFolder Include="Data/mail-template-qrtest-fr" />
+    <ZipFolder Include="Data/mail-template-qrtest-it" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <ZipFolder Include="Data/mail-template-qrtest-*/*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ZipFile Include="folder\**\*">
+      <ArchivePath>folder.zip</ArchivePath>
+      <EntryName>%(RecursiveDir)%(FileName)%(Extension)</EntryName>
+    </ZipFile>
+    <ZipFile Include="*.exe">
+      <ArchivePath>Exe.zip</ZipPath>
+    </ZipFile>
+    <ZipFile Include="*.dll">
+      <ArchivePath>Dll.zip</ZipPath>
+    </ZipFile>
+  </ItemGroup>
+
 -->
 <Project>
   <PropertyGroup>
     <ZipTargetsImported>true</ZipTargetsImported>
   </PropertyGroup>
-
   <Import Project="zou.props" Condition="'$(ZouVersion)' == ''" />
 
-  <!-- Zip source -->
-  <Target Name="ZipSource">
-    <PropertyGroup>
-      <ZipPath>$(ProjectDir)$(ProjectName).zip</ZipPath>
-    </PropertyGroup>
-    <ItemGroup>
-      <ZipFile Include="$(ProjectPath)"/>
-      <ZipFile Include="@(Compile)" Exclude="$(IntermediateOutputPath)*.cs"/>
-    </ItemGroup>
-
-    <Message Text="Compressing source files into $(ZipPath)..." Importance="high" />
-    <Zip Files="@(ZipFile)" FileName="$(ZipPath)" />
-  </Target>
-
-  <!-- Zip folder -->
-  <Target Name="_InitZipFolder">
+  <!-- Convert ZipFolder to ZipFile -->
+  <Target Name="ProcessZipFolder">
     <!-- Preprocess @(ZipFolder) items and $(ZipFolder) property-->
     <ItemGroup>
       <!-- Merge $(ZipFolder) (semi-colon separated) into @(ZipFolder) -->
-      <ZipFolder Include="$(ZipFolder)" />
-
+      <ZipFolder Include="$(ZipFolder)" Condition="'$(ZipFolder)' != ''" />
       <!-- Discriminate files from directories (CreatedTime metadata is empty for a directory) -->
-      <_ZipFolder Condition="'%(ZipFolder.CreatedTime)' == ''" Include="%(ZipFolder.Identity)" />
-      <_ZipFolder Condition="'%(ZipFolder.CreatedTime)' != ''" Include="%(ZipFolder.RelativeDir)" />
-
-      <!-- Normalize separators so that RemoveDuplicate task can do its job -->
+      <_ZipFolder Condition="'%(ZipFolder.CreatedTime)' == '' And Exists('%(Identity)')" Include="%(Identity)" />
+      <_ZipFolder Condition="'%(ZipFolder.CreatedTime)' != '' And Exists('%(RelativeDir)')" Include="%(RelativeDir)" />
       <_ZipFolderNormalized Include="$([System.String]::new('%(_ZipFolder.Identity)').TrimEnd('\/').Replace('\', '/'))" />
-
-      <!-- Reset variable for reuse -->
       <_ZipFolder Remove="@(_ZipFolder)" />
-    </ItemGroup>
-
-    <!-- Remove duplicates from _ZipFolderNormalized items into _ZipFolder -->
-    <RemoveDuplicates Inputs="@(_ZipFolderNormalized)">
-      <Output TaskParameter="Filtered" ItemName="_ZipFolder"/>
-    </RemoveDuplicates>
-
-    <!-- Process ZipFolder items -->
-    <ItemGroup>
-      <!-- Reset -->
+       <!--Process ZipFolder items--> 
       <ZipFolder Remove="@(ZipFolder)" />
-      <!-- Include preprocessed ZipFolder items -->
-      <ZipFolder Include="@(_ZipFolder)" />
-      <!-- Compute ZipDir and ZipPath (item metadata) -->
+      <ZipFolder Include="@(_ZipFolderNormalized)" />
+      <_ZipFolderNormalized Remove="@(_ZipFolderNormalized)" />
+       <!--Compute ZipDir and ZipPath (item metadata)--> 
       <ZipFolder>
         <ZipDir>$([System.String]::new('%(FullPath)').TrimEnd('\/'))</ZipDir>
       </ZipFolder>
       <ZipFolder>
         <ZipPath>%(ZipDir).zip</ZipPath>
       </ZipFolder>
+    
+      <ZipFile Include="%(ZipFolder.ZipDir)\**\*" Condition="'@(ZipFolder)' != ''">
+        <ArchivePath>%(ZipFolder.ZipPath)</ArchivePath>
+      </ZipFile>
+      <ZipFile>
+        <EntryName>%(RecursiveDir)%(FileName)%(Extension)</EntryName>
+      </ZipFile>
     </ItemGroup>
-
-    <!-- Clean temp vars -->
-    <ItemGroup>
-      <_ZipFolderNormalized Remove="@(_ZipFolderNormalized)" />
-      <_ZipFolder Remove="@(_ZipFolder)" />
-    </ItemGroup>
-
-    <!--<LogItems Items="@(ZipFolder)" />-->
+    
+    <!--<LogItems Items="@(ZipFolder)" Title="ZipFolder" AllMetadata="true"/>
+    <LogItems Items="@(ZipFile)" Title="ZipFile"  AllMetadata="true" />-->
   </Target>
 
-  <Target Name="ZipFolderBuild" DependsOnTargets="_InitZipFolder" BeforeTargets="Build" Outputs="%(ZipFolder.ZipPath)">
-    <Warning Condition="'%(ZipFolder.ZipDir)' != '' and !Exists('%(ZipFolder.ZipDir)')" Text="Folder %(ZipFolder.ZipDir) does not exists" />
-    <MSBuild Condition="Exists('%(ZipFolder.ZipDir)')" Projects="$(MSBuildThisFileFullPath)" Targets="_ZipOneFolder" Properties="_ZipFolder=%(ZipFolder.ZipDir);_ZipPath=%(ZipFolder.ZipPath)" />
+  <Target Name="ZipFileBuild" DependsOnTargets="ProcessZipFolder" BeforeTargets="Build">
+    <Zip Files="@(ZipFile)" />
   </Target>
-
-  <Target Name="ZipFolderClean" DependsOnTargets="_InitZipFolder" AfterTargets="Clean">
-    <Message Importance="high" Condition="Exists('%(ZipFolder.ZipPath)')" Text="[-] %(ZipFolder.ZipPath)" />
-    <Delete Files="@(ZipFolder->'%(ZipPath)')" ContinueOnError="true" />
+  
+  <Target Name="ZipFileClean" DependsOnTargets="ProcessZipFolder" AfterTargets="Clean">
+    <Delete Files="@(ZipFile->'%(ArchivePath)')" ContinueOnError="true" />
   </Target>
-
-
-  <!-- MSBuild subtask for one folder -->
-  <Target Name="_InitZipOneFolder">
-    <ItemGroup>
-      <_ZipFile Include="$(_ZipFolder)/**/*.*" />
-    </ItemGroup>
-  </Target>
-
-  <Target Name="_ZipOneFolder" DependsOnTargets="_InitZipOneFolder" Inputs="@(_ZipFile)" Outputs="$(_ZipPath)">
-    <Message Importance="high" Text="[+] Compressing $(_ZipFolder) into $(_ZipPath)..." />
-    <Zip Files="@(_ZipFile)" FileName="$(_ZipPath)" />
-  </Target>
-
 </Project>
