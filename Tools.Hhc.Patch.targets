@@ -1,0 +1,44 @@
+<!-- Patch help compiler COM dependency on Windows Hyper Core 64 bits -->
+
+<Project InitialTargets="ZouPatchHhcRegistry">
+  
+  <Import Project="zou.props" Condition="'$(ZouTmpDir)' == ''"/>
+  <Import Project="Tools.Hhc.Patch.props" Condition="'$(HhcPatchNeeded)' == ''"/>
+  
+  <Target Name="ZouPatchHhcRegistry" Condition="$(HhcPatchNeeded)">
+    
+    <Message Importance="high" Text="Patching Help Compiler COM dependency..." />
+
+    <PropertyGroup>
+      <HhcPatchRegFileName>Tools.Hhc.Patch.reg</HhcPatchRegFileName>
+      <HhcPatchRegTmpPath>$(ZouTmpDir)$(HhcPatchRegFileName)</HhcPatchRegTmpPath>
+      <HhcItssZouPath>$(ZouBinzOsDir)itss.dll</HhcItssZouPath>
+      <HhcItssZouRegPath>$(HhcItssZouPath.Replace('\', '\\'))</HhcItssZouRegPath>
+    </PropertyGroup>
+    
+    <Copy SourceFiles="$(HhcPatchRegFileName)" DestinationFiles="$(HhcPatchRegTmpPath)" />
+    
+    <FileUpdate Files="$(HhcPatchRegTmpPath)"
+                Regex='[^@="]*\\\\SysWOW64\\\\itss\.dll'
+                ReplacementText="$(HhcItssZouRegPath)"
+                Multiline="true"
+                IgnoreCase="true" />
+    
+    <!-- https://ss64.com/nt/syntax-elevate.html -->
+    <Exec Command="regedit /s $(HhcPatchRegTmpPath)" EnvironmentVariables="__COMPAT_LAYER=RunAsInvoker" EchoOFF="true" />
+
+    <PropertyGroup>
+      <HhcItssActualPath>$(Registry:HKEY_CLASSES_ROOT\WOW6432Node\CLSID\{5D02926A-212E-11D0-9DF9-00A0C922E6EC}\InprocServer32@)</HhcItssActualPath>
+    </PropertyGroup>
+    
+    <!--<Message Importance="normal" Text="HhcItssZouPath     = $(HhcItssZouPath)" />
+    <Message Importance="normal" Text="HhcItssZouRegPath  = $(HhcItssZouRegPath)" />
+    <Message Importance="normal" Text="HhcPatchRegTmpPath = $(HhcPatchRegTmpPath)" />
+    <Message Importance="normal" Text="HhcItssActualPath  = $(HhcItssActualPath)" />-->
+
+    <Error  Condition="'$(HhcItssActualPath)' != '$(HhcItssZouPath)'" Text="Unable to import '$(HhcPatchRegTmpPath)' in registry" />
+    <Delete Condition="'$(HhcItssActualPath)' != ''" Files="$(HhcPatchRegTmpPath)" />
+  
+  </Target>
+
+</Project>

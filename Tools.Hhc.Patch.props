@@ -1,0 +1,17 @@
+<!-- Patch help compiler COM dependency on Windows Hyper Core 64 bits -->
+
+<Project InitialTargets="TraceToolsHhcPatchProps">
+  
+  <PropertyGroup>
+    <HhcItssPath Condition="'$(HhcItssPath)' == ''">$(Registry:HKEY_CLASSES_ROOT\WOW6432Node\CLSID\{5D02926A-212E-11D0-9DF9-00A0C922E6EC}\InprocServer32@)</HhcItssPath>
+    <HhcItssPath Condition="'$(HhcItssPath)' == ''">$(Registry:HKEY_CLASSES_ROOT\CLSID\{5D02926A-212E-11D0-9DF9-00A0C922E6EC}\InprocServer32@)</HhcItssPath>
+   
+    <HhcPatchNeeded Condition="'$(HhcPatchNeeded)' == '' And '$(HhcItssPath)' == ''">true</HhcPatchNeeded>
+    <HhcPatchNeeded Condition="'$(HhcPatchNeeded)' == ''">false</HhcPatchNeeded>
+  </PropertyGroup>
+  
+  <Target Name="TraceToolsHhcPatchProps" Condition="'$(ZouTrace)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
+    <Message Importance="normal" Text="HhcItssPath    = $(HhcItssPath)" />
+    <Message Importance="normal" Text="HhcPatchNeeded = $(HhcPatchNeeded)" />
+  </Target>
+</Project>
