@@ -3,13 +3,15 @@
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003"
          InitialTargets="TmpIntDirTrace">
 
-    <!-- For agent functions, redirect IntDir to temp folder to avoid cluttering the agent folder -->
-    <PropertyGroup>
-      <_PropertySheetDisplayName>Intermediate Directory: $(TMP)\_zou\...</_PropertySheetDisplayName>
-      <IntDir>$([System.IO.Path]::Combine('$(TMP)','_zou','$(BundleName)', '$(BundleRelativeProjectPath)', '$(Platform)', '$(PlatformToolset)', '$(Configuration)'))\</IntDir>
-      <!-- Avoid MSB8029 warning -->
-      <IgnoreWarnIntDirInTempDetected>true</IgnoreWarnIntDirInTempDetected>
-    </PropertyGroup>
+  <Import Project="zou.props" Condition="'$(ZouTmpDir)' == ''"/>
+  
+  <!-- For agent functions, redirect IntDir to temp folder to avoid cluttering the agent folder -->
+  <PropertyGroup>
+    <_PropertySheetDisplayName>Intermediate Directory: $(ZouTmpDir)...</_PropertySheetDisplayName>
+    <IntDir>$([System.IO.Path]::Combine('$(ZouTmpDir)','$(BundleName)', '$(BundleRelativeProjectPath)', '$(Platform)', '$(PlatformToolset)', '$(Configuration)'))\</IntDir>
+    <!-- Avoid MSB8029 warning -->
+    <IgnoreWarnIntDirInTempDetected>true</IgnoreWarnIntDirInTempDetected>
+  </PropertyGroup>
 
   <Target Name="TmpIntDirTrace" Condition="'$(ZouTrace)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
     <Message Importance="normal" Text="IntDir = $(IntDir)" />

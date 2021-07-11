@@ -46,6 +46,7 @@ This script can be imported anywhere before first MS import (Microsoft.Cpp.Defau
     <ZouTraceMSBuild Condition="'$(ZouTraceMSBuild)' == '' And '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">true</ZouTraceMSBuild>
     <IsDebug Condition="$(Configuration.StartsWith('Debug', StringComparison.OrdinalIgnoreCase))">true</IsDebug>
     <IsRelease Condition="$(Configuration.StartsWith('Release', StringComparison.OrdinalIgnoreCase))">true</IsRelease>
+    <ZouTmpDir>$([System.IO.Path]::Combine('$(TMP)','_zou'))\</ZouTmpDir>
   </PropertyGroup>
 
   <!-- Bundle -->
@@ -250,6 +251,7 @@ This script can be imported anywhere before first MS import (Microsoft.Cpp.Defau
     <Message Importance="normal" Text="+ ZouBundleDir               = $(ZouBundleDir)" />
     <Message Importance="normal" Text="+ ZouSolutionDir             = $(ZouSolutionDir)" />
     <Message Importance="normal" Text="+ ZouProjectDir              = $(ZouProjectDir)" />
+    <Message Importance="normal" Text="+ ZouTmpDir                  = $(ZouTmpDir)" />
     <Message Importance="normal" Text="+ BundleRelativeSolutionDir  = $(BundleRelativeSolutionDir)" />
     <Message Importance="normal" Text="+ BundleRelativeSolutionName = $(BundleRelativeSolutionName)" />
     <Message Importance="normal" Text="+ BundleRelativeSolutionPath = $(BundleRelativeSolutionPath)" />
