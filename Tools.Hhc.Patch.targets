@@ -9,10 +9,14 @@
     
     <Message Importance="high" Text="Patching Help Compiler COM dependency..." />
 
+    <GetRealPath Path="$(ZouBinzOsDir)">
+      <Output TaskParameter="RealPath" PropertyName="ZouBinzOsRealDir"/>
+    </GetRealPath>
+
     <PropertyGroup>
       <HhcPatchRegFileName>Tools.Hhc.Patch.reg</HhcPatchRegFileName>
       <HhcPatchRegTmpPath>$(ZouTmpDir)$(HhcPatchRegFileName)</HhcPatchRegTmpPath>
-      <HhcItssZouPath>$(ZouBinzOsDir)itss.dll</HhcItssZouPath>
+      <HhcItssZouPath>$(ZouBinzOsRealDir)itss.dll</HhcItssZouPath>
       <HhcItssZouRegPath>$(HhcItssZouPath.Replace('\', '\\'))</HhcItssZouRegPath>
     </PropertyGroup>
     
@@ -31,10 +35,10 @@
       <HhcItssActualPath>$(Registry:HKEY_CLASSES_ROOT\WOW6432Node\CLSID\{5D02926A-212E-11D0-9DF9-00A0C922E6EC}\InprocServer32@)</HhcItssActualPath>
     </PropertyGroup>
     
-    <!--<Message Importance="normal" Text="HhcItssZouPath     = $(HhcItssZouPath)" />
+    <Message Importance="normal" Text="HhcItssZouPath     = $(HhcItssZouPath)" />
     <Message Importance="normal" Text="HhcItssZouRegPath  = $(HhcItssZouRegPath)" />
     <Message Importance="normal" Text="HhcPatchRegTmpPath = $(HhcPatchRegTmpPath)" />
-    <Message Importance="normal" Text="HhcItssActualPath  = $(HhcItssActualPath)" />-->
+    <Message Importance="normal" Text="HhcItssActualPath  = $(HhcItssActualPath)" />
 
     <Error  Condition="'$(HhcItssActualPath)' != '$(HhcItssZouPath)'" Text="Unable to import '$(HhcPatchRegTmpPath)' in registry" />
     <Delete Condition="'$(HhcItssActualPath)' != ''" Files="$(HhcPatchRegTmpPath)" />
