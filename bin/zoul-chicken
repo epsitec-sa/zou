@@ -21,6 +21,7 @@ zou_chicken_setup()
     mio_message "Updating ${Brown}zou.chicken${Cyan}, please wait..."
     gitx fetch --all --prune --tags &>>"$stdallRedir"
     branch_needs_pull || return 0
+    branch_sync_all
   else
     local tracePrefix="${Cyan}[zou.chicken]${NC}"
     mio_warning "Installing zou.chicken into ${VC}$chickenDir${Brown}"
