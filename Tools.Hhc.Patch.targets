@@ -15,19 +15,19 @@
 
     <PropertyGroup>
       <HhcPatchRegFileName>Tools.Hhc.Patch.reg</HhcPatchRegFileName>
-      <HhcPatchRegSrcPath>$(MSBuildThisFileDirectory)$(HhcPatchRegFileName)</HhcPatchRegSrcPath>
+      <HhcPatchRegTplPath>$(MSBuildThisFileDirectory)$(HhcPatchRegFileName)</HhcPatchRegTplPath>
       <HhcPatchRegTmpPath>$(ZouTmpDir)$(HhcPatchRegFileName)</HhcPatchRegTmpPath>
       
-      <HhcItssZouPath>$(ZouBinzOsRealDir)itss.dll</HhcItssZouPath>
-      <HhcItssWinPath>$(windir)\SysWOW64\itss.dll</HhcItssWinPath>
+      <HhcItssSrcPath>$(ZouBinzOsRealDir)itss.dll</HhcItssSrcPath>
+      <HhcItssDstPath>$(windir)\SysWOW64\itss.dll</HhcItssDstPath>
 
-      <HhcItssWinRegPath>$(HhcItssWinPath.Replace('\', '\\'))</HhcItssWinRegPath>
+      <HhcItssWinRegPath>$(HhcItssDstPath.Replace('\', '\\'))</HhcItssWinRegPath>
     </PropertyGroup>
 
-    <Copy SourceFiles="$(HhcPatchRegSrcPath)" DestinationFiles="$(HhcPatchRegTmpPath)" />
-    <Copy SourceFiles="$(HhcItssZouPath)"     DestinationFiles="$(HhcItssWinPath)" Condition="!Exists('$(HhcItssWinPath)')" />
+    <Copy SourceFiles="$(HhcPatchRegTplPath)" DestinationFiles="$(HhcPatchRegTmpPath)" />
+    <Copy SourceFiles="$(HhcItssSrcPath)"     DestinationFiles="$(HhcItssDstPath)" Condition="!Exists('$(HhcItssDstPath)')" />
 
-    <FileUpdate Condition="'$(HhcItssWinPath)' != '$(HhcItssPath)'"
+    <FileUpdate Condition="'$(HhcItssDstPath)' != '$(HhcItssPath)'"
                 Files="$(HhcPatchRegTmpPath)"
                 Regex='[^@="]*\\\\SysWOW64\\\\itss\.dll'
                 ReplacementText="$(HhcItssWinRegPath)"
@@ -41,15 +41,15 @@
       <HhcItssActualPath>$(Registry:HKEY_CLASSES_ROOT\WOW6432Node\CLSID\{5D02926A-212E-11D0-9DF9-00A0C922E6EC}\InprocServer32@)</HhcItssActualPath>
     </PropertyGroup>
 
-    <!--<Message Importance="normal" Text="HhcPatchRegSrcPath = $(HhcPatchRegSrcPath)" />
+    <!--<Message Importance="normal" Text="HhcPatchRegTplPath = $(HhcPatchRegTplPath)" />
     <Message Importance="normal" Text="HhcPatchRegTmpPath = $(HhcPatchRegTmpPath)" />
-    <Message Importance="normal" Text="HhcItssZouPath     = $(HhcItssZouPath)" />
+    <Message Importance="normal" Text="HhcItssSrcPath     = $(HhcItssSrcPath)" />
     <Message Importance="normal" Text="HhcItssPath        = $(HhcItssPath)" />
-    <Message Importance="normal" Text="HhcItssWinPath     = $(HhcItssWinPath)" />
+    <Message Importance="normal" Text="HhcItssDstPath     = $(HhcItssDstPath)" />
     <Message Importance="normal" Text="HhcItssWinRegPath  = $(HhcItssWinRegPath)" />
     <Message Importance="normal" Text="HhcItssActualPath  = $(HhcItssActualPath)" />-->
 
-    <Error  Condition="'$(HhcItssActualPath)' != '$(HhcItssZouPath)'" Text="Unable to import '$(HhcPatchRegTmpPath)' in registry" />
+    <Error  Condition="'$(HhcItssActualPath)' != '$(HhcItssDstPath)'" Text="Unable to import '$(HhcPatchRegTmpPath)' in registry" />
     <Delete Condition="'$(HhcItssActualPath)' != ''" Files="$(HhcPatchRegTmpPath)" />
   
   </Target>
