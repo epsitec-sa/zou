@@ -98,6 +98,12 @@ vtag_highest()
     return 1
   fi
 }
+vtag_describe()
+{
+  local vbranch vtag delta alias
+  vtag_set_describe "${1:-$(branch_current)}"
+  echo "$vtag"
+}
 # find first vtag ancestor starting from given commit
 # usage:
 #  local branch lbranch
@@ -133,6 +139,19 @@ vtag_set_describe()
     esac
     # io_trace "vtag_set_describe -2- $(print_vars branch lbranch skipVNodes match ltag)"
     if [[ -n $ltag ]]; then
+      # if there is multiple tags, get the highest one
+      local ltags=( $(gitx tag -l "$match" --points-at "$ltag"^{}) )
+      # io_trace "vtag_set_describe -2.1- $(print_vars ltag ltags[@])"
+      if [[ ${#ltags[@]} -gt 1 ]]; then
+        # filter candidates
+        ltags=( $(array_exclude "other/*" ${ltags[@]}) )
+        ltags=( $(array_exclude "_*" ${ltags[@]}) )
+        # io_trace "vtag_set_describe -2.2- $(print_vars ltag ltags[@])"
+        if [[ ${#ltags[@]} -gt 1 ]]; then
+          ltag=$(vtag_highest_of ${ltags[@]})
+          # io_trace "vtag_set_describe -2.3- $(print_vars ltag ltags[@])"
+        fi
+      fi
       stag=${ltag%-*-g*}
       if gitx merge-base --is-ancestor $stag^{} $branch &>>"$stdallRedir"; then
         _vtag_set_info "$ltag" "$stag" "$match" # -> vbranch vtag delta alias
@@ -150,7 +169,7 @@ _vtag_describe()
   # io_trace "_vtag_describe ${*@Q}"
   local exclude=() pattern
   for pattern; do exclude+=('--exclude' "$pattern"); done
-  # io_trace "_vtag_describe -- $(print_vars exclude[@])"
+  # io_trace "_vtag_describe -- $(print_vars branch exclude[@])"
   gitx describe --tags --match "$match" --exclude 'other/*' --exclude '_*' ${exclude[@]} -- "$branch" 2>>"$stderrRedir"  
 }
 # Compute tag properties
@@ -231,7 +250,7 @@ vtag_highest_of()
   if [ $# -eq 1 ]; then
     echo $1
   else
-    local highest=$1 cc=0; shift
+    local highest=$1; shift
     while [[ -n $1 ]]; do
       vtag_compare $1 $highest 2>>"$stderrRedir"
       [ $? -eq 1 ] && highest=$1
@@ -268,25 +287,30 @@ vtag_compare()
       (( $major1 > $major2 )) && return  1
       (( $minor1 < $minor2 )) && return -1
       (( $minor1 > $minor2 )) && return  1
+
       [[ -z $patch1 && -z $patch2 ]] && return  0  # both vnodes
-      [[ -z $patch1 && -n $patch2 ]] && return -1
-      [[ -n $patch1 && -z $patch2 ]] && return  1
-      (( $patch1 < $patch2 )) && return -1
-      (( $patch1 > $patch2 )) && return  1
+      if [[ $patch1 != $patch2 ]]; then
+        [[ -z $patch1 && -n $patch2 ]] && return -1
+        [[ -n $patch1 && -z $patch2 ]] && return  1
+        (( $patch1 < $patch2 )) && return -1
+        (( $patch1 > $patch2 )) && return  1
+      fi
 
-      [[ $prerel1 == $prerel2 ]] && return 0
-      [[ -n $prerel1 && -z $prerel2 ]] && return -1
-      [[ -z $prerel1 && -n $prerel2 ]] && return  1
-      [[ $prerelPrefix1 < $prerelPrefix2 ]] && return -1
-      [[ $prerelPrefix1 > $prerelPrefix2 ]] && return  1
-      (( prerelRev1 < prerelRev2 )) && return -1
-      (( prerelRev1 > prerelRev2 )) && return  1
+      if [[ $prerel1 != $prerel2 ]]; then
+        [[ -n $prerel1 && -z $prerel2 ]] && return -1
+        [[ -z $prerel1 && -n $prerel2 ]] && return  1
+        [[ $prerelPrefix1 < $prerelPrefix2 ]] && return -1
+        [[ $prerelPrefix1 > $prerelPrefix2 ]] && return  1
+        (( prerelRev1 < prerelRev2 )) && return -1
+        (( prerelRev1 > prerelRev2 )) && return  1
+      fi
 
-      [[ $meta1 == $meta2 ]] && return 0
-      [[ -n $meta1 && -z $meta2 ]] && return  1
-      [[ -z $meta1 && -n $meta2 ]] && return -1
-      [[ $meta1 < $meta2 ]] && return -1
-      [[ $meta1 > $meta2 ]] && return  1
+      if [[ $meta1 != $meta2 ]]; then
+        [[ -n $meta1 && -z $meta2 ]] && return  1
+        [[ -z $meta1 && -n $meta2 ]] && return -1
+        [[ $meta1 < $meta2 ]] && return -1
+        [[ $meta1 > $meta2 ]] && return  1
+      fi
       
       return 0
     else
