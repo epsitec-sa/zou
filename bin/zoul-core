@@ -287,8 +287,26 @@ array_remove_element()
 array_contains_element()
 {
   local e match="$1"; shift
-  for e; do [[ "$e" == "$match" ]] && return 0; done
+  for e; do
+    [[ "$e" == "$match" ]] && return 0
+  done
   return 1
+}
+array_where()
+{
+  local e match="$1"; shift
+  for e; do
+    # io_trace "array_where -- $(print_vars match e)"
+    [[ $e == $match ]] && echo "$e"
+  done
+}
+array_exclude()
+{
+  local e match="$1"; shift
+  for e; do
+    # io_trace "array_exclude -- $(print_vars match e)"
+    [[ $e != $match ]] && echo "$e"
+  done
 }
 
 path_make_relative()
