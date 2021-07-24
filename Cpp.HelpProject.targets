@@ -63,8 +63,8 @@ lib0\help\helpmap.cpp: {$(IntDir)\lib0.xx.cpp}
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003"
          InitialTargets="TraceHelpProject">
 
-  <Import Project="zou.props"       Condition="'$(ZouVersion)'    == ''"/>
-  <Import Project="Tools.Mfc.props" Condition="'$(MFCIncludeDir)' == ''"/>
+  <Import Project="zou.props"       Condition="'$(ZouVersion)'     == ''"/>
+  <Import Project="Tools.Mfc.props" Condition="'$(MFCIncludeDir)'  == ''"/>
 
   <!-- Patch help compiler COM dependency on Windows Hyper Core 64 bits -->
   <ImportGroup Condition="$([System.Environment]::Is64BitOperatingSystem)">
@@ -283,11 +283,17 @@ lib0\help\helpmap.cpp: {$(IntDir)\lib0.xx.cpp}
     </PropertyGroup>
   </Target>
 
-  <Target Name="_AssignHelpProjectHmFiles" AfterTargets="InitMFCIncludeDir">
-    <Message Text=">>>> _AssignHelpProjectHmFiles" />
-    <Message Text="  MFCIncludeDir = $(MFCIncludeDir)" />
+  <Target Name="_AssignHelpProjectHmFiles" DependsOnTargets="InitMFCIncludeDir;InitMFCIncludeDirRtm">
+    <PropertyGroup>
+      <UseAfxHelpHm>false</UseAfxHelpHm>
+      <UseAfxHelpHm  Condition="'$(UseOfMfc)' != 'false' And '$(UseOfMfc)' != ''">true</UseAfxHelpHm>
+      <AfxHelpHmPath Condition="$(UseAfxHelpHm) And Exists('$(MFCIncludeDir)afxhelp.hm')">$(MFCIncludeDir)afxhelp.hm</AfxHelpHmPath>
+      <AfxHelpHmPath Condition="$(UseAfxHelpHm) And '$(AfxHelpHmPath)' == ''">$(MFCIncludeDirRtm)afxhelp.hm</AfxHelpHmPath>
+    </PropertyGroup>
+    
+    <Warning Condition="!Exists('$(AfxHelpHmPath)')" Text="file '$(AfxHelpHmPath)' does not exists. The builded help may not be fully functional." />
     <ItemGroup>
-      <_HmFile Include="$(MFCIncludeDir)afxhelp.hm" Condition="'$(UseOfMfc)' != 'false' And '$(UseOfMfc)' != ''" />
+      <_HmFile Include="$(AfxHelpHmPath)" Condition="$(UseAfxHelpHm)" />
       <HelpProject>
         <AdditionalHmFiles>@(_HmFile)</AdditionalHmFiles>
       </HelpProject>
