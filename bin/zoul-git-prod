@@ -635,7 +635,7 @@ _prod_refresh_bundle_htag()
   # get principal module release info
   pinfo=$(module_visit "$principalModuleId" "${principalScopes[@]}" _prod_get_principal_module_release_info)
   read -r pstatus pvtag phtag <<< "$pinfo"
-  # io_trace "_prod_refresh_bundle_htag -1- $(print_vars pstatus pvtag phtag)"
+  # io_trace "_prod_refresh_bundle_htag -0- PM -- $(print_vars pstatus pvtag phtag)"
 
   if [[ $pstatus == 'unreleased' || -z "$pvtag" || -z "$phtag" ]]; then
     mio_error "Invalid operation in ${VC}_prod_refresh_bundle_htag${Red} (principal module ${VC}$principalModuleId${Red} should be released), aborting..."
@@ -649,7 +649,9 @@ _prod_refresh_bundle_htag()
   # io_trace "_prod_refresh_bundle_htag -1- $(print_vars prodHTag hver)"
   pvver=${pvtag##*/}
   phver=${phtag##*/}
-  # io_trace "_prod_refresh_bundle_htag -2- $(print_vars pvtag phtag pvver phver)"
+  # io_trace "_prod_refresh_bundle_htag -2- $(print_vars prodVTag prodHTag hver pvtag phtag pvver phver)"
+
+  # _prod_trace '_prod_refresh_bundle_htag -2.1-'
 
   if [[ $phver == $hver ]]; then
     # bundle version equals principal module version
@@ -726,8 +728,8 @@ _prod_increment_release_version()
 #   releaseVTag
 _prod_increment_release_version_core()
 {
-  # io_trace ">>>> _prod_increment_release_version_core $(print_vars noIncrement prodHTag releaseVTag pmProdHTag)"
   local vnext
+  # io_trace ">>>> _prod_increment_release_version_core $(print_vars noIncrement prodHTag releaseVTag pmProdHTag pmProdHTagRoot)"
   [[ -n $pmProdHTag ]] && prodHTag=$pmProdHTag
 
   if [[ $noIncrement == true ]]; then
@@ -742,8 +744,13 @@ _prod_increment_release_version_core()
     releaseVTag=$vnext
   fi
   
+  if [[ $releaseVTag != $prodHTag && -n $principalModuleId ]] && module_is_bundle; then
+    pmProdHTagRoot=$prodHTag
+    # io_trace "#### _prod_increment_release_version_core BUNDLE+PM $(print_vars noIncrement prodHTag prodHTag releaseVTag pmProdHTag pmProdHTagRoot)"
+  fi
+  
   [[ -n $pmProdHTag ]] && pmProdHTag=$releaseVTag
-  # io_trace "<<<< _prod_increment_release_version_core $(print_vars noIncrement prodHTag releaseVTag pmProdHTag)"
+  # io_trace "<<<< _prod_increment_release_version_core $(print_vars noIncrement prodHTag releaseVTag pmProdHTag pmProdHTagRoot)"
   return 0
 }
 

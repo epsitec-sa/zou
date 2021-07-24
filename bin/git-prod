@@ -232,10 +232,12 @@ prod_release_scope()
       forceRelease=true
       if [[ -n "$pmProdHTagRoot" ]]; then
         pmProdHTag="$pmProdHTagRoot"
+        prod_reset_scope
+        _prod_fix_release_status
       fi
       prodCheckoutType='vnext'
     fi
-    # io_trace "prod_release_scope PRINCIPAL -- $(print_vars pmProdHTag prodCheckoutType modulePrerelPrefix forceRelease)"
+    # io_trace "prod_release_scope PRINCIPAL -- $(print_vars pmProdHTagRoot pmProdHTag prodCheckoutType modulePrerelPrefix forceRelease releaseStatus)"
   elif [ $cmdIsTopLevel -ne 0 ]; then
     # prerelease does not apply to non top level submodules (excepting principal module)
     if [[ $prerelPrefix != 'rtm' ]]; then
@@ -421,7 +423,7 @@ _prod_release_unimplemented()
 }
 _prod_force_release_of_principal_module()
 {
-  # io_trace "_prod_force_release_of_principal_module -- $(print_vars pmProdHTagRoot)"
+  # io_trace "_prod_force_release_of_principal_module -- $(print_vars pmProdHTagRoot pmProdHTag)"
   mio_warning "Forcing release of principal module ${VC}$principalModuleId"
   local forcePrincipalRelease=true
   cmd_visit_module "$principalModuleId"
