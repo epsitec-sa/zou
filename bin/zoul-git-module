@@ -604,7 +604,9 @@ _module_list_uninitialized_submodules()
 #  1 if already configured
 module_configure()
 {
-  local forceConfig=$1
+  local forceConfig=$1 verbose=$2
+
+  [[ $verbose == 'true' ]] && mio_message "  Configuring $moduleId..."
 
   if [[ $forceConfig == 'true' ]]; then
     # force hooks configuration
@@ -615,7 +617,16 @@ module_configure()
     hooks_configure "$moduleRoot" && return 1
     notes_configure
   fi
+  module_configure_wsl
   return 0
+}
+module_configure_wsl()
+{
+  # When using WSL repos, the Fork client use Windows git instead of WSL git.
+  # - avoid filemode changes in zou module
+  if [[ $zouWsl -eq 0 && $moduleId == 'zou' ]]; then
+    gitx config core.filemode false
+  fi
 }
 
 module_is_configured() { notes_is_configured; }
