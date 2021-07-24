@@ -1,33 +1,18 @@
-<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003"
-         InitialTargets="TraceToolsCpp;InitVSInstallDir">
-
   <!--
-  Compute Visual Studio installation directory based on MSBuild property VCTargetsPath
-  Example:
-    VCTargetsPath = C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\MSBuild\Microsoft\VC\v160\
-    VSRootDir     = C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\
-    VSToolsDir    = C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\Tools\
+  Compute Visual Studio installation directories (VSInstallDir, VSInstallDirRtm):
+  - VSInstallDirRtm represents the latest RTM release of Visual Studio if one is installed otherwise the RTM release.
+  - VSInstallDir    represents the latest  prerelease of Visual Studio.
+  - properties are available only in targets with the attribute DependsOnTargets="InitVSProps;InitVSPropsRtm"
   -->
+
+<Project InitialTargets="TraceToolsCpp">
   <PropertyGroup>
-    <!-- VSRootDir -->
-    <_VCTargetsPathMSBuildIndex>$(VCTargetsPath.IndexOf('MSBuild'))</_VCTargetsPathMSBuildIndex>
-    <VSRootDir>$(VCTargetsPath.Substring(0, $(_VCTargetsPathMSBuildIndex)))</VSRootDir>
-    <_VCTargetsPathMSBuildIndex />
-    
+    <ToolsCppImported>true</ToolsCppImported>
     <VSInstallDir Condition="'$(VSInstallDir)' == ''">*Undefined*</VSInstallDir>
-    <VSToolsDir   Condition="'$(VSToolsDir)'   == ''">$(VSRootDir)Common7\Tools\</VSToolsDir>
-    <MSVCRootDir  Condition="'$(MSVCRootDir)'  == ''">$(VSRootDir)VC\Tools\MSVC\</MSVCRootDir>
+    <VsWherePath>$(MSBuildProgramFiles32)\Microsoft Visual Studio\Installer\vswhere.exe</VsWherePath>
   </PropertyGroup>
  
-  <!--
-    This is the standard way to find VS installation path. Unfortunately we cannot use it during the 1st pass of msbuild
-    because targets are executed during the 2nd pass and some scripts need VSInstallDir / VSRootDir during the 1st pass
-  -->
-  <Target Name="InitVSInstallDir">
-    <PropertyGroup>
-      <VsWherePath>$(MSBuildProgramFiles32)\Microsoft Visual Studio\Installer\vswhere.exe</VsWherePath>
-    </PropertyGroup>
+  <Target Name="InitVSProps">
     <Exec Command='"$(VsWherePath)" -prerelease -latest -property InstallationPath'
           Condition="Exists('$(VsWherePath)')"
           EchoOFF="true"
@@ -36,29 +21,49 @@
       <Output TaskParameter="ConsoleOutput" PropertyName="_VSInstallDir" />
     </Exec>
     <PropertyGroup>
-      <VSInstallDir Condition="'$(_VSInstallDir)' != '' And Exists('$(_VSInstallDir)')">$([MSBuild]::EnsureTrailingSlash('$(_VSInstallDir)'))</VSInstallDir>
+      <VSInstallDir    Condition="'$(_VSInstallDir)'    != '' And Exists('$(_VSInstallDir)')"   >$([MSBuild]::EnsureTrailingSlash('$(_VSInstallDir)'))</VSInstallDir>
+      <VSToolsDir      Condition="'$(VSToolsDir)'       == ''">$(VSInstallDir)Common7\Tools\</VSToolsDir>
+      <MSVCRootDir     Condition="'$(MSVCRootDir)'      == ''">$(VSInstallDir)VC\Tools\MSVC\</MSVCRootDir>
       <_VSInstallDir />
     </PropertyGroup>
-    
-    <Error Condition="'$(VSRootDir)'  == ''" Text="VS not found" />
-    <Error Condition="'$(VSToolsDir)' == ''" Text="VS Build Tools not found" />
-    <Error Condition="'$(VSInstallDir)' != '*Undefined*' And '$(VSRootDir)' != '$(VSInstallDir)'" Text="Mismatch between VSInstallDir and VSRootDir" />
+
+    <Error Condition="'$(VSInstallDir)' == ''" Text="Visual Studio installation folder not found" />
+    <Error Condition="!Exists($(VSToolsDir))"  Text="Visual Studio tools folder does not exist - '$(VSToolsDir)'" />
+    <Error Condition="!Exists($(MSVCRootDir))" Text="MSVC folder does not exist - '$(MSVCRootDir)'" />
   </Target>
   
-  <Target Name="TraceToolsCppRT" DependsOnTargets="InitVSInstallDir">
-    <Message Importance="normal" Text="Runtime properties" />
-    <Message Importance="normal" Text="==================" />
-    <Message Importance="normal" Text="  + VSInstallDir = $(VSInstallDir)" />
+  <Target Name="InitVSPropsRtm">
+    <Exec Command='"$(VsWherePath)" -latest -property InstallationPath'
+          Condition="Exists('$(VsWherePath)')"
+          EchoOFF="true"
+          StandardOutputImportance="low"
+          ConsoleToMSBuild="true">
+      <Output TaskParameter="ConsoleOutput" PropertyName="_VSInstallDirRtm" />
+    </Exec>
+    <PropertyGroup>
+      <VSInstallDirRtm Condition="'$(_VSInstallDirRtm)' != '' And Exists('$(_VSInstallDirRtm)')">$([MSBuild]::EnsureTrailingSlash('$(_VSInstallDirRtm)'))</VSInstallDirRtm>
+      <VSToolsDirRtm   Condition="'$(VSToolsDirRtm)'    == ''">$(VSInstallDirRtm)Common7\Tools\</VSToolsDirRtm>
+      <MSVCRootDirRtm  Condition="'$(MSVCRootDirRtm)'   == ''">$(VSInstallDirRtm)VC\Tools\MSVC\</MSVCRootDirRtm>
+      <_VSInstallDirRtm />
+    </PropertyGroup>
+
+    <Error Condition="'$(VSInstallDirRtm)' == ''" Text="Visual Studio installation folder not found" />
+    <Error Condition="!Exists($(VSToolsDirRtm))"  Text="Visual Studio tools folder does not exist - '$(VSToolsDir)'" />
+    <Error Condition="!Exists($(MSVCRootDirRtm))" Text="MSVC folder does not exist - '$(MSVCRootDir)'" />
   </Target>
+  
+  <Target Name="TraceToolsCpp" DependsOnTargets="InitVSProps;InitVSPropsRtm" Condition="'$(ZouTrace)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
+    
+    <Message Importance="normal" Text="  * VsWherePath    = $(VsWherePath)" />
+    <Message Importance="normal" Text="  * VCTargetsPath  = $(VCTargetsPath)" />
+    <Message Importance="normal" Text=" " />
 
-  <Target Name="TraceToolsCpp" Condition="'$(ZouTrace)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
-    <Message Importance="normal" Text="Boot properties" />
-    <Message Importance="normal" Text="===============" />
-    <Message Importance="normal" Text="  + VSRootDir     = $(VSRootDir)" />
-    <Message Importance="normal" Text="  + VSToolsDir    = $(VSToolsDir)" />
-    <Message Importance="normal" Text="  * VCTargetsPath = $(VCTargetsPath)" />
-    <Message Importance="normal" Text="  + MSVCRootDir   = $(MSVCRootDir)" />
-
-    <CallTarget Targets="TraceToolsCppRT" />
+    <Message Importance="normal" Text="  + VSInstallDir    = $(VSInstallDir)" />
+    <Message Importance="normal" Text="  + VSToolsDir      = $(VSToolsDir)" />
+    <Message Importance="normal" Text="  + MSVCRootDir     = $(MSVCRootDir)" />
+    <Message Importance="normal" Text=" " />
+    <Message Importance="normal" Text="  + VSInstallDirRtm = $(VSInstallDirRtm)" />
+    <Message Importance="normal" Text="  + VSToolsDirRtm   = $(VSToolsDirRtm)" />
+    <Message Importance="normal" Text="  + MSVCRootDirRtm  = $(MSVCRootDirRtm)" />
   </Target>
 </Project>

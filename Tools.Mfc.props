@@ -1,17 +1,24 @@
-<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003"
-         InitialTargets="TraceToolsMfc;InitMFCIncludeDir">
+<!--
+  Compute the 'MFCIncludeDir' property which is useful for C++ Help projects:
+  - MFCIncludeDir    represents the latest  prerelease of Visual Studio if one is installed otherwise the RTM release.
+  - MFCIncludeDirRtm represents the latest RTM release of Visual Studio.
+  - properties are available only in targets with the attribute DependsOnTargets="InitMFCIncludeDir;InitMFCIncludeDirRtm"
+-->
 
-  <Import Project="Tools.Cpp.props"  Condition="'$(VSRootDir)'  == ''" />
+<Project InitialTargets="TraceToolsMfc">
+
+  <Import Project="Tools.Cpp.props" Condition="'$(ToolsCppImported)' == ''" />
 
   <PropertyGroup>
-    <MFCIncludeDir Condition="'$(MFCIncludeDir)' == ''">*Undefined*</MFCIncludeDir>
+    <MFCIncludeDir    Condition="'$(MFCIncludeDir)'    == ''">*Undefined*</MFCIncludeDir>
+    <MFCIncludeDirRtm Condition="'$(MFCIncludeDirRtm)' == ''">*Undefined*</MFCIncludeDirRtm>
   </PropertyGroup>
   
   <!-- MFCIncludeDir should be used in targets only -->
-  <Target Name="InitMFCIncludeDir" Condition="'$(MFCIncludeDir)' == '*Undefined*'">
+  <Target Name="InitMFCIncludeDir" DependsOnTargets="InitVSProps" Condition="'$(MFCIncludeDir)' == '*Undefined*'">
     <!-- List folders alphabetically -->
     <Exec Command='dir /B /AD /ON "$(MSVCRootDir)"'
+          Condition="'$(MSVCVersion)' == ''"
           StandardOutputImportance="low"
           EchoOFF="true"
           ConsoleToMSBuild="true">
@@ -40,19 +47,45 @@
 
     <Error Condition="'$(MFCIncludeDir)' == '*Undefined*'" Text="MFC Include dir not found, please specify the 'MSVCVersion' property manually (ex: set MSVCVersion=14.29.30037)" />
   </Target>
+  
+  <Target Name="InitMFCIncludeDirRtm" DependsOnTargets="InitVSPropsRtm" Condition="'$(MFCIncludeDirRtm)' == '*Undefined*'">
+    <!-- List folders alphabetically -->
+    <Exec Command='dir /B /AD /ON "$(MSVCRootDirRtm)"'
+          Condition="'$(MSVCVersionRtm)' == ''"
+          StandardOutputImportance="low"
+          EchoOFF="true"
+          ConsoleToMSBuild="true">
+      <Output TaskParameter="ConsoleOutput" PropertyName="MSVCVersionRtm" />
+    </Exec>
+    <!-- Keep only folders with a name that matches a version format -->
+    <ItemGroup>
+      <_MSVCVersion Include="$(MSVCVersionRtm)" />
+      <MSVCVersion Include="%(_MSVCVersion.Identity)" Condition="$([System.Text.RegularExpressions.Regex]::Match('%(Identity)', '^\d+\.\d+\.\d+$')) != ''"/>
+      <_MSVCVersion Remove="@(_MSVCVersion)" />
+    </ItemGroup>
+    
+    <PropertyGroup>
+      <!-- Get the highest version (the highest version is the last item because folders are listed alphabetically - dir /ON) -->
+      <MSVCVersionRtm>%(MSVCVersion.Identity)</MSVCVersionRtm>
+      <!-- Initialize MFCIncludeDir if folder exists -->
+      <_MFCIncludeDir>$(MSVCRootDirRtm)$(MSVCVersionRtm)\atlmfc\include\</_MFCIncludeDir>
+      <MFCIncludeDirRtm Condition="Exists('$(_MFCIncludeDir)')">$(_MFCIncludeDir)</MFCIncludeDirRtm>
+      <_MFCIncludeDir />
+    </PropertyGroup>
+    
+    <!-- Clean -->
+    <ItemGroup>
+      <MSVCVersion Remove="@(MSVCVersion)" />
+    </ItemGroup>
 
-  <Target Name="TraceToolsMfcRT" DependsOnTargets="InitMFCIncludeDir">
-    <Message Importance="normal" Text="Runtime properties" />
-    <Message Importance="normal" Text="==================" />
-    <Message Importance="normal" Text="  MSVCVersion   = $(MSVCVersion)"/>
-    <Message Importance="normal" Text="  MFCIncludeDir = $(MFCIncludeDir)"/>
+    <Error Condition="'$(MFCIncludeDirRtm)' == '*Undefined*'" Text="MFC Include dir not found, please specify the 'MSVCVersion' property manually (ex: set MSVCVersion=14.29.30037)" />
   </Target>
 
-  <Target Name="TraceToolsMfc" Condition="'$(ZouTrace)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
-    <Message Importance="normal" Text="Boot properties" />
-    <Message Importance="normal" Text="===============" />
-    <Message Importance="normal" Text="  MFCIncludeDir = $(MFCIncludeDir)"/>
-    
-    <CallTarget Targets="TraceToolsMfcRT" />
+  <Target Name="TraceToolsMfc" DependsOnTargets="InitMFCIncludeDir;InitMFCIncludeDirRtm">
+    <Message Importance="normal" Text="  MSVCVersion      = $(MSVCVersion)"/>
+    <Message Importance="normal" Text="  MFCIncludeDir    = $(MFCIncludeDir)"/>
+    <Message Importance="normal" Text=" "/>
+    <Message Importance="normal" Text="  MSVCVersionRtm   = $(MSVCVersionRtm)"/>
+    <Message Importance="normal" Text="  MFCIncludeDirRtm = $(MFCIncludeDirRtm)"/>
   </Target>
 </Project>
