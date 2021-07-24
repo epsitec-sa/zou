@@ -125,7 +125,7 @@ _bundler_config()
   local message="${LightBlue}$bundleUrl${White} -> ${VC}$bundleRoot${White}"
 
   # check if bundle is already configured (exit code 1)
-  if module_configure; then
+  if module_configure "$forceConfig"; then
     # bundle was not configured (now it is) - configure submodules
     # io_trace "_bundler_config -1- $(print_vars bundleRoot)"
     io_message "${Brown}┅ $message" "$bundleTracePrefix" ${White}
@@ -155,21 +155,18 @@ _bundler_config_prolog()
   # notes_repair &>>"$stdallRedir" || forceConfig=true
   # hooks_repair &>>"$stdallRedir" || forceConfig=true
 
+  local verbose='false'
+  [ -z $quiet ] && verbose=true
   # io_lock_enter
-  if [[ -z $stopConfig ]] && module_configure "$forceConfig"; then
-    # module was not configured or configuration is forced
-    if [[ -z $quiet ]]; then
-      local moduleType
-      module_is_bundle && moduleType='bundle' || moduleType='submodule'
-      mio_message_unsafe "Configuring $moduleType..."
-    fi
+  if [[ -z $stopConfig ]] && module_configure "$forceConfig" "$verbose"; then
+    : # module was not configured or configuration is forced
   else
     # already configured : do not abort if prune tags is asked
     stopConfig=true
     [[ $pruneTags == true ]] || abort=1
   fi
   if [[ $pruneTags == true ]]; then
-    [[ -z $quiet ]] && mio_warning_unsafe 'Pruning tags...'
+    [[ -z $quiet ]] && mio_warning_unsafe '  Pruning tags...'
     repo_prune_tags
   fi
   # io_lock_exit
