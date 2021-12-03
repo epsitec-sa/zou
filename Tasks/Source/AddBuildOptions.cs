@@ -105,7 +105,7 @@ namespace Zou.Tasks
 
                 if (cleanTarget == null)
                 {
-                    yield return targetsValue;
+                    yield return QuoteValue(targetsValue);
                 }
                 else
                 {
