@@ -42,6 +42,12 @@ prod_parse()
   if [[ $subcommand == 'select' && ${#args[@]} -ge 1 ]]; then
       prodSelectSpec=${args[0]}
       args=(${args[@]:1})
+      ref_set_symbol "$prodSelectSpec"
+      # io_trace "prod_parse -2- $(print_vars prodSelectSpec attachMode refSymbol refType)"
+      if [[ -z $refSymbol ]]; then
+        io_error "reference ${Brown}$prodSelectSpec${Red} not found."
+        return 1
+      fi
   fi
   
   cmd_check_args "${args[@]}"
@@ -56,7 +62,7 @@ prod_run()
         cmdScopes=( prod_scope config_scope cosm_scope ) \
         mergeIntoDev vtable prerelPrefix dryRun prodModulePaths=() \
         checkoutType='vnext' attachMode='auto' forcePrincipalRelease \
-        prodSelectSpec stayInProd=true
+        prodSelectSpec refSymbol refType stayInProd=true
 
   prod_parse "$@" || return $?
   prod_startup_message
@@ -73,7 +79,7 @@ prod_startup_message()
     select)
       local what='current version branch'
       [[ $attachMode == 'vtag' ]] && what='current version tag'
-      [[ -n $prodSelectSpec ]] && what="version $prodSelectSpec"
+      [[ -n $prodSelectSpec ]] && what="version $refType $refSymbol"
       startupMessage="Selecting ${Brown}$what${White}, please wait...";;
     *)
       local what='next version' color=${White}
