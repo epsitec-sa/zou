@@ -11,7 +11,7 @@
     <TargetFramework Condition="'$(TargetFramework)' == '' And '$(RuntimeType)' == 'Full'">$(FullTargetFramework)</TargetFramework>
     <TargetFramework Condition="'$(TargetFramework)' == ''">$(CoreTargetFramework)</TargetFramework>
     <RuntimeIdentifiers Condition="'$(RuntimeIdentifiers)' == ''">win7-x86;win-x86;win-x64;osx-x64;linux-x64</RuntimeIdentifiers>
-    <RazorLangVersion>3.0</RazorLangVersion>
+    <RazorLangVersion   Condition="'$(RazorLangVersion)'   == ''">3.0</RazorLangVersion>
     <Company>Epsitec</Company>
   </PropertyGroup>
   
@@ -41,7 +41,7 @@
     <EnableNETAnalyzers>false</EnableNETAnalyzers>
     <AnalysisMode>AllEnabledByDefault</AnalysisMode>
     <!-- Prevent missing await on async methods -->
-    <WarningsAsErrors>CS4014;</WarningsAsErrors>
+    <WarningsAsErrors>CS4014;$(WarningsAsErrors)</WarningsAsErrors>
   </PropertyGroup>
 
   <!-- Versioning -->
