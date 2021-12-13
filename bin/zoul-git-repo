@@ -423,14 +423,15 @@ repo_prune_tags()
   data=$(gitx tag -l 2>>"$stderrRedir")
   [[ -n $data ]] && xargs git tag -d &>>"$stdallRedir" <<< "$data"
   if [[ $verbose == true ]]; then
-    io_buffered_eval 'gitx fetch --tags 2>&1' _repo_prune_tags_line_selector
+    io_buffered_eval 'gitx fetch --tags 2>&1' _repo_prune_tags_line_selector ${DarkGray}
   else
     gitx fetch --tags &>>"$stdallRedir"
   fi
 }
 _repo_prune_tags_line_selector()
 {
-  [[ $line =~ ^.*\[new\ tag\][[:blank:]]+(.*)$ ]] && line="${BASH_REMATCH[1]}"
+  [[ $line =~ ^.*\[new\ tag\][[:blank:]]+(.*)$ ]] && line="${BASH_REMATCH[1]}" || skipCurrentLine='true'
+  return 0
 }
 repo_require_clean_work_tree()
 {
