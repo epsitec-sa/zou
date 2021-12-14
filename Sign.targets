@@ -9,6 +9,7 @@ Input parameters:
 <Project>
   <PropertyGroup>
     <SignTargetsImported>true</SignTargetsImported>
+    <SignToolBroker Condition="'$(SignToolBroker)' == ''">rn32</SignToolBroker>
   </PropertyGroup>
 
   <Import Project="zou.props" Condition="'$(ZouVersion)' == ''" />
@@ -60,10 +61,7 @@ Input parameters:
 
     <ItemGroup>
       <SignFolder>
-        <Command>esign --nologo --porcelain -r -v "%(Identity)"</Command>
-      </SignFolder>
-      <SignFolder>
-        <Command Condition="%(Test)">%(Command) --test</Command>
+        <Command>esign --nologo --porcelain -r -v --$(SignToolBroker) "%(Identity)"</Command>
       </SignFolder>
     </ItemGroup>
 
