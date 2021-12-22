@@ -23,9 +23,6 @@ config_setup()
   # do not push tags pointing at un-pushed commits automatically
   gitx config --global --unset push.followTags
 
-  # avoid the git credential manager trying to guess which git server is hiding behind the repository URL
-  gitx config --global credential.git.epsitec.ch.provider generic
-
   # update zou aliases
   local alias
   for alias in hotfix zh sb sbx sbw csku csel cver cpub smaster spull sclean oprune publish select attach vbranch config-sku; do
@@ -59,7 +56,17 @@ config_git_tools()
     # credential manager
     local credentialManagerPath="$drive/Program Files/Git/mingw64/libexec/git-core/git-credential-manager.exe"
     if [[ -f "$credentialManagerPath" ]]; then
-      [[ -z $(git config --global --get credential.helper) ]] && gitx config --global credential.helper "$(printf '%q' "$credentialManagerPath")"
+      local actualCredentialManagerPath="$(git config --global --get credential.helper)"
+      if [[ -z $actualCredentialManagerPath ]]; then
+        actualCredentialManagerPath="$(printf '%q' "$credentialManagerPath")"
+        gitx config --global credential.helper "$actualCredentialManagerPath"
+      fi
+      # avoid the git credential manager trying to guess which git server is hiding behind the repository URL
+      if [[ $actualCredentialManagerPath =~ git-credential-manager\.exe ]]; then
+        gitx config --global credential.git.epsitec.ch.provider generic
+      else
+        gitx config --global --unset credential.git.epsitec.ch.provider
+      fi
     fi
     # bc4 tools
     local bc4Path="$drive/Program Files/Beyond Compare 4/BComp.exe"
