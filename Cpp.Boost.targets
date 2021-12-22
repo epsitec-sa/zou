@@ -21,12 +21,8 @@
     
     <_BoostOnlyPackagesConfigFile>$(IntDir)zou.boost.packages.config</_BoostOnlyPackagesConfigFile>
 
-    <_BoostVersionChanged>false</_BoostVersionChanged>
-    <_BoostToolsetChanged>false</_BoostToolsetChanged>
-    <_BoostMergeChanged>false</_BoostMergeChanged>
     <_PackagesConfigChanged>false</_PackagesConfigChanged>
     <_PackagesConfigExists>false</_PackagesConfigExists>
-    
     <_PackagesConfigExists Condition="Exists($(PackagesConfigFile))">true</_PackagesConfigExists>
   </PropertyGroup>
 
@@ -79,18 +75,15 @@
                 Regex='^(?&lt;A&gt;\s*&lt;package\s+id="boost\S*"\s+version=")\S+(?&lt;Z&gt;"[^\r\n]+)'
                 ReplacementText="${A}$(BoostVersion)${Z}"
                 Multiline="true"
-                IgnoreCase="true">
-      <Output TaskParameter="Changed" PropertyName="_BoostVersionChanged" />
-    </FileUpdate>
+                IgnoreCase="true" />
+
     <!-- Update toolset -->
     <FileUpdate Condition="'$(_BoostPackagesConfigType)' == 'Libs'"
                 Files="$(_BoostOnlyPackagesConfigFile)"
                 Regex='^(?&lt;A&gt;\s*&lt;package\s+id="boost\S*-)vc\d+\S*(?&lt;Z&gt;"[^\r\n]+)'
                 ReplacementText="${A}$(BoostToolset)${Z}"
                 Multiline="true"
-                IgnoreCase="true">
-      <Output TaskParameter="Changed" PropertyName="_BoostToolsetChanged" />
-    </FileUpdate>
+                IgnoreCase="true" />
   </Target>
   
   <Target Name="_BoostUpdateExistingPackagesConfig"
@@ -107,30 +100,33 @@
                 IgnoreCase="true">
     </FileUpdate>
     <MergePackagesConfig MergeFiles="$(_BoostOnlyPackagesConfigFile)"
-                         IntoFile="$(PackagesConfigFile)">
-      <Output TaskParameter="Changed" PropertyName="_BoostMergeChanged" />
-    </MergePackagesConfig>
-
-    <PropertyGroup>
-      <_PackagesConfigChanged Condition="!$(_PackagesConfigExists) Or $(_BoostVersionChanged) Or $(_BoostToolsetChanged) Or $(_BoostMergeChanged)">true</_PackagesConfigChanged>
-    </PropertyGroup>
+                         IntoFile="$(PackagesConfigFile)" />
   </Target>
   
-  <Target Name="BoostCommit">
+  <Target Name="_BoostCheckPackagesConfigChanged" Condition="$(BundleIsGit)" DependsOnTargets="_BoostUpdateExistingPackagesConfig" >
     
+    <Exec Command='git add "$(PackagesConfigFile)"' ContinueOnError='true' />
+    <Exec Command='git diff-index --quiet HEAD "$(PackagesConfigFile)' ContinueOnError='true' IgnoreExitCode='true'>
+      <Output TaskParameter="ExitCode" PropertyName="_GitDiffPackagesConfigExitCode" />
+    </Exec>
+    <PropertyGroup>
+      <_PackagesConfigChanged Condition="'$(_GitDiffPackagesConfigExitCode)' != '0'">true</_PackagesConfigChanged>
+    </PropertyGroup>
+    <Message Importance="high" Text="_PackagesConfigChanged1 = $(_PackagesConfigChanged)"/>
+  </Target>
+  
+  <Target Name="_BoostCommitPackagesConfigChanged" Condition="$(BundleIsGit)" >
     <!-- abort if we are not in dev mode -->
     <Exec Command='git in-dev-mode' ContinueOnError='true' IgnoreExitCode='true'>
       <Output TaskParameter="ExitCode" PropertyName="GitInDevMode" />
     </Exec>
-    <Error Condition="$(GitInDevMode) != 0" Text="Switch $(ModuleName) to development mode for boost to be updated." />
+    <Error Condition="'$(GitInDevMode)' != '0'" Text="Switch $(ModuleName) to development mode for boost to be updated." />
     
     <!-- Commit packages.config -->
     <PropertyGroup>
       <_GitCommitMessage>zou-build: update boost $(BoostToolset) to v$(BoostVersion) in $(ModuleRelativeProjectDir)$(PackagesConfigFile)</_GitCommitMessage>
     </PropertyGroup>
-    <Exec Command='git add "$(PackagesConfigFile)"' ContinueOnError='true' />
-    <Exec Command='git diff-index --quiet HEAD "$(PackagesConfigFile)" || git commit "-m$(_GitCommitMessage)" "$(PackagesConfigFile)"' ContinueOnError='true' />
-    
+    <Exec Command='git commit "-m$(_GitCommitMessage)" "$(PackagesConfigFile)"' ContinueOnError='true' />
   </Target>
 
   <!--
@@ -141,19 +137,11 @@
   else
     copy temp file to packages.config
   -->
-  <Target Name="UpdateBoostPackages" DependsOnTargets="_BoostUpdateExistingPackagesConfig" BeforeTargets="_CppBoostHeadersImportCheck;_CppBoostLibsImportCheck">
+  <Target Name="UpdateBoostPackages" DependsOnTargets="_BoostUpdateExistingPackagesConfig;_BoostCheckPackagesConfigChanged" BeforeTargets="_CppBoostHeadersImportCheck;_CppBoostLibsImportCheck">
 
-    <CallTarget Targets="BoostCommit" Condition="$(BundleIsGit) And $(_PackagesConfigChanged)" />
-    
-    <PropertyGroup>
-      <_PackagesConfigChanged Condition="!$(_PackagesConfigExists) Or $(_BoostVersionChanged) Or $(_BoostToolsetChanged) Or $(_BoostMergeChanged)">true</_PackagesConfigChanged>
-    </PropertyGroup>
+    <Message Importance="high" Text="_PackagesConfigChanged2 = $(_PackagesConfigChanged)"/>
+    <CallTarget Condition="$(_PackagesConfigChanged)" Targets="_BoostCommitPackagesConfigChanged" />
 
-    <!--<Message Importance="high" Text="_BoostVersionChanged = $(_BoostVersionChanged)"/>
-    <Message Importance="high" Text="_BoostToolsetChanged = $(_BoostToolsetChanged)"/>
-    <Message Importance="high" Text="_BoostMergeChanged   = $(_BoostMergeChanged)"/>
-    <Message Importance="high" Text="_PackagesConfigChanged = $(_PackagesConfigChanged)"/>-->
-    
     <!-- Restore nuget packages if necessary... -->
     <Exec Condition="$(_PackagesConfigChanged)" Command='"$(ZouBinzOsDir)nuget" restore "$(PackagesConfigFile)" -PackagesDirectory "$(NugetPackagesDir.TrimEnd(\/))"' />
   </Target>
