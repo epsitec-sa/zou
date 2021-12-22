@@ -2,7 +2,7 @@
 
 [[ -z $ZOUL_GIT_VTAG ]]   && . zoul-git-vtag
 [[ -z $ZOUL_GIT_MODULE ]] && . zoul-git-module
-
+[[ -z $ZOUL_GIT_VTAG_GROUPING ]] && . zoul-git-vtag-grouping
 zou_parse()
 {
   while [[ "$#" > 0 ]]; do case "$1" in
@@ -93,17 +93,14 @@ _zou_update_available()
 {
   gitx fetch --all --prune --tags &>>"$stdallRedir"
 
-  local rbranch
-  rbranch=$(gitx rev-parse --abbrev-ref HEAD@{upstream} 2>/dev/null)
-  if [ $? -ne 0 ]; then
-    # we are in detached HEAD or remote branch does not exist
-    # get remote vbranch
-    local vbranch vtag delta alias
-    vtag_set_describe 'HEAD'
-    rbranch="origin/$vbranch"
-  fi
-  # update available if HEAD < rbranch
-  ! ref_equals 'HEAD' "$rbranch" && gitx merge-base --is-ancestor 'HEAD' "$rbranch"
+  local vHighestTag vtags
+  vtags=( $(vtag_list_by_date) )
+  vHighestTag=${vtags[0]}
+
+  # io_trace "_zou_update_available 0 -- $(print_vars vHighestTag)"
+  
+  # update available if HEAD < vHighestTag
+  ! ref_equals 'HEAD' "$vHighestTag" && gitx merge-base --is-ancestor 'HEAD' "$vHighestTag"
 }
 _zou_epilog()
 {
