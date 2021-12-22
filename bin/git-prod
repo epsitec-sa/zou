@@ -142,6 +142,7 @@ prod_attach_xprolog() { module_prod_attach "$attachMode" || io_trace_error 'prod
 
 prod_select_select()   { _prod_select_select || io_trace_error 'prod_select_select'; }
 prod_select_xselect()  { _prod_select_select || io_trace_error 'prod_select_xselect'; }
+prod_select_prolog()   { _prod_select_prolog || io_trace_error 'prod_select_prolog'; }
 prod_select_epilog()   { _prod_select_epilog || io_trace_error 'prod_select_epilog'; }
 prod_select_xepilog()  { _prod_select_epilog || io_trace_error 'prod_select_xepilog'; }
 prod_select_finally()  { branch_show_status  || io_trace_error 'prod_select_finally'; }
@@ -178,9 +179,15 @@ _prod_select_select()
   # io_trace "_prod_select_select -3- $(print_vars configSkuInclude[@])"
   printf '%s\n' "${configSkuInclude[@]}"
 }
+_prod_select_prolog()
+{
+  # io_trace "_prod_select_prolog -- $(print_vars attachMode moduleId)"
+  cmd_is_top_level || module_prod_attach "$attachMode"
+  return 0
+}
 _prod_select_epilog()
 {
-  # io_trace "_prod_select_epilog -- $(print_vars attachMode moduleId)" ${Green}
+  # io_trace "_prod_select_epilog -- $(print_vars attachMode moduleId)"
   repo_remove_dangling_submodules
 }
 
