@@ -112,7 +112,6 @@
     <PropertyGroup>
       <_PackagesConfigChanged Condition="'$(_GitDiffPackagesConfigExitCode)' != '0'">true</_PackagesConfigChanged>
     </PropertyGroup>
-    <Message Importance="high" Text="_PackagesConfigChanged1 = $(_PackagesConfigChanged)"/>
   </Target>
   
   <Target Name="_BoostCommitPackagesConfigChanged" Condition="$(BundleIsGit)" >
@@ -139,7 +138,6 @@
   -->
   <Target Name="UpdateBoostPackages" DependsOnTargets="_BoostUpdateExistingPackagesConfig;_BoostCheckPackagesConfigChanged" BeforeTargets="_CppBoostHeadersImportCheck;_CppBoostLibsImportCheck">
 
-    <Message Importance="high" Text="_PackagesConfigChanged2 = $(_PackagesConfigChanged)"/>
     <CallTarget Condition="$(_PackagesConfigChanged)" Targets="_BoostCommitPackagesConfigChanged" />
 
     <!-- Restore nuget packages if necessary... -->
