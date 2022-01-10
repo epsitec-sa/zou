@@ -220,6 +220,7 @@ prod_release_root_scope()
     # dry run scope
     local rstatusParentGate rstatusLookupPath rstatusParentLookupPath principalReleaseStatus
 
+    local anyNeedsPush=false
     # io_trace "prod_release_root_scope -1- $(print_vars forcePrincipalRelease checkoutType prodCheckoutType prodBranch modulePrerelPrefix)"
   fi
 
@@ -228,6 +229,8 @@ prod_release_root_scope()
 }
 prod_release_scope()
 {
+  _prod_check_synchronized || return 1
+
   local modulePrerelPrefix=$prerelPrefix cmdIsTopLevel \
         wasInDevMode=1 hasBeenReleased forceRelease pmProdHTag
 
@@ -329,15 +332,17 @@ prod_release_epilog()
     _vtable_update || io_trace_error 'prod_release_epilog 2' || return $?
   else
     # io_trace "prod_release_epilog -2- $(print_vars unstagedDirtyIncludedSubmodules[@])"
-    mio_error  "Branch ${VC}$moduleDevBranch${Red} cannot be released."
+    io_lock_enter
+    mio_error_unsafe  "Branch ${VC}$moduleDevBranch${Red} cannot be released."
     if cosm_has_unstaged_dirty_submodules; then
-      io_warning "  Fix unstaged submodules." "$moduleTracePrefix"
+      io_warning_unsafe "  Fix unstaged submodules." "$moduleTracePrefix"
     elif repo_is_merging; then
-      io_warning "  Resolve or abort your merge conflicts." "$moduleTracePrefix"
+      io_warning_unsafe "  Resolve or abort your merge conflicts." "$moduleTracePrefix"
     else
-      io_warning "  Commit or stash your changes (do not commit submodules references)." "$moduleTracePrefix"
+      io_warning_unsafe "  Commit or stash your changes (do not commit submodules references)." "$moduleTracePrefix"
     fi
-    io_warning "  When done, restart the ${VC}git prod release${Brown} command." "$moduleTracePrefix"
+    io_warning_unsafe "  When done, restart the ${VC}git prod release${Brown} command." "$moduleTracePrefix"
+    io_lock_exit
     return 1
   fi
   return 0
@@ -365,12 +370,35 @@ prod_release_finally()
     _sm_in_prod_update "$moduleBundlePath"
   fi
   branch_show_status
+  _prod_synchronize_message
 }
-prod_release_xepilog() { _vtable_update; }
+prod_release_xepilog()  { _vtable_update; }
+prod_release_xfinally() { branch_show_status; }
 
 #################
 # Release helpers
 #################
+
+_prod_check_synchronized()
+{
+  branch_any_needs_pull || return 0
+  local recursiveOption=''; module_has_submodules && recursiveOption=' -r'
+  io_error "ERROR: please synchronize ${VC}${moduleId}${Red} with ${VC}git sync${recursiveOption} [-p]${Red} before releasing ${VC}$prodBranch${Red}" "$moduleTracePrefix"
+  return 1
+}
+_prod_synchronize_message()
+{
+  branch_any_needs_push || return 0
+  anyNeedsPush=true
+  if cmd_is_top_level && [[ $anyNeedsPush == true ]]; then
+    local recursiveOption=''; module_has_submodules && recursiveOption=' -r'
+    io_warning "WARNING: don't forget to synchronize ${VC}${moduleId}${Brown} with ${VC}git sync${recursiveOption}${Brown}" "$moduleTracePrefix"
+    if [[ $stayInProd == true ]]; then
+    io_warning "         and to switch to ${VC}development${Brown} before commiting" "$moduleTracePrefix"
+    fi
+  fi
+  return 0
+}
 
 _prod_dev_checkout()
 {

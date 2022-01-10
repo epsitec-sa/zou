@@ -79,7 +79,6 @@ dev_command()
 
 dev_attach_finally()  { branch_show_status; }
 dev_enter_finally()   { branch_show_status; }
-dev_release_finally() { branch_show_status; }
 dev_vupdate_finally() { branch_show_status; }
 
 ########
@@ -98,11 +97,27 @@ dev_enter_epilog()  { dev_checkout true  || io_trace_error 'dev_enter_prolog'; }
 # RELEASE
 #########
 
-dev_release_prolog()  { dev_checkout true  || io_trace_error 'dev_enter_prolog'; }
+dev_release_root_scope()
+{
+  # avoid reentrency
+  if [[ $devReleaseRootScopeInitialized != true ]]; then
+    local devReleaseRootScopeInitialized=true
+    local anyNeedsPush=false
+    # io_trace "dev_release_root_scope ${*@Q} -- $(print_vars anyNeedsPush)"
+  fi
+
+  # execute next russian doll
+  $1 "${@:2}"
+}
+dev_release_prolog()
+{
+   dev_checkout true  || io_trace_error 'dev_enter_prolog';
+}
 dev_release_epilog()
 {
   # release only modules in dev mode
-  _dev_check_in_strict_dev_mode || return 0
+  _dev_check_in_strict_dev_mode || return 1
+  _dev_check_synchronized || return 1
 
   # a submodule can create a vbranch in the bundle without refreshing the prod scope (run in a subshell)
   # io_trace "dev_release_epilog -1- $(print_vars forceRelease incrementKind moduleDevBranchPath prodBranchPath)"
@@ -127,16 +142,19 @@ dev_release_epilog()
     branch_merge "$moduleDevBranchPath" "$prodBranchPath" '-Xtheirs' \
     && branch_merge_ff "$prodBranchPath" "$moduleDevBranchPath" \
     || io_trace_error 'dev_release_epilog'
+
+    anyNeedsPush=true
   else
     mio_message "Already released" ${LightBlue}
   fi
+  branch_show_status
 }
-_dev_check_in_strict_dev_mode()
+dev_release_finally()
 {
-  module_in_strict_dev_mode && return 0
-  _dev_switch_to_dev_message
-  return 1
+  _dev_synchronize_message
 }
+dev_release_xepilog()  { :; }
+dev_release_xfinally() { branch_show_status; }
 
 #########
 # VUPDATE
@@ -144,7 +162,9 @@ _dev_check_in_strict_dev_mode()
 
 dev_vupdate_epilog()
 {
-  _dev_check_in_dev_mode || return 0
+  _dev_check_in_dev_mode || return 1
+  _dev_check_synchronized || return 1
+
   dev_checkout false "$moduleDevBranch"
 
   local vbranch graftPoint vtag vnext
@@ -154,20 +174,38 @@ dev_vupdate_epilog()
   prod_increment_update_version "$vbranch" "$prerelPrefix" "$vcommit" # -> vtag vnext
   # io_trace "dev_vupdate_epilog -2- -- $(print_vars vtag vnext)"
 }
-_dev_check_in_dev_mode()
-{
-  module_in_dev_mode && return 0
-  _dev_switch_to_dev_message
-  return 1
-}
 
 #########
 # HELPERS
 #########
 
-_dev_switch_to_dev_message()
+_dev_synchronize_message()
 {
-  mio_warning "Use ${VC}git dev enter${Brown} to switch to development"
+  # io_trace "_dev_synchronize_message -1- -- $(print_vars moduleId anyNeedsPush)"
+  if cmd_is_top_level && [[ $anyNeedsPush == true ]]; then
+    local recursiveOption=''; module_has_submodules && recursiveOption=' -r'
+    io_warning "WARNING: don't forget to synchronize ${VC}${moduleId}${Brown} with ${VC}git sync${recursiveOption}${Brown}" "$moduleTracePrefix"
+  fi
+  return 0
+}
+_dev_check_in_strict_dev_mode()
+{
+  module_in_strict_dev_mode && return 0
+  io_error "ERROR: please switch to ${VC}$(wip_to_ref $moduleDevBranch)${Red} with ${VC}git dev enter${Brown}" "$moduleTracePrefix"
+  return 1
+}
+_dev_check_in_dev_mode()
+{
+  module_in_dev_mode && return 0
+  io_error "ERROR: please switch to ${VC}${moduleDevBranch}${Red} with ${VC}git dev enter${Brown}" "$moduleTracePrefix"
+  return 1
+}
+_dev_check_synchronized()
+{
+  branch_any_needs_pull || return 0
+  local recursiveOption=''; module_has_submodules && recursiveOption=' -r'
+  io_error "ERROR: please synchronize ${VC}${moduleId}${Red} with ${VC}git sync${recursiveOption} [-p]${Red} before releasing ${VC}$(wip_to_ref $moduleDevBranch)${Red}" "$moduleTracePrefix"
+  return 1
 }
 
 dev_run  "$@"
