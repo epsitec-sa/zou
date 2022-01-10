@@ -193,7 +193,7 @@ branch_sync_all()
 
   local deleteBrokenTrackingInfoBranches=$1; shift
 
-  gitx fetch --all --prune --tags &>>"$stdallRedir"
+  gitx fetch --all --prune --tags &>$stdallRedir
 
   [[ $moduleIsExternal == true ]] && return 0
   
@@ -213,7 +213,7 @@ branch_oreset_all()
 {
   local forceReset=$1 pruneBranches=$2; shift 2
 
-  gitx fetch --all --prune --tags &>>"$stdallRedir"
+  branch_fetch_all
   notes_prune_all false false true  # no fetch, no verbose, showMessage
 
   branch_merge_abort
