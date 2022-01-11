@@ -18,7 +18,6 @@ sku_parse()
     --vlast)        checkoutType='vlast';;
     --vnext)        checkoutType='vnext';;
     --dev)          checkoutType='dev';;
-    --force)        force='true';;
     enter)          subcommand=$1;;
     info)           subcommand=$1;;
     config)         subcommand=$1;;
@@ -61,7 +60,7 @@ sku_run()
         cmdScopes=( prod_scope config_scope cosm_scope ) \
         skuConfigListOnly skuConfigMode skuConfigInclude=() skuConfigExclude=() configPrincipalModuleId \
         noSkuFilter skuSpec skuModulePaths=() \
-        checkoutType='dev' force='false'
+        checkoutType='dev'
 
   sku_parse "$@" || return $?
   sku_startup_message
@@ -130,7 +129,7 @@ sku_command()
 
 _sku_on_prod_preinit() { prodCheckoutType=$checkoutType; }
 
-sku_enter_finally()  { _sku_any_finally; }
+sku_enter_finally()  { _sku_any_finally; _sku_check_synchronized; }
 sku_info_finally()   { _sku_any_finally; }
 sku_config_finally() { _sku_any_finally; }
 sku_enter_xprolog()  { :; }
@@ -147,7 +146,6 @@ _sku_any_finally()
 
 sku_enter_prolog()
 {
-  _sku_check_synchronized || return 1
 
   local moduleSku='master'
   ( [[ $moduleInSku == true ]] || module_is_bundle ) && moduleSku="$sku"
@@ -160,10 +158,9 @@ sku_enter_prolog()
 }
 _sku_check_synchronized()
 {
-  [[ $force == true ]] && return 0
   branch_any_needs_pull || return 0
   local recursiveOption=''; module_has_submodules && recursiveOption=' -r'
-  io_error "ERROR: please synchronize ${VC}${moduleId}${Red} with ${VC}git sync${recursiveOption} [-p]${Red} before entering ${VC}$(wip_to_ref $moduleDevBranch)${Red}" "$moduleTracePrefix"
+  io_warning "Please synchronize ${VC}${moduleId}${Brown} with ${VC}git sync${recursiveOption} [-p]${Brown}" "$moduleTracePrefix"
   return 1
 }
 
