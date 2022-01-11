@@ -184,8 +184,15 @@ _dev_synchronize_message()
 {
   # io_trace "_dev_synchronize_message -1- -- $(print_vars moduleId anyNeedsPush)"
   if cmd_is_top_level && [[ $anyNeedsPush == true ]]; then
-    local recursiveOption=''; module_has_submodules && recursiveOption=' -r'
-    io_warning "WARNING: don't forget to synchronize ${VC}${moduleId}${Brown} with ${VC}git sync${recursiveOption}${Brown}" "$moduleTracePrefix"
+    local recursiveOption=''
+    local moduleRef="$moduleId"
+    if [[ -n $incrementKind ]] && module_is_principal; then
+      moduleRef="$bundleId"
+      recursiveOption=' -r'
+    else
+      module_has_submodules && recursiveOption=' -r'
+    fi
+    io_warning "WARNING: don't forget to synchronize ${VC}${moduleRef}${Brown} with ${VC}git sync${recursiveOption}${Brown}" "$moduleTracePrefix"
   fi
   return 0
 }
