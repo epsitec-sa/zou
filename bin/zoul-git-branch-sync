@@ -173,6 +173,7 @@ _branch_sync_fix_tracking_core()
 {
   if [[ -n $r ]]; then
     # tracking branch was deleted or renamed
+    # io_trace "_branch_sync_fix_tracking_core -1- $(print_vars l r i)"
     if ref_is_current "$l"; then
       if [[ -z "$moduleDevBranch" || "$l" == "$moduleDevBranch" ]]; then
         # detach head
@@ -188,13 +189,15 @@ _branch_sync_fix_tracking_core()
     fi
   else
     # no tracking info
+    # io_trace "_branch_sync_fix_tracking_core -2- $(print_vars l r i)"
     local remote
     remote=$(git_remote)
+    branch_ensure_tracking_info "$l" "$remote"
     if branch_is_remote_candidate "$l" "$remote"; then
       branch_ensure_remote "$l" "$remote"
     fi
   fi
-  # io_trace "_branch_sync_fix_tracking_core -- $(print_vars l r i)"
+  # io_trace "_branch_sync_fix_tracking_core -3- $(print_vars l r i)"
 }
 branch_sync_all()
 {

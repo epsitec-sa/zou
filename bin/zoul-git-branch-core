@@ -612,6 +612,15 @@ branch_ensure_remote()
   branch_upstream "$branch" >/dev/null && return 0
   io_eval "gitx push "$remote" --set-upstream "$branch" 2>>"$stderrRedir"" : ${DarkGray}
 }
+branch_ensure_tracking_info()
+{
+  local lbranch=$1 remote=${2:-origin}
+  local rbranch="$remote/$lbranch"
+  if branch_is_remote "$rbranch"; then
+    # setup tracking info
+    io_eval "gitx branch -u "$rbranch" "$lbranch" 2>&1" : ${DarkGray}
+  fi
+}
 branch_force_delete()
 {
   local branch=$1 ec=0
