@@ -376,7 +376,7 @@ sku_checkout()
 prod_checkout()
 {
   local prodCheckoutType=$1 forceCheckout=$2 devFallback=$3 \
-        vnodeCheckoutProd=${4:-true} pmProdHTag0=$pmProdHTag
+        vnodeCheckoutProd=${4:-true} pmProdHTag0=$pmProdHTag ec=0
   # io_trace ">>>> prod_checkout -- $(print_vars prodCheckoutType forceCheckout devFallback vnodeCheckoutProd vtagStatus prodBranch prodVTag moduleHead moduleDevBranch pmProdHTag)"
   
 
@@ -391,14 +391,14 @@ prod_checkout()
   fi
 
   case $prodCheckoutType in
-    vnext) _prod_checkout_vnext "$forceCheckout" "$devFallback" "$vnodeCheckoutProd";;
-    vlast) _prod_checkout_vlast "$forceCheckout" "$devFallback" "$vnodeCheckoutProd";;
-    *)     dev_checkout "$forceCheckout" "$devFallback";;
+    vnext) _prod_checkout_vnext "$forceCheckout" "$devFallback" "$vnodeCheckoutProd" || ec=$?;;
+    vlast) _prod_checkout_vlast "$forceCheckout" "$devFallback" "$vnodeCheckoutProd" || ec=$?;;
+    *)     dev_checkout "$forceCheckout" "$devFallback" || ec=$?;;
   esac
 
   pmProdHTag=$pmProdHTag0
-
   # io_trace "<<<< prod_checkout -- $(print_vars pmProdHTag prodHTag)"
+  return $ec
 }
 _prod_checkout_vnext()
 {

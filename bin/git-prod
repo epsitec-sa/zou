@@ -317,18 +317,33 @@ prod_release_prolog()
       return 1
       ;;
   esac
+  local ec=0
   if [[ $dryRun == true ]]; then
     _rstatus_init || io_trace_error 'prod_release_prolog 1'
-  elif repo_is_clean && ! repo_is_merging && ! cosm_has_unstaged_dirty_submodules; then
-    prod_checkout "$prodCheckoutType" false "$moduleDevBranch" || io_trace_error 'prod_release_prolog -2-'
-    # io_trace "prod_release_prolog -3- $(print_vars prodBranch releaseStatus)"
+  else
+    _prod_fix_release_status
+    # io_trace "prod_release_prolog -2- $(print_vars prodCheckoutType prodBranch releaseStatus)"
+    if [[ $releaseStatus == 'released' ]] && ! config_has_submodules; then
+      # io_trace "prod_release_prolog -2.1- $(print_vars prodCheckoutType prodBranch releaseStatus)"
+      :
+    elif repo_is_clean && ! repo_is_merging && ! cosm_has_unstaged_dirty_submodules; then
+      prod_checkout "$prodCheckoutType" false "$moduleDevBranch" || io_trace_error 'prod_release_prolog -2.2-' || ec=$?
+      if [ $ec -ne 0 ]; then
+        mio_warning "Unable to switch to branch ${VC}$prodBranch${Brown}"
+      fi
+      # io_trace "prod_release_prolog -2.2- $(print_vars prodCheckoutType prodBranch releaseStatus)"
+    fi
   fi
+  return $ec
 }
 prod_release_epilog()
 {
   # io_trace "prod_release_epilog ${*@Q} -- $(print_vars prodBranch releaseStatus)"
-  if repo_is_clean && ! repo_is_merging && ! cosm_has_unstaged_dirty_submodules; then
-    _prod_fix_release_status
+  _prod_fix_release_status
+  if [[ $releaseStatus == 'released' ]] && ! config_has_submodules; then
+    # io_trace "prod_release_epilog -1- $(print_vars prodCheckoutType prodBranch releaseStatus)"
+    _prod_release_released
+  elif repo_is_clean && ! repo_is_merging && ! cosm_has_unstaged_dirty_submodules; then
     _prod_release || io_trace_error 'prod_release_epilog 1' || return $?
     _vtable_update || io_trace_error 'prod_release_epilog 2' || return $?
   else
