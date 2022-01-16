@@ -136,7 +136,7 @@ module_is_startup()     { [[ $moduleRoot == $startupRoot ]]; }
 module_in_strict_dev_mode() { [[ $moduleHead == $(wip_to_ref $moduleDevBranch) ]]; }
 bundle_in_strict_dev_mode() { [[ $bundleHead == $(wip_to_ref $bundleDevBranch) ]]; }
 
-module_is_included_in_sku() { array_contains_element "$1" "${configSkuInclude[@]}"; }
+module_is_included_in_sku() { array_contains_element "$1" "${configIncludedSubmodules[@]}"; }
 
 ########################################################
 # ATTACH
@@ -532,7 +532,7 @@ _module_submodule_visitor()
   _module_enter "$smPath" || return $?
 
   module_is_included_in_sku "$smPath" && option='-i'
-  # io_trace "_module_submodule_visitor $smPath -- $(print_vars configSkuInclude[@] configSkuExclude[@] option) >> $*"
+  # io_trace "_module_submodule_visitor $smPath -- $(print_vars configIncludedSubmodules[@] configExcludedSubmodules[@] option) >> $*"
   
   module_scope "$option" $* || io_trace_error '_module_submodule_visitor'
 
@@ -562,12 +562,12 @@ module_upd_sync_all_submodules()
 }
 module_sync_upd_sync_uninitialized_submodules()
 {
-  # io_trace ">>>> module_sync_upd_sync_uninitialized_submodules -- $(print_vars configSkuInclude[@])"
-  local data=$(_module_list_uninitialized_submodules "${configSkuInclude[@]}")
+  # io_trace ">>>> module_sync_upd_sync_uninitialized_submodules -- $(print_vars configIncludedSubmodules[@])"
+  local data=$(_module_list_uninitialized_submodules "${configIncludedSubmodules[@]}")
   [[ -z $data ]] && return 0
 
   xargs git-sm syncupdsync -C "${moduleRoot}" <<< "$data"
-  # io_trace "<<<< module_sync_upd_sync_uninitialized_submodules -- $(print_vars configSkuInclude[@])"
+  # io_trace "<<<< module_sync_upd_sync_uninitialized_submodules -- $(print_vars configIncludedSubmodules[@])"
 }
 
 _module_sync_all_submodules()
@@ -581,7 +581,7 @@ _module_sync_all_submodules()
 _module_upd_sync_unitialized_submodules()
 {
   # io_trace ">>>> _module_upd_sync_unitialized_submodules -- $(print_vars moduleSubmodulePaths[@])"
-  local data=$(_module_list_uninitialized_submodules "${configSkuInclude[@]}")
+  local data=$(_module_list_uninitialized_submodules "${configIncludedSubmodules[@]}")
   [[ -z $data ]] && return 0
 
   xargs git-sm updsync -C "${moduleRoot}" <<< "$data"

@@ -82,10 +82,10 @@ cosm_reset_scope()
   unstagedDirtyExternalSubmodules=()
   [ ${#moduleSubmodulePaths[@]} -eq 0 ] && return 0
   repo_split_unstaged_submodules "$moduleRoot"
-  unstagedCleanIncludedSubmodules=( $(array_remove_array 'unstagedCleanSubmodules[@]' 'configSkuExclude[@]') )
-  unstagedDirtyIncludedSubmodules=( $(array_remove_array 'unstagedDirtySubmodules[@]' 'configSkuExclude[@]') )
-  unstagedCleanExternalSubmodules=( $(array_intersect_array 'unstagedCleanSubmodules[@]' 'configSelectExclude[@]') )
-  unstagedDirtyExternalSubmodules=( $(array_intersect_array 'unstagedDirtySubmodules[@]' 'configSelectExclude[@]') )
+  unstagedCleanIncludedSubmodules=( $(array_remove_array 'unstagedCleanSubmodules[@]' 'configExcludedSubmodules[@]') )
+  unstagedDirtyIncludedSubmodules=( $(array_remove_array 'unstagedDirtySubmodules[@]' 'configExcludedSubmodules[@]') )
+  unstagedCleanExternalSubmodules=( $(array_intersect_array 'unstagedCleanSubmodules[@]' 'configExternalSubmodules[@]') )
+  unstagedDirtyExternalSubmodules=( $(array_intersect_array 'unstagedDirtySubmodules[@]' 'configExternalSubmodules[@]') )
 
   _cosm_trace
 }

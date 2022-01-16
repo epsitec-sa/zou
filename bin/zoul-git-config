@@ -27,9 +27,9 @@ _config_on_sync()
 config_scope()
 {
   # setup config context
-  local configSkuInclude configSkuExclude \
-        configSelectInclude configSelectExclude \
-        configSelectIncludeBundlePaths configSelectExcludeBundlePaths \
+  local configIncludedSubmodules configExcludedSubmodules \
+        configInternalSubmodules configExternalSubmodules \
+        configInternalSubmoduleBundlePaths configExternalSubmoduleBundlePaths \
         configScopeInitialized=true
   
   _config_reset_scope
@@ -37,16 +37,16 @@ config_scope()
   # execute next russian doll
   $1 "${@:2}"
 }
-config_has_submodules() { [ ${#configSelectInclude[@]} -gt 0 ]; }
+config_has_internal_submodules() { [ ${#configInternalSubmodules[@]} -gt 0 ]; }
 
 config_list_external()
 {
   if [[ $noSelectFilter == true ]]; then
     local external=( $(config_select_list_excluded moduleSubmodulePaths[@]) )
-    external=( $(array_remove_array external[@] configSkuExclude[@]) )
+    external=( $(array_remove_array external[@] configExcludedSubmodules[@]) )
     printf '%s\n' "${external[@]}"
   else
-    printf '%s\n' "${configSelectExclude[@]}"
+    printf '%s\n' "${configExternalSubmodules[@]}"
   fi
 }
 _config_reset_scope()
@@ -56,34 +56,34 @@ _config_reset_scope()
   [[ $configScopeInitialized == true ]] || return 0
 
   if [ ${#moduleSubmodulePaths[@]} -eq 0 ]; then
-    configSkuExclude=()
-    configSkuInclude=()
-    configSelectExclude=()
-    configSelectInclude=()
-    configSelectIncludeBundlePaths=()
-    configSelectExcludeBundlePaths=()
+    configExcludedSubmodules=()
+    configIncludedSubmodules=()
+    configExternalSubmodules=()
+    configInternalSubmodules=()
+    configInternalSubmoduleBundlePaths=()
+    configExternalSubmoduleBundlePaths=()
   else
     if [[ $noSkuFilter == true ]]; then
-      configSkuExclude=()
-      configSkuInclude=( ${moduleSubmodulePaths[@]} )
+      configExcludedSubmodules=()
+      configIncludedSubmodules=( ${moduleSubmodulePaths[@]} )
     else
-      configSkuExclude=( $(config_sku_list_excluded) )
-      configSkuInclude=( $(config_sku_list_included moduleSubmodulePaths[@] configSkuExclude[@]) )
+      configExcludedSubmodules=( $(config_sku_list_excluded) )
+      configIncludedSubmodules=( $(config_sku_list_included moduleSubmodulePaths[@] configExcludedSubmodules[@]) )
     fi
     if [[ $noSelectFilter == true ]]; then
-      configSelectExclude=()
-      configSelectInclude=( ${configSkuInclude[@]} )
+      configExternalSubmodules=()
+      configInternalSubmodules=( ${configIncludedSubmodules[@]} )
     else
       local exclude=( $(config_select_list_excluded moduleSubmodulePaths[@]) )
       local include=( $(config_select_list_included moduleSubmodulePaths[@]) )
       # io_trace "_config_reset_scope -- $(print_vars exclude[@] include[@])" ${Green}
-      configSelectExclude=( $(array_remove_array exclude[@] configSkuExclude[@]) )
-      configSelectInclude=( $(array_remove_array include[@] configSkuExclude[@]) )
+      configExternalSubmodules=( $(array_remove_array exclude[@] configExcludedSubmodules[@]) )
+      configInternalSubmodules=( $(array_remove_array include[@] configExcludedSubmodules[@]) )
     fi
-    configSelectIncludeBundlePaths=( "${configSelectInclude[@]/#/$moduleBundlePath\/}" )
-    configSelectExcludeBundlePaths=( "${configSelectExclude[@]/#/$moduleBundlePath\/}" )
-    configSelectIncludeBundlePaths=( "${configSelectIncludeBundlePaths[@]#/}" )
-    configSelectExcludeBundlePaths=( "${configSelectExcludeBundlePaths[@]#/}" )
+    configInternalSubmoduleBundlePaths=( "${configInternalSubmodules[@]/#/$moduleBundlePath\/}" )
+    configExternalSubmoduleBundlePaths=( "${configExternalSubmodules[@]/#/$moduleBundlePath\/}" )
+    configInternalSubmoduleBundlePaths=( "${configInternalSubmoduleBundlePaths[@]#/}" )
+    configExternalSubmoduleBundlePaths=( "${configExternalSubmoduleBundlePaths[@]#/}" )
   fi
 
   [[ $noSubmodulesInit == true ]] || module_sync_upd_sync_uninitialized_submodules
@@ -97,11 +97,11 @@ _config_trace()
 
   io_lock_enter
   [[ -n $1 ]] && io_trace "_config_reset_scope -- $(print_vars noSkuFilter noSelectFilter)"
-  [[ -n $1 ]] && io_trace "_config_reset_scope -- $(print_vars configSkuInclude[@])"
-  [[ -n $1 ]] && io_trace "_config_reset_scope -- $(print_vars configSkuExclude[@])"
-  [[ -n $1 ]] && io_trace "_config_reset_scope -- $(print_vars configSelectInclude[@])"
-  [[ -n $1 ]] && io_trace "_config_reset_scope -- $(print_vars configSelectExclude[@])"
-  [[ -n $1 ]] && io_trace "_config_reset_scope -- $(print_vars configSelectIncludeBundlePaths[@])"
-  [[ -n $1 ]] && io_trace "_config_reset_scope -- $(print_vars configSelectExcludeBundlePaths[@])"
+  [[ -n $1 ]] && io_trace "_config_reset_scope -- $(print_vars configIncludedSubmodules[@])"
+  [[ -n $1 ]] && io_trace "_config_reset_scope -- $(print_vars configExcludedSubmodules[@])"
+  [[ -n $1 ]] && io_trace "_config_reset_scope -- $(print_vars configInternalSubmodules[@])"
+  [[ -n $1 ]] && io_trace "_config_reset_scope -- $(print_vars configExternalSubmodules[@])"
+  [[ -n $1 ]] && io_trace "_config_reset_scope -- $(print_vars configInternalSubmoduleBundlePaths[@])"
+  [[ -n $1 ]] && io_trace "_config_reset_scope -- $(print_vars configExternalSubmoduleBundlePaths[@])"
   io_lock_exit
 }

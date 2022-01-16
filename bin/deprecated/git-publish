@@ -99,7 +99,7 @@ publish_require_clean_repo()
 publish_process_excluded()
 {
   # feed exclude list with moduleIds (modulePaths by default)
-  publishSelectExcludeBundlePaths+=( "${configSelectExcludeBundlePaths[@]}" )
+  publishSelectExcludeBundlePaths+=( "${configExternalSubmoduleBundlePaths[@]}" )
   if array_contains_element "$moduleBundlePath" "${publishSelectExcludeBundlePaths[@]}"; then
     publish_update_vtable
     return 0
@@ -143,7 +143,7 @@ publish_prolog()
 
 publish_submodules()
 {
-  local publishSubmodules=( $(array_sort configSkuInclude[@]) )
+  local publishSubmodules=( $(array_sort configIncludedSubmodules[@]) )
   module_visit_submodules_async 'publishSubmodules[@]' "${publishScopes[@]}" 'publish_tree'
 }
 
@@ -331,7 +331,7 @@ publish_init_pstatus()
   pstatusParentLookupPath=$pstatusLookupPath
   pstatusLookupPath=''
   # io_trace "publish_init_pstatus 1 -- $(print_vars moduleId pstatusParentLookupPath pstatusLookupPath)"
-  if config_has_submodules; then
+  if config_has_internal_submodules; then
     pstatusLookupPath="$(mktemp)"
     pstatus_init "$pstatusLookupPath"
     # io_trace "publish_init_pstatus 2 -- $(print_vars moduleId pstatusParentLookupPath pstatusLookupPath)"

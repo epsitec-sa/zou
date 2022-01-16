@@ -177,8 +177,8 @@ _prod_select_select()
   # deferred submodules initialisation (see noSubmodulesInit)
   module_upd_sync_all_submodules
 
-  # io_trace "_prod_select_select -3- $(print_vars configSkuInclude[@])"
-  printf '%s\n' "${configSkuInclude[@]}"
+  # io_trace "_prod_select_select -3- $(print_vars configIncludedSubmodules[@])"
+  printf '%s\n' "${configIncludedSubmodules[@]}"
 }
 _prod_select_prolog()
 {
@@ -323,7 +323,7 @@ prod_release_prolog()
   else
     _prod_fix_release_status
     # io_trace "prod_release_prolog -2- $(print_vars prodCheckoutType prodBranch releaseStatus)"
-    if [[ $releaseStatus == 'released' ]] && ! config_has_submodules; then
+    if [[ $releaseStatus == 'released' ]] && ! config_has_internal_submodules; then
       # io_trace "prod_release_prolog -2.1- $(print_vars prodCheckoutType prodBranch releaseStatus)"
       :
     elif repo_is_clean && ! repo_is_merging && ! cosm_has_unstaged_dirty_submodules; then
@@ -340,7 +340,7 @@ prod_release_epilog()
 {
   # io_trace "prod_release_epilog ${*@Q} -- $(print_vars prodBranch releaseStatus)"
   _prod_fix_release_status
-  if [[ $releaseStatus == 'released' ]] && ! config_has_submodules; then
+  if [[ $releaseStatus == 'released' ]] && ! config_has_internal_submodules; then
     # io_trace "prod_release_epilog -1- $(print_vars prodCheckoutType prodBranch releaseStatus)"
     _prod_release_released
   elif repo_is_clean && ! repo_is_merging && ! cosm_has_unstaged_dirty_submodules; then
@@ -368,7 +368,7 @@ prod_release_finally()
   [[ $dryRun == true ]] && { branch_show_status; return 0; }
 
   if [ $cmdIsTopLevel -eq 0 ]; then
-    if config_has_submodules; then
+    if config_has_internal_submodules; then
       # checkout dev branch for registerd child submodules
       . "$smInProdPath" # deserialize
       # io_trace "prod_release_finally TOP LEVEL -- $(print_vars smInProd[@] smInProdPath)"
@@ -604,7 +604,7 @@ _rstatus_init()
   rstatusParentLookupPath=$rstatusLookupPath
   rstatusLookupPath=''
   # io_trace "_rstatus_init -1- $(print_vars rstatusParentLookupPath rstatusLookupPath)"
-  if config_has_submodules; then
+  if config_has_internal_submodules; then
     rstatusLookupPath="$(mktemp)"
     trap_exit "rm \"$rstatusLookupPath\""
     _rstatus_init_core "$rstatusLookupPath"

@@ -136,25 +136,25 @@ _cmd_visit_tree()
   _cmd_is_recursive || return 0
 
   # process custom submodules selection
-  # allow override of configSelectInclude and configSelectExclude arrays (submodules to visit)
+  # allow override of configInternalSubmodules and configExternalSubmodules arrays (submodules to visit)
   # - see git-cosm for an exemple
-  local include exclude includeArrayName='configSelectInclude[@]' excludeArrayName='configSelectExclude[@]'
-  if [[ ${#configSelectInclude[@]} -gt 0 && $(type -t "${command}_${subcommand}_select") == 'function' ]]; then
-    include=($(${command}_${subcommand}_select 'configSelectInclude[@]'))
+  local include exclude includeArrayName='configInternalSubmodules[@]' excludeArrayName='configExternalSubmodules[@]'
+  if [[ ${#configInternalSubmodules[@]} -gt 0 && $(type -t "${command}_${subcommand}_select") == 'function' ]]; then
+    include=($(${command}_${subcommand}_select 'configInternalSubmodules[@]'))
     includeArrayName='include[@]'
   fi
-  if [[ ${#configSelectExclude[@]} -gt 0 && $(type -t "${command}_${subcommand}_xselect") == 'function' ]]; then
-    exclude=($(${command}_${subcommand}_xselect 'configSelectExclude[@]'))
+  if [[ ${#configExternalSubmodules[@]} -gt 0 && $(type -t "${command}_${subcommand}_xselect") == 'function' ]]; then
+    exclude=($(${command}_${subcommand}_xselect 'configExternalSubmodules[@]'))
     excludeArrayName='exclude[@]'
   fi
 
   local ec=0
-  # io_trace "_cmd_visit_tree ${*@Q} -1- $(print_vars include[@] configSelectInclude[@] cmdScopes[@])"
+  # io_trace "_cmd_visit_tree ${*@Q} -1- $(print_vars include[@] configInternalSubmodules[@] cmdScopes[@])"
   module_visit_submodules_async "$includeArrayName" "${cmdScopes[@]}" _cmd_tree "$@" || io_trace_error '_cmd_visit_tree 1' || ec=$?
-  # io_trace "_cmd_visit_tree ${*@Q} -2- $(print_vars exclude[@] configSelectExclude[@] cmdScopes[@] ec)"
+  # io_trace "_cmd_visit_tree ${*@Q} -2- $(print_vars exclude[@] configExternalSubmodules[@] cmdScopes[@] ec)"
   module_visit_submodules_async "$excludeArrayName" _cmd_xscope "${cmdScopes[@]}" _cmd_xtree "$@" || io_trace_error '_cmd_visit_tree 2' || ec=$?
   [[ $(type -t cosm_reset_scope) == 'function' ]] && cosm_reset_scope
-  # io_trace "_cmd_visit_tree ${*@Q} -3- $(print_vars exclude[@] configSelectExclude[@] cmdScopes[@] ec)"
+  # io_trace "_cmd_visit_tree ${*@Q} -3- $(print_vars exclude[@] configExternalSubmodules[@] cmdScopes[@] ec)"
   return $ec
 }
 _cmd_is_recursive()
