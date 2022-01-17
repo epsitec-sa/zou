@@ -339,11 +339,8 @@ prod_release_prolog()
 prod_release_epilog()
 {
   # io_trace "prod_release_epilog ${*@Q} -- $(print_vars prodBranch releaseStatus)"
-  _prod_fix_release_status
-  if [[ $releaseStatus == 'released' ]] && ! config_has_internal_submodules; then
-    # io_trace "prod_release_epilog -1- $(print_vars prodCheckoutType prodBranch releaseStatus)"
-    _prod_release_released
-  elif repo_is_clean && ! repo_is_merging && ! cosm_has_unstaged_dirty_submodules; then
+  if repo_is_clean && ! repo_is_merging && ! cosm_has_unstaged_dirty_submodules; then
+    _prod_fix_release_status
     _prod_release || io_trace_error 'prod_release_epilog 1' || return $?
     _vtable_update || io_trace_error 'prod_release_epilog 2' || return $?
   else
