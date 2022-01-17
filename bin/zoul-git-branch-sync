@@ -199,13 +199,28 @@ _branch_sync_fix_tracking_core()
   fi
   # io_trace "_branch_sync_fix_tracking_core -3- $(print_vars l r i)"
 }
+branch_sync_fetch_all()
+{
+  branch_fetch_all
+
+  local current=$moduleHead l r i
+  [[ -z $current ]] && current=$(branch_current)
+
+  while read -r l r i; do
+    [[ -z "$r" ]] && branch_ensure_tracking_info "$l" 'origin'
+    if [[ $l == "$current" ]]; then
+      _branch_raise_branch_sync_event "$r" "$l" "$i"
+    fi
+  done < <(branch_sync_info "$@")
+  return 0
+}
 branch_sync_all()
 {
   # io_trace ">>>> branch_sync_all ${*@Q}"
 
   local deleteBrokenTrackingInfoBranches=$1; shift
 
-  gitx fetch --all --prune --tags &>$stdallRedir
+  branch_fetch_all_quiet
 
   [[ $moduleIsExternal == true ]] && return 0
   
@@ -225,7 +240,7 @@ branch_oreset_all()
 {
   local forceReset=$1 pruneBranches=$2; shift 2
 
-  branch_fetch_all
+  branch_fetch_all_quiet
   notes_prune_all false false true  # no fetch, no verbose, showMessage
 
   branch_merge_abort

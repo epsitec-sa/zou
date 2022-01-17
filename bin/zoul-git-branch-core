@@ -157,6 +157,10 @@ branch_fetch_all()
 {
   io_buffered_eval "gitx fetch --all --prune --tags -f 2>&1" : ${DarkGray}
 }
+branch_fetch_all_quiet()
+{
+  gitx fetch --all --prune --tags -f &>$stdallRedir
+}
 branch_needs_pull()
 {
   local branch=${1:-$(branch_current)}

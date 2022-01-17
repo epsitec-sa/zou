@@ -8,6 +8,7 @@ ZOUL_GIT_PROD=true
 [[ -z $ZOUL_GIT_VBRANCH ]]        && . zoul-git-vbranch
 [[ -z $ZOUL_GIT_BRANCH_CORE ]]    && . zoul-git-branch-core
 [[ -z $ZOUL_GIT_BRANCH_MERGE ]]   && . zoul-git-branch-merge
+[[ -z $ZOUL_GIT_BRANCH_SYNC ]]    && . zoul-git-branch-sync
 [[ -z $ZOUL_GIT_CONFIG_VERSION ]] && . zoul-git-config-version
 
 ########################################################
@@ -56,7 +57,7 @@ prod_scope()
         releaseVTag releasePrerelPrefix releaseStatus \
         prodCheckoutType vtagResolveMode
   
-  [[ $branchFetchAll == true ]] && branch_fetch_all
+  [[ $branchFetchAll == true ]] && branch_sync_fetch_all
   prod_reset_scope
 
   # execute next russian doll
