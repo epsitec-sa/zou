@@ -56,7 +56,7 @@
     </Otherwise>
   </Choose>
 
-  <Import Project="$([MSBuild]::GetPathOfFileAbove('Version.props', '$(MSBuildProjectDirectory)'))"/>
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Version.props', '$(MSBuildProjectDirectory)'))" Condition="'$(Version)' == ''"/>
   <ItemGroup>
     <GoBuildEnv Include="GOOS=$(GoOS)" />
     <GoBuildEnv Include="GOARCH=$(GoArch)" />
