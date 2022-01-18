@@ -29,11 +29,11 @@
   <Target Name="GoBuild" AfterTargets="Build" DependsOnTargets="GoInitSingleTargetPath;GoBuildVersionInfo" Inputs="@(GoSource);@(GoResource)" Outputs="$(GoSingleTargetPath)">
     <Message Importance="high" Text="go generate [$(ProjectPath)]" />
     <Delete Files="@(TargetPath)" />
+    <!--<LogItems Items="@(GoBuildEnv)" />-->
     <Exec Command="go generate"
           WorkingDirectory="$(ProjectDir)"
           EnvironmentVariables="@(GoBuildEnv);TARGETPATH=$(TargetPath)"
-          StandardOutputImportance='low'
-          IgnoreExitCode='true' >
+          StandardOutputImportance='low' >
       <Output TaskParameter="ExitCode" PropertyName="GoGenerateExitCode" />
     </Exec>
     <Message Condition="'$(GoGenerateExitCode)' == '0'" Importance="high" Text="$(ProjectName) -> %(TargetPath.Identity)" />
