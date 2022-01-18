@@ -58,9 +58,11 @@
     </Otherwise>
   </Choose>
 
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Version.props', '$(MSBuildProjectDirectory)'))"/>
   <ItemGroup>
     <GoBuildEnv Include="GOOS=$(GoOS)" />
     <GoBuildEnv Include="GOARCH=$(GoArch)" />
+    <GoBuildEnv Include="VERSION=$(Version)" />
     <GoBuildEnv Include="PATH=$(GoEnvPath)" />
   </ItemGroup>
 
