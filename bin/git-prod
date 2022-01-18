@@ -332,20 +332,28 @@ prod_release_prolog()
 prod_release_epilog()
 {
   # io_trace "prod_release_epilog ${*@Q} -- $(print_vars prodBranch releaseStatus)"
-  if repo_is_clean && ! repo_is_merging && ! cosm_has_unstaged_dirty_submodules; then
+  local repoIsClean repoIsMerging hasDirtySubmodules
+  repo_is_clean; repoIsClean=$?
+  repo_is_merging; repoIsMerging=$?
+  cosm_has_unstaged_dirty_submodules; hasDirtySubmodules=$?
+  if [ $repoIsClean -eq 0 ] && [ $repoIsMerging -ne 0 ] && [ $hasDirtySubmodules -ne 0 ]; then
     _prod_fix_release_status
     _prod_release || io_trace_error 'prod_release_epilog 1' || return $?
     _vtable_update || io_trace_error 'prod_release_epilog 2' || return $?
   else
-    # io_trace "prod_release_epilog -2- $(print_vars unstagedDirtyIncludedSubmodules[@])"
     io_lock_enter
-    mio_error_unsafe  "Branch ${VC}$moduleDevBranch${Red} cannot be released."
-    if cosm_has_unstaged_dirty_submodules; then
-      io_warning_unsafe "  Fix unstaged submodules." "$moduleTracePrefix"
-    elif repo_is_merging; then
-      io_warning_unsafe "  Resolve or abort your merge conflicts." "$moduleTracePrefix"
+    # io_trace_unsafe "prod_release_epilog -2- $(print_vars repoIsClean repoIsMerging unstagedDirtyIncludedSubmodules[@])"
+    mio_error_unsafe  "Branch ${VC}${prodBranch:-$moduleDevBranch}${Red} cannot be released."
+    if [ $hasDirtySubmodules -eq 0 ]; then
+      io_warning_unsafe "  Some submodules are dirty (${VC}$(string_join ', ' "${unstagedDirtyIncludedSubmodules[@]}}")${Brown})." "$moduleTracePrefix"
+    elif [ $repoIsMerging -eq 0 ]; then
+      io_warning_unsafe '  Resolve or abort your merge conflicts.' "$moduleTracePrefix"
+    elif [ $repoIsClean -ne 0 ]; then
+      io_warning_unsafe '  Commit or stash your changes (do not commit submodules references).' "$moduleTracePrefix"
     else
-      io_warning_unsafe "  Commit or stash your changes (do not commit submodules references)." "$moduleTracePrefix"
+      io_error_unsafe "  Unknown error ($(print_vars repoIsClean repoIsMerging unstagedDirtyIncludedSubmodules[@]))." "$moduleTracePrefix"
+      io_lock_exit
+      return 1
     fi
     io_warning_unsafe "  When done, restart the ${VC}git prod release${Brown} command." "$moduleTracePrefix"
     io_lock_exit
@@ -400,7 +408,7 @@ _prod_synchronize_message()
     local recursiveOption=''; module_has_submodules && recursiveOption=' -r'
     io_warning "WARNING: don't forget to synchronize ${VC}${moduleId}${Brown} with ${VC}git sync${recursiveOption}${Brown}" "$moduleTracePrefix"
     if [[ $stayInProd == true ]]; then
-    io_warning "         and to switch to ${VC}development${Brown} before commiting" "$moduleTracePrefix"
+    io_warning "         and to switch back to development with ${VC}git dev enter${recursiveOption}${Brown} before commiting" "$moduleTracePrefix"
     fi
   fi
   return 0
