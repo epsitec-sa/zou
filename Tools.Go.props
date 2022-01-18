@@ -45,7 +45,6 @@
         <GoRicePath>$([System.IO.Path]::GetFullPath('$(GoBinDir)\rice.exe'))</GoRicePath>
         <GoVerInfoPath>$([System.IO.Path]::GetFullPath('$(GoBinDir)\goversioninfo.exe'))</GoVerInfoPath>
         <GoSwagPath>$([System.IO.Path]::GetFullPath('$(GoBinDir)\swag.exe'))</GoSwagPath>
-        <GoGovvvPath>$([System.IO.Path]::GetFullPath('$(GoBinDir)\govvv.exe'))</GoGovvvPath>
       </PropertyGroup>
     </When>
     <Otherwise>
@@ -53,7 +52,6 @@
         <GoRicePath>$([System.IO.Path]::GetFullPath('$(GoBinDir)\rice'))</GoRicePath>
         <GoVerInfoPath>$([System.IO.Path]::GetFullPath('$(GoBinDir)\goversioninfo'))</GoVerInfoPath>
         <GoSwagPath>$([System.IO.Path]::GetFullPath('$(GoBinDir)\swag'))</GoSwagPath>
-        <GoGovvvPath>$([System.IO.Path]::GetFullPath('$(GoBinDir)\govvv'))</GoGovvvPath>
       </PropertyGroup>
     </Otherwise>
   </Choose>
@@ -101,11 +99,7 @@
     <Exec Command="go get -u github.com/swaggo/swag/cmd/swag" />
   </Target>
   
-  <Target Name="GoGetGovvv" Condition="$(ForceGoGet) Or !Exists('$(GoGovvvPath)')">
-    <Exec Command="go get -u github.com/ahmetb/govvv" />
-  </Target>
-
-  <Target Name="GoGetTools" DependsOnTargets="GoGetRice;GoGetVersionInfo;GoGetSwag;GoGetGovvv" BeforeTargets="Build" />
+  <Target Name="GoGetTools" DependsOnTargets="GoGetRice;GoGetVersionInfo;GoGetSwag" BeforeTargets="Build" />
 
   <Target Name="ToolsGoTrace" Condition="'$(ZouTrace)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
     <Message Importance="normal" Text="GoWorkspace   = $(GoWorkspace)" />
@@ -116,7 +110,6 @@
     <Message Importance="normal" Text="GoExePath     = $(GoExePath)" />
     <Message Importance="normal" Text="GoRicePath    = $(GoRicePath)" />
     <Message Importance="normal" Text="GoSwagPath    = $(GoSwagPath)" />
-    <Message Importance="normal" Text="GoGovvvPath   = $(GoGovvvPath)" />
     <Message Importance="normal" Text="GoVerInfoPath = $(GoVerInfoPath)" />
     <Message Importance="normal" Text="GoOS          = $(GoOS)" />
     <Message Importance="normal" Text="GoArch        = $(GoArch)" />
