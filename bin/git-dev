@@ -54,6 +54,7 @@ dev_run()
         cmdScopes=( prod_scope config_scope cosm_scope ) \
         noSkuFilter incrementKind defaultVersion='0.1' \
         forceRelease prerelPrefix vcommit devModulePaths=()
+        cliArgs="$@"
 
   dev_parse "$@" || return $?
   
@@ -124,7 +125,8 @@ dev_release_epilog()
   # io_trace "dev_release_epilog -1- $(print_vars forceRelease incrementKind moduleDevBranchPath prodBranchPath)"
   module_is_bundle && _cmd_is_recursive && prod_reset_scope
   if [[ $forceRelease == true ]] || [[ -n $incrementKind ]] || cosm_has_unstaged_clean_submodules || ! ref_equals "$moduleDevBranchPath" "$prodBranchPath"; then
-    # io_trace "dev_release_epilog -2- $(print_vars forceRelease incrementKind moduleDevBranchPath prodBranchPath)"
+    # io_trace "dev_release_epilog -2- $(print_vars forceRelease incrementKind moduleDevBranchPath prodBranchPath releaseStatus)"
+    _dev_check_releasable || return $?
     dev_checkout false "$moduleDevBranch"
     prod_ensure_vbranch "$defaultVersion" "$incrementKind"
     if [[ $forceRelease == true && -z $incrementKind ]] && ref_equals "$moduleDevBranchPath" "$prodBranchPath"; then
@@ -156,6 +158,20 @@ dev_release_finally()
 }
 dev_release_xepilog()  { :; }
 dev_release_xfinally() { branch_show_status; }
+
+_dev_check_releasable()
+{
+    # we cannot create a minor or major branch if actual branch is not released
+    if [[ -n $incrementKind ]] && [[ $releaseStatus == 'unreleased' ]]; then
+      io_lock_enter
+      mio_error_unsafe "ERROR: cannot create a new ${VC}$incrementKind${Red} production branch while current one (${VC}$prodBranch${Red}) is not yet published"
+      io_error_unsafe  "       release ${VC}$moduleDevBranch${Red} as a ${VC}patch${Red} with the ${VC}git dev release${Red} command" "$moduleTracePrefix"
+      io_error_unsafe  "       or publish ${VC}$prodBranch${Red} with ${VC}git prod release -${Red} and restart the ${VC}git dev $cliArgs${Red} command" "$moduleTracePrefix"
+      io_lock_exit
+      return 1
+    fi
+    return 0
+}
 
 #########
 # VUPDATE
