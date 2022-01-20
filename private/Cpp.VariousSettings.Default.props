@@ -13,7 +13,8 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <MinimalRebuild>false</MinimalRebuild>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <MultiProcessorCompilation Condition="'$(MaxCpuCount)' == '0' Or  '$(MaxCpuCount)' == ''">true</MultiProcessorCompilation>
+      <MultiProcessorCompilation Condition="'$(MaxCpuCount)' != '0' And '$(MaxCpuCount)' != ''">$(MaxCpuCount)</MultiProcessorCompilation>
       <PrecompiledHeader>Use</PrecompiledHeader>
       
       <SDLCheck>true</SDLCheck>
