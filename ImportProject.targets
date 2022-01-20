@@ -64,8 +64,10 @@
         <MSBuildOptions>-nologo -nr:false</MSBuildOptions>
       </ProjectsToBuild>
       <ProjectsToBuild>
-        <MSBuildOptions Condition="'%(MaxCpuCount)' != ''">%(MSBuildOptions) -m:%(MaxCpuCount)</MSBuildOptions>
-        <MSBuildOptions Condition="'%(MaxCpuCount)' == ''">%(MSBuildOptions) -m</MSBuildOptions>
+        <MSBuildOptions Condition="'%(MaxCpuCount)' == '0'">%(MSBuildOptions) -m</MSBuildOptions>
+      </ProjectsToBuild>
+      <ProjectsToBuild>
+        <MSBuildOptions Condition="'%(MaxCpuCount)' != '0' And '%(MaxCpuCount)' != ''">%(MSBuildOptions) -m:%(MaxCpuCount)</MSBuildOptions>
       </ProjectsToBuild>
       <ProjectsToBuild>
         <MSBuildOptions Condition="'%(Verbosity)' != ''">%(MSBuildOptions) -v:%(Verbosity)</MSBuildOptions>
