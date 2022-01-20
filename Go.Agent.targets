@@ -29,9 +29,9 @@
   <Target Name="GoBuild" AfterTargets="Build" DependsOnTargets="GoInitSingleTargetPath;GoBuildVersionInfo" Inputs="@(GoSource);@(GoResource)" Outputs="$(GoSingleTargetPath)">
     <Message Importance="high" Text="go generate [$(ProjectPath)]" />
     <Delete Files="@(TargetPath)" />
-    <!--<LogItems Items="@(GoBuildEnv)" />-->
-    <Exec Command="go generate"
-          WorkingDirectory="$(ProjectDir)"
+    <!--<LogItems Items="OUTDIR=$(OutDir);TARGETPATH=$(TargetPath);@(GoBuildEnv)" />-->
+    <Exec Command="go generate -v -x"
+          WorkingDirectory="$(ProjectDir)" 
           EnvironmentVariables="@(GoBuildEnv);TARGETPATH=$(TargetPath)"
           StandardOutputImportance='low' >
       <Output TaskParameter="ExitCode" PropertyName="GoGenerateExitCode" />
