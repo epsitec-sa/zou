@@ -5,6 +5,22 @@
     <Platforms>AnyCPU;x86;x64</Platforms>
   </PropertyGroup>
   
+  <!--
+  Use following properties to control on which platform the build will take place
+  If CrossBuild is true all platforms are concerned
+  If RuntimeIdentifier is specified, only the associated platform is concerned
+  If RuntimeIdentifier is not specified, only the current platform is concerned
+  -->
+  <PropertyGroup>
+    <CrossBuild Condition="'$(CrossBuild)' == ''">false</CrossBuild>
+    <BuildWin>false</BuildWin>
+    <BuildOsx>false</BuildOsx>
+    <BuildLinux>false</BuildLinux>
+    <BuildWin   Condition="$(CrossBuild) Or $(RuntimeIdentifier.StartsWith('win'))   Or ('$(RuntimeIdentifier)'=='' And $([MSBuild]::IsOsPlatform(Windows)))">true</BuildWin>
+    <BuildOsx   Condition="$(CrossBuild) Or $(RuntimeIdentifier.StartsWith('osx'))   Or ('$(RuntimeIdentifier)'=='' And $([MSBuild]::IsOsPlatform(OSX))    )">true</BuildOsx>
+    <BuildLinux Condition="$(CrossBuild) Or $(RuntimeIdentifier.StartsWith('linux')) Or ('$(RuntimeIdentifier)'=='' And $([MSBuild]::IsOsPlatform(Linux))  )">true</BuildLinux>
+  </PropertyGroup>
+
   <Choose>
     <When Condition="'$(RuntimeIdentifier)' == ''">
       <PropertyGroup>
@@ -68,6 +84,10 @@
     <Message Importance="high" Text="RuntimePlatform    = $(RuntimePlatform)" />
     <Message Importance="high" Text="ForwardPlatform    = $(ForwardPlatform)" />
     <Message Importance="high" Text="PlatformSpecified  = $(PlatformSpecified)" />
+
+    <Message Importance="high" Text="BuildWin           = $(BuildWin)" />
+    <Message Importance="high" Text="BuildOsx           = $(BuildOsx)" />
+    <Message Importance="high" Text="BuildLinux         = $(BuildLinux)" />
   </Target>
 
 </Project>
