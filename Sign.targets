@@ -1,10 +1,10 @@
 <!--
 The Sign.targets can be used to sign folders.
 Input parameters:
-  $(ZouSignTest) :: use local test server (signtool/start-server)
+  $(SignToolBroker) :: (local|partout|rn32)
   $(SignFolder)
   @(SignFolder)
-    %(Test) :: default to $(ZouSignTest)
+    %(Broker) :: default to $(SignToolBroker)
 -->
 <Project>
   <PropertyGroup>
@@ -14,13 +14,11 @@ Input parameters:
 
   <Import Project="zou.props" Condition="'$(ZouVersion)' == ''" />
 
-  <!-- Setup default -->
+  <!-- Setup default broker -->
   <ItemDefinitionGroup>
     <SignFolder>
-      <Test Condition="'%(Test)' == '' And '$(ZouSignTest)' != ''">$(ZouSignTest)</Test>
-    </SignFolder>
-    <SignFolder>
-      <Test Condition="'%(Test)' == ''">false</Test>
+      <Broker    Condition="'%(Broker)'    == ''">$(SignToolBroker)</Broker>
+      <Recursive Condition="'%(Recursive)' == ''">true</Recursive>
     </SignFolder>
   </ItemDefinitionGroup>
   
@@ -42,7 +40,7 @@ Input parameters:
 
       <!-- Make a copy with normalized paths for RemoveDuplicate -->
       <_SignFolder Include="%(SignFolder.Folder)" Condition="Exists('%(Folder)')">
-        <Test>%(SignFolder.Test)</Test>
+        <Broker>%(SignFolder.Broker)</Broker>
       </_SignFolder>
 
       <!-- Reset variable for reuse -->
@@ -61,7 +59,13 @@ Input parameters:
 
     <ItemGroup>
       <SignFolder>
-        <Command>esign --nologo --porcelain -r -v --$(SignToolBroker) "%(Identity)"</Command>
+        <Command>esign --nologo --porcelain --verbose --%(Broker)</Command>
+      </SignFolder>
+      <SignFolder>
+        <Command Condition="%(Recursive)">%(Command) --recursive</Command>
+      </SignFolder>
+      <SignFolder>
+        <Command>%(Command) "%(Identity)"</Command>
       </SignFolder>
     </ItemGroup>
 
