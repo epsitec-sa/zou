@@ -5,9 +5,10 @@
   </PropertyGroup>
   <Import Project="$(RedistBuildPropsPath)" Condition="Exists('$(RedistBuildPropsPath)')" />
 
-  <Target Name="TraceRedistProps">
-    <Message Importance="high" Text="Redist.props" />
-    <Message Importance="high" Text="------------" />
+  <Target Name="TraceRedistProps" Condition="'$(ZouTrace)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
+    <Message Importance="high" Text="zou/Redist.props [$(ProjectName)]" />
+    <Message Importance="high" Text="----------------" />
+    <Message Importance="high" Text="RuntimeIdentifier     = $(RuntimeIdentifier)" />
     <Message Importance="high" Text="ProjectPath           = $(ProjectPath)" />
     <Message Importance="high" Text="RedistBuildPropsPath  = $(RedistBuildPropsPath)" />
     <Message Importance="high" Text="RedistFolder          = $(RedistFolder)" />

@@ -16,7 +16,7 @@ Import this script at the end of a C# redist agent
   <ItemGroup Condition="'$(Configuration)|$(RuntimePlatform)'=='Debug|x86'">
     <ImportProject Condition="$([MSBuild]::IsOsPlatform(Windows))" Include="$(RedistProjectPath)">
       <TargetFramework>$(RedistWinX86Framework)</TargetFramework>
-      <OutDir>$(OutDir)</OutDir>
+      <OutDir>$(OutDir)$(RuntimeIdentifier)</OutDir>
       <PublishDir />
     </ImportProject>
   </ItemGroup>
@@ -25,7 +25,7 @@ Import this script at the end of a C# redist agent
   <ItemGroup Condition="'$(Configuration)|$(RuntimePlatform)'=='Debug|x64' Or '$(Configuration)|$(RuntimePlatform)'=='Debug|AnyCPU'">
     <ImportProject Condition="$([MSBuild]::IsOsPlatform(Windows))" Include="$(RedistProjectPath)">
       <TargetFramework>$(RedistWinX64Framework)</TargetFramework>
-      <OutDir>$(OutDir)</OutDir>
+      <OutDir>$(OutDir)$(RuntimeIdentifier)</OutDir>
       <PublishDir />
     </ImportProject>
   </ItemGroup>
@@ -45,19 +45,16 @@ Import this script at the end of a C# redist agent
   <!-- Release|x64 or Release|AnyCPU -->
   <ItemGroup Condition="'$(Configuration)|$(RuntimePlatform)'=='Release|x64' Or '$(Configuration)|$(RuntimePlatform)'=='Release|AnyCPU'">
     <ImportProject Condition="$(BuildWin)" Include="$(RedistProjectPath)">
-      <RuntimeIdentifier>win-x64</RuntimeIdentifier>
       <TargetFramework>$(RedistWinX64Framework)</TargetFramework>
       <OutDir />
       <PublishDir>$(OutDir)win-$(RuntimePlatform)</PublishDir>
     </ImportProject>
     <ImportProject Condition="$(BuildOsx)" Include="$(RedistProjectPath)">
-      <RuntimeIdentifier>osx-x64</RuntimeIdentifier>
       <TargetFramework>$(CoreTargetFramework)</TargetFramework>
       <OutDir />
       <PublishDir>$(OutDir)osx-$(RuntimePlatform)</PublishDir>
     </ImportProject>
     <ImportProject Condition="$(BuildLinux)" Include="$(RedistProjectPath)">
-      <RuntimeIdentifier>linux-x64</RuntimeIdentifier>
       <TargetFramework>$(CoreTargetFramework)</TargetFramework>
       <OutDir />
       <PublishDir>$(OutDir)linux-$(RuntimePlatform)</PublishDir>
@@ -91,24 +88,7 @@ Import this script at the end of a C# redist agent
       </ImportProject>
 
       <ImportProject>
-        <_ProjectOutputFolder Condition="'%(ImportProject.OutDir)'     != ''">$([System.String]::new('%(OutDir)').Replace('$(OutDir)', ''))</_ProjectOutputFolder>
-        <_ProjectOutputFolder Condition="'%(ImportProject.PublishDir)' != ''">$([System.String]::new('%(ImportProject.PublishDir)').Replace('$(OutDir)', ''))</_ProjectOutputFolder>
-      </ImportProject>
-      <ImportProject>
-        <_ProjectOutputFolder Condition="$([System.String]::new('%(ImportProject._ProjectOutputFolder)').EndsWith('%(ImportProject._RuntimeFolder)'))">$([System.IO.Path]::GetDirectoryName('%(_ProjectOutputFolder)'))</_ProjectOutputFolder>
-      </ImportProject>
-      <ImportProject>
-        <_ProjectOutputFolder>$([MSBuild]::EnsureTrailingSlash('%(ImportProject._ProjectOutputFolder)'))</_ProjectOutputFolder>
-      </ImportProject>
-
-      <ImportProject>
         <_OutputFolder>$([MSBuild]::EnsureTrailingSlash('$([System.IO.Path]::Combine('%(ImportProject._RuntimeFolder)', '$(RedistFolder)'))'))</_OutputFolder>
-      </ImportProject>
-      <!--<ImportProject>
-        <_OutputFolder Condition="'$(RedistFolder)' != ''">$([MSBuild]::EnsureTrailingSlash('%(ImportProject._OutputFolder)$(RedistFolder)'))</_OutputFolder>
-      </ImportProject>-->
-      <ImportProject>
-        <_OutputFolder>%(ImportProject._OutputFolder)%(_ProjectOutputFolder)</_OutputFolder>
       </ImportProject>
 
       <ImportProject>
@@ -120,7 +100,7 @@ Import this script at the end of a C# redist agent
       </ImportProject>
 
       <!-- Remove temporary metadata -->
-      <!--<ImportProject RemoveMetadata="_ProjectOutputFolder;_OutputFolder;_RuntimeFolder" />-->
+      <!--<ImportProject RemoveMetadata="_OutputFolder;_RuntimeFolder" />-->
     </ItemGroup>
 
     <LogItems Items="@(ImportProject)" Title="RedistTransformLayout.ImportProject" />
@@ -140,8 +120,12 @@ Import this script at the end of a C# redist agent
         <Targets Condition="%(_UseBuildTarget)">Build</Targets>
       </ImportProject>
       <ImportProject>
-        <!-- force 'dotnet build' instead of 'msbuild' usage -->
-        <RuntimeType>Core</RuntimeType>
+        <!--
+        Reset Platform metadata if RuntimeIdentifier is specified to avoid redondant platform in OutDir like bin\x64\Release\netstandard2.0\win-x64
+        - set its value to *Undefined* so that the ItemDefinitionGroup.ImportProject default value is not restored
+        - the AddBuildOptions custom task (ImportProject.targets) does not generate metadata which value equals to *Undefined*
+        -->
+        <Platform Condition="'%(ImportProject.RuntimeIdentifier)' != ''">*Undefined*</Platform>
       </ImportProject>
 
       <ImportProject RemoveMetadata="_UseBuildTarget" />
@@ -150,9 +134,9 @@ Import this script at the end of a C# redist agent
     <!--<LogItems Items="@(ImportProject)" Title="RedistUpdateTarget.ImportProject" />-->
   </Target>
 
-  <Target Name="TraceRedistTargets">
-    <Message Importance="high" Text="Redist.targets" />
-    <Message Importance="high" Text="--------------" />
+  <Target Name="TraceRedistTargets" Condition="'$(ZouTrace)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
+    <Message Importance="high" Text="zou/Redist.targets [$(ProjectName)]" />
+    <Message Importance="high" Text="------------------" />
     <Message Importance="high" Text="ProjectPath           = $(ProjectPath)" />
     <Message Importance="high" Text="Configuration         = $(Configuration)" />
     <Message Importance="high" Text="OutDir                = $(OutDir)" />
