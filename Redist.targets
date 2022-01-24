@@ -11,27 +11,13 @@ Import this script at the end of a C# redist agent
 <Project InitialTargets="TraceRedistTargets">
 
   <Import Project="Import.targets"/>
-
-  <!-- Debug|x86 -->
-  <ItemGroup Condition="'$(Configuration)|$(RuntimePlatform)'=='Debug|x86'">
-    <ImportProject Condition="$([MSBuild]::IsOsPlatform(Windows))" Include="$(RedistProjectPath)">
-      <TargetFramework>$(RedistWinX86Framework)</TargetFramework>
-      <OutDir>$(OutDir)$(RuntimeIdentifier)</OutDir>
-      <PublishDir />
-    </ImportProject>
-  </ItemGroup>
-
-  <!-- Debug|x64 or Debug|AnyCPU -->
-  <ItemGroup Condition="'$(Configuration)|$(RuntimePlatform)'=='Debug|x64' Or '$(Configuration)|$(RuntimePlatform)'=='Debug|AnyCPU'">
-    <ImportProject Condition="$([MSBuild]::IsOsPlatform(Windows))" Include="$(RedistProjectPath)">
-      <TargetFramework>$(RedistWinX64Framework)</TargetFramework>
-      <OutDir>$(OutDir)$(RuntimeIdentifier)</OutDir>
-      <PublishDir />
-    </ImportProject>
-  </ItemGroup>
   
-  <!-- Release|x86 -->
-  <ItemGroup Condition="'$(Configuration)|$(RuntimePlatform)'=='Release|x86'">
+  <PropertyGroup>
+    <RedistByFramework Condition="'$(RedistByFramework)' == ''">true</RedistByFramework>
+  </PropertyGroup>
+
+  <!-- x86 -->
+  <ItemGroup Condition="'$(RuntimePlatform)'=='x86'">
     <ImportProject Condition="$([MSBuild]::IsOsPlatform(Windows))" Include="$(RedistProjectPath)">
       <RuntimeIdentifier Condition="'%(RuntimeIdentifier)' == ''">win-x86</RuntimeIdentifier>
       <TargetFramework>$(RedistWinX86Framework)</TargetFramework>
@@ -42,8 +28,8 @@ Import this script at the end of a C# redist agent
     </ImportProject>
   </ItemGroup>
 
-  <!-- Release|x64 or Release|AnyCPU -->
-  <ItemGroup Condition="'$(Configuration)|$(RuntimePlatform)'=='Release|x64' Or '$(Configuration)|$(RuntimePlatform)'=='Release|AnyCPU'">
+  <!-- x64|AnyCPU -->
+  <ItemGroup Condition="'$(RuntimePlatform)'=='x64' Or '$(RuntimePlatform)'=='AnyCPU'">
     <ImportProject Condition="$(BuildWin)" Include="$(RedistProjectPath)">
       <TargetFramework>$(RedistWinX64Framework)</TargetFramework>
       <OutDir />
@@ -88,7 +74,13 @@ Import this script at the end of a C# redist agent
       </ImportProject>
 
       <ImportProject>
-        <_OutputFolder>$([MSBuild]::EnsureTrailingSlash('$([System.IO.Path]::Combine('%(ImportProject._RuntimeFolder)', '$(RedistFolder)'))'))</_OutputFolder>
+        <_OutputFolder>$([System.IO.Path]::Combine('%(ImportProject._RuntimeFolder)', '$(RedistFolder)'))</_OutputFolder>
+      </ImportProject>
+      <ImportProject>
+        <_OutputFolder Condition="$(RedistByFramework)">$([System.IO.Path]::Combine('%(ImportProject.TargetFramework)', '%(ImportProject._OutputFolder)'))</_OutputFolder>
+      </ImportProject>
+      <ImportProject>
+        <_OutputFolder>$([MSBuild]::EnsureTrailingSlash('%(ImportProject._OutputFolder)'))</_OutputFolder>
       </ImportProject>
 
       <ImportProject>
