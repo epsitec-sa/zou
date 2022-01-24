@@ -1,39 +1,47 @@
-<?xml version="1.0" encoding="utf-8"?>
 <!-- The ImportProject.targets can be used to build and import the output of one or many projects or solutions. -->
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project>
 
   <Import Project="Boot.Platform.props" Condition="'$(RuntimePlatform)' == ''" />
 
   <!-- Define imported projects default metadata -->
   <ItemDefinitionGroup>
+
     <ImportProject>
-      <!-- Override options specified on the command line for nested command lines -->
-      <WorkDir         Condition="'$(ForwardWorkDir)'         != ''">$(ForwardWorkDir)</WorkDir>
-      <PkgDir          Condition="'$(ForwardPkgDir)'          != ''">$(ForwardPkgDir)</PkgDir>
-      <AsmDir          Condition="'$(ForwardAsmDir)'          != ''">$(ForwardAsmDir)</AsmDir>
-      <OutDir          Condition="'$(ForwardOutDir)'          != ''">$(ForwardOutDir)</OutDir>
-      <Platform        Condition="'$(ForwardPlatform)'        != ''">$(ForwardPlatform)</Platform>
-      <PlatformToolset Condition="'$(ForwardPlatformToolset)' != ''">$(ForwardPlatformToolset)</PlatformToolset>
+      <!-- Forward following properties to nested commands -->
+      <Verbosity         Condition="'%(Verbosity)'         == '' And '$(Verbosity)'         != ''">$(Verbosity)</Verbosity>
+      <MaxCpuCount       Condition="'%(MaxCpuCount)'       == '' And '$(MaxCpuCount)'       != ''">$(MaxCpuCount)</MaxCpuCount>
+
+      <WorkDir           Condition="'%(WorkDir)'           == '' And '$(WorkDir)'           != ''">$(WorkDir)</WorkDir>
+      <PkgDir            Condition="'%(PkgDir)'            == '' And '$(PkgDir)'            != ''">$(PkgDir)</PkgDir>
+      <PkgBinDir         Condition="'%(PkgBinDir)'         == '' And '$(PkgBinDir)'         != ''">$(PkgBinDir)</PkgBinDir>
+      <PkgDbgDir         Condition="'%(PkgDbgDir)'         == '' And '$(PkgDbgDir)'         != ''">$(PkgDbgDir)</PkgDbgDir>
+      <AsmDir            Condition="'%(AsmDir)'            == '' And '$(AsmDir)'            != ''">$(AsmDir)</AsmDir>
+      <OutDir            Condition="'%(OutDir)'            == '' And '$(OutDir)'            != ''">$(OutDir)</OutDir>
+      
+      <PlatformToolset   Condition="'%(PlatformToolset)'   == '' And '$(PlatformToolset)'   != ''">$(PlatformToolset)</PlatformToolset>
+      <Platform          Condition="'%(Platform)'          == '' And '$(Platform)'          != ''">$(Platform)</Platform>
+      
+      <Configuration     Condition="'%(Configuration)'     == '' And '$(Configuration)'     != ''">$(Configuration)</Configuration>
+      <RuntimeType       Condition="'%(RuntimeType)'       == '' And '$(RuntimeType)'       != ''">$(RuntimeType)</RuntimeType>
+      <RuntimeIdentifier Condition="'%(RuntimeIdentifier)' == '' And '$(RuntimeIdentifier)' != ''">$(RuntimeIdentifier)</RuntimeIdentifier>
+      <AssemblerOutput   Condition="'%(AssemblerOutput)'   == '' And '$(AssemblerOutput)'   != ''">$(AssemblerOutput)</AssemblerOutput>
+      
+      <CrossBuild        Condition="'%(CrossBuild)'        == '' And '$(CrossBuild)'        != ''">$(CrossBuild)</CrossBuild>
+      <SignToolBroker    Condition="'%(SignToolBroker)'    == '' And '$(SignToolBroker)'    != ''">$(SignToolBroker)</SignToolBroker>
+      <RedistFolder      Condition="'%(RedistFolder)'      == '' And '$(RedistFolder)'      != ''">$(RedistFolder)</RedistFolder>
     </ImportProject>
 
     <ImportProject>
-      <Configuration  Condition="'%(Configuration)'  == '' And '$(Configuration)'      != ''">$(Configuration)</Configuration>
-      <RuntimeType    Condition="'%(RuntimeType)'    == '' And '$(MSBuildRuntimeType)' != ''">$(MSBuildRuntimeType)</RuntimeType>
-      <SignToolBroker Condition="'%(SignToolBroker)' == '' And '$(SignToolBroker)'     != ''">$(SignToolBroker)</SignToolBroker>
-      <CrossBuild     Condition="'%(CrossBuild)'     == '' And '$(CrossBuild)'         != ''">$(CrossBuild)</CrossBuild>
-      <Verbosity      Condition="'%(Verbosity)'      == '' And '$(Verbosity)'          != ''">$(Verbosity)</Verbosity>
-      <RedistFolder   Condition="'%(RedistFolder)'   == '' And '$(RedistFolder)'       != ''">$(RedistFolder)</RedistFolder>
-    </ImportProject>
-
-    <ImportProject>
-      <Configuration         Condition="'%(Configuration)'         == ''">Debug</Configuration>
-      <RuntimeIdentifier     Condition="'%(RuntimeIdentifier)'     == '' And '$(RuntimeIdentifier)' != ''">$(RuntimeIdentifier)</RuntimeIdentifier>
-      <AssemblerOutput       Condition="'%(AssemblerOutput)'       == '' And '$(AssemblerOutput)'   != ''">$(AssemblerOutput)</AssemblerOutput>
-      <MaxCpuCount           Condition="'%(MaxCpuCount)'           == ''">$(MaxCpuCount)</MaxCpuCount>
-      <CrossBuild            Condition="'%(CrossBuild)'            == ''">false</CrossBuild>
+      <!-- Setup default values -->
       <Verbosity             Condition="'%(Verbosity)'             == ''">minimal</Verbosity>
+      
+      <Configuration         Condition="'%(Configuration)'         == ''">Debug</Configuration>
+      <RuntimeType           Condition="'%(RuntimeType)'           == ''">Core</RuntimeType>
+
       <Targets               Condition="'%(Targets)'               == ''">Build</Targets>
       <CopyToOutputDirectory Condition="'%(CopyToOutputDirectory)' == ''">PreserveNewest</CopyToOutputDirectory>
+      
+      <CrossBuild            Condition="'%(CrossBuild)'            == ''">false</CrossBuild>
       <SignToolBroker        Condition="'%(SignToolBroker)'        == ''">rn32</SignToolBroker>
     </ImportProject>
   </ItemDefinitionGroup>
@@ -60,27 +68,27 @@
   <Target Name="InitProjectsToBuild" DependsOnTargets="AddBuildOptions">
     <ItemGroup>
       <ProjectsToBuild>
-        <MSBuildCmd>"$(MSBuildToolsPath)$(V)msbuild"</MSBuildCmd>
+        <MSBuildCmd>"$(MSBuildToolsPath)\msbuild"</MSBuildCmd>
       </ProjectsToBuild>
       <ProjectsToBuild>
-        <MSBuildCmd Condition="'%(RuntimeType)' != 'Full'">dotnet build</MSBuildCmd>
+        <MSBuildCmd Condition="'%(RuntimeType)' == 'Core' Or !$([MSBuild]::IsOsPlatform(Windows))">dotnet build</MSBuildCmd>
         <!-- Do not reuse MSBuild nodes after a build -->
         <MSBuildOptions>-nologo -nr:false</MSBuildOptions>
       </ProjectsToBuild>
       <ProjectsToBuild>
-        <MSBuildOptions Condition="'%(MaxCpuCount)' == '0'">%(MSBuildOptions) -m</MSBuildOptions>
+        <MSBuildOptions Condition="'%(ProjectsToBuild.MaxCpuCount)' == '0'">%(MSBuildOptions) -m</MSBuildOptions>
       </ProjectsToBuild>
       <ProjectsToBuild>
-        <MSBuildOptions Condition="'%(MaxCpuCount)' != '0' And '%(MaxCpuCount)' != ''">%(MSBuildOptions) -m:%(MaxCpuCount)</MSBuildOptions>
+        <MSBuildOptions Condition="'%(ProjectsToBuild.MaxCpuCount)' != '0' And '%(ProjectsToBuild.MaxCpuCount)' != ''">%(MSBuildOptions) -m:%(ProjectsToBuild.MaxCpuCount)</MSBuildOptions>
       </ProjectsToBuild>
       <ProjectsToBuild>
-        <MSBuildOptions Condition="'%(Verbosity)' != ''">%(MSBuildOptions) -v:%(Verbosity)</MSBuildOptions>
+        <MSBuildOptions Condition="'%(ProjectsToBuild.Verbosity)' != ''">%(MSBuildOptions) -v:%(ProjectsToBuild.Verbosity)</MSBuildOptions>
       </ProjectsToBuild>
       <ProjectsToBuild>
-        <MSBuildOptions Condition="'%(Targets)' != ''">%(MSBuildOptions) -t:%(Targets)</MSBuildOptions>
+        <MSBuildOptions Condition="'%(ProjectsToBuild.Targets)' != ''">%(MSBuildOptions) -t:%(ProjectsToBuild.Targets)</MSBuildOptions>
       </ProjectsToBuild>
       <ProjectsToBuild>
-        <MSBuildOptions Condition="'%(Properties)' != ''">%(MSBuildOptions) -p:%(Properties)</MSBuildOptions>
+        <MSBuildOptions Condition="'%(ProjectsToBuild.Properties)' != ''">%(MSBuildOptions) -p:%(ProjectsToBuild.Properties)</MSBuildOptions>
       </ProjectsToBuild>
     </ItemGroup>
 
