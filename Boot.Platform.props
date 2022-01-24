@@ -5,22 +5,6 @@
     <Platforms>AnyCPU;x86;x64</Platforms>
   </PropertyGroup>
   
-  <!--
-  Use following properties to control on which platform the build will take place
-  If CrossBuild is true all platforms are concerned
-  If RuntimeIdentifier is specified, only the associated platform is concerned
-  If RuntimeIdentifier is not specified, only the current platform is concerned
-  -->
-  <PropertyGroup>
-    <CrossBuild Condition="'$(CrossBuild)' == ''">false</CrossBuild>
-    <BuildWin>false</BuildWin>
-    <BuildOsx>false</BuildOsx>
-    <BuildLinux>false</BuildLinux>
-    <BuildWin   Condition="$(CrossBuild) Or $(RuntimeIdentifier.StartsWith('win'))   Or ('$(RuntimeIdentifier)'=='' And $([MSBuild]::IsOsPlatform(Windows)))">true</BuildWin>
-    <BuildOsx   Condition="$(CrossBuild) Or $(RuntimeIdentifier.StartsWith('osx'))   Or ('$(RuntimeIdentifier)'=='' And $([MSBuild]::IsOsPlatform(OSX))    )">true</BuildOsx>
-    <BuildLinux Condition="$(CrossBuild) Or $(RuntimeIdentifier.StartsWith('linux')) Or ('$(RuntimeIdentifier)'=='' And $([MSBuild]::IsOsPlatform(Linux))  )">true</BuildLinux>
-  </PropertyGroup>
-
   <Choose>
     <When Condition="'$(RuntimeIdentifier)' == ''">
       <PropertyGroup>
@@ -44,7 +28,8 @@
       
       <!--  Do not modify RuntimeIdentifier when building inside VisualStudio -->
       <PropertyGroup Condition="'$(BuildingInsideVisualStudio)' == ''">
-        <RuntimeIdentifier Condition="'$(RuntimePlatform)' != 'AnyCPU'">$(ZouOs)-$(RuntimePlatform)</RuntimeIdentifier>
+        <RuntimeIdentifier Condition="'$(RuntimePlatform)'   != 'AnyCPU'">$(ZouOs)-$(RuntimePlatform)</RuntimeIdentifier>
+        <!--<RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''"      >$(ZouOs)</RuntimeIdentifier>-->
       </PropertyGroup>
     </When>
     <When Condition="$(RuntimeIdentifier.EndsWith('x86'))">
@@ -67,6 +52,22 @@
     </Otherwise>
   </Choose>
   
+  <!--
+  Use following properties to control on which platform the build will take place
+  If CrossBuild is true all platforms are concerned
+  If RuntimeIdentifier is specified, only the associated platform is concerned
+  If RuntimeIdentifier is not specified, only the current platform is concerned
+  -->
+  <PropertyGroup>
+    <CrossBuild Condition="'$(CrossBuild)' == ''">false</CrossBuild>
+    <BuildWin>false</BuildWin>
+    <BuildOsx>false</BuildOsx>
+    <BuildLinux>false</BuildLinux>
+    <BuildWin   Condition="$(CrossBuild) Or $(RuntimeIdentifier.StartsWith('win'))   Or ('$(RuntimeIdentifier)'=='' And $([MSBuild]::IsOsPlatform(Windows)))">true</BuildWin>
+    <BuildOsx   Condition="$(CrossBuild) Or $(RuntimeIdentifier.StartsWith('osx'))   Or ('$(RuntimeIdentifier)'=='' And $([MSBuild]::IsOsPlatform(OSX))    )">true</BuildOsx>
+    <BuildLinux Condition="$(CrossBuild) Or $(RuntimeIdentifier.StartsWith('linux')) Or ('$(RuntimeIdentifier)'=='' And $([MSBuild]::IsOsPlatform(Linux))  )">true</BuildLinux>
+  </PropertyGroup>
+
   <Target Name="ZouCheckPlatform" Condition="'$(ForwardPlatform)' != '' And '$(RuntimePlatform)' != ''">
     <PropertyGroup>
       <ErrorMessage>"Platform ($(ForwardPlatform)) and RuntimePlatform ($(RuntimePlatform)) are not compatibles"</ErrorMessage>
@@ -76,6 +77,7 @@
   </Target>
   
   <Target Name="TraceBootPlatform" Condition="'$(ZouTrace)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
+    <Message Importance="high" Text="ZouAgentType       = $(ZouAgentType)" />
     <Message Importance="high" Text="DebugBootPlatform  = $(DebugBootPlatform)" />
     <Message Importance="high" Text="MSBuildRuntimeType = $(MSBuildRuntimeType)" />
     <Message Importance="high" Text="RuntimeIdentifier  = $(RuntimeIdentifier)" />

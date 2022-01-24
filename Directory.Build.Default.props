@@ -1,15 +1,11 @@
 <!-- Defines the default metadata for .NET projects (prolog) -->
 <Project>
-  <Import Project="zou.props" Condition="'$(ZouVersion)' == ''" />
+  <Import Project="zou.props"           Condition="'$(ZouVersion)' == ''" />
+  <Import Project="Cs.Frameworks.props" Condition="'$(CoreTargetFramework)' == ''" />
 
   <!-- Default properties (can be overloaded in bundle after importing this script) -->
   <PropertyGroup>
-    <FullTargetFramework    Condition="'$(FullTargetFramework)'    == ''">net48</FullTargetFramework>
-    <CoreTargetFramework    Condition="'$(CoreTargetFramework)'    == ''">net6</CoreTargetFramework>
-    <WindowsTargetFramework Condition="'$(WindowsTargetFramework)' == ''">$(CoreTargetFramework)-windows</WindowsTargetFramework>
-    <TargetFramework Condition="'$(TargetFramework)' == '' And '$(RuntimeType)' == 'Core'">$(CoreTargetFramework)</TargetFramework>
-    <TargetFramework Condition="'$(TargetFramework)' == '' And '$(RuntimeType)' == 'Full'">$(FullTargetFramework)</TargetFramework>
-    <TargetFramework Condition="'$(TargetFramework)' == ''">$(CoreTargetFramework)</TargetFramework>
+    <TargetFramework    Condition="'$(TargetFramework)'    == ''">$(CoreTargetFramework)</TargetFramework>
     <RuntimeIdentifiers Condition="'$(RuntimeIdentifiers)' == ''">win7-x86;win-x86;win7-x64;win-x64;osx-x64;linux-x64</RuntimeIdentifiers>
     <RazorLangVersion   Condition="'$(RazorLangVersion)'   == ''">3.0</RazorLangVersion>
     <Company>Epsitec</Company>

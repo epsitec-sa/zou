@@ -1,0 +1,23 @@
+<!-- Import this script at the beginning of a C# redist agent -->
+<Project InitialTargets="TraceRedistProps" TreatAsLocalProperty="RedistFolder">
+  <PropertyGroup>
+    <RedistBuildPropsPath>$([MSBuild]::GetPathOfFileAbove('Redist.Build.props', '$(MSBuildProjectDirectory)'))</RedistBuildPropsPath>
+  </PropertyGroup>
+  <Import Project="$(RedistBuildPropsPath)" Condition="Exists('$(RedistBuildPropsPath)')" />
+
+  <Target Name="TraceRedistProps">
+    <Message Importance="high" Text="Redist.props" />
+    <Message Importance="high" Text="------------" />
+    <Message Importance="high" Text="ProjectPath           = $(ProjectPath)" />
+    <Message Importance="high" Text="RedistBuildPropsPath  = $(RedistBuildPropsPath)" />
+    <Message Importance="high" Text="RedistFolder          = $(RedistFolder)" />
+    <Message Importance="high" Text="RedistWinX86Framework = $(RedistWinX86Framework)" />
+    <Message Importance="high" Text="RedistWinX64Framework = $(RedistWinX64Framework)" />
+    <Message Importance="high" Text="RedistProjectPath     = $(RedistProjectPath)" />
+    <Message Importance="high" Text=" " />
+
+    <LogItems Items="@(ImportProject)" Title="TraceRedistProps.ImportProject" />
+    <Message Importance="high" Text=" " />
+  </Target>
+
+</Project>
