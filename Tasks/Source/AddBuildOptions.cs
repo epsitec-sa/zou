@@ -79,7 +79,7 @@ namespace Zou.Tasks
                 var properties = names
                     .Where(name => Mixins.IsBuildProperty(name))
                     .Select(name => (Key: name, Value: project.GetMetadata(name)))
-                    .Where(kv => !string.IsNullOrWhiteSpace(kv.Value))
+                    .Where(kv => !string.IsNullOrWhiteSpace(kv.Value) && kv.Value != Mixins.UndefinedValue)
                     .OrderBy(kv => kv, BuildPropertyComparer.Default)
                     .Select(kv => $"{kv.Key}={QuotePropertyValue(kv.Value)}")
                     .ToArray();
@@ -224,11 +224,13 @@ namespace Zou.Tasks
     }
     internal static partial class Mixins
     {
+        public const string UndefinedValue = "*Undefined*";
+
         public static bool          IsBuildProperty(string name) => !NonBuildProperties.Contains(name);
         public static Platform      GetPlatform(this ITaskItem item)
         {
             var metadata = item.GetMetadata("Platform");
-            if (string.IsNullOrWhiteSpace(metadata))
+            if (string.IsNullOrWhiteSpace(metadata) || metadata == UndefinedValue)
             {
                 return Platform.NotSpecified;
             }
