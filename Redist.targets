@@ -2,10 +2,11 @@
 Import this script at the end of a C# redist agent
 
   Inputs:
-    RedistProjectPath     
-    RedistFolder          
-    RedistWinX86Framework - CoreTargetFramework | FullTargetFramework
-    RedistWinX64Framework - CoreTargetFramework | FullTargetFramework
+    RedistProjectPath     - project to build                                               (ex: Net\Swissdec.Transmitter.Host\Swissdec.Transmitter.Host.csproj)
+    RedistFolder          - append a component folder to the output directory              (ex: bin/Release/win-x64/swissdec)
+    RedistByFramework     - include TargetFrameowrk in output directory (true by default)  (ex: bin/Release/net6/win-x64/swissdec)
+    RedistWinX86Framework - .NET framework used for x86 platform            (CoreTargetFramework | FullTargetFramework)
+    RedistWinX64Framework - .NET framework used for x64 or AnyCPU platforms (CoreTargetFramework | FullTargetFramework)
 
 -->
 <Project InitialTargets="TraceRedistTargets">
@@ -92,10 +93,10 @@ Import this script at the end of a C# redist agent
       </ImportProject>
 
       <!-- Remove temporary metadata -->
-      <!--<ImportProject RemoveMetadata="_OutputFolder;_RuntimeFolder" />-->
+      <ImportProject RemoveMetadata="_OutputFolder;_RuntimeFolder" />
     </ItemGroup>
 
-    <LogItems Items="@(ImportProject)" Title="RedistTransformLayout.ImportProject" />
+    <!--<LogItems Items="@(ImportProject)" Title="RedistTransformLayout.ImportProject" />-->
   </Target>
   
   <Target Name="RedistUpdateTarget" BeforeTargets="AddBuildOptions" DependsOnTargets="RedistTransformLayout">
