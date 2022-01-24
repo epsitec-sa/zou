@@ -1,11 +1,13 @@
-<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003"
-         InitialTargets="ZouTasksTrace">
+<Project InitialTargets="TraceZouTasksProps">
 
+  <!--<Import Project="zou.props" Condition="'$(ZouVersion)' == ''"/>-->
+  
   <PropertyGroup>
     <!-- Use debug version builded with Tasks.sln inside Visual Studio -->
-    <ZouTasksDllPath Condition="'$(ZouTasksDllPath)' == '' And Exists('$(MSBuildThisFileDirectory)Tasks/bin/Debug/netstandard2.0/Tasks.dll')">$(MSBuildThisFileDirectory)Tasks/bin/Debug/netstandard2.0/Tasks.dll</ZouTasksDllPath>
-    <ZouTasksDllPath Condition="'$(ZouTasksDllPath)' == ''">$(ZouBinzDir)tasks/$(ZouOs)/Tasks.dll</ZouTasksDllPath>
+    <ZouTasksDebugDllPath>$(MSBuildThisFileDirectory)Tasks\bin\Debug\netstandard2.0\Tasks.dll</ZouTasksDebugDllPath>
+    <ZouTasksReleaseDllPath>$(ZouBinzDir)tasks\$(ZouOs)\Tasks.dll</ZouTasksReleaseDllPath>
+    <ZouTasksDllPath Condition="'$(ZouTasksDllPath)' == '' And Exists('$(ZouTasksDebugDllPath)')">$(ZouTasksDebugDllPath)</ZouTasksDllPath>
+    <ZouTasksDllPath Condition="'$(ZouTasksDllPath)' == ''">$(ZouTasksReleaseDllPath)</ZouTasksDllPath>
   </PropertyGroup>
 
   <UsingTask TaskName="AddBuildOptions"     AssemblyFile="$(ZouTasksDllPath)" />
@@ -53,8 +55,10 @@
     </Task>
   </UsingTask>
   
-  <Target Name="ZouTasksTrace" Condition="'$(ZouTrace)' == 'true'">
-    <Message Importance="normal" Text="ZouTasksDllPath = $(ZouTasksDllPath)" />
+  <Target Name="TraceZouTasksProps" Condition="'$(ZouTrace)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
+    <Message Importance="high" Text="ZouTasksDebugDllPath   = $(ZouTasksDebugDllPath)" />
+    <Message Importance="high" Text="ZouTasksReleaseDllPath = $(ZouTasksReleaseDllPath)" />
+    <Message Importance="high" Text="ZouTasksDllPath        = $(ZouTasksDllPath)" />
   </Target>
 </Project>
 
