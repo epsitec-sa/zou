@@ -52,7 +52,7 @@ _module_on_sync()
   if [[ $3 =~ ^\< ]]; then
     _module_set_submodule_paths
     _module_sync_all_submodules
-    _module_upd_sync_unitialized_submodules
+    module_upd_sync_unitialized_submodules
   fi
   # io_trace ">>>> _module_on_sync ${*@Q} -- $(print_vars moduleSubmodulePaths[@])"
 }
@@ -560,6 +560,15 @@ module_upd_sync_all_submodules()
   echo "${moduleSubmodulePaths[@]}" | xargs git-sm updsync -C "${moduleRoot}"
   # io_trace "<<<< module_upd_sync_all_submodules -- $(print_vars moduleSubmodulePaths[@])"
 }
+module_upd_sync_unitialized_submodules()
+{
+  # io_trace ">>>> module_upd_sync_unitialized_submodules -- $(print_vars moduleSubmodulePaths[@])"
+  local data=$(_module_list_uninitialized_submodules "${configIncludedSubmodules[@]}")
+  [[ -z $data ]] && return 0
+
+  xargs git-sm updsync -C "${moduleRoot}" <<< "$data"
+  # io_trace "<<<< module_upd_sync_unitialized_submodules -- $(print_vars moduleSubmodulePaths[@])"
+}
 module_sync_upd_sync_uninitialized_submodules()
 {
   # io_trace ">>>> module_sync_upd_sync_uninitialized_submodules -- $(print_vars configIncludedSubmodules[@])"
@@ -577,15 +586,6 @@ _module_sync_all_submodules()
 
   echo "${moduleSubmodulePaths[@]}" | xargs git-sm sync -C "${moduleRoot}" --
   # io_trace "<<<< _module_sync_all_submodules -- $(print_vars moduleSubmodulePaths[@])"
-}
-_module_upd_sync_unitialized_submodules()
-{
-  # io_trace ">>>> _module_upd_sync_unitialized_submodules -- $(print_vars moduleSubmodulePaths[@])"
-  local data=$(_module_list_uninitialized_submodules "${configIncludedSubmodules[@]}")
-  [[ -z $data ]] && return 0
-
-  xargs git-sm updsync -C "${moduleRoot}" <<< "$data"
-  # io_trace "<<<< _module_upd_sync_unitialized_submodules -- $(print_vars moduleSubmodulePaths[@])"
 }
 _module_list_uninitialized_submodules()
 {
