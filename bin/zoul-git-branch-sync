@@ -32,14 +32,6 @@ _branch_sync_push()
   # io_trace "git push --follow-tags "$r" "$l""
   io_buffered_eval "gitx push --follow-tags "$r" "$l" 2>&1" _branch_sync_filter_tags
 }
-_branch_sync_push_tags()
-{
-  [[ $syncNoPush == true ]] && return 0
-  # l > r -- move r
-  local r=${1%%/*} l=$2
-  # io_trace "git push --follow-tags "$r" "$l""
-  io_buffered_eval "gitx push --tags "$r" 2>&1" _branch_sync_filter_tags
-}
 _branch_sync_filter_tags()
 {
   [ $ec -ne 0 ] && return 0
@@ -71,7 +63,7 @@ _branch_sync_visitor()
     '>')  _branch_sync_push  "$r" "$l" || return 1;; # l > r ahead   -- move r
     '<')  _branch_sync_merge "$r" "$l" || return 1;; # l < r behind  -- move l
     '<>') _branch_sync_sync  "$r" "$l" || return 1;; # ahead and behind
-    # '=')  _branch_sync_push_tags "$r";; # push tags
+    '=')  _branch_sync_push  "$r" "$l" || return 1;; # follow tags
     *) return 0;;
   esac
   if [[ $l == "$current" ]]; then
