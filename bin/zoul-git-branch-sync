@@ -208,9 +208,6 @@ branch_sync_fetch_all()
 
   while read -r l r i; do
     [[ -z "$r" ]] && branch_ensure_tracking_info "$l" 'origin'
-    if [[ $l == "$current" ]]; then
-      _branch_raise_branch_sync_event "$r" "$l" "$i"
-    fi
   done < <(branch_sync_info "$@")
   return 0
 }
