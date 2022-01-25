@@ -207,6 +207,7 @@ _git_sm_out_filter()
 {
   local line indent error
   [[ -z $moduleTracePrefix ]] || indent='  '
+  io_lock_enter
   while read -r line; do
     if [[ $error == true ]]; then
       io_message_unsafe "${indent}$line" "$moduleTracePrefix" ${Brown}
@@ -222,4 +223,5 @@ _git_sm_out_filter()
       fi
     fi
   done
+  io_lock_exit
 }
