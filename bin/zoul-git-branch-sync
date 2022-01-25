@@ -17,15 +17,12 @@ ZOUL_GIT_BRANCH_SYNC=true
 # global variables
 #   branchSyncVisitInfo = ( $r $l $i )
 #   syncNoPush
-#   syncNoRaiseEvent
 
 branchSyncVisitInfo=()
 syncNoPush=''
-syncNoRaiseEvent=''
 
-# io_trace "branchSyncEvent=()"
 branchSyncEvent=()
-_branch_raise_branch_sync_event() { [[ $syncNoRaiseEvent == true ]] || raise_event 'branchSyncEvent[@]' "$@"; }
+_branch_raise_branch_sync_event() { raise_event 'branchSyncEvent[@]' "$@"; }
 
 _branch_sync_push()
 {
