@@ -45,8 +45,15 @@ prod_parse()
       ref_set_symbol "$prodSelectSpec"
       # io_trace "prod_parse -2- $(print_vars prodSelectSpec attachMode refSymbol refType)"
       if [[ -z $refSymbol ]]; then
-        io_error "reference ${Brown}$prodSelectSpec${Red} not found."
-        return 1
+        local branch lbranch bref
+        branch_set_realize "$prodSelectSpec"
+        if [ $? -eq 2 ]; then
+          io_error "reference ${Brown}$prodSelectSpec${Red} not found."
+          return 1
+        else
+          refType='branch'
+          refSymbol="$prodSelectSpec"
+        fi
       fi
   fi
   
