@@ -6,12 +6,12 @@
   </PropertyGroup>
   
   <Choose>
-    <When Condition="'$(RuntimeIdentifier)' == ''">
+    <When Condition="'$(RuntimeIdentifier)' == '' Or '$(RuntimeIdentifier)' == '*Undefined*'">
       <PropertyGroup>
         <DebugBootPlatform>1</DebugBootPlatform>
 
         <Platform Condition="'$(Platform)' == '' And '$(ZouAgentType)' == 'Cpp'">Win32</Platform>
-        <Platform Condition="'$(Platform)' == '' And '$(ZouAgentType)' == 'CSharp'">Any CPU</Platform>
+        <Platform Condition="'$(Platform)' == '' And '$(ZouAgentType)' == 'CSharp'">AnyCPU</Platform>
 
         <!-- Normalized Platform -->
         <RuntimePlatform Condition="'$(Platform)' == 'Any CPU' Or '$(Platform)' == 'AnyCPU'">AnyCPU</RuntimePlatform>
@@ -24,12 +24,6 @@
         <ForwardPlatform Condition="'$(ForwardPlatform)' == '' And '$(RuntimePlatform)' == 'x86' And '$(Platform)' == 'Win32'">Win32</ForwardPlatform>
         <ForwardPlatform Condition="'$(ForwardPlatform)' == '' And '$(RuntimePlatform)' == 'x86'">x86</ForwardPlatform>
         <ForwardPlatform Condition="'$(ForwardPlatform)' == ''">x64</ForwardPlatform>
-      </PropertyGroup>
-      
-      <!--  Do not modify RuntimeIdentifier when building inside VisualStudio -->
-      <PropertyGroup Condition="'$(BuildingInsideVisualStudio)' == ''">
-        <RuntimeIdentifier Condition="'$(RuntimePlatform)'   != 'AnyCPU'">$(ZouOs)-$(RuntimePlatform)</RuntimeIdentifier>
-        <!--<RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''"      >$(ZouOs)</RuntimeIdentifier>-->
       </PropertyGroup>
     </When>
     <When Condition="$(RuntimeIdentifier.EndsWith('x86'))">
@@ -51,7 +45,7 @@
       </PropertyGroup>
     </Otherwise>
   </Choose>
-  
+
   <!--
   Use following properties to control on which platform the build will take place
   If CrossBuild is true all platforms are concerned

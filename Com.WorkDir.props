@@ -22,9 +22,11 @@
   </ImportGroup>
 
   <PropertyGroup>
-    <WorkDir Condition="'$(WorkDir)' != ''">$([MSBuild]::EnsureTrailingSlash('$(WorkDir)'))</WorkDir>
+    <WorkDir Condition="'$(WorkDir)' == ''">.</WorkDir>
+    <WorkDir>$([MSBuild]::EnsureTrailingSlash('$(WorkDir)'))</WorkDir>
     <WorkDir Condition="'$(WorkDirSpecified)' != 'true'">$([System.IO.Path]::Combine($(ProjectDir),$(WorkDir)))</WorkDir>
     <WorkDir Condition="'$(WorkDirSpecified)' == 'true'">$([System.IO.Path]::Combine($(MSBuildStartupDirectory),$(WorkDir)))</WorkDir>
+    <WorkDir>$([System.IO.Path]::GetFullPath('$(WorkDir)'))</WorkDir>
   </PropertyGroup>
 
   <Target Name="WorkDirTrace" Condition="'$(ZouTrace)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
