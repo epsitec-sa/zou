@@ -18,11 +18,12 @@ echo.
 echo Options:
 echo     -h             -- display current help
 echo     -n             -- dry run
-echo     -c             -- clean project
-echo     -b             -- build project
 echo     -p PLATFORM    -- ^(x86^|x64^)
-echo     -s             -- sign components
+echo     -c             -- clean only
+echo     -b             -- build only
+echo     -a             -- build for Windows, OSX and Linux
 echo     -m             -- build remote components
+echo     -s             -- sign components
 echo     -v             -- display MSBuild commands
 echo [0m
 exit /b %exitcode%
@@ -67,12 +68,17 @@ if /i '%arg%' == '-b' (
 )
 if /i '%arg%' == '-s' (
   set opt=true
-  set CresusSign=true
+  set sign=true
   goto :Parse
 )
 if /i '%arg%' == '-m' (
   set opt=true
-  set BuildRome=true
+  set rome=true
+  goto :Parse
+)
+if /i '%arg%' == '-a' (
+  set opt=true
+  set all=true
   goto :Parse
 )
 if /i '%arg%' == '-v' (
@@ -118,7 +124,10 @@ if '%clean%' == '' if '%build%' == '' (
   set clean=true
   set build=true
 )
-set props=Configuration=Release;CrossBuild=true
+set props=Configuration=Release
+if '%all%'     == 'true' set props=%props%;CrossBuild=true
+if '%rome%'    == 'true' set props=%props%;BuildRome=true
+if '%sign%'    == 'true' set props=%props%;Sign=true
 if '%verbose%' == 'true' set props=%props%;DisplayMSBuildCommand=true
 set command=msbuild %project% -nologo -v:m -p:%props%
 
