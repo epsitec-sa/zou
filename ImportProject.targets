@@ -27,10 +27,12 @@
       
       <CrossBuild        Condition="'%(CrossBuild)'        == '' And '$(CrossBuild)'        != ''">$(CrossBuild)</CrossBuild>
       <SignToolBroker    Condition="'%(SignToolBroker)'    == '' And '$(SignToolBroker)'    != ''">$(SignToolBroker)</SignToolBroker>
+
       <RedistFolder      Condition="'%(RedistFolder)'      == '' And '$(RedistFolder)'      != ''">$(RedistFolder)</RedistFolder>
       <RedistByFramework Condition="'%(RedistByFramework)' == '' And '$(RedistByFramework)' != ''">$(RedistByFramework)</RedistByFramework>
       <RedistByRuntime   Condition="'%(RedistByRuntime)'   == '' And '$(RedistByRuntime)'   != ''">$(RedistByRuntime)</RedistByRuntime>
       
+      <DisplayMSBuildCommand Condition="'%(DisplayMSBuildCommand)' == '' And '$(DisplayMSBuildCommand)' != ''">$(DisplayMSBuildCommand)</DisplayMSBuildCommand>
     </ImportProject>
 
     <ImportProject>
@@ -121,7 +123,7 @@
     Instead with use the Exec task which starts the MSBuild process.
     -->
 
-    <!--<Message Importance="high" Text='%(MSBuildCmd) %(MSBuildOptions) "%(ProjectsToBuild.Identity)"' />-->
+    <Message Condition="'$(DisplayMSBuildCommand)' == 'true'" Importance="high" Text='%(MSBuildCmd) %(MSBuildOptions) "%(ProjectsToBuild.Identity)"' />
     <Exec Command='%(MSBuildCmd) %(MSBuildOptions) "%(ProjectsToBuild.Identity)"' />
     <CallTarget Targets="_DeleteLastBuildState" Condition="'$(BuildingInsideVisualStudio)'=='true'" />
   </Target>
