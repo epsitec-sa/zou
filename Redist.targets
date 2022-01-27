@@ -2,18 +2,30 @@
 Import this script at the end of a C# redist agent
 For information on redist properties, see Redist.props
 -->
-<Project>
+<Project InitialTargets="TraceRedistTargets;RedistCheckProps">
 
   <Import Project="Import.targets"/>
-
-  <!-- Forward properties -->
-  <!--<ItemDefinitionGroup>
-    <ItemProject>
-      <RedistFolder      Condition="'%(RedistFolder)'      == '' And '$(RedistFolder)'      != ''">$(RedistFolder)</RedistFolder>
-      <RedistByFramework Condition="'%(RedistByFramework)' == '' And '$(RedistByFramework)' != ''">$(RedistByFramework)</RedistByFramework>
-      <RedistByRuntime   Condition="'%(RedistByRuntime)'   == '' And '$(RedistByRuntime)'   != ''">$(RedistByRuntime)</RedistByRuntime>
-    </ItemProject>
-  </ItemDefinitionGroup>-->
+  
+  <!-- Defaults-->
+  <PropertyGroup>
+    <RedistByFramework     Condition="'$(RedistByFramework)'     == ''">false</RedistByFramework>
+    <RedistWinX86Framework Condition="'$(RedistWinX86Framework)' == ''">$(CoreTargetFramework)</RedistWinX86Framework>
+    <RedistWinX64Framework Condition="'$(RedistWinX64Framework)' == ''">$(CoreTargetFramework)</RedistWinX64Framework>
+    <!--
+    Compute RedistByRuntime property:
+      if CrossBuild
+        RedistByRuntime = true
+      elsif OutDir.Contains(RuntimePlatform) || (BuildingInsideVisualStudio && IsDebug)
+        RedistByRuntime = false
+       else
+        RedistByRuntime = true
+       endif
+     -->
+    <RedistByRuntime Condition="'$(RedistByRuntime)' == '' And $(CrossBuild)">true</RedistByRuntime>
+    <RedistByRuntime Condition="'$(RedistByRuntime)' == '' And '$(RuntimePlatform)' != '' And $(OutDir.Contains('$(RuntimePlatform)'))">false</RedistByRuntime>
+    <RedistByRuntime Condition="'$(RedistByRuntime)' == '' And '$(BuildingInsideVisualStudio)' != '' And $(IsDebug)">false</RedistByRuntime>
+    <RedistByRuntime Condition="'$(RedistByRuntime)' == ''">true</RedistByRuntime>
+  </PropertyGroup>
 
   <!-- x86|AnyCPU -->
   <ItemGroup Condition="'$(RuntimePlatform)' == 'x86' Or '$(RuntimePlatform)' == 'AnyCPU'">
@@ -31,16 +43,19 @@ For information on redist properties, see Redist.props
       <TargetFramework>$(RedistWinX64Framework)</TargetFramework>
       <OutDir     Condition="'$(RedistWinX64Framework)' == '$(FullTargetFramework)'">$(OutDir)win-$(RuntimePlatform)</OutDir>
       <PublishDir Condition="'$(RedistWinX64Framework)' == '$(CoreTargetFramework)'">$(OutDir)win-$(RuntimePlatform)</PublishDir>
+      <RuntimeIdentifier Condition="'$(RedistWinX64Framework)' == '$(CoreTargetFramework)'">win7-$(RuntimePlatform)</RuntimeIdentifier>
     </ImportProject>
     <ImportProject Condition="$(BuildOsx)" Include="$(RedistProjectPath)">
       <TargetFramework>$(CoreTargetFramework)</TargetFramework>
       <OutDir>$(OutDir)osx-$(RuntimePlatform)</OutDir>
       <PublishDir>$(OutDir)osx-$(RuntimePlatform)</PublishDir>
+      <RuntimeIdentifier>osx-$(RuntimePlatform)</RuntimeIdentifier>
     </ImportProject>
     <ImportProject Condition="$(BuildLinux)" Include="$(RedistProjectPath)">
       <TargetFramework>$(CoreTargetFramework)</TargetFramework>
       <OutDir>$(OutDir)linux-$(RuntimePlatform)</OutDir>
       <PublishDir>$(OutDir)linux-$(RuntimePlatform)</PublishDir>
+      <RuntimeIdentifier>linux-$(RuntimePlatform)</RuntimeIdentifier>
     </ImportProject>
   </ItemGroup>
 
@@ -123,8 +138,36 @@ For information on redist properties, see Redist.props
       <ImportProject RemoveMetadata="_UseBuildTarget" />
     </ItemGroup>
 
-    <!--<LogItems Items="@(ImportProject)" Title="RedistUpdateTarget.ImportProject" />
-    <Message Importance="high" Text=" " />-->
+    <LogItems Items="@(ImportProject)" Title="RedistUpdateTarget.ImportProject" />
+    <Message Importance="high" Text=" " />
+  </Target>
+
+  <Target Name="RedistCheckProps">
+    <Error Condition="'$(RedistProjectPath)' == ''"    Message="RedistProjectPath property not defined." />
+    <Error Condition="!Exists('$(RedistProjectPath)')" Message="RedistProjectPath not found: '$(RedistProjectPath)'." />
+  </Target>
+
+  <Target Name="TraceRedistTargets">
+    <Message Importance="high" Text="zou/Redist.props [$(MSBuildProjectFile)]" />
+    <Message Importance="high" Text="----------------" />
+    <Message Importance="high" Text="CrossBuild            = $(CrossBuild)" />
+    <Message Importance="high" Text="BuildWin              = $(BuildWin)" />
+    <Message Importance="high" Text="BuildOsx              = $(BuildOsx)" />
+    <Message Importance="high" Text="BuildLinux            = $(BuildLinux)" />
+    <Message Importance="high" Text=" " />
+    <Message Importance="high" Text="Configuration         = $(Configuration)" />
+    <Message Importance="high" Text="RuntimePlatform       = $(RuntimePlatform)" />
+    <Message Importance="high" Text="RuntimeIdentifier     = $(RuntimeIdentifier)" />
+    <Message Importance="high" Text="OutDir                = $(OutDir)" />
+    <Message Importance="high" Text="PublishDir            = $(PublishDir)" />
+    <Message Importance="high" Text=" " />
+    <Message Importance="high" Text="RedistBuildPropsPath  = $(RedistBuildPropsPath)" />
+    <Message Importance="high" Text="RedistByFramework     = $(RedistByFramework)" />
+    <Message Importance="high" Text="RedistByRuntime       = $(RedistByRuntime)" />
+    <Message Importance="high" Text="RedistWinX86Framework = $(RedistWinX86Framework)" />
+    <Message Importance="high" Text="RedistWinX64Framework = $(RedistWinX64Framework)" />
+    <Message Importance="high" Text="RedistProjectPath     = $(RedistProjectPath)" />
+    <Message Importance="high" Text=" " />
   </Target>
 
 </Project>

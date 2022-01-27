@@ -7,52 +7,20 @@ properties to control the 'Redist.targets' build settings.
     RedistProjectPath     - [required] - the path of the project script                         - ex: Net\Swissdec.Transmitter.Host\Swissdec.Transmitter.Host.csproj
                                          relative to the 'Redist.build.props' directory
     RedistFolder          - [optional] - append a component folder to the output directory      - ex: bin\Release\win-x64\<redist-folder>
-    RedistByFramework     - [optional] - include the target framework   in the output directory - ex: bin\Release\net6\win-x64\<redist-folder>
-    RedistByRuntime       - [optional] - include the runtime identifier in the output directory - ex: bin\Release\net6\win-x64\<redist-folder>
+    RedistByFramework     - [optional] - include the target framework   in the output directory - ex: bin\Release\net6[\win-x64]\<redist-folder>
+    RedistByRuntime       - [optional] - include the runtime identifier in the output directory - ex: bin\Release\[net6\]win-x64\<redist-folder>
     RedistWinX86Framework - [optional] - the target framework used for x86 platform             - (CoreTargetFramework | FullTargetFramework)
     RedistWinX64Framework - [optional] - the target framework used for x64 or AnyCPU platforms  - (CoreTargetFramework | FullTargetFramework)
 -->
-<Project InitialTargets="TraceRedistProps;RedistCheckProps"
-         TreatAsLocalProperty="RedistBuildPropsPath;RedistFolder">
-  
+<Project TreatAsLocalProperty="RedistBuildPropsPath;RedistFolder;CrossBuild">
+
+  <Import Project="zou.props"           Condition="'$(ZouVersion)' == ''" />
+  <Import Project="Cs.Frameworks.props" Condition="'$(CoreTargetFramework)' == ''" />
+
   <!-- Import the first 'Redist.Build.props' found in the local project directory or above -->
   <PropertyGroup>
     <RedistBuildPropsPath>$([MSBuild]::GetPathOfFileAbove('Redist.Build.props', '$(MSBuildProjectDirectory)'))</RedistBuildPropsPath>
   </PropertyGroup>
   <Import Project="$(RedistBuildPropsPath)" Condition="Exists('$(RedistBuildPropsPath)')" />
-  
-  <!-- Defaults-->
-  <PropertyGroup>
-    <RedistByFramework     Condition="'$(RedistByFramework)'     == ''">false</RedistByFramework>
-    <RedistByRuntime       Condition="'$(RedistByRuntime)'       == ''">true</RedistByRuntime>
-    <RedistWinX86Framework Condition="'$(RedistWinX86Framework)' == ''">$(CoreTargetFramework)</RedistWinX86Framework>
-    <RedistWinX64Framework Condition="'$(RedistWinX64Framework)' == ''">$(CoreTargetFramework)</RedistWinX64Framework>
-  </PropertyGroup>
-
-  <Target Name="RedistCheckProps">
-    <Error Condition="'$(RedistProjectPath)' == ''"    Message="RedistProjectPath property not defined." />
-    <Error Condition="!Exists('$(RedistProjectPath)')" Message="RedistProjectPath ($(RedistProjectPath)) not found." />
-  </Target>
-  
-  <Target Name="TraceRedistProps" Condition="'$(ZouTrace)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
-    <Message Importance="high" Text="zou/Redist.props [$(ProjectName)]" />
-    <Message Importance="high" Text="----------------" />
-    <Message Importance="high" Text="Configuration         = $(Configuration)" />
-    <Message Importance="high" Text="RuntimePlatform       = $(RuntimePlatform)" />
-    <Message Importance="high" Text="RuntimeIdentifier     = $(RuntimeIdentifier)" />
-    <Message Importance="high" Text="OutDir                = $(OutDir)" />
-    <Message Importance="high" Text="PublishDir            = $(PublishDir)" />
-    <Message Importance="high" Text=" " />
-    <Message Importance="high" Text="RedistBuildPropsPath  = $(RedistBuildPropsPath)" />
-    <Message Importance="high" Text="RedistByFramework     = $(RedistByFramework)" />
-    <Message Importance="high" Text="RedistByRuntime       = $(RedistByRuntime)" />
-    <Message Importance="high" Text="RedistWinX86Framework = $(RedistWinX86Framework)" />
-    <Message Importance="high" Text="RedistWinX64Framework = $(RedistWinX64Framework)" />
-    <Message Importance="high" Text="RedistProjectPath     = $(RedistProjectPath)" />
-    <Message Importance="high" Text=" " />
-
-    <LogItems Items="@(ImportProject)" Title="TraceRedistProps.ImportProject" />
-    <Message Importance="high" Text=" " />
-  </Target>
 
 </Project>
