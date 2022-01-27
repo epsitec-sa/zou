@@ -8,6 +8,8 @@ For information on redist properties, see Redist.props
   
   <!-- Defaults-->
   <PropertyGroup>
+    <WinRuntimePrefix      Condition="'$(WinRuntimePrefix)'      == ''">win7</WinRuntimePrefix>
+
     <RedistByFramework     Condition="'$(RedistByFramework)'     == ''">false</RedistByFramework>
     <RedistWinX86Framework Condition="'$(RedistWinX86Framework)' == ''">$(CoreTargetFramework)</RedistWinX86Framework>
     <RedistWinX64Framework Condition="'$(RedistWinX64Framework)' == ''">$(CoreTargetFramework)</RedistWinX64Framework>
@@ -30,10 +32,10 @@ For information on redist properties, see Redist.props
   <!-- x86|AnyCPU -->
   <ItemGroup Condition="'$(RuntimePlatform)' == 'x86' Or '$(RuntimePlatform)' == 'AnyCPU'">
     <ImportProject Condition="$([MSBuild]::IsOsPlatform(Windows))" Include="$(RedistProjectPath)">
-      <RuntimeIdentifier Condition="'%(RuntimeIdentifier)' == '' And '$(RuntimePlatform)' == 'x86'">win7-x86</RuntimeIdentifier>
       <TargetFramework>$(RedistWinX86Framework)</TargetFramework>
-      <OutDir     Condition="'$(RedistWinX86Framework)' == '$(FullTargetFramework)'">$(OutDir)win-$(RuntimePlatform)</OutDir>
-      <PublishDir Condition="'$(RedistWinX86Framework)' == '$(CoreTargetFramework)'">$(OutDir)win-$(RuntimePlatform)</PublishDir>
+      <RuntimeIdentifier Condition="'$(RuntimePlatform)' == 'x86'">$(WinRuntimePrefix)-$(RuntimePlatform)</RuntimeIdentifier>
+      <OutDir            Condition="'$(RedistWinX86Framework)' == '$(FullTargetFramework)'">$(OutDir)win-$(RuntimePlatform)</OutDir>
+      <PublishDir        Condition="'$(RedistWinX86Framework)' == '$(CoreTargetFramework)'">$(OutDir)win-$(RuntimePlatform)</PublishDir>
     </ImportProject>
   </ItemGroup>
 
@@ -41,21 +43,21 @@ For information on redist properties, see Redist.props
   <ItemGroup Condition="'$(RuntimePlatform)' == 'x64'">
     <ImportProject Condition="$(BuildWin)" Include="$(RedistProjectPath)">
       <TargetFramework>$(RedistWinX64Framework)</TargetFramework>
-      <OutDir     Condition="'$(RedistWinX64Framework)' == '$(FullTargetFramework)'">$(OutDir)win-$(RuntimePlatform)</OutDir>
-      <PublishDir Condition="'$(RedistWinX64Framework)' == '$(CoreTargetFramework)'">$(OutDir)win-$(RuntimePlatform)</PublishDir>
-      <RuntimeIdentifier Condition="'$(RedistWinX64Framework)' == '$(CoreTargetFramework)'">win7-$(RuntimePlatform)</RuntimeIdentifier>
+      <RuntimeIdentifier Condition="'$(RedistWinX64Framework)' == '$(CoreTargetFramework)'">$(WinRuntimePrefix)-$(RuntimePlatform)</RuntimeIdentifier>
+      <OutDir            Condition="'$(RedistWinX64Framework)' == '$(FullTargetFramework)'">$(OutDir)win-$(RuntimePlatform)</OutDir>
+      <PublishDir        Condition="'$(RedistWinX64Framework)' == '$(CoreTargetFramework)'">$(OutDir)win-$(RuntimePlatform)</PublishDir>
     </ImportProject>
     <ImportProject Condition="$(BuildOsx)" Include="$(RedistProjectPath)">
       <TargetFramework>$(CoreTargetFramework)</TargetFramework>
+      <RuntimeIdentifier>osx-$(RuntimePlatform)</RuntimeIdentifier>
       <OutDir>$(OutDir)osx-$(RuntimePlatform)</OutDir>
       <PublishDir>$(OutDir)osx-$(RuntimePlatform)</PublishDir>
-      <RuntimeIdentifier>osx-$(RuntimePlatform)</RuntimeIdentifier>
     </ImportProject>
     <ImportProject Condition="$(BuildLinux)" Include="$(RedistProjectPath)">
       <TargetFramework>$(CoreTargetFramework)</TargetFramework>
+      <RuntimeIdentifier>linux-$(RuntimePlatform)</RuntimeIdentifier>
       <OutDir>$(OutDir)linux-$(RuntimePlatform)</OutDir>
       <PublishDir>$(OutDir)linux-$(RuntimePlatform)</PublishDir>
-      <RuntimeIdentifier>linux-$(RuntimePlatform)</RuntimeIdentifier>
     </ImportProject>
   </ItemGroup>
 
