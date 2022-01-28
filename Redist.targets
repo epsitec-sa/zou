@@ -5,19 +5,34 @@ For information on redist properties, see Redist.props
 <Project InitialTargets="TraceRedistTargets;RedistCheckProps">
 
   <Import Project="Import.targets"/>
-  
-  <!-- Defaults-->
-  <PropertyGroup>
-    <WinRuntimePrefix      Condition="'$(WinRuntimePrefix)'      == ''">win7</WinRuntimePrefix>
 
-    <RedistByFramework     Condition="'$(RedistByFramework)'     == ''">false</RedistByFramework>
-    <RedistWinX86Framework Condition="'$(RedistWinX86Framework)' == ''">$(CoreTargetFramework)</RedistWinX86Framework>
-    <RedistWinX64Framework Condition="'$(RedistWinX64Framework)' == ''">$(CoreTargetFramework)</RedistWinX64Framework>
+  <!-- Supported Windows platform  -->
+  <PropertyGroup>
+    <WinRuntimePrefix Condition="'$(WinRuntimePrefix)' == ''">win7</WinRuntimePrefix>
+  </PropertyGroup>
+
+  <!-- Limit cross-build -->
+  <PropertyGroup>
+    <!-- FullTargetFramework is not available on OSX and Linux -->
+    <CrossBuild Condition="'$(RedistX64Framework)' == '$(FullTargetFramework)'">false</CrossBuild>
+    <!-- Do not cross-build inside Visual Studio -->
+    <CrossBuild Condition="'$(BuildingInsideVisualStudio)' != ''">false</CrossBuild>
+    <CrossBuild Condition="'$(CrossBuild)' == ''">false</CrossBuild>
+
+    <BuildWin>false</BuildWin>
+    <BuildOsx>false</BuildOsx>
+    <BuildLinux>false</BuildLinux>
+    <BuildWin   Condition="$(CrossBuild) Or $(RuntimeIdentifier.StartsWith('win'))   Or ('$(RuntimeIdentifier)'=='' And $([MSBuild]::IsOsPlatform(Windows)))">true</BuildWin>
+    <BuildOsx   Condition="$(CrossBuild) Or $(RuntimeIdentifier.StartsWith('osx'))   Or ('$(RuntimeIdentifier)'=='' And $([MSBuild]::IsOsPlatform(OSX))    )">true</BuildOsx>
+    <BuildLinux Condition="$(CrossBuild) Or $(RuntimeIdentifier.StartsWith('linux')) Or ('$(RuntimeIdentifier)'=='' And $([MSBuild]::IsOsPlatform(Linux))  )">true</BuildLinux>
+  </PropertyGroup>
+
+  <!-- Append or not the runtime identifier to the output directory -->
+  <PropertyGroup>
     <!--
-    Compute RedistByRuntime property:
-      if CrossBuild
+      if CrossBuild                           # need to classify multiple outputs
         RedistByRuntime = true
-      elsif OutDir.Contains(RuntimePlatform) || (BuildingInsideVisualStudio && IsDebug)
+      elsif OutDir.Contains(RuntimePlatform)  # no need to classify output
         RedistByRuntime = false
        else
         RedistByRuntime = true
@@ -25,27 +40,33 @@ For information on redist properties, see Redist.props
      -->
     <RedistByRuntime Condition="'$(RedistByRuntime)' == '' And $(CrossBuild)">true</RedistByRuntime>
     <RedistByRuntime Condition="'$(RedistByRuntime)' == '' And '$(RuntimePlatform)' != '' And $(OutDir.Contains('$(RuntimePlatform)'))">false</RedistByRuntime>
-    <RedistByRuntime Condition="'$(RedistByRuntime)' == '' And '$(BuildingInsideVisualStudio)' != '' And $(IsDebug)">false</RedistByRuntime>
     <RedistByRuntime Condition="'$(RedistByRuntime)' == ''">true</RedistByRuntime>
+  </PropertyGroup>
+
+  <!-- Defaults-->
+  <PropertyGroup>
+    <RedistByFramework  Condition="'$(RedistByFramework)'  == ''">false</RedistByFramework>
+    <RedistX86Framework Condition="'$(RedistX86Framework)' == ''">$(CoreTargetFramework)</RedistX86Framework>
+    <RedistX64Framework Condition="'$(RedistX64Framework)' == ''">$(CoreTargetFramework)</RedistX64Framework>
   </PropertyGroup>
 
   <!-- x86|AnyCPU -->
   <ItemGroup Condition="'$(RuntimePlatform)' == 'x86' Or '$(RuntimePlatform)' == 'AnyCPU'">
     <ImportProject Condition="$([MSBuild]::IsOsPlatform(Windows))" Include="$(RedistProjectPath)">
-      <TargetFramework>$(RedistWinX86Framework)</TargetFramework>
+      <TargetFramework>$(RedistX86Framework)</TargetFramework>
       <RuntimeIdentifier Condition="'$(RuntimePlatform)' == 'x86'">$(WinRuntimePrefix)-$(RuntimePlatform)</RuntimeIdentifier>
-      <OutDir            Condition="'$(RedistWinX86Framework)' == '$(FullTargetFramework)'">$(OutDir)win-$(RuntimePlatform)</OutDir>
-      <PublishDir        Condition="'$(RedistWinX86Framework)' == '$(CoreTargetFramework)'">$(OutDir)win-$(RuntimePlatform)</PublishDir>
+      <OutDir            Condition="'$(RedistX86Framework)' == '$(FullTargetFramework)'">$(OutDir)win-$(RuntimePlatform)</OutDir>
+      <PublishDir        Condition="'$(RedistX86Framework)' == '$(CoreTargetFramework)'">$(OutDir)win-$(RuntimePlatform)</PublishDir>
     </ImportProject>
   </ItemGroup>
 
   <!-- x64 -->
   <ItemGroup Condition="'$(RuntimePlatform)' == 'x64'">
     <ImportProject Condition="$(BuildWin)" Include="$(RedistProjectPath)">
-      <TargetFramework>$(RedistWinX64Framework)</TargetFramework>
-      <RuntimeIdentifier Condition="'$(RedistWinX64Framework)' == '$(CoreTargetFramework)'">$(WinRuntimePrefix)-$(RuntimePlatform)</RuntimeIdentifier>
-      <OutDir            Condition="'$(RedistWinX64Framework)' == '$(FullTargetFramework)'">$(OutDir)win-$(RuntimePlatform)</OutDir>
-      <PublishDir        Condition="'$(RedistWinX64Framework)' == '$(CoreTargetFramework)'">$(OutDir)win-$(RuntimePlatform)</PublishDir>
+      <TargetFramework>$(RedistX64Framework)</TargetFramework>
+      <RuntimeIdentifier Condition="'$(RedistX64Framework)' == '$(CoreTargetFramework)'">$(WinRuntimePrefix)-$(RuntimePlatform)</RuntimeIdentifier>
+      <OutDir            Condition="'$(RedistX64Framework)' == '$(FullTargetFramework)'">$(OutDir)win-$(RuntimePlatform)</OutDir>
+      <PublishDir        Condition="'$(RedistX64Framework)' == '$(CoreTargetFramework)'">$(OutDir)win-$(RuntimePlatform)</PublishDir>
     </ImportProject>
     <ImportProject Condition="$(BuildOsx)" Include="$(RedistProjectPath)">
       <TargetFramework>$(CoreTargetFramework)</TargetFramework>
@@ -150,25 +171,25 @@ For information on redist properties, see Redist.props
   </Target>
 
   <Target Name="TraceRedistTargets">
-    <Message Importance="high" Text="zou/Redist.props [$(MSBuildProjectFile)]" />
-    <Message Importance="high" Text="----------------" />
-    <Message Importance="high" Text="CrossBuild            = $(CrossBuild)" />
-    <Message Importance="high" Text="BuildWin              = $(BuildWin)" />
-    <Message Importance="high" Text="BuildOsx              = $(BuildOsx)" />
-    <Message Importance="high" Text="BuildLinux            = $(BuildLinux)" />
+    <Message Importance="high" Text="zou/Redist.targets [$(MSBuildProjectFile)]" />
+    <Message Importance="high" Text="------------------" />
+    <Message Importance="high" Text="CrossBuild           = $(CrossBuild)" />
+    <Message Importance="high" Text="BuildWin             = $(BuildWin)" />
+    <Message Importance="high" Text="BuildOsx             = $(BuildOsx)" />
+    <Message Importance="high" Text="BuildLinux           = $(BuildLinux)" />
     <Message Importance="high" Text=" " />
-    <Message Importance="high" Text="Configuration         = $(Configuration)" />
-    <Message Importance="high" Text="RuntimePlatform       = $(RuntimePlatform)" />
-    <Message Importance="high" Text="RuntimeIdentifier     = $(RuntimeIdentifier)" />
-    <Message Importance="high" Text="OutDir                = $(OutDir)" />
-    <Message Importance="high" Text="PublishDir            = $(PublishDir)" />
+    <Message Importance="high" Text="Configuration        = $(Configuration)" />
+    <Message Importance="high" Text="RuntimePlatform      = $(RuntimePlatform)" />
+    <Message Importance="high" Text="RuntimeIdentifier    = $(RuntimeIdentifier)" />
+    <Message Importance="high" Text="OutDir               = $(OutDir)" />
+    <Message Importance="high" Text="PublishDir           = $(PublishDir)" />
     <Message Importance="high" Text=" " />
-    <Message Importance="high" Text="RedistBuildPropsPath  = $(RedistBuildPropsPath)" />
-    <Message Importance="high" Text="RedistByFramework     = $(RedistByFramework)" />
-    <Message Importance="high" Text="RedistByRuntime       = $(RedistByRuntime)" />
-    <Message Importance="high" Text="RedistWinX86Framework = $(RedistWinX86Framework)" />
-    <Message Importance="high" Text="RedistWinX64Framework = $(RedistWinX64Framework)" />
-    <Message Importance="high" Text="RedistProjectPath     = $(RedistProjectPath)" />
+    <Message Importance="high" Text="RedistBuildPropsPath = $(RedistBuildPropsPath)" />
+    <Message Importance="high" Text="RedistByFramework    = $(RedistByFramework)" />
+    <Message Importance="high" Text="RedistByRuntime      = $(RedistByRuntime)" />
+    <Message Importance="high" Text="RedistX86Framework   = $(RedistX86Framework)" />
+    <Message Importance="high" Text="RedistX64Framework   = $(RedistX64Framework)" />
+    <Message Importance="high" Text="RedistProjectPath    = $(RedistProjectPath)" />
     <Message Importance="high" Text=" " />
   </Target>
 
