@@ -10,10 +10,15 @@ properties to control the 'Redist.targets' build settings.
     RedistByFramework  - [optional] - include the target framework   in the output directory - ex: bin\Release\net6[\win-x64]\<redist-folder>
     RedistByRuntime    - [optional] - include the runtime identifier in the output directory - ex: bin\Release\[net6\]win-x64\<redist-folder>
     RedistX86Framework - [optional] - the target framework used for x86 or AnyCPU platforms  - (CoreTargetFramework | FullTargetFramework)
-    RedistX64Framework - [optional] - the target framework used for x64 platform            - (CoreTargetFramework | FullTargetFramework)
+    RedistX64Framework - [optional] - the target framework used for x64 platform             - (CoreTargetFramework | FullTargetFramework)
 -->
 <Project TreatAsLocalProperty="RedistBuildPropsPath;RedistFolder;CrossBuild;RedistDebug">
 
+  <PropertyGroup>
+    <!-- Inform agents that we are in redistribution mode -->
+    <RedistMode>true</RedistMode>
+  </PropertyGroup>
+  
   <Import Project="zou.props"           Condition="'$(ZouVersion)' == ''" />
   <Import Project="Cs.Frameworks.props" Condition="'$(CoreTargetFramework)' == ''" />
 
