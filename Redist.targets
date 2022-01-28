@@ -11,6 +11,11 @@ For information on redist properties, see Redist.props
     <WinRuntimePrefix Condition="'$(WinRuntimePrefix)' == ''">win7</WinRuntimePrefix>
   </PropertyGroup>
 
+  <!-- Defaults-->
+  <PropertyGroup>
+    <RedistByFramework  Condition="'$(RedistByFramework)'  == ''">false</RedistByFramework>
+  </PropertyGroup>
+
   <!-- Limit cross-build -->
   <PropertyGroup>
     <!-- FullTargetFramework is not available on OSX and Linux -->
@@ -42,13 +47,6 @@ For information on redist properties, see Redist.props
     <RedistByRuntime Condition="'$(RedistByRuntime)' == '' And '$(RuntimePlatform)' != '' And $(OutDir.Contains('$(RuntimePlatform)'))">false</RedistByRuntime>
     <RedistByRuntime Condition="'$(RedistByRuntime)' == '' And '$(RuntimePlatform)' == 'x86' And $(OutDir.Contains('Win32'))">false</RedistByRuntime>
     <RedistByRuntime Condition="'$(RedistByRuntime)' == ''">true</RedistByRuntime>
-  </PropertyGroup>
-
-  <!-- Defaults-->
-  <PropertyGroup>
-    <RedistByFramework  Condition="'$(RedistByFramework)'  == ''">false</RedistByFramework>
-    <RedistX86Framework Condition="'$(RedistX86Framework)' == ''">$(CoreTargetFramework)</RedistX86Framework>
-    <RedistX64Framework Condition="'$(RedistX64Framework)' == ''">$(CoreTargetFramework)</RedistX64Framework>
   </PropertyGroup>
 
   <!-- x86|AnyCPU -->
@@ -140,7 +138,7 @@ For information on redist properties, see Redist.props
         <_UseBuildTarget>false</_UseBuildTarget>
       </ImportProject>
       <ImportProject>
-        <_UseBuildTarget Condition="$(IsDebug) Or '%(TargetFramework)' == '$(FullTargetFramework)'">true</_UseBuildTarget>
+        <_UseBuildTarget Condition="$(IsDebug) Or '%(TargetFramework)' == '' Or '%(TargetFramework)' == '$(FullTargetFramework)'">true</_UseBuildTarget>
       </ImportProject>
       <ImportProject>
         <Targets>Publish</Targets>
