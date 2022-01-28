@@ -40,6 +40,7 @@ For information on redist properties, see Redist.props
      -->
     <RedistByRuntime Condition="'$(RedistByRuntime)' == '' And $(CrossBuild)">true</RedistByRuntime>
     <RedistByRuntime Condition="'$(RedistByRuntime)' == '' And '$(RuntimePlatform)' != '' And $(OutDir.Contains('$(RuntimePlatform)'))">false</RedistByRuntime>
+    <RedistByRuntime Condition="'$(RedistByRuntime)' == '' And '$(RuntimePlatform)' == 'x86' And $(OutDir.Contains('Win32'))">false</RedistByRuntime>
     <RedistByRuntime Condition="'$(RedistByRuntime)' == ''">true</RedistByRuntime>
   </PropertyGroup>
 
@@ -161,8 +162,8 @@ For information on redist properties, see Redist.props
       <ImportProject RemoveMetadata="_UseBuildTarget" />
     </ItemGroup>
 
-    <LogItems Items="@(ImportProject)" Title="RedistUpdateTarget.ImportProject" />
-    <Message Importance="high" Text=" " />
+    <LogItems Condition="$(RedistDebug)" Items="@(ImportProject)" Title="RedistUpdateTarget.ImportProject" />
+    <Message  Condition="$(RedistDebug)" Importance="high" Text=" " />
   </Target>
 
   <Target Name="RedistCheckProps">
@@ -170,7 +171,7 @@ For information on redist properties, see Redist.props
     <Error Condition="!Exists('$(RedistProjectPath)')" Message="RedistProjectPath not found: '$(RedistProjectPath)'." />
   </Target>
 
-  <Target Name="TraceRedistTargets">
+  <Target Name="TraceRedistTargets" Condition="$(RedistDebug) Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
     <Message Importance="high" Text="zou/Redist.targets [$(MSBuildProjectFile)]" />
     <Message Importance="high" Text="------------------" />
     <Message Importance="high" Text="CrossBuild           = $(CrossBuild)" />

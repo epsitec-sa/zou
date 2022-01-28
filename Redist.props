@@ -12,7 +12,7 @@ properties to control the 'Redist.targets' build settings.
     RedistX86Framework - [optional] - the target framework used for x86 or AnyCPU platforms  - (CoreTargetFramework | FullTargetFramework)
     RedistX64Framework - [optional] - the target framework used for x64 platform            - (CoreTargetFramework | FullTargetFramework)
 -->
-<Project TreatAsLocalProperty="RedistBuildPropsPath;RedistFolder;CrossBuild">
+<Project TreatAsLocalProperty="RedistBuildPropsPath;RedistFolder;CrossBuild;RedistDebug">
 
   <Import Project="zou.props"           Condition="'$(ZouVersion)' == ''" />
   <Import Project="Cs.Frameworks.props" Condition="'$(CoreTargetFramework)' == ''" />
@@ -23,4 +23,7 @@ properties to control the 'Redist.targets' build settings.
   </PropertyGroup>
   <Import Project="$(RedistBuildPropsPath)" Condition="Exists('$(RedistBuildPropsPath)')" />
 
+  <PropertyGroup>
+    <RedistDebug Condition="'$(RedistDebug)' == ''">false</RedistDebug>
+  </PropertyGroup>
 </Project>
