@@ -32,15 +32,14 @@ Summary
   + TargetDir, OutputPath, IntermediateOutputPath if netcore
   # Forward.props
   # Microsoft.Cpp.targets
-
 -->
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project InitialTargets="TraceCppAgent">
 
   <PropertyGroup>
     <_PropertySheetDisplayName>[zou] C++ Agent</_PropertySheetDisplayName>
     <ZouAgentType>Cpp</ZouAgentType>
   </PropertyGroup>
-
+  
   <Import Project="Cpp.Boot.props" Condition="'$(ZouVersion)' == ''"/>
   <Import Project="Agent.props" />
 
@@ -59,5 +58,25 @@ Summary
     <ImportMicrosoftCppTargets>true</ImportMicrosoftCppTargets>
   </PropertyGroup>
   <Import Project="Agent.targets" />
+  
+  <Target Name="TraceCppAgent" Condition="'$(ZouTrace)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
+    <Message Importance="high" Text="zou/Cpp.Agent.props [$(MSBuildProjectFile)]" />
+    <Message Importance="high" Text="-------------------" />
+    <Message Importance="high" Text="NTVersion          = _WIN32_WINNT = $(NTVersion)" />
+    <Message Importance="high" Text="WorkDirSpecified   = $(WorkDirSpecified)" />
+    <Message Importance="high" Text="WorkDir            = $(WorkDir)" />
+    <Message Importance="high" Text="IntDir             = $(IntDir)" />
+    <Message Importance="high" Text="AsmDirSpecified    = $(AsmDirSpecified)" />
+    <Message Importance="high" Text="AsmDir             = $(AsmDir)" />
+    <Message Importance="high" Text="AsmProjDir         = $(AsmProjDir)" />
+    <Message Importance="high" Text="PkgDirSpecified    = $(PkgDirSpecified)" />
+    <Message Importance="high" Text="PkgBinDirSpecified = $(PkgBinDirSpecified)" />
+    <Message Importance="high" Text="PkgDir             = $(PkgDir)" />
+    <Message Importance="high" Text="PkgBinDir          = $(PkgBinDir)" />
+    <Message Importance="high" Text="PkgDbgDir          = $(PkgDbgDir)" />
+    <Message Importance="high" Text="OutDirSpecified    = $(OutDirSpecified)" />
+    <Message Importance="high" Text="OutDir             = $(OutDir)" />
+    <Message Importance="high" Text=" " />
+  </Target>
 
 </Project>

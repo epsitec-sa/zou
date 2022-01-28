@@ -1,7 +1,5 @@
-<?xml version="1.0" encoding="utf-8"?>
 <!-- This property sheet resolves the 'IntDir' property (supports override in zou.cfg folder). -->
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003"
-         InitialTargets="TmpIntDirTrace">
+<Project>
 
   <Import Project="zou.props" Condition="'$(ZouTmpDir)' == ''"/>
   
@@ -12,8 +10,4 @@
     <!-- Avoid MSB8029 warning -->
     <IgnoreWarnIntDirInTempDetected>true</IgnoreWarnIntDirInTempDetected>
   </PropertyGroup>
-
-  <Target Name="TmpIntDirTrace" Condition="'$(ZouTrace)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
-    <Message Importance="normal" Text="IntDir = $(IntDir)" />
-  </Target>
 </Project>

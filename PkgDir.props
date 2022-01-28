@@ -1,8 +1,5 @@
-<?xml version="1.0" encoding="utf-8"?>
 <!-- This property sheet resolves the 'PkgDir'property (supports override in zou.cfg folder). -->
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003"
-         InitialTargets="PkgDirTrace"
-         TreatAsLocalProperty="PkgDir;PkgBinDir">
+<Project TreatAsLocalProperty="PkgDir;PkgBinDir">
 
   <PropertyGroup>
     <PkgDir    Condition="'$(PkgDir)'    != ''">$([MSBuild]::EnsureTrailingSlash('$(PkgDir)'))</PkgDir>
@@ -33,12 +30,4 @@
     <PkgBinDir Condition="'$(PkgBinDir)' == ''">$(PkgDir)bin\</PkgBinDir>
     <PkgDbgDir Condition="'$(PkgDbgDir)' == ''">$(PkgDir)dbg\</PkgDbgDir>
   </PropertyGroup>
-  
-  <Target Name="PkgDirTrace" Condition="'$(ZouTrace)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
-    <Message Importance="normal" Text="PkgDirSpecified    = $(PkgDirSpecified)" />
-    <Message Importance="normal" Text="PkgBinDirSpecified = $(PkgBinDirSpecified)" />
-    <Message Importance="normal" Text="PkgDir             = $(PkgDir)" />
-    <Message Importance="normal" Text="PkgBinDir          = $(PkgBinDir)" />
-    <Message Importance="normal" Text="PkgDbgDir          = $(PkgDbgDir)" />
-  </Target>
 </Project>

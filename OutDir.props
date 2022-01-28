@@ -1,8 +1,5 @@
-<?xml version="1.0" encoding="utf-8"?>
 <!-- This property sheet resolves the 'OutDir'property (supports override in zou.cfg folder). -->
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003"
-         TreatAsLocalProperty="OutDir"
-         InitialTargets="OutDirTrace">
+<Project TreatAsLocalProperty="OutDir">
   
   <PropertyGroup>
     <OutDir Condition="'$(OutDir)' != ''">$([MSBuild]::EnsureTrailingSlash('$(OutDir)'))</OutDir>
@@ -33,9 +30,4 @@
       </PropertyGroup>
     </Otherwise>
   </Choose>
-
-  <Target Name="OutDirTrace" Condition="'$(ZouTrace)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
-    <Message Importance="normal" Text="OutDirSpecified = $(OutDirSpecified)" />
-    <Message Importance="normal" Text="OutDir          = $(OutDir)" />
-  </Target>
 </Project>

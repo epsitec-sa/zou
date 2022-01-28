@@ -1,8 +1,5 @@
-<?xml version="1.0" encoding="utf-8"?>
 <!-- This property sheet resolves the 'NTVersion'property and C++ '_WIN32_WINNT' macro (supports override in zou.cfg folder). -->
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003"
-         InitialTargets="CppNTVersionTrace"
-         TreatAsLocalProperty="NTVersion">
+<Project TreatAsLocalProperty="NTVersion">
 
   <ImportGroup Label="PropertySheets">
     <Import Project="$(MSBuildProjectDirectory)\..\..\..\..\..\..\..\$(ZouCfg)**\$(MSBuildThisFileName)*$(MSBuildThisFileExtension)" />
@@ -55,8 +52,4 @@
       <PreprocessorDefinitions>_WIN32_WINNT=$(NTVersion);%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
-
-  <Target Name="CppNTVersionTrace" Condition="'$(ZouTrace)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
-    <Message Importance="normal" Text="NTVersion = _WIN32_WINNT = $(NTVersion)" />
-  </Target>
 </Project>

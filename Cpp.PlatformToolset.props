@@ -1,8 +1,5 @@
-<?xml version="1.0" encoding="utf-8"?>
 <!-- This property sheet resolves the 'PlatformToolset'property (supports override in zou.cfg folder). -->
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003"
-         InitialTargets="CppPlatformToolsetTrace"
-         TreatAsLocalProperty="PlatformToolset">
+<Project TreatAsLocalProperty="PlatformToolset">
 
   <PropertyGroup Label="Globals">
     <!-- Reset property if not specified on the command line (initialise fallback) -->
@@ -27,8 +24,4 @@
       <PreprocessorDefinitions>_TOOLSET=$(PlatformToolset);%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
-
-  <Target Name="CppPlatformToolsetTrace" Condition="'$(ZouTrace)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
-    <Message Importance="normal" Text="PlatformToolset = _TOOLSET = $(PlatformToolset)" />
-  </Target>
 </Project>
