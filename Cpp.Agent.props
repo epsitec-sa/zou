@@ -48,7 +48,16 @@ Summary
     <Import Project="Cpp.NTVersion.props" />
     <Import Project="Com.WorkDir.props"/>
     <Import Project="Tmp.IntDir.props" />
-    <Import Project="Cpp.AsmDir.props" Condition="'$(MSBuildProjectExtension)' == '.vcxproj'" />
+  </ImportGroup>
+  
+  <PropertyGroup Condition="'$(RedistMode)' == 'true'">
+    <AsmDir Condition="'$(AsmDir)' == ''">$(WorkDir)bin\.cod\$(Configuration)\</AsmDir>
+    <PkgDir Condition="'$(PkgDir)' == ''">$(WorkDir)pkg\$(Configuration)\</PkgDir>
+    <OutDir Condition="'$(OutDir)' == ''">$(WorkDir)bin\$(Configuration)\</OutDir>
+  </PropertyGroup>
+
+  <ImportGroup Label="PropertySheets">
+    <Import Project="Cpp.AsmDir.props" />
     <Import Project="Cpp.PkgDir.props" />
     <Import Project="Cpp.OutDir.props"/>
   </ImportGroup>
