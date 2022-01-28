@@ -8,30 +8,30 @@
 
     <ImportProject>
       <!-- Forward following properties to nested commands -->
-      <Verbosity         Condition="'%(Verbosity)'         == '' And '$(Verbosity)'         != ''">$(Verbosity)</Verbosity>
-      <MaxCpuCount       Condition="'%(MaxCpuCount)'       == '' And '$(MaxCpuCount)'       != ''">$(MaxCpuCount)</MaxCpuCount>
+      <Verbosity         Condition="'%(Verbosity)'         == '' And '$(Verbosity)'          != ''">$(Verbosity)</Verbosity>
+      <MaxCpuCount       Condition="'%(MaxCpuCount)'       == '' And '$(MaxCpuCount)'        != ''">$(MaxCpuCount)</MaxCpuCount>
 
-      <WorkDir           Condition="'%(WorkDir)'           == '' And '$(WorkDir)'           != ''">$(WorkDir)</WorkDir>
-      <PkgDir            Condition="'%(PkgDir)'            == '' And '$(PkgDir)'            != ''">$(PkgDir)</PkgDir>
-      <PkgBinDir         Condition="'%(PkgBinDir)'         == '' And '$(PkgBinDir)'         != ''">$(PkgBinDir)</PkgBinDir>
-      <AsmDir            Condition="'%(AsmDir)'            == '' And '$(AsmDir)'            != ''">$(AsmDir)</AsmDir>
-      <OutDir            Condition="'%(OutDir)'            == '' And '$(OutDir)'            != ''">$(OutDir)</OutDir>
+      <WorkDir           Condition="'%(WorkDir)'           == '' And '$(WorkDir)'            != ''">$(WorkDir)</WorkDir>
+      <PkgDir            Condition="'%(PkgDir)'            == '' And '$(PkgDir)'             != ''">$(PkgDir)</PkgDir>
+      <PkgBinDir         Condition="'%(PkgBinDir)'         == '' And '$(PkgBinDir)'          != ''">$(PkgBinDir)</PkgBinDir>
+      <AsmDir            Condition="'%(AsmDir)'            == '' And '$(AsmDir)'             != ''">$(AsmDir)</AsmDir>
+      <OutDir            Condition="'%(OutDir)'            == '' And '$(OutDir)'             != ''">$(OutDir)</OutDir>
       
-      <PlatformToolset   Condition="'%(PlatformToolset)'   == '' And '$(PlatformToolset)'   != ''">$(PlatformToolset)</PlatformToolset>
-      <Platform          Condition="'%(Platform)'          == '' And '$(Platform)'          != ''">$(Platform)</Platform>
+      <PlatformToolset   Condition="'%(PlatformToolset)'   == '' And '$(PlatformToolset)'    != ''">$(PlatformToolset)</PlatformToolset>
+      <Platform          Condition="'%(Platform)'          == '' And '$(Platform)'           != ''">$(Platform)</Platform>
       
-      <Configuration     Condition="'%(Configuration)'     == '' And '$(Configuration)'     != ''">$(Configuration)</Configuration>
-      <RuntimeType       Condition="'%(RuntimeType)'       == '' And '$(RuntimeType)'       != ''">$(RuntimeType)</RuntimeType>
-      <RuntimeIdentifier Condition="'%(RuntimeIdentifier)' == '' And '$(RuntimeIdentifier)' != ''">$(RuntimeIdentifier)</RuntimeIdentifier>
-      <AssemblerOutput   Condition="'%(AssemblerOutput)'   == '' And '$(AssemblerOutput)'   != ''">$(AssemblerOutput)</AssemblerOutput>
+      <Configuration     Condition="'%(Configuration)'     == '' And '$(Configuration)'      != ''">$(Configuration)</Configuration>
+      <RuntimeType       Condition="'%(RuntimeType)'       == '' And '$(MSBuildRuntimeType)' != ''">$(MSBuildRuntimeType)</RuntimeType>
+      <RuntimeIdentifier Condition="'%(RuntimeIdentifier)' == '' And '$(RuntimeIdentifier)'  != ''">$(RuntimeIdentifier)</RuntimeIdentifier>
+      <AssemblerOutput   Condition="'%(AssemblerOutput)'   == '' And '$(AssemblerOutput)'    != ''">$(AssemblerOutput)</AssemblerOutput>
       
-      <CrossBuild        Condition="'%(CrossBuild)'        == '' And '$(CrossBuild)'        != ''">$(CrossBuild)</CrossBuild>
-      <SignToolBroker    Condition="'%(SignToolBroker)'    == '' And '$(SignToolBroker)'    != ''">$(SignToolBroker)</SignToolBroker>
+      <CrossBuild        Condition="'%(CrossBuild)'        == '' And '$(CrossBuild)'         != ''">$(CrossBuild)</CrossBuild>
+      <SignToolBroker    Condition="'%(SignToolBroker)'    == '' And '$(SignToolBroker)'     != ''">$(SignToolBroker)</SignToolBroker>
 
       <RedistDebug       Condition="'%(RedistDebug)'       == '' And '$(RedistDebug)'        != ''">$(RedistDebug)</RedistDebug>
-      <RedistFolder      Condition="'%(RedistFolder)'      == '' And '$(RedistFolder)'      != ''">$(RedistFolder)</RedistFolder>
-      <RedistByFramework Condition="'%(RedistByFramework)' == '' And '$(RedistByFramework)' != ''">$(RedistByFramework)</RedistByFramework>
-      <RedistByRuntime   Condition="'%(RedistByRuntime)'   == '' And '$(RedistByRuntime)'   != ''">$(RedistByRuntime)</RedistByRuntime>
+      <RedistFolder      Condition="'%(RedistFolder)'      == '' And '$(RedistFolder)'       != ''">$(RedistFolder)</RedistFolder>
+      <RedistByFramework Condition="'%(RedistByFramework)' == '' And '$(RedistByFramework)'  != ''">$(RedistByFramework)</RedistByFramework>
+      <RedistByRuntime   Condition="'%(RedistByRuntime)'   == '' And '$(RedistByRuntime)'    != ''">$(RedistByRuntime)</RedistByRuntime>
       
       <DisplayMSBuildCommand Condition="'%(DisplayMSBuildCommand)' == '' And '$(DisplayMSBuildCommand)' != ''">$(DisplayMSBuildCommand)</DisplayMSBuildCommand>
     </ImportProject>
@@ -76,7 +76,7 @@
         <MSBuildCmd>"$(MSBuildToolsPath)\msbuild"</MSBuildCmd>
       </ProjectsToBuild>
       <ProjectsToBuild>
-        <MSBuildCmd Condition="'%(RuntimeType)' == 'Core' Or !$([MSBuild]::IsOsPlatform(Windows))">dotnet build</MSBuildCmd>
+        <MSBuildCmd Condition="'%(RuntimeType)' != 'Full' Or !$([MSBuild]::IsOsPlatform(Windows))">dotnet build</MSBuildCmd>
         <!-- Do not reuse MSBuild nodes after a build -->
         <MSBuildOptions>-nologo -nr:false</MSBuildOptions>
       </ProjectsToBuild>
