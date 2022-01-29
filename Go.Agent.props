@@ -2,6 +2,44 @@
   References:
     https://gist.github.com/asukakenji/f15ba7e588ac42795f421b48b8aede63
     https://stackoverflow.com/questions/49078510/trouble-compiling-windows-dll-using-golang-1-10
+
+Summary
+
+# : import project
++ : define data
+
+# Agent.props
+  + Standard configurations (Debug|x64, ...)
+  + Default targets (Build, Clean, PackFilter)
+  # Microsoft.Cpp.Default.props
+  + C++ utility project
+  # Boot.Core.props
+    # zou.props
+    # zou.Errors.props
+    # PlatformToolset.props
+      + PlatformToolset
+    + Configuration, IsDebug, IsRelease, Solution*, Project*
+  # Microsoft.Cpp.props
+
+# Com.WorkDir.props
+# Tmp.IntDir.props
+# Go.PkgDir.props
+# Go.OutDir.props
+# Tools.Go.props
+
+# Agent.targets
+  + TargetDir, OutputPath, IntermediateOutputPath
+  # Forward.props
+  # [Microsoft.Cpp.targets] if ImportMicrosoftCppTargets
+
++ GoSourceDir
++ GoResourceDir
++ TargetExt
++ TargetName
++ TargetExt
++ TargetFileName
++ TargetPath
+
 -->
 <Project InitialTargets="TraceGoAgent">
 
@@ -37,11 +75,14 @@
   </PropertyGroup>
 
   <Target Name="TraceGoAgent" Condition="'$(ZouTrace)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
+    <Message Importance="high" Text="zou/Go.Agent.props [$(MSBuildProjectFile)]" />
+    <Message Importance="high" Text="------------------" />
     <Message Importance="high" Text="GoSourceDir    = $(GoSourceDir)" />
     <Message Importance="high" Text="GoResourceDir  = $(GoResourceDir)" />
-    <Message Importance="high" Text="TargetExt      = $(TargetExt)" />
     <Message Importance="high" Text="TargetName     = $(TargetName)" />
+    <Message Importance="high" Text="TargetExt      = $(TargetExt)" />
     <Message Importance="high" Text="TargetFileName = $(TargetFileName)" />
     <Message Importance="high" Text="TargetPath     = $(TargetPath)" />
+    <Message Importance="high" Text=" " />
   </Target>
 </Project>

@@ -4,34 +4,33 @@ Summary
 # : import project
 + : define data
 
-# Cpp.Boot.props
-  # zou.props
-  # zou.Errors.props
-  # Cpp.PlatformToolset.props
-  # Cpp.PlatformVersion.props
-  # Cpp.CharacterSet.props
-  # Cpp.Configuration.props
-  # Boot.Core.props (if netcore)
 # Agent.props
-  + Standard C# project configurations
+  + Standard configurations (Debug|x64, ...)
   + Default targets (Build, Clean, PackFilter)
   # Microsoft.Cpp.Default.props
-  + define as C++ utility project
+  + C++ utility project
+  # Boot.Core.props
+    # zou.props
+    # zou.Errors.props
+    # PlatformToolset.props
+      + PlatformToolset
+    + Configuration, IsDebug, IsRelease, Solution*, Project*
   # Microsoft.Cpp.props
+
 # Boot.Platform.props
-  + RuntimeIdentifier
-  + RuntimePlatform
-  + ForwardPlatform
+  + Platforms, Platform, RuntimePlatform, ForwardPlatform
+
 # Cpp.NTVersion.props
 # Com.WorkDir.props
 # Tmp.IntDir.props
 # Cpp.AsmDir.props
 # Cpp.PkgDir.props
 # Cpp.OutDir.props
-# Agent.targets (ImportMicrosoftCppTargets: true)
-  + TargetDir, OutputPath, IntermediateOutputPath if netcore
+
+# Agent.targets
+  + TargetDir, OutputPath, IntermediateOutputPath
   # Forward.props
-  # Microsoft.Cpp.targets
+  # [Microsoft.Cpp.targets] if ImportMicrosoftCppTargets
 -->
 <Project InitialTargets="TraceCppAgent">
 

@@ -5,31 +5,33 @@ Normally, external components are C# based, because C++ components should be imp
 # : import project
 + : define data
 
-# Cs.Boot.props
-  # zou.props
-  # zou.Errors.props
-  # Cs.PlatformToolset.props
-  # Boot.Core.props (if netcore)
 # Agent.props
-  + Standard C# project configurations
+  + Standard configurations (Debug|x64, ...)
   + Default targets (Build, Clean, PackFilter)
   # Microsoft.Cpp.Default.props
-  + define as C++ utility project
+  + C++ utility project
+  # Boot.Core.props
+    # zou.props
+    # zou.Errors.props
+    # PlatformToolset.props
+      + PlatformToolset
+    + Configuration, IsDebug, IsRelease, Solution*, Project*
   # Microsoft.Cpp.props
-+ Force Platform to 'Any CPU' if netcore
-+ Force ForwardPlatform to 'Any CPU' if Platform is 'Win32'
+
 # Boot.Platform.props
-  + RuntimeIdentifier
-  + RuntimePlatform
-  + ForwardPlatform
+  + Platforms, Platform, RuntimePlatform, ForwardPlatform
+# Cs.Frameworks.props
+  + CoreTargetFramework, FullTargetFramework
+
 # Com.WorkDir.props
 # Tmp.IntDir.props
 # Cs.PkgDir.props
 # Cs.OutDir.props
-# Agent.targets (ImportMicrosoftCppTargets: false)
-  + TargetDir, OutputPath, IntermediateOutputPath if netcore
+
+# Agent.targets
+  + TargetDir, OutputPath, IntermediateOutputPath
   # Forward.props
-  # Microsoft.Cpp.targets
+  # [Microsoft.Cpp.targets] if ImportMicrosoftCppTargets
 -->
 <Project>
   <PropertyGroup>

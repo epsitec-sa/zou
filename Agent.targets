@@ -1,5 +1,15 @@
-<!-- The Agent.targets is used to create a minimal zou agent (see Agent.props) -->
-<Project InitialTargets="TraceAgentTargets">
+<!--
+The Agent.targets is used to create a minimal zou agent (see Agent.props)
+
++ TargetDir               - local
++ OutputPath              - local
++ IntermediateOutputPath  - local
+# Forward.props
+# [Microsoft.Cpp.targets] if ImportMicrosoftCppTargets
+
+-->
+<Project InitialTargets="TraceAgentTargets"
+         TreatAsLocalProperty="TargetDir;OutputPath;IntermediateOutputPath">
 
   <!-- Ensure following properties are initialized for all zou agents -->
   <PropertyGroup>
@@ -26,8 +36,10 @@
   <Target Name="TraceAgentTargets" Condition="'$(ZouTrace)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
     <Message Importance="high" Text="zou/Agent.targets [$(MSBuildProjectFile)]" />
     <Message Importance="high" Text="-----------------" />
+    <Message Importance="high" Text="ZouAgentType           = $(ZouAgentType)" />
     <Message Importance="high" Text="Configuration          = $(Configuration)" />
     <Message Importance="high" Text="Platform               = $(Platform)" />
+    <Message Importance="high" Text="PlatformToolset        = $(PlatformToolset)" />
     <Message Importance="high" Text="OutDir                 = $(OutDir)" />
     <Message Importance="high" Text="TargetDir              = $(TargetDir)" />
     <Message Importance="high" Text="OutputPath             = $(OutputPath)" />

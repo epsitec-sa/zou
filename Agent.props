@@ -2,6 +2,18 @@
 The Agent.props & .targets are used to create a minimal zou agent.
 with standard configurations (Debug, Release) and platforms (Win32, x86, x64 and Any CPU).
 Example: see Templates\Cs.Component.Pack.vcxproj
+
+  # zou.props
+  # zou.Errors.props
+  + Standard configurations (Debug|x64, ...)
+  + Default targets (Build, Clean, PackFilter)
+  # Microsoft.Cpp.Default.props
+  + C++ utility project
+  # Boot.Core.props
+    # PlatformToolset.props
+      + PlatformToolset
+    + Configuration, IsDebug, IsRelease, Solution*, Project*
+  # Microsoft.Cpp.props
 -->
 <Project>
 
@@ -45,6 +57,8 @@ Example: see Templates\Cs.Component.Pack.vcxproj
   <Target Name="Build" Condition="'$(VCTargetsPath)' == ''" />
   <Target Name="Clean" Condition="'$(VCTargetsPath)' == ''" />
   <Target Name="PackFilter" />
+
+  <!-- Microsoft.Cpp.Default.props -->
 
   <PropertyGroup>
     <!-- 'Microsoft.Cpp.Default.props' overrides Platform value (Platform=Win32) -->

@@ -1,5 +1,25 @@
-<!-- Import this script at the top of a C++ agent -->
-<Project InitialTargets="TraceCppBoot">
+<!--
+Import this script at the beginning of a C++ project like this:
+ 
+  [ItemGroup Label="ProjectConfigurations"]
+    ...
+  [/ItemGroup]
+  
+  [!- zou - extension settings -]
+  [Import Project="..\zou\Cpp.Boot.props"]
+  
+  [PropertyGroup Label="Globals"]
+    ...
+  [/PropertyGroup]
+
+Summary
+  # Cpp.PlatformToolset.props
+  # Cpp.PlatformVersion.props
+  # Cpp.CharacterSet.props
+  # Cpp.Configuration.props
+  
+ -->
+ <Project InitialTargets="TraceCppBoot">
   
   <PropertyGroup>
     <!-- Check Wow64 registry key first, since some Kits will record an incorrect root in this registry key. Still fallback to usual reg key for architectures without a Wow6432Node. -->
@@ -13,9 +33,13 @@
   </ImportGroup>
 
   <ImportGroup Label="ExtensionSettings">
-    <Import Project="Cpp.PlatformToolset.props" />
+    <!-- PlatformToolset -->
+    <Import Project="Cpp.PlatformToolset.props"/>
+    <!-- WindowsTargetPlatformVersion -->
     <Import Project="Cpp.PlatformVersion.props" />
+    <!-- CharacterSet -->
     <Import Project="Cpp.CharacterSet.props" />
+    <!-- UseDebugLibraries, LinkIncremental -->
     <Import Project="Cpp.Configuration.props" />
     
     <Import Project="Boot.Core.props" Condition="'$(MSBuildRuntimeType)' == 'Core'" />

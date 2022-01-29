@@ -1,16 +1,40 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<!-- Resolves missing properties when using 'dotnet msbuild' command. -->
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" >
+<!--
+  # zou.props
+  # zou.Errors.props
+  # PlatformToolset.props
+    + PlatformToolset
+  + Configuration, IsDebug, IsRelease, Solution*, Project*
+-->
+<Project InitialTargets="TraceBootCore">
 
   <PropertyGroup>
     <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
+  <!-- Resolves missing properties when using 'dotnet msbuild' command. -->
+  <PropertyGroup>
     <SolutionName  Condition="'$(SolutionName)'  == ''">*Undefined*</SolutionName>
-    <SolutionDir   Condition="'$(SolutionDir)'   == ''">$(MSBuildProjectDirectory)$(V)</SolutionDir>
+    <SolutionDir   Condition="'$(SolutionDir)'   == ''">$(MSBuildProjectDirectory)\</SolutionDir>
     <SolutionPath  Condition="'$(SolutionPath)'  == ''">*Undefined*</SolutionPath>
     <ProjectName   Condition="'$(ProjectName)'   == ''">$([System.IO.Path]::GetFileNameWithoutExtension('$(MSBuildProjectFile)'))</ProjectName>
-    <ProjectDir    Condition="'$(ProjectDir)'    == ''">$(MSBuildProjectDirectory)$(V)</ProjectDir>
+    <ProjectDir    Condition="'$(ProjectDir)'    == ''">$(MSBuildProjectDirectory)\</ProjectDir>
     <ProjectDir    Condition="'$(ProjectDir)'    == ''">$(SolutionDir)</ProjectDir>
     <ProjectPath   Condition="'$(ProjectPath)'   == ''">$(ProjectDir)$(MSBuildProjectFile)</ProjectPath>
   </PropertyGroup>
+
+  <Target Name="TraceBootCore" Condition="'$(ZouTrace)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
+    <Message Importance="high" Text="zou/Boot.Core.props [$(MSBuildProjectFile)]" />
+    <Message Importance="high" Text="-------------------" />
+    <Message Importance="high" Text="PlatformToolset = $(PlatformToolset)" />
+    <Message Importance="high" Text="Configuration   = $(Configuration)" />
+    <Message Importance="high" Text="IsDebug         = $(IsDebug)" />
+    <Message Importance="high" Text="IsRelease       = $(IsRelease)" />
+    <Message Importance="high" Text=" " />
+    <Message Importance="high" Text="SolutionName    = $(SolutionName)" />
+    <Message Importance="high" Text="SolutionDir     = $(SolutionDir)" />
+    <Message Importance="high" Text="SolutionPath    = $(SolutionPath)" />
+    <Message Importance="high" Text="ProjectName     = $(ProjectName)" />
+    <Message Importance="high" Text="ProjectDir      = $(ProjectDir)" />
+    <Message Importance="high" Text="ProjectPath     = $(ProjectPath)" />
+    <Message Importance="high" Text=" " />
+  </Target>
 
 </Project>
