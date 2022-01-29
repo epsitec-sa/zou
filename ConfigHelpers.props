@@ -1,0 +1,18 @@
+<Project InitialTargets="TraceConfigHelpers">
+
+  <PropertyGroup>
+    <IsDebug   Condition="'$(Configuration)' != ''">false</IsDebug>
+    <IsRelease Condition="'$(Configuration)' != ''">false</IsRelease>
+    <IsDebug   Condition="$(Configuration.StartsWith('Debug',   StringComparison.OrdinalIgnoreCase))">true</IsDebug>
+    <IsRelease Condition="$(Configuration.StartsWith('Release', StringComparison.OrdinalIgnoreCase))">true</IsRelease>
+  </PropertyGroup>
+
+  <Target Name="TraceConfigHelpers" Condition="'$(ZouTrace)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
+    <Message Importance="high" Text="zou/ConfigHelpers.props [$(MSBuildProjectFile)]" />
+    <Message Importance="high" Text="-----------------------" />
+    <Message Importance="high" Text="Configuration = $(Configuration)" />
+    <Message Importance="high" Text="IsDebug       = $(IsDebug)" />
+    <Message Importance="high" Text="IsRelease     = $(IsRelease)" />
+    <Message Importance="high" Text=" " />
+  </Target>
+</Project>

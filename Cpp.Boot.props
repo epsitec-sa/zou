@@ -21,16 +21,16 @@ Summary
  -->
  <Project InitialTargets="TraceCppBoot">
   
+  <ImportGroup Condition="'$(ZouVersion)' == ''">
+    <Import Project="zou.props" />
+    <Import Project="zou.Errors.props" />
+  </ImportGroup>
+
   <PropertyGroup>
     <!-- Check Wow64 registry key first, since some Kits will record an incorrect root in this registry key. Still fallback to usual reg key for architectures without a Wow6432Node. -->
     <UCRTContentRoot Condition="'$(UCRTContentRoot)' == ''">$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Microsoft\Windows Kits\Installed Roots@KitsRoot10)</UCRTContentRoot>
     <UCRTContentRoot Condition="'$(UCRTContentRoot)' == ''">$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows Kits\Installed Roots@KitsRoot10)</UCRTContentRoot>
   </PropertyGroup>
-
-  <ImportGroup Condition="'$(ZouVersion)' == ''">
-    <Import Project="zou.props" />
-    <Import Project="zou.Errors.props" />
-  </ImportGroup>
 
   <ImportGroup Label="ExtensionSettings">
     <!-- PlatformToolset -->
@@ -41,8 +41,6 @@ Summary
     <Import Project="Cpp.CharacterSet.props" />
     <!-- UseDebugLibraries, LinkIncremental -->
     <Import Project="Cpp.Configuration.props" />
-    
-    <Import Project="Boot.Core.props" Condition="'$(MSBuildRuntimeType)' == 'Core'" />
   </ImportGroup>
   
   <Target Name="TraceCppBoot" Condition="'$(ZouTrace)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">

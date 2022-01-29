@@ -6,9 +6,19 @@
   + Configuration, IsDebug, IsRelease, Solution*, Project*
 -->
 <Project InitialTargets="TraceBootCore">
+    
+  <!-- PlatformToolset -->
+  <Import Project="Cpp.PlatformToolset.props" Condition="'$(PlatformToolset)' == ''"/>
 
+  <!-- Configuration, IsDebug, IsRelease -->
   <PropertyGroup>
+    <IsDebug>false</IsDebug> <IsRelease>false</IsRelease>
+    
     <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
+    <IsDebug       Condition="$(Configuration.StartsWith('Debug',   StringComparison.OrdinalIgnoreCase))">true</IsDebug>
+    <IsRelease     Condition="$(Configuration.StartsWith('Release', StringComparison.OrdinalIgnoreCase))">true</IsRelease>
+  </PropertyGroup>
+
   <!-- Resolves missing properties when using 'dotnet msbuild' command. -->
   <PropertyGroup>
     <SolutionName  Condition="'$(SolutionName)'  == ''">*Undefined*</SolutionName>

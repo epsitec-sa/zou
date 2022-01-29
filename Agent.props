@@ -14,8 +14,14 @@ Example: see Templates\Cs.Component.Pack.vcxproj
       + PlatformToolset
     + Configuration, IsDebug, IsRelease, Solution*, Project*
   # Microsoft.Cpp.props
+
 -->
 <Project>
+
+  <ImportGroup Condition="'$(ZouVersion)' == ''">
+    <Import Project="zou.props" />
+    <Import Project="zou.Errors.props" />
+  </ImportGroup>
 
   <!-- Standard configurations -->
   <ItemGroup Label="ProjectConfigurations">
@@ -64,13 +70,10 @@ Example: see Templates\Cs.Component.Pack.vcxproj
     <!-- 'Microsoft.Cpp.Default.props' overrides Platform value (Platform=Win32) -->
     <_Agent_Platform0>$(Platform)</_Agent_Platform0>
   </PropertyGroup>
-
-  <!-- Default C++ properties -->
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" Condition="Exists('$(VCTargetsPath)\Microsoft.Cpp.Default.props')"/>
-
-  <!-- Restore Platform -->
   <PropertyGroup>
-    <Platform>$(_Agent_Platform0)</Platform>
+    <!-- Restore Platform -->
+    <Platform Condition="'$(_Agent_Platform0)' != ''">$(_Agent_Platform0)</Platform>
     <_Agent_Platform0 />
   </PropertyGroup>
 
@@ -79,7 +82,20 @@ Example: see Templates\Cs.Component.Pack.vcxproj
     <ConfigurationType>Utility</ConfigurationType>
   </PropertyGroup>
 
-  <!-- C++ utility properties -->
+  <!-- PlatformToolset, Configuration, IsDebug, IsRelease, Solution*, Project* -->
+  <Import Project="Boot.Core.props"/>
+
+  <!-- Microsoft.Cpp.props -->
+
+  <PropertyGroup>
+    <!-- 'Microsoft.Cpp.props' overrides OutDir value -->
+    <_Agent_OutDir0>$(OutDir)</_Agent_OutDir0>
+  </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" Condition="Exists('$(VCTargetsPath)\Microsoft.Cpp.props')"/>
+  <PropertyGroup>
+    <!-- Restore OutDir -->
+    <OutDir>$(_Agent_OutDir0)</OutDir>
+    <_Agent_OutDir0 />
+  </PropertyGroup>
 
 </Project>

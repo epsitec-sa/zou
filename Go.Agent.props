@@ -48,7 +48,6 @@ Summary
     <ZouAgentType>Go</ZouAgentType>
   </PropertyGroup>
 
-  <Import Project="Go.Boot.props" Condition="'$(ZouVersion)' == ''"/>
   <Import Project="Agent.props" />
 
   <ImportGroup Label="PropertySheets">
@@ -68,8 +67,8 @@ Summary
   <PropertyGroup>
     <GoSourceDir   Condition="'$(GoSourceDir)'   == ''">$(ProjectDir)</GoSourceDir>
     <GoResourceDir Condition="'$(GoResourceDir)' == ''">$(ProjectDir)resources\</GoResourceDir>
-    <TargetExt     Condition="'$(TargetExt)'     == '' And $([MSBuild]::IsOsPlatform('Windows'))">.exe</TargetExt>
     <TargetName    Condition="'$(TargetName)'    == ''">$(MSBuildProjectName)</TargetName>
+    <TargetExt     Condition="'$(TargetExt)'     == '' And $([MSBuild]::IsOsPlatform('Windows'))">.exe</TargetExt>
     <TargetFileName>$(TargetName)$(TargetExt)</TargetFileName>
     <TargetPath>$(TargetDir)$(TargetFileName)</TargetPath>
   </PropertyGroup>

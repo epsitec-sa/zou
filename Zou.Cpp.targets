@@ -26,23 +26,14 @@ Summary:
     </None>
   </ItemGroup>
 
+  <!-- Enable boost -->
   <PropertyGroup>
     <BoostEnabled Condition="'$(BoostEnabled)' == ''">true</BoostEnabled>
   </PropertyGroup>
+  <Import Project="Cpp.Boost.targets" Condition="'$(BoostEnabled)' == 'true' And ('$(ConfigurationType)' == 'StaticLibrary' Or '$(ConfigurationType)' == 'DynamicLibrary' Or '$(ConfigurationType)' == 'Application')"/>
 
-  <Import Project="$(MSBuildThisFileDirectory)Cpp.Boost.targets"
-          Condition="'$(BoostEnabled)' == 'true' And ('$(ConfigurationType)' == 'StaticLibrary' Or '$(ConfigurationType)' == 'DynamicLibrary' Or '$(ConfigurationType)' == 'Application')"/>
+  <!-- Optional VLD -->
+  <Import Project="Cpp.Vld.targets" Condition="'$(EnableVLD)' == 'true' And ('$(ConfigurationType)' == 'Application' Or '$(ConfigurationType)' == 'DynamicLibrary')"/>
 
-  <!--
-  Ensure vld.ini appears in VS solution explorer ('vld.ini' should appear verbatim in the Include attribute)
-  WARNING: should not depend on the EnableVLD property - so do not move this code in the Cpp.Vld.targets script!
-  -->
-  <!--<ItemGroup Condition="'$(ConfigurationType)' == 'Application'">
-    <None Include="$(ProjectDir)vld.ini" />
-  </ItemGroup>-->
-
-  <Import Project="$(MSBuildThisFileDirectory)Cpp.Vld.targets"
-          Condition="'$(EnableVLD)' == 'true' And ('$(ConfigurationType)' == 'Application' Or '$(ConfigurationType)' == 'DynamicLibrary')"/>
-
-  <Import Project="$(MSBuildThisFileDirectory)Zou.Cpp.Base.targets"/>
+  <Import Project="Zou.Cpp.Base.targets"/>
 </Project>
