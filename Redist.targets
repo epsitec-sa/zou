@@ -175,9 +175,9 @@ For information on redist properties, see Redist.props
     <Message  Condition="$(RedistDebug)" Importance="high" Text=" " />
   </Target>
 
-  <Target Name="RedistCheckProps" Condition="@(ImportProject->Count()) == 0 And '$(RedistProjectPath)' == ''">
-    <Error Condition="'$(RedistProjectPath)' == ''"    Text="RedistProjectPath property not defined." />
-    <Error Condition="!Exists('$(RedistProjectPath)')" Text="RedistProjectPath not found: '$(RedistProjectPath)'." />
+  <Target Name="RedistCheckProps">
+    <Warning Condition="'$(RedistProjectPath)' == '' And @(ImportProject->Count()) == 0"  Text="No project defined: specify one with the 'RedistProjectPath' property or the 'ImportProject' ItemGroup." />
+    <Error   Condition="'$(RedistProjectPath)' != '' And !Exists('$(RedistProjectPath)')" Text="'RedistProjectPath' not found: '$(RedistProjectPath)'." />
   </Target>
 
   <Target Name="TraceRedistTargets" Condition="$(RedistDebug) Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
