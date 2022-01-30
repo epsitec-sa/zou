@@ -47,74 +47,108 @@ For information on redist properties, see Redist.props
     <RedistByRuntime Condition="'$(RedistByRuntime)' == ''">true</RedistByRuntime>
   </PropertyGroup>
 
+  <!-- Define RedistProject metadata transfered to ItemProject -->
+  <PropertyGroup>
+    <RedistProjectMetadataToRemove>CrossBuild;Os;RedistFolder;RedistByFramework;RedistByRuntime;RedistX86Framework;RedistX64Framework</RedistProjectMetadataToRemove>
+    <RedistProjectMetadataToKeep>Targets</RedistProjectMetadataToKeep>
+    <RedistProjectMetadataToTransfer>$(RedistProjectMetadataToRemove);$(RedistProjectMetadataToKeep)</RedistProjectMetadataToTransfer>
+  </PropertyGroup>
+
+  <!-- Setup RedistProject defaults -->
+  <!--<ItemDefinitionGroup>
+    <RedistProject>
+      <CrossBuild         Condition="'%(CrossBuild)'         == '' And '$(CrossBuild)'         != ''">$(CrossBuild)</CrossBuild>
+      <RedistFolder       Condition="'%(RedistFolder)'       == '' And '$(RedistFolder)'       != ''">$(RedistFolder)</RedistFolder>
+      <RedistByFramework  Condition="'%(RedistByFramework)'  == '' And '$(RedistByFramework)'  != ''">$(RedistByFramework)</RedistByFramework>
+      <RedistByRuntime    Condition="'%(RedistByRuntime)'    == '' And '$(RedistByRuntime)'    != ''">$(RedistByRuntime)</RedistByRuntime>
+      <RedistX86Framework Condition="'%(RedistX86Framework)' == '' And '$(RedistX86Framework)' != ''">$(RedistX86Framework)</RedistX86Framework>
+      <RedistX64Framework Condition="'%(RedistX64Framework)' == '' And '$(RedistX64Framework)' != ''">$(RedistX64Framework)</RedistX64Framework>
+    </RedistProject>
+  </ItemDefinitionGroup>-->
+  
+  <!-- Create default RedistProject Item -->
   <ItemGroup>
-    <ImportProject Condition="'$(RedistProjectPath)' != ''" Include="$(RedistProjectPath)" />
+    <RedistProject Include="$(RedistProjectPath)" Condition="'$(RedistProjectPath)' != ''">
+      <CrossBuild         Condition="'$(CrossBuild)'         != ''">$(CrossBuild)</CrossBuild>
+      <RedistFolder       Condition="'$(RedistFolder)'       != ''">$(RedistFolder)</RedistFolder>
+      <RedistByFramework  Condition="'$(RedistByFramework)'  != ''">$(RedistByFramework)</RedistByFramework>
+      <RedistByRuntime    Condition="'$(RedistByRuntime)'    != ''">$(RedistByRuntime)</RedistByRuntime>
+      <RedistX86Framework Condition="'$(RedistX86Framework)' != ''">$(RedistX86Framework)</RedistX86Framework>
+      <RedistX64Framework Condition="'$(RedistX64Framework)' != ''">$(RedistX64Framework)</RedistX64Framework>
+    </RedistProject>
+  </ItemGroup>
+  
+  <!-- Duplicate ItemProject for specified OSes-->
+  <ItemGroup>
+    <ImportProject Include="@(RedistProject)" Condition="$(BuildWin)" KeepMetadata="$(RedistProjectMetadataToTransfer)">
+      <Os>win</Os>
+    </ImportProject>
+    <ImportProject Include="@(RedistProject)" Condition="$(BuildOsx)" KeepMetadata="$(RedistProjectMetadataToTransfer)">
+      <Os>osx</Os>
+    </ImportProject>
+    <ImportProject Include="@(RedistProject)" Condition="$(BuildLinux)" KeepMetadata="$(RedistProjectMetadataToTransfer)">
+      <Os>linux</Os>
+    </ImportProject>
   </ItemGroup>
 
   <Target Name="RedistInitImports">
+    <!--<LogItems Condition="$(RedistDebug)" Items="@(ImportProject)" Title="RedistInitImports.ImportProject" />
+    <Message  Condition="$(RedistDebug)" Importance="high" Text=" " />-->
+
     <ItemGroup>
-      <ImportProject>
+      <ImportProject Condition="'%(ImportProject.Os)' == 'win'">
         <!-- Use 'msbuild' for .sln and .vcxproj -->
         <RuntimeType Condition="'%(Extension)' == '.sln' Or '%(Extension)' == '.vcxproj'">Full</RuntimeType>
         <!-- Use 'dotnet build' for .csproj -->
         <RuntimeType Condition="'%(Extension)' == '.csproj'">Core</RuntimeType>
       </ImportProject>
+      <ImportProject>
+        <RuntimeFolder>%(ImportProject.Os)-$(RuntimePlatform)</RuntimeFolder>
+      </ImportProject>
+      <ImportProject>
+        <OutDir    >$(OutDir)%(ImportProject.RuntimeFolder)</OutDir>
+        <PublishDir>$(OutDir)%(ImportProject.RuntimeFolder)</PublishDir>
+      </ImportProject>
     </ItemGroup>
 
     <!-- x86|AnyCPU -->
-    <ItemGroup Condition="$(BuildWin) And ('$(RuntimePlatform)' == 'x86' Or '$(RuntimePlatform)' == 'AnyCPU')">
-      <ImportProject>
+    <ItemGroup Condition="'$(RuntimePlatform)' == 'x86' Or '$(RuntimePlatform)' == 'AnyCPU'">
+      <ImportProject Condition="'%(ImportProject.Os)' == 'win'">
+        <RuntimeFolder>win-$(RuntimePlatform)</RuntimeFolder>
         <RuntimeIdentifier Condition="'$(RuntimePlatform)' == 'x86'">$(WinRuntimePrefix)-$(RuntimePlatform)</RuntimeIdentifier>
-      </ImportProject>
-      <!-- C# project-->
-      <ImportProject Condition="'$(RedistX86Framework)' != ''">
-        <TargetFramework>$(RedistX86Framework)</TargetFramework>
-        <RuntimeIdentifier Condition="'$(RuntimePlatform)' == 'x86'">$(WinRuntimePrefix)-$(RuntimePlatform)</RuntimeIdentifier>
-        <OutDir            Condition="'$(RedistX86Framework)' == '$(FullTargetFramework)'">$(OutDir)win-$(RuntimePlatform)</OutDir>
-        <PublishDir        Condition="'$(RedistX86Framework)' == '$(CoreTargetFramework)'">$(OutDir)win-$(RuntimePlatform)</PublishDir>
-      </ImportProject>
-      <!-- Other projects -->
-      <ImportProject Condition="'$(RedistX86Framework)' == ''">
-        <OutDir     >$(OutDir)win-$(RuntimePlatform)</OutDir>
-        <PublishDir >$(OutDir)win-$(RuntimePlatform)</PublishDir>
+        <TargetFramework   Condition="'%(ImportProject.RedistX86Framework)' != ''">%(ImportProject.RedistX86Framework)</TargetFramework>
       </ImportProject>
     </ItemGroup>
 
     <!-- x64 -->
     <ItemGroup Condition="'$(RuntimePlatform)' == 'x64'">
       <!-- Windows -->
-      <!-- C# project-->
-      <ImportProject Condition="$(BuildWin) And '$(RedistX64Framework)' != ''">
-        <TargetFramework>$(RedistX64Framework)</TargetFramework>
-        <RuntimeIdentifier Condition="'$(RedistX64Framework)' == '$(CoreTargetFramework)'">$(WinRuntimePrefix)-$(RuntimePlatform)</RuntimeIdentifier>
-        <OutDir            Condition="'$(RedistX64Framework)' == '$(FullTargetFramework)'">$(OutDir)win-$(RuntimePlatform)</OutDir>
-        <PublishDir        Condition="'$(RedistX64Framework)' == '$(CoreTargetFramework)'">$(OutDir)win-$(RuntimePlatform)</PublishDir>
-      </ImportProject>
-      <!-- Other projects -->
-      <ImportProject Condition="$(BuildWin) And '$(RedistX64Framework)' == ''">
-        <OutDir     >$(OutDir)win-$(RuntimePlatform)</OutDir>
-        <PublishDir >$(OutDir)win-$(RuntimePlatform)</PublishDir>
+      <ImportProject Condition="'%(ImportProject.Os)' == 'win'">
+        <RuntimeFolder>win-$(RuntimePlatform)</RuntimeFolder>
+        <RuntimeIdentifier Condition="'%(ImportProject.RedistX64Framework)' == '$(CoreTargetFramework)'">$(WinRuntimePrefix)-$(RuntimePlatform)</RuntimeIdentifier>
+        <TargetFramework   Condition="'%(ImportProject.RedistX64Framework)' != ''">%(ImportProject.RedistX64Framework)</TargetFramework>
       </ImportProject>
       
       <!-- OSX -->
-      <ImportProject Condition="$(BuildOsx)">
+      <ImportProject Condition="'%(ImportProject.Os)' == 'osx'">
         <!-- Use 'dotnet build' on OSX -->
         <RuntimeType>Core</RuntimeType>
+        <RuntimeFolder>osx-$(RuntimePlatform)</RuntimeFolder>
         <TargetFramework>$(CoreTargetFramework)</TargetFramework>
         <RuntimeIdentifier>osx-$(RuntimePlatform)</RuntimeIdentifier>
-        <OutDir>$(OutDir)osx-$(RuntimePlatform)</OutDir>
-        <PublishDir>$(OutDir)osx-$(RuntimePlatform)</PublishDir>
       </ImportProject>
       
       <!-- Linux -->
-      <ImportProject Condition="$(BuildLinux)">
+      <ImportProject Condition="'%(ImportProject.Os)' == 'linux'">
         <!-- Use 'dotnet build' on Linux -->
         <RuntimeType>Core</RuntimeType>
+        <RuntimeFolder>linux-$(RuntimePlatform)</RuntimeFolder>
         <TargetFramework>$(CoreTargetFramework)</TargetFramework>
         <RuntimeIdentifier>linux-$(RuntimePlatform)</RuntimeIdentifier>
-        <OutDir>$(OutDir)linux-$(RuntimePlatform)</OutDir>
-        <PublishDir>$(OutDir)linux-$(RuntimePlatform)</PublishDir>
       </ImportProject>
+
+      <!-- Remove temporary metadata -->
+      <ImportProject RemoveMetadata="$(RedistProjectMetadataToRemove)" />
     </ItemGroup>
   </Target>
 
@@ -141,13 +175,8 @@ For information on redist properties, see Redist.props
     <ItemGroup>
       <!-- Process C# output directories -->
       <ImportProject>
-        <_RuntimeFolder Condition="$([System.String]::new('%(ImportProject.OutDir)').EndsWith('$(RuntimePlatform)'))">$([System.IO.Path]::GetFileName('%(OutDir)'))</_RuntimeFolder>
-        <_RuntimeFolder Condition="$([System.String]::new('%(ImportProject.PublishDir)').EndsWith('$(RuntimePlatform)'))">$([System.IO.Path]::GetFileName('%(ImportProject.PublishDir)'))</_RuntimeFolder>
-      </ImportProject>
-
-      <ImportProject>
         <_OutputFolder Condition="! $(RedistByRuntime)">$(RedistFolder)</_OutputFolder>
-        <_OutputFolder Condition="  $(RedistByRuntime)">$([System.IO.Path]::Combine('%(ImportProject._RuntimeFolder)', '$(RedistFolder)'))</_OutputFolder>
+        <_OutputFolder Condition="  $(RedistByRuntime)">$([System.IO.Path]::Combine('%(ImportProject.RuntimeFolder)', '$(RedistFolder)'))</_OutputFolder>
       </ImportProject>
       <ImportProject>
         <_OutputFolder Condition="$(RedistByFramework)">$([System.IO.Path]::Combine('%(ImportProject.TargetFramework)', '%(ImportProject._OutputFolder)'))</_OutputFolder>
@@ -165,7 +194,7 @@ For information on redist properties, see Redist.props
       </ImportProject>
 
       <!-- Remove temporary metadata -->
-      <ImportProject RemoveMetadata="_OutputFolder;_RuntimeFolder" />
+      <ImportProject RemoveMetadata="_OutputFolder" />
     </ItemGroup>
   </Target>
 
@@ -199,6 +228,8 @@ For information on redist properties, see Redist.props
       <ImportProject RemoveMetadata="_UseBuildTarget" />
     </ItemGroup>
 
+    <LogItems Condition="$(RedistDebug)" Items="@(RedistProject)" Title="RedistUpdateTarget.RedistProject" />
+    <Message  Condition="$(RedistDebug)" Importance="high" Text=" " />
     <LogItems Condition="$(RedistDebug)" Items="@(ImportProject)" Title="RedistUpdateTarget.ImportProject" />
     <Message  Condition="$(RedistDebug)" Importance="high" Text=" " />
   </Target>
