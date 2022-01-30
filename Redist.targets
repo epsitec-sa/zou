@@ -83,10 +83,10 @@ For information on redist properties, see Redist.props
     <ImportProject Include="@(RedistProject)" Condition="$(BuildWin)" KeepMetadata="$(RedistProjectMetadataToTransfer)">
       <Os>win</Os>
     </ImportProject>
-    <ImportProject Include="@(RedistProject)" Condition="$(BuildOsx)" KeepMetadata="$(RedistProjectMetadataToTransfer)">
+    <ImportProject Include="@(RedistProject)" Condition="$(BuildOsx) And '$(RuntimePlatform)' == 'x64'" KeepMetadata="$(RedistProjectMetadataToTransfer)">
       <Os>osx</Os>
     </ImportProject>
-    <ImportProject Include="@(RedistProject)" Condition="$(BuildLinux)" KeepMetadata="$(RedistProjectMetadataToTransfer)">
+    <ImportProject Include="@(RedistProject)" Condition="$(BuildLinux) And '$(RuntimePlatform)' == 'x64'" KeepMetadata="$(RedistProjectMetadataToTransfer)">
       <Os>linux</Os>
     </ImportProject>
   </ItemGroup>
