@@ -52,40 +52,70 @@ For information on redist properties, see Redist.props
   </ItemGroup>
 
   <Target Name="RedistInitImports">
+    <ItemGroup>
+      <ImportProject>
+        <!-- Use 'msbuild' for .sln and .vcxproj -->
+        <RuntimeType Condition="'%(Extension)' == '.sln' Or '%(Extension)' == '.vcxproj'">Full</RuntimeType>
+        <!-- Use 'dotnet build' for .csproj -->
+        <RuntimeType Condition="'%(Extension)' == '.csproj'">Core</RuntimeType>
+      </ImportProject>
+    </ItemGroup>
+
     <!-- x86|AnyCPU -->
-    <ItemGroup Condition="'$(RuntimePlatform)' == 'x86' Or '$(RuntimePlatform)' == 'AnyCPU'">
-      <ImportProject Condition="$([MSBuild]::IsOsPlatform(Windows))">
+    <ItemGroup Condition="$(BuildWin) And ('$(RuntimePlatform)' == 'x86' Or '$(RuntimePlatform)' == 'AnyCPU')">
+      <ImportProject>
+        <RuntimeIdentifier Condition="'$(RuntimePlatform)' == 'x86'">$(WinRuntimePrefix)-$(RuntimePlatform)</RuntimeIdentifier>
+      </ImportProject>
+      <!-- C# project-->
+      <ImportProject Condition="'$(RedistX86Framework)' != ''">
         <TargetFramework>$(RedistX86Framework)</TargetFramework>
         <RuntimeIdentifier Condition="'$(RuntimePlatform)' == 'x86'">$(WinRuntimePrefix)-$(RuntimePlatform)</RuntimeIdentifier>
         <OutDir            Condition="'$(RedistX86Framework)' == '$(FullTargetFramework)'">$(OutDir)win-$(RuntimePlatform)</OutDir>
         <PublishDir        Condition="'$(RedistX86Framework)' == '$(CoreTargetFramework)'">$(OutDir)win-$(RuntimePlatform)</PublishDir>
       </ImportProject>
+      <!-- Other projects -->
+      <ImportProject Condition="'$(RedistX86Framework)' == ''">
+        <OutDir     >$(OutDir)win-$(RuntimePlatform)</OutDir>
+        <PublishDir >$(OutDir)win-$(RuntimePlatform)</PublishDir>
+      </ImportProject>
     </ItemGroup>
 
     <!-- x64 -->
     <ItemGroup Condition="'$(RuntimePlatform)' == 'x64'">
-      <ImportProject Condition="$(BuildWin)">
+      <!-- Windows -->
+      <!-- C# project-->
+      <ImportProject Condition="$(BuildWin) And '$(RedistX64Framework)' != ''">
         <TargetFramework>$(RedistX64Framework)</TargetFramework>
         <RuntimeIdentifier Condition="'$(RedistX64Framework)' == '$(CoreTargetFramework)'">$(WinRuntimePrefix)-$(RuntimePlatform)</RuntimeIdentifier>
         <OutDir            Condition="'$(RedistX64Framework)' == '$(FullTargetFramework)'">$(OutDir)win-$(RuntimePlatform)</OutDir>
         <PublishDir        Condition="'$(RedistX64Framework)' == '$(CoreTargetFramework)'">$(OutDir)win-$(RuntimePlatform)</PublishDir>
       </ImportProject>
+      <!-- Other projects -->
+      <ImportProject Condition="$(BuildWin) And '$(RedistX64Framework)' == ''">
+        <OutDir     >$(OutDir)win-$(RuntimePlatform)</OutDir>
+        <PublishDir >$(OutDir)win-$(RuntimePlatform)</PublishDir>
+      </ImportProject>
+      
+      <!-- OSX -->
       <ImportProject Condition="$(BuildOsx)">
+        <!-- Use 'dotnet build' on OSX -->
+        <RuntimeType>Core</RuntimeType>
         <TargetFramework>$(CoreTargetFramework)</TargetFramework>
         <RuntimeIdentifier>osx-$(RuntimePlatform)</RuntimeIdentifier>
         <OutDir>$(OutDir)osx-$(RuntimePlatform)</OutDir>
         <PublishDir>$(OutDir)osx-$(RuntimePlatform)</PublishDir>
       </ImportProject>
+      
+      <!-- Linux -->
       <ImportProject Condition="$(BuildLinux)">
+        <!-- Use 'dotnet build' on Linux -->
+        <RuntimeType>Core</RuntimeType>
         <TargetFramework>$(CoreTargetFramework)</TargetFramework>
         <RuntimeIdentifier>linux-$(RuntimePlatform)</RuntimeIdentifier>
         <OutDir>$(OutDir)linux-$(RuntimePlatform)</OutDir>
         <PublishDir>$(OutDir)linux-$(RuntimePlatform)</PublishDir>
       </ImportProject>
     </ItemGroup>
-    
-    <!--<LogItems Items="@(ImportProject)" Title="RedistInitImports.ImportProject" />
-    <Message Importance="high" Text=" " />-->
   </Target>
 
   <!--
@@ -109,6 +139,7 @@ For information on redist properties, see Redist.props
   -->
   <Target Name="RedistTransformLayout" Condition="'$(RedistFolder)' != ''" DependsOnTargets="RedistInitImports">
     <ItemGroup>
+      <!-- Process C# output directories -->
       <ImportProject>
         <_RuntimeFolder Condition="$([System.String]::new('%(ImportProject.OutDir)').EndsWith('$(RuntimePlatform)'))">$([System.IO.Path]::GetFileName('%(OutDir)'))</_RuntimeFolder>
         <_RuntimeFolder Condition="$([System.String]::new('%(ImportProject.PublishDir)').EndsWith('$(RuntimePlatform)'))">$([System.IO.Path]::GetFileName('%(ImportProject.PublishDir)'))</_RuntimeFolder>
@@ -136,9 +167,6 @@ For information on redist properties, see Redist.props
       <!-- Remove temporary metadata -->
       <ImportProject RemoveMetadata="_OutputFolder;_RuntimeFolder" />
     </ItemGroup>
-
-    <!--<LogItems Items="@(ImportProject)" Title="RedistTransformLayout.ImportProject" />
-    <Message Importance="high" Text=" " />-->
   </Target>
 
   <Target Name="RedistUpdateTarget" BeforeTargets="AddBuildOptions" DependsOnTargets="RedistTransformLayout">
@@ -148,7 +176,7 @@ For information on redist properties, see Redist.props
         <_UseBuildTarget>false</_UseBuildTarget>
       </ImportProject>
       <ImportProject>
-        <_UseBuildTarget Condition="$(Configuration.StartsWith('Debug', StringComparison.OrdinalIgnoreCase)) Or '%(TargetFramework)' == '' Or '%(TargetFramework)' == '$(FullTargetFramework)'">true</_UseBuildTarget>
+        <_UseBuildTarget Condition="$(Configuration.StartsWith('Debug', StringComparison.OrdinalIgnoreCase)) Or '%(ImportProject.TargetFramework)' == '' Or '%(ImportProject.TargetFramework)' == '$(FullTargetFramework)'">true</_UseBuildTarget>
       </ImportProject>
       <ImportProject>
         <Targets Condition="'%(ImportProject.Targets)' == ''">Publish</Targets>
@@ -176,8 +204,7 @@ For information on redist properties, see Redist.props
   </Target>
 
   <Target Name="RedistCheckProps">
-    <Warning Condition="'$(RedistProjectPath)' == '' And @(ImportProject->Count()) == 0"  Text="No project defined: specify one with the 'RedistProjectPath' property or the 'ImportProject' ItemGroup." />
-    <Error   Condition="'$(RedistProjectPath)' != '' And !Exists('$(RedistProjectPath)')" Text="'RedistProjectPath' not found: '$(RedistProjectPath)'." />
+    <Warning Condition="@(ImportProject->Count()) == 0" Text="No project defined in '$(ZouRedistPath)' : specify one with the 'RedistProjectPath' property or the 'ImportProject' ItemGroup." />
   </Target>
 
   <Target Name="TraceRedistTargets" Condition="$(RedistDebug) Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
