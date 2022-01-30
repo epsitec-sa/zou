@@ -12,7 +12,7 @@ properties to control the 'Redist.targets' build settings.
     RedistX86Framework - [optional] - the target framework used for x86 or AnyCPU platforms  - (CoreTargetFramework | FullTargetFramework)
     RedistX64Framework - [optional] - the target framework used for x64 platform             - (CoreTargetFramework | FullTargetFramework)
 -->
-<Project TreatAsLocalProperty="ZouRedistPath;RedistFolder;CrossBuild;RedistDebug">
+<Project TreatAsLocalProperty="ZouRedistPath;RedistFolder;RedistDebug;CrossBuild">
 
   <PropertyGroup>
     <!-- Inform agents that we are in redistribution mode -->
@@ -30,5 +30,11 @@ properties to control the 'Redist.targets' build settings.
 
   <PropertyGroup>
     <RedistDebug Condition="'$(RedistDebug)' == ''">false</RedistDebug>
+  </PropertyGroup>
+  
+  <!-- Limit cross-build -->
+  <PropertyGroup>
+    <!-- FullTargetFramework is not available on OSX and Linux -->
+    <CrossBuild Condition="'$(RedistX64Framework)' == '$(FullTargetFramework)'">false</CrossBuild>
   </PropertyGroup>
 </Project>

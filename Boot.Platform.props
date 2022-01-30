@@ -8,7 +8,7 @@ Outputs
   ForwardPlatform - local (Forward.props)
 -->
 <Project InitialTargets="TraceBootPlatform;ZouCheckPlatform" 
-         TreatAsLocalProperty="RuntimeIdentifier;RuntimePlatform;Platform">
+         TreatAsLocalProperty="RuntimeIdentifier;RuntimePlatform;Platform;CrossBuild;BuildWin;BuildOsx;BuildLinux">
 
   <PropertyGroup>
     <Platforms>AnyCPU;x86;x64</Platforms>
@@ -54,6 +54,22 @@ Outputs
       </PropertyGroup>
     </Otherwise>
   </Choose>
+
+
+  <!-- Limit cross-build -->
+  <PropertyGroup>
+    <!-- Do not cross-build inside Visual Studio -->
+    <CrossBuild Condition="'$(BuildingInsideVisualStudio)' != ''">false</CrossBuild>
+    <CrossBuild Condition="$(RuntimePlatform.EndsWith('x86'))">false</CrossBuild>
+    <CrossBuild Condition="'$(CrossBuild)' == ''">false</CrossBuild>
+
+    <BuildWin>false</BuildWin>
+    <BuildOsx>false</BuildOsx>
+    <BuildLinux>false</BuildLinux>
+    <BuildWin   Condition="$(CrossBuild) Or $(RuntimeIdentifier.StartsWith('win'))   Or ('$(RuntimeIdentifier)'=='' And $([MSBuild]::IsOsPlatform(Windows)))">true</BuildWin>
+    <BuildOsx   Condition="$(CrossBuild) Or $(RuntimeIdentifier.StartsWith('osx'))   Or ('$(RuntimeIdentifier)'=='' And $([MSBuild]::IsOsPlatform(OSX))    )">true</BuildOsx>
+    <BuildLinux Condition="$(CrossBuild) Or $(RuntimeIdentifier.StartsWith('linux')) Or ('$(RuntimeIdentifier)'=='' And $([MSBuild]::IsOsPlatform(Linux))  )">true</BuildLinux>
+  </PropertyGroup>
 
   <Target Name="ZouCheckPlatform" Condition="'$(ForwardPlatform)' != '' And '$(RuntimePlatform)' != ''">
     <PropertyGroup>

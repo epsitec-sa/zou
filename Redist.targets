@@ -14,22 +14,6 @@ For information on redist properties, see Redist.props
     <RedistByFramework  Condition="'$(RedistByFramework)'  == ''">false</RedistByFramework>
   </PropertyGroup>
 
-  <!-- Limit cross-build -->
-  <PropertyGroup>
-    <!-- FullTargetFramework is not available on OSX and Linux -->
-    <CrossBuild Condition="'$(RedistX64Framework)' == '$(FullTargetFramework)'">false</CrossBuild>
-    <!-- Do not cross-build inside Visual Studio -->
-    <CrossBuild Condition="'$(BuildingInsideVisualStudio)' != ''">false</CrossBuild>
-    <CrossBuild Condition="'$(CrossBuild)' == ''">false</CrossBuild>
-
-    <BuildWin>false</BuildWin>
-    <BuildOsx>false</BuildOsx>
-    <BuildLinux>false</BuildLinux>
-    <BuildWin   Condition="$(CrossBuild) Or $(RuntimeIdentifier.StartsWith('win'))   Or ('$(RuntimeIdentifier)'=='' And $([MSBuild]::IsOsPlatform(Windows)))">true</BuildWin>
-    <BuildOsx   Condition="$(CrossBuild) Or $(RuntimeIdentifier.StartsWith('osx'))   Or ('$(RuntimeIdentifier)'=='' And $([MSBuild]::IsOsPlatform(OSX))    )">true</BuildOsx>
-    <BuildLinux Condition="$(CrossBuild) Or $(RuntimeIdentifier.StartsWith('linux')) Or ('$(RuntimeIdentifier)'=='' And $([MSBuild]::IsOsPlatform(Linux))  )">true</BuildLinux>
-  </PropertyGroup>
-
   <!-- Append or not the runtime identifier to the output directory -->
   <PropertyGroup>
     <!--
@@ -57,7 +41,6 @@ For information on redist properties, see Redist.props
   <!-- Setup RedistProject defaults -->
   <!--<ItemDefinitionGroup>
     <RedistProject>
-      <CrossBuild         Condition="'%(CrossBuild)'         == '' And '$(CrossBuild)'         != ''">$(CrossBuild)</CrossBuild>
       <RedistFolder       Condition="'%(RedistFolder)'       == '' And '$(RedistFolder)'       != ''">$(RedistFolder)</RedistFolder>
       <RedistByFramework  Condition="'%(RedistByFramework)'  == '' And '$(RedistByFramework)'  != ''">$(RedistByFramework)</RedistByFramework>
       <RedistByRuntime    Condition="'%(RedistByRuntime)'    == '' And '$(RedistByRuntime)'    != ''">$(RedistByRuntime)</RedistByRuntime>
@@ -69,7 +52,6 @@ For information on redist properties, see Redist.props
   <!-- Create default RedistProject Item -->
   <ItemGroup>
     <RedistProject Include="$(RedistProjectPath)" Condition="'$(RedistProjectPath)' != ''">
-      <CrossBuild         Condition="'$(CrossBuild)'         != ''">$(CrossBuild)</CrossBuild>
       <RedistFolder       Condition="'$(RedistFolder)'       != ''">$(RedistFolder)</RedistFolder>
       <RedistByFramework  Condition="'$(RedistByFramework)'  != ''">$(RedistByFramework)</RedistByFramework>
       <RedistByRuntime    Condition="'$(RedistByRuntime)'    != ''">$(RedistByRuntime)</RedistByRuntime>
@@ -92,9 +74,6 @@ For information on redist properties, see Redist.props
   </ItemGroup>
 
   <Target Name="RedistInitImports">
-    <!--<LogItems Condition="$(RedistDebug)" Items="@(ImportProject)" Title="RedistInitImports.ImportProject" />
-    <Message  Condition="$(RedistDebug)" Importance="high" Text=" " />-->
-
     <ItemGroup>
       <ImportProject Condition="'%(ImportProject.Os)' == 'win'">
         <!-- Use 'msbuild' for .sln and .vcxproj -->
