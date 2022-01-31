@@ -17,7 +17,7 @@ Outputs
   <Choose>
     <When Condition="'$(RuntimeIdentifier)' == '' Or '$(RuntimeIdentifier)' == '*Undefined*'">
       <PropertyGroup>
-        <DebugBootPlatform>1</DebugBootPlatform>
+        <DebugBootRuntime>1</DebugBootRuntime>
 
         <Platform Condition="'$(Platform)' == '' And '$(ZouAgentType)' == 'Cpp'">Win32</Platform>
         <Platform Condition="'$(Platform)' == '' And '$(ZouAgentType)' == 'CSharp'">AnyCPU</Platform>
@@ -37,7 +37,7 @@ Outputs
     </When>
     <When Condition="$(RuntimeIdentifier.EndsWith('x86'))">
       <PropertyGroup>
-        <DebugBootPlatform>2</DebugBootPlatform>
+        <DebugBootRuntime>2</DebugBootRuntime>
 
         <Platform        Condition="'$(Platform)'        == ''">x86</Platform>
         <RuntimePlatform Condition="'$(RuntimePlatform)' == ''">x86</RuntimePlatform>
@@ -46,7 +46,7 @@ Outputs
     </When>
     <Otherwise>
       <PropertyGroup>
-        <DebugBootPlatform>3</DebugBootPlatform>
+        <DebugBootRuntime>3</DebugBootRuntime>
 
         <Platform        Condition="'$(Platform)'        == ''">x64</Platform>
         <RuntimePlatform Condition="'$(RuntimePlatform)' == ''">x64</RuntimePlatform>
@@ -80,14 +80,21 @@ Outputs
   </Target>
 
   <Target Name="TraceBootPlatform" Condition="'$(ZouTrace)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
-    <Message Importance="high" Text="zou/Boot.Platform.props [$(MSBuildProjectFile)]" />
-    <Message Importance="high" Text="-----------------------" />
-    <Message Importance="high" Text="DebugBootPlatform  = $(DebugBootPlatform)" />
-    <Message Importance="high" Text="Platforms          = $(Platforms)" />
-    <Message Importance="high" Text="RuntimeIdentifier  = $(RuntimeIdentifier)" />
-    <Message Importance="high" Text="Platform           = $(Platform)" />
-    <Message Importance="high" Text="RuntimePlatform    = $(RuntimePlatform)" />
-    <Message Importance="high" Text="ForwardPlatform    = $(ForwardPlatform)" />
+    <Message Importance="high" Text="zou/Boot.Runtime.props [$(MSBuildProjectFile)]" />
+    <Message Importance="high" Text="----------------------" />
+    <Message Importance="high" Text="DebugBootRuntime  = $(DebugBootRuntime)" />
+    <Message Importance="high" Text=" " />
+    <Message Importance="high" Text="CrossBuild        = $(CrossBuild)" />
+    <Message Importance="high" Text="BuildWin          = $(BuildWin)" />
+    <Message Importance="high" Text="BuildOsx          = $(BuildOsx)" />
+    <Message Importance="high" Text="BuildLinux        = $(BuildLinux)" />
+    <Message Importance="high" Text=" " />
+    <Message Importance="high" Text="Platform          = $(Platform)" />
+    <Message Importance="high" Text="RuntimePlatform   = $(RuntimePlatform)" />
+    <Message Importance="high" Text="RuntimeIdentifier = $(RuntimeIdentifier)" />
+    <Message Importance="high" Text=" " />
+    <Message Importance="high" Text="ForwardPlatform   = $(ForwardPlatform)" />
+    <Message Importance="high" Text="Platforms         = $(Platforms)" />
     <Message Importance="high" Text=" " />
   </Target>
 
