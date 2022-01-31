@@ -154,11 +154,11 @@ For information on redist properties, see Redist.props
     <ItemGroup>
       <!-- Process C# output directories -->
       <ImportProject>
-        <_OutputFolder Condition="! $(RedistByRuntime)">$(RedistFolder)</_OutputFolder>
-        <_OutputFolder Condition="  $(RedistByRuntime)">$([System.IO.Path]::Combine('%(ImportProject.RuntimeFolder)', '$(RedistFolder)'))</_OutputFolder>
+        <_OutputFolder Condition="! %(ImportProject.RedistByRuntime)">%(ImportProject.RedistFolder)</_OutputFolder>
+        <_OutputFolder Condition="  %(ImportProject.RedistByRuntime)">$([System.IO.Path]::Combine('%(ImportProject.RuntimeFolder)', '%(ImportProject.RedistFolder)'))</_OutputFolder>
       </ImportProject>
       <ImportProject>
-        <_OutputFolder Condition="$(RedistByFramework)">$([System.IO.Path]::Combine('%(ImportProject.TargetFramework)', '%(ImportProject._OutputFolder)'))</_OutputFolder>
+        <_OutputFolder Condition="%(ImportProject.RedistByFramework)">$([System.IO.Path]::Combine('%(ImportProject.TargetFramework)', '%(ImportProject._OutputFolder)'))</_OutputFolder>
       </ImportProject>
       <ImportProject>
         <_OutputFolder>$([MSBuild]::EnsureTrailingSlash('%(ImportProject._OutputFolder)'))</_OutputFolder>
@@ -193,14 +193,6 @@ For information on redist properties, see Redist.props
       <ImportProject>
         <OutDir     Condition="! %(_UseBuildTarget)" />
         <PublishDir Condition="  %(_UseBuildTarget)" />
-      </ImportProject>
-      <ImportProject>
-        <!--
-        Reset Platform metadata if RuntimeIdentifier is specified to avoid redondant platform in OutDir like bin\x64\Release\netstandard2.0\win-x64
-        - set its value to *Undefined* so that the ItemDefinitionGroup.ImportProject default value is not restored
-        - the AddBuildOptions custom task (ImportProject.targets) does not generate metadata which value equals to *Undefined*
-        -->
-        <!--<Platform Condition="'%(ImportProject.RuntimeIdentifier)' != '' And '%(ImportProject.RuntimeIdentifier)' != '*Undefined*'">*Undefined*</Platform>-->
       </ImportProject>
 
       <!-- Remove temporary metadata -->
