@@ -29,8 +29,9 @@
       <CrossBuild        Condition="'%(CrossBuild)'        == '' And '$(CrossBuild)'         != ''">$(CrossBuild)</CrossBuild>
       <SignToolBroker    Condition="'%(SignToolBroker)'    == '' And '$(SignToolBroker)'     != ''">$(SignToolBroker)</SignToolBroker>
 
-      <RedistDebug           Condition="'%(RedistDebug)'           == '' And '$(RedistDebug)'           != ''">$(RedistDebug)</RedistDebug>
-      <DisplayMSBuildCommand Condition="'%(DisplayMSBuildCommand)' == '' And '$(DisplayMSBuildCommand)' != ''">$(DisplayMSBuildCommand)</DisplayMSBuildCommand>
+      <RedistDebug       Condition="'%(RedistDebug)'       == '' And '$(RedistDebug)'        != ''">$(RedistDebug)</RedistDebug>
+      <TargetDebug       Condition="'%(TargetDebug)'       == '' And '$(TargetDebug)'        != ''">$(TargetDebug)</TargetDebug>
+      <ExecDebug         Condition="'%(ExecDebug)'         == '' And '$(ExecDebug)'          != ''">$(ExecDebug)</ExecDebug>
     </ImportProject>
 
     <ImportProject>
@@ -46,86 +47,109 @@
     </ImportProject>
   </ItemDefinitionGroup>
 
-  <!-- Preprocess build options and add a 'Properties' metadata -->
-  <Target Name="AddBuildOptions">
+  <Target Name="CreateImportedProjects">
+    <Message Condition="'$(TargetDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] CreateImportedProjects(CrossBuild=$(CrossBuild))" />
+
+    <!-- ImportProject = ImportProject x RuntimeIdentifier (defined in Boot.Runtime.props ) -->
+    <MulJoin Input="@(ImportProject)" Items="@(RuntimeIdentifier)" ItemName="RuntimeIdentifier" >
+      <Output ItemName="_ImportProject" TaskParameter="Output" />
+    </MulJoin>
+
+    <ItemGroup>
+      <ImportProject Remove="@(ImportProject)" />
+      <ImportProject Include="@(_ImportProject)" />
+      <_ImportProject Remove="@(_ImportProject)" />
+    </ItemGroup>
+
+    <!--<LogItems Items="@(ImportProject)" Title="CreateImportedProjects.ImportProject" />
+    <Message Importance="high"  Text=" " />-->
+  </Target>
+  
+  <Target Name="CreateMSBuildProjects" DependsOnTargets="CreateImportedProjects">
+    <Message Condition="'$(TargetDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] CreateMSBuildProjects" />
+
+    <!-- Preprocess build options and add a 'Properties' metadata -->
     <AddBuildOptions Projects="@(ImportProject)">
-      <Output ItemName="ProjectsToBuild" TaskParameter="ProjectsOutput" />
+      <Output ItemName="MSBuildProject" TaskParameter="ProjectsOutput" />
     </AddBuildOptions>
+    
+    <!--<LogItems Items="@(ImportProject)" Title="CreateMSBuildProjects.ImportProject" />
+    <Message Importance="high" Text=" " />-->
   </Target>
 
   <!-- ================ ImportProjectClean ================ -->
 
   <!-- Target batching -->
   <Target Name="ImportProjectClean"
-          DependsOnTargets="AddBuildOptions"
-          Returns="%(ProjectsToBuild.Identity)">
+          DependsOnTargets="CreateMSBuildProjects"
+          Returns="%(MSBuildProject.Identity)">
     <!-- The clean target does not care about project dependencies. This means that we can safely use the MSBuild task for solutions too. -->
-    <MSBuild Projects="%(ProjectsToBuild.Identity)" Targets="Clean" Properties="%(Properties)" ContinueOnError="WarnAndContinue" />
+    <MSBuild Projects="%(MSBuildProject.Identity)" Targets="Clean" Properties="%(Properties)" ContinueOnError="WarnAndContinue" />
   </Target>
 
   <!-- ================ ImportProject ================ -->
 
-  <Target Name="InitProjectsToBuild" DependsOnTargets="AddBuildOptions">
+  <Target Name="UpdateMSBuildProjects" DependsOnTargets="CreateMSBuildProjects">
+    <Message Condition="'$(TargetDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] UpdateMSBuildProjects" />
+
     <ItemGroup>
-      <ProjectsToBuild>
-        <MSBuildCmd>"$(MSBuildToolsPath)\msbuild"</MSBuildCmd>
-      </ProjectsToBuild>
-      <ProjectsToBuild>
-        <MSBuildCmd Condition="'%(RuntimeType)' != 'Full' Or !$([MSBuild]::IsOsPlatform(Windows))">dotnet build</MSBuildCmd>
+      <MSBuildProject>
+        <Command>"$(MSBuildToolsPath)\msbuild"</Command>
+      </MSBuildProject>
+      <MSBuildProject>
+        <Command Condition="'%(RuntimeType)' != 'Full' Or !$([MSBuild]::IsOsPlatform(Windows))">dotnet build</Command>
         <!-- Do not reuse MSBuild nodes after a build -->
-        <MSBuildOptions>-nologo -nr:false</MSBuildOptions>
-      </ProjectsToBuild>
-      <ProjectsToBuild>
-        <MSBuildOptions Condition="'%(ProjectsToBuild.MaxCpuCount)' == '0'">%(MSBuildOptions) -m</MSBuildOptions>
-      </ProjectsToBuild>
-      <ProjectsToBuild>
-        <MSBuildOptions Condition="'%(ProjectsToBuild.MaxCpuCount)' != '0' And '%(ProjectsToBuild.MaxCpuCount)' != ''">%(MSBuildOptions) -m:%(ProjectsToBuild.MaxCpuCount)</MSBuildOptions>
-      </ProjectsToBuild>
-      <ProjectsToBuild>
-        <MSBuildOptions Condition="'%(ProjectsToBuild.Verbosity)' != ''">%(MSBuildOptions) -v:%(ProjectsToBuild.Verbosity)</MSBuildOptions>
-      </ProjectsToBuild>
-      <ProjectsToBuild>
-        <MSBuildOptions Condition="'%(ProjectsToBuild.Targets)' != ''">%(MSBuildOptions) -t:%(ProjectsToBuild.Targets)</MSBuildOptions>
-      </ProjectsToBuild>
-      <ProjectsToBuild>
-        <MSBuildOptions Condition="'%(ProjectsToBuild.Properties)' != ''">%(MSBuildOptions) -p:%(ProjectsToBuild.Properties)</MSBuildOptions>
-      </ProjectsToBuild>
+        <Options>-nologo -nr:false</Options>
+      </MSBuildProject>
+      <MSBuildProject>
+        <Options Condition="'%(MSBuildProject.MaxCpuCount)' == '0'">%(Options) -m</Options>
+      </MSBuildProject>
+      <MSBuildProject>
+        <Options Condition="'%(MSBuildProject.MaxCpuCount)' != '0' And '%(MSBuildProject.MaxCpuCount)' != ''">%(Options) -m:%(MSBuildProject.MaxCpuCount)</Options>
+      </MSBuildProject>
+      <MSBuildProject>
+        <Options Condition="'%(MSBuildProject.Verbosity)' != ''">%(Options) -v:%(MSBuildProject.Verbosity)</Options>
+      </MSBuildProject>
+      <MSBuildProject>
+        <Options Condition="'%(MSBuildProject.Targets)' != ''">%(Options) -t:%(MSBuildProject.Targets)</Options>
+      </MSBuildProject>
+      <MSBuildProject>
+        <Options Condition="'%(MSBuildProject.Properties)' != ''">%(Options) -p:%(MSBuildProject.Properties)</Options>
+      </MSBuildProject>
     </ItemGroup>
 
-    <!--<LogItems Items="@(ProjectsToBuild)" Title="ProjectsToBuild" />
-    <Message Text=" " />-->
-
+    <!--<LogItems Items="@(MSBuildProject)" Title="MSBuildProject" />
+    <Message Importance="high" Text=" " />-->
   </Target>
   
   <!-- Target batching -->
-  <Target Name="ImportProject"
-          Condition="'@(ImportProject)' != ''"
-          DependsOnTargets="InitProjectsToBuild"
-          Returns="%(ProjectsToBuild.Identity)">
-    
+  <Target Name="ImportProject" Condition="'@(ImportProject)' != ''" DependsOnTargets="UpdateMSBuildProjects" Returns="%(MSBuildProject.Identity)">
+    <Message Condition="'$(TargetDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] ImportProject" />
+
     <!-- Restore nuget packages for solution... -->
-    <Exec Condition="'%(ProjectsToBuild.Extension)' == '.sln'"
-          Command='"$(ZouBinzOsDir)nuget" restore "%(ProjectsToBuild.Identity)"'/>
+    <Exec Condition="'%(MSBuildProject.Extension)' == '.sln'"
+          Command='"$(ZouBinzOsDir)nuget" restore "%(MSBuildProject.Identity)"'/>
     
     <!-- ...or project with solution. -->
-    <Exec Condition="'%(ProjectsToBuild.Extension)' != '.sln' And ('$(SolutionDir)' != '*Undefined*' And '$(SolutionDir)' != '') And Exists('%(RootDir)%(Directory)packages.config')"
-          Command='"$(ZouBinzOsDir)nuget" restore "%(ProjectsToBuild.RootDir)%(Directory)packages.config" -Verbosity quiet -PackagesDirectory "$(NugetPackagesDir)."'/>
+    <Exec Condition="'%(MSBuildProject.Extension)' != '.sln' And ('$(SolutionDir)' != '*Undefined*' And '$(SolutionDir)' != '') And Exists('%(RootDir)%(Directory)packages.config')"
+          Command='"$(ZouBinzOsDir)nuget" restore "%(MSBuildProject.RootDir)%(Directory)packages.config" -Verbosity quiet -PackagesDirectory "$(NugetPackagesDir)."'/>
 
     <!--
     The MSBuild task does not determine the build order but MSBuild.exe and Visual Studio do:
     https://maximelabelle.wordpress.com/2011/11/29/building-multiple-projects-in-order-with-msbuild/
     We cannot use the following MSBuild task:
-        <MSBuild Projects="%(ProjectsToBuild.Identity)" Targets="Build" Properties="OutDir=%(OutDir);Configuration=%(Configuration);Platform=%(Platform) " />
+        <MSBuild Projects="%(MSBuildProject.Identity)" Targets="Build" Properties="OutDir=%(OutDir);Configuration=%(Configuration);Platform=%(Platform) " />
     Instead with use the Exec task which starts the MSBuild process.
     -->
 
-    <Message Condition="'$(DisplayMSBuildCommand)' == 'true'" Importance="high" Text='%(MSBuildCmd) %(MSBuildOptions) "%(ProjectsToBuild.Identity)"' />
-    <Exec Command='%(MSBuildCmd) %(MSBuildOptions) "%(ProjectsToBuild.Identity)"' />
+    <Message Condition="'$(ExecDebug)' == 'true'" Importance="high" Text='### [$(MSBuildProjectFile)] %(Command) %(Options) "%(MSBuildProject.Identity)"' />
+    <Message Condition="'$(ExecDebug)' == 'true'" Importance="high" Text=' ' />
+    <Exec Command='%(Command) %(Options) "%(MSBuildProject.Identity)"' />
     <CallTarget Targets="_DeleteLastBuildState" Condition="'$(BuildingInsideVisualStudio)'=='true'" />
   </Target>
 
   <Target Name="_ImportProject" Condition="'$(ZouTrace)' == 'true'">
-    <Message Importance="high" Text='$(MSBuildCmd) $(MSBuildOptions) "-t:%(MSBuildTarget.Identity)" "%(ProjectsToBuild.Identity)"' />
+    <Message Importance="high" Text='$(Command) $(Options) "-t:%(MSBuildTarget.Identity)" "%(MSBuildProject.Identity)"' />
   </Target>
 
 </Project>

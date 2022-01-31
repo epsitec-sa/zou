@@ -7,13 +7,20 @@ Outputs
   RuntimePlatform - local
   ForwardPlatform - local (Forward.props)
 -->
-<Project InitialTargets="TraceBootPlatform;ZouCheckPlatform" 
-         TreatAsLocalProperty="RuntimeIdentifier;RuntimePlatform;Platform;CrossBuild;BuildWin;BuildOsx;BuildLinux">
+<Project InitialTargets="TraceBootPlatform;BootRuntimeCheck" 
+         TreatAsLocalProperty="RuntimeIdentifier;RuntimePlatform;Platform;CrossBuild">
+
+  <!-- Supported Windows RID prefix  -->
+  <PropertyGroup>
+    <WinRuntimePrefix   Condition="'$(WinRuntimePrefix)'   == ''">win7</WinRuntimePrefix>
+    <OsxRuntimePrefix   Condition="'$(OsxRuntimePrefix)'   == ''">osx</OsxRuntimePrefix>
+    <LinuxRuntimePrefix Condition="'$(LinuxRuntimePrefix)' == ''">linux</LinuxRuntimePrefix>
+  </PropertyGroup>
 
   <PropertyGroup>
     <Platforms>AnyCPU;x86;x64</Platforms>
   </PropertyGroup>
-  
+
   <Choose>
     <When Condition="'$(RuntimeIdentifier)' == '' Or '$(RuntimeIdentifier)' == '*Undefined*'">
       <PropertyGroup>
@@ -55,8 +62,14 @@ Outputs
     </Otherwise>
   </Choose>
 
-
   <!-- Limit cross-build -->
+  <PropertyGroup Condition="'$(SkipCrossBuild)' == 'true'">
+    <!-- Save CrossBuild state -->
+    <_CrossBuild0>$(CrossBuild)</_CrossBuild0>
+    <!-- Disable cross-build for pack agent -->
+    <CrossBuild>false</CrossBuild>
+  </PropertyGroup>
+
   <PropertyGroup>
     <!-- Do not cross-build inside Visual Studio -->
     <CrossBuild Condition="'$(BuildingInsideVisualStudio)' != ''">false</CrossBuild>
@@ -71,7 +84,36 @@ Outputs
     <BuildLinux Condition="$(CrossBuild) Or $(RuntimeIdentifier.StartsWith('linux')) Or ('$(RuntimeIdentifier)'=='' And $([MSBuild]::IsOsPlatform(Linux))  )">true</BuildLinux>
   </PropertyGroup>
 
-  <Target Name="ZouCheckPlatform" Condition="'$(ForwardPlatform)' != '' And '$(RuntimePlatform)' != ''">
+  <PropertyGroup Condition="'$(SkipCrossBuild)' == 'true'">
+    <SkipCrossBuild />
+    <!-- Restore CrossBuild state -->
+    <CrossBuild>$(_CrossBuild0)</CrossBuild>
+    <_CrossBuild0 />
+  </PropertyGroup>
+
+  <!-- Compute RIDs -->
+  <ItemGroup>
+    <RuntimeIdentifier Condition="$(BuildWin)   And   $(RuntimeIdentifier.StartsWith('win'))"   Include="$(RuntimeIdentifier)">
+      <RuntimeOS>win</RuntimeOS>
+    </RuntimeIdentifier>
+    <RuntimeIdentifier Condition="$(BuildWin)   And ! $(RuntimeIdentifier.StartsWith('win'))"   Include="$(WinRuntimePrefix)-$(RuntimePlatform)">
+      <RuntimeOS>win</RuntimeOS>
+    </RuntimeIdentifier>
+    <RuntimeIdentifier Condition="$(BuildOsx)   And   $(RuntimeIdentifier.StartsWith('osx'))"   Include="$(RuntimeIdentifier)">
+      <RuntimeOS>osx</RuntimeOS>
+    </RuntimeIdentifier>
+    <RuntimeIdentifier Condition="$(BuildOsx)   And ! $(RuntimeIdentifier.StartsWith('osx'))"   Include="$(OsxRuntimePrefix)-$(RuntimePlatform)">
+      <RuntimeOS>osx</RuntimeOS>
+    </RuntimeIdentifier>
+    <RuntimeIdentifier Condition="$(BuildLinux) And   $(RuntimeIdentifier.StartsWith('linux'))" Include="$(RuntimeIdentifier)">
+      <RuntimeOS>linux</RuntimeOS>
+    </RuntimeIdentifier>
+    <RuntimeIdentifier Condition="$(BuildLinux) And ! $(RuntimeIdentifier.StartsWith('linux'))" Include="$(LinuxRuntimePrefix)-$(RuntimePlatform)">
+      <RuntimeOS>linux</RuntimeOS>
+    </RuntimeIdentifier>
+  </ItemGroup>
+
+  <Target Name="BootRuntimeCheck" Condition="'$(ForwardPlatform)' != '' And '$(RuntimePlatform)' != ''">
     <PropertyGroup>
       <ErrorMessage>"Platform ($(ForwardPlatform)) and RuntimePlatform ($(RuntimePlatform)) are not compatibles"</ErrorMessage>
     </PropertyGroup>
@@ -82,19 +124,20 @@ Outputs
   <Target Name="TraceBootPlatform" Condition="'$(ZouTrace)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
     <Message Importance="high" Text="zou/Boot.Runtime.props [$(MSBuildProjectFile)]" />
     <Message Importance="high" Text="----------------------" />
-    <Message Importance="high" Text="DebugBootRuntime  = $(DebugBootRuntime)" />
+    <Message Importance="high" Text="DebugBootRuntime   = $(DebugBootRuntime)" />
     <Message Importance="high" Text=" " />
-    <Message Importance="high" Text="CrossBuild        = $(CrossBuild)" />
-    <Message Importance="high" Text="BuildWin          = $(BuildWin)" />
-    <Message Importance="high" Text="BuildOsx          = $(BuildOsx)" />
-    <Message Importance="high" Text="BuildLinux        = $(BuildLinux)" />
+    <Message Importance="high" Text="CrossBuild         = $(CrossBuild)" />
+    <Message Importance="high" Text="BuildWin           = $(BuildWin)" />
+    <Message Importance="high" Text="BuildOsx           = $(BuildOsx)" />
+    <Message Importance="high" Text="BuildLinux         = $(BuildLinux)" />
     <Message Importance="high" Text=" " />
-    <Message Importance="high" Text="Platform          = $(Platform)" />
-    <Message Importance="high" Text="RuntimePlatform   = $(RuntimePlatform)" />
-    <Message Importance="high" Text="RuntimeIdentifier = $(RuntimeIdentifier)" />
+    <Message Importance="high" Text="Platform           = $(Platform)" />
+    <Message Importance="high" Text="RuntimePlatform    = $(RuntimePlatform)" />
+    <Message Importance="high" Text="$RuntimeIdentifier = $(RuntimeIdentifier)"/>
+    <Message Importance="high" Text="@RuntimeIdentifier = %(RuntimeIdentifier.Identity)" />
     <Message Importance="high" Text=" " />
-    <Message Importance="high" Text="ForwardPlatform   = $(ForwardPlatform)" />
-    <Message Importance="high" Text="Platforms         = $(Platforms)" />
+    <Message Importance="high" Text="ForwardPlatform    = $(ForwardPlatform)" />
+    <Message Importance="high" Text="Platforms          = $(Platforms)" />
     <Message Importance="high" Text=" " />
   </Target>
 

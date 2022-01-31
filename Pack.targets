@@ -34,21 +34,20 @@
     </ItemGroup>
   </Target>
 
-  <Target Name="PackDeleteAll"
-          DependsOnTargets="PackCreate">
-    
+  <Target Name="PackDeleteAll" DependsOnTargets="PackCreate">
     <Delete  Files="%(PackCopyFile.ImportDir)%(RecursiveDir)%(FileName)%(Extension)" />
-    <Message Importance="normal" Text="[-] %(PackCopyFile.ImportDir)%(RecursiveDir)%(FileName)%(Extension)" Condition="'%(FileName)%(Extension)' != ''"/>
+    <Message Importance="high" Text="[-] %(PackCopyFile.ImportDir)%(RecursiveDir)%(FileName)%(Extension)" Condition="'%(FileName)%(Extension)' != ''"/>
   </Target>
 
-  <Target Name="PackCopy"
-          DependsOnTargets="PackCreate"
-          Inputs="@(PackCopyFile)"
-          Outputs="%(PackCopyFile.ImportDir)%(RecursiveDir)%(FileName)%(Extension)">
-
+  <Target Name="PackCopy0" DependsOnTargets="PackCreate" Inputs="@(PackCopyFile)" Outputs="%(PackCopyFile.ImportDir)%(RecursiveDir)%(FileName)%(Extension)">
     <CallTarget Targets="_DeleteLastBuildState" Condition="'$(BuildingInsideVisualStudio)'=='true'" />
-    <Message Importance="normal" Text="[+] %(PackCopyFile.Identity) =&gt; %(ImportDir)%(RecursiveDir)%(FileName)%(Extension)" />
+    <Message Importance="high" Text="[+] %(PackCopyFile.Identity) =&gt; %(ImportDir)%(RecursiveDir)%(FileName)%(Extension)" />
     <Copy SourceFiles="%(PackCopyFile.Identity)" DestinationFiles="%(ImportDir)%(RecursiveDir)%(FileName)%(Extension)"  />
+  </Target>
+  <Target Name="PackCopy" DependsOnTargets="PackCreate" Inputs="@(PackCopyFile)" Outputs="@(PackCopyFile->'%(ImportDir)%(RecursiveDir)%(FileName)%(Extension)')">
+    <CallTarget Targets="_DeleteLastBuildState" Condition="'$(BuildingInsideVisualStudio)'=='true'" />
+    <Copy SourceFiles="@(PackCopyFile)" DestinationFiles="@(PackCopyFile->'%(ImportDir)%(RecursiveDir)%(FileName)%(Extension)')"  />
+    <Message Importance="high" Text="[+] %(PackCopyFile.Identity) =&gt; %(ImportDir)%(RecursiveDir)%(FileName)%(Extension)" />
   </Target>
 
   <Target Name="PackBuild" AfterTargets="Build"  DependsOnTargets="ImportProject;PackCopy">
