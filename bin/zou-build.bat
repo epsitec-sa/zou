@@ -1,13 +1,15 @@
 @echo off
 setlocal EnableDelayedExpansion
 
+echo [33m[zou-build][33m [7m%0 %*[0m
+
 goto Parse
 
 :Error
-  echo.
-	echo [33m[zou-build][31m %error%[0m
-  set exitcode=1
-  goto :Help
+echo.
+echo [33m[zou-build][31m %error%[0m
+set exitcode=1
+goto :Help
 
 :Help
 
@@ -140,50 +142,52 @@ set props=Configuration=Release
 if '%all%'     == 'true' set props=%props%;CrossBuild=true
 if '%rome%'    == 'true' set props=%props%;BuildRome=true
 if '%sign%'    == 'true' set props=%props%;Sign=true
-if '%verbose%' == 'true' set props=%props%;RedistDebug=true;ExecDebug=true;TargetDebug=true
+if '%verbose%' == 'true' set props=%props%;RedistDebug=true;ZouDebug=true
 if '%pkgDir%'  neq ''    set props=%props%;PkgDir=%pkgDir%
 set command=msbuild %project% -nologo -v:m -p:%props%
 
 if '%test%' == 'true' (
-  echo   [33m[zou-build][90m platforms = !platforms![0m
-  echo   [33m[zou-build][90m project   = %project%[0m
-  echo   [33m[zou-build][90m build     = %build%[0m
-  echo   [33m[zou-build][90m clean     = %clean%[0m
-  echo   [33m[zou-build][90m args      = %args%[0m
+  echo [33m[zou-build][90m platforms = !platforms![0m
+  echo [33m[zou-build][90m project   = %project%[0m
+  echo [33m[zou-build][90m build     = %build%[0m
+  echo [33m[zou-build][90m clean     = %clean%[0m
+  echo [33m[zou-build][90m args      = %args%[0m
   exit /b
 )
 
 :: clean
 if '%clean%' == 'true' (
-  for %%x in (bin %pkgDir%) do (
+  for %%x in (bin pkg %pkgDir%) do (
     :: avoid to delete root folder
     set dirName=%%x
     set firstChar=!dirName:~0,1!
-    set firstChar=%firstChar:/=\%
-    if '%firstchar%' neq '\' if exist %%x (
-      echo   [33m[zou-build][36m Removing %%x...[0m
+    set firstChar=!firstChar:/=\!
+    if '!firstchar!' neq '\' if exist %%x (
+      echo [33m[zou-build][36m Removing %%x...[0m
       if '%dry_run%' == '' rmdir /S /Q %%x
     )
   )
   for %%p in (%platforms%) do (
-	  echo   [33m[zou-build][36m Cleaning %%p...[0m
-
-    echo   [33m[zou-build][90m %command% -p:Platform=%%p -t:Clean %args%[0m
-	  if '%dry_run%' == '' (
+    echo [33m[zou-build][36m Cleaning %%p...[0m
+    echo [33m[zou-build][90m %command% -p:Platform=%%p -t:Clean %args%[0m
+    if '%dry_run%' == '' (
       %command% -p:Platform=%%p -t:Clean %args%
-  	  if !errorlevel! neq 0 exit /b !errorlevel!
+      if !errorlevel! neq 0 exit /b !errorlevel!
     )
   )
 )
 
 :: build
 if '%build%' == 'true' (
+  if '%pkgDir%' == '' set pkgDir=pkg
   for %%p in (%platforms%) do (
-	  echo   [33m[zou-build][36m Packing %%p to 'pkg' folder...[0m
-    echo   [33m[zou-build][90m %command% -p:Platform=%%p %args%[0m
-	  if '%dry_run%' == '' (
+    set message=Building %%p
+    if /I not '!project:pack!'=='!project!' set message=Packing %%p to '%pkgDir%' folder
+    echo [33m[zou-build][36m !message!...[0m
+    echo [33m[zou-build][90m %command% -p:Platform=%%p %args%[0m
+    if '%dry_run%' == '' (
       %command% -p:Platform=%%p %args%
-	    if !errorlevel! neq 0 exit /b !errorlevel!
+      if !errorlevel! neq 0 exit /b !errorlevel!
     )
   )
 )
