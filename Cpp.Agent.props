@@ -4,7 +4,7 @@ Summary
 # : import project
 + : define data
 
-# Agent.props
+# Agent.prolog.props
   + Standard configurations (Debug|x64, ...)
   + Default targets (Build, Clean, PackFilter)
   # Microsoft.Cpp.Default.props
@@ -27,7 +27,7 @@ Summary
 # Cpp.PkgDir.props
 # Cpp.OutDir.props
 
-# Agent.targets
+# Agent.epilog.props
   + TargetDir, OutputPath, IntermediateOutputPath
   # Forward.props
   # [Microsoft.Cpp.targets] if ImportMicrosoftCppTargets
@@ -39,7 +39,7 @@ Summary
     <ZouAgentType>Cpp</ZouAgentType>
   </PropertyGroup>
   
-  <Import Project="Agent.props" />
+  <Import Project="Agent.prolog.props" />
   <Import Project="Boot.Runtime.props" Condition="'$(RuntimePlatform)' == ''" />
 
   <ImportGroup Label="PropertySheets">
@@ -54,7 +54,8 @@ Summary
   <PropertyGroup>
     <ImportMicrosoftCppTargets>true</ImportMicrosoftCppTargets>
   </PropertyGroup>
-  <Import Project="Agent.targets" />
+  
+  <Import Project="Agent.epilog.props" />
   
   <Target Name="TraceCppAgent" Condition="'$(ZouTrace)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
     <Message Importance="high" Text="zou/Cpp.Agent.props [$(MSBuildProjectFile)]" />

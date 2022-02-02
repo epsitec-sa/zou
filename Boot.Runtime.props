@@ -16,7 +16,7 @@ Outputs
     <OsxRuntimePrefix   Condition="'$(OsxRuntimePrefix)'   == ''">osx</OsxRuntimePrefix>
     <LinuxRuntimePrefix Condition="'$(LinuxRuntimePrefix)' == ''">linux</LinuxRuntimePrefix>
   </PropertyGroup>
-
+  
   <PropertyGroup>
     <Platforms>AnyCPU;x86;x64</Platforms>
   </PropertyGroup>
@@ -63,6 +63,13 @@ Outputs
   </Choose>
 
   <!-- Limit cross-build -->
+  <PropertyGroup>
+    <!-- Do not cross-build inside Visual Studio -->
+    <CrossBuild Condition="'$(BuildingInsideVisualStudio)' != ''">false</CrossBuild>
+    <CrossBuild Condition="$(RuntimePlatform.EndsWith('x86'))">false</CrossBuild>
+    <CrossBuild Condition="'$(CrossBuild)' == ''">false</CrossBuild>
+  </PropertyGroup>
+
   <PropertyGroup Condition="'$(SkipCrossBuild)' == 'true'">
     <!-- Save CrossBuild state -->
     <_CrossBuild0>$(CrossBuild)</_CrossBuild0>
@@ -71,11 +78,6 @@ Outputs
   </PropertyGroup>
 
   <PropertyGroup>
-    <!-- Do not cross-build inside Visual Studio -->
-    <CrossBuild Condition="'$(BuildingInsideVisualStudio)' != ''">false</CrossBuild>
-    <CrossBuild Condition="$(RuntimePlatform.EndsWith('x86'))">false</CrossBuild>
-    <CrossBuild Condition="'$(CrossBuild)' == ''">false</CrossBuild>
-
     <BuildWin>false</BuildWin>
     <BuildOsx>false</BuildOsx>
     <BuildLinux>false</BuildLinux>

@@ -1,3 +1,14 @@
+<!--
+By default '.xml' and '.manifest' files are excluded from bin.
+To keep them add the following code in the project.pack.msbuildproj:
+
+  <Target Name="PackFilter">
+    <ItemGroup>
+      <ProdBinExclude Remove="$(OutDir)**\*.xml" />
+      <ProdBinExclude Remove="$(OutDir)**\*.manifest" />
+    </ItemGroup>
+  </Target>
+-->
 <Project DefaultTargets="PackBuild">
 
   <PropertyGroup>
@@ -15,6 +26,8 @@
       <ProdBinExclude Include="$(OutDir)**\*.bsc" />
       <ProdBinExclude Include="$(OutDir)**\*.ilk" />
       <ProdBinExclude Include="$(OutDir)**\*.cod" />
+      <ProdBinExclude Include="$(OutDir)**\*.xml" />
+      <ProdBinExclude Include="$(OutDir)**\*.manifest" />
       <!-- Exclude Visual Leak Detector in release mode -->
       <ProdBinExclude Include="$(OutDir)vld_x86.dll" Condition="'$(Configuration)'=='Release' And Exists('$(OutDir)vld_x86.dll')" />
       <ProdBinExclude Include="$(OutDir)vld.ini"     Condition="'$(Configuration)'=='Release' And Exists('$(OutDir)vld.ini')" />
@@ -36,18 +49,13 @@
 
   <Target Name="PackDeleteAll" DependsOnTargets="PackCreate">
     <Delete  Files="%(PackCopyFile.ImportDir)%(RecursiveDir)%(FileName)%(Extension)" />
-    <Message Importance="high" Text="[-] %(PackCopyFile.ImportDir)%(RecursiveDir)%(FileName)%(Extension)" Condition="'%(FileName)%(Extension)' != ''"/>
+    <Message Importance="high" Text="[-] %(PackCopyFile.ImportDir)%(RecursiveDir)%(FileName)%(Extension)" Condition="Exists('%(PackCopyFile.ImportDir)%(RecursiveDir)%(FileName)%(Extension)')"/>
   </Target>
 
-  <Target Name="PackCopy0" DependsOnTargets="PackCreate" Inputs="@(PackCopyFile)" Outputs="%(PackCopyFile.ImportDir)%(RecursiveDir)%(FileName)%(Extension)">
-    <CallTarget Targets="_DeleteLastBuildState" Condition="'$(BuildingInsideVisualStudio)'=='true'" />
-    <Message Importance="high" Text="[+] %(PackCopyFile.Identity) =&gt; %(ImportDir)%(RecursiveDir)%(FileName)%(Extension)" />
-    <Copy SourceFiles="%(PackCopyFile.Identity)" DestinationFiles="%(ImportDir)%(RecursiveDir)%(FileName)%(Extension)"  />
-  </Target>
   <Target Name="PackCopy" DependsOnTargets="PackCreate" Inputs="@(PackCopyFile)" Outputs="@(PackCopyFile->'%(ImportDir)%(RecursiveDir)%(FileName)%(Extension)')">
     <CallTarget Targets="_DeleteLastBuildState" Condition="'$(BuildingInsideVisualStudio)'=='true'" />
     <Copy SourceFiles="@(PackCopyFile)" DestinationFiles="@(PackCopyFile->'%(ImportDir)%(RecursiveDir)%(FileName)%(Extension)')"  />
-    <Message Importance="high" Text="[+] %(PackCopyFile.Identity) =&gt; %(ImportDir)%(RecursiveDir)%(FileName)%(Extension)" />
+    <Message Importance="high" Text="[+] %(PackCopyFile.RecursiveDir)%(FileName)%(Extension) =&gt; %(ImportDir)%(RecursiveDir)" />
   </Target>
 
   <Target Name="PackBuild" AfterTargets="Build"  DependsOnTargets="ImportProject;PackCopy">

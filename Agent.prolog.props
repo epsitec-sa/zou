@@ -1,8 +1,9 @@
 <!--
-The Agent.props & .targets are used to create a minimal zou agent.
+The agent prolog and epilog are used to create a minimal zou agent.
 with standard configurations (Debug, Release) and platforms (Win32, x86, x64 and Any CPU).
 Example: see Templates\Cs.Component.Pack.vcxproj
 
+Summary:
   # zou.props
   # zou.Errors.props
   + Standard configurations (Debug|x64, ...)
@@ -22,6 +23,8 @@ Example: see Templates\Cs.Component.Pack.vcxproj
     <Import Project="zou.props" />
     <Import Project="zou.Errors.props" />
   </ImportGroup>
+
+  <Import Project="hook.zou.build.props" Condition="'$(ZouBuildProps)' == ''"/>
 
   <!-- Standard configurations -->
   <ItemGroup Label="ProjectConfigurations">
@@ -62,6 +65,7 @@ Example: see Templates\Cs.Component.Pack.vcxproj
   <!-- Default targets -->
   <Target Name="Build" Condition="'$(VCTargetsPath)' == ''" />
   <Target Name="Clean" Condition="'$(VCTargetsPath)' == ''" />
+  <Target Name="Publish" />
   <Target Name="PackFilter" />
 
   <!-- Microsoft.Cpp.Default.props -->

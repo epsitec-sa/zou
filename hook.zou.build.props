@@ -1,0 +1,18 @@
+<Project InitialTargets="TraceZouBuildChainProps">
+  <!-- Import the first 'zou.build.props' found in the local project directory or above -->
+  <PropertyGroup>
+    <ZouBuildProps>$([MSBuild]::GetPathOfFileAbove('zou.build.props', '$(MSBuildProjectDirectory)'))</ZouBuildProps>
+  </PropertyGroup>
+  <Import Project="$(ZouBuildProps)" Condition="Exists('$(ZouBuildProps)')" />
+
+  <PropertyGroup>
+    <RedistDebug Condition="'$(RedistDebug)' == ''">false</RedistDebug>
+  </PropertyGroup>
+
+  <Target Name="TraceZouBuildChainProps" Condition="$(ZouDebug) Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
+    <Message Importance="high" Text="zou/hook.zou.build.props [$(MSBuildProjectFile)]" />
+    <Message Importance="high" Text="------------------------" />
+    <Message Importance="high" Text="ZouBuildProps = $(ZouBuildProps)" />
+    <Message Importance="high" Text=" " />
+  </Target>
+</Project>

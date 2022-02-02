@@ -36,8 +36,11 @@ This script can be imported anywhere before first MS import (Microsoft.Cpp.Defau
   </Choose>
 
   <!-- Various -->
+  <Import Project="Version.props" />
+  
   <PropertyGroup>
-    <ZouVersion>4.0</ZouVersion>
+    <ZouDebug Condition="'$(ZouDebug)' == ''">false</ZouDebug>
+    <ZouVersion>$(Version)</ZouVersion>
     <NETSdkVersion>$([System.Text.RegularExpressions.Regex]::Match($(MSBuildToolsPath), '(?&lt;=dotnet[\\/]sdk[\\/])\d+\.\d+\.\d+'))</NETSdkVersion>
     <!-- Configuration sub-directory -->
     <ZouCfg>zou.cfg$(V)</ZouCfg>

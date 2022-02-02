@@ -1,0 +1,14 @@
+<Project InitialTargets="TraceZouBuildImportTargets">
+  <!-- Import the first 'zou.build.targets' found in the invoking project directory -->
+  <PropertyGroup>
+    <ZouBuildTargets>$(MSBuildProjectDirectory)\zou.build.targets</ZouBuildTargets>
+  </PropertyGroup>
+  <Import Project="$(ZouBuildTargets)" Condition="Exists('$(ZouBuildTargets)')" />
+  
+  <Target Name="TraceZouBuildImportTargets" Condition="$(ZouDebug) Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
+    <Message Importance="high" Text="zou/hook.zou.build.targets [$(MSBuildProjectFile)]" />
+    <Message Importance="high" Text="--------------------------" />
+    <Message Importance="high" Text="ZouBuildTargets = $(ZouBuildTargets)" />
+    <Message Importance="high" Text=" " />
+  </Target>
+</Project>

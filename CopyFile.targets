@@ -9,23 +9,42 @@ Input parameters:
   <!-- Define copy files default metadata -->
   <ItemDefinitionGroup>
     <CopyFile>
-      <TargetDir>$(OutDir)</TargetDir>
       <TargetFile>%(FileName)%(Extension)</TargetFile>
     </CopyFile>
   </ItemDefinitionGroup>
 
-  <Target Name="CopyClean" AfterTargets="Clean">
+  <Target Name="CopyFileInitCrossBuild">
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] CreateCopyFiles(CrossBuild=$(CrossBuild))" />
 
-    <Delete  Files="%(CopyFile.TargetDir)%(RecursiveDir)%(TargetFile)" />
-    <Message Importance="normal" Text="[-] %(CopyFile.TargetDir)%(RecursiveDir)%(TargetFile)" Condition="'%(TargetFile)' != ''"/>
+    <!-- CopyFile = CopyFile x RuntimeIdentifier (defined in Boot.Runtime.props ) -->
+    <MulJoin Input="@(CopyFile)" Items="@(RuntimeIdentifier)" ItemName="RuntimeIdentifier" >
+      <Output ItemName="_CopyFile" TaskParameter="Output" />
+    </MulJoin>
+
+    <ItemGroup>
+      <_CopyFile>
+        <RuntimeFolder>%(_CopyFile.RuntimeOS)-$(RuntimePlatform)</RuntimeFolder>
+      </_CopyFile>
+      <_CopyFile>
+        <TargetDir Condition="'%(_CopyFile.TargetDir)' == ''">$([System.IO.Path]::Combine('$(OutDir)', '%(RuntimeFolder)'))\</TargetDir>
+      </_CopyFile>
+      
+      <CopyFile Remove="@(CopyFile)" />
+      <CopyFile Include="@(_CopyFile)" />
+      <_CopyFile Remove="@(_CopyFile)" />
+    </ItemGroup>
+
+    <!--<LogItems Items="@(CopyFile)" Title="CreateCopyFiles.CopyFile" />
+    <Message Importance="high"  Text=" " />-->
   </Target>
 
-  <Target Name="Copy"
-          Inputs="%(CopyFile.Identity)"
-          Outputs="%(CopyFile.TargetDir)%(RecursiveDir)%(TargetFile)"
-          BeforeTargets="Build">
+  <Target Name="CopyClean" AfterTargets="Clean" DependsOnTargets="CopyFileInitCrossBuild">
+    <Delete  Files="@(CopyFile->'%(TargetDir)%(RecursiveDir)%(TargetFile)')" />
+    <Message Importance="high" Text="[-] %(CopyFile.TargetDir)%(RecursiveDir)%(TargetFile)" Condition="Exists('%(CopyFile.TargetDir)%(RecursiveDir)%(TargetFile)')"/>
+  </Target>
 
-    <Message Importance="normal" Text="[+] %(CopyFile.Identity) =&gt; %(TargetDir)%(RecursiveDir)%(TargetFile)" />
+  <Target Name="Copy" Inputs="%(CopyFile.Identity)" Outputs="%(CopyFile.TargetDir)%(RecursiveDir)%(TargetFile)" BeforeTargets="Build" DependsOnTargets="CopyFileInitCrossBuild">
+    <Message Importance="high" Text="[+] %(CopyFile.Identity) =&gt; %(TargetDir)%(RecursiveDir)%(TargetFile)" />
     <Copy SourceFiles="%(CopyFile.Identity)" DestinationFiles="%(CopyFile.TargetDir)%(RecursiveDir)%(TargetFile)" ContinueOnError="true" />
   </Target>
 

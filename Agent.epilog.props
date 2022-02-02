@@ -1,11 +1,13 @@
 <!--
-The Agent.targets is used to create a minimal zou agent (see Agent.props)
+The agent prolog and epilog are used to create a minimal zou agent.
 
-+ TargetDir               - local
-+ OutputPath              - local
-+ IntermediateOutputPath  - local
-# Forward.props
-# [Microsoft.Cpp.targets] if ImportMicrosoftCppTargets
+Summary:
+  + TargetDir               - local
+  + OutputPath              - local
+  + IntermediateOutputPath  - local
+  # Forward.props
+  # [Microsoft.Cpp.targets] if ImportMicrosoftCppTargets
+  # hook.zou.build.props
 
 -->
 <Project InitialTargets="TraceAgentTargets"
@@ -34,8 +36,8 @@ The Agent.targets is used to create a minimal zou agent (see Agent.props)
   </PropertyGroup>
 
   <Target Name="TraceAgentTargets" Condition="'$(ZouTrace)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
-    <Message Importance="high" Text="zou/Agent.targets [$(MSBuildProjectFile)]" />
-    <Message Importance="high" Text="-----------------" />
+    <Message Importance="high" Text="zou/Agent.epilog.props [$(MSBuildProjectFile)]" />
+    <Message Importance="high" Text="----------------------" />
     <Message Importance="high" Text="ZouAgentType           = $(ZouAgentType)" />
     <Message Importance="high" Text="Configuration          = $(Configuration)" />
     <Message Importance="high" Text="Platform               = $(Platform)" />

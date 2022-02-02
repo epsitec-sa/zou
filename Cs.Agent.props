@@ -5,7 +5,7 @@ Normally, external components are C# based, because C++ components should be imp
 # : import project
 + : define data
 
-# Agent.props
+# Agent.prolog.props
   + Standard configurations (Debug|x64, ...)
   + Default targets (Build, Clean, PackFilter)
   # Microsoft.Cpp.Default.props
@@ -28,7 +28,7 @@ Normally, external components are C# based, because C++ components should be imp
 # Cs.PkgDir.props
 # Cs.OutDir.props
 
-# Agent.targets
+# Agent.epilog.props
   + TargetDir, OutputPath, IntermediateOutputPath
   # Forward.props
   # [Microsoft.Cpp.targets] if ImportMicrosoftCppTargets
@@ -39,7 +39,7 @@ Normally, external components are C# based, because C++ components should be imp
     <ZouAgentType>CSharp</ZouAgentType>
   </PropertyGroup>
 
-  <Import Project="Agent.props" />
+  <Import Project="Agent.prolog.props" />
   <Import Project="Boot.Runtime.props" Condition="'$(RuntimePlatform)' == ''" />
   <Import Project="Cs.Frameworks.props" Condition="'$(CoreTargetFramework)' == ''" />
 
@@ -53,6 +53,7 @@ Normally, external components are C# based, because C++ components should be imp
   <PropertyGroup>
     <ImportMicrosoftCppTargets>false</ImportMicrosoftCppTargets>
   </PropertyGroup>
-  <Import Project="Agent.targets" />
+  
+  <Import Project="Agent.epilog.props" />
 
 </Project>

@@ -1,6 +1,13 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- Import this script at the end of a C++ .import agent -->
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="_ImportProject">
+<!--
+Import this script at the end of a C++ import agent.
+
+This script imports the 'zou.build.targets' located in the invoking project directory.
+There you can define the Itemgroup managed by the imported projects below.
+-->
+<Project DefaultTargets="_ImportProject">
+  <!-- Import targets separately if client 'zou.build.targets' is not wanted -->
+  <Import Project="hook.zou.build.targets" Condition="'$(ZouBuildTargets)' == ''" />
+
   <Import Project="CopyFile.targets" />
   <Import Project="MoveFile.targets" />
   <Import Project="ImportFile.targets" />

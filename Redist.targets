@@ -1,6 +1,16 @@
 <!--
 Import this script at the end of a C# redist agent
-For information on redist properties, see Redist.props
+
+This script imports a chain of 'zou.build.props' in which we can define
+properties to control the 'Redist.targets' build settings.
+
+    RedistProjectPath  - [required] - the path of the project script                         - ex: Net\Swissdec.Transmitter.Host\Swissdec.Transmitter.Host.csproj
+                                      relative to the 'zou.build.props' directory
+    RedistFolder       - [optional] - append a component folder to the output directory      - ex: bin\Release\win-x64\<redist-folder>
+    RedistByFramework  - [optional] - include the target framework   in the output directory - ex: bin\Release\net6[\win-x64]\<redist-folder>
+    RedistByRuntime    - [optional] - include the runtime identifier in the output directory - ex: bin\Release\[net6\]win-x64\<redist-folder>
+    RedistX86Framework - [optional] - the target framework used for x86 or AnyCPU platforms  - (CoreTargetFramework | FullTargetFramework)
+    RedistX64Framework - [optional] - the target framework used for x64 platform             - (CoreTargetFramework | FullTargetFramework)
 -->
 <Project InitialTargets="TraceRedistTargets" TreatAsLocalProperty="RedistByRuntime">
 
@@ -26,18 +36,20 @@ For information on redist properties, see Redist.props
     <RedistByRuntime Condition="'$(RedistByRuntime)' == ''">true</RedistByRuntime>
   </PropertyGroup>
 
-  <Target Name="RedistInit" DependsOnTargets="CreateImportedProjects" >
-    <Message Condition="'$(TargetDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] RedistInit" />
+  <Import Project="hook.zou.build.targets" Condition="'$(ZouBuildTargets)' == ''" />
+
+  <Target Name="RedistInit" DependsOnTargets="ImportProjectInitCrossBuild" >
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] RedistInit" />
     <ItemGroup>
       <!-- Setup defaults -->
       <ImportProject>
         <RedistFolder       Condition="'%(ImportProject.RedistFolder)'       == ''">$(RedistFolder)</RedistFolder>
-        <RedistX86Framework Condition="'%(ImportProject.RedistX86Framework)' == ''">$(CoreTargetFramework)</RedistX86Framework>
-        <RedistX64Framework Condition="'%(ImportProject.RedistX64Framework)' == ''">$(CoreTargetFramework)</RedistX64Framework>
+        <!--<RedistX86Framework Condition="'%(ImportProject.RedistX86Framework)' == ''">$(CoreTargetFramework)</RedistX86Framework>
+        <RedistX64Framework Condition="'%(ImportProject.RedistX64Framework)' == ''">$(CoreTargetFramework)</RedistX64Framework>-->
+        <TargetFramework    Condition="'%(Extension)' == '.csproj'">$(CoreTargetFramework)</TargetFramework>
         
         <RuntimeType    >Core</RuntimeType>
         <RuntimeFolder  >%(RuntimeOS)-$(RuntimePlatform)</RuntimeFolder>
-        <TargetFramework>$(CoreTargetFramework)</TargetFramework>
       </ImportProject>
         
       <ImportProject>
@@ -61,6 +73,12 @@ For information on redist properties, see Redist.props
       <ImportProject Condition="'$(RuntimePlatform)' == 'x64'">
         <TargetFramework Condition="'%(ImportProject.RedistX64Framework)' != ''">%(ImportProject.RedistX64Framework)</TargetFramework>
       </ImportProject>
+
+      <!-- Set defaults for non C# projects -->
+      <!--<ImportProject Condition="'$(MSBuildProjectExtension)' != '.csproj'">
+        <Targets Condition="'%(ImportProject.Targets)' == ''">Build</Targets>
+        <TargetFramework />
+      </ImportProject>-->
     </ItemGroup>
   </Target>
 
@@ -84,7 +102,7 @@ For information on redist properties, see Redist.props
         %(AsmDir)       - ex: C:\devel\cresus-dev\cresus\bin\Release\win-x64\user\modules\cresus\[<c++>\].cod\
   -->
   <Target Name="RedistTransformLayout" DependsOnTargets="RedistInit">
-    <Message Condition="'$(TargetDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] RedistTransformLayout" />
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] RedistTransformLayout" />
     <ItemGroup>
       <!-- Process C# output directories -->
       <ImportProject>
@@ -103,7 +121,7 @@ For information on redist properties, see Redist.props
         <PublishDir Condition="'%(ImportProject.PublishDir)' != ''">$([System.IO.Path]::GetFullPath('$(OutDir)%(_OutputFolder)'))</PublishDir>
       </ImportProject>
       <ImportProject>
-        <AsmDir Condition="'%(ImportProject.OutDir)' != '' And !$([System.String]::new('%(ImportProject.Identity)').EndsWith('.csproj'))">%(OutDir).cod\</AsmDir>
+        <AsmDir Condition="'%(ImportProject.OutDir)' != '' And $([System.String]::new('%(ImportProject.Identity)').EndsWith('.vcxproj'))">%(OutDir).cod\</AsmDir>
       </ImportProject>
 
       <!-- Remove temporary metadata -->
@@ -112,7 +130,7 @@ For information on redist properties, see Redist.props
   </Target>
 
   <Target Name="RedistUpdateTarget" DependsOnTargets="RedistTransformLayout;RedistInit" BeforeTargets="CreateMSBuildProjects">
-    <Message Condition="'$(TargetDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] RedistUpdateTarget" />
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] RedistUpdateTarget" />
     <ItemGroup>
       <ImportProject>
         <!-- use Build target for Debug config or .NET Framework -->
@@ -138,15 +156,12 @@ For information on redist properties, see Redist.props
     <Message  Condition="$(RedistDebug)" Importance="high" Text=" " />
   </Target>
 
-  <Target Name="RedistCheck" BeforeTargets="CreateMSBuildProjects" AfterTargets="CreateImportedProjects">
-    <Message Condition="'$(TargetDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] RedistCheck" />
-    <Warning Condition="@(ImportProject->Count()) == 0" Text="No project defined in '$(ZouRedistPath)' : specify one with the 'RedistProjectPath' property or the 'ImportProject' ItemGroup." />
-  </Target>
-
   <Target Name="TraceRedistTargets" Condition="$(RedistDebug) Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'"
           BeforeTargets="CreateMSBuildProjects" AfterTargets="RedistUpdateTarget">
     <Message Importance="high" Text="zou/Redist.targets [$(MSBuildProjectFile)]" />
     <Message Importance="high" Text="------------------" />
+    <Message Importance="high" Text="ZouBuildProps      = $(ZouBuildProps)" />
+    <Message Importance="high" Text="ZouBuildTargets    = $(ZouBuildTargets)" />
     <Message Importance="high" Text="CrossBuild         = $(CrossBuild)" />
     <Message Importance="high" Text="BuildWin           = $(BuildWin)" />
     <Message Importance="high" Text="BuildOsx           = $(BuildOsx)" />
@@ -157,13 +172,16 @@ For information on redist properties, see Redist.props
     <Message Importance="high" Text="RuntimePlatform    = $(RuntimePlatform)" />
     <Message Importance="high" Text="$RuntimeIdentifier = $(RuntimeIdentifier)" Condition="'$(RuntimeIdentifier)' != ''" />
     <Message Importance="high" Text="@RuntimeIdentifier = %(RuntimeIdentifier.Identity)" />
+    <Message Importance="high" Text="RedistFolder       = $(RedistFolder)" />
     <Message Importance="high" Text="OutDir             = $(OutDir)" />
     <Message Importance="high" Text="PublishDir         = $(PublishDir)" Condition="'$(PublishDir)' != ''" />
     <Message Importance="high" Text=" " />
-    <Message Importance="high" Text="ZouRedistPath      = $(ZouRedistPath)" />
     <Message Importance="high" Text="RedistByRuntime    = $(RedistByRuntime)" />
     <Message Importance="high" Text="RedistByFramework  = $(RedistByFramework)" />
     <Message Importance="high" Text=" " />
+
+    <LogItems Condition="$(RedistDebug)" Items="@(ImportProject)" Title="RedistUpdateTarget.ImportProject" />
+    <Message  Condition="$(RedistDebug)" Importance="high" Text=" " />
   </Target>
 
 </Project>

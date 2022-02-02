@@ -30,8 +30,8 @@
       <SignToolBroker    Condition="'%(SignToolBroker)'    == '' And '$(SignToolBroker)'     != ''">$(SignToolBroker)</SignToolBroker>
 
       <RedistDebug       Condition="'%(RedistDebug)'       == '' And '$(RedistDebug)'        != ''">$(RedistDebug)</RedistDebug>
-      <TargetDebug       Condition="'%(TargetDebug)'       == '' And '$(TargetDebug)'        != ''">$(TargetDebug)</TargetDebug>
-      <ExecDebug         Condition="'%(ExecDebug)'         == '' And '$(ExecDebug)'          != ''">$(ExecDebug)</ExecDebug>
+      <ZouDebug       Condition="'%(ZouDebug)'       == '' And '$(ZouDebug)'        != ''">$(ZouDebug)</ZouDebug>
+      <ZouDebug         Condition="'%(ZouDebug)'         == '' And '$(ZouDebug)'          != ''">$(ZouDebug)</ZouDebug>
     </ImportProject>
 
     <ImportProject>
@@ -47,8 +47,8 @@
     </ImportProject>
   </ItemDefinitionGroup>
 
-  <Target Name="CreateImportedProjects">
-    <Message Condition="'$(TargetDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] CreateImportedProjects(CrossBuild=$(CrossBuild))" />
+  <Target Name="ImportProjectInitCrossBuild">
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] ImportProjectInitCrossBuild(CrossBuild=$(CrossBuild))" />
 
     <!-- ImportProject = ImportProject x RuntimeIdentifier (defined in Boot.Runtime.props ) -->
     <MulJoin Input="@(ImportProject)" Items="@(RuntimeIdentifier)" ItemName="RuntimeIdentifier" >
@@ -61,12 +61,12 @@
       <_ImportProject Remove="@(_ImportProject)" />
     </ItemGroup>
 
-    <!--<LogItems Items="@(ImportProject)" Title="CreateImportedProjects.ImportProject" />
+    <!--<LogItems Items="@(ImportProject)" Title="ImportProjectInitCrossBuild.ImportProject" />
     <Message Importance="high"  Text=" " />-->
   </Target>
   
-  <Target Name="CreateMSBuildProjects" DependsOnTargets="CreateImportedProjects">
-    <Message Condition="'$(TargetDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] CreateMSBuildProjects" />
+  <Target Name="CreateMSBuildProjects" DependsOnTargets="ImportProjectInitCrossBuild">
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] CreateMSBuildProjects" />
 
     <!-- Preprocess build options and add a 'Properties' metadata -->
     <AddBuildOptions Projects="@(ImportProject)">
@@ -90,7 +90,7 @@
   <!-- ================ ImportProject ================ -->
 
   <Target Name="UpdateMSBuildProjects" DependsOnTargets="CreateMSBuildProjects">
-    <Message Condition="'$(TargetDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] UpdateMSBuildProjects" />
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] UpdateMSBuildProjects" />
 
     <ItemGroup>
       <MSBuildProject>
@@ -124,7 +124,7 @@
   
   <!-- Target batching -->
   <Target Name="ImportProject" Condition="'@(ImportProject)' != ''" DependsOnTargets="UpdateMSBuildProjects" Returns="%(MSBuildProject.Identity)">
-    <Message Condition="'$(TargetDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] ImportProject" />
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] ImportProject" />
 
     <!-- Restore nuget packages for solution... -->
     <Exec Condition="'%(MSBuildProject.Extension)' == '.sln'"
@@ -142,8 +142,8 @@
     Instead with use the Exec task which starts the MSBuild process.
     -->
 
-    <Message Condition="'$(ExecDebug)' == 'true'" Importance="high" Text='### [$(MSBuildProjectFile)] %(Command) %(Options) "%(MSBuildProject.Identity)"' />
-    <Message Condition="'$(ExecDebug)' == 'true'" Importance="high" Text=' ' />
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text='### [$(MSBuildProjectFile)] %(Command) %(Options) "%(MSBuildProject.Identity)"' />
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text=' ' />
     <Exec Command='%(Command) %(Options) "%(MSBuildProject.Identity)"' />
     <CallTarget Targets="_DeleteLastBuildState" Condition="'$(BuildingInsideVisualStudio)'=='true'" />
   </Target>

@@ -8,7 +8,7 @@ Summary
 # : import project
 + : define data
 
-# Agent.props
+# Agent.prolog.props
   + Standard configurations (Debug|x64, ...)
   + Default targets (Build, Clean, PackFilter)
   # Microsoft.Cpp.Default.props
@@ -27,7 +27,7 @@ Summary
 # Go.OutDir.props
 # Tools.Go.props
 
-# Agent.targets
+# Agent.epilog.props
   + TargetDir, OutputPath, IntermediateOutputPath
   # Forward.props
   # [Microsoft.Cpp.targets] if ImportMicrosoftCppTargets
@@ -48,7 +48,7 @@ Summary
     <ZouAgentType>Go</ZouAgentType>
   </PropertyGroup>
 
-  <Import Project="Agent.props" />
+  <Import Project="Agent.prolog.props" />
 
   <ImportGroup Label="PropertySheets">
     <Import Project="Com.WorkDir.props" />
@@ -62,7 +62,6 @@ Summary
   <PropertyGroup>
     <ImportMicrosoftCppTargets>false</ImportMicrosoftCppTargets>
   </PropertyGroup>
-  <Import Project="Agent.targets" />
 
   <PropertyGroup>
     <GoSourceDir   Condition="'$(GoSourceDir)'   == ''">$(ProjectDir)</GoSourceDir>
@@ -72,6 +71,8 @@ Summary
     <TargetFileName>$(TargetName)$(TargetExt)</TargetFileName>
     <TargetPath>$(TargetDir)$(TargetFileName)</TargetPath>
   </PropertyGroup>
+  
+  <Import Project="Agent.epilog.props" />
 
   <Target Name="TraceGoAgent" Condition="'$(ZouTrace)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
     <Message Importance="high" Text="zou/Go.Agent.props [$(MSBuildProjectFile)]" />
