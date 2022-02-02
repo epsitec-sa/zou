@@ -115,6 +115,14 @@ Outputs
     </RuntimeIdentifier>
   </ItemGroup>
 
+  <!-- RuntimeOs and RuntimeFolder properties -->
+  <PropertyGroup>
+    <RuntimeOs Condition="$(RuntimeIdentifier.StartsWith('win'))">win</RuntimeOs>
+    <RuntimeOs Condition="$(RuntimeIdentifier.StartsWith('osx'))">osx</RuntimeOs>
+    <RuntimeOs Condition="$(RuntimeIdentifier.StartsWith('linux'))">linux</RuntimeOs>
+    <RuntimeFolder>$(RuntimeOs)-$(RuntimePlatform)</RuntimeFolder>
+  </PropertyGroup>
+
   <Target Name="BootRuntimeCheck" Condition="'$(ForwardPlatform)' != '' And '$(RuntimePlatform)' != ''">
     <PropertyGroup>
       <ErrorMessage>"Platform ($(ForwardPlatform)) and RuntimePlatform ($(RuntimePlatform)) are not compatibles"</ErrorMessage>
@@ -134,9 +142,11 @@ Outputs
     <Message Importance="high" Text="BuildLinux         = $(BuildLinux)" />
     <Message Importance="high" Text=" " />
     <Message Importance="high" Text="Platform           = $(Platform)" />
-    <Message Importance="high" Text="RuntimePlatform    = $(RuntimePlatform)" />
-    <Message Importance="high" Text="$RuntimeIdentifier = $(RuntimeIdentifier)"/>
+    <Message Importance="high" Text="RuntimeIdentifier  = $(RuntimeIdentifier)"/>
     <Message Importance="high" Text="@RuntimeIdentifier = %(RuntimeIdentifier.Identity)" />
+    <Message Importance="high" Text="RuntimeOs          = $(RuntimeOs)" />
+    <Message Importance="high" Text="RuntimePlatform    = $(RuntimePlatform)" />
+    <Message Importance="high" Text="RuntimeFolder      = $(RuntimeFolder)" />
     <Message Importance="high" Text=" " />
     <Message Importance="high" Text="ForwardPlatform    = $(ForwardPlatform)" />
     <Message Importance="high" Text="Platforms          = $(Platforms)" />

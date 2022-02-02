@@ -43,13 +43,10 @@ properties to control the 'Redist.targets' build settings.
     <ItemGroup>
       <!-- Setup defaults -->
       <ImportProject>
-        <RedistFolder       Condition="'%(ImportProject.RedistFolder)'       == ''">$(RedistFolder)</RedistFolder>
-        <!--<RedistX86Framework Condition="'%(ImportProject.RedistX86Framework)' == ''">$(CoreTargetFramework)</RedistX86Framework>
-        <RedistX64Framework Condition="'%(ImportProject.RedistX64Framework)' == ''">$(CoreTargetFramework)</RedistX64Framework>-->
-        <TargetFramework    Condition="'%(Extension)' == '.csproj'">$(CoreTargetFramework)</TargetFramework>
-        
-        <RuntimeType    >Core</RuntimeType>
-        <RuntimeFolder  >%(RuntimeOS)-$(RuntimePlatform)</RuntimeFolder>
+        <TargetFramework Condition="'%(Extension)' == '.csproj'">$(CoreTargetFramework)</TargetFramework>
+        <RedistFolder    Condition="'%(ImportProject.RedistFolder)' == ''">$(RedistFolder)</RedistFolder>
+        <RuntimeType  >Core</RuntimeType>
+        <RuntimeFolder>%(RuntimeOS)-$(RuntimePlatform)</RuntimeFolder>
       </ImportProject>
         
       <ImportProject>
@@ -121,7 +118,7 @@ properties to control the 'Redist.targets' build settings.
         <PublishDir Condition="'%(ImportProject.PublishDir)' != ''">$([System.IO.Path]::GetFullPath('$(OutDir)%(_OutputFolder)'))</PublishDir>
       </ImportProject>
       <ImportProject>
-        <AsmDir Condition="'%(ImportProject.OutDir)' != '' And $([System.String]::new('%(ImportProject.Identity)').EndsWith('.vcxproj'))">%(OutDir).cod\</AsmDir>
+        <AsmDir Condition="'%(ImportProject.OutDir)' != '' And ('%(Extension)' == '.vcxproj' Or '%(Extension)' == '.sln')">%(OutDir).cod\</AsmDir>
       </ImportProject>
 
       <!-- Remove temporary metadata -->
@@ -169,12 +166,14 @@ properties to control the 'Redist.targets' build settings.
     <Message Importance="high" Text=" " />
     <Message Importance="high" Text="Configuration      = $(Configuration)" />
     <Message Importance="high" Text="Platform           = $(Platform)" />
-    <Message Importance="high" Text="RuntimePlatform    = $(RuntimePlatform)" />
-    <Message Importance="high" Text="$RuntimeIdentifier = $(RuntimeIdentifier)" Condition="'$(RuntimeIdentifier)' != ''" />
+    <Message Importance="high" Text="RuntimeIdentifier  = (RuntimeIdentifier)" />
     <Message Importance="high" Text="@RuntimeIdentifier = %(RuntimeIdentifier.Identity)" />
+    <Message Importance="high" Text="RuntimeOs          = $(RuntimeOs)" />
+    <Message Importance="high" Text="RuntimePlatform    = $(RuntimePlatform)" />
+    <Message Importance="high" Text="RuntimeFolder      = $(RuntimeFolder)" />
     <Message Importance="high" Text="RedistFolder       = $(RedistFolder)" />
     <Message Importance="high" Text="OutDir             = $(OutDir)" />
-    <Message Importance="high" Text="PublishDir         = $(PublishDir)" Condition="'$(PublishDir)' != ''" />
+    <Message Importance="high" Text="PublishDir         = $(PublishDir)" />
     <Message Importance="high" Text=" " />
     <Message Importance="high" Text="RedistByRuntime    = $(RedistByRuntime)" />
     <Message Importance="high" Text="RedistByFramework  = $(RedistByFramework)" />
