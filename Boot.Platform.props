@@ -25,9 +25,8 @@ Outputs
         <Platform Condition="'$(Platform)' == '' And '$(ZouAgentType)' == 'Cpp'">Win32</Platform>
         <Platform Condition="'$(Platform)' == '' And '$(ZouAgentType)' == 'CSharp'">AnyCPU</Platform>
 
-        <!-- Normalized Platform -->
-        <RuntimePlatform Condition="'$(Platform)' == 'Any CPU' Or '$(Platform)' == 'AnyCPU'">AnyCPU</RuntimePlatform>
-        <RuntimePlatform Condition="'$(Platform)' == 'Win32'   Or '$(Platform)' == 'x86'">x86</RuntimePlatform>
+        <!-- Runtime Platform -->
+        <RuntimePlatform Condition="'$(Platform)' == 'Win32' Or '$(Platform)' == 'x86'">x86</RuntimePlatform>
         <RuntimePlatform Condition="'$(RuntimePlatform)' == ''">x64</RuntimePlatform>
         <!-- Fix runtime platform for linux and osx -->
         <RuntimePlatform Condition="'$(RuntimePlatform)' == 'AnyCPU' And ! $([MSBuild]::IsOsPlatform(Windows))">x64</RuntimePlatform>
