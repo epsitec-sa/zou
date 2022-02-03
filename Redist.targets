@@ -9,12 +9,15 @@ Import this script at the end of a C# redist agent
     RedistX86Framework - [optional] - the target framework used for x86 or AnyCPU platforms  - (CoreTargetFramework | FullTargetFramework)
     RedistX64Framework - [optional] - the target framework used for x64 platform             - (CoreTargetFramework | FullTargetFramework)
 -->
+
 <Project InitialTargets="TraceRedistTargets" TreatAsLocalProperty="RedistByRuntime">
 
   <Import Project="hook.zou.build.targets" Condition="'$(ZouBuildTargets)' == ''" />
 
-  <Target Name="RedistInit" DependsOnTargets="ImportProjectInitCrossBuild" >
-    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] RedistInit" />
+  <!-- ========== ImportProject ========== -->
+
+  <Target Name="RedistImportProjectInit" DependsOnTargets="ImportProjectInitCrossBuild" >
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] RedistImportProjectInit" />
     <ItemGroup>
       <!-- Setup defaults -->
       <ImportProject>
@@ -49,28 +52,28 @@ Import this script at the end of a C# redist agent
   </Target>
 
   <!--
-  Transform ImportProject.(Out|Publish)Dir metadata from redist to monolith layout
+  Transform ImportProject.(Out|Publish)Dir metadata from standard to redist layout
 
-    - standard: $(OutDir)<project-folder>\$(RuntimeIdentifier)
-    - monolith: $(OutDir)$(RuntimeIdentifier)\$(RedistFolder)
+  - standard: $(OutDir)<project-folder>\$(RuntimeIdentifier)
+  - redist:   $(OutDir)$(RuntimeIdentifier)\$(RedistFolder)
 
-    Inputs:
-      PropertyGroup
-        $(OutDir)       - ex: C:\devel\cresus-dev\cresus\bin\Release\
-        $(RedistFolder) - ex: user\modules\cresus
-      ItemGroup.ImportProject (redist layout)
-        %(OutDir)       - ex: C:\devel\cresus-dev\cresus\bin\Release\xlsgen\win-x64
-        %(PublishDir)   - ex: C:\devel\cresus-dev\cresus\bin\Release\xlsgen\win-x64
-    Outputs:
-      ItemGroup.ImportProject (monolith layout)
-        %(OutDir)       - ex: C:\devel\cresus-dev\cresus\bin\Release\win-x64\user\modules\cresus\xlsgen\
-        %(PublishDir)   - ex: C:\devel\cresus-dev\cresus\bin\Release\win-x64\user\modules\cresus\xlsgen\
-        %(AsmDir)       - ex: C:\devel\cresus-dev\cresus\bin\Release\win-x64\user\modules\cresus\[<c++>\].cod\
+  Inputs:
+    PropertyGroup
+      $(OutDir)       - ex: C:\devel\cresus-dev\cresus\bin\Release\
+      $(RedistFolder) - ex: user\modules\cresus
+    ItemGroup.ImportProject (redist layout)
+      %(OutDir)       - ex: C:\devel\cresus-dev\cresus\bin\Release\xlsgen\win-x64
+      %(PublishDir)   - ex: C:\devel\cresus-dev\cresus\bin\Release\xlsgen\win-x64
+  Outputs:
+    ItemGroup.ImportProject (monolith layout)
+      %(OutDir)       - ex: C:\devel\cresus-dev\cresus\bin\Release\win-x64\user\modules\cresus\xlsgen\
+      %(PublishDir)   - ex: C:\devel\cresus-dev\cresus\bin\Release\win-x64\user\modules\cresus\xlsgen\
+      %(AsmDir)       - ex: C:\devel\cresus-dev\cresus\bin\Release\win-x64\user\modules\cresus\[<c++>\].cod\
   -->
-  <Target Name="RedistTransformLayout" DependsOnTargets="RedistInit">
-    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] RedistTransformLayout" />
+  <Target Name="RedistImportProjectTransformLayout" DependsOnTargets="RedistImportProjectInit">
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] RedistImportProjectTransformLayout" />
     <ItemGroup>
-      <!-- Process C# output directories -->
+      <!-- Process output directories -->
       <ImportProject>
         <_OutputFolder Condition="! $(RedistByRuntime)">%(ImportProject.RedistFolder)</_OutputFolder>
         <_OutputFolder Condition="  $(RedistByRuntime)">$([System.IO.Path]::Combine('%(ImportProject.RuntimeFolder)', '%(ImportProject.RedistFolder)'))</_OutputFolder>
@@ -95,8 +98,8 @@ Import this script at the end of a C# redist agent
     </ItemGroup>
   </Target>
 
-  <Target Name="RedistUpdateTarget" DependsOnTargets="RedistTransformLayout;RedistInit" BeforeTargets="CreateMSBuildProjects">
-    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] RedistUpdateTarget" />
+  <Target Name="RedistImportProjectUpdateTarget" DependsOnTargets="RedistImportProjectTransformLayout;RedistImportProjectInit" BeforeTargets="CreateMSBuildProjects">
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] RedistImportProjectUpdateTarget" />
     <ItemGroup>
       <ImportProject>
         <!-- use Build target for Debug config or .NET Framework -->
@@ -105,6 +108,7 @@ Import this script at the end of a C# redist agent
       <ImportProject>
         <_UseBuildTarget Condition="$(Configuration.StartsWith('Debug', StringComparison.OrdinalIgnoreCase)) Or '%(ImportProject.TargetFramework)' == '' Or '%(ImportProject.TargetFramework)' == '$(FullTargetFramework)'">true</_UseBuildTarget>
       </ImportProject>
+
       <ImportProject>
         <Targets Condition="'%(ImportProject.Targets)' == ''">Publish</Targets>
         <Targets Condition="'%(ImportProject.Targets)' == '' And %(_UseBuildTarget)">Build</Targets>
@@ -122,8 +126,51 @@ Import this script at the end of a C# redist agent
     <Message  Condition="$(RedistDebug)" Importance="high" Text=" " />
   </Target>
 
+
+  <!-- ========== CopyFile ========== -->
+
+  <Target Name="RedistCopyFileInit" DependsOnTargets="CopyFileInitCrossBuild" >
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] RedistCopyFileInit" />
+    <ItemGroup>
+      <CopyFile>
+        <RedistFolder Condition="'%(CopyFile.RedistFolder)' == ''">$(RedistFolder)</RedistFolder>
+        <RuntimeFolder>%(RuntimeOS)-$(RuntimePlatform)</RuntimeFolder>
+      </CopyFile>
+      <CopyFile>
+        <TargetDir>%(TargetDir)%(RuntimeFolder)</TargetDir>
+      </CopyFile>
+    </ItemGroup>
+  </Target>
+
+  <Target Name="RedistCopyFileTransformLayout" DependsOnTargets="RedistCopyFileInit" BeforeTargets="CopyFile">
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] RedistCopyFileTransformLayout" />
+    <ItemGroup>
+      <!-- Process output directories -->
+      <CopyFile>
+        <_OutputFolder Condition="! $(RedistByRuntime)">%(CopyFile.RedistFolder)</_OutputFolder>
+        <_OutputFolder Condition="  $(RedistByRuntime)">$([System.IO.Path]::Combine('%(CopyFile.RuntimeFolder)', '%(CopyFile.RedistFolder)'))</_OutputFolder>
+      </CopyFile>
+      <CopyFile>
+        <_OutputFolder Condition="$(RedistByFramework)">$([System.IO.Path]::Combine('%(CopyFile.TargetFramework)', '%(CopyFile._OutputFolder)'))</_OutputFolder>
+      </CopyFile>
+      <CopyFile>
+        <_OutputFolder>$([MSBuild]::EnsureTrailingSlash('%(CopyFile._OutputFolder)'))</_OutputFolder>
+      </CopyFile>
+
+      <CopyFile>
+        <TargetDir Condition="'%(CopyFile.TargetDir)' != ''">$([System.IO.Path]::GetFullPath('$(OutDir)%(_OutputFolder)'))</TargetDir>
+      </CopyFile>
+
+      <!-- Remove temporary metadata -->
+      <CopyFile RemoveMetadata="_OutputFolder" />
+    </ItemGroup>
+
+    <LogItems Condition="$(RedistDebug)" Items="@(CopyFile)" Title="RedistCopyFileTransformLayout.CopyFile" />
+    <Message  Condition="$(RedistDebug)" Importance="high" Text=" " />
+  </Target>
+
   <Target Name="TraceRedistTargets" Condition="$(RedistDebug) Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'"
-          BeforeTargets="CreateMSBuildProjects" AfterTargets="RedistUpdateTarget">
+          BeforeTargets="CreateMSBuildProjects" AfterTargets="RedistImportProjectUpdateTarget">
     <Message Importance="high" Text="zou/Redist.targets [$(MSBuildProjectFile)]" />
     <Message Importance="high" Text="------------------" />
     <Message Importance="high" Text="ZouBuildProps      = $(ZouBuildProps)" />
@@ -147,9 +194,6 @@ Import this script at the end of a C# redist agent
     <Message Importance="high" Text="RedistByRuntime    = $(RedistByRuntime)" />
     <Message Importance="high" Text="RedistByFramework  = $(RedistByFramework)" />
     <Message Importance="high" Text=" " />
-
-    <LogItems Condition="$(RedistDebug)" Items="@(ImportProject)" Title="RedistUpdateTarget.ImportProject" />
-    <Message  Condition="$(RedistDebug)" Importance="high" Text=" " />
   </Target>
 
 </Project>
