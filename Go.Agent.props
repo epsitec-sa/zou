@@ -65,6 +65,8 @@ Summary
     <ImportMicrosoftCppTargets>false</ImportMicrosoftCppTargets>
   </PropertyGroup>
 
+  <Import Project="Agent.epilog.props" />
+
   <PropertyGroup>
     <GoSourceDir   Condition="'$(GoSourceDir)'   == ''">$(ProjectDir)</GoSourceDir>
     <GoResourceDir Condition="'$(GoResourceDir)' == ''">$(ProjectDir)resources\</GoResourceDir>
@@ -73,10 +75,8 @@ Summary
     <TargetFileName>$(TargetName)$(TargetExt)</TargetFileName>
     <TargetPath>$(TargetDir)$(TargetFileName)</TargetPath>
   </PropertyGroup>
-  
-  <Import Project="Agent.epilog.props" />
 
-  <Target Name="TraceGoAgent" Condition="'$(ZouTrace)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
+  <Target Name="TraceGoAgent" Condition="'$(ZouDebug)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
     <Message Importance="high" Text="zou/Go.Agent.props [$(MSBuildProjectFile)]" />
     <Message Importance="high" Text="------------------" />
     <Message Importance="high" Text="GoSourceDir    = $(GoSourceDir)" />
