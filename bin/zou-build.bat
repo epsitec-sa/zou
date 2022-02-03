@@ -205,9 +205,10 @@ if '%clean%' == 'true' (
 rem build
 if '%build%' == 'true' (
   if '%pkgDir%' == '' set pkgDir=pkg
+  set projNoPack=!project:pack=!
   for %%p in (%platforms%) do (
-    set message=Building %%p
-    if /I not '!project:pack!'=='!project!' set message=Packing %%p to '%pkgDir%' folder
+    set message=Packing %%p to '!pkgDir!' folder
+    if /I '!projNoPack!' == '!project!' set message=Building %%p
     echo [33m[zou-build][36m !message!...[0m
     echo [33m[zou-build][90m %command% -p:Platform=%%p %args%[0m
     if '%dry_run%' == '' (
