@@ -10,6 +10,8 @@ Input:
     <WimTargetsImported>true</WimTargetsImported>
   </PropertyGroup>
 
+  <Import Project="hook.zou.build.targets" Condition="'$(ZouBuildTargets)' == ''" />
+
   <Target Name="CreateWimMapping">
     <PropertyGroup>
       <WimMappingPath>$([System.IO.Path]::GetTempFileName())</WimMappingPath>

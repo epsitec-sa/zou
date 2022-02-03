@@ -1,7 +1,8 @@
 <!-- The ImportProject.targets can be used to build and import the output of one or many projects or solutions. -->
 <Project>
-
-  <Import Project="Boot.Runtime.props" Condition="'$(RuntimePlatform)' == ''" />
+  <PropertyGroup>
+    <ImportProjectTargetsImported>true</ImportProjectTargetsImported>
+  </PropertyGroup>
 
   <!-- Define imported projects default metadata -->
   <ItemDefinitionGroup>
@@ -46,6 +47,8 @@
       <SignToolBroker        Condition="'%(SignToolBroker)'        == ''">rn32</SignToolBroker>
     </ImportProject>
   </ItemDefinitionGroup>
+
+  <Import Project="hook.zou.build.targets" Condition="'$(ZouBuildTargets)' == ''" />
 
   <Target Name="ImportProjectInitCrossBuild">
     <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] ImportProjectInitCrossBuild(CrossBuild=$(CrossBuild))" />
@@ -148,8 +151,6 @@
     <CallTarget Targets="_DeleteLastBuildState" Condition="'$(BuildingInsideVisualStudio)'=='true'" />
   </Target>
 
-  <Target Name="_ImportProject" Condition="'$(ZouTrace)' == 'true'">
-    <Message Importance="high" Text='$(Command) $(Options) "-t:%(MSBuildTarget.Identity)" "%(MSBuildProject.Identity)"' />
-  </Target>
-
+  <Target Name="_ImportProject"      BeforeTargets="Build" DependsOnTargets="ImportProject" />
+  <Target Name="_ImportProjectClean" AfterTargets="Clean"  DependsOnTargets="ImportProjectClean" />
 </Project>

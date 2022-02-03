@@ -6,12 +6,18 @@ Input parameters:
   - %(TargetFile) - default to source file
 -->
 <Project>
+  <PropertyGroup>
+    <CopyFileTargetsImported>true</CopyFileTargetsImported>
+  </PropertyGroup>
+  
   <!-- Define copy files default metadata -->
   <ItemDefinitionGroup>
     <CopyFile>
       <TargetFile>%(FileName)%(Extension)</TargetFile>
     </CopyFile>
   </ItemDefinitionGroup>
+
+  <Import Project="hook.zou.build.targets" Condition="'$(ZouBuildTargets)' == ''" />
 
   <Target Name="CopyFileInitCrossBuild">
     <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] CreateCopyFiles(CrossBuild=$(CrossBuild))" />

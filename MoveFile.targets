@@ -6,6 +6,10 @@ Input parameters:
   - %(TargetFile) - default to source file
 -->
 <Project>
+  <PropertyGroup>
+    <MoveFileTargetsImported>true</MoveFileTargetsImported>
+  </PropertyGroup>
+
   <!-- Define move files default metadata -->
   <ItemDefinitionGroup>
     <MoveFile>
@@ -13,6 +17,8 @@ Input parameters:
       <TargetFile>%(FileName)%(Extension)</TargetFile>
     </MoveFile>
   </ItemDefinitionGroup>
+
+  <Import Project="hook.zou.build.targets" Condition="'$(ZouBuildTargets)' == ''" />
 
   <Target Name="Move"
           Inputs="%(MoveFile.Identity)"

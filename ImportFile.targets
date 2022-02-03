@@ -6,6 +6,10 @@ Input parameters:
   - %(ImportFile)
 -->
 <Project>
+  <PropertyGroup>
+    <ImportFileTargetsImported>true</ImportFileTargetsImported>
+  </PropertyGroup>
+
   <!-- Define imported files default metadata -->
   <ItemDefinitionGroup>
     <ImportFile>
@@ -30,5 +34,7 @@ Input parameters:
       <TreatOutputAsContent>true</TreatOutputAsContent>
     </CustomBuild>
   </ItemGroup>
+
+  <Import Project="hook.zou.build.targets" Condition="'$(ZouBuildTargets)' == ''" />
 
 </Project>

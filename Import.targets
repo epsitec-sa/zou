@@ -4,19 +4,12 @@ Import this script at the end of a C++ import agent.
 This script imports the 'zou.build.targets' located in the invoking project directory.
 There you can define the Itemgroup managed by the imported projects below.
 -->
-<Project DefaultTargets="_ImportProject">
-  <!-- Import targets separately if client 'zou.build.targets' is not wanted -->
-  <Import Project="hook.zou.build.targets" Condition="'$(ZouBuildTargets)' == ''" />
-
-  <Import Project="CopyFile.targets" />
-  <Import Project="MoveFile.targets" />
-  <Import Project="ImportFile.targets" />
-  <Import Project="ImportProject.targets" />
-
-  <Target Name="_ImportProject"      BeforeTargets="Build" DependsOnTargets="ImportProject" />
-  <Target Name="_ImportProjectClean" AfterTargets="Clean"  DependsOnTargets="ImportProjectClean" />
-  
-  <Import Project="Sign.targets" Condition="'$(SignTargetsImported)' == ''" />
-  <Import Project="Wim.targets"  Condition="'$(WimTargetsImported)'  == ''" />
-  <Import Project="Zip.targets"  Condition="'$(ZipTargetsImported)'  == ''" />
+<Project>
+  <Import Project="CopyFile.targets"      Condition="'$(CopyFileTargetsImported)'      == ''" />
+  <Import Project="MoveFile.targets"      Condition="'$(MoveFileTargetsImported)'      == ''" />
+  <Import Project="ImportFile.targets"    Condition="'$(ImportFileTargetsImported)'    == ''" />
+  <Import Project="ImportProject.targets" Condition="'$(ImportProjectTargetsImported)' == ''" />
+  <Import Project="Sign.targets"          Condition="'$(SignTargetsImported)'          == ''" />
+  <Import Project="Wim.targets"           Condition="'$(WimTargetsImported)'           == ''" />
+  <Import Project="Zip.targets"           Condition="'$(ZipTargetsImported)'           == ''" />
 </Project>
