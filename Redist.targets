@@ -1,9 +1,6 @@
 <!--
 Import this script at the end of a C# redist agent
 
-This script imports a chain of 'zou.build.props' in which we can define
-properties to control the 'Redist.targets' build settings.
-
     RedistProjectPath  - [required] - the path of the project script                         - ex: Net\Swissdec.Transmitter.Host\Swissdec.Transmitter.Host.csproj
                                       relative to the 'zou.build.props' directory
     RedistFolder       - [optional] - append a component folder to the output directory      - ex: bin\Release\win-x64\<redist-folder>
@@ -13,28 +10,6 @@ properties to control the 'Redist.targets' build settings.
     RedistX64Framework - [optional] - the target framework used for x64 platform             - (CoreTargetFramework | FullTargetFramework)
 -->
 <Project InitialTargets="TraceRedistTargets" TreatAsLocalProperty="RedistByRuntime">
-
-  <!-- Defaults-->
-  <PropertyGroup>
-    <RedistByFramework  Condition="'$(RedistByFramework)'  == ''">false</RedistByFramework>
-  </PropertyGroup>
-
-  <!-- Append or not the runtime identifier to the output directory -->
-  <PropertyGroup>
-    <!--
-      if CrossBuild                           # need to classify multiple outputs
-        RedistByRuntime = true
-      elsif OutDir.Contains(RuntimePlatform)  # no need to classify output
-        RedistByRuntime = false
-       else
-        RedistByRuntime = true
-       endif
-     -->
-    <RedistByRuntime Condition="'$(RedistByRuntime)' == '' And $(CrossBuild)">true</RedistByRuntime>
-    <RedistByRuntime Condition="'$(RedistByRuntime)' == '' And '$(RuntimePlatform)' != '' And $(OutDir.Contains('$(RuntimePlatform)'))">false</RedistByRuntime>
-    <RedistByRuntime Condition="'$(RedistByRuntime)' == '' And '$(RuntimePlatform)' == 'x86' And $(OutDir.Contains('Win32'))">false</RedistByRuntime>
-    <RedistByRuntime Condition="'$(RedistByRuntime)' == ''">true</RedistByRuntime>
-  </PropertyGroup>
 
   <Import Project="hook.zou.build.targets" Condition="'$(ZouBuildTargets)' == ''" />
 
@@ -70,12 +45,6 @@ properties to control the 'Redist.targets' build settings.
       <ImportProject Condition="'$(RuntimePlatform)' == 'x64'">
         <TargetFramework Condition="'%(ImportProject.RedistX64Framework)' != ''">%(ImportProject.RedistX64Framework)</TargetFramework>
       </ImportProject>
-
-      <!-- Set defaults for non C# projects -->
-      <!--<ImportProject Condition="'$(MSBuildProjectExtension)' != '.csproj'">
-        <Targets Condition="'%(ImportProject.Targets)' == ''">Build</Targets>
-        <TargetFramework />
-      </ImportProject>-->
     </ItemGroup>
   </Target>
 

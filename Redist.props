@@ -1,0 +1,49 @@
+<!--
+  RedistFolder       - append a component folder to the output directory      - ex: bin\Release\win-x64\<redist-folder>
+  RedistByRuntime    - include the runtime identifier in the output directory - ex: bin\Release\[net6\]win-x64\<redist-folder>
+  RedistByFramework  - include the target framework   in the output directory - ex: bin\Release\net6[\win-x64]\<redist-folder>
+
+Inputs
+  CrossBuild
+  RuntimePlatform
+  [RedistByRuntime]
+  [RedistByFramework]
+Outputs
+  RedistByRuntime
+  RedistByFramework
+
+-->
+<Project InitialTargets="TraceRedistProps" TreatAsLocalProperty="RedistByRuntime;RedistByFramework">
+
+  <!-- Defaults-->
+  <PropertyGroup>
+    <RedistByFramework  Condition="'$(RedistByFramework)'  == ''">false</RedistByFramework>
+  </PropertyGroup>
+
+  <!-- Append or not the runtime identifier to the output directory -->
+  <PropertyGroup>
+    <!--
+      if CrossBuild                           # need to classify multiple outputs
+        RedistByRuntime = true
+      elsif OutDir.Contains(RuntimePlatform)  # no need to classify output
+        RedistByRuntime = false
+       else
+        RedistByRuntime = true
+       endif
+     -->
+    <RedistByRuntime Condition="'$(RedistByRuntime)' == '' And $(CrossBuild)">true</RedistByRuntime>
+    <RedistByRuntime Condition="'$(RedistByRuntime)' == '' And '$(RuntimePlatform)' != '' And $(OutDir.Contains('$(RuntimePlatform)'))">false</RedistByRuntime>
+    <RedistByRuntime Condition="'$(RedistByRuntime)' == '' And '$(RuntimePlatform)' == 'x86' And $(OutDir.Contains('Win32'))">false</RedistByRuntime>
+    <RedistByRuntime Condition="'$(RedistByRuntime)' == ''">true</RedistByRuntime>
+  </PropertyGroup>
+
+  <Target Name="TraceRedistProps" Condition="$(RedistDebug) Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
+    <Message Importance="high" Text="zou/Redist.props [$(MSBuildProjectFile)]" />
+    <Message Importance="high" Text="----------------" />
+    <Message Importance="high" Text="RedistByRuntime   = $(RedistByRuntime)" />
+    <Message Importance="high" Text="RedistByFramework = $(RedistByFramework)" />
+    <Message Importance="high" Text="RedistFolder      = $(RedistFolder)" />
+    <Message Importance="high" Text=" " />
+  </Target>
+
+</Project>
