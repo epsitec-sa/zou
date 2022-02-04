@@ -28,8 +28,7 @@ Import this script at the end of a C# redist agent
       </ImportProject>
         
       <ImportProject>
-        <OutDir    >$(OutDir)%(RuntimeFolder)</OutDir>
-        <PublishDir>$(OutDir)%(RuntimeFolder)</PublishDir>
+        <PublishDir Condition="'%(ImportProject.PublishDir)' == ''">%(ImportProject.OutDir)</PublishDir>
       </ImportProject>
       
       <!-- Adjust RuntimeType and TargetFramework for Windows -->
@@ -75,6 +74,9 @@ Import this script at the end of a C# redist agent
     <ItemGroup>
       <!-- Process output directories -->
       <ImportProject>
+        <_ProjectFolder Condition="$([System.String]::new('%(ImportProject.OutDir)').StartsWith('$(OutDir)'))">$([System.String]::new('%(ImportProject.OutDir)').Replace('$(OutDir)', ''))</_ProjectFolder>
+      </ImportProject>
+      <ImportProject>
         <_OutputFolder Condition="! $(RedistByRuntime)">%(ImportProject.RedistFolder)</_OutputFolder>
         <_OutputFolder Condition="  $(RedistByRuntime)">$([System.IO.Path]::Combine('%(ImportProject.RuntimeFolder)', '%(ImportProject.RedistFolder)'))</_OutputFolder>
       </ImportProject>
@@ -82,7 +84,7 @@ Import this script at the end of a C# redist agent
         <_OutputFolder Condition="$(RedistByFramework)">$([System.IO.Path]::Combine('%(ImportProject.TargetFramework)', '%(ImportProject._OutputFolder)'))</_OutputFolder>
       </ImportProject>
       <ImportProject>
-        <_OutputFolder>$([MSBuild]::EnsureTrailingSlash('%(ImportProject._OutputFolder)'))</_OutputFolder>
+        <_OutputFolder>$([MSBuild]::EnsureTrailingSlash($([System.IO.Path]::Combine('%(ImportProject._OutputFolder)', '%(ImportProject._ProjectFolder)'))))</_OutputFolder>
       </ImportProject>
 
       <ImportProject>
@@ -94,7 +96,7 @@ Import this script at the end of a C# redist agent
       </ImportProject>
 
       <!-- Remove temporary metadata -->
-      <ImportProject RemoveMetadata="_OutputFolder" />
+      <ImportProject RemoveMetadata="_ProjectFolder;_OutputFolder" />
     </ItemGroup>
   </Target>
 
@@ -136,9 +138,6 @@ Import this script at the end of a C# redist agent
         <RedistFolder Condition="'%(CopyFile.RedistFolder)' == ''">$(RedistFolder)</RedistFolder>
         <RuntimeFolder>%(RuntimeOS)-$(RuntimePlatform)</RuntimeFolder>
       </CopyFile>
-      <CopyFile>
-        <TargetDir>%(TargetDir)%(RuntimeFolder)</TargetDir>
-      </CopyFile>
     </ItemGroup>
   </Target>
 
@@ -147,6 +146,9 @@ Import this script at the end of a C# redist agent
     <ItemGroup>
       <!-- Process output directories -->
       <CopyFile>
+        <_ProjectFolder Condition="$([System.String]::new('%(CopyFile.TargetDir)').StartsWith('$(OutDir)'))">$([System.String]::new('%(CopyFile.TargetDir)').Replace('$(OutDir)', ''))</_ProjectFolder>
+      </CopyFile>
+      <CopyFile>
         <_OutputFolder Condition="! $(RedistByRuntime)">%(CopyFile.RedistFolder)</_OutputFolder>
         <_OutputFolder Condition="  $(RedistByRuntime)">$([System.IO.Path]::Combine('%(CopyFile.RuntimeFolder)', '%(CopyFile.RedistFolder)'))</_OutputFolder>
       </CopyFile>
@@ -154,7 +156,7 @@ Import this script at the end of a C# redist agent
         <_OutputFolder Condition="$(RedistByFramework)">$([System.IO.Path]::Combine('%(CopyFile.TargetFramework)', '%(CopyFile._OutputFolder)'))</_OutputFolder>
       </CopyFile>
       <CopyFile>
-        <_OutputFolder>$([MSBuild]::EnsureTrailingSlash('%(CopyFile._OutputFolder)'))</_OutputFolder>
+        <_OutputFolder>$([MSBuild]::EnsureTrailingSlash($([System.IO.Path]::Combine('%(CopyFile._OutputFolder)', '%(CopyFile._ProjectFolder)'))))</_OutputFolder>
       </CopyFile>
 
       <CopyFile>
@@ -162,11 +164,11 @@ Import this script at the end of a C# redist agent
       </CopyFile>
 
       <!-- Remove temporary metadata -->
-      <CopyFile RemoveMetadata="_OutputFolder" />
+      <CopyFile RemoveMetadata="_ProjectFolder;_OutputFolder" />
     </ItemGroup>
 
-    <LogItems Condition="$(RedistDebug)" Items="@(CopyFile)" Title="RedistCopyFileTransformLayout.CopyFile" />
-    <Message  Condition="$(RedistDebug)" Importance="high" Text=" " />
+    <!--<LogItems Condition="$(RedistDebug)" Items="@(CopyFile)" Title="RedistCopyFileTransformLayout.CopyFile" />
+    <Message  Condition="$(RedistDebug)" Importance="high" Text=" " />-->
   </Target>
 
   <Target Name="TraceRedistTargets" Condition="$(RedistDebug) Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'"
