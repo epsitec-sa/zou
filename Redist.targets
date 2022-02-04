@@ -171,6 +171,49 @@ Import this script at the end of a C# redist agent
     <Message  Condition="$(RedistDebug)" Importance="high" Text=" " />-->
   </Target>
 
+
+  <!-- ========== ImportFile ========== -->
+
+  <Target Name="RedistImportFileInit" DependsOnTargets="ImportFileInitCrossBuild" >
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] RedistImportFileInit" />
+    <ItemGroup>
+      <ImportFile>
+        <RedistFolder Condition="'%(ImportFile.RedistFolder)' == ''">$(RedistFolder)</RedistFolder>
+        <RuntimeFolder>%(RuntimeOS)-$(RuntimePlatform)</RuntimeFolder>
+      </ImportFile>
+    </ItemGroup>
+  </Target>
+
+  <Target Name="RedistImportFileTransformLayout" DependsOnTargets="RedistImportFileInit" BeforeTargets="ImportFile">
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] RedistImportFileTransformLayout" />
+    <ItemGroup>
+      <!-- Process output directories -->
+      <ImportFile>
+        <_ProjectFolder Condition="$([System.String]::new('%(ImportFile.ImportDir)').StartsWith('$(OutDir)'))">$([System.String]::new('%(ImportFile.ImportDir)').Replace('$(OutDir)', ''))</_ProjectFolder>
+      </ImportFile>
+      <ImportFile>
+        <_OutputFolder Condition="! $(RedistByRuntime)">%(ImportFile.RedistFolder)</_OutputFolder>
+        <_OutputFolder Condition="  $(RedistByRuntime)">$([System.IO.Path]::Combine('%(ImportFile.RuntimeFolder)', '%(ImportFile.RedistFolder)'))</_OutputFolder>
+      </ImportFile>
+      <ImportFile>
+        <_OutputFolder Condition="$(RedistByFramework)">$([System.IO.Path]::Combine('%(ImportFile.TargetFramework)', '%(ImportFile._OutputFolder)'))</_OutputFolder>
+      </ImportFile>
+      <ImportFile>
+        <_OutputFolder>$([MSBuild]::EnsureTrailingSlash($([System.IO.Path]::Combine('%(ImportFile._OutputFolder)', '%(ImportFile._ProjectFolder)'))))</_OutputFolder>
+      </ImportFile>
+
+      <ImportFile>
+        <ImportDir Condition="'%(ImportFile.ImportDir)' != ''">$([System.IO.Path]::GetFullPath('$(OutDir)%(_OutputFolder)'))</ImportDir>
+      </ImportFile>
+
+      <!-- Remove temporary metadata -->
+      <!--<ImportFile RemoveMetadata="_ProjectFolder;_OutputFolder" />-->
+    </ItemGroup>
+
+    <!--<LogItems Condition="$(RedistDebug)" Items="@(ImportFile)" Title="RedistImportFileTransformLayout.ImportFile" />
+    <Message  Condition="$(RedistDebug)" Importance="high" Text=" " />-->
+  </Target>
+
   <Target Name="TraceRedistTargets" Condition="$(RedistDebug) Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'"
           BeforeTargets="CreateMSBuildProjects" AfterTargets="RedistImportProjectUpdateTarget">
     <Message Importance="high" Text="zou/Redist.targets [$(MSBuildProjectFile)]" />

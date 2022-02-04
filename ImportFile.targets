@@ -18,23 +18,47 @@ Input parameters:
     </ImportFile>
   </ItemDefinitionGroup>
 
-  <!-- Create custom builds so that Visual Studio FastUpToDateCheck does not skip changes -->
-
-  <ItemGroup>
-    <CustomBuild Include="@(ImportFile)">
-      <Outputs Condition="'%(ImportPaths)' == ''">%(ImportDir)%(RecursiveDir)%(ImportFile)</Outputs>
-      <Message Condition="'%(ImportPaths)' == ''">[+] %(FullPath) =^&gt; %(ImportDir)%(RecursiveDir)%(ImportFile)</Message>
-      <Command Condition="'%(ImportPaths)' == '' And  $([MSBuild]::IsOsPlatform('Windows'))">copy "%(FullPath)" "%(ImportDir)%(RecursiveDir)%(ImportFile)" &gt;$(Nul)</Command>
-      <Command Condition="'%(ImportPaths)' == '' And !$([MSBuild]::IsOsPlatform('Windows'))">cp '%(FullPath)' '%(ImportDir)%(RecursiveDir)%(ImportFile)' &gt;$(Nul)</Command>
-
-      <Outputs Condition="'%(ImportPaths)' != ''">%(ImportPaths)</Outputs>
-      <Message Condition="'%(ImportPaths)' != ''">[+] %(FullPath) =^&gt; %(ImportPaths)</Message>
-      <Command Condition="'%(ImportPaths)' != '' And  $([MSBuild]::IsOsPlatform('Windows'))">for %%i in (%(ImportPaths)) do copy "%(FullPath)" "%%i" &gt;$(Nul)</Command>
-      <Command Condition="'%(ImportPaths)' != '' And !$([MSBuild]::IsOsPlatform('Windows'))">IFS=';'; for i in '%(ImportPaths)'; do cp '%(FullPath)' "$i" &gt;$(Nul); done</Command>
-      <TreatOutputAsContent>true</TreatOutputAsContent>
-    </CustomBuild>
-  </ItemGroup>
-
   <Import Project="hook.zou.build.targets" Condition="'$(ZouBuildTargets)' == ''" />
+
+  <Target Name="ImportFileInitCrossBuild">
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] ImportFileInitCrossBuild(CrossBuild=$(CrossBuild))" />
+
+    <!-- CopyFile = CopyFile x RuntimeIdentifier (defined in Boot.Runtime.props ) -->
+    <MulJoin Input="@(ImportFile)" Items="@(RuntimeIdentifier)" ItemName="RuntimeIdentifier" >
+      <Output ItemName="_ImportFile" TaskParameter="Output" />
+    </MulJoin>
+
+    <ItemGroup>
+      <ImportFile Remove="@(ImportFile)" />
+      <ImportFile Include="@(_ImportFile)" />
+      <_ImportFile Remove="@(_ImportFile)" />
+    </ItemGroup>
+
+    <!--<LogItems Items="@(ImportFile)" Title="ImportFileInitCrossBuild.ImportFile" />
+    <Message Importance="high"  Text=" " />-->
+  </Target>
+
+  <Target Name="ImportFile" Inputs="@(ImportFile)" Outputs="@(ImportFile->'%(ImportDir)%(RecursiveDir)%(ImportFile)')" BeforeTargets="PrepareForBuild" DependsOnTargets="ImportFileInitCrossBuild">
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] ImportFile" />
+    
+    <!-- Create custom builds so that Visual Studio FastUpToDateCheck does not skip changes -->
+    <ItemGroup>
+      <CustomBuild Include="@(ImportFile)">
+        <Outputs Condition="'%(CustomBuild.ImportPaths)' == ''">%(ImportDir)%(RecursiveDir)%(ImportFile)</Outputs>
+        <Message Condition="'%(CustomBuild.ImportPaths)' == ''">[+] %(FullPath) =^&gt; %(ImportDir)%(RecursiveDir)%(ImportFile)</Message>
+        <Command Condition="'%(CustomBuild.ImportPaths)' == '' And  $([MSBuild]::IsOsPlatform('Windows'))">copy "%(FullPath)" "%(ImportDir)%(RecursiveDir)%(ImportFile)" &gt;$(Nul)</Command>
+        <Command Condition="'%(CustomBuild.ImportPaths)' == '' And !$([MSBuild]::IsOsPlatform('Windows'))">cp '%(FullPath)' '%(ImportDir)%(RecursiveDir)%(ImportFile)' &gt;$(Nul)</Command>
+
+        <Outputs Condition="'%(CustomBuild.ImportPaths)' != ''">%(CustomBuild.ImportPaths)</Outputs>
+        <Message Condition="'%(CustomBuild.ImportPaths)' != ''">[+] %(FullPath) =^&gt; %(CustomBuild.ImportPaths)</Message>
+        <Command Condition="'%(CustomBuild.ImportPaths)' != '' And  $([MSBuild]::IsOsPlatform('Windows'))">for %%i in (%(CustomBuild.ImportPaths)) do copy "%(FullPath)" "%%i" &gt;$(Nul)</Command>
+        <Command Condition="'%(CustomBuild.ImportPaths)' != '' And !$([MSBuild]::IsOsPlatform('Windows'))">IFS=';'; for i in '%(CustomBuild.ImportPaths)'; do cp '%(FullPath)' "$i" &gt;$(Nul); done</Command>
+        <TreatOutputAsContent>true</TreatOutputAsContent>
+      </CustomBuild>
+    </ItemGroup>
+
+    <!--<LogItems Items="@(CustomBuild)" Title="### ImportFile.CustomBuild" />
+    <Message Importance="high"  Text=" " />-->
+  </Target>
 
 </Project>
