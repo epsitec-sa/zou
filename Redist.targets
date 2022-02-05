@@ -19,8 +19,7 @@ Import this script at the end of a C# redist agent
     <ItemGroup>
       <!-- Setup defaults -->
       <ImportProject>
-        <TargetFramework Condition="'%(Extension)' == '.csproj'">$(CoreTargetFramework)</TargetFramework>
-        <RedistFolder    Condition="'%(ImportProject.RedistFolder)' == ''">$(RedistFolder)</RedistFolder>
+        <RedistFolder Condition="'%(ImportProject.RedistFolder)' == ''">$(RedistFolder)</RedistFolder>
         <RuntimeType  >Core</RuntimeType>
         <RuntimeFolder>%(RuntimeOS)-$(RuntimePlatform)</RuntimeFolder>
       </ImportProject>
@@ -102,20 +101,28 @@ Import this script at the end of a C# redist agent
     <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] RedistImportProjectUpdateTarget" />
     <ItemGroup>
       <ImportProject>
-        <!-- use Build target for Debug config or .NET Framework -->
-        <_UseBuildTarget>false</_UseBuildTarget>
+        <_UseBuildTarget Condition="$([System.String]::new('%(ImportProject.Targets)').IndexOf('Publish', StringComparison.OrdinalIgnoreCase)) >= 0">false</_UseBuildTarget>
+        <_UseBuildTarget Condition="$([System.String]::new('%(ImportProject.Targets)').IndexOf('Build',   StringComparison.OrdinalIgnoreCase)) >= 0">true</_UseBuildTarget>
       </ImportProject>
       <ImportProject>
-        <_UseBuildTarget Condition="$(Configuration.StartsWith('Debug', StringComparison.OrdinalIgnoreCase)) Or '%(ImportProject.TargetFramework)' == '' Or '%(ImportProject.TargetFramework)' == '$(FullTargetFramework)'">true</_UseBuildTarget>
+          <!-- Use Build target for Debug config, .NET Framework or  -->
+        <_UseBuildTarget Condition="'%(ImportProject._UseBuildTarget)' == '' And '%(ImportProject.Targets)' == '' And ( $(Configuration.StartsWith('Debug', StringComparison.OrdinalIgnoreCase)) Or '%(ImportProject.TargetFramework)' == '' Or '%(ImportProject.TargetFramework)' == '$(FullTargetFramework)' )">true</_UseBuildTarget>
+      </ImportProject>
+      <ImportProject>
+        <!-- Default to Publish target -->
+        <_UseBuildTarget Condition="'%(ImportProject._UseBuildTarget)' == ''">false</_UseBuildTarget>
       </ImportProject>
 
+      <!-- Set Targets default -->
       <ImportProject>
         <Targets Condition="'%(ImportProject.Targets)' == ''">Publish</Targets>
         <Targets Condition="'%(ImportProject.Targets)' == '' And %(_UseBuildTarget)">Build</Targets>
       </ImportProject>
+      
+      <!-- Keep only one of OutDir or PublishDir -->
       <ImportProject>
-        <OutDir     Condition="! %(_UseBuildTarget)" />
-        <PublishDir Condition="  %(_UseBuildTarget)" />
+        <OutDir     Condition="%(_UseBuildTarget) == false" />
+        <PublishDir Condition="%(_UseBuildTarget) == true" />
       </ImportProject>
 
       <!-- Remove temporary metadata -->
@@ -205,7 +212,7 @@ Import this script at the end of a C# redist agent
       </ImportFile>
 
       <!-- Remove temporary metadata -->
-      <!--<ImportFile RemoveMetadata="_ProjectFolder;_OutputFolder" />-->
+      <ImportFile RemoveMetadata="_ProjectFolder;_OutputFolder" />
     </ItemGroup>
 
     <!--<LogItems Condition="$(RedistDebug)" Items="@(ImportFile)" Title="RedistImportFileTransformLayout.ImportFile" />
@@ -217,7 +224,6 @@ Import this script at the end of a C# redist agent
     <Message Importance="high" Text="zou/Redist.targets [$(MSBuildProjectFile)]" />
     <Message Importance="high" Text="------------------" />
     <Message Importance="high" Text="ZouBuildProps      = $(ZouBuildProps)" />
-    <Message Importance="high" Text="ZouBuildTargets    = $(ZouBuildTargets)" />
     <Message Importance="high" Text="CrossBuild         = $(CrossBuild)" />
     <Message Importance="high" Text="BuildWin           = $(BuildWin)" />
     <Message Importance="high" Text="BuildOsx           = $(BuildOsx)" />
@@ -230,12 +236,12 @@ Import this script at the end of a C# redist agent
     <Message Importance="high" Text="RuntimeOs          = $(RuntimeOs)" />
     <Message Importance="high" Text="RuntimePlatform    = $(RuntimePlatform)" />
     <Message Importance="high" Text="RuntimeFolder      = $(RuntimeFolder)" />
-    <Message Importance="high" Text="RedistFolder       = $(RedistFolder)" />
     <Message Importance="high" Text="OutDir             = $(OutDir)" />
     <Message Importance="high" Text="PublishDir         = $(PublishDir)" />
     <Message Importance="high" Text=" " />
     <Message Importance="high" Text="RedistByRuntime    = $(RedistByRuntime)" />
     <Message Importance="high" Text="RedistByFramework  = $(RedistByFramework)" />
+    <Message Importance="high" Text="RedistFolder       = $(RedistFolder)" />
     <Message Importance="high" Text=" " />
   </Target>
 
