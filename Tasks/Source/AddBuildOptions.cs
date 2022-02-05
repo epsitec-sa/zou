@@ -76,7 +76,7 @@ namespace Zou.Tasks
 
                 var names = project.CustomMetadataNames();
                 // Add Properties metadata
-                var properties = names
+                var propertyKeyValues = names
                     .Where(name => Mixins.IsBuildProperty(name))
                     .Select(name => (Key: name, Value: project.GetMetadata(name)))
                     .Where(kv => !string.IsNullOrWhiteSpace(kv.Value) && kv.Value != Mixins.UndefinedValue)
@@ -84,14 +84,23 @@ namespace Zou.Tasks
                     .Select(kv => $"{kv.Key}={QuotePropertyValue(kv.Value)}")
                     .ToArray();
 
-                var propertiesValue = string.Join(";", properties);
-                if (propertiesValue.EndsWith("\\"))
+                // Create the MSBuild task 'Properties' attribute
+                var properties = string.Join(";", propertyKeyValues);
+                if (properties.EndsWith("\\"))
                 {
-                    propertiesValue += ";_=_";
+                    properties += ";_=_";
                 }
-                propertiesValue = QuoteValue(propertiesValue);
-                project.SetMetadata("Properties", propertiesValue);
+                properties = QuoteValue(properties);
+                project.SetMetadata("Properties", properties);
 
+                // Create the 'msbuild' command property options (-p:prop1=value1 -p:prop2=value2)
+                // There is an issue when property-value pairs are concatenated with ';' (-p:prop1=value1;prop2=value2)
+                // If the 'TargetFramework' property-value is not the first in the list, the nuget restore fails.
+                //      -p:TargetFramework=net6;Configuration=Release  // OK
+                //      -p:Configuration=Release;TargetFramework=net6  // NOT OK
+                // Split the options to avoid this issue (-p:prop1=value1 -p:prop2=value2)
+                var propertyOptions = string.Join(" ", propertyKeyValues.Select(kv => $"-p:{kv}"));
+                project.SetMetadata("PropertyOptions", propertyOptions);
 
                 yield return project;
             }
