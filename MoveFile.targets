@@ -18,11 +18,7 @@ Input parameters:
     </MoveFile>
   </ItemDefinitionGroup>
 
-  <Target Name="Move"
-          Inputs="%(MoveFile.Identity)"
-          Outputs="%(MoveFile.TargetDir)%(RecursiveDir)%(TargetFile)"
-          BeforeTargets="Build">
-
+  <Target Name="Move" Inputs="%(MoveFile.Identity)" Outputs="%(MoveFile.TargetDir)%(RecursiveDir)%(TargetFile)" BeforeTargets="Build">
     <Message Importance="high" Text="[ ] %(MoveFile.Identity) =&gt; %(TargetDir)%(RecursiveDir)%(TargetFile)" />
     <Move SourceFiles="%(MoveFile.Identity)" DestinationFiles="%(MoveFile.TargetDir)%(RecursiveDir)%(TargetFile)" />
   </Target>
