@@ -1,0 +1,151 @@
+<!--
+Compute ImportProject.(OutDir|PublishDir).
+
+  %(OutDir|PublishDir) = $(OutDir)[%(TargetFramework)\][%(RuntimeFolder)\][<project-folder>\]
+  where <project-folder> :: %(OutDir).Replace($(OutDir), "")
+
+Example:
+  $(RedistByFramework) = $(RedistByRuntime) = true
+  $(OutDir)            = bin\Release\
+  %(OutDir|PublishDir) = bin\Release\
+  %(TargetFramework)   = net6
+  %(RuntimePlatform)   = win-x64
+  %(RedistFolder)      = swissdec
+  <project-folder>     = <empty>
+  
+  %(OutDir|PublishDir) -> bin\Release\net6\win-x64\swissdec\
+  
+Inputs:
+  $(RedistFolder)       - [optional] - default redist folder
+  $(RedistByFramework)  - [optional] - include the target framework   in the output directory  - ex: ...\net6\...
+  $(RedistByRuntime)    - [optional] - include the runtime identifier in the output directory  - ex: ...\win-x64\...
+  %(RedistFolder)       - [optional] - append a specific redist folder to the output directory - ex: ...\swissdec\...
+  %(RedistX86Framework) - [optional] - the target framework used for x86 or AnyCPU platforms   - (CoreTargetFramework | FullTargetFramework)
+  %(RedistX64Framework) - [optional] - the target framework used for x64 platform              - (CoreTargetFramework | FullTargetFramework)
+
+Outputs:
+  %(RedistFolder)       - ex: swissdec
+  %(OutDir|PublishDir)  - ex: bin\Release\win-x64\swissdec\
+-->
+<Project InitialTargets="TraceRedistTargets" TreatAsLocalProperty="RedistByRuntime">
+
+  <Target Name="RedistImportProjectInit" DependsOnTargets="ImportProjectInitCrossBuild" >
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] RedistImportProjectInit" />
+    <ItemGroup>
+      <!-- Setup defaults -->
+      <ImportProject>
+        <RedistFolder Condition="'%(ImportProject.RedistFolder)' == ''">$(RedistFolder)</RedistFolder>
+        <RuntimeType  >Core</RuntimeType>
+        <RuntimeFolder>%(RuntimeOS)-$(RuntimePlatform)</RuntimeFolder>
+      </ImportProject>
+        
+      <ImportProject>
+        <PublishDir Condition="'%(ImportProject.PublishDir)' == ''">%(ImportProject.OutDir)</PublishDir>
+      </ImportProject>
+      
+      <!-- Adjust RuntimeType and TargetFramework for Windows -->
+      <ImportProject Condition="'%(RuntimeOS)' == 'win'">
+        <!-- Use 'msbuild' for .sln and .vcxproj -->
+        <RuntimeType Condition="'%(Extension)' == '.sln' Or '%(Extension)' == '.vcxproj'">Full</RuntimeType>
+        <!-- Use 'dotnet build' for .csproj -->
+        <RuntimeType Condition="'%(Extension)' == '.csproj'">Core</RuntimeType>
+      </ImportProject>
+      
+      <!-- x86|AnyCPU -->
+      <ImportProject Condition="'$(RuntimePlatform)' == 'x86' Or '$(RuntimePlatform)' == 'AnyCPU'">
+        <TargetFramework Condition="'%(ImportProject.RedistX86Framework)' != ''">%(ImportProject.RedistX86Framework)</TargetFramework>
+      </ImportProject>
+      <!-- x64 -->
+      <ImportProject Condition="'$(RuntimePlatform)' == 'x64'">
+        <TargetFramework Condition="'%(ImportProject.RedistX64Framework)' != ''">%(ImportProject.RedistX64Framework)</TargetFramework>
+      </ImportProject>
+    </ItemGroup>
+  </Target>
+
+  <!--
+  Transform ImportProject.(Out|Publish)Dir metadata from standard to redist layout
+
+  - standard: $(OutDir)<project-folder>\$(RuntimeIdentifier)
+  - redist:   $(OutDir)$(RuntimeIdentifier)\$(RedistFolder)
+
+  Inputs:
+    PropertyGroup
+      $(OutDir)       - ex: C:\devel\cresus-dev\cresus\bin\Release\
+      $(RedistFolder) - ex: user\modules\cresus
+    ItemGroup.ImportProject (redist layout)
+      %(OutDir)       - ex: C:\devel\cresus-dev\cresus\bin\Release\xlsgen\win-x64
+      %(PublishDir)   - ex: C:\devel\cresus-dev\cresus\bin\Release\xlsgen\win-x64
+  Outputs:
+    ItemGroup.ImportProject (monolith layout)
+      %(OutDir)       - ex: C:\devel\cresus-dev\cresus\bin\Release\win-x64\user\modules\cresus\xlsgen\
+      %(PublishDir)   - ex: C:\devel\cresus-dev\cresus\bin\Release\win-x64\user\modules\cresus\xlsgen\
+      %(AsmDir)       - ex: C:\devel\cresus-dev\cresus\bin\Release\win-x64\user\modules\cresus\[<c++>\].cod\
+  -->
+  <Target Name="RedistImportProjectTransformLayout" DependsOnTargets="RedistImportProjectInit">
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] RedistImportProjectTransformLayout" />
+    <ItemGroup>
+      <!-- Process output directories -->
+      <ImportProject>
+        <_ProjectFolder Condition="$([System.String]::new('%(ImportProject.OutDir)').StartsWith('$(OutDir)'))">$([System.String]::new('%(ImportProject.OutDir)').Replace('$(OutDir)', ''))</_ProjectFolder>
+      </ImportProject>
+      <ImportProject>
+        <_OutputFolder Condition="! $(RedistByRuntime)">%(ImportProject.RedistFolder)</_OutputFolder>
+        <_OutputFolder Condition="  $(RedistByRuntime)">$([System.IO.Path]::Combine('%(ImportProject.RuntimeFolder)', '%(ImportProject.RedistFolder)'))</_OutputFolder>
+      </ImportProject>
+      <ImportProject>
+        <_OutputFolder Condition="$(RedistByFramework)">$([System.IO.Path]::Combine('%(ImportProject.TargetFramework)', '%(ImportProject._OutputFolder)'))</_OutputFolder>
+      </ImportProject>
+      <ImportProject>
+        <_OutputFolder>$([MSBuild]::EnsureTrailingSlash($([System.IO.Path]::Combine('%(ImportProject._OutputFolder)', '%(ImportProject._ProjectFolder)'))))</_OutputFolder>
+      </ImportProject>
+
+      <ImportProject>
+        <OutDir     Condition="'%(ImportProject.OutDir)'     != ''">$([System.IO.Path]::GetFullPath('$(OutDir)%(_OutputFolder)'))</OutDir>
+        <PublishDir Condition="'%(ImportProject.PublishDir)' != ''">$([System.IO.Path]::GetFullPath('$(OutDir)%(_OutputFolder)'))</PublishDir>
+      </ImportProject>
+      <ImportProject>
+        <AsmDir Condition="'%(ImportProject.OutDir)' != '' And ('%(Extension)' == '.vcxproj' Or '%(Extension)' == '.sln')">%(OutDir).cod\</AsmDir>
+      </ImportProject>
+
+      <!-- Remove temporary metadata -->
+      <ImportProject RemoveMetadata="_ProjectFolder;_OutputFolder" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="RedistImportProjectUpdateTarget" DependsOnTargets="RedistImportProjectTransformLayout;RedistImportProjectInit" BeforeTargets="CreateMSBuildProjects">
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] RedistImportProjectUpdateTarget" />
+    <ItemGroup>
+      <ImportProject>
+        <_UseBuildTarget Condition="$([System.String]::new('%(ImportProject.Targets)').IndexOf('Publish', StringComparison.OrdinalIgnoreCase)) >= 0">false</_UseBuildTarget>
+        <_UseBuildTarget Condition="$([System.String]::new('%(ImportProject.Targets)').IndexOf('Build',   StringComparison.OrdinalIgnoreCase)) >= 0">true</_UseBuildTarget>
+      </ImportProject>
+      <ImportProject>
+          <!-- Use Build target for Debug config, .NET Framework or  -->
+        <_UseBuildTarget Condition="'%(ImportProject._UseBuildTarget)' == '' And '%(ImportProject.Targets)' == '' And ( $(Configuration.StartsWith('Debug', StringComparison.OrdinalIgnoreCase)) Or '%(ImportProject.TargetFramework)' == '' Or '%(ImportProject.TargetFramework)' == '$(FullTargetFramework)' )">true</_UseBuildTarget>
+      </ImportProject>
+      <ImportProject>
+        <!-- Default to Publish target -->
+        <_UseBuildTarget Condition="'%(ImportProject._UseBuildTarget)' == ''">false</_UseBuildTarget>
+      </ImportProject>
+
+      <!-- Set Targets default -->
+      <ImportProject>
+        <Targets Condition="'%(ImportProject.Targets)' == ''">Publish</Targets>
+        <Targets Condition="'%(ImportProject.Targets)' == '' And %(_UseBuildTarget)">Build</Targets>
+      </ImportProject>
+      
+      <!-- Keep only one of OutDir or PublishDir -->
+      <ImportProject>
+        <OutDir     Condition="%(_UseBuildTarget) == false" />
+        <PublishDir Condition="%(_UseBuildTarget) == true" />
+      </ImportProject>
+
+      <!-- Remove temporary metadata -->
+      <ImportProject RemoveMetadata="_UseBuildTarget" />
+    </ItemGroup>
+
+    <LogItems Condition="$(RedistDebug)" Items="@(ImportProject)" Title="RedistUpdateTarget.ImportProject" />
+    <Message  Condition="$(RedistDebug)" Importance="high" Text=" " />
+  </Target>
+
+</Project>

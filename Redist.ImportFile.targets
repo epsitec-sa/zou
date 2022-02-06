@@ -1,0 +1,72 @@
+<!--
+Compute ImportFile.ImportDir.
+
+  %(TargetDir) = $(OutDir)[%(TargetFramework)\][%(RuntimeFolder)\][<project-folder>\]
+  where <project-folder> :: %(TargetDir).Replace($(OutDir), "")
+
+Example:
+  $(RedistByFramework) = $(RedistByRuntime) = true
+  $(OutDir)            = bin\Release\
+  %(TargetDir)         = bin\Release\documents\
+  %(TargetFramework)   = net6
+  %(RuntimePlatform)   = win-x64
+  %(RedistFolder)      = coursdechange
+  <project-folder>     = documents
+  
+  %(ImportDir) -> bin\Release\net6\win-x64\coursdechange\documents
+  
+Inputs:
+  $(RedistFolder)       - [optional] - default redist folder
+  $(RedistByFramework)  - [optional] - include the target framework   in the output directory  - ex: ...\net6\...
+  $(RedistByRuntime)    - [optional] - include the runtime identifier in the output directory  - ex: ...\win-x64\...
+  %(RedistFolder)       - [optional] - append a specific redist folder to the output directory - ex: ...\coursdechange\...
+  %(RedistX86Framework) - [optional] - the target framework used for x86 or AnyCPU platforms   - (CoreTargetFramework | FullTargetFramework)
+  %(RedistX64Framework) - [optional] - the target framework used for x64 platform              - (CoreTargetFramework | FullTargetFramework)
+
+Outputs:
+  %(RedistFolder)       - ex: coursdechange
+  %(ImportDir)          - ex: bin\Release\win-x64\coursdechange\documents
+-->
+<Project>
+
+  <Target Name="RedistImportFileInit" DependsOnTargets="ImportFileInitCrossBuild" >
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] RedistImportFileInit" />
+    <ItemGroup>
+      <ImportFile>
+        <RedistFolder Condition="'%(ImportFile.RedistFolder)' == ''">$(RedistFolder)</RedistFolder>
+        <RuntimeFolder>%(RuntimeOS)-$(RuntimePlatform)</RuntimeFolder>
+      </ImportFile>
+    </ItemGroup>
+  </Target>
+
+  <Target Name="RedistImportFileTransformLayout" DependsOnTargets="RedistImportFileInit" BeforeTargets="ImportFile">
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] RedistImportFileTransformLayout" />
+    <ItemGroup>
+      <!-- Process output directories -->
+      <ImportFile>
+        <_ProjectFolder Condition="$([System.String]::new('%(ImportFile.ImportDir)').StartsWith('$(OutDir)'))">$([System.String]::new('%(ImportFile.ImportDir)').Replace('$(OutDir)', ''))</_ProjectFolder>
+      </ImportFile>
+      <ImportFile>
+        <_OutputFolder Condition="! $(RedistByRuntime)">%(ImportFile.RedistFolder)</_OutputFolder>
+        <_OutputFolder Condition="  $(RedistByRuntime)">$([System.IO.Path]::Combine('%(ImportFile.RuntimeFolder)', '%(ImportFile.RedistFolder)'))</_OutputFolder>
+      </ImportFile>
+      <ImportFile>
+        <_OutputFolder Condition="$(RedistByFramework)">$([System.IO.Path]::Combine('%(ImportFile.TargetFramework)', '%(ImportFile._OutputFolder)'))</_OutputFolder>
+      </ImportFile>
+      <ImportFile>
+        <_OutputFolder>$([MSBuild]::EnsureTrailingSlash($([System.IO.Path]::Combine('%(ImportFile._OutputFolder)', '%(ImportFile._ProjectFolder)'))))</_OutputFolder>
+      </ImportFile>
+
+      <ImportFile>
+        <ImportDir Condition="'%(ImportFile.ImportDir)' != ''">$([System.IO.Path]::GetFullPath('$(OutDir)%(_OutputFolder)'))</ImportDir>
+      </ImportFile>
+
+      <!-- Remove temporary metadata -->
+      <ImportFile RemoveMetadata="_ProjectFolder;_OutputFolder" />
+    </ItemGroup>
+
+    <!--<LogItems Condition="$(RedistDebug)" Items="@(ImportFile)" Title="RedistImportFileTransformLayout.ImportFile" />
+    <Message  Condition="$(RedistDebug)" Importance="high" Text=" " />-->
+  </Target>
+
+</Project>
