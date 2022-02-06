@@ -116,15 +116,19 @@ Outputs:
     <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] RedistImportProjectUpdateTarget" />
     <ItemGroup>
       <ImportProject>
+        <!-- if (Targets.Contains(Publish)) use Publish target -->
         <_UseBuildTarget Condition="$([System.String]::new('%(ImportProject.Targets)').IndexOf('Publish', StringComparison.OrdinalIgnoreCase)) >= 0">false</_UseBuildTarget>
-        <_UseBuildTarget Condition="$([System.String]::new('%(ImportProject.Targets)').IndexOf('Build',   StringComparison.OrdinalIgnoreCase)) >= 0">true</_UseBuildTarget>
       </ImportProject>
       <ImportProject>
-          <!-- Use Build target for Debug config, .NET Framework or  -->
-        <_UseBuildTarget Condition="'%(ImportProject._UseBuildTarget)' == '' And '%(ImportProject.Targets)' == '' And ( $(Configuration.StartsWith('Debug', StringComparison.OrdinalIgnoreCase)) Or '%(ImportProject.TargetFramework)' == '' Or '%(ImportProject.TargetFramework)' == '$(FullTargetFramework)' )">true</_UseBuildTarget>
+        <!-- else if (Targets is not empty) use Build target -->
+        <_UseBuildTarget Condition="'%(ImportProject._UseBuildTarget)' == '' And '%(ImportProject.Targets)' != ''">true</_UseBuildTarget>
       </ImportProject>
       <ImportProject>
-        <!-- Default to Publish target -->
+        <!-- else if (Debug or TargetFramework is empty or Full) use Build target  -->
+        <_UseBuildTarget Condition="'%(ImportProject._UseBuildTarget)' == '' And ( $(Configuration.StartsWith('Debug', StringComparison.OrdinalIgnoreCase)) Or '%(ImportProject.TargetFramework)' == '' Or '%(ImportProject.TargetFramework)' == '$(FullTargetFramework)' )">true</_UseBuildTarget>
+      </ImportProject>
+      <ImportProject>
+        <!-- else use Publish target -->
         <_UseBuildTarget Condition="'%(ImportProject._UseBuildTarget)' == ''">false</_UseBuildTarget>
       </ImportProject>
 
