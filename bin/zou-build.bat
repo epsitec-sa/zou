@@ -169,7 +169,8 @@ if '%sign%'    == 'true' set props=%props%;Sign=true
 if '%verbose%' == 'true' set props=%props%;RedistDebug=true;ZouDebug=true
 if '%pkgDir%'  neq ''    set props=%props%;PkgDir=%pkgDir%
 
-set command=msbuild %opts% %project% -p:%props%
+if /I '%projExt%' == '.csproj' (set command=dotnet build) else (set command=msbuild)
+set command=%command% %opts% %project% -p:%props%
 
 if '%test%' == 'true' (
   echo [33m[zou-build][90m platforms = !platforms![0m
