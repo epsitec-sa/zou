@@ -86,11 +86,6 @@ namespace Zou.Tasks
 
                 // Create the MSBuild task 'Properties' attribute
                 var properties = string.Join(";", propertyKeyValues);
-                if (properties.EndsWith("\\"))
-                {
-                    properties += ";_=_";
-                }
-                properties = QuoteValue(properties);
                 project.SetMetadata("Properties", properties);
 
                 // Create the 'msbuild' command property options (-p:prop1=value1 -p:prop2=value2)
@@ -126,13 +121,27 @@ namespace Zou.Tasks
             static string QuotePropertyValue(string value)
             {
                 // https://github.com/dotnet/sdk/issues/8792#issuecomment-393756980
-                if (value.Contains(';'))
+                if (Environment.OSVersion.Platform == PlatformID.Win32NT)
                 {
-                    value = Environment.OSVersion.Platform switch
+                    if (value.Contains(';'))
                     {
-                        PlatformID.Win32NT => $"\\\"{value}\\\"",
-                        _ => $"'\"{value}\"'"
-                    };
+                        value = $"\\\"{value}\\\"";   // -p:NoWarn=\"1591;1573;3001;3002\"
+                    }
+                    else if (value.Contains(' '))
+                    {
+                        value = $"\"{value}\"";       // -p:OutDir="my project directory"
+                    }
+                }
+                else
+                {
+                    if (value.Contains(';'))
+                    {
+                        value = $"'\"{value}\"'";   // -p:NoWarn='"1591;1573;3001;3002"'
+                    }
+                    else if (value.Contains(' '))
+                    {
+                        value = $"'{value}'";       // -p:OutDir='my project directory'
+                    }
                 }
                 return value;
             }
