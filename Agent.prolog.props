@@ -69,13 +69,16 @@ Summary:
   <!-- Microsoft.Cpp.Default.props -->
 
   <PropertyGroup>
-    <!-- 'Microsoft.Cpp.Default.props' overrides Platform value (Platform=Win32) -->
+    <!-- 'Microsoft.Cpp.Default.props' overrides PlatformToolset and Platform -->
+    <_Agent_PlatformToolset0>$(PlatformToolset)</_Agent_PlatformToolset0>
     <_Agent_Platform0>$(Platform)</_Agent_Platform0>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" Condition="Exists('$(VCTargetsPath)\Microsoft.Cpp.Default.props')"/>
   <PropertyGroup>
     <!-- Restore Platform -->
-    <Platform Condition="'$(_Agent_Platform0)' != ''">$(_Agent_Platform0)</Platform>
+    <PlatformToolset>$(_Agent_PlatformToolset0)</PlatformToolset>
+    <Platform>$(_Agent_Platform0)</Platform>
+    <_Agent_PlatformToolset0 />
     <_Agent_Platform0 />
   </PropertyGroup>
 
