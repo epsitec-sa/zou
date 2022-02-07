@@ -36,6 +36,19 @@ Outputs
     <RedistByRuntime Condition="'$(RedistByRuntime)' == '' And '$(RuntimePlatform)' == 'x86' And $(OutDir.Contains('Win32'))">false</RedistByRuntime>
     <RedistByRuntime Condition="'$(RedistByRuntime)' == ''">true</RedistByRuntime>
   </PropertyGroup>
+  
+  <!-- Forward properties -->
+  <ItemDefinitionGroup>
+    <CopyFile>
+      <RedistByRuntime>$(RedistByRuntime)</RedistByRuntime>
+    </CopyFile>
+    <ImportFile>
+      <RedistByRuntime>$(RedistByRuntime)</RedistByRuntime>
+    </ImportFile>
+    <ImportProject>
+      <RedistByRuntime>$(RedistByRuntime)</RedistByRuntime>
+    </ImportProject>
+  </ItemDefinitionGroup>
 
   <Target Name="TraceRedistProps" Condition="$(RedistDebug) Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
     <Message Importance="high" Text="zou/Redist.props [$(MSBuildProjectFile)]" />
