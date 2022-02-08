@@ -4,9 +4,9 @@
 #   [[ -z $ZOUL_GIT_VTAG ]] && . zoul-git-vtag
 ZOUL_GIT_VTAG=true
 
-[[ -z $ZOUL_CORE ]]            && . zoul-core
-[[ -z $ZOUL_GIT_CORE ]]        && . zoul-git-core
-[[ -z $ZOUL_GIT_REF ]]         && . zoul-git-ref
+[[ -z $ZOUL_CORE ]]     && . zoul-core
+[[ -z $ZOUL_GIT_CORE ]] && . zoul-git-core
+[[ -z $ZOUL_GIT_REF ]]  && . zoul-git-ref
 
 # Tokenize semver tag
 # in:
@@ -101,7 +101,7 @@ vtag_highest()
 vtag_describe()
 {
   local vbranch vtag delta alias
-  vtag_set_describe "${1:-$(branch_current)}"
+  vtag_set_describe "${1:-HEAD}"
   echo "$vtag"
 }
 # find first vtag ancestor starting from given commit

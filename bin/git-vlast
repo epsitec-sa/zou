@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+[[ -z $ZOUL_GIT_MODULE ]] && . zoul-git-module
+[[ -z $ZOUL_GIT_PROD ]]   && . zoul-git-prod
+
+while [[ "$#" > 0 ]]; do case "$1" in
+  -h|--help) zou-help $0; exit 0;;
+  -*) echo "unknown option: $1" >&2; exit 1;;
+esac; shift; done
+
+vlast_display() { echo $prodVTag; }
+
+module_run prod_scope vlast_display
