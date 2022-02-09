@@ -60,6 +60,11 @@ Outputs:
       <CopyFile>
         <TargetDir Condition="'%(CopyFile.TargetDir)' != ''">$([System.IO.Path]::GetFullPath('$(OutDir)%(_OutputFolder)'))</TargetDir>
       </CopyFile>
+      
+      <CopyFile>
+        <BundleRelativeSrcDir>$([MSBuild]::MakeRelative('$(BundleDir)', '%(RootDir)%(Directory)'))</BundleRelativeSrcDir>
+        <BundleRelativeDstDir>$([MSBuild]::MakeRelative('$(BundleDir)', '%(TargetDir)'))</BundleRelativeDstDir>
+      </CopyFile>
 
       <!-- Remove temporary metadata -->
       <CopyFile RemoveMetadata="_ProjectFolder;_OutputFolder" />

@@ -61,6 +61,11 @@ Outputs:
         <ImportDir Condition="'%(ImportFile.ImportDir)' != ''">$([System.IO.Path]::GetFullPath('$(OutDir)%(_OutputFolder)'))</ImportDir>
       </ImportFile>
 
+      <ImportFile>
+        <BundleRelativeSrcDir>$([MSBuild]::MakeRelative('$(BundleDir)', '%(RootDir)%(Directory)'))</BundleRelativeSrcDir>
+        <BundleRelativeDstDir>$([MSBuild]::MakeRelative('$(BundleDir)', '%(ImportDir)'))</BundleRelativeDstDir>
+      </ImportFile>
+
       <!-- Remove temporary metadata -->
       <ImportFile RemoveMetadata="_ProjectFolder;_OutputFolder" />
     </ItemGroup>

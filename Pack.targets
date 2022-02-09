@@ -47,20 +47,53 @@ To keep them add the following code in the project.pack.msbuildproj:
       </PackCopyFile>
       <PackDeleteFile Include="@(ProdBinExclude)" Condition="'$(OutDir)' == '$(PkgBinDir)' And '$(OutDir)' != '$(PkgDbgDir)'" />
     </ItemGroup>
+    
+    <ItemGroup>
+      <PackCopyFile>
+        <BundleRelativeSrcDir>$([MSBuild]::MakeRelative('$(BundleDir)', '%(RootDir)%(Directory)'))</BundleRelativeSrcDir>
+        <BundleRelativeDstDir>$([MSBuild]::MakeRelative('$(BundleDir)', '%(ImportDir)'))</BundleRelativeDstDir>
+      </PackCopyFile>
+    </ItemGroup>
+    <!--<LogItems Items="@(ProdBinExclude)" Title="PackCreate.ProdBinExclude" />
+    <Message Importance="high"  Text=" " />-->
   </Target>
 
   <Target Name="PackDeleteAll" DependsOnTargets="PackCreate">
-    <Delete  Files="%(PackCopyFile.ImportDir)%(RecursiveDir)%(FileName)%(Extension)" />
-    <Message Importance="high" Text="[-] %(PackCopyFile.ImportDir)%(RecursiveDir)%(FileName)%(Extension)" Condition="Exists('%(PackCopyFile.ImportDir)%(RecursiveDir)%(FileName)%(Extension)')"/>
+    <Delete  Files="@(PackCopyFile->'%(ImportDir)%(RecursiveDir)%(FileName)%(Extension)')" />
+
+    <!-- Display deleted files by extension  -->
+    <ItemGroup>
+      <_Message Include="@(PackCopyFile->'[-] %(ImportDir)%(RecursiveDir)*%(Extension)')" />
+    </ItemGroup>
+    <RemoveDuplicates Inputs="@(_Message)">
+      <Output TaskParameter="Filtered" ItemName="_Message"/>
+    </RemoveDuplicates>
+    <Message Importance="high" Text="%(_Message.Identity)" />
+    <ItemGroup>
+      <_Message Remove="@(_Message')" />
+    </ItemGroup>
   </Target>
 
   <Target Name="PackCopy" DependsOnTargets="PackCreate" Inputs="@(PackCopyFile)" Outputs="@(PackCopyFile->'%(ImportDir)%(RecursiveDir)%(FileName)%(Extension)')">
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] PackCopy" />
     <CallTarget Targets="_DeleteLastBuildState" Condition="'$(BuildingInsideVisualStudio)'=='true'" />
-    <Copy SourceFiles="@(PackCopyFile)" DestinationFiles="@(PackCopyFile->'%(ImportDir)%(RecursiveDir)%(FileName)%(Extension)')"  />
-    <Message Importance="high" Text="[+] %(PackCopyFile.RecursiveDir)%(FileName)%(Extension) =&gt; %(ImportDir)%(RecursiveDir)" />
+    <Copy SourceFiles="@(PackCopyFile)" DestinationFiles="@(PackCopyFile->'%(ImportDir)%(RecursiveDir)%(FileName)%(Extension)')" />
+
+    <!-- Display file transfer by extension  -->
+    <ItemGroup>
+      <_Message Include="@(PackCopyFile->'[Pack] %(BundleRelativeSrcDir)*%(Extension) -> %(BundleRelativeDstDir)%(RecursiveDir)*%(Extension)')" />
+    </ItemGroup>
+    <RemoveDuplicates Inputs="@(_Message)">
+      <Output TaskParameter="Filtered" ItemName="_Message"/>
+    </RemoveDuplicates>
+    <Message Importance="high" Text="%(_Message.Identity)" />
+    <ItemGroup>
+      <_Message Remove="@(_Message')" />
+    </ItemGroup>
   </Target>
 
   <Target Name="PackBuild" AfterTargets="Build"  DependsOnTargets="ImportProject;PackCopy">
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] PackBuild" />
     <Delete Files="@(PackDeleteFile)" />
   </Target>
   <Target Name="PackClean" BeforeTargets="Clean" DependsOnTargets="PackDeleteAll;ImportProjectClean">

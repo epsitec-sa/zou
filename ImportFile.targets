@@ -32,6 +32,13 @@ Input parameters:
       <_ImportFile Remove="@(_ImportFile)" />
     </ItemGroup>
 
+    <ItemGroup>
+      <ImportFile>
+        <BundleRelativeSrcDir>$([MSBuild]::MakeRelative('$(BundleDir)', '%(RootDir)%(Directory)'))</BundleRelativeSrcDir>
+        <BundleRelativeDstDir>$([MSBuild]::MakeRelative('$(BundleDir)', '%(ImportDir)'))</BundleRelativeDstDir>
+      </ImportFile>
+    </ItemGroup>
+
     <!--<LogItems Items="@(ImportFile)" Title="ImportFileInitCrossBuild.ImportFile" />
     <Message Importance="high"  Text=" " />-->
   </Target>
@@ -43,16 +50,28 @@ Input parameters:
     <ItemGroup>
       <CustomBuild Include="@(ImportFile)">
         <Outputs Condition="'%(CustomBuild.ImportPaths)' == ''">%(ImportDir)%(RecursiveDir)%(ImportFile)</Outputs>
-        <Message Condition="'%(CustomBuild.ImportPaths)' == ''">[+] %(FullPath) =^&gt; %(ImportDir)%(RecursiveDir)%(ImportFile)</Message>
         <Command Condition="'%(CustomBuild.ImportPaths)' == '' And  $([MSBuild]::IsOsPlatform('Windows'))">copy "%(FullPath)" "%(ImportDir)%(RecursiveDir)%(ImportFile)" &gt;$(Nul)</Command>
         <Command Condition="'%(CustomBuild.ImportPaths)' == '' And !$([MSBuild]::IsOsPlatform('Windows'))">cp '%(FullPath)' '%(ImportDir)%(RecursiveDir)%(ImportFile)' &gt;$(Nul)</Command>
 
         <Outputs Condition="'%(CustomBuild.ImportPaths)' != ''">%(CustomBuild.ImportPaths)</Outputs>
-        <Message Condition="'%(CustomBuild.ImportPaths)' != ''">[+] %(FullPath) =^&gt; %(CustomBuild.ImportPaths)</Message>
         <Command Condition="'%(CustomBuild.ImportPaths)' != '' And  $([MSBuild]::IsOsPlatform('Windows'))">for %%i in (%(CustomBuild.ImportPaths)) do copy "%(FullPath)" "%%i" &gt;$(Nul)</Command>
         <Command Condition="'%(CustomBuild.ImportPaths)' != '' And !$([MSBuild]::IsOsPlatform('Windows'))">IFS=';'; for i in '%(CustomBuild.ImportPaths)'; do cp '%(FullPath)' "$i" &gt;$(Nul); done</Command>
         <TreatOutputAsContent>true</TreatOutputAsContent>
+
+        <Message />
       </CustomBuild>
+    </ItemGroup>
+    
+    <!-- Display file import by extension  -->
+    <ItemGroup>
+      <_Message Include="@(ImportFile->'[Import] %(BundleRelativeSrcDir)%(RecursiveDir)*%(Extension) -> %(BundleRelativeDstDir)%(RecursiveDir)*%(Extension)')" />
+    </ItemGroup>
+    <RemoveDuplicates Inputs="@(_Message)">
+      <Output TaskParameter="Filtered" ItemName="_Message"/>
+    </RemoveDuplicates>
+    <Message Importance="high" Text="%(_Message.Identity)" />
+    <ItemGroup>
+      <_Message Remove="@(_Message')" />
     </ItemGroup>
 
     <!--<LogItems Items="@(CustomBuild)" Title="### ImportFile.CustomBuild" />

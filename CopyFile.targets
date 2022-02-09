@@ -32,6 +32,13 @@ Input parameters:
       <_CopyFile Remove="@(_CopyFile)" />
     </ItemGroup>
 
+    <ItemGroup>
+      <CopyFile>
+        <BundleRelativeSrcDir>$([MSBuild]::MakeRelative('$(BundleDir)', '%(RootDir)%(Directory)'))</BundleRelativeSrcDir>
+        <BundleRelativeDstDir>$([MSBuild]::MakeRelative('$(BundleDir)', '%(TargetDir)'))</BundleRelativeDstDir>
+      </CopyFile>
+    </ItemGroup>
+
     <!--<LogItems Items="@(CopyFile)" Title="CopyFileInitCrossBuild.CopyFile" />
     <Message Importance="high"  Text=" " />-->
   </Target>
@@ -41,9 +48,21 @@ Input parameters:
     <Message Importance="high" Text="[-] %(CopyFile.TargetDir)%(RecursiveDir)%(TargetFile)" Condition="Exists('%(CopyFile.TargetDir)%(RecursiveDir)%(TargetFile)')"/>
   </Target>
 
-  <Target Name="CopyFile" Inputs="%(CopyFile.Identity)" Outputs="%(CopyFile.TargetDir)%(RecursiveDir)%(TargetFile)" BeforeTargets="Build" DependsOnTargets="CopyFileInitCrossBuild">
-    <Message Importance="high" Text="[+] %(CopyFile.Identity) =&gt; %(TargetDir)%(RecursiveDir)%(TargetFile)" />
-    <Copy SourceFiles="%(CopyFile.Identity)" DestinationFiles="%(CopyFile.TargetDir)%(RecursiveDir)%(TargetFile)" ContinueOnError="true" />
+  <Target Name="CopyFile" Inputs="@(CopyFile.Identity)" Outputs="@(CopyFile->'%(TargetDir)%(RecursiveDir)%(TargetFile)')" BeforeTargets="Build" DependsOnTargets="CopyFileInitCrossBuild">
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] CopyFile" />
+    <Copy SourceFiles="@(CopyFile)" DestinationFiles="@(CopyFile->'%(TargetDir)%(RecursiveDir)%(TargetFile)')" ContinueOnError="true" />
+
+    <!-- Display file copy by extension  -->
+    <ItemGroup>
+      <_Message Include="@(CopyFile->'[Copy] %(BundleRelativeSrcDir)%(RecursiveDir)*%(Extension) -> %(BundleRelativeDstDir)%(RecursiveDir)*%(Extension)')" />
+    </ItemGroup>
+    <RemoveDuplicates Inputs="@(_Message)">
+      <Output TaskParameter="Filtered" ItemName="_Message"/>
+    </RemoveDuplicates>
+    <Message Importance="high" Text="%(_Message.Identity)" />
+    <ItemGroup>
+      <_Message Remove="@(_Message')" />
+    </ItemGroup>
   </Target>
 
 </Project>
