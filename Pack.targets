@@ -15,6 +15,8 @@ To keep them add the following code in the project.pack.msbuildproj:
     <ForwardOutDir Condition="'$(ForwardOutDir)' == ''">$(OutDir)</ForwardOutDir>
   </PropertyGroup>
 
+  <Import Project="Import.targets" />
+
   <Target Name="PackCreateDefault">
     <!-- Default includes and excludes -->
     <ItemGroup>
@@ -63,12 +65,4 @@ To keep them add the following code in the project.pack.msbuildproj:
   </Target>
   <Target Name="PackClean" BeforeTargets="Clean" DependsOnTargets="PackDeleteAll;ImportProjectClean">
   </Target>
-
-  <Import Project="ImportProject.targets" />
-  <Target Name="_ImportProject" />
-  <Target Name="_ImportProjectClean" />
-
-  <Import Project="Sign.targets" Condition="'$(SignTargetsImported)' == ''" />
-  <Import Project="Wim.targets"  Condition="'$(WimTargetsImported)'  == ''" />
-  <Import Project="Zip.targets"  Condition="'$(ZipTargetsImported)'  == ''" />
 </Project>

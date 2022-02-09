@@ -73,11 +73,7 @@ Input parameters:
   
   </Target>
 
-  <Target Name="SignFolder"
-          DependsOnTargets="_InitSignFolder"
-          AfterTargets="Build;ImportProject"
-          Outputs="%(SignFolder.Identity)">
-
+  <Target Name="SignFolder" DependsOnTargets="_InitSignFolder" AfterTargets="PackBuild" Outputs="%(SignFolder.Identity)">
     <!--<Message Text="%(SignFolder.Command)" Importance="high" />-->
     <Exec Command="%(SignFolder.Command)" Condition="'%(Command)' != ''" />
   </Target>

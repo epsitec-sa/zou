@@ -22,7 +22,7 @@ Input:
     <WriteLinesToFile File="$(WimMappingPath)" Lines="@(WimMapping->'%(Mapping)')" Overwrite="true" />
   </Target>
   
-  <Target Name="WimCapture" Condition="'$(WimPath)' != '' And '@(WimMapping)' != ''" AfterTargets="Build;ImportProject" DependsOnTargets="CreateWimMapping">
+  <Target Name="WimCapture" Condition="'$(WimPath)' != '' And '@(WimMapping)' != ''" AfterTargets="PackBuild" DependsOnTargets="CreateWimMapping">
     <Message Importance="high" Text=" " />
     <Message Importance="high" Text="Capturing %(WimMapping.Src)..." />
     

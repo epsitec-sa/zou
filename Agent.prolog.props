@@ -61,10 +61,18 @@ Summary:
   </ItemGroup>
 
   <!-- Default targets -->
-  <Target Name="Build" Condition="'$(VCTargetsPath)' == ''" />
-  <Target Name="Clean" Condition="'$(VCTargetsPath)' == ''" />
-  <Target Name="Publish" />
-  <Target Name="PackFilter" />
+  <Target Name="Build">
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] Agent.prolog.Build (DUMMY)" />
+  </Target>
+  <Target Name="Publish" DependsOnTargets="Build">
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] Agent.prolog.Publish (DUMMY)" />
+  </Target>
+  <Target Name="Clean">
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] Agent.prolog.Clean (DUMMY)" />
+  </Target>
+  <Target Name="PackFilter">
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] Import.PackFilter (DUMMY)" />
+  </Target>
 
   <!-- Microsoft.Cpp.Default.props -->
 
