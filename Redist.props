@@ -31,7 +31,7 @@ Outputs
         RedistByRuntime = true
        endif
      -->
-    <RedistByRuntime Condition="'$(RedistByRuntime)' == '' And $(CrossBuild)">true</RedistByRuntime>
+    <RedistByRuntime Condition="$(CrossBuild)">true</RedistByRuntime>
     <RedistByRuntime Condition="'$(RedistByRuntime)' == '' And '$(RuntimePlatform)' != '' And $(OutDir.Contains('$(RuntimePlatform)'))">false</RedistByRuntime>
     <RedistByRuntime Condition="'$(RedistByRuntime)' == '' And '$(RuntimePlatform)' == 'x86' And $(OutDir.Contains('Win32'))">false</RedistByRuntime>
     <RedistByRuntime Condition="'$(RedistByRuntime)' == ''">true</RedistByRuntime>

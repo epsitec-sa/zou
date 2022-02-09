@@ -62,7 +62,14 @@
       <_ImportProject Remove="@(_ImportProject)" />
     </ItemGroup>
 
-    <!--<LogItems Items="@(ImportProject)" Title="ImportProjectInitCrossBuild.ImportProject" />
+    <ItemGroup>
+      <ImportProject>
+        <Platform Condition="'%(ImportProject.Platform)' == '' And $([System.String]::new(%(ImportProject.RuntimeIdentifier)).EndsWith('x86'))">x86</Platform>
+        <Platform Condition="'%(ImportProject.Platform)' == '' And $([System.String]::new(%(ImportProject.RuntimeIdentifier)).EndsWith('x64'))">x64</Platform>
+      </ImportProject>
+    </ItemGroup>
+
+    <!--<LogItems Items="@(ImportProject)" Title="#2 ImportProjectInitCrossBuild.ImportProject" />
     <Message Importance="high"  Text=" " />-->
   </Target>
   

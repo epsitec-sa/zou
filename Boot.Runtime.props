@@ -31,18 +31,26 @@ Outputs
   </PropertyGroup>
 
   <!-- RuntimeIdentifier property -->
-  <PropertyGroup Condition="'$(RuntimeIdentifier)' == ''">
+  <PropertyGroup Condition="'$(RuntimePlatform)' != ''">
     <RuntimeIdentifier Condition="$([MSBuild]::IsOsPlatform(Windows))">$(WinRuntimePrefix)-$(RuntimePlatform)</RuntimeIdentifier>
     <RuntimeIdentifier Condition="$([MSBuild]::IsOsPlatform(OSX))">$(OsxRuntimePrefix)-$(RuntimePlatform)</RuntimeIdentifier>
     <RuntimeIdentifier Condition="$([MSBuild]::IsOsPlatform(Linux))">$(LinuxRuntimePrefix)-$(RuntimePlatform)</RuntimeIdentifier>
   </PropertyGroup>
+  <!--<PropertyGroup Condition="'$(RuntimeIdentifier)' == ''">
+    <RuntimeIdentifier Condition="$([MSBuild]::IsOsPlatform(Windows))">$(WinRuntimePrefix)-$(RuntimePlatform)</RuntimeIdentifier>
+    <RuntimeIdentifier Condition="$([MSBuild]::IsOsPlatform(OSX))">$(OsxRuntimePrefix)-$(RuntimePlatform)</RuntimeIdentifier>
+    <RuntimeIdentifier Condition="$([MSBuild]::IsOsPlatform(Linux))">$(LinuxRuntimePrefix)-$(RuntimePlatform)</RuntimeIdentifier>
+  </PropertyGroup>-->
 
   <!-- RuntimeOs and RuntimeFolder properties -->
   <PropertyGroup>
     <RuntimeOs Condition="$(RuntimeIdentifier.StartsWith('win'))">win</RuntimeOs>
     <RuntimeOs Condition="$(RuntimeIdentifier.StartsWith('osx'))">osx</RuntimeOs>
     <RuntimeOs Condition="$(RuntimeIdentifier.StartsWith('linux'))">linux</RuntimeOs>
-    <RuntimeFolder>$(RuntimeOs)-$(RuntimePlatform)</RuntimeFolder>
+    <RuntimeFolder Condition="'$(RuntimePlatform)' == ''">$(RuntimeOs)</RuntimeFolder>
+    <RuntimeFolder Condition="'$(RuntimeOs)' != '' And '$(RuntimePlatform)' != ''">$(RuntimeOs)-$(RuntimePlatform)</RuntimeFolder>
+    <RuntimeFolder Condition="'$(RuntimeOs)' == '' And '$(RuntimePlatform)' != ''">$(RuntimePlatform)</RuntimeFolder>
+    <RuntimeFolder Condition="'$(RuntimeOs)' != '' And '$(RuntimePlatform)' == ''">$(RuntimeOs)</RuntimeFolder>
   </PropertyGroup>
 
   <!-- RuntimeIdentifier items -->
@@ -50,19 +58,19 @@ Outputs
     <RuntimeIdentifier Condition="$(BuildWin)   And   $(RuntimeIdentifier.StartsWith('win'))"   Include="$(RuntimeIdentifier)">
       <RuntimeOS>win</RuntimeOS>
     </RuntimeIdentifier>
-    <RuntimeIdentifier Condition="$(BuildWin)   And ! $(RuntimeIdentifier.StartsWith('win'))"   Include="$(WinRuntimePrefix)-$(RuntimePlatform)">
+    <RuntimeIdentifier Condition="$(BuildWin)   And ! $(RuntimeIdentifier.StartsWith('win')) And '$(RuntimePlatform)' != ''"   Include="$(WinRuntimePrefix)-$(RuntimePlatform)">
       <RuntimeOS>win</RuntimeOS>
     </RuntimeIdentifier>
     <RuntimeIdentifier Condition="$(BuildOsx)   And   $(RuntimeIdentifier.StartsWith('osx'))"   Include="$(RuntimeIdentifier)">
       <RuntimeOS>osx</RuntimeOS>
     </RuntimeIdentifier>
-    <RuntimeIdentifier Condition="$(BuildOsx)   And ! $(RuntimeIdentifier.StartsWith('osx'))"   Include="$(OsxRuntimePrefix)-$(RuntimePlatform)">
+    <RuntimeIdentifier Condition="$(BuildOsx)   And ! $(RuntimeIdentifier.StartsWith('osx')) And '$(RuntimePlatform)' != ''"   Include="$(OsxRuntimePrefix)-$(RuntimePlatform)">
       <RuntimeOS>osx</RuntimeOS>
     </RuntimeIdentifier>
     <RuntimeIdentifier Condition="$(BuildLinux) And   $(RuntimeIdentifier.StartsWith('linux'))" Include="$(RuntimeIdentifier)">
       <RuntimeOS>linux</RuntimeOS>
     </RuntimeIdentifier>
-    <RuntimeIdentifier Condition="$(BuildLinux) And ! $(RuntimeIdentifier.StartsWith('linux'))" Include="$(LinuxRuntimePrefix)-$(RuntimePlatform)">
+    <RuntimeIdentifier Condition="$(BuildLinux) And ! $(RuntimeIdentifier.StartsWith('linux')) And '$(RuntimePlatform)' != ''" Include="$(LinuxRuntimePrefix)-$(RuntimePlatform)">
       <RuntimeOS>linux</RuntimeOS>
     </RuntimeIdentifier>
   </ItemGroup>

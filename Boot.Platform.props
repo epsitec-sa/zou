@@ -18,41 +18,34 @@ Outputs
   </PropertyGroup>
 
   <Choose>
-    <When Condition="'$(RuntimeIdentifier)' == '' Or '$(RuntimeIdentifier)' == '*Undefined*'">
-      <PropertyGroup>
+    <When Condition="'$(Platform)' == '' Or '$(Platform)' == 'AnyCPU' Or '$(Platform)' == 'Any CPU'">
+      <PropertyGroup Condition="$(RuntimeIdentifier.EndsWith('x86'))">
         <DebugBootPlatform>1</DebugBootPlatform>
-
-        <Platform Condition="'$(Platform)' == '' And '$(ZouAgentType)' == 'Cpp'">Win32</Platform>
-        <Platform Condition="'$(Platform)' == '' And '$(ZouAgentType)' == 'CSharp'">AnyCPU</Platform>
-
-        <!-- Runtime Platform -->
-        <RuntimePlatform Condition="'$(Platform)' == 'Win32' Or '$(Platform)' == 'x86'">x86</RuntimePlatform>
-        <RuntimePlatform Condition="'$(RuntimePlatform)' == ''">x64</RuntimePlatform>
-        <!-- Fix runtime platform for linux and osx -->
-        <RuntimePlatform Condition="'$(RuntimePlatform)' == 'AnyCPU' And ! $([MSBuild]::IsOsPlatform(Windows))">x64</RuntimePlatform>
-
-        <ForwardPlatform Condition="'$(ForwardPlatform)' == '' And '$(RuntimePlatform)' == 'AnyCPU'">Any CPU</ForwardPlatform>
-        <ForwardPlatform Condition="'$(ForwardPlatform)' == '' And '$(RuntimePlatform)' == 'x86' And '$(Platform)' == 'Win32'">Win32</ForwardPlatform>
-        <ForwardPlatform Condition="'$(ForwardPlatform)' == '' And '$(RuntimePlatform)' == 'x86'">x86</ForwardPlatform>
-        <ForwardPlatform Condition="'$(ForwardPlatform)' == ''">x64</ForwardPlatform>
+        <Platform       >x86</Platform>
+        <RuntimePlatform>x86</RuntimePlatform>
+        <ForwardPlatform>x86</ForwardPlatform>
       </PropertyGroup>
     </When>
-    <When Condition="$(RuntimeIdentifier.EndsWith('x86'))">
+    <When Condition="'$(Platform)' == 'x86' Or '$(Platform)' == 'x64'">
       <PropertyGroup>
         <DebugBootPlatform>2</DebugBootPlatform>
-
-        <Platform        Condition="'$(Platform)'        == ''">x86</Platform>
-        <RuntimePlatform Condition="'$(RuntimePlatform)' == ''">x86</RuntimePlatform>
-        <ForwardPlatform Condition="'$(ForwardPlatform)' == ''">x86</ForwardPlatform>
+        <RuntimePlatform>$(Platform)</RuntimePlatform>
+        <ForwardPlatform>$(Platform)</ForwardPlatform>
+      </PropertyGroup>
+    </When>
+    <When Condition="'$(Platform)' == 'Win32'">
+      <PropertyGroup>
+        <DebugBootPlatform>3</DebugBootPlatform>
+        <RuntimePlatform>x86</RuntimePlatform>
+        <ForwardPlatform>x86</ForwardPlatform>
       </PropertyGroup>
     </When>
     <Otherwise>
       <PropertyGroup>
-        <DebugBootPlatform>3</DebugBootPlatform>
-
-        <Platform        Condition="'$(Platform)'        == ''">x64</Platform>
-        <RuntimePlatform Condition="'$(RuntimePlatform)' == ''">x64</RuntimePlatform>
-        <ForwardPlatform Condition="'$(ForwardPlatform)' == ''">x64</ForwardPlatform>
+        <DebugBootPlatform>4</DebugBootPlatform>
+        <Platform       >x64</Platform>
+        <RuntimePlatform>x64</RuntimePlatform>
+        <ForwardPlatform>x64</ForwardPlatform>
       </PropertyGroup>
     </Otherwise>
   </Choose>
@@ -69,13 +62,12 @@ Outputs
     <Message Importance="high" Text="zou/Boot.Platform.props [$(MSBuildProjectFile)]" />
     <Message Importance="high" Text="-----------------------" />
     <Message Importance="high" Text="DebugBootPlatform  = $(DebugBootPlatform)" />
-    <Message Importance="high" Text=" " />
     <Message Importance="high" Text="ZouAgentType       = $(ZouAgentType)" />
-    <Message Importance="high" Text="RuntimeIdentifier  = $(RuntimeIdentifier)"/>
     <Message Importance="high" Text=" " />
     <Message Importance="high" Text="Platform           = $(Platform)" />
     <Message Importance="high" Text="RuntimePlatform    = $(RuntimePlatform)" />
     <Message Importance="high" Text="ForwardPlatform    = $(ForwardPlatform)" />
+    <Message Importance="high" Text="RuntimeIdentifier  = $(RuntimeIdentifier)"/>
     <Message Importance="high" Text=" " />
   </Target>
 
