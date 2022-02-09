@@ -24,9 +24,8 @@ Input parameters:
 
     <!-- CopyFile = CopyFile x RuntimeIdentifier (defined in Boot.Runtime.props ) -->
     <MulJoin Input="@(CopyFile)" Items="@(RuntimeIdentifier)" ItemName="RuntimeIdentifier" >
-      <Output ItemName="_CopyFile" TaskParameter="Output" />
+      <Output TaskParameter="Output" ItemName="_CopyFile" />
     </MulJoin>
-
     <ItemGroup>
       <CopyFile Remove="@(CopyFile)" />
       <CopyFile Include="@(_CopyFile)" />
