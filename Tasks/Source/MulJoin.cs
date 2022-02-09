@@ -13,15 +13,26 @@ namespace Zou.Tasks
 {
     public class MulJoin : Task
     {
-        [Required] public ITaskItem[]   Input    { get; set; }
-        [Required] public ITaskItem[]   Items    { get; set; }
-                   public string        ItemName { get; set; }
-        [Output]   public ITaskItem[]   Output   { get; private set; }
+        public ITaskItem[]   Input    { get; set; } = Array.Empty<ITaskItem>();
+        public ITaskItem[]   Items    { get; set; } = Array.Empty<ITaskItem>();
+        public string        ItemName { get; set; }
+        [Output]
+        public ITaskItem[]   Output   { get; private set; }
 
         public override bool            Execute()
         {
             //Debugger.Launch();
 
+            if (this.Input.Length == 0)
+            {
+                this.Output = Array.Empty<ITaskItem>();
+                return true;
+            }
+            if (this.Items.Length == 0)
+            {
+                this.Output = this.Input;
+                return true;
+            }
             this.Output = this.Input.SelectMany(project => this.CreateOutput(project)).ToArray();
             return !this.Log.HasLoggedErrors;
         }
@@ -34,7 +45,7 @@ namespace Zou.Tasks
                 var output = new TaskItem(input);
                 input.CopyMetadataTo(output);
                 item.CopyMetadataTo(output);
-                if (!string.IsNullOrWhiteSpace(this.ItemName))
+                if (!string.IsNullOrWhiteSpace(this.ItemName) && !string.IsNullOrWhiteSpace(output.GetMetadata(this.ItemName)))
                 {
                     output.SetMetadata(this.ItemName, item.ItemSpec);
                 }
