@@ -58,20 +58,25 @@ Summary:
       <Configuration>Release</Configuration>
       <Platform>Any CPU</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|AnyCPU">
+      <Configuration>Debug</Configuration>
+      <Platform>AnyCPU</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|AnyCPU">
+      <Configuration>Release</Configuration>
+      <Platform>AnyCPU</Platform>
+    </ProjectConfiguration>
   </ItemGroup>
 
-  <!-- Default targets -->
+  <!-- Default standard targets -->
   <Target Name="Build">
     <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] Agent.prolog.Build (DUMMY)" />
-  </Target>
-  <Target Name="Publish" DependsOnTargets="Build">
-    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] Agent.prolog.Publish (DUMMY)" />
   </Target>
   <Target Name="Clean">
     <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] Agent.prolog.Clean (DUMMY)" />
   </Target>
-  <Target Name="PackFilter">
-    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] Import.PackFilter (DUMMY)" />
+  <Target Name="Rebuild" DependsOnTargets="Clean;Build">
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] Agent.prolog.Rebuild (DUMMY)" />
   </Target>
 
   <!-- Microsoft.Cpp.Default.props -->
