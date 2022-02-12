@@ -1,10 +1,15 @@
 <!--
 The Sign.targets can be used to sign folders.
-Input parameters:
-  $(SignToolBroker) :: (local|partout|rn32)
+
+Input:
+  $(SignToolBroker) - (*rn32|partout|local)
+  $(Sign)           - (*true|false)
   $(SignFolder)
   @(SignFolder)
-    %(Broker) :: default to $(SignToolBroker)
+    %(Broker)
+ 
+Operations:
+  RemoveDuplicates( @(SignFolder) += $(SignFolder) )
 -->
 <Project>
   <PropertyGroup>
@@ -69,8 +74,9 @@ Input parameters:
       </SignFolder>
     </ItemGroup>
 
-    <!--<LogItems Items="@(SignFolder)" />-->
-  
+    <!--<LogItems Items="@(SignFolder)" Title="_InitSignFolder.SignFolder" />
+    <Message Importance="high"  Text=" " />-->
+
   </Target>
 
   <Target Name="SignFolder" DependsOnTargets="_InitSignFolder" AfterTargets="PackBuild" Outputs="%(SignFolder.Identity)">
