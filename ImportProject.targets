@@ -83,7 +83,16 @@
       <Output ItemName="MSBuildProject" TaskParameter="ProjectsOutput" />
     </AddBuildOptions>
 
-    <!--<LogItems Items="@(ImportProject)" Title="CreateMSBuildProjects.ImportProject" />
+    <ItemGroup>
+      <MSBuildProject>
+        <BundleRelativeSrcDir>$([MSBuild]::MakeRelative('$(BundleDir)', '%(RootDir)%(Directory)'))</BundleRelativeSrcDir>
+        <BundleRelativeDstDir Condition="'%(MSBuildProject.PublishDir)' != ''">$([MSBuild]::MakeRelative('$(BundleDir)', '%(MSBuildProject.PublishDir)'))</BundleRelativeDstDir>
+        <BundleRelativeDstDir Condition="'%(MSBuildProject.OutDir)'     != ''">$([MSBuild]::MakeRelative('$(BundleDir)', '%(MSBuildProject.OutDir)'))</BundleRelativeDstDir>
+        <BundleRelativeDstDir Condition="'%(MSBuildProject.OutputPath)' != ''">$([MSBuild]::MakeRelative('$(BundleDir)', '%(MSBuildProject.OutputPath)'))</BundleRelativeDstDir>
+      </MSBuildProject>
+    </ItemGroup>
+
+    <!--<LogItems Items="@(MSBuildProject)" Title="CreateMSBuildProjects.MSBuildProject" />
     <Message Importance="high" Text=" " />-->
   </Target>
 
@@ -135,6 +144,12 @@
   <!-- Target batching -->
   <Target Name="ImportProject" Condition="'@(ImportProject)' != ''" DependsOnTargets="UpdateMSBuildProjects" Returns="%(MSBuildProject.Identity)">
     <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] ImportProject" />
+    <Message Condition="'%(MSBuildProject.BundleRelativeDstDir)' == '' And '%(RuntimeIdentifier)' == '' And '$(Platform)' == ''" Importance="high" Text="[$(Configuration)] %(MSBuildProject.BundleRelativeSrcDir)%(RecursiveDir)%(FileName)%(Extension)" />
+    <Message Condition="'%(MSBuildProject.BundleRelativeDstDir)' != '' And '%(RuntimeIdentifier)' == '' And '$(Platform)' == ''" Importance="high" Text="[$(Configuration)] %(MSBuildProject.BundleRelativeSrcDir)%(RecursiveDir)%(FileName)%(Extension) -> %(MSBuildProject.BundleRelativeDstDir)%(RecursiveDir)" />
+    <Message Condition="'%(MSBuildProject.BundleRelativeDstDir)' == '' And '%(RuntimeIdentifier)' == '' And '$(Platform)' != ''" Importance="high" Text="[$(Configuration)|$(Platform)] %(MSBuildProject.BundleRelativeSrcDir)%(RecursiveDir)%(FileName)%(Extension)" />
+    <Message Condition="'%(MSBuildProject.BundleRelativeDstDir)' != '' And '%(RuntimeIdentifier)' == '' And '$(Platform)' != ''" Importance="high" Text="[$(Configuration)|$(Platform)] %(MSBuildProject.BundleRelativeSrcDir)%(RecursiveDir)%(FileName)%(Extension) -> %(MSBuildProject.BundleRelativeDstDir)%(RecursiveDir)" />
+    <Message Condition="'%(MSBuildProject.BundleRelativeDstDir)' == '' And '%(RuntimeIdentifier)' != ''" Importance="high" Text="[$(Configuration)|%(RuntimeIdentifier)] %(MSBuildProject.BundleRelativeSrcDir)%(RecursiveDir)%(FileName)%(Extension)" />
+    <Message Condition="'%(MSBuildProject.BundleRelativeDstDir)' != '' And '%(RuntimeIdentifier)' != ''" Importance="high" Text="[$(Configuration)|%(RuntimeIdentifier)] %(MSBuildProject.BundleRelativeSrcDir)%(RecursiveDir)%(FileName)%(Extension) -> %(MSBuildProject.BundleRelativeDstDir)%(RecursiveDir)" />
 
     <!-- Restore nuget packages for solution... -->
     <Exec Condition="'%(MSBuildProject.Extension)' == '.sln'"

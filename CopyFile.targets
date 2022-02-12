@@ -45,7 +45,7 @@ Input parameters:
 
   <Target Name="CopyFileClean" AfterTargets="Clean" DependsOnTargets="CopyFileInitCrossBuild">
     <Delete  Files="@(CopyFile->'%(TargetDir)%(RecursiveDir)%(TargetFile)')" />
-    <Message Importance="high" Text="[-] %(CopyFile.TargetDir)%(RecursiveDir)%(TargetFile)" Condition="Exists('%(CopyFile.TargetDir)%(RecursiveDir)%(TargetFile)')"/>
+    <Message Importance="high" Text="[- Copy] %(CopyFile.TargetDir)%(RecursiveDir)%(TargetFile)" Condition="Exists('%(CopyFile.TargetDir)%(RecursiveDir)%(TargetFile)')"/>
   </Target>
 
   <Target Name="CopyFile" Inputs="@(CopyFile.Identity)" Outputs="@(CopyFile->'%(TargetDir)%(RecursiveDir)%(TargetFile)')" BeforeTargets="Build" DependsOnTargets="CopyFileInitCrossBuild">

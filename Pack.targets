@@ -59,11 +59,9 @@ To keep them add the following code in the project.pack.msbuildproj:
   </Target>
 
   <Target Name="PackDeleteAll" DependsOnTargets="PackCreate">
-    <Delete  Files="@(PackCopyFile->'%(ImportDir)%(RecursiveDir)%(FileName)%(Extension)')" />
-
     <!-- Display deleted files by extension  -->
     <ItemGroup>
-      <_Message Include="@(PackCopyFile->'[-] %(ImportDir)%(RecursiveDir)*%(Extension)')" />
+      <_Message Include="[- Pack] %(PackCopyFile.ImportDir)%(RecursiveDir)*%(Extension)')" Condition="Exists('%(ImportDir)%(RecursiveDir)%(FileName)%(Extension)')" />
     </ItemGroup>
     <RemoveDuplicates Inputs="@(_Message)">
       <Output TaskParameter="Filtered" ItemName="_Message"/>
@@ -72,6 +70,8 @@ To keep them add the following code in the project.pack.msbuildproj:
     <ItemGroup>
       <_Message Remove="@(_Message')" />
     </ItemGroup>
+
+    <Delete Files="@(PackCopyFile->'%(ImportDir)%(RecursiveDir)%(FileName)%(Extension)')" />
   </Target>
 
   <Target Name="PackCopy" DependsOnTargets="PackCreate" Inputs="@(PackCopyFile)" Outputs="@(PackCopyFile->'%(ImportDir)%(RecursiveDir)%(FileName)%(Extension)')">
@@ -81,6 +81,7 @@ To keep them add the following code in the project.pack.msbuildproj:
 
     <!-- Display file transfer by extension  -->
     <ItemGroup>
+      <!--<_Message Include="[+ Pack] %(PackCopyFile.BundleRelativeSrcDir)*%(Extension)')" Condition="Exists('%(PackCopyFile.ImportDir)%(RecursiveDir)%(FileName)%(Extension)')" />-->
       <_Message Include="@(PackCopyFile->'[Pack] %(BundleRelativeSrcDir)*%(Extension) -> %(BundleRelativeDstDir)%(RecursiveDir)*%(Extension)')" />
     </ItemGroup>
     <RemoveDuplicates Inputs="@(_Message)">
