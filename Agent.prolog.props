@@ -3,19 +3,25 @@ The agent prolog and epilog are used to create a minimal zou agent.
 with standard configurations (Debug, Release) and platforms (Win32, x86, x64 and Any CPU).
 Example: see Templates\Cs.Component.Pack.vcxproj
 
+# : import project
++ : define data
+
 Summary:
   # zou.props
   # zou.Errors.props
   + Standard configurations (Debug|x64, ...)
-  + Default targets (Build, Clean, PackFilter)
+  + Default targets (Build, Clean, Rebuild, PackFilter)
   # Microsoft.Cpp.Default.props
   + C++ utility project
   # Boot.Core.props
-    # PlatformToolset.props
-      + PlatformToolset
+    # Cpp.PlatformToolset.props
     + Configuration, IsDebug, IsRelease, Solution*, Project*
   # Microsoft.Cpp.props
-
+  # Boot.Runtime.props
+    + Platforms, Platform, RuntimePlatform, ForwardPlatform
+  # Cs.Frameworks.props
+    + CoreTargetFramework, FullTargetFramework
+  # hook.zou.build.props  
 -->
 <Project TreatAsLocalProperty="RedistFolder">
 
