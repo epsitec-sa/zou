@@ -1,5 +1,8 @@
 <!--
-The ImportFile.targets can be used to import files in the parent project.
+The ImportFile.targets can be used to import files in C++ projects.
+For C# projects, use the Content  Itemgroup
+For Go projects, use the CopyFile ItemGroup
+
 Input parameters:
 - @(ImportFile)
   - %(ImportDir)
@@ -21,7 +24,7 @@ Input parameters:
 
   <Target Name="ImportFileInitCrossBuild">
     <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] ImportFileInitCrossBuild(CrossBuild=$(CrossBuild))" />
-
+    
     <!-- CopyFile = CopyFile x RuntimeIdentifier (defined in Boot.Runtime.props ) -->
     <MulJoin Input="@(ImportFile)" Items="@(RuntimeIdentifier)" ItemName="RuntimeIdentifier" >
       <Output TaskParameter="Output" ItemName="_ImportFile" />
@@ -45,6 +48,8 @@ Input parameters:
 
   <Target Name="ImportFile" Inputs="@(ImportFile)" Outputs="@(ImportFile->'%(ImportDir)%(RecursiveDir)%(ImportFile)')" BeforeTargets="PrepareForBuild" DependsOnTargets="ImportFileInitCrossBuild">
     <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] ImportFile" />
+    
+    <Error Condition="'$(ZouAgentType)' != 'Cpp' And '$(ZouAgentType)' != ''" Text="ImportFile is not available with '$(ZouAgentType)' agent (only available with C++ agent)" />
     
     <!-- Create custom builds so that Visual Studio FastUpToDateCheck does not skip changes -->
     <ItemGroup>
