@@ -78,7 +78,7 @@ To keep them add the following code in the project.pack.msbuildproj:
     <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] PackCopy" />
     <CallTarget Targets="_DeleteLastBuildState" Condition="'$(BuildingInsideVisualStudio)'=='true'" />
     <Copy SourceFiles="@(PackCopyFile)" DestinationFiles="@(PackCopyFile->'%(ImportDir)%(RecursiveDir)%(FileName)%(Extension)')" />
-
+    
     <!-- Display file transfer by extension  -->
     <ItemGroup>
       <!--<_Message Include="[+ Pack] %(PackCopyFile.BundleRelativeSrcDir)*%(Extension)')" Condition="Exists('%(PackCopyFile.ImportDir)%(RecursiveDir)%(FileName)%(Extension)')" />-->
@@ -96,6 +96,13 @@ To keep them add the following code in the project.pack.msbuildproj:
   <Target Name="PackBuild" AfterTargets="Build"  DependsOnTargets="ImportProject;PackCopy">
     <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] PackBuild" />
     <Delete Files="@(PackDeleteFile)" />
+
+    <!-- Enable signing of Windows packaging folder if 'Sign' property is true -->
+    <ItemGroup Condition="$(Sign)">
+      <SignFolder Condition=" Exists('$(PkgBinDir)win-$(RuntimePlatform)')" Include="$(PkgBinDir)win-$(RuntimePlatform)" />
+      <SignFolder Condition="!Exists('$(PkgBinDir)win-$(RuntimePlatform)')" Include="$(PkgBinDir)" />
+    </ItemGroup>
+
   </Target>
 
   <Target Name="PackClean" BeforeTargets="Clean" DependsOnTargets="PackDeleteAll;ImportProjectClean" />
