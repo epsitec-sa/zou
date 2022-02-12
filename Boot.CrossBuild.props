@@ -30,12 +30,15 @@ Outputs
 
   <!-- Compute cross-build outputs -->
   <PropertyGroup>
-    <BuildWin>false</BuildWin>
-    <BuildOsx>false</BuildOsx>
+    <BuildWin  >false</BuildWin>
+    <BuildOsx  >false</BuildOsx>
     <BuildLinux>false</BuildLinux>
-    <BuildWin   Condition="$(CrossBuild) Or $(RuntimeIdentifier.StartsWith('win'))   Or ('$(RuntimeIdentifier)'=='' And $([MSBuild]::IsOsPlatform(Windows)))">true</BuildWin>
-    <BuildOsx   Condition="$(CrossBuild) Or $(RuntimeIdentifier.StartsWith('osx'))   Or ('$(RuntimeIdentifier)'=='' And $([MSBuild]::IsOsPlatform(OSX))    )">true</BuildOsx>
-    <BuildLinux Condition="$(CrossBuild) Or $(RuntimeIdentifier.StartsWith('linux')) Or ('$(RuntimeIdentifier)'=='' And $([MSBuild]::IsOsPlatform(Linux))  )">true</BuildLinux>
+    <BuildWin Condition="$(CrossBuild) Or $(RuntimeIdentifier.StartsWith('win')) Or ('$(RuntimeIdentifier)'=='' And $([MSBuild]::IsOsPlatform(Windows)))">true</BuildWin>
+  </PropertyGroup>
+  <!-- Only x64 platform on OSX and Linux -->
+  <PropertyGroup Condition="$(RuntimePlatform.EndsWith('x64'))">
+    <BuildOsx    Condition="$(CrossBuild) Or $(RuntimeIdentifier.StartsWith('osx'))   Or ('$(RuntimeIdentifier)'=='' And $([MSBuild]::IsOsPlatform(OSX)))"  >true</BuildOsx>
+    <BuildLinux  Condition="$(CrossBuild) Or $(RuntimeIdentifier.StartsWith('linux')) Or ('$(RuntimeIdentifier)'=='' And $([MSBuild]::IsOsPlatform(Linux)))">true</BuildLinux>
   </PropertyGroup>
 
   <!-- Restore CrossBuild state -->
@@ -43,6 +46,13 @@ Outputs
     <CrossBuild>$(_CrossBuild0)</CrossBuild>
     <_CrossBuild0 />
   </PropertyGroup>
+
+  <!-- Forward properties -->
+  <ItemDefinitionGroup>
+    <ImportProject>
+      <CrossBuild>$(CrossBuild)</CrossBuild>
+    </ImportProject>
+  </ItemDefinitionGroup>
 
   <Target Name="TraceBootCrossBuild" Condition="'$(ZouTrace)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
     <Message Importance="high" Text="zou/Boot.CrossBuild.props [$(MSBuildProjectFile)]" />

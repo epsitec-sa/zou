@@ -11,13 +11,26 @@ Input:
 Operations:
   RemoveDuplicates( @(SignFolder) += $(SignFolder) )
 -->
-<Project>
+<Project TreatAsLocalProperty="Sign;SignToolBroker">
   <PropertyGroup>
     <SignTargetsImported>true</SignTargetsImported>
-    <SignToolBroker Condition="'$(SignToolBroker)' == ''">rn32</SignToolBroker>
   </PropertyGroup>
 
   <Import Project="zou.props" Condition="'$(ZouVersion)' == ''" />
+
+  <!-- Setup defaults -->
+  <PropertyGroup>
+    <SignToolBroker Condition="'$(SignToolBroker)' == ''">rn32</SignToolBroker>
+    <Sign           Condition="'$(Sign)'           == ''">true</Sign>
+  </PropertyGroup>
+
+  <!-- Forward properties -->
+  <ItemDefinitionGroup>
+    <ImportProject>
+      <SignToolBroker>$(SignToolBroker)</SignToolBroker>
+      <Sign          >$(Sign)</Sign>
+    </ImportProject>
+  </ItemDefinitionGroup>
 
   <!-- Setup default broker -->
   <ItemDefinitionGroup>

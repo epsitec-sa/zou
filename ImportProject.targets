@@ -1,57 +1,56 @@
 <!-- The ImportProject.targets can be used to build and import the output of one or many projects or solutions. -->
-<Project>
+<Project TreatAsLocalProperty="Verbosity">
+
   <PropertyGroup>
     <ImportProjectTargetsImported>true</ImportProjectTargetsImported>
   </PropertyGroup>
+  
+  <Import Project="Sign.targets" Condition="'$(SignTargetsImported)' == ''" />
 
-  <!-- Define imported projects default metadata -->
+  <PropertyGroup>
+    <Verbosity Condition="'$(Verbosity)' == ''">minimal</Verbosity>
+    <Configuration>Debug</Configuration>
+  </PropertyGroup>
+  
   <!--
   Define imported projects default metadata
   Forward properties to nested commands
   -->
   <ItemDefinitionGroup>
     <ImportProject>
+      <!--
+      Defines which build application is used:
+      - Full -> 'msbuild'
+      - Core -> 'dotnet build'
+      -->
+      <RuntimeType      >$(MSBuildRuntimeType)</RuntimeType>
+
       <Verbosity        >$(Verbosity)</Verbosity>
       <MaxCpuCount      >$(MaxCpuCount)</MaxCpuCount>
 
+      <!-- Layout -->
       <WorkDir          >$(WorkDir)</WorkDir>
-      <PkgDir           >$(PkgDir)</PkgDir>
-      <PkgBinDir        >$(PkgBinDir)</PkgBinDir>
       <AsmDir           >$(AsmDir)</AsmDir>
       <OutDir           >$(OutDir)</OutDir>
       <PublishDir       >$(PublishDir)</PublishDir>
-
-      <PlatformToolset  >$(PlatformToolset)</PlatformToolset>
-      <Platform         >$(Platform)</Platform>
-      
-      <Configuration    >$(Configuration)</Configuration>
-      <RuntimeType      >$(MSBuildRuntimeType)</RuntimeType>
-      <RuntimeIdentifier>$(RuntimeIdentifier)</RuntimeIdentifier>
-      <AssemblerOutput  >$(AssemblerOutput)</AssemblerOutput>
-      
-      <CrossBuild       >$(CrossBuild)</CrossBuild>
-      <SignToolBroker   >$(SignToolBroker)</SignToolBroker>
-
+      <PkgDir           >$(PkgDir)</PkgDir>
+      <PkgBinDir        >$(PkgBinDir)</PkgBinDir>
       <RedistFolder     >$(RedistFolder)</RedistFolder>
+
+      <Configuration    >$(Configuration)</Configuration>
+      <Platform         >$(Platform)</Platform>
+      <PlatformToolset  >$(PlatformToolset)</PlatformToolset>
+      <RuntimeIdentifier>$(RuntimeIdentifier)</RuntimeIdentifier>
+
       <RedistDebug      >$(RedistDebug)</RedistDebug>
       <ZouDebug         >$(ZouDebug)</ZouDebug>
-    </ImportProject>
-
-    <ImportProject>
-      <!-- Setup default values -->
-      <Verbosity             Condition="'%(Verbosity)'             == ''">minimal</Verbosity>
-      
-      <Configuration         Condition="'%(Configuration)'         == ''">Debug</Configuration>
-      <RuntimeType           Condition="'%(RuntimeType)'           == ''">Core</RuntimeType>
-
-      <CopyToOutputDirectory Condition="'%(CopyToOutputDirectory)' == ''">PreserveNewest</CopyToOutputDirectory>
-      
-      <SignToolBroker        Condition="'%(SignToolBroker)'        == ''">rn32</SignToolBroker>
     </ImportProject>
   </ItemDefinitionGroup>
 
   <Target Name="ImportProjectInitCrossBuild">
     <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] ImportProjectInitCrossBuild(CrossBuild=$(CrossBuild))" />
+    <!--<LogItems Items="@(RuntimeIdentifier)" Title="#1 ImportProjectInitCrossBuild.RuntimeIdentifier" />
+    <Message Importance="high"  Text=" " />-->
 
     <!-- ImportProject = ImportProject x RuntimeIdentifier (defined in Boot.Runtime.props ) -->
     <MulJoin Input="@(ImportProject)" Items="@(RuntimeIdentifier)" ItemName="RuntimeIdentifier" >

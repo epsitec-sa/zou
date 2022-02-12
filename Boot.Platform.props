@@ -15,34 +15,56 @@ Outputs
 
   <PropertyGroup>
     <Platforms>AnyCPU;x86;x64</Platforms>
+    
+    <DebugBootPlatform>Platform='$(Platform)', RID='$(RuntimeIdentifier)'</DebugBootPlatform>
   </PropertyGroup>
 
   <Choose>
     <When Condition="'$(Platform)' == '' Or '$(Platform)' == 'AnyCPU' Or '$(Platform)' == 'Any CPU'">
-      <PropertyGroup Condition="$(RuntimeIdentifier.EndsWith('x86'))">
-        <DebugBootPlatform>1</DebugBootPlatform>
-        <Platform       >x86</Platform>
-        <RuntimePlatform>x86</RuntimePlatform>
-        <ForwardPlatform>x86</ForwardPlatform>
-      </PropertyGroup>
+      <Choose>
+        <When Condition="$(RuntimeIdentifier.EndsWith('x86'))">
+          <PropertyGroup>
+            <DebugBootPlatform>1.1 $(DebugBootPlatform)</DebugBootPlatform>
+            <Platform       >x86</Platform>
+            <RuntimePlatform>x86</RuntimePlatform>
+            <ForwardPlatform>x86</ForwardPlatform>
+          </PropertyGroup>
+        </When>
+        <When Condition="$(RuntimeIdentifier.EndsWith('x64'))">
+          <PropertyGroup>
+            <DebugBootPlatform>1.2 $(DebugBootPlatform)</DebugBootPlatform>
+            <Platform       >x64</Platform>
+            <RuntimePlatform>x64</RuntimePlatform>
+            <ForwardPlatform>x64</ForwardPlatform>
+          </PropertyGroup>
+        </When>
+        <Otherwise>
+          <PropertyGroup>
+            <DebugBootPlatform>1.3 $(DebugBootPlatform)</DebugBootPlatform>
+            <!--<Platform       >x64</Platform>
+            <RuntimePlatform>x64</RuntimePlatform>
+            <ForwardPlatform>x64</ForwardPlatform>-->
+          </PropertyGroup>
+        </Otherwise>
+      </Choose>
     </When>
     <When Condition="'$(Platform)' == 'x86' Or '$(Platform)' == 'x64'">
       <PropertyGroup>
-        <DebugBootPlatform>2</DebugBootPlatform>
+        <DebugBootPlatform>2 $(DebugBootPlatform)</DebugBootPlatform>
         <RuntimePlatform>$(Platform)</RuntimePlatform>
         <ForwardPlatform>$(Platform)</ForwardPlatform>
       </PropertyGroup>
     </When>
     <When Condition="'$(Platform)' == 'Win32'">
       <PropertyGroup>
-        <DebugBootPlatform>3</DebugBootPlatform>
+        <DebugBootPlatform>3 $(DebugBootPlatform)</DebugBootPlatform>
         <RuntimePlatform>x86</RuntimePlatform>
         <ForwardPlatform>x86</ForwardPlatform>
       </PropertyGroup>
     </When>
     <Otherwise>
       <PropertyGroup>
-        <DebugBootPlatform>4</DebugBootPlatform>
+        <DebugBootPlatform>4 $(DebugBootPlatform)</DebugBootPlatform>
         <Platform       >x64</Platform>
         <RuntimePlatform>x64</RuntimePlatform>
         <ForwardPlatform>x64</ForwardPlatform>

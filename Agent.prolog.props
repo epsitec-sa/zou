@@ -88,45 +88,51 @@ Summary:
     <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] Import.PackFilter (DUMMY)" />
   </Target>
 
-  <!-- Microsoft.Cpp.Default.props -->
+  <!-- Save PlatformToolset, Platform and OutDir -->
+  <PropertyGroup>
+    <Zou_PlatformToolset>$(PlatformToolset)</Zou_PlatformToolset>
+    <Zou_Platform>$(Platform)</Zou_Platform>
+    <Zou_OutDir>$(OutDir)</Zou_OutDir>
+  </PropertyGroup>
 
-  <PropertyGroup>
-    <!-- 'Microsoft.Cpp.Default.props' overrides PlatformToolset and Platform -->
-    <_Agent_PlatformToolset0>$(PlatformToolset)</_Agent_PlatformToolset0>
-    <_Agent_Platform0>$(Platform)</_Agent_Platform0>
-  </PropertyGroup>
+  <!-- Microsoft.Cpp.Default.props: Platform -> *Win32 -->
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" Condition="Exists('$(VCTargetsPath)\Microsoft.Cpp.Default.props')"/>
-  <PropertyGroup>
-    <!-- Restore Platform -->
-    <PlatformToolset>$(_Agent_PlatformToolset0)</PlatformToolset>
-    <Platform>$(_Agent_Platform0)</Platform>
-    <_Agent_PlatformToolset0 />
-    <_Agent_Platform0 />
-  </PropertyGroup>
 
   <!-- C++ utility project -->
   <PropertyGroup Label="Configuration">
     <ConfigurationType>Utility</ConfigurationType>
   </PropertyGroup>
 
+  <!-- Restore PlatformToolset -->
+  <PropertyGroup>
+    <PlatformToolset>$(Zou_PlatformToolset)</PlatformToolset>
+  </PropertyGroup>
+
   <!-- PlatformToolset, Configuration, IsDebug, IsRelease, Solution*, Project* -->
   <Import Project="Boot.Core.props"/>
 
-  <!-- Microsoft.Cpp.props -->
-
-  <PropertyGroup>
-    <!-- 'Microsoft.Cpp.props' overrides OutDir value -->
-    <_Agent_OutDir0>$(OutDir)</_Agent_OutDir0>
-  </PropertyGroup>
+  <!-- Microsoft.Cpp.props: OutDir -> $(Configuration) -->
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" Condition="Exists('$(VCTargetsPath)\Microsoft.Cpp.props')"/>
+
+  <!-- TODO: DEBUG ONLY -->
+  <!--<PropertyGroup>
+    <PlatformToolset1>$(PlatformToolset)</PlatformToolset1>
+    <Platform1>$(Platform)</Platform1>
+    <OutDir1>$(OutDir)</OutDir1>
+  </PropertyGroup>-->
+
+  <!-- Restore Platform and OutDir -->
   <PropertyGroup>
-    <!-- Restore OutDir -->
-    <OutDir>$(_Agent_OutDir0)</OutDir>
-    <_Agent_OutDir0 />
+    <Platform>$(Zou_Platform)</Platform>
+    <OutDir>$(Zou_OutDir)</OutDir>
+    <!-- Clean -->
+    <Zou_PlatformToolset />
+    <Zou_Platform />
+    <Zou_OutDir />
   </PropertyGroup>
 
-  <Import Project="Boot.Runtime.props"   Condition="'$(BootRuntimeImported)' == ''" />
+  <Import Project="Boot.Runtime.props"    Condition="'$(BootRuntimeImported)' == ''" />
   <Import Project="TargetFramework.props" Condition="'$(CoreTargetFramework)' == ''" />
-  <Import Project="hook.zou.build.props" Condition="'$(ZouBuildProps)' == ''"/>
+  <Import Project="hook.zou.build.props"  Condition="'$(ZouBuildProps)' == ''"/>
 
 </Project>
