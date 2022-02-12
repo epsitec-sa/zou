@@ -59,14 +59,15 @@ To keep them add the following code in the project.pack.msbuildproj:
   </Target>
 
   <Target Name="PackDeleteAll" DependsOnTargets="PackCreate">
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] PackDeleteAll" />
     <!-- Display deleted files by extension  -->
     <ItemGroup>
-      <_Message Include="[- Pack] %(PackCopyFile.ImportDir)%(RecursiveDir)*%(Extension)')" Condition="Exists('%(ImportDir)%(RecursiveDir)%(FileName)%(Extension)')" />
+      <_Message Include="%(PackCopyFile.ImportDir)%(RecursiveDir)*%(Extension)')" Condition="Exists('%(ImportDir)%(RecursiveDir)%(FileName)%(Extension)')" />
     </ItemGroup>
     <RemoveDuplicates Inputs="@(_Message)">
       <Output TaskParameter="Filtered" ItemName="_Message"/>
     </RemoveDuplicates>
-    <Message Importance="high" Text="%(_Message.Identity)" />
+    <Message Importance="high" Text="%1B[36m[-]%1B[37m %(_Message.Identity)%1B[0m" />
     <ItemGroup>
       <_Message Remove="@(_Message')" />
     </ItemGroup>
@@ -81,13 +82,12 @@ To keep them add the following code in the project.pack.msbuildproj:
     
     <!-- Display file transfer by extension  -->
     <ItemGroup>
-      <!--<_Message Include="[+ Pack] %(PackCopyFile.BundleRelativeSrcDir)*%(Extension)')" Condition="Exists('%(PackCopyFile.ImportDir)%(RecursiveDir)%(FileName)%(Extension)')" />-->
-      <_Message Include="@(PackCopyFile->'[Pack] %(BundleRelativeSrcDir)*%(Extension) -> %(BundleRelativeDstDir)%(RecursiveDir)*%(Extension)')" />
+      <_Message Include="@(PackCopyFile->'%(BundleRelativeSrcDir)*%(Extension) -> %(BundleRelativeDstDir)%(RecursiveDir)*%(Extension)')" />
     </ItemGroup>
     <RemoveDuplicates Inputs="@(_Message)">
       <Output TaskParameter="Filtered" ItemName="_Message"/>
     </RemoveDuplicates>
-    <Message Importance="high" Text="%(_Message.Identity)" />
+    <Message Importance="high" Text="%1B[36m[Pack]%1B[37m %(_Message.Identity)%1B[0m" />
     <ItemGroup>
       <_Message Remove="@(_Message')" />
     </ItemGroup>
