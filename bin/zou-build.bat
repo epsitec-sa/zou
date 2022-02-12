@@ -2,13 +2,12 @@
 setlocal EnableDelayedExpansion
 
 rem Display command line
-echo [33m[zou-build][0m [44m%0 %*[0m
+echo [33m[zou-build] [0;1;4m%0 %*[0m
 
 goto Parse
 
 :Error
-echo.
-echo [33m[zou-build][31m %error%[0m
+echo [33m[zou-build] [91m%error%[0m
 set exitcode=1
 goto :Help
 
@@ -21,7 +20,8 @@ echo.
 echo Options:
 echo     -h             -- display current help
 echo     -n             -- dry run
-echo     -p PLATFORM    -- ^(x64^|x86^|Win32^)
+echo     -p-            -- do not specify platform
+echo     -pPLATFORM     -- ^(*x64^|*x86^|Win32^)
 echo     -c             -- clean only
 echo     -b             -- build only
 echo     -a             -- build for Windows, OSX and Linux
@@ -59,18 +59,24 @@ if /i '%arg:~0,2%' == '/h' goto Help
 if /i '%arg:~0,2%' == '-?' goto Help
 if /i '%arg:~0,2%' == '/?' goto Help
 
-if /i '%arg:~0,2%' == '-p' (
-  set val=!arg:~2!
-  if '!val!' == '' (
-    shift
-    set val=%1
-  )
-  if '!platforms!' == '' (
-    set platforms=!val!
-  ) else (
-    set platforms=!platforms! !val!
-  )
+if /i '%arg%' == '-p-' (
+  set noPlatform=true
   goto :Parse
+) else (
+  if /i '%arg:~0,2%' == '-p' (
+    set val=!arg:~2!
+    if '!val!' == '' (
+      shift
+      set val=%1
+    )
+    if '!platforms!' == '' (
+      set platforms=!val!
+    ) else (
+      set platforms=!platforms! !val!
+      set byRuntime=true
+    )
+    goto :Parse
+  )
 )
 if /i '%arg:~0,2%' == '-k' (
   set val=!arg:~2!
@@ -139,7 +145,11 @@ if '%project%' == '' (
   goto :Error
 )
 if not exist "%project%" (
-  set error=Project not found: '%project%'.
+  set error=Project not found: [97m%project%[91m.
+  goto :Error
+)
+if not '!platforms!' == '' if not '!noPlatform!' == '' (
+  set error=Options [97m-p-[91m and [97m-pPLATFORM[91m are mutually exclusive.
   goto :Error
 )
 
@@ -150,29 +160,35 @@ for %%i in ("%project%") do (
   set projExt=%%~xi
 )
 rem set defaults
-if '!platforms!' == '' set platforms=x86 x64
+if '!platforms!' == '' if '!noPlatform!' == '' (
+  set byRuntime=true
+  set platforms=x86 x64
+)
 if '%clean%' == '' if '%build%' == '' (
   set clean=true
   set build=true
 )
 
 rem compute msbuild options
-set opts=-nologo -v:m
+set opts=--nologo -v:m -m
 if '%binlog%'     == 'true' set opts=%opts% -bl:%projDir%%projName%.binlog
 if '%preprocess%' == 'true' set opts=%opts% -pp:%projDir%%projName%.pp.xml
 
 rem compute properties
-set props=Configuration=Release
-if '%all%'     == 'true' set props=%props%;CrossBuild=true
-if '%rome%'    == 'true' set props=%props%;BuildRome=true
-if '%sign%'    == 'true' set props=%props%;Sign=true
-if '%verbose%' == 'true' set props=%props%;RedistDebug=true;ZouDebug=true
+set props=Configuration=Release;MaxCpuCount=0
+if '%byRuntime%' == 'true' set props=%props%;RedistByRuntime=true
+if '%sign%'      == 'true' (set props=%props%;Sign=true) else (set props=%props%;Sign=false)
+if '%all%'       == 'true' set props=%props%;CrossBuild=true
+if '%rome%'      == 'true' set props=%props%;BuildRome=true
+if '%verbose%'   == 'true' set props=%props%;RedistDebug=true;ZouDebug=true
 if '%pkgDir%'  neq ''    set props=%props%;PkgDir=%pkgDir%
 
-if /I '%projExt%' == '.csproj' (set command=dotnet build) else (set command=msbuild)
+if /i '%projExt%' == '.csproj' (set command=dotnet build) else (set command=msbuild)
 set command=%command% %opts% %project% -p:%props%
 
 if '%test%' == 'true' (
+  echo [33m[zou-build][90m byRuntime = !byRuntime![0m
+  echo [33m[zou-build][90m platfAuto = !platfAuto![0m
   echo [33m[zou-build][90m platforms = !platforms![0m
   echo [33m[zou-build][90m project   = %project%[0m
   echo [33m[zou-build][90m build     = %build%[0m
@@ -181,21 +197,25 @@ if '%test%' == 'true' (
   exit /b
 )
 
-rem clean
+rem ################## clean
 if '%clean%' == 'true' (
-  for %%x in (bin pkg %pkgDir%) do (
+  for %%x in (x86 x64 Win32 bin pkg %pkgDir%) do (
     rem avoid to delete root folder
     set dirName=%%x
     set firstChar=!dirName:~0,1!
     set firstChar=!firstChar:/=\!
     if '!firstchar!' neq '\' if exist %%x (
-      echo [33m[zou-build][36m Removing %%x...[0m
-      if '%dry_run%' == '' rmdir /S /Q %%x
+      if '%dry_run%' == '' (
+        echo [33m[zou-build] [36mRemoving %%x...[0m
+        rmdir /S /Q %%x
+      ) else (
+        echo [33m[zou-build] [90mRemoving %%x...[0m
+      )
     )
   )
   for %%p in (%platforms%) do (
-    echo [33m[zou-build][36m Cleaning %%p...[0m
-    echo [33m[zou-build][90m %command% -p:Platform=%%p -t:Clean %args%[0m
+    echo [33m[zou-build] [36mCleaning %%p...[0m
+    echo [33m[zou-build] [90m%command% -p:Platform=%%p -t:Clean %args%[0m
     if '%dry_run%' == '' (
       %command% -p:Platform=%%p -t:Clean %args%
       if !errorlevel! neq 0 exit /b !errorlevel!
@@ -203,18 +223,29 @@ if '%clean%' == 'true' (
   )
 )
 
-rem build
+rem ################## build
 if '%build%' == 'true' (
   if '%pkgDir%' == '' set pkgDir=pkg
   set projNoPack=!project:pack=!
-  for %%p in (%platforms%) do (
-    set message=Packing %%p to '!pkgDir!' folder
-    if /I '!projNoPack!' == '!project!' set message=Building %%p
+  if '!platforms!' == '' (
+    set message=Packing to '!pkgDir!' folder
+    if /I '!projNoPack!' == '!project!' set message=Building
     echo [33m[zou-build][36m !message!...[0m
-    echo [33m[zou-build][90m %command% -p:Platform=%%p %args%[0m
+    echo [33m[zou-build][90m %command% %args%[0m
     if '%dry_run%' == '' (
-      %command% -p:Platform=%%p %args%
+      %command% %args%
       if !errorlevel! neq 0 exit /b !errorlevel!
+    )
+  ) else (
+    for %%p in (%platforms%) do (
+      set message=Packing %%p to '!pkgDir!' folder
+      if /I '!projNoPack!' == '!project!' set message=Building %%p
+      echo [33m[zou-build][36m !message!...[0m
+      echo [33m[zou-build][90m %command% -p:Platform=%%p %args%[0m
+      if '%dry_run%' == '' (
+        %command% -p:Platform=%%p %args%
+        if !errorlevel! neq 0 exit /b !errorlevel!
+      )
     )
   )
 )
