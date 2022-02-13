@@ -1,0 +1,54 @@
+<Project TreatAsLocalProperty="NoColor">
+
+  <PropertyGroup>
+    <NoColor Condition="'$(BuildingInsideVisualStudio)' != ''">true</NoColor>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(NoColor)' != 'true'">
+    <NC>%1B[0m</NC>
+
+    <Black >%1B[30m</Black>
+    <Red   >%1B[31m</Red>
+    <Green >%1B[32m</Green>
+    <Brown >%1B[33m</Brown>
+    <Blue  >%1B[34m</Blue>
+    <Purple>%1B[35m</Purple>
+    <Cyan  >%1B[36m</Cyan>
+    <Gray  >%1B[37m</Gray>
+
+    <DarkGray  >%1B[90m</DarkGray>
+    <LightRed  >%1B[91m</LightRed>
+    <LightGreen>%1B[92m</LightGreen>
+    <Yellow    >%1B[93m</Yellow>
+    <LightBlue >%1B[94m</LightBlue>
+    <Magenta   >%1B[95m</Magenta>
+    <LightCyan >%1B[96m</LightCyan>
+    <White     >%1B[97m</White>
+
+    <L1b>$(White)</L1b>
+    <!-- Label 1 begin -->
+    <L1e>$(Green)</L1e>
+    <!-- Label 1 end -->
+
+    <L2p>$(Cyan)</L2p>
+    <!-- Label 2 plus  - for additions -->
+    <L2m>$(Magenta)</L2m>
+    <!-- Label 2 minus - for deletions -->
+
+    <T1>$(White)</T1>
+    <T2>$(Gray)</T2>
+    <T3>$(DarkGray)</T3>
+
+    <XC>$(DarkGray)</XC>
+    <!-- eXternal Color -->
+
+  </PropertyGroup>
+
+  <!-- Forward properties -->
+  <ItemDefinitionGroup>
+    <ImportProject>
+      <NoColor>$(NoColor)</NoColor>
+    </ImportProject>
+  </ItemDefinitionGroup>
+
+</Project>
