@@ -141,12 +141,13 @@
   <!-- Target batching -->
   <Target Name="ImportProject" Condition="'@(ImportProject)' != ''" DependsOnTargets="UpdateMSBuildProjects" Returns="%(MSBuildProject.Identity)">
     <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] ImportProject" />
-    <Message Condition="'%(MSBuildProject.BundleRelativeDstDir)' == '' And '%(RuntimeIdentifier)' == '' And '$(Platform)' == ''" Importance="high" Text="%1B[96m[$(Configuration)]%1B[37m %(MSBuildProject.BundleRelativeSrcDir)%(RecursiveDir)%(FileName)%(Extension)%1B[90m" />
-    <Message Condition="'%(MSBuildProject.BundleRelativeDstDir)' != '' And '%(RuntimeIdentifier)' == '' And '$(Platform)' == ''" Importance="high" Text="%1B[96m[$(Configuration)]%1B[37m %(MSBuildProject.BundleRelativeSrcDir)%(RecursiveDir)%(FileName)%(Extension) -> %(MSBuildProject.BundleRelativeDstDir)%(RecursiveDir)%1B[90m" />
-    <Message Condition="'%(MSBuildProject.BundleRelativeDstDir)' == '' And '%(RuntimeIdentifier)' == '' And '$(Platform)' != ''" Importance="high" Text="%1B[96m[$(Configuration)|$(Platform)]%1B[37m %(MSBuildProject.BundleRelativeSrcDir)%(RecursiveDir)%(FileName)%(Extension)%1B[90m" />
-    <Message Condition="'%(MSBuildProject.BundleRelativeDstDir)' != '' And '%(RuntimeIdentifier)' == '' And '$(Platform)' != ''" Importance="high" Text="%1B[96m[$(Configuration)|$(Platform)]%1B[37m %(MSBuildProject.BundleRelativeSrcDir)%(RecursiveDir)%(FileName)%(Extension) -> %(MSBuildProject.BundleRelativeDstDir)%(RecursiveDir)%1B[90m" />
-    <Message Condition="'%(MSBuildProject.BundleRelativeDstDir)' == '' And '%(RuntimeIdentifier)' != ''"                         Importance="high" Text="%1B[96m[$(Configuration)|%(RuntimeIdentifier)]%1B[37m %(MSBuildProject.BundleRelativeSrcDir)%(RecursiveDir)%(FileName)%(Extension)%1B[90m" />
-    <Message Condition="'%(MSBuildProject.BundleRelativeDstDir)' != '' And '%(RuntimeIdentifier)' != ''"                         Importance="high" Text="%1B[96m[$(Configuration)|%(RuntimeIdentifier)]%1B[37m %(MSBuildProject.BundleRelativeSrcDir)%(RecursiveDir)%(FileName)%(Extension) -> %(MSBuildProject.BundleRelativeDstDir)%(RecursiveDir)%1B[90m" />
+
+    <Message Condition="'%(MSBuildProject.BundleRelativeDstDir)' == '' And '%(RuntimeIdentifier)' == '' And '$(Platform)' == ''" Importance="high" Text="$(L1b)[$(Configuration)|custom] $(T3)%(MSBuildProject.BundleRelativeSrcDir)%(RecursiveDir)$(T2)%(FileName)$(XC)" />
+    <Message Condition="'%(MSBuildProject.BundleRelativeDstDir)' != '' And '%(RuntimeIdentifier)' == '' And '$(Platform)' == ''" Importance="high" Text="$(L1b)[$(Configuration)|custom] $(T3)%(MSBuildProject.BundleRelativeSrcDir)%(RecursiveDir)$(T2)%(FileName) $(T3)-> %(MSBuildProject.BundleRelativeDstDir)%(RecursiveDir)$(XC)" />
+    <Message Condition="'%(MSBuildProject.BundleRelativeDstDir)' == '' And '%(RuntimeIdentifier)' == '' And '$(Platform)' != ''" Importance="high" Text="$(L1b)[$(Configuration)|$(Platform)] $(T3)%(MSBuildProject.BundleRelativeSrcDir)%(RecursiveDir)$(T2)%(FileName)$(XC)" />
+    <Message Condition="'%(MSBuildProject.BundleRelativeDstDir)' != '' And '%(RuntimeIdentifier)' == '' And '$(Platform)' != ''" Importance="high" Text="$(L1b)[$(Configuration)|$(Platform)] $(T3)%(MSBuildProject.BundleRelativeSrcDir)%(RecursiveDir)$(T2)%(FileName) $(T3)-> %(MSBuildProject.BundleRelativeDstDir)%(RecursiveDir)$(XC)" />
+    <Message Condition="'%(MSBuildProject.BundleRelativeDstDir)' == '' And '%(RuntimeIdentifier)' != ''"                         Importance="high" Text="$(L1b)[$(Configuration)|%(RuntimeIdentifier)] $(T3)%(MSBuildProject.BundleRelativeSrcDir)%(RecursiveDir)$(T2)%(FileName)$(XC)" />
+    <Message Condition="'%(MSBuildProject.BundleRelativeDstDir)' != '' And '%(RuntimeIdentifier)' != ''"                         Importance="high" Text="$(L1b)[$(Configuration)|%(RuntimeIdentifier)] $(T3)%(MSBuildProject.BundleRelativeSrcDir)%(RecursiveDir)$(T2)%(FileName) $(T3)-> %(MSBuildProject.BundleRelativeDstDir)%(RecursiveDir)$(XC)" />
 
     <!-- Restore nuget packages for solution... -->
     <Exec Condition="'%(MSBuildProject.Extension)' == '.sln'"
@@ -168,8 +169,10 @@
     <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text=' ' />
     <Exec Command='%(Command) %(Options) "%(MSBuildProject.Identity)"' />
     <CallTarget Targets="_DeleteLastBuildState" Condition="'$(BuildingInsideVisualStudio)'=='true'" />
-    
-    <Message Importance="high" Text="%1B[0m" />
+
+    <Message Condition="'%(RuntimeIdentifier)' == '' And '$(Platform)' == ''" Importance="high" Text="$(L1e)[$(Configuration)|custom] $(T3)%(MSBuildProject.BundleRelativeSrcDir)%(RecursiveDir)%(FileName)$(NC)" />
+    <Message Condition="'%(RuntimeIdentifier)' == '' And '$(Platform)' != ''" Importance="high" Text="$(L1e)[$(Configuration)|$(Platform)] $(T3)%(MSBuildProject.BundleRelativeSrcDir)%(RecursiveDir)%(FileName)$(NC)" />
+    <Message Condition="'%(RuntimeIdentifier)' != ''"                         Importance="high" Text="$(L1e)[$(Configuration)|%(RuntimeIdentifier)] $(T3)%(MSBuildProject.BundleRelativeSrcDir)%(RecursiveDir)%(FileName)$(NC)" />
   </Target>
 
   <Target Name="_ImportProject"      BeforeTargets="Build" DependsOnTargets="ImportProject" />

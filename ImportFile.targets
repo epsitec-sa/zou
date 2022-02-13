@@ -69,12 +69,12 @@ Input parameters:
     
     <!-- Display file import by extension  -->
     <ItemGroup>
-      <_Message Include="@(ImportFile->'%(BundleRelativeSrcDir)%(RecursiveDir)*%(Extension) -> %(BundleRelativeDstDir)%(RecursiveDir)*%(Extension)')" />
+      <_Message Include="@(ImportFile->'$(T3)%(BundleRelativeSrcDir)$(T3)%(RecursiveDir)%2A%(Extension) -> %(BundleRelativeDstDir)$(T3)%(RecursiveDir)%2A%(Extension)')" />
     </ItemGroup>
     <RemoveDuplicates Inputs="@(_Message)">
       <Output TaskParameter="Filtered" ItemName="_Message"/>
     </RemoveDuplicates>
-    <Message Importance="high" Text="%1B[36m[Import]%1B[37m %(_Message.Identity)%1B[0m" />
+    <Message Importance="high" Text="$(L2p)[+] %(_Message.Identity)$(XC)" />
     <ItemGroup>
       <_Message Remove="@(_Message)" />
     </ItemGroup>
