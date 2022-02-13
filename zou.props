@@ -1,10 +1,5 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!--
-This script can be imported anywhere before first MS import (Microsoft.Cpp.Default.props).
--->
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003"
-         InitialTargets="ZouTraceMSBuild;ZouTraceZou"
-         TreatAsLocalProperty="ZouTrace">
+<!-- This script can be imported anywhere before first MS import -->
+<Project InitialTargets="ZouTraceMSBuild;ZouTraceZou" TreatAsLocalProperty="ZouTrace">
 
   <!-- System dependent -->
   <Choose>
@@ -36,8 +31,9 @@ This script can be imported anywhere before first MS import (Microsoft.Cpp.Defau
   </Choose>
 
   <!-- Various -->
+  <Import Project="zou.errors.props" />
   <Import Project="Version.props" Condition="'$(Version)' == ''" />
-  
+
   <PropertyGroup>
     <ZouTrace Condition="'$(ZouTrace)' == ''">false</ZouTrace>
     <ZouDebug Condition="'$(ZouDebug)' == ''">false</ZouDebug>

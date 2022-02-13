@@ -8,7 +8,6 @@ Example: see Templates\Cs.Component.Pack.vcxproj
 
 Summary:
   # zou.props
-  # zou.Errors.props
   + Standard configurations (Debug|x64, ...)
   + Default targets (Build, Clean, Rebuild, PackFilter)
   # Microsoft.Cpp.Default.props
@@ -25,10 +24,7 @@ Summary:
 -->
 <Project TreatAsLocalProperty="RedistFolder">
 
-  <ImportGroup Condition="'$(ZouVersion)' == ''">
-    <Import Project="zou.props" />
-    <Import Project="zou.Errors.props" />
-  </ImportGroup>
+  <Import Project="zou.props" Condition="'$(ZouVersion)' == ''" />
 
   <!-- Standard configurations -->
   <ItemGroup Label="ProjectConfigurations">
