@@ -18,6 +18,7 @@ To keep them add the following code in the project.pack.msbuildproj:
   <Import Project="Import.targets" />
 
   <Target Name="PackCreateDefault">
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] PackCreateDefault($(OutDir))" />
     <!-- Default includes and excludes -->
     <ItemGroup>
       <ProdBinInclude Include="$(OutDir)**\*" />
@@ -37,6 +38,7 @@ To keep them add the following code in the project.pack.msbuildproj:
   </Target>
 
   <Target Name="PackCreate" DependsOnTargets="PackCreateDefault;PackFilter">
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] PackCreate" />
     <!-- Dispatch package content to respective folders -->
     <ItemGroup>
       <PackCopyFile Include="@(ProdBinInclude)" Exclude="@(ProdBinExclude)" Condition="'$(OutDir)' != '$(PkgBinDir)'">
@@ -59,7 +61,8 @@ To keep them add the following code in the project.pack.msbuildproj:
   </Target>
 
   <Target Name="PackDeleteAll" DependsOnTargets="PackCreate">
-    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] PackDeleteAll" />
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] PackDeleteAll(@(PackCopyFile->Count()))" />
+
     <!-- Display deleted files by extension  -->
     <ItemGroup>
       <_Message Include="%(PackCopyFile.ImportDir)%(RecursiveDir)*%(Extension)')" Condition="Exists('%(ImportDir)%(RecursiveDir)%(FileName)%(Extension)')" />
@@ -69,7 +72,7 @@ To keep them add the following code in the project.pack.msbuildproj:
     </RemoveDuplicates>
     <Message Importance="high" Text="%1B[36m[-]%1B[37m %(_Message.Identity)%1B[0m" />
     <ItemGroup>
-      <_Message Remove="@(_Message')" />
+      <_Message Remove="@(_Message)" />
     </ItemGroup>
 
     <Delete Files="@(PackCopyFile->'%(ImportDir)%(RecursiveDir)%(FileName)%(Extension)')" />
@@ -105,5 +108,7 @@ To keep them add the following code in the project.pack.msbuildproj:
 
   </Target>
 
-  <Target Name="PackClean" BeforeTargets="Clean" DependsOnTargets="PackDeleteAll;ImportProjectClean" />
+  <Target Name="PackClean" BeforeTargets="Clean" DependsOnTargets="PackDeleteAll;ImportProjectClean">
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] PackClean" />
+  </Target>
 </Project>

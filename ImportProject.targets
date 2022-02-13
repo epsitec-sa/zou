@@ -98,9 +98,7 @@
   <!-- ================ ImportProjectClean ================ -->
 
   <!-- Target batching -->
-  <Target Name="ImportProjectClean"
-          DependsOnTargets="CreateMSBuildProjects"
-          Returns="%(MSBuildProject.Identity)">
+  <Target Name="ImportProjectClean" DependsOnTargets="CreateMSBuildProjects" Returns="%(MSBuildProject.Identity)">
     <!-- The clean target does not care about project dependencies. This means that we can safely use the MSBuild task for solutions too. -->
     <MSBuild Projects="%(MSBuildProject.Identity)" Targets="Clean" Properties="%(Properties)" ContinueOnError="WarnAndContinue" />
   </Target>

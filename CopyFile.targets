@@ -44,7 +44,8 @@ Input parameters:
   </Target>
 
   <Target Name="CopyFileClean" AfterTargets="Clean" DependsOnTargets="CopyFileInitCrossBuild">
-    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] CopyFileClean" />
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] CopyFileClean(@(CopyFile->Count()), @(CopyFile))" />
+
     <!-- Display deleted files by extension  -->
     <ItemGroup>
       <_Message Include="%(CopyFile.TargetDir)%(RecursiveDir)*%(Extension)')" Condition="Exists('%(TargetDir)%(RecursiveDir)%(FileName)%(Extension)')" />
@@ -54,7 +55,7 @@ Input parameters:
     </RemoveDuplicates>
     <Message Importance="high" Text="%1B[36m[-]%1B[37m %(_Message.Identity)%1B[0m" />
     <ItemGroup>
-      <_Message Remove="@(_Message')" />
+      <_Message Remove="@(_Message)" />
     </ItemGroup>
 
     <Delete  Files="@(CopyFile->'%(TargetDir)%(RecursiveDir)%(TargetFile)')" />
