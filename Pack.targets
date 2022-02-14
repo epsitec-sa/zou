@@ -101,7 +101,7 @@ To keep them add the following code in the project.pack.msbuildproj:
     <Delete Files="@(PackDeleteFile)" />
 
     <!-- Enable signing of Windows packaging folder if 'Sign' property is true -->
-    <ItemGroup Condition="$(Sign)">
+    <ItemGroup Condition="$(Sign) And '$(RuntimeOs)' == 'win'">
       <SignFolder Condition=" Exists('$(PkgBinDir)win-$(RuntimePlatform)')" Include="$(PkgBinDir)win-$(RuntimePlatform)" />
       <SignFolder Condition="!Exists('$(PkgBinDir)win-$(RuntimePlatform)')" Include="$(PkgBinDir)" />
     </ItemGroup>
