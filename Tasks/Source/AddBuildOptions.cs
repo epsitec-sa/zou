@@ -7,6 +7,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 
+using Bcx.Linq;
+
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 
@@ -114,8 +116,11 @@ namespace Zou.Tasks
                 else
                 {
                     yield return cleanTarget;
-                    // group other targets
-                    yield return QuoteValue(string.Join(";", targets.Except(EnumerableEx.Return(cleanTarget))));
+                    var otherTargets = targets.Except(EnumerableEx.Return(cleanTarget));
+                    if (otherTargets.Any())
+                    {
+                        yield return QuoteValue(string.Join(";", otherTargets));
+                    }
                 }
             }
             static string QuotePropertyValue(string value)
