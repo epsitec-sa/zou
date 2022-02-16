@@ -34,7 +34,7 @@ Outputs
   </PropertyGroup>
 
   <!-- RuntimeIdentifier property -->
-  <PropertyGroup Condition="'$(RuntimePlatform)' != ''">
+  <PropertyGroup Condition="'$(RuntimeIdentifier)' == '' And '$(RuntimePlatform)' != ''">
     <RuntimeIdentifier Condition="$([MSBuild]::IsOsPlatform(Windows))">$(WinRuntimePrefix)-$(RuntimePlatform)</RuntimeIdentifier>
     <RuntimeIdentifier Condition="$([MSBuild]::IsOsPlatform(OSX))">$(OsxRuntimePrefix)-$(RuntimePlatform)</RuntimeIdentifier>
     <RuntimeIdentifier Condition="$([MSBuild]::IsOsPlatform(Linux))">$(LinuxRuntimePrefix)-$(RuntimePlatform)</RuntimeIdentifier>
