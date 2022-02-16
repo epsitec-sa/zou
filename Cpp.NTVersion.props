@@ -17,35 +17,39 @@
   <Choose>
     <When Condition="'$(NTVersion)' == '0x601'">
       <PropertyGroup>
-        <_PropertySheetDisplayName>Windows 7 (0x601)</_PropertySheetDisplayName>
+        <NTVersionDisplayName>Windows 7 (0x601)</NTVersionDisplayName>
       </PropertyGroup>
     </When>
     <When Condition="'$(NTVersion)' == '0x600'">
       <PropertyGroup>
-        <_PropertySheetDisplayName>Windows Vista (0x600)</_PropertySheetDisplayName>
+        <NTVersionDisplayName>Windows Vista (0x600)</NTVersionDisplayName>
       </PropertyGroup>
     </When>
     <When Condition="'$(NTVersion)' == '0x502'">
       <PropertyGroup>
-        <_PropertySheetDisplayName>Windows Server 2003 (0x502)</_PropertySheetDisplayName>
+        <NTVersionDisplayName>Windows Server 2003 (0x502)</NTVersionDisplayName>
       </PropertyGroup>
     </When>
     <When Condition="'$(NTVersion)' == '0x501'">
       <PropertyGroup>
-        <_PropertySheetDisplayName>Windows XP (0x501)</_PropertySheetDisplayName>
+        <NTVersionDisplayName>Windows XP (0x501)</NTVersionDisplayName>
       </PropertyGroup>
     </When>
     <When Condition="'$(NTVersion)' == '0x500'">
       <PropertyGroup>
-        <_PropertySheetDisplayName>Windows 2000 (0x500)</_PropertySheetDisplayName>
+        <NTVersionDisplayName>Windows 2000 (0x500)</NTVersionDisplayName>
       </PropertyGroup>
     </When>
     <Otherwise>
       <PropertyGroup>
-        <_PropertySheetDisplayName>ERROR: unknown windows version</_PropertySheetDisplayName>
+        <NTVersionDisplayName>WARNING: unknown windows version</NTVersionDisplayName>
       </PropertyGroup>
     </Otherwise>
   </Choose>
+  
+  <PropertyGroup>
+    <_PropertySheetDisplayName>$(NTVersionDisplayName)</_PropertySheetDisplayName>
+  </PropertyGroup>
 
   <ItemDefinitionGroup>
     <ClCompile>
