@@ -82,7 +82,7 @@ Outputs:
     ItemGroup.ImportProject (monolith layout)
       %(OutDir)       - ex: C:\devel\cresus-dev\cresus\bin\Release\win-x64\user\modules\cresus\xlsgen\
       %(PublishDir)   - ex: C:\devel\cresus-dev\cresus\bin\Release\win-x64\user\modules\cresus\xlsgen\
-      %(AsmDir)       - ex: C:\devel\cresus-dev\cresus\bin\Release\win-x64\user\modules\cresus\[<c++>\]cod\
+      %(AsmDir)       - ex: C:\devel\cresus-dev\cresus\bin\Release\win-x64\user\modules\cresus\[<c++>\].cod\
   -->
   <Target Name="RedistImportProjectTransformLayout" DependsOnTargets="RedistImportProjectInit">
     <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] RedistImportProjectTransformLayout" />
@@ -107,7 +107,7 @@ Outputs:
         <PublishDir Condition="'%(ImportProject.PublishDir)' != ''">$([System.IO.Path]::GetFullPath('$(OutDir)%(_OutputFolder)'))</PublishDir>
       </ImportProject>
       <ImportProject>
-        <AsmDir Condition="'%(ImportProject.OutDir)' != '' And ('%(Extension)' == '.vcxproj' Or '%(Extension)' == '.sln')">%(OutDir)cod\</AsmDir>
+        <AsmDir Condition="'%(ImportProject.OutDir)' != '' And ('%(Extension)' == '.vcxproj' Or '%(Extension)' == '.sln')">%(OutDir).cod\</AsmDir>
       </ImportProject>
 
       <!-- Remove temporary metadata -->
