@@ -228,15 +228,15 @@ lib0\help\helpmap.cpp: {$(IntDir)\lib0.xx.cpp}
 
     <!-- Clean locals -->
     <PropertyGroup>
-      <_SourceFile></_SourceFile>
-      <_HelpOptionsSection></_HelpOptionsSection>
-      <_HelpCompiledFile></_HelpCompiledFile>
-      <_HelpContentsFile></_HelpContentsFile>
-      <_HelpDefaultTopic></_HelpDefaultTopic>
-      <_HelpStopListFile></_HelpStopListFile>
-      <_HelpIndexFile></_HelpIndexFile>
-      <_HelpErrorLogFile></_HelpErrorLogFile>
-      <_HelpOutputFile></_HelpOutputFile>
+      <_SourceFile />
+      <_HelpOptionsSection />
+      <_HelpCompiledFile />
+      <_HelpContentsFile />
+      <_HelpDefaultTopic />
+      <_HelpStopListFile />
+      <_HelpIndexFile />
+      <_HelpErrorLogFile />
+      <_HelpOutputFile />
     </PropertyGroup>
   </Target>
   
@@ -466,7 +466,8 @@ lib0\help\helpmap.cpp: {$(IntDir)\lib0.xx.cpp}
     <!-- Execute the MS crazy help compiler (HHC) and redirect its output to custom log file -->
     <Exec Command='"$(Hhc)" "%(HelpProject.FullPath)" &gt;"%(HelpProject.HhcLogFile)"' IgnoreExitCode='true' />
     <ItemGroup>
-      <_Temporary Include="**\%(HelpProject.ErrorLogFile);%(OutputFile)" />
+      <_Temporary Include="**\%(HelpProject.ErrorLogFile)" Condition="'%(HelpProject.ErrorLogFile)' != ''"/>
+      <_Temporary Include="%(HelpProject.OutputFile)" />
     </ItemGroup>
     <Delete Files="@(_Temporary)" />
     <Move SourceFiles="%(HelpProject.CompiledFile)" DestinationFiles="%(OutputFile)" />
@@ -514,7 +515,8 @@ lib0\help\helpmap.cpp: {$(IntDir)\lib0.xx.cpp}
 
   <Target Name="_DeleteHhcFiles" DependsOnTargets="_InitHelpProject">
     <ItemGroup>
-      <_Temporary Include="**\%(HelpProject.ErrorLogFile);%(HhpTmpFile);%(OutputFile);%(HhcLogFile)" />
+      <_Temporary Include="**\%(HelpProject.ErrorLogFile)" Condition="'%(HelpProject.ErrorLogFile)' != ''"/>
+      <_Temporary Include="%(HelpProject.HhpTmpFile);%(OutputFile);%(HhcLogFile)" />
     </ItemGroup>
     <Delete Files="@(_Temporary)" />
     <ItemGroup>
