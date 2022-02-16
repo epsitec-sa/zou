@@ -49,7 +49,10 @@ Outputs:
         <!-- Use 'dotnet build' for .csproj -->
         <RuntimeType Condition="'%(Extension)' == '.csproj'">Core</RuntimeType>
       </ImportProject>
-      
+      <ImportProject Condition="'%(RuntimeOS)' != 'win'">
+        <RuntimeType>Core</RuntimeType>
+      </ImportProject>
+
       <!-- x86|AnyCPU -->
       <ImportProject Condition="'$(RuntimePlatform)' == 'x86' Or '$(RuntimePlatform)' == 'AnyCPU'">
         <TargetFramework Condition="'%(ImportProject.RedistX86Framework)' != ''">%(ImportProject.RedistX86Framework)</TargetFramework>
