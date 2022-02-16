@@ -13,10 +13,16 @@ Import this script in the middle of a C++ project (.vcxproj)
   [PropertyGroup Label="UserMacros"/]
   ...
 -->
-<Project>
+<Project InitialTargets="TraceCppStandard">
 
   <PropertyGroup>
     <_PropertySheetDisplayName>[zou] C++ Standard settings</_PropertySheetDisplayName>
+  </PropertyGroup>
+  
+  <PropertyGroup>
+    <!-- Reset default OutDir property (defined in Microsoft.Cpp.props) if not specified on the command line -->
+    <!-- WARNING: do not use Microsoft's OutDirWasSpecified property because it is resetted in Microsoft.Cpp.targets! -->
+    <OutDir Condition="'$(OutDirSpecified)' != 'true'" />
   </PropertyGroup>
 
   <!-- WARNING: do not change import order -->
@@ -35,4 +41,18 @@ Import this script in the middle of a C++ project (.vcxproj)
     <Import Project="Cpp.Diagnostics.props" />
     <Import Project="Cpp.OutDir.props"/>
   </ImportGroup>
+
+  <Target Name="TraceCppStandard" Condition="$(ZouTrace) Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
+    <Message Importance="high" Text="zou/Cpp.Standard.props [$(MSBuildProjectFile)]" />
+    <Message Importance="high" Text="----------------------" />
+    <Message Importance="high" Text="NTVersion    = $(NTVersionDisplayName)" />
+    <Message Importance="high" Text="EnableVLD    = $(EnableVLD)" />
+    <Message Importance="high" Text="VldVersion   = $(VldVersion)" />
+    <Message Importance="high" Text="BoostVersion = $(BoostVersion)" />
+    <Message Importance="high" Text="WorkDir      = $(WorkDir)" />
+    <Message Importance="high" Text="IntDir       = $(IntDir)" />
+    <Message Importance="high" Text="AsmDir       = $(AsmDir)" />
+    <Message Importance="high" Text="OutDir       = $(OutDir)" />
+    <Message Importance="high" Text=" " />
+  </Target>
 </Project>
