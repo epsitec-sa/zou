@@ -15,7 +15,7 @@ rem Clean actual tasks
 rmdir /S /Q %~dp0\..\binz\tasks >nul 2>&1
 
 rem Build and deploy the release versions
-dotnet build --nologo -v:m Tasks.Pack.msbuildproj -p:Configuration=Release -p:Platform=x64 -p:CrossBuild=true
+call zou-build Tasks.Pack.msbuildproj -a -b -px64 %*
 
 rem Clean build output
 for %%x in (bin obj pkg) do (
