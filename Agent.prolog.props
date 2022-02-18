@@ -84,8 +84,9 @@ Summary:
     <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] Import.PackFilter (DUMMY)" />
   </Target>
 
-  <!-- Save PlatformToolset, Platform and OutDir -->
+  <!-- Save TargetFramework, PlatformToolset, Platform and OutDir -->
   <PropertyGroup>
+    <Zou_TargetFramework>$(TargetFramework)</Zou_TargetFramework>
     <Zou_PlatformToolset>$(PlatformToolset)</Zou_PlatformToolset>
     <Zou_Platform>$(Platform)</Zou_Platform>
     <Zou_OutDir>$(OutDir)</Zou_OutDir>
@@ -99,9 +100,10 @@ Summary:
     <ConfigurationType>Utility</ConfigurationType>
   </PropertyGroup>
 
-  <!-- Restore PlatformToolset -->
+  <!-- Restore PlatformToolset and TargetFramework -->
   <PropertyGroup>
     <PlatformToolset>$(Zou_PlatformToolset)</PlatformToolset>
+    <TargetFramework>$(Zou_TargetFramework)</TargetFramework>
   </PropertyGroup>
 
   <!-- PlatformToolset, Configuration, IsDebug, IsRelease, Solution*, Project* -->
