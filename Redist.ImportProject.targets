@@ -35,31 +35,18 @@ Outputs:
       <!-- Setup defaults -->
       <ImportProject>
         <RedistFolder Condition="'%(ImportProject.RedistFolder)' == ''">$(RedistFolder)</RedistFolder>
-        <RuntimeFolder>%(RuntimeOS)-$(RuntimePlatform)</RuntimeFolder>
       </ImportProject>
         
       <ImportProject>
         <PublishDir Condition="'%(ImportProject.PublishDir)' == ''">%(ImportProject.OutDir)</PublishDir>
       </ImportProject>
-      
-      <!-- Adjust RuntimeType -->
-      <ImportProject Condition="'%(RuntimeOS)' == 'win'">
-        <!-- Use 'msbuild' for .sln and .vcxproj -->
-        <RuntimeType Condition="'%(Extension)' == '.sln' Or '%(Extension)' == '.vcxproj'">Full</RuntimeType>
-        <!-- Use 'dotnet build' for .csproj -->
-        <RuntimeType Condition="'%(Extension)' == '.csproj'">Core</RuntimeType>
-      </ImportProject>
-      <ImportProject Condition="'%(RuntimeOS)' != 'win'">
-        <!-- Use 'dotnet build' on OSX and linux -->
-        <RuntimeType>Core</RuntimeType>
-      </ImportProject>
 
       <!-- x86|AnyCPU -->
-      <ImportProject Condition="'$(RuntimePlatform)' == 'x86' Or '$(RuntimePlatform)' == 'AnyCPU'">
+      <ImportProject Condition="!$(TargetFramework.StartsWith('netstandard')) And '$(RuntimePlatform)' == 'x86'">
         <TargetFramework Condition="'%(ImportProject.RedistX86Framework)' != ''">%(ImportProject.RedistX86Framework)</TargetFramework>
       </ImportProject>
       <!-- x64 -->
-      <ImportProject Condition="'$(RuntimePlatform)' == 'x64'">
+      <ImportProject Condition="!$(TargetFramework.StartsWith('netstandard')) And '$(RuntimePlatform)' == 'x64'">
         <TargetFramework Condition="'%(ImportProject.RedistX64Framework)' != ''">%(ImportProject.RedistX64Framework)</TargetFramework>
       </ImportProject>
     </ItemGroup>

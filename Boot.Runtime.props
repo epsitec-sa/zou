@@ -22,7 +22,7 @@ Outputs
   <PropertyGroup>
     <BootRuntimeImported>true</BootRuntimeImported>
   </PropertyGroup>
-  
+
   <Import Project="Boot.Platform.props" />
   <Import Project="Boot.CrossBuild.props" />
 
@@ -34,103 +34,64 @@ Outputs
   </PropertyGroup>
 
   <!-- RuntimeIdentifier property -->
-  <PropertyGroup Condition="'$(RuntimeIdentifier)' == '' And '$(RuntimePlatform)' != ''">
-    <RuntimeIdentifier Condition="$([MSBuild]::IsOsPlatform(Windows))">$(WinRuntimePrefix)-$(RuntimePlatform)</RuntimeIdentifier>
-    <RuntimeIdentifier Condition="$([MSBuild]::IsOsPlatform(OSX))">$(OsxRuntimePrefix)-$(RuntimePlatform)</RuntimeIdentifier>
-    <RuntimeIdentifier Condition="$([MSBuild]::IsOsPlatform(Linux))">$(LinuxRuntimePrefix)-$(RuntimePlatform)</RuntimeIdentifier>
-  </PropertyGroup>
-
-  <!-- RuntimeOs and RuntimeFolder properties -->
-  <PropertyGroup>
-    <RuntimeOs Condition="$(RuntimeIdentifier.StartsWith('win'))">win</RuntimeOs>
-    <RuntimeOs Condition="$(RuntimeIdentifier.StartsWith('osx'))">osx</RuntimeOs>
-    <RuntimeOs Condition="$(RuntimeIdentifier.StartsWith('linux'))">linux</RuntimeOs>
-    <RuntimeFolder Condition="'$(RuntimePlatform)' == ''">$(RuntimeOs)</RuntimeFolder>
-    <RuntimeFolder Condition="'$(RuntimeOs)' != '' And '$(RuntimePlatform)' != ''">$(RuntimeOs)-$(RuntimePlatform)</RuntimeFolder>
-    <RuntimeFolder Condition="'$(RuntimeOs)' == '' And '$(RuntimePlatform)' != ''">$(RuntimePlatform)</RuntimeFolder>
-    <RuntimeFolder Condition="'$(RuntimeOs)' != '' And '$(RuntimePlatform)' == ''">$(RuntimeOs)</RuntimeFolder>
-  </PropertyGroup>
-
-  <!-- RuntimeIdentifier items -->
   <Choose>
-    <When Condition="'$(RuntimeIdentifier)' != ''">
-      <ItemGroup>
-        <RuntimeIdentifier Condition="$(BuildWin)   And   $(RuntimeIdentifier.StartsWith('win'))"   Include="$(RuntimeIdentifier)">
-          <RuntimeOS>win</RuntimeOS>
-        </RuntimeIdentifier>
-        <RuntimeIdentifier Condition="$(BuildWin)   And ! $(RuntimeIdentifier.StartsWith('win')) And '$(RuntimePlatform)' != ''"   Include="$(WinRuntimePrefix)-$(RuntimePlatform)">
-          <RuntimeOS>win</RuntimeOS>
-        </RuntimeIdentifier>
-        <RuntimeIdentifier Condition="$(BuildOsx)   And   $(RuntimeIdentifier.StartsWith('osx'))"   Include="$(RuntimeIdentifier)">
-          <RuntimeOS>osx</RuntimeOS>
-        </RuntimeIdentifier>
-        <RuntimeIdentifier Condition="$(BuildOsx)   And ! $(RuntimeIdentifier.StartsWith('osx')) And '$(RuntimePlatform)' != ''"   Include="$(OsxRuntimePrefix)-$(RuntimePlatform)">
-          <RuntimeOS>osx</RuntimeOS>
-        </RuntimeIdentifier>
-        <RuntimeIdentifier Condition="$(BuildLinux) And   $(RuntimeIdentifier.StartsWith('linux'))" Include="$(RuntimeIdentifier)">
-          <RuntimeOS>linux</RuntimeOS>
-        </RuntimeIdentifier>
-        <RuntimeIdentifier Condition="$(BuildLinux) And ! $(RuntimeIdentifier.StartsWith('linux')) And '$(RuntimePlatform)' != ''" Include="$(LinuxRuntimePrefix)-$(RuntimePlatform)">
-          <RuntimeOS>linux</RuntimeOS>
-        </RuntimeIdentifier>
-      </ItemGroup>
+    <When Condition="$(TargetFramework.StartsWith('netstandard'))">
+      <PropertyGroup>
+        <RuntimeIdentifier />
+      </PropertyGroup>
     </When>
-    <!-- TODO: fallback when platform is not specified -->
-    <!--<Otherwise>
-      <ItemGroup>
-        <RuntimeIdentifier Condition="$(BuildWin)"   Include="$(WinRuntimePrefix)-x86">
-          <Platform>x86</Platform>
-          <RuntimeOS>win</RuntimeOS>
-          <RuntimePlatform>x86</RuntimePlatform>
-        </RuntimeIdentifier>
-        <RuntimeIdentifier Condition="$(BuildWin)"   Include="$(WinRuntimePrefix)-x64">
-          <Platform>x64</Platform>
-          <RuntimeOS>win</RuntimeOS>
-          <RuntimePlatform>x64</RuntimePlatform>
-        </RuntimeIdentifier>
-        <RuntimeIdentifier Condition="$(BuildOsx)"   Include="$(OsxRuntimePrefix)-x64">
-          <Platform>x64</Platform>
-          <RuntimeOS>osx</RuntimeOS>
-          <RuntimePlatform>x64</RuntimePlatform>
-        </RuntimeIdentifier>
-        <RuntimeIdentifier Condition="$(BuildLinux)" Include="$(LinuxRuntimePrefix)-x64">
-          <Platform>x64</Platform>
-          <RuntimeOS>linux</RuntimeOS>
-          <RuntimePlatform>x64</RuntimePlatform>
-        </RuntimeIdentifier>
-      </ItemGroup>
-    </Otherwise>-->
+    <Otherwise>
+      <PropertyGroup Condition="'$(ZouAgentType)' == '' And '$(RuntimeIdentifier)' == '' And '$(RuntimePlatform)' != ''">
+        <RuntimeIdentifier Condition="$([MSBuild]::IsOsPlatform(Windows))">$(WinRuntimePrefix)-$(RuntimePlatform)</RuntimeIdentifier>
+        <RuntimeIdentifier Condition="$([MSBuild]::IsOsPlatform(OSX))">$(OsxRuntimePrefix)-$(RuntimePlatform)</RuntimeIdentifier>
+        <RuntimeIdentifier Condition="$([MSBuild]::IsOsPlatform(Linux))">$(LinuxRuntimePrefix)-$(RuntimePlatform)</RuntimeIdentifier>
+      </PropertyGroup>
+    </Otherwise>
   </Choose>
+  
+  <!-- RuntimeOs and RuntimeFolder properties -->
+  <PropertyGroup Condition="'$(ZouAgentType)' == ''">
+    <RuntimeOs Condition="$([MSBuild]::IsOsPlatform(Windows))">win</RuntimeOs>
+    <RuntimeOs Condition="$([MSBuild]::IsOsPlatform(OSX))">osx</RuntimeOs>
+    <RuntimeOs Condition="$([MSBuild]::IsOsPlatform(Linux))">linux</RuntimeOs>
+    <RuntimeFolder>$(RuntimeOs)-$(RuntimePlatform)</RuntimeFolder>
+  </PropertyGroup>
+  
+  <!-- RuntimeOs items -->
+  <ItemGroup Condition="'$(ZouAgentType)' != ''">
+    <RuntimeOs Condition="$(BuildWin)" Include="win">
+      <RuntimeIdentifier Condition=" $(RuntimeIdentifier.StartsWith('win'))">$(RuntimeIdentifier)</RuntimeIdentifier>
+      <RuntimeIdentifier Condition="!$(RuntimeIdentifier.StartsWith('win')) And '$(RuntimePlatform)' != ''">$(WinRuntimePrefix)-$(RuntimePlatform)</RuntimeIdentifier>
+      <RuntimeFolder>win-$(RuntimePlatform)</RuntimeFolder>
+    </RuntimeOs>
+    <RuntimeOs Condition="$(BuildOsx)" Include="osx">
+      <RuntimeIdentifier Condition=" $(RuntimeIdentifier.StartsWith('osx'))">$(RuntimeIdentifier)</RuntimeIdentifier>
+      <RuntimeIdentifier Condition="!$(RuntimeIdentifier.StartsWith('osx')) And '$(RuntimePlatform)' != ''">$(OsxRuntimePrefix)-$(RuntimePlatform)</RuntimeIdentifier>
+      <RuntimeFolder>osx-$(RuntimePlatform)</RuntimeFolder>
+    </RuntimeOs>
+    <RuntimeOs Condition="$(BuildLinux)" Include="linux">
+      <RuntimeIdentifier Condition=" $(RuntimeIdentifier.StartsWith('linux'))">$(RuntimeIdentifier)</RuntimeIdentifier>
+      <RuntimeIdentifier Condition="!$(RuntimeIdentifier.StartsWith('linux')) And '$(RuntimePlatform)' != ''">$(LinuxRuntimePrefix)-$(RuntimePlatform)</RuntimeIdentifier>
+      <RuntimeFolder>linux-$(RuntimePlatform)</RuntimeFolder>
+    </RuntimeOs>
+  </ItemGroup>
 
-  <Target Name="TraceBootRuntime" Condition="'$(ZouTrace)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
+  <Target Name="TraceBootRuntime" Condition="'$(ZouDebug)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
     <Message Importance="high" Text="zou/Boot.Runtime.props [$(MSBuildProjectFile)]" />
     <Message Importance="high" Text="----------------------" />
-    <Message Importance="high" Text="DebugBootPlatform  = $(DebugBootPlatform)" />
-    <Message Importance="high" Text="ZouAgentType       = $(ZouAgentType)" />
-    <Message Importance="high" Text=" " />
-    <!-- TODO: DEBUG ONLY -->
-    <!--<Message Importance="high" Text="PlatformToolset1   = $(PlatformToolset1)" />
-    <Message Importance="high" Text="Platform1          = $(Platform1)" />
-    <Message Importance="high" Text="OutDir1            = $(OutDir1)" />
-    <Message Importance="high" Text=" " />-->
-    <Message Importance="high" Text="Platform           = $(Platform)" />
-    <Message Importance="high" Text="RuntimePlatform    = $(RuntimePlatform)" />
-    <Message Importance="high" Text="ForwardPlatform    = $(ForwardPlatform)" />
-    <Message Importance="high" Text=" " />
-    <Message Importance="high" Text="SkipCrossBuild     = $(SkipCrossBuild)" />
-    <Message Importance="high" Text="CrossBuild         = $(CrossBuild)" />
-    <Message Importance="high" Text="RedistByRuntime    = $(RedistByRuntime)" />
-    <Message Importance="high" Text="BuildWin           = $(BuildWin)" />
-    <Message Importance="high" Text="BuildOsx           = $(BuildOsx)" />
-    <Message Importance="high" Text="BuildLinux         = $(BuildLinux)" />
-    <Message Importance="high" Text=" " />
-    <Message Importance="high" Text="RuntimeIdentifier  = $(RuntimeIdentifier)"/>
-    <Message Importance="high" Text="@RuntimeIdentifier = %(RuntimeIdentifier.Identity)" />
-    <Message Importance="high" Text="RuntimeOs          = $(RuntimeOs)" />
-    <Message Importance="high" Text="RuntimeFolder      = $(RuntimeFolder)" />
-    <Message Importance="high" Text=" " />
+    <Message Importance="high" Text="ZouAgentType       = $(ZouAgentType)" Condition="'$(ZouAgentType)' != ''" />
+    <Message Importance="high" Text="BuildWin           = $(BuildWin)"     Condition="'$(ZouAgentType)' != ''" />
+    <Message Importance="high" Text="BuildOsx           = $(BuildOsx)"     Condition="'$(ZouAgentType)' != ''" />
+    <Message Importance="high" Text="BuildLinux         = $(BuildLinux)"   Condition="'$(ZouAgentType)' != ''" />
+    <Message Importance="high" Text=" "                                    Condition="'$(ZouAgentType)' != ''" />
+
+    <Message Importance="high" Text="TargetFramework    = $(TargetFramework)"    Condition="'$(TargetFramework)' != ''"/>
+    <Message Importance="high" Text="RuntimeOs          = $(RuntimeOs)"          Condition="'$(RuntimeOs)' != ''" />
+    <Message Importance="high" Text="RuntimePlatform    = $(RuntimePlatform)"    Condition="'$(RuntimePlatform)' != ''" />
+    <Message Importance="high" Text="RuntimeIdentifier  = $(RuntimeIdentifier)"  Condition="'$(RuntimeIdentifier)' != ''" />
+    <Message Importance="high" Text="RuntimeFolder      = $(RuntimeFolder)"      Condition="'$(RuntimeFolder)' != ''" />
     
-    <LogItems Items="@(RuntimeIdentifier)" Title="TraceBootRuntime.RuntimeIdentifier" />
+    <LogItems Items="@(RuntimeOs)" Title="@RuntimeOs" />
     <Message Importance="high"  Text=" " />
   </Target>
 

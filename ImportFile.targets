@@ -25,8 +25,8 @@ Input parameters:
   <Target Name="ImportFileInitCrossBuild">
     <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] ImportFileInitCrossBuild(CrossBuild=$(CrossBuild))" />
     
-    <!-- CopyFile = CopyFile x RuntimeIdentifier (defined in Boot.Runtime.props ) -->
-    <MulJoin Input="@(ImportFile)" Items="@(RuntimeIdentifier)" ItemName="RuntimeIdentifier" >
+    <!-- ImportFile x RuntimeOs (defined in Boot.Runtime.props ) -->
+    <MulJoin Input="@(ImportFile)" Items="@(RuntimeOs)" ItemName="RuntimeOs" >
       <Output TaskParameter="Output" ItemName="_ImportFile" />
     </MulJoin>
     <ItemGroup>

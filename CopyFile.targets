@@ -22,8 +22,8 @@ Input parameters:
   <Target Name="CopyFileInitCrossBuild">
     <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] CopyFileInitCrossBuild(CrossBuild=$(CrossBuild))" />
 
-    <!-- CopyFile = CopyFile x RuntimeIdentifier (defined in Boot.Runtime.props ) -->
-    <MulJoin Input="@(CopyFile)" Items="@(RuntimeIdentifier)" ItemName="RuntimeIdentifier" >
+    <!-- CopyFile x RuntimeOs (defined in Boot.Runtime.props ) -->
+    <MulJoin Input="@(CopyFile)" Items="@(RuntimeOs)" ItemName="RuntimeOs" >
       <Output TaskParameter="Output" ItemName="_CopyFile" />
     </MulJoin>
     <ItemGroup>

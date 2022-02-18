@@ -49,11 +49,9 @@
 
   <Target Name="ImportProjectInitCrossBuild">
     <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] ImportProjectInitCrossBuild(CrossBuild=$(CrossBuild))" />
-    <!--<LogItems Items="@(RuntimeIdentifier)" Title="#1 ImportProjectInitCrossBuild.RuntimeIdentifier" />
-    <Message Importance="high"  Text=" " />-->
 
-    <!-- ImportProject = ImportProject x RuntimeIdentifier (defined in Boot.Runtime.props ) -->
-    <MulJoin Input="@(ImportProject)" Items="@(RuntimeIdentifier)" ItemName="RuntimeIdentifier" >
+    <!-- ImportFile x RuntimeOs (defined in Boot.Runtime.props ) -->
+    <MulJoin Input="@(ImportProject)" Items="@(RuntimeOs)" ItemName="RuntimeOs" >
       <Output TaskParameter="Output" ItemName="_ImportProject" />
     </MulJoin>
 
@@ -68,9 +66,21 @@
         <Platform Condition="'%(ImportProject.Platform)' == '' And $([System.String]::new(%(ImportProject.RuntimeIdentifier)).EndsWith('x86'))">x86</Platform>
         <Platform Condition="'%(ImportProject.Platform)' == '' And $([System.String]::new(%(ImportProject.RuntimeIdentifier)).EndsWith('x64'))">x64</Platform>
       </ImportProject>
+
+      <!-- Adjust RuntimeType -->
+      <ImportProject Condition="'%(RuntimeOs)' == 'win'">
+        <!-- Use 'msbuild' for .sln and .vcxproj -->
+        <RuntimeType Condition="'%(Extension)' == '.sln' Or '%(Extension)' == '.vcxproj'">Full</RuntimeType>
+        <!-- Use 'dotnet build' for .csproj -->
+        <RuntimeType Condition="'%(Extension)' == '.csproj'">Core</RuntimeType>
+      </ImportProject>
+      <ImportProject Condition="'%(RuntimeOs)' != 'win'">
+        <!-- Use 'dotnet build' on OSX and linux -->
+        <RuntimeType>Core</RuntimeType>
+      </ImportProject>
     </ItemGroup>
 
-    <!--<LogItems Items="@(ImportProject)" Title="#2 ImportProjectInitCrossBuild.ImportProject" />
+    <!--<LogItems Items="@(ImportProject)" Title="ImportProjectInitCrossBuild.ImportProject" />
     <Message Importance="high"  Text=" " />-->
   </Target>
 
