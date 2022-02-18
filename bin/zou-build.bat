@@ -171,8 +171,8 @@ if '%_clean%' == '' if '%_build%' == '' (
 )
 
 rem compute msbuild options
-set _opts=--nologo -v:m -m
-if '%_binlog%'     == 'true' set _opts=%_opts% -bl:%_projDir%%_projName%._binlog
+set _opts=--nologo -v:m -m -nr:false
+if '%_binlog%'     == 'true' set _opts=%_opts% -bl:%_projDir%%_projName%.binlog
 if '%_preprocess%' == 'true' set _opts=%_opts% -pp:%_projDir%%_projName%.pp.xml
 
 rem compute properties
@@ -184,7 +184,7 @@ if '%_rome%'      == 'true' set props=%props%;BuildRome=true
 if '%_verbose%'   == 'true' set props=%props%;RedistDebug=true;ZouDebug=true
 if '%_pkgDir%' neq ''       set props=%props%;PkgDir=%_pkgDir%
 
-if /i '%_projExt%' == '.csproj' (set command=dotnet _build) else (set command=msbuild)
+if /i '%_projExt%' == '.csproj' (set command=dotnet build) else (set command=msbuild)
 set command=%command% %_opts% %_project% -p:%props%
 
 if '%_test%' == 'true' (
