@@ -45,7 +45,7 @@ namespace Zou.Tasks
                 var output = new TaskItem(input);
                 input.CopyMetadataTo(output);
                 item.CopyMetadataTo(output);
-                if (!string.IsNullOrWhiteSpace(this.ItemName) && !string.IsNullOrWhiteSpace(output.GetMetadata(this.ItemName)))
+                if (!string.IsNullOrWhiteSpace(this.ItemName) && string.IsNullOrWhiteSpace(output.GetMetadata(this.ItemName)))
                 {
                     output.SetMetadata(this.ItemName, item.ItemSpec);
                 }
