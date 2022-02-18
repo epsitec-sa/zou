@@ -32,7 +32,7 @@
     <!--<LogItems Items="OUTDIR=$(OutDir);TARGETPATH=$(TargetPath);@(GoBuildEnv)" />-->
     <Exec Command="go generate"
           WorkingDirectory="$(ProjectDir)" 
-          EnvironmentVariables="@(GoBuildEnv);TARGETPATH=$(TargetPath)"
+          EnvironmentVariables="@(GoBuildEnv);TARGETPATH=$(TargetPath);CONFIGURATION=$(Configuration)"
           StandardOutputImportance='low' >
       <Output TaskParameter="ExitCode" PropertyName="GoGenerateExitCode" />
     </Exec>
