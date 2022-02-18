@@ -97,15 +97,19 @@ To keep them add the following code in the project.pack.msbuildproj:
   </Target>
 
   <Target Name="PackBuild" AfterTargets="Build"  DependsOnTargets="ImportProject;PackCopy">
-    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] PackBuild" />
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] PackBuild(RuntimePlatform=$(RuntimePlatform), PkgBinDir=$(PkgBinDir))" />
+
     <Delete Files="@(PackDeleteFile)" />
 
     <!-- Enable signing of Windows packaging folder if 'Sign' property is true -->
-    <ItemGroup Condition="$(Sign) And '$(RuntimeOs)' == 'win'">
-      <SignFolder Condition=" Exists('$(PkgBinDir)win-$(RuntimePlatform)')" Include="$(PkgBinDir)win-$(RuntimePlatform)" />
-      <SignFolder Condition="!Exists('$(PkgBinDir)win-$(RuntimePlatform)')" Include="$(PkgBinDir)" />
+    <ItemGroup>
+      <PkgBinWinDir Include="$([System.IO.Directory]::GetDirectories('$(PkgBinDir)', 'win*'))" />
+      <PkgBinWinDir Condition="@(PkgBinWinDir->Count()) == 0" Include="$(PkgBinDir)" />
     </ItemGroup>
-
+    
+    <ItemGroup Condition="$(Sign)">
+      <SignFolder Include="@(PkgBinWinDir)" />
+    </ItemGroup>
   </Target>
 
   <Target Name="PackClean" BeforeTargets="Clean" DependsOnTargets="PackDeleteAll;ImportProjectClean">

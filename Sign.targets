@@ -93,8 +93,9 @@ Operations:
   </Target>
 
   <Target Name="SignFolder" DependsOnTargets="_InitSignFolder" AfterTargets="PackBuild" Outputs="%(SignFolder.Identity)">
-    <!--<Message Text="%(SignFolder.Command)" Importance="high" />-->
-    <Exec Command="%(SignFolder.Command)" Condition="'%(Command)' != ''" />
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] SignFolder" />
+    <Message Condition="'$(ZouDebug)' == 'true' And '%(Command)' != ''" Importance="high" Text="%(SignFolder.Command)" />
+    <Exec    Condition="'$(ZouDebug)' != 'true' And '%(Command)' != ''" Command="%(SignFolder.Command)" />
   </Target>
 
 </Project>
