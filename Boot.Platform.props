@@ -16,11 +16,11 @@ Outputs
   <PropertyGroup>
     <Platforms>AnyCPU;x86;x64</Platforms>
     
-    <DebugBootPlatform>Platform='$(Platform)', RID='$(RuntimeIdentifier)'</DebugBootPlatform>
+    <DebugBootPlatform>Platform='$(Platform)', RuntimeIdentifier='$(RuntimeIdentifier)'</DebugBootPlatform>
   </PropertyGroup>
 
   <Choose>
-    <When Condition="'$(Platform)' == '' Or '$(Platform)' == 'AnyCPU' Or '$(Platform)' == 'Any CPU'">
+    <When Condition="'$(Platform)' == ''">
       <Choose>
         <When Condition="$(RuntimeIdentifier.EndsWith('x86'))">
           <PropertyGroup>
@@ -41,9 +41,6 @@ Outputs
         <Otherwise>
           <PropertyGroup>
             <DebugBootPlatform>1.3 $(DebugBootPlatform)</DebugBootPlatform>
-            <!--<Platform       >x64</Platform>
-            <RuntimePlatform>x64</RuntimePlatform>
-            <ForwardPlatform>x64</ForwardPlatform>-->
           </PropertyGroup>
         </Otherwise>
       </Choose>
@@ -62,12 +59,17 @@ Outputs
         <ForwardPlatform>x86</ForwardPlatform>
       </PropertyGroup>
     </When>
-    <Otherwise>
+    <When Condition=" '$(Platform)' == 'AnyCPU' Or '$(Platform)' == 'Any CPU'">
       <PropertyGroup>
         <DebugBootPlatform>4 $(DebugBootPlatform)</DebugBootPlatform>
+        <RuntimePlatform>AnyCPU</RuntimePlatform>
+      </PropertyGroup>
+    </When>
+    <Otherwise>
+      <PropertyGroup>
+        <DebugBootPlatform>5 $(DebugBootPlatform)</DebugBootPlatform>
         <Platform       >x64</Platform>
         <RuntimePlatform>x64</RuntimePlatform>
-        <ForwardPlatform>x64</ForwardPlatform>
       </PropertyGroup>
     </Otherwise>
   </Choose>
