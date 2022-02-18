@@ -25,8 +25,8 @@ namespace Zou.Tasks
         private const string EntryName        = "EntryName";
         private const string CompressionLevel = "CompressionLevel";
 
-        private record EntryMapping(string EntryName, string Path);
-        private record Entry(ITaskItem FileItem, EntryMapping Mapping, CompressionLevel CompressionLevel)
+        private sealed record EntryMapping(string EntryName, string Path);
+        private sealed record Entry(ITaskItem FileItem, EntryMapping Mapping, CompressionLevel CompressionLevel)
         {
             public static Entry     Create(ITaskItem fileItem)
             {
@@ -50,7 +50,7 @@ namespace Zou.Tasks
             public DateTimeOffset   CreatedTime          => DateTimeOffset.Parse(this.FileItem.GetMetadata("CreatedTime")).Truncate(TimeSpan.FromSeconds(2));
             public DateTimeOffset   ModifiedTime         => DateTimeOffset.Parse(this.FileItem.GetMetadata("ModifiedTime")).Truncate(TimeSpan.FromSeconds(2));
             public override int     GetHashCode()        => this.Mapping.GetHashCode();
-            public virtual bool     Equals(Entry? other) => this.Mapping.Equals(other?.Mapping);
+            public bool             Equals(Entry? other) => this.Mapping.Equals(other?.Mapping);
         }
 
         public bool                     Overwrite { get; set; } = true;
@@ -104,15 +104,14 @@ namespace Zou.Tasks
 
                 toDelete.ForEach(entryName => DeleteEntry(archive, entryName));
                 toAdd.ForEach(entryName => CreateEntry(archive, GetEntry(entries, entryName)));
-                toUpdate.ForEach(entryName =>
+                toUpdate.ForEach (entryName =>
                 {
                     var entry = GetEntry(entries, entryName);
                     var archiveEntry = archive.GetEntry(entryName);
                     var modifiedTime = entry.ModifiedTime;
                     if (modifiedTime > archiveEntry.LastWriteTime)
                     {
-                        archiveEntry.Delete();
-                        archiveEntry = CreateEntry(archive, entry);
+                        archiveEntry = UpdateEntry(archive, entry, archiveEntry);
                     }
                 });
             }
@@ -155,6 +154,26 @@ namespace Zou.Tasks
                 modified = true;
                 this.Log.LogMessage(MessageImportance.Normal, $"[+] {entry.Mapping.EntryName}");
                 return archive.CreateEntryFromFile(entry.Mapping.Path, entry.Mapping.EntryName, entry.CompressionLevel);
+            }
+            ZipArchiveEntry UpdateEntry(ZipArchive archive, Entry entry, ZipArchiveEntry archiveEntry)
+            {
+                using (var archiveMemoryStream = new MemoryStream((int) archiveEntry.Length))
+                using (var archiveReadStream = archiveEntry.Open())
+                {
+                    archiveReadStream.CopyTo(archiveMemoryStream);
+                    var archiveEntryBytes = archiveMemoryStream.ToArray ();
+                    var updatedEntryBytes = File.ReadAllBytes(entry.Mapping.Path);
+                    if ((archiveEntryBytes.Length == updatedEntryBytes.Length) &&
+                        (Enumerable.SequenceEqual(archiveEntryBytes, updatedEntryBytes)))
+                    {
+                        this.Log.LogMessage(MessageImportance.Normal, $"[=] {entry.Mapping.EntryName}");
+                        return archiveEntry;
+                    }
+                }
+                
+                archiveEntry.Delete();
+                archiveEntry = CreateEntry(archive, entry);
+                return archiveEntry;
             }
         }
     }
