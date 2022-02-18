@@ -1,5 +1,5 @@
 <!-- This script can be imported anywhere before first MS import -->
-<Project InitialTargets="ZouTraceMSBuild;ZouTraceZou" TreatAsLocalProperty="ZouTrace">
+<Project InitialTargets="ZouTraceMSBuild;ZouTraceZou" TreatAsLocalProperty="ZouTrace;ZouDebug;RedistDebug">
 
   <!-- System dependent -->
   <Choose>
@@ -36,8 +36,11 @@
   <Import Project="Version.props" Condition="'$(Version)' == ''" />
 
   <PropertyGroup>
-    <ZouTrace Condition="'$(ZouTrace)' == ''">false</ZouTrace>
-    <ZouDebug Condition="'$(ZouDebug)' == ''">false</ZouDebug>
+    <!-- Do not trace during restore (too much output) -->
+    <ZouTrace    Condition="'$(ZouTrace)'    == '' Or '$(MSBuildRestoreSessionId)' != ''">false</ZouTrace>
+    <ZouDebug    Condition="'$(ZouDebug)'    == '' Or '$(MSBuildRestoreSessionId)' != ''">false</ZouDebug>
+    <RedistDebug Condition="'$(RedistDebug)' == '' Or '$(MSBuildRestoreSessionId)' != ''">false</RedistDebug>
+    
     <ZouVersion>$(Version)</ZouVersion>
     <NETSdkVersion>$([System.Text.RegularExpressions.Regex]::Match($(MSBuildToolsPath), '(?&lt;=dotnet[\\/]sdk[\\/])\d+\.\d+\.\d+'))</NETSdkVersion>
     <!-- Configuration sub-directory -->
@@ -182,6 +185,7 @@
     <Message Importance="normal" Text="MSBuild properties" />
     <Message Importance="normal" Text="==================" />
     <Message Importance="normal" Text="  OS                             = $(OS)" />
+    <Message Importance="normal" Text="  MSBuildRestoreSessionId        = $(MSBuildRestoreSessionId)" />
     <Message Importance="normal" Text="  MSBuildProgramFiles32          = $(MSBuildProgramFiles32)" />
     <Message Importance="normal" Text="  MSBuildRuntimeType             = $(MSBuildRuntimeType)" />
     <Message Importance="normal" Text="  MSBuildAssemblyVersion         = $(MSBuildAssemblyVersion)" />
