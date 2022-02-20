@@ -28,10 +28,13 @@ Layout:
     <AvailableItemName Include="ImportProject" />
   </ItemGroup>
 
-  <Import Project="Cs.Boot.props" Condition="'$(ZouVersion)' == ''"/>
   <Import Project="Com.WorkDir.props"/>
   <Import Project="Com.InteropPlatform.props" />
 
+  <PropertyGroup>
+    <TargetFrameworks />
+  </PropertyGroup>
+  
   <ItemDefinitionGroup>
     <ImportProject>
       <Platform>$(InteropPlatform)</Platform>
@@ -40,14 +43,18 @@ Layout:
   </ItemDefinitionGroup>
   
   <Import Project="ImportProject.targets" />
-  <Target Name="_ImportProject" />
-  <Target Name="_ImportProjectClean" />
+  
+  <Target Name="_ImportProject">
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] CsInterop._ImportProject" />
+  </Target>
+  <Target Name="_ImportProjectClean">
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] CsInterop._ImportProjectClean" />
+  </Target>
 
-  <Target Name="CreateInteropContent"
-          Condition="'@(ImportProject)' != ''"
-          DependsOnTargets="ImportProject">
+  <Target Name="CreateInteropContent" DependsOnTargets="ImportProject">
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] CreateInteropContent" />
     <ItemGroup>
-      <InteropContent Include="%(ImportProject.OutDir)**\*.*" />
+      <InteropContent Include="%(ImportProject.OutDir)**" />
       <InteropContent>
         <Link>%(InteropContent.RecursiveDir)%(FileName)%(Extension)</Link>
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -55,15 +62,20 @@ Layout:
       </InteropContent>
       <Content Include="@(InteropContent)" />
     </ItemGroup>
-    <Message Importance="low" Text="[i] %(InteropContent.FullPath) -&gt; $(TargetDir)%(RecursiveDir)%(FileName)%(Extension)" />
+    <!--<LogItems Items="@(InteropContent)" Title="InteropContent" />
+    <Message Importance="high"  Text=" " />-->
   </Target>
 
-  <Target Name="InteropBuild"
-          BeforeTargets="ResolveReferences"
-          DependsOnTargets="CreateInteropContent"
-          Condition="'$(DesignTimeBuild)' != 'true' And '$(BuildingProject)' == 'true'"/>
-
-  <Target Name="InteropClean"
-          AfterTargets="Clean"
-          DependsOnTargets="ImportProjectClean" />
+  <Target Name="InteropBuild" BeforeTargets="Build" DependsOnTargets="CreateInteropContent" Condition="'$(DesignTimeBuild)' != 'true' And '$(BuildingProject)' == 'true'">
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] InteropBuild" />
+  </Target>
+  <Target Name="InteropClean" BeforeTargets="Clean" DependsOnTargets="ImportProjectInit">
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] InteropClean(%(ImportProject.OutDir))" />
+    <ItemGroup>
+      <InteropClean Include="%(ImportProject.OutDir)**" />
+    </ItemGroup>
+    <!--<LogItems Items="@(InteropClean)" Title="InteropClean" />
+    <Message Importance="high"  Text=" " />-->
+    <Delete Files="@(InteropClean)" />
+  </Target>
 </Project>

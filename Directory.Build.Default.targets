@@ -40,6 +40,7 @@
   <PropertyGroup Condition="'$(TargetFrameworks)' == '*Undefined*'">
     <TargetFrameworks Condition="'$(BuildingInsideVisualStudio)' != ''" />
     <TargetFrameworks Condition="'$(BuildingInsideVisualStudio)' == ''">$(FullTargetFramework);$(CoreTargetFramework);netstandard2.0;netstandard2.1</TargetFrameworks>
+    <TargetFrameworks Condition="'$(BuildingInsideVisualStudio)' == '' And $(TargetFrameworks.IndexOf('$(TargetFramework)')) &lt; 0">$(TargetFramework);$(TargetFrameworks)</TargetFrameworks>
   </PropertyGroup>
 
   <!-- Exclude git metadata from project -->

@@ -105,9 +105,10 @@
 
     <ItemGroup>
       <MSBuildProject>
-        <Command>"$(MSBuildToolsPath)\msbuild"</Command>
+        <Command Condition="Exists('$(MSBuildToolsPath)\msbuild.exe')">"$(MSBuildToolsPath)\msbuild"</Command>
       </MSBuildProject>
       <MSBuildProject>
+        <Command Condition="'%(RuntimeType)' == 'Full' And '%(MSBuildProject.Command)' == ''">msbuild</Command>
         <Command Condition="'%(RuntimeType)' != 'Full' Or !$([MSBuild]::IsOsPlatform(Windows))">dotnet build</Command>
         <!-- Do not reuse MSBuild nodes after a build -->
         <Options>-nologo -nr:false</Options>
@@ -137,7 +138,7 @@
 
   <!-- Target batching -->
   <Target Name="ImportProjectClean" Condition="@(ImportProject->Count()) > 0" DependsOnTargets="CreateMSBuildProjects" Returns="%(MSBuildProject.Identity)">
-    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] ImportProjectClean.Begin($(TargetFrameworks))" />
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] ImportProjectClean.Begin(MSBuildRuntimeType=$(MSBuildRuntimeType), TargetFrameworks=$(TargetFrameworks))" />
     
     <Message Condition="'%(RuntimeIdentifier)' == '' And '$(Platform)' == ''" Importance="high" Text="$(L2m)[$(Configuration)|custom] $(T3)%(MSBuildProject.BundleRelativeSrcDir)%(RecursiveDir)$(T2)%(FileName)%(Extension)$(XC)" />
     <Message Condition="'%(RuntimeIdentifier)' == '' And '$(Platform)' != ''" Importance="high" Text="$(L2m)[$(Configuration)|$(Platform)] $(T3)%(MSBuildProject.BundleRelativeSrcDir)%(RecursiveDir)$(T2)%(FileName)%(Extension)$(XC)" />
