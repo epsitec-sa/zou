@@ -60,7 +60,7 @@ _sku_init_scope()
   fi
   lastVersion=$(vtag_highest $prod_branch)  # exclude vnode
 
-  io_trace "_sku_init_scope ${*@Q} -> $(print_vars skuMode dev_branch prod_branch lastVersion dev_vtag prod_vtag dev_delta prod_delta)"
+# io_trace "_sku_init_scope ${*@Q} -> $(print_vars skuMode dev_branch prod_branch lastVersion dev_vtag prod_vtag dev_delta prod_delta)"
 }
 # out:
 #   skuMode -- (dev|prod)
@@ -70,7 +70,7 @@ _sku_set_sku_mode()
 }
 _sku_set_dev_scope()
 {
-  io_trace "_sku_set_dev_scope ${*@Q}" Purple
+# io_trace "_sku_set_dev_scope ${*@Q}" Purple
   # set vtag context
   local ltag stag lsuf delta
   _sku_describe_vtag_fallback $dev_branch
@@ -86,11 +86,11 @@ _sku_set_dev_scope()
     [ $? -ne 0 ] && return 2 # no vbranch
     prod_branch=$lbranch
   }
-  io_trace "_sku_set_dev_scope ${*@Q}" Green
+# io_trace "_sku_set_dev_scope ${*@Q}" Green
 }
 _sku_set_prod_scope()
 {
-  io_trace "_sku_set_prod_scope ${*@Q}" Purple
+# io_trace "_sku_set_prod_scope ${*@Q}" Purple
   # set vtag context
   local ltag stag lsuf delta
   _sku_describe_vtag_fallback $prod_branch
@@ -102,14 +102,14 @@ _sku_set_prod_scope()
     local branch
     _sku_set_best_match_dev_branch $bundleBranch $prod_vtag
     [ $? -ne 0 ] && return 1 # no dev branch
-    io_trace "_sku_set_prod_scope ${*@Q} -> $(print_vars branch)"
+  # io_trace "_sku_set_prod_scope ${*@Q} -> $(print_vars branch)"
     local lbranch rbranch
     _sku_realize_branch "$branch"
-    io_trace "_sku_set_prod_scope ${*@Q} -> $(print_vars lbranch rbranch)"
+  # io_trace "_sku_set_prod_scope ${*@Q} -> $(print_vars lbranch rbranch)"
     [ $? -ne 0 ] && return 2 # no dev branch
     dev_branch=$lbranch
   }
-  io_trace "_sku_set_prod_scope ${*@Q}" Green
+# io_trace "_sku_set_prod_scope ${*@Q}" Green
 }
 # in:
 #   $1 (branch) -- module branch (dev|prod)
@@ -121,7 +121,7 @@ _sku_set_prod_scope()
 #   delta -- commits between branch and tag
 _sku_describe_vtag()
 {
-  io_trace "_sku_describe_vtag ${*@Q}" Purple
+# io_trace "_sku_describe_vtag ${*@Q}" Purple
   local branch=$1 fhint=$2 ftag
   delta=0
   for ftag in $(ref_tag_fallback $fhint 'v[0-9]*'); do
@@ -130,7 +130,7 @@ _sku_describe_vtag()
       stag=${ltag%-*-g*}
       lsuf=${ltag#$stag}
       [[ -n $lsuf && $lsuf =~ ^-([0-9]+)-g.*$ ]] && delta=${BASH_REMATCH[1]}
-      io_trace "_sku_describe_vtag ${*@Q} -> $(print_vars ltag stag lsuf delta)"
+    # io_trace "_sku_describe_vtag ${*@Q} -> $(print_vars ltag stag lsuf delta)"
       return 0
     fi
   done
@@ -139,7 +139,7 @@ _sku_describe_vtag()
 }
 _sku_describe_vtag_fallback()
 {
-  io_trace "_sku_describe_vtag_fallback ${*@Q}" Gray
+# io_trace "_sku_describe_vtag_fallback ${*@Q}" Gray
   _sku_describe_vtag $1 $bundleBranch || _sku_describe_vtag $1 $1
 }
 # in:
@@ -164,7 +164,7 @@ _sku_set_vbranch_name()
 #   vbranch -- remote branch
 _sku_realize_branch()
 {
-  io_trace "_sku_realize_branch ${*@Q}" Purple
+# io_trace "_sku_realize_branch ${*@Q}" Purple
   if git show-ref -s --verify "refs/heads/$1" &>>"$stdallRedir"; then
     # local branch
     lbranch=$1
@@ -182,7 +182,7 @@ _sku_realize_branch()
       return 1
     fi
   fi
-  io_trace "_sku_realize_branch ${*@Q}" Green
+# io_trace "_sku_realize_branch ${*@Q}" Green
 }
 # in:
 #   $1 (fhint) -- fallback hint
@@ -206,11 +206,11 @@ _sku_set_best_match_dev_branch()
       else
         lbranch=${branch#*/}
       fi
-      io_trace "_sku_set_best_match_dev_branch ${*@Q} -> $(print_vars pattern i branch lbranch)"
+    # io_trace "_sku_set_best_match_dev_branch ${*@Q} -> $(print_vars pattern i branch lbranch)"
       if [[ $lbranch == $pattern ]]; then
         _sku_describe_vtag_fallback $branch
         if [ $? -eq 0 ] && [[ $stag == $vtag ]]; then
-          io_trace "_sku_set_best_match_dev_branch ${*@Q} -> $(print_vars stag vtag)"
+        # io_trace "_sku_set_best_match_dev_branch ${*@Q} -> $(print_vars stag vtag)"
           return 0
         fi
       fi
