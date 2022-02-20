@@ -47,8 +47,20 @@
     </ImportProject>
   </ItemDefinitionGroup>
 
-  <Target Name="ImportProjectInitCrossBuild">
-    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] ImportProjectInitCrossBuild(CrossBuild=$(CrossBuild))" />
+  <Target Name="ImportProjectInit">
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] ImportProjectInit" />
+
+    <ItemGroup>
+      <ImportProject>
+        <Platform    Condition="'%(ImportProject.Platform)' == '' And $([System.String]::new(%(ImportProject.RuntimeIdentifier)).EndsWith('x86'))">x86</Platform>
+        <Platform    Condition="'%(ImportProject.Platform)' == '' And $([System.String]::new(%(ImportProject.RuntimeIdentifier)).EndsWith('x64'))">x64</Platform>
+        <RuntimeType Condition="'%(ImportProject.Extension)' == '.vcxproj'">Full</RuntimeType>
+      </ImportProject>
+    </ItemGroup>
+  </Target>
+
+  <Target Name="ImportProjectCrossBuild" DependsOnTargets="ImportProjectInit">
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] ImportProjectCrossBuild(CrossBuild=$(CrossBuild))" />
 
     <!-- ImportFile x RuntimeOs (defined in Boot.Runtime.props ) -->
     <MulJoin Input="@(ImportProject)" Items="@(RuntimeOs)" ItemName="RuntimeOs" >
@@ -61,32 +73,13 @@
       <_ImportProject Remove="@(_ImportProject)" />
     </ItemGroup>
 
-    <ItemGroup>
-      <ImportProject>
-        <Platform Condition="'%(ImportProject.Platform)' == '' And $([System.String]::new(%(ImportProject.RuntimeIdentifier)).EndsWith('x86'))">x86</Platform>
-        <Platform Condition="'%(ImportProject.Platform)' == '' And $([System.String]::new(%(ImportProject.RuntimeIdentifier)).EndsWith('x64'))">x64</Platform>
-      </ImportProject>
-
-      <!-- Adjust RuntimeType -->
-      <ImportProject Condition="'%(RuntimeOs)' == 'win'">
-        <!-- Use 'msbuild' for .sln and .vcxproj -->
-        <RuntimeType Condition="'%(Extension)' == '.sln' Or '%(Extension)' == '.vcxproj'">Full</RuntimeType>
-        <!-- Use 'dotnet build' for .csproj -->
-        <RuntimeType Condition="'%(Extension)' == '.csproj'">Core</RuntimeType>
-      </ImportProject>
-      <ImportProject Condition="'%(RuntimeOs)' != 'win'">
-        <!-- Use 'dotnet build' on OSX and linux -->
-        <RuntimeType>Core</RuntimeType>
-      </ImportProject>
-    </ItemGroup>
-
-    <!--<LogItems Items="@(ImportProject)" Title="ImportProjectInitCrossBuild.ImportProject" />
-    <Message Importance="high"  Text=" " />-->
+    <LogItems Condition="'$(ZouDebug)' == 'true'" Items="@(ImportProject)" Title="ImportProjectCrossBuild.ImportProject" />
+    <Message  Condition="'$(ZouDebug)' == 'true'" Importance="high"  Text=" " />
   </Target>
 
   <!-- ================ MSBuildProject ================ -->
 
-  <Target Name="CreateMSBuildProjects" DependsOnTargets="ImportProjectInitCrossBuild">
+  <Target Name="CreateMSBuildProjects" DependsOnTargets="ImportProjectCrossBuild">
     <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] CreateMSBuildProjects" />
 
     <!-- Preprocess build options and add a 'Properties' metadata -->

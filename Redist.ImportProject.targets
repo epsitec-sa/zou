@@ -29,7 +29,7 @@ Outputs:
 -->
 <Project InitialTargets="TraceRedistTargets" TreatAsLocalProperty="RedistByRuntime">
 
-  <Target Name="RedistImportProjectInit" DependsOnTargets="ImportProjectInitCrossBuild" >
+  <Target Name="RedistImportProjectInit" DependsOnTargets="ImportProjectCrossBuild" >
     <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] RedistImportProjectInit(Platform=$(Platform))" />
     <ItemGroup>
       <!-- Setup defaults -->
@@ -39,6 +39,18 @@ Outputs:
         
       <ImportProject>
         <PublishDir Condition="'%(ImportProject.PublishDir)' == ''">%(ImportProject.OutDir)</PublishDir>
+      </ImportProject>
+
+      <!-- Adjust RuntimeType -->
+      <ImportProject Condition="'%(RuntimeOs)' == 'win'">
+        <!-- Use 'msbuild' for .sln and .vcxproj -->
+        <RuntimeType Condition="'%(Extension)' == '.sln' Or '%(Extension)' == '.vcxproj'">Full</RuntimeType>
+        <!-- Use 'dotnet build' for .csproj -->
+        <RuntimeType Condition="'%(Extension)' == '.csproj'">Core</RuntimeType>
+      </ImportProject>
+      <ImportProject Condition="'%(RuntimeOs)' != 'win'">
+        <!-- Use 'dotnet build' on OSX and linux -->
+        <RuntimeType>Core</RuntimeType>
       </ImportProject>
 
       <!-- x86|AnyCPU -->

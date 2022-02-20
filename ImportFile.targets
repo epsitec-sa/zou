@@ -21,14 +21,22 @@ Input parameters:
     </ImportFile>
   </ItemDefinitionGroup>
 
-  <Target Name="ImportFileInitCrossBuild">
-    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] ImportFileInitCrossBuild(CrossBuild=$(CrossBuild))" />
+  <Target Name="ImportFileInit">
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] ImportFileInit" />
 
     <ItemGroup>
       <ImportFile>
         <ImportFile Condition="'%(ImportFile.ImportFile)' == ''">%(FileName)%(Extension)</ImportFile>
       </ImportFile>
+      <ImportFile>
+        <BundleRelativeSrcDir>$([MSBuild]::MakeRelative('$(BundleDir)', '%(RootDir)%(Directory)'))</BundleRelativeSrcDir>
+        <BundleRelativeDstDir>$([MSBuild]::MakeRelative('$(BundleDir)', '%(ImportDir)'))</BundleRelativeDstDir>
+      </ImportFile>
     </ItemGroup>
+  </Target>
+
+  <Target Name="ImportFileCrossBuild" DependsOnTargets="ImportFileInit">
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] ImportFileCrossBuild(CrossBuild=$(CrossBuild))" />
 
     <!-- ImportFile x RuntimeOs (defined in Boot.Runtime.props ) -->
     <MulJoin Input="@(ImportFile)" Items="@(RuntimeOs)" ItemName="RuntimeOs" >
@@ -40,18 +48,11 @@ Input parameters:
       <_ImportFile Remove="@(_ImportFile)" />
     </ItemGroup>
 
-    <ItemGroup>
-      <ImportFile>
-        <BundleRelativeSrcDir>$([MSBuild]::MakeRelative('$(BundleDir)', '%(RootDir)%(Directory)'))</BundleRelativeSrcDir>
-        <BundleRelativeDstDir>$([MSBuild]::MakeRelative('$(BundleDir)', '%(ImportDir)'))</BundleRelativeDstDir>
-      </ImportFile>
-    </ItemGroup>
-
-    <!--<LogItems Items="@(ImportFile)" Title="ImportFileInitCrossBuild.ImportFile" />
+    <!--<LogItems Items="@(ImportFile)" Title="ImportFileCrossBuild.ImportFile" />
     <Message Importance="high"  Text=" " />-->
   </Target>
 
-  <Target Name="ImportFile" Inputs="@(ImportFile)" Outputs="@(ImportFile->'%(ImportDir)%(RecursiveDir)%(ImportFile)')" BeforeTargets="PrepareForBuild" DependsOnTargets="ImportFileInitCrossBuild">
+  <Target Name="ImportFile" Inputs="@(ImportFile)" Outputs="@(ImportFile->'%(ImportDir)%(RecursiveDir)%(ImportFile)')" BeforeTargets="PrepareForBuild" DependsOnTargets="ImportFileCrossBuild">
     <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] ImportFile" />
     
     <Error Condition="'$(ZouAgentType)' != 'Cpp' And '$(ZouAgentType)' != ''" Text="ImportFile is not available with '$(ZouAgentType)' agent (only available with C++ agent)" />

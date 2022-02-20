@@ -19,8 +19,19 @@ Input parameters:
     </CopyFile>
   </ItemDefinitionGroup>
 
-  <Target Name="CopyFileInitCrossBuild">
-    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] CopyFileInitCrossBuild(CrossBuild=$(CrossBuild))" />
+  <Target Name="CopyFileInit">
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] CopyFileInit" />
+
+    <ItemGroup>
+      <CopyFile>
+        <BundleRelativeSrcDir>$([MSBuild]::MakeRelative('$(BundleDir)', '%(RootDir)%(Directory)'))</BundleRelativeSrcDir>
+        <BundleRelativeDstDir>$([MSBuild]::MakeRelative('$(BundleDir)', '%(TargetDir)'))</BundleRelativeDstDir>
+      </CopyFile>
+    </ItemGroup>
+  </Target>
+
+  <Target Name="CopyFileCrossBuild" DependsOnTargets="CopyFileInit">
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] CopyFileCrossBuild(CrossBuild=$(CrossBuild))" />
 
     <!-- CopyFile x RuntimeOs (defined in Boot.Runtime.props ) -->
     <MulJoin Input="@(CopyFile)" Items="@(RuntimeOs)" ItemName="RuntimeOs" >
@@ -32,18 +43,11 @@ Input parameters:
       <_CopyFile Remove="@(_CopyFile)" />
     </ItemGroup>
 
-    <ItemGroup>
-      <CopyFile>
-        <BundleRelativeSrcDir>$([MSBuild]::MakeRelative('$(BundleDir)', '%(RootDir)%(Directory)'))</BundleRelativeSrcDir>
-        <BundleRelativeDstDir>$([MSBuild]::MakeRelative('$(BundleDir)', '%(TargetDir)'))</BundleRelativeDstDir>
-      </CopyFile>
-    </ItemGroup>
-
-    <!--<LogItems Items="@(CopyFile)" Title="CopyFileInitCrossBuild.CopyFile" />
+    <!--<LogItems Items="@(CopyFile)" Title="CopyFileCrossBuild.CopyFile" />
     <Message Importance="high"  Text=" " />-->
   </Target>
 
-  <Target Name="CopyFileClean" AfterTargets="Clean" DependsOnTargets="CopyFileInitCrossBuild">
+  <Target Name="CopyFileClean" AfterTargets="Clean" DependsOnTargets="CopyFileCrossBuild">
     <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] CopyFileClean(@(CopyFile->Count()), @(CopyFile))" />
 
     <!-- Display deleted files by extension  -->
@@ -61,7 +65,7 @@ Input parameters:
     <Delete  Files="@(CopyFile->'%(TargetDir)%(RecursiveDir)%(TargetFile)')" />
   </Target>
 
-  <Target Name="CopyFile" Inputs="@(CopyFile.Identity)" Outputs="@(CopyFile->'%(TargetDir)%(RecursiveDir)%(TargetFile)')" BeforeTargets="Build" DependsOnTargets="CopyFileInitCrossBuild">
+  <Target Name="CopyFile" Inputs="@(CopyFile.Identity)" Outputs="@(CopyFile->'%(TargetDir)%(RecursiveDir)%(TargetFile)')" BeforeTargets="Build" DependsOnTargets="CopyFileCrossBuild">
     <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] CopyFile" />
     <Copy SourceFiles="@(CopyFile)" DestinationFiles="@(CopyFile->'%(TargetDir)%(RecursiveDir)%(TargetFile)')" ContinueOnError="true" />
 
