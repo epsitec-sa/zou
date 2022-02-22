@@ -1,0 +1,44 @@
+<Project InitialTargets="TraceCppBoostProps">
+
+  <PropertyGroup>
+    <PackagesConfigFile Condition="'$(PackagesConfigFile)' == ''">packages.config</PackagesConfigFile>
+
+    <BoostToolset Condition="'$(BoostToolset)' == ''">$(PlatformToolset)</BoostToolset>
+    <BoostToolset Condition="'$(BoostToolset)' == 'v142'"   >vc142</BoostToolset>
+    <BoostToolset Condition="'$(BoostToolset)' == 'v141'"   >vc141</BoostToolset>
+    <BoostToolset Condition="'$(BoostToolset)' == 'v140'"   >vc140</BoostToolset>
+    <BoostToolset Condition="'$(BoostToolset)' == 'v140_xp'">vc140</BoostToolset>
+
+    <BoostTargetSubdir Condition="$(BoostVersion.StartsWith(1.7))">build</BoostTargetSubdir>
+    <BoostTargetSubdir Condition="'$(BoostTargetSubdir)' == ''">build\native</BoostTargetSubdir>
+
+    <_BoostPackagesConfigType Condition="'$(ConfigurationType)' == 'StaticLibrary'">Headers</_BoostPackagesConfigType>
+    <_BoostPackagesConfigType Condition="'$(ConfigurationType)' == 'DynamicLibrary'">Libs</_BoostPackagesConfigType>
+    <_BoostPackagesConfigType Condition="'$(ConfigurationType)' == 'Application'">Libs</_BoostPackagesConfigType>
+
+    <_BoostTemplatePathPrefix>$(ZouDir).Templates\nuget\Cpp.Boost.$(_BoostPackagesConfigType)</_BoostTemplatePathPrefix>
+    
+    <_BoostOnlyPackagesConfigFile>$(IntDir)zou.boost.packages.config</_BoostOnlyPackagesConfigFile>
+
+    <_PackagesConfigChanged>false</_PackagesConfigChanged>
+    <_PackagesConfigExists>false</_PackagesConfigExists>
+    <_PackagesConfigExists Condition="Exists($(PackagesConfigFile))">true</_PackagesConfigExists>
+  </PropertyGroup>
+
+  <!-- Import standard nuget boost imports -->
+  <Import Project="$(_BoostTemplatePathPrefix).Imports.targets"/>
+
+  <Target Name="TraceCppBoostProps" Condition="'$(ZouDebug)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
+    <Message Importance="high" Text="zou/Cpp.Boost.props [$(MSBuildProjectFile)]" />
+    <Message Importance="high" Text="-------------------" />
+    <Message Importance="high" Text="PlatformToolset              = $(PlatformToolset)" />
+    <Message Importance="high" Text="ConfigurationType            = $(ConfigurationType)" />
+    <Message Importance="high" Text="BoostVersion                 = $(BoostVersion)" />
+    <Message Importance="high" Text="BoostToolset                 = $(BoostToolset)" />
+    <Message Importance="high" Text="BoostTargetSubdir            = $(BoostTargetSubdir)" />
+    <Message Importance="high" Text="_BoostPackagesConfigType     = $(_BoostPackagesConfigType)" />
+    <Message Importance="high" Text="_BoostTemplatePathPrefix     = $(_BoostTemplatePathPrefix)" />
+    <Message Importance="high" Text="_BoostOnlyPackagesConfigFile = $(_BoostOnlyPackagesConfigFile)" />
+    <Message Importance="high" Text=" " />
+  </Target>
+</Project>

@@ -1,30 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" InitialTargets="_CppBoostTrace;_BoostCheckVersions">
-
-  <PropertyGroup>
-    <PackagesConfigFile Condition="'$(PackagesConfigFile)' == ''">packages.config</PackagesConfigFile>
-
-    <BoostToolset Condition="'$(BoostToolset)' == ''">$(PlatformToolset)</BoostToolset>
-    <BoostToolset Condition="'$(BoostToolset)' == 'v142'"   >vc142</BoostToolset>
-    <BoostToolset Condition="'$(BoostToolset)' == 'v141'"   >vc141</BoostToolset>
-    <BoostToolset Condition="'$(BoostToolset)' == 'v140'"   >vc140</BoostToolset>
-    <BoostToolset Condition="'$(BoostToolset)' == 'v140_xp'">vc140</BoostToolset>
-
-    <BoostTargetSubdir Condition="$(BoostVersion.StartsWith(1.7))">build</BoostTargetSubdir>
-    <BoostTargetSubdir Condition="'$(BoostTargetSubdir)' == ''">build\native</BoostTargetSubdir>
-
-    <_BoostPackagesConfigType Condition="'$(ConfigurationType)' == 'StaticLibrary'">Headers</_BoostPackagesConfigType>
-    <_BoostPackagesConfigType Condition="'$(ConfigurationType)' == 'DynamicLibrary'">Libs</_BoostPackagesConfigType>
-    <_BoostPackagesConfigType Condition="'$(ConfigurationType)' == 'Application'">Libs</_BoostPackagesConfigType>
-
-    <_BoostTemplatePathPrefix>$(ZouDir).Templates\nuget\Cpp.Boost.$(_BoostPackagesConfigType)</_BoostTemplatePathPrefix>
-    
-    <_BoostOnlyPackagesConfigFile>$(IntDir)zou.boost.packages.config</_BoostOnlyPackagesConfigFile>
-
-    <_PackagesConfigChanged>false</_PackagesConfigChanged>
-    <_PackagesConfigExists>false</_PackagesConfigExists>
-    <_PackagesConfigExists Condition="Exists($(PackagesConfigFile))">true</_PackagesConfigExists>
-  </PropertyGroup>
+<Project InitialTargets="_BoostCheckVersions">
 
   <!-- Abort if actual version bigger than zou version (probably a missing synchronization) -->
   <Target Name="_BoostCheckVersions">
@@ -61,15 +35,16 @@
       <_BoostVersionMatch Remove="@(_BoostVersionMatch)" />
     </ItemGroup>
   </Target>
-
-  <!-- Import standard nuget boost imports -->
-  <Import Project="$(_BoostTemplatePathPrefix).Imports.targets"/>
   
   <Target Name="_BoostCreateBoostOnlyPackagesConfig" Inputs="$(_BoostTemplatePathPrefix).packages.config" Outputs="$(_BoostOnlyPackagesConfigFile)">
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] _BoostCreateBoostOnlyPackagesConfig" />
+    
     <Copy SourceFiles="$(_BoostTemplatePathPrefix).packages.config" DestinationFiles="$(_BoostOnlyPackagesConfigFile)" />
   </Target>
 
   <Target Name="_BoostUpdateBoostOnlyPackagesConfig" DependsOnTargets="_BoostCreateBoostOnlyPackagesConfig" >
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] _BoostUpdateBoostOnlyPackagesConfig(_BoostOnlyPackagesConfigFile=$(_BoostOnlyPackagesConfigFile))" />
+    
     <!-- Update version -->
     <FileUpdate Files="$(_BoostOnlyPackagesConfigFile)"
                 Regex='^(?&lt;A&gt;\s*&lt;package\s+id="boost\S*"\s+version=")\S+(?&lt;Z&gt;"[^\r\n]+)'
@@ -86,10 +61,8 @@
                 IgnoreCase="true" />
   </Target>
   
-  <Target Name="_BoostUpdateExistingPackagesConfig"
-          DependsOnTargets="_BoostUpdateBoostOnlyPackagesConfig"
-          Inputs="$(_BoostOnlyPackagesConfigFile)"
-          Outputs="$(PackagesConfigFile)" >
+  <Target Name="_BoostUpdateExistingPackagesConfig" DependsOnTargets="_BoostUpdateBoostOnlyPackagesConfig" Inputs="$(_BoostOnlyPackagesConfigFile)" Outputs="$(PackagesConfigFile)" >
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] _BoostUpdateExistingPackagesConfig" />
     
     <Copy Condition="!$(_PackagesConfigExists)" SourceFiles="$(_BoostOnlyPackagesConfigFile)" DestinationFiles="$(PackagesConfigFile)"/>
     <!-- Remove previous boost packages -->
@@ -104,14 +77,15 @@
   </Target>
   
   <Target Name="_BoostCheckPackagesConfigChanged" Condition="$(BundleIsGit)" DependsOnTargets="_BoostUpdateExistingPackagesConfig" >
-    
-    <Exec Command='git add "$(PackagesConfigFile)"' ContinueOnError='true' />
+    <Exec Command='git add "$(PackagesConfigFile)"' StandardOutputImportance="low" />
     <Exec Command='git diff-index --quiet HEAD "$(PackagesConfigFile)' ContinueOnError='true' IgnoreExitCode='true'>
       <Output TaskParameter="ExitCode" PropertyName="_GitDiffPackagesConfigExitCode" />
     </Exec>
     <PropertyGroup>
       <_PackagesConfigChanged Condition="'$(_GitDiffPackagesConfigExitCode)' != '0'">true</_PackagesConfigChanged>
     </PropertyGroup>
+    
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] _BoostCheckPackagesConfigChanged.End(_PackagesConfigChanged=$(_PackagesConfigChanged))" />
   </Target>
   
   <Target Name="_BoostCommitPackagesConfigChanged" Condition="$(BundleIsGit)" >
@@ -123,9 +97,10 @@
     
     <!-- Commit packages.config -->
     <PropertyGroup>
-      <_GitCommitMessage>zou-build: update boost $(BoostToolset) to v$(BoostVersion) in $(ModuleRelativeProjectDir)$(PackagesConfigFile)</_GitCommitMessage>
+      <_GitCommitMessage>zou-build: update boost $(BoostToolset) to v$(BoostVersion) in $(BundleRelativeProjectDir)$(PackagesConfigFile)</_GitCommitMessage>
     </PropertyGroup>
-    <Exec Command='git commit "-m$(_GitCommitMessage)" "$(PackagesConfigFile)"' ContinueOnError='true' />
+    <Message Condition="'$(_PackagesConfigChanged)' == 'true'" Importance="high" Text="$(Cyan)$(_GitCommitMessage)$(NC)" />
+    <Exec Command='git commit "-m$(_GitCommitMessage)" "$(PackagesConfigFile)"' StandardOutputImportance="low" />
   </Target>
 
   <!--
@@ -146,13 +121,5 @@
 
   <Target Name="BoostClean" AfterTargets="Clean">
     <Delete Files="$(_BoostOnlyPackagesConfigFile)" />
-  </Target>
-
-  <Target Name="_CppBoostTrace" Condition="'$(ZouTrace)' == 'true'">
-    <Message Importance="high" Text="PlatformToolset         = $(PlatformToolset)" />
-    <Message Importance="high" Text="ConfigurationType       = $(ConfigurationType)" />
-    <Message Importance="high" Text="BoostVersion            = $(BoostVersion)" />
-    <Message Importance="high" Text="BoostToolset            = $(BoostToolset)" />
-    <Message Importance="high" Text="BoostPackagesConfigType = $(_BoostPackagesConfigType)" />
   </Target>
 </Project>

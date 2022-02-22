@@ -9,7 +9,7 @@ Import this script at the end of a C++ project (.vcxporj)
  
 Summary:
   + packages.config visibility in VS
-  + BoostEnabled
+  + BoostUpdate
   # Cpp.Boost.targets
   # Cpp.Vld.targets
   # Zou.Cpp.Base.targets
@@ -17,7 +17,7 @@ Summary:
     # ImportFile.targets
 
  -->
-<Project>
+<Project TreatAsLocalProperty="BoostUpdate">
 
   <!-- Ensure packages.config appears in VS solution explorer -->
   <ItemGroup Condition="'$(ConfigurationType)' == 'StaticLibrary' Or '$(ConfigurationType)' == 'DynamicLibrary' Or '$(ConfigurationType)' == 'Application'">
@@ -26,11 +26,14 @@ Summary:
     </None>
   </ItemGroup>
 
-  <!-- Enable boost -->
+  <!-- Import standard nuget boost imports -->
+  <Import Project="Cpp.Boost.props" Condition="'$(BoostToolset)' == '' And ('$(ConfigurationType)' == 'StaticLibrary' Or '$(ConfigurationType)' == 'DynamicLibrary' Or '$(ConfigurationType)' == 'Application')"/>
+
+  <!-- Enable boost update -->
   <PropertyGroup>
-    <BoostEnabled Condition="'$(BoostEnabled)' == ''">true</BoostEnabled>
+    <BoostUpdate Condition="'$(BoostUpdate)' == ''">false</BoostUpdate>
   </PropertyGroup>
-  <Import Project="Cpp.Boost.targets" Condition="'$(BoostEnabled)' == 'true' And ('$(ConfigurationType)' == 'StaticLibrary' Or '$(ConfigurationType)' == 'DynamicLibrary' Or '$(ConfigurationType)' == 'Application')"/>
+  <Import Project="Cpp.Boost.targets" Condition="'$(BoostUpdate)' == 'true' And ('$(ConfigurationType)' == 'StaticLibrary' Or '$(ConfigurationType)' == 'DynamicLibrary' Or '$(ConfigurationType)' == 'Application')"/>
 
   <!-- Optional VLD -->
   <Import Project="Cpp.Vld.targets" Condition="'$(EnableVLD)' == 'true' And ('$(ConfigurationType)' == 'Application' Or '$(ConfigurationType)' == 'DynamicLibrary')"/>
