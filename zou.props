@@ -112,12 +112,21 @@
   <PropertyGroup>
     <!-- project/zou.cfg/ -->
     <ZouProjectDir Condition="'$(ZouProjectDir)' == ''">$(MSBuildProjectDirectory)$(V)$(ZouCfg)</ZouProjectDir>
-    <BundleRelativeProjectDir>$([MSBuild]::MakeRelative($(BundleDir), $(MSBuildProjectDirectory)/))</BundleRelativeProjectDir>
-    <BundleRelativeProjectName>$([MSBuild]::MakeRelative($(BundleDir), $(MSBuildProjectDirectory)/$(MSBuildProjectName)))</BundleRelativeProjectName>
-    <BundleRelativeProjectPath>$([MSBuild]::MakeRelative($(BundleDir), $(MSBuildProjectDirectory)/$(MSBuildProjectFile)))</BundleRelativeProjectPath>
-    <ModuleRelativeProjectDir>$([MSBuild]::MakeRelative($(ModuleDir), $(MSBuildProjectDirectory)/))</ModuleRelativeProjectDir>
-    <ModuleRelativeProjectName>$([MSBuild]::MakeRelative($(ModuleDir), $(MSBuildProjectDirectory)/$(MSBuildProjectName)))</ModuleRelativeProjectName>
-    <ModuleRelativeProjectPath>$([MSBuild]::MakeRelative($(ModuleDir), $(MSBuildProjectDirectory)/$(MSBuildProjectFile)))</ModuleRelativeProjectPath>
+    
+    <BundleRelativeProjectDir>$([MSBuild]::MakeRelative('$(BundleDir)', '$(MSBuildProjectDirectory)'))</BundleRelativeProjectDir>
+    <BundleRelativeProjectDir Condition="'$(BundleRelativeProjectDir)' == '.'" />
+    <BundleRelativeProjectDir Condition="'$(BundleRelativeProjectDir)' != '.'">$([MSBuild]::EnsureTrailingSlash('$(BundleRelativeProjectDir)'))</BundleRelativeProjectDir>
+
+    <BundleRelativeProjectName>$(BundleRelativeProjectDir)$(MSBuildProjectName)))</BundleRelativeProjectName>
+    <BundleRelativeProjectPath>$(BundleRelativeProjectDir)$(MSBuildProjectFile)))</BundleRelativeProjectPath>
+    
+    <ModuleRelativeProjectDir>$([MSBuild]::MakeRelative('$(ModuleDir)', '$(MSBuildProjectDirectory)'))</ModuleRelativeProjectDir>
+    <ModuleRelativeProjectDir Condition="'$(ModuleRelativeProjectDir)' == '.'" />
+    <ModuleRelativeProjectDir Condition="'$(ModuleRelativeProjectDir)' != '.'">$([MSBuild]::EnsureTrailingSlash('$(ModuleRelativeProjectDir)'))</ModuleRelativeProjectDir>
+    
+    <ModuleRelativeProjectName>$(ModuleRelativeProjectDir)$(MSBuildProjectName)))</ModuleRelativeProjectName>
+    <ModuleRelativeProjectPath>$(ModuleRelativeProjectDir)$(MSBuildProjectFile)))</ModuleRelativeProjectPath>
+    
     <ProjectId>$(BundleRelativeProjectName)</ProjectId>
   </PropertyGroup>
 
