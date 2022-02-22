@@ -41,9 +41,10 @@ echo.
 echo [96m 1) zou      agent only (     .msbuildproj)
 echo [96m 2) zou pack agent only (.pack.msbuildproj)
 echo.
-echo [92mDebug only options:
+echo [92mAdvanced options:
 echo [37m    -v             [92m display zou debug info
 echo [37m    -#             [92m display %_zouCmd% script internal variables
+echo [37m       --boost     [92m update [37mboost[92m nuget packages
 echo [37m       --bl        [92m create build log ([37m.binlog[92m)
 echo [37m       --pp        [92m create preprocessed XML (does not build)
 echo.
@@ -192,6 +193,10 @@ if /i '%_arg%' == '--rm' (
   set _rome=true
   goto :Parse
 )
+if /i '%_arg%' == '--boost' (
+  set _boost=true
+  goto :Parse
+)
 if /i '%_arg%' == '--bl' (
   set _binlog=true
   goto :Parse
@@ -247,13 +252,14 @@ if '!_anyCpu!' == 'true' (
   if '!_platforms!' == '' (set _platforms=!_anyCpu!) else (set _platforms=!_platforms! !_anyCpu!)
 )
 
+rem Disable multi-processor usage when updating boost
+if /i '%_boost%' == 'true' set _cpuCount=1
+
 rem create options
 set _opts=--nologo -v:m -nr:false
-if '%_cpuCount%'   == '0'   (set _opts=%_opts% -m) else (set _opts=%_opts% -m:%_cpuCount%)
-if '%_binlog%'     == 'true' set _opts=%_opts% -bl:%_projDir%%_projName%.binlog
-if '%_binlog%'     == 'true' set _opts=%_opts% -bl:%_projDir%%_projName%.binlog
-if '%_preprocess%' == 'true' set _opts=%_opts% -pp:%_projDir%%_projName%.pp.xml
-
+if /i '%_cpuCount%'   == '0'   (set _opts=%_opts% -m) else (set _opts=%_opts% -m:%_cpuCount%)
+if /i '%_binlog%'     == 'true' set _opts=%_opts% -bl:%_projDir%%_projName%.binlog
+if /i '%_preprocess%' == 'true' set _opts=%_opts% -pp:%_projDir%%_projName%.pp.xml
 
 rem create properties
 set _props=MaxCpuCount=%_cpuCount%
@@ -265,6 +271,7 @@ if '%_crossBuild%' neq '' set _props=%_props%;CrossBuild=%_crossBuild%
 if '%_rome%'       neq '' set _props=%_props%;BuildRome=%_rome%
 if '%_verbose%'    neq '' set _props=%_props%;RedistDebug=%_verbose%;ZouDebug=%_verbose%
 if '%_pkgDir%'     neq '' set _props=%_props%;PkgDir=%_pkgDir%
+if '%_boost%'      neq '' set _props=%_props%;BoostUpdate=%_boost%
 
 rem create msbuild command
 if /i '%_projExt%' == '.csproj' (set command=dotnet build) else (set command=msbuild)
@@ -281,6 +288,9 @@ if '%_debug%' == 'true' (
   echo [33m[%_zouCmd%][90m _noPlatform = !_noPlatform![0m
   echo [33m[%_zouCmd%][90m _anyCpu     = %_anyCpu%[0m
   echo [33m[%_zouCmd%][90m _byRuntime  = !_byRuntime![0m
+  echo [33m[%_zouCmd%][90m _boost      = %_boost%[0m
+  echo [33m[%_zouCmd%][90m _binlog     = %_binlog%[0m
+  echo [33m[%_zouCmd%][90m _preprocess = %_preprocess%[0m
   echo [33m[%_zouCmd%][90m _args       = %_args%[0m
   echo [33m[%_zouCmd%][90m command     = %command%[0m
   exit /b
