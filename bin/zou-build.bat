@@ -252,9 +252,6 @@ if '!_anyCpu!' == 'true' (
   if '!_platforms!' == '' (set _platforms=!_anyCpu!) else (set _platforms=!_platforms! !_anyCpu!)
 )
 
-rem Disable multi-processor usage when updating boost
-if /i '%_boost%' == 'true' set _cpuCount=1
-
 rem create options
 set _opts=--nologo -v:m -nr:false
 if /i '%_cpuCount%'   == '0'   (set _opts=%_opts% -m) else (set _opts=%_opts% -m:%_cpuCount%)
