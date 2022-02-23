@@ -17,7 +17,7 @@ Summary:
     # ImportFile.targets
 
  -->
-<Project TreatAsLocalProperty="BoostUpdate">
+<Project TreatAsLocalProperty="BoostUpdate;DoNotUseBoost">
 
   <!-- Ensure packages.config appears in VS solution explorer -->
   <ItemGroup Condition="'$(ConfigurationType)' == 'StaticLibrary' Or '$(ConfigurationType)' == 'DynamicLibrary' Or '$(ConfigurationType)' == 'Application'">
@@ -27,7 +27,7 @@ Summary:
   </ItemGroup>
 
   <!-- Import standard nuget boost imports -->
-  <Import Project="Cpp.Boost.props" Condition="'$(BoostToolset)' == '' And ('$(ConfigurationType)' == 'StaticLibrary' Or '$(ConfigurationType)' == 'DynamicLibrary' Or '$(ConfigurationType)' == 'Application')"/>
+  <Import Project="Cpp.Boost.props" Condition="'$(DoNotUseBoost)' != 'true' And '$(BoostToolset)' == '' And ('$(ConfigurationType)' == 'StaticLibrary' Or '$(ConfigurationType)' == 'DynamicLibrary' Or '$(ConfigurationType)' == 'Application')"/>
 
   <!-- Enable boost update -->
   <PropertyGroup>
