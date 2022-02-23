@@ -41,7 +41,8 @@
           StandardOutputImportance='low' >
       <Output TaskParameter="ExitCode" PropertyName="GoGenerateExitCode" />
     </Exec>
-    <Message Condition="'$(GoGenerateExitCode)' == '0'" Importance="high" Text="$(ProjectName) -> %(TargetPath.Identity)" />
+    <!--<LogItems Items="@(TargetPath)" Title="TargetPath" AllMetadata="true" />-->
+    <Message Condition="'$(GoGenerateExitCode)' == '0'" Importance="high" Text="$(ProjectName) -> %(TargetPath.RootDir)%(Directory)%(RecursiveDir)%(FileName)*" />
   </Target>
 
   <Target Name="GoClean" AfterTargets="Clean">
