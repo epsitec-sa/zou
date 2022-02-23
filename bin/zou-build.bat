@@ -223,7 +223,7 @@ if '%_project%' == '' (
   goto :Error
 )
 if not exist "%_project%" (
-  set _error=_project not found: [97m%_project%[91m.
+  set _error=project not found: [97m%_project%[91m.
   goto :Error
 )
 if not '!_platforms!' == '' if not '!_noPlatform!' == '' (
