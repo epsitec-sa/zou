@@ -35,7 +35,9 @@ namespace Zou.Tasks
         Js,
         MsBuild,
         Sql,
-        DataBase
+        DataBase,
+        Go,
+        Zou
     }
     public enum Platform
     {
@@ -292,22 +294,24 @@ namespace Zou.Tasks
 
         private static readonly Dictionary<string, ProjectType> ProjectExtensionToType = new Dictionary<string, ProjectType>()
         {
-            { ".sln",         ProjectType.Solution },
-            { ".metaproj",    ProjectType.MetaProj },
-            { ".csproj",      ProjectType.CSharp },
-            { ".vcxproj",     ProjectType.Cpp },
-            { ".pssproj",     ProjectType.PowerShell },
-            { ".fsproj",      ProjectType.FSharp },
+            { ".sln",         ProjectType.Solution    },
+            { ".metaproj",    ProjectType.MetaProj    },
+            { ".csproj",      ProjectType.CSharp      },
+            { ".fsproj",      ProjectType.FSharp      },
+            { ".vcxproj",     ProjectType.Cpp         },
+            { ".goproj",      ProjectType.Go          },
+            { ".jsproj",      ProjectType.Js          },
+            { ".njsproj",     ProjectType.NodeJs      },
+            { ".pssproj",     ProjectType.PowerShell  },
             { ".vbproj",      ProjectType.VisualBasic },
-            { ".modelproj",   ProjectType.Dependency },
-            { ".dcproj",      ProjectType.Docker },
-            { ".shproj",      ProjectType.Shared },
-            { ".ccproj",      ProjectType.Cloud },
-            { ".njsproj",     ProjectType.NodeJs },
-            { ".jsproj",      ProjectType.Js },
-            { ".msbuildproj", ProjectType.MsBuild },
-            { ".sqlproj",     ProjectType.Sql },
-            { ".dbproj",      ProjectType.DataBase },
+            { ".modelproj",   ProjectType.Dependency  },
+            { ".dcproj",      ProjectType.Docker      },
+            { ".shproj",      ProjectType.Shared      },
+            { ".ccproj",      ProjectType.Cloud       },
+            { ".msbuildproj", ProjectType.MsBuild     },
+            { ".sqlproj",     ProjectType.Sql         },
+            { ".dbproj",      ProjectType.DataBase    },
+            { ".zouproj",     ProjectType.Zou         },
         };
     }
 }
