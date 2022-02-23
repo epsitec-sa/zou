@@ -5,6 +5,11 @@
     <GoResource Include="$(GoResourceDir)**\*" />
     <TargetPath Condition="'@(TargetName->Count())'!='0'" Include="@(TargetName->'$(TargetDir)%(Identity)$(TargetExt)')" />
     <TargetPath Condition="'@(TargetName->Count())'=='0'" Include="$(TargetPath)" />
+
+    <!-- Additional environment for go generate -->
+    <GoBuildEnv Include="CONFIGURATION=$(Configuration)" />
+    <GoBuildEnv Include="TARGETPATH=$(TargetPath)" />
+    <GoBuildEnv Include="BUILDMODE=$(BuildMode)" />
   </ItemGroup>
   
   <Target Name="GoInitSingleTargetPath">
@@ -32,7 +37,7 @@
     <!--<LogItems Items="OUTDIR=$(OutDir);TARGETPATH=$(TargetPath);@(GoBuildEnv)" />-->
     <Exec Command="go generate"
           WorkingDirectory="$(ProjectDir)" 
-          EnvironmentVariables="@(GoBuildEnv);TARGETPATH=$(TargetPath);CONFIGURATION=$(Configuration)"
+          EnvironmentVariables="@(GoBuildEnv)"
           StandardOutputImportance='low' >
       <Output TaskParameter="ExitCode" PropertyName="GoGenerateExitCode" />
     </Exec>
