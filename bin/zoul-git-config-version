@@ -170,6 +170,32 @@ version_update_rc_mmop()
 
   ised "$file" "$script"
 }
+# Update Version tags in Darwin *.plist
+#
+# info.plist format:
+# ...
+# 	<key>CFBundleShortVersionString</key>
+# 	<string>1.0</string>
+# 	<key>CFBundleVersion</key>
+# 	<string>1</string>
+# ...
+version_update_plist()
+{
+  local file=$1 varray=( ${!2} ) major minor patch yyww=$(date +%y%V)
+  major=${varray[1]}
+  minor=${varray[2]}
+  patch=${varray[3]}
+
+  local script="\
+  /[[:blank:]]*<key>CFBundleShortVersionString/\
+  {n;s/([[:blank:]]+<string>)[^a-zA-Z\<]+(.*)$/\1$major.$minor.$patch\2/;};\
+  /[[:blank:]]*<key>CFBundleVersion/\
+  {n;s/([[:blank:]]+<string>)[^a-zA-Z\<]+(.*)$/\1$major.$minor.$patch\2/;}"
+
+  # io_trace "version_update_plist -- $(print_vars file varray[@] major minor patch)"
+  
+  ised "$file" "$script"
+}
 version_update_custom()
 {
   local techver=$1 varray=( ${!2} ) updater="${3:-$PWD/update-version}"
@@ -305,6 +331,7 @@ declare -A versionFilters=( \
   [package-json]='\"version\":[[:blank:]]*\"[0-9]' \
   [rc]='(FILEVERSION[[:blank:]]+[0-9]|\"FileVersion\",[[:blank:]]*\"[0-9])' \
   [rc-mmop]='(FILEVERSION[[:blank:]]+[0-9]|\"FileVersion\",[[:blank:]]*\"[0-9])' \
+  [plist]='(<key>CFBundleShortVersionString</key>)' \
 )
 declare -A versionAutoSpecs=( \
   [version-props]='Version.props:*/Version.props' \
@@ -312,6 +339,7 @@ declare -A versionAutoSpecs=( \
   [csproj]='*.csproj' \
   [package-json]='package.json:*/package.json' \
   [rc]='*.rc' \
+  [plist]='*.plist' \
 )
 version_config_auto()
 {
