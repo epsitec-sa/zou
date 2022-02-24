@@ -18,6 +18,8 @@ Summary:
     <TargetDir              Condition="'$(TargetDir)'              == ''">$(OutDir)</TargetDir>
     <OutputPath             Condition="'$(OutputPath)'             == ''">$(OutDir)</OutputPath>
     <IntermediateOutputPath Condition="'$(IntermediateOutputPath)' == ''">$(IntDir)</IntermediateOutputPath>
+
+    <ProjectRelativeTargetDir>$([MSBuild]::MakeRelative('$(ProjectDir)', '$(TargetDir)'))</ProjectRelativeTargetDir>
   </PropertyGroup>
 
   <!-- Forward properties specified on the command line -->
@@ -40,15 +42,16 @@ Summary:
   <Target Name="TraceAgentTargets" Condition="'$(ZouTrace)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
     <Message Importance="high" Text="zou/Agent.epilog.props [$(MSBuildProjectFile)]" />
     <Message Importance="high" Text="----------------------" />
-    <Message Importance="high" Text="ZouAgentType           = $(ZouAgentType)" />
-    <Message Importance="high" Text="Configuration          = $(Configuration)" />
-    <Message Importance="high" Text="Platform               = $(Platform)" />
-    <Message Importance="high" Text="PlatformToolset        = $(PlatformToolset)" />
-    <Message Importance="high" Text="OutDir                 = $(OutDir)" />
-    <Message Importance="high" Text="TargetDir              = $(TargetDir)" />
-    <Message Importance="high" Text="OutputPath             = $(OutputPath)" />
-    <Message Importance="high" Text="IntDir                 = $(IntDir)" />
-    <Message Importance="high" Text="IntermediateOutputPath = $(IntermediateOutputPath)" />
+    <Message Importance="high" Text="ZouAgentType             = $(ZouAgentType)" />
+    <Message Importance="high" Text="Configuration            = $(Configuration)" />
+    <Message Importance="high" Text="Platform                 = $(Platform)" />
+    <Message Importance="high" Text="PlatformToolset          = $(PlatformToolset)" />
+    <Message Importance="high" Text="OutDir                   = $(OutDir)" />
+    <Message Importance="high" Text="TargetDir                = $(TargetDir)" />
+    <Message Importance="high" Text="OutputPath               = $(OutputPath)" />
+    <Message Importance="high" Text="IntDir                   = $(IntDir)" />
+    <Message Importance="high" Text="IntermediateOutputPath   = $(IntermediateOutputPath)" />
+    <Message Importance="high" Text="ProjectRelativeTargetDir = $(ProjectRelativeTargetDir)" />
     <Message Importance="high" Text=" " />
   </Target>
 
