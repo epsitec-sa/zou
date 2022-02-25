@@ -295,7 +295,7 @@ if '%_debug%' == 'true' (
 
 rem ################## _clean
 if '%_clean%' == 'true' (
-  for %%x in (x86 x64 Win32 bin pkg %pkgDir%) do (
+  for %%x in (x86 x64 Win32 bin obj pkg %pkgDir%) do (
     rem avoid to delete root folder
     set dirName=%%x
     set _firstChar=!dirName:~0,1!
@@ -309,12 +309,21 @@ if '%_clean%' == 'true' (
       )
     )
   )
-  for %%p in (%_platforms%) do (
-    echo [33m[%_zouCmd%] [96mCleaning %%p...[0m
-    echo [33m[%_zouCmd%] [90m%command% -p:Platform=%%p -t:Clean %_args%[0m
+  if '!_platforms!' == '' (
+    echo [33m[%_zouCmd%] [96mCleaning...[0m
+    echo [33m[%_zouCmd%] [90m%command% -t:Clean %_args%[0m
     if '%_dryRun%' == '' (
-      %command% -p:Platform=%%p -t:Clean %_args%
+      %command% -t:Clean %_args%
       if !errorlevel! neq 0 exit /b !errorlevel!
+    )
+  ) else (
+    for %%p in (%_platforms%) do (
+      echo [33m[%_zouCmd%] [96mCleaning %%p...[0m
+      echo [33m[%_zouCmd%] [90m%command% -p:Platform=%%p -t:Clean %_args%[0m
+      if '%_dryRun%' == '' (
+        %command% -p:Platform=%%p -t:Clean %_args%
+        if !errorlevel! neq 0 exit /b !errorlevel!
+      )
     )
   )
 )
