@@ -188,9 +188,9 @@ version_update_plist()
 
   local script="\
   /[[:blank:]]*<key>CFBundleShortVersionString/\
-  {n;s/([[:blank:]]+<string>)[^a-zA-Z\<]+(.*)$/\1$major.$minor.$patch\2/;};\
+  {n;s/([[:blank:]]+<string>)[^\<]+(.*)$/\1$major.$minor.$patch\2/;};\
   /[[:blank:]]*<key>CFBundleVersion/\
-  {n;s/([[:blank:]]+<string>)[^a-zA-Z\<]+(.*)$/\1$major.$minor.$patch\2/;}"
+  {n;s/([[:blank:]]+<string>)[^\<]+(.*)$/\1$major.$minor.$patch\2/;}"
 
   # io_trace "version_update_plist -- $(print_vars file varray[@] major minor patch)"
   
