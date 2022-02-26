@@ -33,7 +33,19 @@
   <!-- Various -->
   <Import Project="zou.errors.props" />
   <Import Project="zou.colors.props" />
-  <Import Project="Version.props" Condition="'$(Version)' == ''" />
+  
+  <!-- ZouVersion -->
+  <PropertyGroup>
+    <!-- Save actual project version -->
+    <ZouProjectVersion>$(Version)</ZouProjectVersion>
+  </PropertyGroup>
+  <Import Project="Version.props" />
+  <PropertyGroup>
+    <ZouVersion>$(Version)</ZouVersion>
+    <!-- Restore project version -->
+    <Version>$(ZouProjectVersion)</Version>
+    <ZouProjectVersion />
+  </PropertyGroup>
 
   <PropertyGroup>
     <!-- Do not trace during restore (too much output) -->
@@ -41,7 +53,6 @@
     <ZouDebug    Condition="'$(ZouDebug)'    == '' Or '$(MSBuildRestoreSessionId)' != ''">false</ZouDebug>
     <RedistDebug Condition="'$(RedistDebug)' == '' Or '$(MSBuildRestoreSessionId)' != ''">false</RedistDebug>
     
-    <ZouVersion>$(Version)</ZouVersion>
     <NETSdkVersion>$([System.Text.RegularExpressions.Regex]::Match($(MSBuildToolsPath), '(?&lt;=dotnet[\\/]sdk[\\/])\d+\.\d+\.\d+'))</NETSdkVersion>
     <!-- Configuration sub-directory -->
     <ZouCfg>zou.cfg$(V)</ZouCfg>
@@ -256,6 +267,7 @@
     <Message Importance="normal" Text="+ V                          = $(V)" />
     <Message Importance="normal" Text="+ Nul                        = $(Nul)" />
     <Message Importance="normal" Text="+ ZouOs                      = $(ZouOs)" />
+    <Message Importance="normal" Text="+ ZouVersion                 = $(ZouVersion)" />
     <Message Importance="normal" Text="+ ZouExeExtension            = $(ZouExeExtension)" />
     <Message Importance="normal" Text="+ ZouName                    = $(ZouName)" />
     <Message Importance="normal" Text="+ ZouDir                     = $(ZouDir)" />
