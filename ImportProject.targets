@@ -130,7 +130,7 @@
       </MSBuildProject>
     </ItemGroup>
 
-    <!--<LogItems Items="@(MSBuildProject)" Title="UpdateMSBuildProjects.MSBuildProject" />
+    <!--<LogItems Items="@(MSBuildProject)" Title="UpdateMSBuildProjects.MSBuildProject" AllMetadata="true"/>
     <Message Importance="high" Text=" " />-->
   </Target>
 
@@ -156,11 +156,11 @@
     <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] ImportProject" />
 
     <Message Condition="'%(MSBuildProject.BundleRelativeDstDir)' == '' And '%(RuntimeIdentifier)' == '' And '$(Platform)' == ''" Importance="high" Text="$(L1b)[$(Configuration)|custom] $(T3)%(MSBuildProject.BundleRelativeSrcDir)%(RecursiveDir)$(T2)%(FileName)%(Extension)$(XC)" />
-    <Message Condition="'%(MSBuildProject.BundleRelativeDstDir)' != '' And '%(RuntimeIdentifier)' == '' And '$(Platform)' == ''" Importance="high" Text="$(L1b)[$(Configuration)|custom] $(T3)%(MSBuildProject.BundleRelativeSrcDir)%(RecursiveDir)$(T2)%(FileName)%(Extension) $(T3)-> %(MSBuildProject.BundleRelativeDstDir)%(RecursiveDir)$(XC)" />
+    <Message Condition="'%(MSBuildProject.BundleRelativeDstDir)' != '' And '%(RuntimeIdentifier)' == '' And '$(Platform)' == ''" Importance="high" Text="$(L1b)[$(Configuration)|custom] $(T3)%(MSBuildProject.BundleRelativeSrcDir)%(RecursiveDir)$(T2)%(FileName)%(Extension) $(T3)-> %(MSBuildProject.BundleRelativeDstDir)%(RecursiveDir)%(RedistFolder)$(XC)" />
     <Message Condition="'%(MSBuildProject.BundleRelativeDstDir)' == '' And '%(RuntimeIdentifier)' == '' And '$(Platform)' != ''" Importance="high" Text="$(L1b)[$(Configuration)|$(Platform)] $(T3)%(MSBuildProject.BundleRelativeSrcDir)%(RecursiveDir)$(T2)%(FileName)%(Extension)$(XC)" />
-    <Message Condition="'%(MSBuildProject.BundleRelativeDstDir)' != '' And '%(RuntimeIdentifier)' == '' And '$(Platform)' != ''" Importance="high" Text="$(L1b)[$(Configuration)|$(Platform)] $(T3)%(MSBuildProject.BundleRelativeSrcDir)%(RecursiveDir)$(T2)%(FileName)%(Extension) $(T3)-> %(MSBuildProject.BundleRelativeDstDir)%(RecursiveDir)$(XC)" />
+    <Message Condition="'%(MSBuildProject.BundleRelativeDstDir)' != '' And '%(RuntimeIdentifier)' == '' And '$(Platform)' != ''" Importance="high" Text="$(L1b)[$(Configuration)|$(Platform)] $(T3)%(MSBuildProject.BundleRelativeSrcDir)%(RecursiveDir)$(T2)%(FileName)%(Extension) $(T3)-> %(MSBuildProject.BundleRelativeDstDir)%(RecursiveDir)%(RedistFolder)$(XC)" />
     <Message Condition="'%(MSBuildProject.BundleRelativeDstDir)' == '' And '%(RuntimeIdentifier)' != ''"                         Importance="high" Text="$(L1b)[$(Configuration)|%(RuntimeIdentifier)] $(T3)%(MSBuildProject.BundleRelativeSrcDir)%(RecursiveDir)$(T2)%(FileName)%(Extension)$(XC)" />
-    <Message Condition="'%(MSBuildProject.BundleRelativeDstDir)' != '' And '%(RuntimeIdentifier)' != ''"                         Importance="high" Text="$(L1b)[$(Configuration)|%(RuntimeIdentifier)] $(T3)%(MSBuildProject.BundleRelativeSrcDir)%(RecursiveDir)$(T2)%(FileName)%(Extension) $(T3)-> %(MSBuildProject.BundleRelativeDstDir)%(RecursiveDir)$(XC)" />
+    <Message Condition="'%(MSBuildProject.BundleRelativeDstDir)' != '' And '%(RuntimeIdentifier)' != ''"                         Importance="high" Text="$(L1b)[$(Configuration)|%(RuntimeIdentifier)] $(T3)%(MSBuildProject.BundleRelativeSrcDir)%(RecursiveDir)$(T2)%(FileName)%(Extension) $(T3)-> %(MSBuildProject.BundleRelativeDstDir)%(RecursiveDir)%(RedistFolder)$(XC)" />
 
     <!-- Restore nuget packages for solution... -->
     <Exec Condition="'%(MSBuildProject.Extension)' == '.sln'"
