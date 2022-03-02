@@ -9,7 +9,7 @@ for %%x in (bin obj pkg) do (
 rem Build debug version
 rem The debug version of Tasks.dll has precedence over the release versions
 rem because of the fallback implemented in zou.Tasks.props
-dotnet build Tasks.csproj -c Debug
+dotnet build -nr:false Tasks.csproj -c Debug
 
 rem Clean actual tasks
 rmdir /S /Q %~dp0\..\binz\tasks >nul 2>&1
