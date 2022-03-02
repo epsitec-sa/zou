@@ -14,30 +14,31 @@ using Microsoft.Build.Utilities;
 
 namespace Zou.Tasks
 {
+    /// <summary>
+    /// set MSBuildEmitSolution=1<br/>
+    /// msbuild myapp.sln -> myapp.sln.metaproj
+    /// </summary>
     public enum ProjectType
     {
-        Solution,
-        /// <summary>
-        /// set MSBuildEmitSolution=1
-        /// msbuild myapp.sln -> myapp.sln.metaproj
-        /// </summary>
-        MetaProj,
         CSharp,
+        Cloud,
         Cpp,
-        PowerShell,
-        FSharp,
-        VisualBasic,
+        DataBase,
         Dependency,
         Docker,
-        Shared,
-        Cloud,
-        NodeJs,
-        Js,
-        MsBuild,
-        Sql,
-        DataBase,
+        FSharp,
         Go,
-        Zou
+        Goblin,
+        Js,
+        MetaProj,
+        MsBuild,
+        NodeJs,
+        PowerShell,
+        Shared,
+        Solution,
+        Sql,
+        VisualBasic,
+        Zou,
     }
     public enum Platform
     {
@@ -294,23 +295,24 @@ namespace Zou.Tasks
 
         private static readonly Dictionary<string, ProjectType> ProjectExtensionToType = new Dictionary<string, ProjectType>()
         {
-            { ".sln",         ProjectType.Solution    },
-            { ".metaproj",    ProjectType.MetaProj    },
             { ".csproj",      ProjectType.CSharp      },
-            { ".fsproj",      ProjectType.FSharp      },
+            { ".ccproj",      ProjectType.Cloud       },
             { ".vcxproj",     ProjectType.Cpp         },
-            { ".goproj",      ProjectType.Go          },
-            { ".jsproj",      ProjectType.Js          },
-            { ".njsproj",     ProjectType.NodeJs      },
-            { ".pssproj",     ProjectType.PowerShell  },
-            { ".vbproj",      ProjectType.VisualBasic },
+            { ".dbproj",      ProjectType.DataBase    },
             { ".modelproj",   ProjectType.Dependency  },
             { ".dcproj",      ProjectType.Docker      },
-            { ".shproj",      ProjectType.Shared      },
-            { ".ccproj",      ProjectType.Cloud       },
+            { ".fsproj",      ProjectType.FSharp      },
+            { ".goproj",      ProjectType.Go          },
+            { ".goblinproj",  ProjectType.Goblin      },
+            { ".jsproj",      ProjectType.Js          },
+            { ".metaproj",    ProjectType.MetaProj    },
             { ".msbuildproj", ProjectType.MsBuild     },
+            { ".njsproj",     ProjectType.NodeJs      },
+            { ".pssproj",     ProjectType.PowerShell  },
+            { ".shproj",      ProjectType.Shared      },
+            { ".sln",         ProjectType.Solution    },
             { ".sqlproj",     ProjectType.Sql         },
-            { ".dbproj",      ProjectType.DataBase    },
+            { ".vbproj",      ProjectType.VisualBasic },
             { ".zouproj",     ProjectType.Zou         },
         };
     }
