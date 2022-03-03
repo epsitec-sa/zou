@@ -5,6 +5,10 @@
 
 Summary
 
+Input:
+  TargetName
+  BuildMode
+
 # Agent.prolog.props
   + Default targets (Build, Clean, Rebuild, PackFilter)
   + PlatformToolset, Configuration, IsDebug, IsRelease
@@ -25,6 +29,7 @@ Summary
 
 + GoSourceDir
 + GoResourceDir
+  TargetDir += BuildMode
 + TargetExt
 + TargetName
 + TargetExt
@@ -57,24 +62,29 @@ Summary
   <Import Project="Agent.epilog.props" />
 
   <PropertyGroup>
+    <TargetDir     Condition="'$(BuildMode)'  != '' And !$(ProjectRelativeTargetDir.Contains('$(BuildMode)'))">$([MSBuild]::EnsureTrailingSlash('$(TargetDir)$(BuildMode)'))</TargetDir>
+    <TargetName    Condition="'$(TargetName)' == ''">$(MSBuildProjectName)</TargetName>
+    <TargetExt     >$(ZouExeExtension)</TargetExt>
+    <TargetFileName>$(TargetName)$(TargetExt)</TargetFileName>
+    <TargetPath    >$(TargetDir)$(TargetFileName)</TargetPath>
+  </PropertyGroup>
+
+  <PropertyGroup>
     <GoSourceDir   Condition="'$(GoSourceDir)'   == ''">$(ProjectDir)</GoSourceDir>
     <GoResourceDir Condition="'$(GoResourceDir)' == ''">$(ProjectDir)resources\</GoResourceDir>
-    <TargetDir     Condition="'$(BuildMode)' != '' And !$(ProjectRelativeTargetDir.Contains('$(BuildMode)'))">$([MSBuild]::EnsureTrailingSlash('$(TargetDir)$(BuildMode)'))</TargetDir>
-    <TargetName    Condition="'$(TargetName)'    == ''">$(MSBuildProjectName)</TargetName>
-    <TargetExt     Condition="'$(TargetExt)'     == '' And $([MSBuild]::IsOsPlatform('Windows'))">.exe</TargetExt>
-    <TargetFileName>$(TargetName)$(TargetExt)</TargetFileName>
-    <TargetPath>$(TargetDir)$(TargetFileName)</TargetPath>
   </PropertyGroup>
 
   <Target Name="TraceGoAgent" Condition="'$(ZouDebug)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
     <Message Importance="high" Text="zou/Go.Agent.props [$(MSBuildProjectFile)]" />
     <Message Importance="high" Text="------------------" />
-    <Message Importance="high" Text="GoSourceDir    = $(GoSourceDir)" />
-    <Message Importance="high" Text="GoResourceDir  = $(GoResourceDir)" />
+    <Message Importance="high" Text="BuildMode      = $(BuildMode)" />
+    <Message Importance="high" Text="TargetDir      = $(TargetDir)" />
     <Message Importance="high" Text="TargetName     = $(TargetName)" />
     <Message Importance="high" Text="TargetExt      = $(TargetExt)" />
     <Message Importance="high" Text="TargetFileName = $(TargetFileName)" />
     <Message Importance="high" Text="TargetPath     = $(TargetPath)" />
+    <Message Importance="high" Text="GoSourceDir    = $(GoSourceDir)" />
+    <Message Importance="high" Text="GoResourceDir  = $(GoResourceDir)" />
     <Message Importance="high" Text=" " />
   </Target>
 </Project>
