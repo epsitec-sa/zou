@@ -54,7 +54,8 @@ Outputs
     <RuntimeOs Condition="$([MSBuild]::IsOsPlatform(Windows))">win</RuntimeOs>
     <RuntimeOs Condition="$([MSBuild]::IsOsPlatform(OSX))">osx</RuntimeOs>
     <RuntimeOs Condition="$([MSBuild]::IsOsPlatform(Linux))">linux</RuntimeOs>
-    <RuntimeFolder>$(RuntimeOs)-$(RuntimePlatform)</RuntimeFolder>
+    <RuntimeFolder Condition="'$(RuntimePlatform)' == ''">$(RuntimeOs)</RuntimeFolder>
+    <RuntimeFolder Condition="'$(RuntimePlatform)' != ''">$(RuntimeOs)-$(RuntimePlatform)</RuntimeFolder>
   </PropertyGroup>
   
   <!-- RuntimeOs items -->
@@ -62,17 +63,20 @@ Outputs
     <RuntimeOs Condition="$(BuildWin)" Include="win">
       <RuntimeIdentifier Condition=" $(RuntimeIdentifier.StartsWith('win'))">$(RuntimeIdentifier)</RuntimeIdentifier>
       <RuntimeIdentifier Condition="!$(RuntimeIdentifier.StartsWith('win')) And '$(RuntimePlatform)' != ''">$(WinRuntimePrefix)-$(RuntimePlatform)</RuntimeIdentifier>
-      <RuntimeFolder>win-$(RuntimePlatform)</RuntimeFolder>
+      <RuntimeFolder Condition="'$(RuntimePlatform)' == ''">win</RuntimeFolder>
+      <RuntimeFolder Condition="'$(RuntimePlatform)' != ''">win-$(RuntimePlatform)</RuntimeFolder>
     </RuntimeOs>
     <RuntimeOs Condition="$(BuildOsx)" Include="osx">
       <RuntimeIdentifier Condition=" $(RuntimeIdentifier.StartsWith('osx'))">$(RuntimeIdentifier)</RuntimeIdentifier>
       <RuntimeIdentifier Condition="!$(RuntimeIdentifier.StartsWith('osx')) And '$(RuntimePlatform)' != ''">$(OsxRuntimePrefix)-$(RuntimePlatform)</RuntimeIdentifier>
-      <RuntimeFolder>osx-$(RuntimePlatform)</RuntimeFolder>
+      <RuntimeFolder Condition="'$(RuntimePlatform)' == ''">osx</RuntimeFolder>
+      <RuntimeFolder Condition="'$(RuntimePlatform)' != ''">osx-$(RuntimePlatform)</RuntimeFolder>
     </RuntimeOs>
     <RuntimeOs Condition="$(BuildLinux)" Include="linux">
       <RuntimeIdentifier Condition=" $(RuntimeIdentifier.StartsWith('linux'))">$(RuntimeIdentifier)</RuntimeIdentifier>
       <RuntimeIdentifier Condition="!$(RuntimeIdentifier.StartsWith('linux')) And '$(RuntimePlatform)' != ''">$(LinuxRuntimePrefix)-$(RuntimePlatform)</RuntimeIdentifier>
-      <RuntimeFolder>linux-$(RuntimePlatform)</RuntimeFolder>
+      <RuntimeFolder Condition="'$(RuntimePlatform)' == ''">linux</RuntimeFolder>
+      <RuntimeFolder Condition="'$(RuntimePlatform)' != ''">linux-$(RuntimePlatform)</RuntimeFolder>
     </RuntimeOs>
   </ItemGroup>
 
@@ -86,13 +90,16 @@ Outputs
     <Message Importance="high" Text=" "                                    Condition="'$(ZouAgentType)' != ''" />
 
     <Message Importance="high" Text="PlatformTarget     = $(PlatformTarget)"     Condition="'$(PlatformTarget)'    != ''"/>
+    <Message Importance="high" Text="Platform           = $(Platform)"           Condition="'$(Platform)'          != ''"/>
     <Message Importance="high" Text="TargetFramework    = $(TargetFramework)"    Condition="'$(TargetFramework)'   != ''"/>
     <Message Importance="high" Text="TargetFrameworks   = $(TargetFrameworks)"   Condition="'$(TargetFrameworks)'  != ''"/>
     <Message Importance="high" Text="RuntimeOs          = $(RuntimeOs)"          Condition="'$(RuntimeOs)'         != ''" />
     <Message Importance="high" Text="RuntimePlatform    = $(RuntimePlatform)"    Condition="'$(RuntimePlatform)'   != ''" />
     <Message Importance="high" Text="RuntimeFolder      = $(RuntimeFolder)"      Condition="'$(RuntimeFolder)'     != ''" />
     <Message Importance="high" Text="RuntimeIdentifier  = $(RuntimeIdentifier)"  Condition="'$(RuntimeIdentifier)' != ''" />
-    
+    <Message Importance="high" Text="OutDir             = $(OutDir)" />
+    <Message Importance="high" Text="OutputPath         = $(OutputPath)" />
+
     <LogItems Items="@(RuntimeOs)" Title="@RuntimeOs" />
     <Message Importance="high"  Text=" " />
   </Target>
