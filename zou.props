@@ -172,18 +172,8 @@
     <PlatformToolsetSpecified Condition=" '$(PlatformToolset)' != '' And '$(PlatformToolsetSpecified)' == '' ">true</PlatformToolsetSpecified>
   </PropertyGroup>
 
-  <!-- ZouVersion -->
-  <PropertyGroup>
-    <!-- Save actual project version -->
-    <ZouProjectVersion>$(Version)</ZouProjectVersion>
-  </PropertyGroup>
-  <Import Project="Version.props" />
-  <PropertyGroup>
-    <ZouVersion>$(Version)</ZouVersion>
-    <!-- Restore project version -->
-    <Version>$(ZouProjectVersion)</Version>
-    <ZouProjectVersion />
-  </PropertyGroup>
+  <!-- Version -->
+  <Import Project="Version.props" Condition="'$(Version)' == ''" />
 
   <!-- zou custom tasks -->
   <Import Project="zou.Tasks.props"/>
@@ -259,6 +249,7 @@
     <Message Importance="high" Text="  RuntimeIdentifier          = $(RuntimeIdentifier)" />
     <Message Importance="high" Text="  TargetFrameworks           = $(TargetFrameworks)" />
     <Message Importance="high" Text="  RuntimeIdentifiers         = $(RuntimeIdentifiers)" />
+    <Message Importance="high" Text="+ Version                    = $(Version)" />
     <Message Importance="high" Text="+ NETSdkVersion              = $(NETSdkVersion)" />
     <Message Importance="high" Text="+ BundleId                   = $(BundleId)" />
     <Message Importance="high" Text="+ BundleName                 = $(BundleName)" />
@@ -271,8 +262,6 @@
     <Message Importance="high" Text="+ V                          = $(V)" />
     <Message Importance="high" Text="+ Nul                        = $(Nul)" />
     <Message Importance="high" Text="+ ZouOs                      = $(ZouOs)" />
-    <Message Importance="high" Text="+ Version                    = $(Version)" />
-    <Message Importance="high" Text="+ ZouVersion                 = $(ZouVersion)" />
     <Message Importance="high" Text="+ ZouExeExtension            = $(ZouExeExtension)" />
     <Message Importance="high" Text="+ ZouName                    = $(ZouName)" />
     <Message Importance="high" Text="+ ZouDir                     = $(ZouDir)" />
