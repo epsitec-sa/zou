@@ -1,0 +1,89 @@
+<!-- 
+Summary
+
+Input:
+  GoblinBundleDir
+  GoblinName
+  GoblinBuildId
+  TargetName
+
+# Agent.prolog.props
+  + Default targets (Build, Clean, Rebuild, PackFilter)
+  + PlatformToolset, Configuration, IsDebug, IsRelease
+  + Platform, RuntimePlatform
+  + CoreTargetFramework, FullTargetFramework
+  # hook.zou.build.props  
+
+# Com.WorkDir.props
+# Tmp.IntDir.props
+# Go.PkgDir.props
+# Go.OutDir.props
+# Tools.Go.props
+
+# Agent.epilog.props
+  + TargetDir, OutputPath, IntermediateOutputPath
+  # Forward.props
+  # [Microsoft.Cpp.targets] if ImportMicrosoftCppTargets
+
++ GoblinIntDir
++ GoblinOutDir
++ GoblinTargetPath
++ TargetName
++ TargetExt
++ TargetFileName
++ TargetPath
+
+-->
+<Project InitialTargets="TraceGoblinAgent">
+
+  <PropertyGroup>
+    <_PropertySheetDisplayName>[zou] Goblin Agent</_PropertySheetDisplayName>
+    <ZouAgentType>Goblin</ZouAgentType>
+  </PropertyGroup>
+
+  <Import Project="Agent.prolog.props" />
+
+  <ImportGroup Label="PropertySheets">
+    <Import Project="Com.WorkDir.props" />
+    <Import Project="Tmp.IntDir.props" />
+    <Import Project="Cs.PkgDir.props" />
+    <Import Project="Cs.OutDir.props" />
+  </ImportGroup>
+
+  <PropertyGroup>
+    <ImportMicrosoftCppTargets>false</ImportMicrosoftCppTargets>
+  </PropertyGroup>
+  
+  <Import Project="Agent.epilog.props" />
+
+  <PropertyGroup>
+    <TargetName Condition="'$(TargetName)' == ''">$(MSBuildProjectName)</TargetName>
+    <TargetExt     >$(ZouExeExtension)</TargetExt>
+    <TargetFileName>$(TargetName)$(TargetExt)</TargetFileName>
+    <TargetPath    >$(TargetDir)$(TargetFileName)</TargetPath>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <GoblinSourceDir  Condition="'$(GoblinSourceDir)'  == ''">$(GoblinBundleDir)lib\$(GoblinName)\</GoblinSourceDir>
+    <GoblinBuildId    Condition="'$(GoblinBuildId)'    == ''">$(MSBuildProjectName)</GoblinBuildId>
+    <GoblinIntDir     Condition="'$(GoblinIntDir)'     == ''">$(ModuleDir)obj\$(Configuration)\$(ProjectName)\</GoblinIntDir>
+    <GoblinOutDir     Condition="'$(GoblinOutDir)'     == ''">$(GoblinIntDir)build\product\win-unpacked\</GoblinOutDir>
+    <GoblinTargetPath Condition="'$(GoblinTargetPath)' == ''">$(GoblinOutDir)$(TargetName)$(ZouExeExtension)</GoblinTargetPath>
+  </PropertyGroup>
+
+  <Target Name="TraceGoblinAgent" Condition="'$(ZouDebug)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
+    <Message Importance="high" Text="zou/Goblin.Agent.props [$(MSBuildProjectFile)]" />
+    <Message Importance="high" Text="----------------------" />
+    <Message Importance="high" Text="TargetName        = $(TargetName)" />
+    <Message Importance="high" Text="TargetExt         = $(TargetExt)" />
+    <Message Importance="high" Text="TargetFileName    = $(TargetFileName)" />
+    <Message Importance="high" Text="TargetPath        = $(TargetPath)" />
+    <Message Importance="high" Text="GoblinBuildId     = $(GoblinBuildId)" />
+    <Message Importance="high" Text="GoblinSourceDir   = $(GoblinSourceDir)" />
+    <Message Importance="high" Text="GoblinIntDir      = $(GoblinIntDir)" />
+    <Message Importance="high" Text="GoblinOutDir      = $(GoblinOutDir)" />
+    <Message Importance="high" Text="GoblinTargetPath  = $(GoblinTargetPath)" />
+    <Message Importance="high" Text="#GoblinBuildInput = @(GoblinBuildInput->Count())" />
+    <Message Importance="high" Text=" " />
+  </Target>
+</Project>

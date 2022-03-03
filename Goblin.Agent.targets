@@ -1,0 +1,69 @@
+<!-- 
+Summary
+
+Input:
+  GoblinBundleDir <- bundle\zou.build.props
+
++ GoblinSourceDir
+
+-->
+<Project>
+
+  <ItemGroup>
+    <GoblinBuildInput Include="$(GoblinSourceDir)lib\**\*.js*" />
+  </ItemGroup>
+
+  <!-- Condition="'$(ZouDebug)' == 'true'" -->
+  <Target Name="GoblinBuildRelease" Condition="'$(Configuration)' == 'Release'" AfterTargets="Build" Inputs="@(GoblinBuildInput)" Outputs="$(GoblinTargetPath)" >
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### GoblinBuildRelease" />
+    <!--<Message Importance="high" Text="GoblinTargetPath = $(GoblinTargetPath)" />-->
+    <!--<Message Importance="high" Text="@GoblinBuildInput = %(GoblinBuildInput.Identity)" />-->
+
+    <Message Importance="high" Text='$(L1b)[$(Configuration)|$(Platform)] $(XC)zog electronify.build $(T1)$(GoblinBuildId)$(XC) "$(GoblinIntDir)." $(Platform)' />
+    <Exec Command='zog electronify.build $(GoblinBuildId) "$(GoblinIntDir)." $(Platform)' WorkingDirectory="$(WesterosDevDir)" EnvironmentVariables="GOBLINS_APP=builder" />
+  </Target>
+
+  <Target Name="GoblinInitPostBuildCopy">
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### GoblinInitPostBuildCopy(OutDir=$(OutDir), RedistFolder=$(RedistFolder))" />
+
+    <PropertyGroup>
+      <_GoblinCopyTargetDir>$(OutDir)$(RedistFolder)\</_GoblinCopyTargetDir>
+    </PropertyGroup>
+    <ItemGroup>
+      <_GoblinCopySourceFile Include="$(GoblinOutDir)**\*" />
+      <_GoblinCopyTargetFile Include="@(_GoblinCopySourceFile->'$(_GoblinCopyTargetDir)%(RecursiveDir)%(FileName)%(Extension)')" />
+    </ItemGroup>
+
+    <!--<Message Importance="high" Text="@_GoblinCopySourceFile = %(_GoblinCopySourceFile.Identity)" />-->
+    <!--<Message Importance="high" Text="@_GoblinCopyTargetFile = %(_GoblinCopyTargetFile.Identity)" />-->
+  </Target>
+
+  <Target Name="GoblinPostBuildCopy"
+          AfterTargets="GoblinBuildRelease"
+          DependsOnTargets="GoblinInitPostBuildCopy"
+          Inputs="@(_GoblinCopySourceFile)"
+          Outputs="@(_GoblinCopyTargetFile)">
+
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### GoblinPostBuildCopy(OutDir=$(OutDir), RedistFolder=$(RedistFolder))" />
+
+    <Copy SourceFiles="@(_GoblinCopySourceFile)" DestinationFiles="@(_GoblinCopyTargetFile)" />
+
+    <ItemGroup>
+      <_GoblinCopySourceFile Remove="@(_GoblinCopySourceFile)" />
+      <_GoblinCopyTargetFile Remove="@(_GoblinCopyTargetFile)" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="GoblinClean" AfterTargets="Clean" DependsOnTargets="GoblinInitPostBuildCopy">
+    <!--<Message Importance="high" Text="### GoblinClean(OutDir=$(OutDir), RedistFolder=$(RedistFolder))" />
+    <Message Importance="high" Text="_GoblinCopyTargetDir   = $(_GoblinCopyTargetDir)" />
+    <Message Importance="high" Text="@_GoblinCopySourceFile = %(_GoblinCopySourceFile.Identity)" />
+    <Message Importance="high" Text="@_GoblinCopyTargetFile = %(_GoblinCopyTargetFile.Identity)" />-->
+    <!--<Delete Files="@(_GoblinCopySourceFile)" />-->
+    <Delete Files="@(_GoblinCopyTargetFile)" />
+    <!--<RemoveDir Directories="$(GoblinIntDir)" ContinueOnError="true" />-->
+  </Target>
+
+  <Target Name="Rebuild" DependsOnTargets="Clean;Build" />
+
+</Project>
