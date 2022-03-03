@@ -72,6 +72,10 @@
   <Import Project="Wim.targets"  Condition="'$(WimTargetsImported)'  == ''" />
   <Import Project="Zip.targets"  Condition="'$(ZipTargetsImported)'  == ''" />
 
+  <Target Name="DeleteProjectAssets" BeforeTargets="Clean">
+    <Delete Files="obj\project.assets.json" />
+  </Target>
+
   <Target Name="TraceDirectoryBuildDefaultTargets" Condition="'$(ZouTrace)' == 'true'">
     <Message Importance="high" Text="zou/Directory.Build.Default.targets [$(MSBuildProjectFile)]" />
     <Message Importance="high" Text="-----------------------------------" />
