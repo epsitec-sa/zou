@@ -101,12 +101,16 @@ Outputs:
         <_OutputFolder>$([MSBuild]::EnsureTrailingSlash($([System.IO.Path]::Combine('%(ImportProject._OutputFolder)', '%(ImportProject._ProjectFolder)'))))</_OutputFolder>
       </ImportProject>
 
-      <ImportProject>
-        <OutDir     Condition="'%(ImportProject.OutDir)'     != ''">$([System.IO.Path]::GetFullPath('$(OutDir)%(_OutputFolder)'))</OutDir>
-        <PublishDir Condition="'%(ImportProject.PublishDir)' != ''">$([System.IO.Path]::GetFullPath('$(OutDir)%(_OutputFolder)'))</PublishDir>
+      <ImportProject Condition="$(RedistByRuntime)">
+        <OutDir    >$([System.String]::new('%(ImportProject.OutDir)').Replace('%(Platform)\', ''))</OutDir>
+        <PublishDir>$([System.String]::new('%(ImportProject.PublishDir)').Replace('%(Platform)\', ''))</PublishDir>
       </ImportProject>
       <ImportProject>
-        <AsmDir Condition="'%(ImportProject.OutDir)' != '' And ('%(Extension)' == '.vcxproj' Or '%(Extension)' == '.sln')">%(OutDir).cod\</AsmDir>
+        <OutDir    >$([System.IO.Path]::GetFullPath('%(ImportProject.OutDir)%(_OutputFolder)'))</OutDir>
+        <PublishDir>$([System.IO.Path]::GetFullPath('%(ImportProject.PublishDir)%(_OutputFolder)'))</PublishDir>
+      </ImportProject>
+      <ImportProject>
+        <AsmDir Condition="'%(Extension)' == '.vcxproj' Or '%(Extension)' == '.sln'">%(OutDir).cod\</AsmDir>
       </ImportProject>
 
       <!-- Remove temporary metadata -->
