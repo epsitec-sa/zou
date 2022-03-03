@@ -1,0 +1,26 @@
+<!-- This property sheet resolves the 'BinDir' property (supports override in zou.cfg folder). -->
+<Project InitialTargets="CppBinDirTrace">
+  
+  <PropertyGroup>
+    <_PropertySheetDisplayName>C++ Binary Directory</_PropertySheetDisplayName>
+    <!-- Initialize fallback -->
+    <BinDir />
+  </PropertyGroup>
+
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(MSBuildProjectDirectory)\..\..\..\..\..\..\..\$(ZouCfg)**\$(MSBuildThisFileName)*$(MSBuildThisFileExtension)" />
+    <Import Project="$(MSBuildProjectDirectory)\..\..\..\..\..\..\$(ZouCfg)**\$(MSBuildThisFileName)*$(MSBuildThisFileExtension)" />
+    <Import Project="$(MSBuildProjectDirectory)\..\..\..\..\..\$(ZouCfg)**\$(MSBuildThisFileName)*$(MSBuildThisFileExtension)" />
+    <Import Project="$(MSBuildProjectDirectory)\..\..\..\..\$(ZouCfg)**\$(MSBuildThisFileName)*$(MSBuildThisFileExtension)" />
+    <Import Project="$(MSBuildProjectDirectory)\..\..\..\$(ZouCfg)**\$(MSBuildThisFileName)*$(MSBuildThisFileExtension)" />
+    <Import Project="$(MSBuildProjectDirectory)\..\..\$(ZouCfg)**\$(MSBuildThisFileName)*$(MSBuildThisFileExtension)" />
+    <Import Project="$(MSBuildProjectDirectory)\..\$(ZouCfg)**\$(MSBuildThisFileName)*$(MSBuildThisFileExtension)" />
+    <Import Project="$(MSBuildProjectDirectory)\$(ZouCfg)**\$(MSBuildThisFileName)*$(MSBuildThisFileExtension)" />
+
+    <Import Project="$(ZouPrivateDir)$(MSBuildThisFileName).Default$(MSBuildThisFileExtension)" />
+  </ImportGroup>
+
+  <Target Name="CppBinDirTrace" Condition="'$(ZouTrace)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
+    <Message Importance="normal" Text="BinDir = $(BinDir)" />
+  </Target>
+</Project>
