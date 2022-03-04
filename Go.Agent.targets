@@ -12,10 +12,6 @@
     <GoBuildEnv Include="BUILDMODE=$(BuildMode)" />
   </ItemGroup>
 
-  <ItemGroup>
-    <GoOutputFile Include="%(TargetPath.RootDir)%(Directory)%(RecursiveDir)%(FileName)*" />
-  </ItemGroup>
-
   <Target Name="GoInitSingleTargetPath">
     <!-- multiple target support -->
     <PropertyGroup>
@@ -48,7 +44,7 @@
   <Target Name="GoClean" AfterTargets="Clean">
     <Message Importance="high" Text="go clean [$(ProjectPath)]" />
     <Exec Command="go clean" WorkingDirectory="$(ProjectDir)" StandardOutputImportance="low" ContinueOnError="true" />
-    <Delete Files="@(GoOutputFile)" />
+    <Delete Files="@(TargetPath)" />
   </Target>
   
   <Target Name="Rebuild" DependsOnTargets="Clean;Build" />
