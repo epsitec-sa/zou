@@ -4,7 +4,7 @@
     <GoSource   Include="$(GoSourceDir)**\*.go"  />
     <GoResource Include="$(GoResourceDir)**\*" />
     <TargetPath Condition="'@(TargetName->Count())'!='0'" Include="@(TargetName->'$(TargetDir)%(Identity)$(TargetExt)')" />
-    <TargetPath Condition="'@(TargetName->Count())'=='0'" Include="$(TargetPath)" />
+    <TargetPath Condition="'@(TargetName->Count())'=='0'" Include="$(TargetDir)$(TargetName)*$(TargetExt)" />
 
     <!-- Additional environment for go generate -->
     <GoBuildEnv Include="CONFIGURATION=$(Configuration)" />
@@ -21,6 +21,7 @@
     <PropertyGroup>
       <!-- Get last TargetPath item -->
       <GoSingleTargetPath>%(TargetPath.Identity)</GoSingleTargetPath>
+      <GoSingleTargetPath Condition="'$(GoSingleTargetPath)' == ''">$(TargetPath)</GoSingleTargetPath>
     </PropertyGroup>
   </Target>
 
@@ -38,7 +39,10 @@
     <Exec Command="go generate" WorkingDirectory="$(ProjectDir)" EnvironmentVariables="@(GoBuildEnv)" StandardOutputImportance="low" >
       <Output TaskParameter="ExitCode" PropertyName="GoGenerateExitCode" />
     </Exec>
-    <Message Condition="'$(GoGenerateExitCode)' == '0'" Importance="high" Text="$(ProjectName) -> %(TargetPath.RootDir)%(Directory)%(RecursiveDir)%(FileName)*" />
+    <ItemGroup>
+      <TargetPath Condition="'@(TargetName->Count())'=='0'" Include="$(TargetDir)$(TargetName)*$(TargetExt)" />
+    </ItemGroup>
+    <Message Condition="'$(GoGenerateExitCode)' == '0'" Importance="high" Text="$(ProjectName) -> %(TargetPath.RootDir)%(Directory)%(RecursiveDir)%(FileName)%(Extension)" />
   </Target>
 
   <Target Name="GoClean" AfterTargets="Clean">
