@@ -34,7 +34,7 @@ Input:
 + TargetPath
 
 -->
-<Project InitialTargets="TraceGoblinAgent">
+<Project InitialTargets="CheckGoblinBundleDir;TraceGoblinAgent">
 
   <PropertyGroup>
     <_PropertySheetDisplayName>[zou] Goblin Agent</_PropertySheetDisplayName>
@@ -64,12 +64,17 @@ Input:
   </PropertyGroup>
 
   <PropertyGroup>
+    <GoblinBundleDir  Condition="'$(GoblinBundleDir)'  == ''">$([System.IO.Path]::GetFullPath('$(BundleDir)..\westeros-dev\'))</GoblinBundleDir>
     <GoblinSourceDir  Condition="'$(GoblinSourceDir)'  == ''">$(GoblinBundleDir)lib\$(GoblinName)\</GoblinSourceDir>
     <GoblinBuildId    Condition="'$(GoblinBuildId)'    == ''">$(MSBuildProjectName)</GoblinBuildId>
     <GoblinIntDir     Condition="'$(GoblinIntDir)'     == ''">$(ModuleDir)obj\$(Configuration)\$(ProjectName)\</GoblinIntDir>
     <GoblinOutDir     Condition="'$(GoblinOutDir)'     == ''">$(GoblinIntDir)build\product\win-unpacked\</GoblinOutDir>
     <GoblinTargetPath Condition="'$(GoblinTargetPath)' == ''">$(GoblinOutDir)$(TargetName)$(ZouExeExtension)</GoblinTargetPath>
   </PropertyGroup>
+
+  <Target Name="CheckGoblinBundleDir">
+    <Error Condition="!Exists($(GoblinBundleDir))" Text="Goblin bundle not found : $(GoblinBundleDir)" />
+  </Target>
 
   <Target Name="TraceGoblinAgent" Condition="'$(ZouDebug)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
     <Message Importance="high" Text="zou/Goblin.Agent.props [$(MSBuildProjectFile)]" />
