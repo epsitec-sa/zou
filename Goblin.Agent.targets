@@ -13,14 +13,44 @@ Input:
     <GoblinBuildInput Include="$(GoblinSourceDir)lib\**\*.js*" />
   </ItemGroup>
 
-  <!-- Condition="'$(ZouDebug)' == 'true'" -->
-  <Target Name="GoblinBuildRelease" Condition="'$(Configuration)' == 'Release'" AfterTargets="Build" Inputs="@(GoblinBuildInput)" Outputs="$(GoblinTargetPath)" >
+  <Target Name="GoblinEnsureBuilderRunning">
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### GoblinEnsureBuilderRunning" />
+    <PropertyGroup>
+      <GoblinRunBuilderCommand>powershell -command "Start-Process -FilePath cmd -ArgumentList /C,cd,'$(GoblinBundleDir)','&amp;&amp;',npm,run,builder -Verb runas"</GoblinRunBuilderCommand>
+    </PropertyGroup>
+    <ItemGroup>
+      <GoblinBuilderRunning Include="$(AppData)\Epsitec\builder\var\run\xcraftd.*" />
+      <GoblinBuilderRunning>
+        <Command>powershell -command "Get-Process -Id $([System.String]::new('%(Extension)').TrimStart('.')) -ErrorAction SilentlyContinue"</Command>
+      </GoblinBuilderRunning>
+    </ItemGroup>
+    
+    <!--<Message Importance="high" Text="GoblinBuilderRunning.Identity = %(GoblinBuilderRunning.Identity)" />
+    <Message Importance="high" Text="GoblinBuilderRunning.Command  = %(GoblinBuilderRunning.Command)" />
+    <Message Importance="high" Text="GoblinBuilderRunning.Count    = @(GoblinBuilderRunning->Count())" />
+    <Message Importance="high" Text="GoblinRunBuilderCommand     = $(GoblinRunBuilderCommand)" />-->
+    
+    <Exec Condition="@(GoblinBuilderRunning->Count()) > 0"
+          Command="%(GoblinBuilderRunning.Command)"
+          IgnoreExitCode="true"
+          StandardErrorImportance="low"
+          StandardOutputImportance="low"
+          ConsoleToMSBuild="true" >
+      <Output TaskParameter="ExitCode" PropertyName="GoblinBuilderRunningExitCode" />
+    </Exec>
+    <!--<Message Importance="high" Text="GoblinBuilderRunningExitCode     = $(GoblinBuilderRunningExitCode)" />-->
+    <!--<Message Condition="'$(GoblinBuilderRunningExitCode)' != '0'" Importance="high" Text="Starting goblin builder with administrator privileges..." />-->
+    <Exec    Condition="'$(GoblinBuilderRunningExitCode)' != '0'" Command="$(GoblinRunBuilderCommand)" WorkingDirectory="$(GoblinBundleDir)" />
+  </Target>
+
+  <Target Name="GoblinBuildRelease" Condition="'$(Configuration)' == 'Release'" AfterTargets="Build" Inputs="@(GoblinBuildInput)" Outputs="$(GoblinTargetPath)">
     <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### GoblinBuildRelease" />
     <!--<Message Importance="high" Text="GoblinTargetPath = $(GoblinTargetPath)" />-->
     <!--<Message Importance="high" Text="@GoblinBuildInput = %(GoblinBuildInput.Identity)" />-->
 
     <Message Importance="high" Text='$(L1b)[$(Configuration)|$(Platform)] $(XC)zog electronify.build $(T1)$(GoblinBuildId)$(XC) "$(GoblinIntDir)." $(Platform)' />
-    <Exec Command='zog electronify.build $(GoblinBuildId) "$(GoblinIntDir)." $(Platform)' WorkingDirectory="$(WesterosDevDir)" EnvironmentVariables="GOBLINS_APP=builder" />
+    <CallTarget Targets="GoblinEnsureBuilderRunning" />
+    <Exec Command='zog electronify.build $(GoblinBuildId) "$(GoblinIntDir)." $(Platform)' WorkingDirectory="$(GoblinBundleDir)" EnvironmentVariables="GOBLINS_APP=builder" />
   </Target>
 
   <Target Name="GoblinInitPostBuildCopy">
