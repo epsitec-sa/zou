@@ -103,7 +103,7 @@ To keep them add the following code in the project.pack.msbuildproj:
     <Delete Files="@(PackDeleteFile)" />
 
     <!-- Enable signing of Windows packaging folder if 'Sign' property is true -->
-    <ItemGroup>
+    <ItemGroup Condition="Exists('$(PkgBinDir)')">
       <PkgBinWinDir Include="$([System.IO.Directory]::GetDirectories('$(PkgBinDir)', 'win*'))" />
       <PkgBinWinDir Condition="@(PkgBinWinDir->Count()) == 0" Include="$(PkgBinDir)" />
     </ItemGroup>
