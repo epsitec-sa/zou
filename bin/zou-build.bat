@@ -34,6 +34,7 @@ echo [37m    -c[90m=[37mCONFIG      [92m ^([37mRelease[92m^|[90mDebug[92
 echo [37m    -p[90m=[37mPLATFORM    [92m ^([37mx86[92m,[37mx64[92m,[90mWin32[92m,[90mAnyCPU[92m^|[90m-[92m)
 echo [96m 1)[37m -p-            [92m do not specify platform
 echo [96m 1)[37m -a[90m^|[37m--cross     [92m cross build ^([37mWindows[92m,[90mOSX[92m,[90mLinux^[92m)
+echo [96m 1)[37m[37m -g[90m^|[37m--goblin    [92m build goblins
 echo [96m 1)[37m[37m    --rm        [92m build remote components
 echo [96m 2)[37m -s[90m^|[37m--sign      [92m sign Windows package binaries
 echo [96m 2)[37m -k[90m=[37mPKGDIR      [92m packaging directory ([37mpkg[92m)
@@ -88,6 +89,7 @@ if /i '%_arg%' == '-e' set _arg=--clean
 if /i '%_arg%' == '-x' set _arg=--rebuild
 if /i '%_arg%' == '-s' set _arg=--sign
 if /i '%_arg%' == '-a' set _arg=--cross
+if /i '%_arg%' == '-g' set _arg=--goblin
 
 
 rem DRY_RUN '-n'
@@ -177,7 +179,7 @@ if /i '%_arg%' == '-v' (
   goto :Parse
 )
 
-rem DEBUG : -1
+rem CPU_COUNT : -1
 if /i '%_arg%' == '-1' (
   set _cpuCount=%_arg:~1%
   goto :Parse
@@ -189,6 +191,10 @@ if /i '%_arg%' == '-#' (
 )
 
 
+if /i '%_arg%' == '--goblin' (
+  set _goblin=true
+  goto :Parse
+)
 if /i '%_arg%' == '--rm' (
   set _rome=true
   goto :Parse
@@ -265,6 +271,7 @@ if '%_config%'     neq '' set _props=%_props%;Configuration=%_config%
 if '%_sign%'       neq '' set _props=%_props%;Sign=%_sign%
 if '%_byRuntime%'  neq '' set _props=%_props%;RedistByRuntime=%_byRuntime%
 if '%_crossBuild%' neq '' set _props=%_props%;CrossBuild=%_crossBuild%
+if '%_goblin%'     neq '' set _props=%_props%;BuildGoblins=%_goblin%
 if '%_rome%'       neq '' set _props=%_props%;BuildRome=%_rome%
 if '%_verbose%'    neq '' set _props=%_props%;RedistDebug=%_verbose%;ZouDebug=%_verbose%
 if '%_pkgDir%'     neq '' set _props=%_props%;PkgDir=%_pkgDir%
