@@ -43,7 +43,7 @@ Input:
     <Exec    Condition="'$(GoblinBuilderRunningExitCode)' != '0'" Command="$(GoblinRunBuilderCommand)" WorkingDirectory="$(GoblinBundleDir)" />
   </Target>
 
-  <Target Name="GoblinBuildRelease" Condition="'$(Configuration)' == 'Release'" AfterTargets="Build" Inputs="@(GoblinBuildInput)" Outputs="$(GoblinTargetPath)">
+  <Target Name="GoblinBuildRelease" Condition="'$(Configuration)' == 'Release'" BeforeTargets="Build" Inputs="@(GoblinBuildInput)" Outputs="$(GoblinTargetPath)">
     <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### GoblinBuildRelease" />
     <!--<Message Importance="high" Text="GoblinTargetPath = $(GoblinTargetPath)" />-->
     <!--<Message Importance="high" Text="@GoblinBuildInput = %(GoblinBuildInput.Identity)" />-->
@@ -69,7 +69,7 @@ Input:
   </Target>
 
   <Target Name="GoblinPostBuildCopy"
-          AfterTargets="GoblinBuildRelease"
+          AfterTargets="Build"
           DependsOnTargets="GoblinInitPostBuildCopy"
           Inputs="@(_GoblinCopySourceFile)"
           Outputs="@(_GoblinCopyTargetFile)">
