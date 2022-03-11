@@ -2,6 +2,7 @@
 The agent prolog and epilog are used to create a minimal zou agent.
 
 Summary:
+  + PublishDir
   + TargetDir               - local
   + OutputPath              - local
   + IntermediateOutputPath  - local
@@ -15,6 +16,7 @@ Summary:
 
   <!-- Ensure following properties are initialized for all zou agents -->
   <PropertyGroup>
+    <PublishDir             Condition="'$(PublishDir)'             == ''">$(OutDir)</PublishDir>
     <TargetDir              Condition="'$(TargetDir)'              == ''">$(OutDir)</TargetDir>
     <OutputPath             Condition="'$(OutputPath)'             == ''">$(OutDir)</OutputPath>
     <IntermediateOutputPath Condition="'$(IntermediateOutputPath)' == ''">$(IntDir)</IntermediateOutputPath>
@@ -47,6 +49,7 @@ Summary:
     <Message Importance="high" Text="Platform                 = $(Platform)" />
     <Message Importance="high" Text="PlatformToolset          = $(PlatformToolset)" />
     <Message Importance="high" Text="OutDir                   = $(OutDir)" />
+    <Message Importance="high" Text="PublishDir               = $(PublishDir)" />
     <Message Importance="high" Text="TargetDir                = $(TargetDir)" />
     <Message Importance="high" Text="OutputPath               = $(OutputPath)" />
     <Message Importance="high" Text="IntDir                   = $(IntDir)" />
