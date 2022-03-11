@@ -4,8 +4,8 @@ To keep them add the following code in the project.pack.msbuildproj:
 
   <Target Name="PackFilter">
     <ItemGroup>
-      <ProdBinExclude Remove="$(OutDir)**\*.xml" />
-      <ProdBinExclude Remove="$(OutDir)**\*.manifest" />
+      <ProdBinExclude Remove="$(PackSourceDir)**\*.xml" />
+      <ProdBinExclude Remove="$(PackSourceDir)**\*.manifest" />
     </ItemGroup>
   </Target>
 -->
@@ -19,22 +19,25 @@ To keep them add the following code in the project.pack.msbuildproj:
 
   <Target Name="PackCreateDefault">
     <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] PackCreateDefault($(OutDir))" />
+
     <!-- Default includes and excludes -->
     <ItemGroup>
-      <ProdBinInclude Include="$(OutDir)**\*" />
-      <ProdBinExclude Include="$(OutDir)**\*.pdb" />
-      <ProdBinExclude Include="$(OutDir)**\*.map" Exclude="$(OutDir)**\node_modules\**\*.map"/>
-      <ProdBinExclude Include="$(OutDir)**\*.lib" />
-      <ProdBinExclude Include="$(OutDir)**\*.exp" />
-      <ProdBinExclude Include="$(OutDir)**\*.bsc" />
-      <ProdBinExclude Include="$(OutDir)**\*.ilk" />
-      <ProdBinExclude Include="$(OutDir)**\*.cod" />
-      <ProdBinExclude Include="$(OutDir)**\*.xml" />
-      <ProdBinExclude Include="$(OutDir)**\*.manifest" />
-      <ProdBinExclude Include="$(OutDir)**\launchSettings.json" />
+      <ProdBinInclude Include="$(PackSourceDir)**\*" />
+      <ProdBinExclude Include="$(PackSourceDir)**\*.pdb" />
+      <ProdBinExclude Include="$(PackSourceDir)**\*.map" Exclude="$(PackSourceDir)**\node_modules\**\*.map"/>
+      <ProdBinExclude Include="$(PackSourceDir)**\*.lib" />
+      <ProdBinExclude Include="$(PackSourceDir)**\*.exp" />
+      <ProdBinExclude Include="$(PackSourceDir)**\*.bsc" />
+      <ProdBinExclude Include="$(PackSourceDir)**\*.ilk" />
+      <ProdBinExclude Include="$(PackSourceDir)**\*.cod" />
+      <ProdBinExclude Include="$(PackSourceDir)**\*.xml" />
+      <ProdBinExclude Include="$(PackSourceDir)**\*.manifest" />
+      <ProdBinExclude Include="$(PackSourceDir)**\launchSettings.json" />
+    </ItemGroup>
+    <ItemGroup Condition="'$(Configuration)'=='Release'">
       <!-- Exclude Visual Leak Detector in release mode -->
-      <ProdBinExclude Include="$(OutDir)vld_x86.dll" Condition="'$(Configuration)'=='Release' And Exists('$(OutDir)vld_x86.dll')" />
-      <ProdBinExclude Include="$(OutDir)vld.ini"     Condition="'$(Configuration)'=='Release' And Exists('$(OutDir)vld.ini')" />
+      <ProdBinExclude Include="$(PackSourceDir)**\vld_x86.dll" />
+      <ProdBinExclude Include="$(PackSourceDir)**\vld.ini" />
     </ItemGroup>
   </Target>
 
@@ -42,13 +45,13 @@ To keep them add the following code in the project.pack.msbuildproj:
     <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] PackCreate" />
     <!-- Dispatch package content to respective folders -->
     <ItemGroup>
-      <PackCopyFile Include="@(ProdBinInclude)" Exclude="@(ProdBinExclude)" Condition="'$(OutDir)' != '$(PkgBinDir)'">
+      <PackCopyFile Include="@(ProdBinInclude)" Exclude="@(ProdBinExclude)" Condition="!$(PkgBinDir.StartsWith('$(PackSourceDir)'))">
         <ImportDir>$(PkgBinDir)</ImportDir>
       </PackCopyFile>
-      <PackCopyFile Include="@(ProdBinExclude)" Condition="'$(OutDir)' != '$(PkgDbgDir)'">
+      <PackCopyFile Include="@(ProdBinExclude)" Condition="!$(PkgDbgDir.StartsWith('$(PackSourceDir)'))">
         <ImportDir>$(PkgDbgDir)</ImportDir>
       </PackCopyFile>
-      <PackDeleteFile Include="@(ProdBinExclude)" Condition="'$(OutDir)' == '$(PkgBinDir)' And '$(OutDir)' != '$(PkgDbgDir)'" />
+      <PackDeleteFile Include="@(ProdBinExclude)" Condition="'$(PackSourceDir)' == '$(PkgBinDir)' And !$(PkgDbgDir.StartsWith('$(PackSourceDir)'))" />
     </ItemGroup>
     
     <ItemGroup>
