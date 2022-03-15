@@ -1,0 +1,258 @@
+#!/usr/bin/env bash
+
+[[ -z $ZOUL_STDIO ]] && . zoul-stdio
+
+build_help()
+{
+  # io_trace "build_help ${*@Q} -- $(print_vars me)"
+  io_message_unsafe ${LightGreen}'Usage:'
+  io_message_unsafe ${Gray}"    $me PROJECT-NAME ${DarkGray}[OPTIONS] [-p:KEY=VAL]*"
+  io_message_unsafe ''
+  io_message_unsafe ${LightGreen}'Options:'
+  io_message_unsafe ${Gray}"    -h             ${LightGreen} display current help"
+  io_message_unsafe ${Gray}"    -n             ${LightGreen} dry run (display commands)"
+  io_message_unsafe ${Gray}"    -1             ${LightGreen} use single processor"
+  io_message_unsafe ${Gray}"    -e${DarkGray}|${Gray}--clean     ${LightGreen} clean"
+  io_message_unsafe ${Gray}"    -x${DarkGray}|${Gray}--rebuild   ${LightGreen} rebuild"
+  io_message_unsafe ${Gray}"    -c${DarkGray}=${Gray}CONFIG      ${LightGreen} (${Gray}Release${LightGreen}|${DarkGray}Debug${LightGreen})"
+  io_message_unsafe ${Gray}"    -p${DarkGray}=${Gray}PLATFORM    ${LightGreen} (${Gray}x86${LightGreen},${Gray}x64${LightGreen},${DarkGray}Win32${LightGreen},${DarkGray}AnyCPU${LightGreen}|${DarkGray}-${LightGreen})"
+  io_message_unsafe ${LightCyan}" 1)${Gray} -p-            ${LightGreen} do not specify platform"
+  io_message_unsafe ${LightCyan}" 1)${Gray} -a${DarkGray}|${Gray}--cross     ${LightGreen} cross build ^(${Gray}Windows${LightGreen},${DarkGray}OSX${LightGreen},${DarkGray}Linux^${LightGreen})"
+  io_message_unsafe ${LightCyan}" 1)${Gray}${Gray} -g${DarkGray}|${Gray}--goblin    ${LightGreen} build goblins"
+  io_message_unsafe ${LightCyan}" 1)${Gray}${Gray}    --rm        ${LightGreen} build remote components"
+  io_message_unsafe ${LightCyan}" 2)${Gray} -s${DarkGray}|${Gray}--sign      ${LightGreen} sign Windows package binaries"
+  io_message_unsafe ${LightCyan}" 2)${Gray} -k${DarkGray}=${Gray}PKGDIR      ${LightGreen} packaging directory (${Gray}pkg${LightGreen})"
+  io_message_unsafe ''
+  io_message_unsafe ${LightCyan}" 1) zou      agent only (     .msbuildproj)"
+  io_message_unsafe ${LightCyan}" 2) zou pack agent only (.pack.msbuildproj)"
+  io_message_unsafe ''
+  io_message_unsafe ${LightGreen}'Advanced options:'
+  io_message_unsafe ${Gray}"    -v             ${LightGreen} display zou debug info"
+  io_message_unsafe ${Gray}"    -#             ${LightGreen} display $me script internal variables"
+  io_message_unsafe ${Gray}"       --boost     ${LightGreen} update ${Gray}boost${LightGreen} nuget packages"
+  io_message_unsafe ${Gray}"       --bl        ${LightGreen} create build log (${Gray}.binlog${LightGreen})"
+  io_message_unsafe ${Gray}"       --pp        ${LightGreen} create preprocessed XML (does not build)"
+  io_message_unsafe ''
+  io_message_unsafe ${LightGreen}'Examples:'
+  io_message_unsafe ${Brown}"    $me ${DarkGray}foo${Gray}.sln                       ${LightGreen}# build ${Gray}Release${DarkGray}|${Gray}x86 ${LightGreen}and ${Gray}Release${DarkGray}|${Gray}x64"
+  io_message_unsafe ${Brown}"    $me ${DarkGray}foo${Gray}.sln -px64                 ${LightGreen}# build ${Gray}Release${DarkGray}|${Gray}x64"
+  io_message_unsafe ${Brown}"    $me ${DarkGray}foo${Gray}.sln -pAnyCPU              ${LightGreen}# build ${Gray}Release${DarkGray}|${Gray}Any CPU ${LightGreen}(solution)"
+  io_message_unsafe ${Brown}"    $me ${DarkGray}foo${Gray}.csproj -pAnyCPU           ${LightGreen}# build ${Gray}Release${DarkGray}|${Gray}AnyCPU  ${LightGreen}(project)"
+  io_message_unsafe ${Brown}"    $me ${DarkGray}foo${Gray}.msbuildproj -p-           ${LightGreen}# build ${Gray}Release${DarkGray}|${DarkGray}custom  ${LightGreen}(zou agent)"
+  io_message_unsafe ${Brown}"    $me ${DarkGray}foo${Gray}.sln -cDebug -pWin32       ${LightGreen}# build ${Gray}Debug${DarkGray}|${Gray}Win32"
+  io_message_unsafe ${Brown}"    $me ${DarkGray}foo${Gray}.sln ${DarkGray}...${Gray} ${Gray}-p:Foo=Bar        ${LightGreen}# define/override MSBuild property ${Gray}Foo"
+}
+build_parse()
+{
+  # io_trace "build_parse ${*@Q}"
+  local args=() arg
+  while [[ "$#" -gt 0 ]]; do case "$1" in
+    -h|--help)    build_help; exit 0;;
+    -#)           debug='true';;
+    -v)           verbose='true';;
+    -n)           dryRun='true';;
+    -1)           cpuCount="${1:1}";;
+    -e|--clean)   clean='true'; build='false';;
+    -x|--rebuild) clean='true'; build='true';;
+    -s|--sign)    sign='true';;
+    -g|--goblin)  goblin='true';;
+    --rm)         rome='true';;
+    --boost)      boost='true';;
+    --bl)         binlog='true';;
+    --pp)         preprocess='true';;
+    -a|--cross)   crossBuild='true'; byRuntime='true';;
+    -c*)          arg="${1:2}"; config="${arg//=}";;
+    -k*)          arg="${1:2}"; pkgDir="${arg//=}";;
+    -p:*)         props+=("$1");;
+    -p*)
+      arg="${1:2}"
+      arg="${arg//=}"
+      case "${arg,,}" in
+        -)      noPlatform=true;;
+        anycpu) anyCpu='AnyCPU';;
+        *)      platforms+=("$arg");;
+      esac
+      ;;
+    -*) build_error "Unknown option: ${VC}$1${NC}";;
+    *)  args+=("$1")
+  esac; shift; done
+
+  # io_trace "build_parse ${*@Q} -- $(print_vars args[@])"
+
+  # Check options and args
+  [ ${#args[@]} -eq 0 ] && build_error 'Missing project name.'
+  project="${args[0]}"
+  [ -f "$project" ] || build_error "Project not found: ${VC}$project${NC}."
+  [[ $noPlatform == 'true' && ${#platforms[@]} -ne 0 ]] && build_error "Options ${VC}-p-${Red} and ${VC}-pPLATFORM${Red} are mutually exclusive"
+
+  # Set defaults
+  projDir="${project%/*}"
+  projFileName="${project##*/}"
+  projName="${projFileName%.*}"
+  projExt="${projFileName##*.}"
+  [[ $projDir == '' ]] && projDir='.'
+  [[ $projExt == $projName ]] && projExt=''
+
+  [[ ${#platforms[@]} -eq 0 && $noPlatform == 'false' && $anyCpu == '' ]] && platforms=('x64')
+  if [[ $anyCpu != '' ]]; then
+    [[ $projExt == 'sln' ]] && anyCpu='Any CPU'
+    platforms+=( "$anyCpu" )
+  fi
+  [ ${#platforms[@]} -gt 1 ] && byRuntime='true'
+
+  [ $cpuCount -eq 0 ]         && opts+=('-m') || opts+=("-m:$cpuCount")
+  [[ $binlog     == 'true' ]] && opts+=("-bl:'${projDir}/${projName}.binlog'")
+  [[ $preprocess == 'true' ]] && opts+=("-pp:'${projDir}/${projName}.pp.xml'")
+
+  props+=("-p:MaxCpuCount=$cpuCount")
+  [[ $config     != ''     ]] && props+=("-p:Configuration=$config")
+  [[ $pkgDir     != ''     ]] && props+=("-p:PkgDir='$pkgDir'")
+  [[ $sign       == 'true' ]] && props+=("-p:Sign=$sign")
+  [[ $byRuntime  == 'true' ]] && props+=("-p:RedistByRuntime=$byRuntime")
+  [[ $crossBuild == 'true' ]] && props+=("-p:CrossBuild=$crossBuild")
+  [[ $goblin     == 'true' ]] && props+=("-p:BuildGoblins=$goblin")
+  [[ $rome       == 'true' ]] && props+=("-p:BuildRome=$rome")
+  [[ $boost      == 'true' ]] && props+=("-p:BoostUpdate=$boost")
+  [[ $verbose    == 'true' ]] && props+=("-p:ZouDebug=$verbose" "-p:RedistDebug=$verbose")
+
+  command="dotnet build $project ${opts[*]} ${props[*]}"
+
+  [[ $debug == 'true' ]] && build_debug
+}
+build_main()
+{
+  local me=$(basename "$0") \
+        debug='false' \
+        verbose='false' \
+        dryRun='false' \
+        cpuCount=0 \
+        project \
+        config='Release' \
+        build='true' \
+        clean='false' \
+        goblin='false' \
+        rome='false' \
+        boost='false' \
+        binlog='false' \
+        preprocess='false' \
+        sign='false' \
+        props=() \
+        opts=('--nologo' '-v:m' '-nr:false') \
+        platforms=() \
+        noPlatform='false' \
+        anyCpu \
+        byRuntime='false' \
+        crossBuild='false' \
+        pkgDir
+
+  # Display command line
+  io_message_unsafe ${Brown}"[$me] \e[0;1;4m$me $*\n"
+
+  build_parse "$@"
+  
+  [[ $clean == 'true' ]] && build_clean
+  [[ $build == 'true' ]] && build_build
+}
+build_clean()
+{
+  local dirName platform color=${Cyan}
+  [[ $dryRun == 'true' ]] && color=${DarkGray}
+
+  for dirName in 'x86' 'x64' 'Win32' 'bin' 'obj' 'pkg' "$pkgDir"; do
+    if [[ ${dirName:0:1} != '/' && -d "$dirName" ]] ; then
+      io_message_unsafe ${Brown}"[$me]$color Removing $dirName..."
+      if [[ $dryRun != 'true' ]]; then
+        rm -rf "$dirName"
+      fi
+    fi
+  done
+  if [ ${#platforms[@]} -eq 0 ]; then
+    io_message_unsafe ${Brown}"[$me]$color Cleaning..."
+    if [[ $dryRun == 'true' ]]; then
+      io_message_unsafe ${Brown}"[$me]${DarkGray} $command -t:Clean"
+    else
+      $command -t:Clean || exit $?
+    fi
+  else
+    for platform in ${platforms[@]}; do
+      io_message_unsafe ${Brown}"[$me]$color Cleaning $platform..."
+      if [[ $dryRun == 'true' ]]; then
+        io_message_unsafe ${Brown}"[$me]${DarkGray} $command -p:Platform=$platform -t:Clean"
+      else
+        $command -p:Platform=$platform -t:Clean || exit $?
+      fi
+    done
+  fi
+}
+build_build()
+{
+  local pack platform message color=${Cyan}
+  [[ $dryRun == 'true' ]] && color=${DarkGray}
+  [[ $projName =~ pack ]] && pack='true'
+  pkgDir=${pkgDir:-'pkg'}
+
+  if [ ${#platforms[@]} -eq 0 ]; then
+    message="Packing to '$pkgDir' folder"
+    [[ $pack != 'true' ]] && message='Building'
+    io_message_unsafe ${Brown}"[$me]$color $message..."
+    if [[ $dryRun == 'true' ]]; then
+      io_message_unsafe ${Brown}"[$me]${DarkGray} $command -t:Build"
+    else
+      $command -t:Build || exit $?
+    fi
+  else
+    for platform in ${platforms[@]}; do
+      message="Packing $platform to '$pkgDir' folder"
+      [[ $pack != 'true' ]] && message="Building $platform"
+      io_message_unsafe ${Brown}"[$me]$color $message..."
+      if [[ $dryRun == 'true' ]]; then
+        io_message_unsafe ${Brown}"[$me]${DarkGray} $command -p:Platform=$platform -t:Build"
+      else
+        $command -p:Platform=$platform -t:Build || exit $?
+      fi
+    done
+  fi
+}
+build_error()
+{
+  io_message_unsafe ${Red}"$1\n"
+  build_help
+  exit 1
+}
+build_debug()
+{
+  io_message_unsafe ${Brown}"[$me]${DarkGray} dryRun       = $dryRun"
+  io_message_unsafe ${Brown}"[$me]${DarkGray} debug        = $debug"
+  io_message_unsafe ${Brown}"[$me]${DarkGray} verbose      = $verbose"
+  io_message_unsafe ${Brown}"[$me]${DarkGray} project      = $project"
+  io_message_unsafe ${Brown}"[$me]${DarkGray} proDir       = $projDir"
+  io_message_unsafe ${Brown}"[$me]${DarkGray} projFileName = $projFileName"
+  io_message_unsafe ${Brown}"[$me]${DarkGray} projName     = $projName"
+  io_message_unsafe ${Brown}"[$me]${DarkGray} projExt      = $projExt"
+  io_message_unsafe ${Brown}"[$me]${DarkGray} pkgDir       = $pkgDir"
+  io_message_unsafe ${Brown}"[$me]${DarkGray} cpuCount     = $cpuCount"
+  io_message_unsafe ${Brown}"[$me]${DarkGray} build        = $build"
+  io_message_unsafe ${Brown}"[$me]${DarkGray} clean        = $clean"
+  io_message_unsafe ${Brown}"[$me]${DarkGray} sign         = $sign"
+  io_message_unsafe ${Brown}"[$me]${DarkGray} goblin       = $goblin"
+  io_message_unsafe ${Brown}"[$me]${DarkGray} rome         = $rome"
+  io_message_unsafe ${Brown}"[$me]${DarkGray} boost        = $boost"
+  io_message_unsafe ${Brown}"[$me]${DarkGray} binlog       = $binlog"
+  io_message_unsafe ${Brown}"[$me]${DarkGray} preprocess   = $preprocess"
+  io_message_unsafe ${Brown}"[$me]${DarkGray} config       = $config"
+  io_message_unsafe ${Brown}"[$me]${DarkGray} platforms    = (${platforms[*]})"
+  io_message_unsafe ${Brown}"[$me]${DarkGray} anyCpu       = $anyCpu"
+  io_message_unsafe ${Brown}"[$me]${DarkGray} noPlatform   = $noPlatform"
+  io_message_unsafe ${Brown}"[$me]${DarkGray} byRuntime    = $byRuntime"
+  io_message_unsafe ${Brown}"[$me]${DarkGray} crossBuild   = $crossBuild"
+  io_message_unsafe ${Brown}"[$me]${DarkGray} boost        = $boost"
+  io_message_unsafe ${Brown}"[$me]${DarkGray} binlog       = $binlog"
+  io_message_unsafe ${Brown}"[$me]${DarkGray} preprocess   = $preprocess"
+  io_message_unsafe ${Brown}"[$me]${DarkGray} args         = (${args[*]})"
+  io_message_unsafe ${Brown}"[$me]${DarkGray} opts         = (${opts[*]})"
+  io_message_unsafe ${Brown}"[$me]${DarkGray} props        = (${props[*]})"
+  io_message_unsafe ${Brown}"[$me]${DarkGray} command      = $command"
+  exit 0
+}
+
+build_main "$@"
