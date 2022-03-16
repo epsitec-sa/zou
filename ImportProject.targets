@@ -153,7 +153,7 @@
   
   <!-- ================ ImportProject ================ -->
 
-  <Target Name="ImportProject" Condition="@(ImportProject->Count()) > 0" DependsOnTargets="UpdateMSBuildProjects" Returns="%(MSBuildProject.Identity)">
+  <Target Name="ImportProject" Condition="$(BuildAny) And @(ImportProject->Count()) > 0" DependsOnTargets="UpdateMSBuildProjects" Returns="%(MSBuildProject.Identity)">
     <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] ImportProject" />
 
     <Message Condition="'%(MSBuildProject.BundleRelativeDstDir)' == '' And '%(RuntimeIdentifier)' == '' And '$(Platform)' == ''" Importance="high" Text="$(L1b)[$(Configuration)|custom] $(T3)%(MSBuildProject.BundleRelativeSrcDir)%(RecursiveDir)$(T2)%(FileName)%(Extension)$(XC)" />

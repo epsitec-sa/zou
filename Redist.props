@@ -34,9 +34,13 @@ Outputs
     <RedistByRuntime Condition="$(CrossBuild)">true</RedistByRuntime>
     <RedistByRuntime Condition="'$(RedistByRuntime)' == '' And '$(RuntimePlatform)' != '' And $(OutDir.Contains('$(RuntimePlatform)'))">false</RedistByRuntime>
     <RedistByRuntime Condition="'$(RedistByRuntime)' == '' And '$(RuntimePlatform)' == 'x86' And $(OutDir.Contains('Win32'))">false</RedistByRuntime>
+    <RedistByRuntime Condition="'$(RedistByRuntime)' == '' And !$(BuildWin) And !$(BuildOsx) And !$(BuildLinux)">false</RedistByRuntime>
+    <RedistByRuntime Condition="'$(RedistByRuntime)' == '' And  $(BuildWin) And !$(BuildOsx) And !$(BuildLinux)">false</RedistByRuntime>
+    <RedistByRuntime Condition="'$(RedistByRuntime)' == '' And !$(BuildWin) And  $(BuildOsx) And !$(BuildLinux)">false</RedistByRuntime>
+    <RedistByRuntime Condition="'$(RedistByRuntime)' == '' And !$(BuildWin) And !$(BuildOsx) And  $(BuildLinux)">false</RedistByRuntime>
     <RedistByRuntime Condition="'$(RedistByRuntime)' == ''">true</RedistByRuntime>
   </PropertyGroup>
-  
+
   <PropertyGroup>
     <PackSourceDir Condition="! $(RedistByRuntime)">$(OutDir)</PackSourceDir>
     <PackSourceDir Condition="  $(RedistByRuntime)">$([System.String]::new('$(OutDir)').Replace('$(Platform)\', ''))</PackSourceDir>

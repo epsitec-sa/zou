@@ -40,6 +40,10 @@ Outputs
     <BuildOsx    Condition="$(CrossBuild) Or $(RuntimeIdentifier.StartsWith('osx'))   Or ('$(RuntimeIdentifier)'=='' And $([MSBuild]::IsOsPlatform(OSX)))"  >true</BuildOsx>
     <BuildLinux  Condition="$(CrossBuild) Or $(RuntimeIdentifier.StartsWith('linux')) Or ('$(RuntimeIdentifier)'=='' And $([MSBuild]::IsOsPlatform(Linux)))">true</BuildLinux>
   </PropertyGroup>
+  <PropertyGroup>
+    <BuildAny>false</BuildAny>
+    <BuildAny Condition="$(BuildWin) Or $(BuildOsx) Or $(BuildLinux)">true</BuildAny>
+  </PropertyGroup>
 
   <!-- Restore CrossBuild state -->
   <PropertyGroup Condition="'$(SkipCrossBuild)' == 'true'">
@@ -63,6 +67,7 @@ Outputs
     <Message Importance="high" Text="BuildWin        = $(BuildWin)" />
     <Message Importance="high" Text="BuildOsx        = $(BuildOsx)" />
     <Message Importance="high" Text="BuildLinux      = $(BuildLinux)" />
+    <Message Importance="high" Text="BuildAny        = $(BuildAny)" />
     <Message Importance="high" Text=" " />
   </Target>
 
