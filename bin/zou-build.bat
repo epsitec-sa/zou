@@ -9,6 +9,8 @@ rem Setup defaults
 set _build=true
 set _clean=false
 set _sign=false
+set _config=Release
+set _cpuCount=0
 
 goto Parse
 
@@ -245,9 +247,6 @@ for %%i in ("%_project%") do (
 )
 
 rem set defaults
-if '%_config%'   == '' set _config=Release
-if '%_build%'    == '' set _build=true
-if '%_cpuCount%' == '' set _cpuCount=0
 if '!_platforms!' == '' if '!_noPlatform!' == '' if '!_anyCpu!' neq 'true' (
   set _byRuntime=true
   set _platforms=x86 x64
