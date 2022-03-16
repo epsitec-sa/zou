@@ -57,7 +57,11 @@ Outputs:
       </ImportFile>
 
       <ImportFile>
-        <ImportDir Condition="'%(ImportFile.ImportDir)' != ''">$([System.IO.Path]::GetFullPath('$(OutDir)%(_OutputFolder)'))</ImportDir>
+        <_OutDir Condition="! $(RedistByRuntime)">$(OutDir)</_OutDir>
+        <_OutDir Condition="  $(RedistByRuntime)">$([System.String]::new('$(OutDir)').Replace('$(Platform)\', ''))</_OutDir>
+      </ImportFile>
+      <ImportFile>
+        <ImportDir Condition="'%(ImportFile.ImportDir)' != ''">$([System.IO.Path]::GetFullPath('%(_OutDir)%(_OutputFolder)'))</ImportDir>
       </ImportFile>
 
       <ImportFile>
@@ -65,11 +69,11 @@ Outputs:
       </ImportFile>
 
       <!-- Remove temporary metadata -->
-      <ImportFile RemoveMetadata="_ProjectFolder;_OutputFolder" />
+      <ImportFile RemoveMetadata="_ProjectFolder;_OutputFolder;_OutDir" />
     </ItemGroup>
 
-    <!--<LogItems Condition="$(RedistDebug)" Items="@(ImportFile)" Title="RedistImportFileTransformLayout.ImportFile" />
-    <Message  Condition="$(RedistDebug)" Importance="high" Text=" " />-->
+    <LogItems Condition="$(RedistDebug)" Items="@(ImportFile)" Title="RedistImportFileTransformLayout.ImportFile" />
+    <Message  Condition="$(RedistDebug)" Importance="high" Text=" " />
   </Target>
 
 </Project>

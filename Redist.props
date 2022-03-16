@@ -37,6 +37,11 @@ Outputs
     <RedistByRuntime Condition="'$(RedistByRuntime)' == ''">true</RedistByRuntime>
   </PropertyGroup>
   
+  <PropertyGroup>
+    <PackSourceDir Condition="! $(RedistByRuntime)">$(OutDir)</PackSourceDir>
+    <PackSourceDir Condition="  $(RedistByRuntime)">$([System.String]::new('$(OutDir)').Replace('$(Platform)\', ''))</PackSourceDir>
+  </PropertyGroup>
+
   <!-- Forward properties -->
   <ItemDefinitionGroup>
     <CopyFile>

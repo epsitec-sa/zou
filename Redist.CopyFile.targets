@@ -57,7 +57,11 @@ Outputs:
       </CopyFile>
 
       <CopyFile>
-        <TargetDir Condition="'%(CopyFile.TargetDir)' != ''">$([System.IO.Path]::GetFullPath('$(OutDir)%(_OutputFolder)'))</TargetDir>
+        <_OutDir Condition="! $(RedistByRuntime)">$(OutDir)</_OutDir>
+        <_OutDir Condition="  $(RedistByRuntime)">$([System.String]::new('$(OutDir)').Replace('$(Platform)\', ''))</_OutDir>
+      </CopyFile>
+      <CopyFile>
+        <TargetDir Condition="'%(CopyFile.TargetDir)' != ''">$([System.IO.Path]::GetFullPath('%(_OutDir)%(_OutputFolder)'))</TargetDir>
       </CopyFile>
       
       <CopyFile>
@@ -65,7 +69,7 @@ Outputs:
       </CopyFile>
 
       <!-- Remove temporary metadata -->
-      <CopyFile RemoveMetadata="_ProjectFolder;_OutputFolder" />
+      <CopyFile RemoveMetadata="_ProjectFolder;_OutputFolder;_OutDir" />
     </ItemGroup>
 
     <!--<LogItems Condition="$(RedistDebug)" Items="@(CopyFile)" Title="RedistCopyFileTransformLayout.CopyFile" />

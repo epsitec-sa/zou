@@ -143,7 +143,9 @@
     <Message Condition="'%(RuntimeIdentifier)' == '' And '$(Platform)' == ''" Importance="high" Text="$(L2m)[$(Configuration)|custom] $(T3)%(MSBuildProject.BundleRelativeSrcDir)%(RecursiveDir)$(T2)%(FileName)%(Extension)$(XC)" />
     <Message Condition="'%(RuntimeIdentifier)' == '' And '$(Platform)' != ''" Importance="high" Text="$(L2m)[$(Configuration)|$(Platform)] $(T3)%(MSBuildProject.BundleRelativeSrcDir)%(RecursiveDir)$(T2)%(FileName)%(Extension)$(XC)" />
     <Message Condition="'%(RuntimeIdentifier)' != ''"                         Importance="high" Text="$(L2m)[$(Configuration)|%(RuntimeIdentifier)] $(T3)%(MSBuildProject.BundleRelativeSrcDir)%(RecursiveDir)$(T2)%(FileName)%(Extension)$(XC)" />
-    
+
+    <Delete Files="%(MSBuildProject.RootDir)%(Directory)\obj\project.assets.json" />
+
     <MSBuild Projects="%(MSBuildProject.Identity)" Targets="Clean" Properties="%(Properties)" ContinueOnError="WarnAndContinue" BuildInParallel="true" />
     
     <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] ImportProjectClean.End" />
