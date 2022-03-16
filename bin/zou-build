@@ -16,18 +16,21 @@ build_help()
   io_message_unsafe ${Gray}"    -x${DarkGray}|${Gray}--rebuild   ${LightGreen} rebuild"
   io_message_unsafe ${Gray}"    -c${DarkGray}=${Gray}CONFIG      ${LightGreen} (${Gray}Release${LightGreen}|${DarkGray}Debug${LightGreen})"
   io_message_unsafe ${Gray}"    -p${DarkGray}=${Gray}PLATFORM    ${LightGreen} (${Gray}x86${LightGreen},${Gray}x64${LightGreen},${DarkGray}Win32${LightGreen},${DarkGray}AnyCPU${LightGreen}|${DarkGray}-${LightGreen})"
-  io_message_unsafe ${LightCyan}" 1)${Gray} -p-            ${LightGreen} do not specify platform"
-  io_message_unsafe ${LightCyan}" 1)${Gray} -a${DarkGray}|${Gray}--cross     ${LightGreen} cross build ^(${Gray}Windows${LightGreen},${DarkGray}OSX${LightGreen},${DarkGray}Linux^${LightGreen})"
-  io_message_unsafe ${LightCyan}" 1)${Gray}${Gray} -g${DarkGray}|${Gray}--goblin    ${LightGreen} build goblins"
-  io_message_unsafe ${LightCyan}" 1)${Gray}${Gray}    --rm        ${LightGreen} build remote components"
-  io_message_unsafe ${LightCyan}" 2)${Gray} -s${DarkGray}|${Gray}--sign      ${LightGreen} sign Windows package binaries"
-  io_message_unsafe ${LightCyan}" 2)${Gray} -k${DarkGray}=${Gray}PKGDIR      ${LightGreen} packaging directory (${Gray}pkg${LightGreen})"
   io_message_unsafe ''
-  io_message_unsafe ${LightCyan}" 1) zou      agent only (     .msbuildproj)"
-  io_message_unsafe ${LightCyan}" 2) zou pack agent only (.pack.msbuildproj)"
+  io_message_unsafe ${Green}"  zou agent (${Gray}.msbuildproj${Green}):"
+  io_message_unsafe ${Gray}"    -v             ${LightGreen} display some debug info"
+  io_message_unsafe ${Gray}"    -p-            ${LightGreen} do not specify platform"
+  io_message_unsafe ${Gray}"    -a${DarkGray}|${Gray}--cross     ${LightGreen} cross build ^(${Gray}Windows${LightGreen},${DarkGray}OSX${LightGreen},${DarkGray}Linux^${LightGreen})"
+  io_message_unsafe ${Gray}"    -g${DarkGray}|${Gray}--goblin    ${LightGreen} build goblins"
+  io_message_unsafe ${Gray}"       --rm        ${LightGreen} build remote components"
   io_message_unsafe ''
-  io_message_unsafe ${LightGreen}'Advanced options:'
-  io_message_unsafe ${Gray}"    -v             ${LightGreen} display zou debug info"
+  io_message_unsafe ${Green}"  zou pack agent (${Gray}.pack.msbuildproj${Green}):"
+  io_message_unsafe ${Gray}"    -s${DarkGray}|${Gray}--sign      ${LightGreen} sign Windows package binaries"
+  io_message_unsafe ${Gray}"    -k${DarkGray}=${Gray}PKGDIR      ${LightGreen} package root  directory (${Gray}pkg${LightGreen})"
+  io_message_unsafe ${Gray}"    --kb${DarkGray}=${Gray}PKGBINDIR ${LightGreen} package bin   directory (${Gray}pkg/<CONFIG>/bin${LightGreen})"
+  io_message_unsafe ${Gray}"    --kd${DarkGray}=${Gray}PKGDBGDIR ${LightGreen} package debug directory (${Gray}pkg/<CONFIG>/dbg${LightGreen})"
+  io_message_unsafe ''
+  io_message_unsafe ${Green}'  various:'
   io_message_unsafe ${Gray}"    -#             ${LightGreen} display $me script internal variables"
   io_message_unsafe ${Gray}"       --boost     ${LightGreen} update ${Gray}boost${LightGreen} nuget packages"
   io_message_unsafe ${Gray}"       --bl        ${LightGreen} create build log (${Gray}.binlog${LightGreen})"
@@ -63,6 +66,8 @@ build_parse()
     -a|--cross)   crossBuild='true'; byRuntime='true';;
     -c*)          arg="${1:2}"; config="${arg//=}";;
     -k*)          arg="${1:2}"; pkgDir="${arg//=}";;
+    --kb*)        arg="${1:4}"; pkgBinDir="${arg//=}";;
+    --kd*)        arg="${1:4}"; pkgDbgDir="${arg//=}";;
     -p:*)         props+=("$1");;
     -p*)
       arg="${1:2}"
@@ -93,12 +98,12 @@ build_parse()
   [[ $projDir == '' ]] && projDir='.'
   [[ $projExt == $projName ]] && projExt=''
 
-  [[ ${#platforms[@]} -eq 0 && $noPlatform == 'false' && $anyCpu == '' ]] && platforms=('x64')
+  [[ ${#platforms[@]} -eq 0 && $noPlatform == 'false' && $anyCpu == '' ]] && platforms=('x86' 'x64')
   if [[ $anyCpu != '' ]]; then
     [[ $projExt == 'sln' ]] && anyCpu='Any CPU'
     platforms+=( "$anyCpu" )
   fi
-  [ ${#platforms[@]} -gt 1 ] && byRuntime='true'
+  # [ ${#platforms[@]} -gt 1 ] && byRuntime='true'
 
   [ $cpuCount -eq 0 ]         && opts+=('-m') || opts+=("-m:$cpuCount")
   [[ $binlog     == 'true' ]] && opts+=("-bl:'${projDir}/${projName}.binlog'")
@@ -106,7 +111,9 @@ build_parse()
 
   props+=("-p:MaxCpuCount=$cpuCount")
   [[ $config     != ''     ]] && props+=("-p:Configuration=$config")
-  [[ $pkgDir     != ''     ]] && props+=("-p:PkgDir='$pkgDir'")
+  [[ $pkgDir     != ''     ]] && props+=("-p:PkgDir=$pkgDir")
+  [[ $pkgBinDir  != ''     ]] && props+=("-p:PkgBinDir=$pkgBinDir")
+  [[ $pkgDbgDir  != ''     ]] && props+=("-p:PkgDbgDir=$pkgDbgDir")
   [[ $sign       == 'true' ]] && props+=("-p:Sign=$sign")
   [[ $byRuntime  == 'true' ]] && props+=("-p:RedistByRuntime=$byRuntime")
   [[ $crossBuild == 'true' ]] && props+=("-p:CrossBuild=$crossBuild")
@@ -230,6 +237,8 @@ build_debug()
   io_message_unsafe ${Brown}"[$me]${DarkGray} projName     = $projName"
   io_message_unsafe ${Brown}"[$me]${DarkGray} projExt      = $projExt"
   io_message_unsafe ${Brown}"[$me]${DarkGray} pkgDir       = $pkgDir"
+  io_message_unsafe ${Brown}"[$me]${DarkGray} pkgBinDir    = $pkgBinDir"
+  io_message_unsafe ${Brown}"[$me]${DarkGray} pkgDbgDir    = $pkgDbgDir"
   io_message_unsafe ${Brown}"[$me]${DarkGray} cpuCount     = $cpuCount"
   io_message_unsafe ${Brown}"[$me]${DarkGray} build        = $build"
   io_message_unsafe ${Brown}"[$me]${DarkGray} clean        = $clean"
