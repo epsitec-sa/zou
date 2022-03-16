@@ -233,7 +233,7 @@ if not exist "%_project%" (
   goto :Error
 )
 if not '!_platforms!' == '' if not '!_noPlatform!' == '' (
-  set _error=options [97m--cp[91m and [97m-pPLATFORM[91m are mutually exclusive.
+  set _error=options [97m-p-[91m and [97m-pPLATFORM[91m are mutually exclusive.
   goto :Error
 )
 
@@ -283,6 +283,7 @@ set command=%command% %_opts% %_project% -p:%_props%
 
 if '%_debug%' == 'true' (
   echo [33m[%_zouCmd%][90m _project    = %_project%[0m
+  echo [33m[%_zouCmd%][90m _pkgDir     = %_pkgDir%[0m
   echo [33m[%_zouCmd%][90m _cpuCount   = %_cpuCount%[0m
   echo [33m[%_zouCmd%][90m _build      = %_build%[0m
   echo [33m[%_zouCmd%][90m _clean      = %_clean%[0m
