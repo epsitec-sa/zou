@@ -34,19 +34,22 @@ echo [37m    -e[90m^|[37m--clean     [92m clean
 echo [37m    -x[90m^|[37m--rebuild   [92m rebuild
 echo [37m    -c[90m=[37mCONFIG      [92m ^([37mRelease[92m^|[90mDebug[92m^)
 echo [37m    -p[90m=[37mPLATFORM    [92m ^([37mx86[92m,[37mx64[92m,[90mWin32[92m,[90mAnyCPU[92m^|[90m-[92m)
-echo [96m 1)[37m -p-            [92m do not specify platform
-echo [96m 1)[37m -a[90m^|[37m--cross     [92m cross build ^([37mWindows[92m,[90mOSX[92m,[90mLinux^[92m)
-echo [96m 1)[37m[37m -g[90m^|[37m--goblin    [92m build goblins
-echo [96m 1)[37m[37m    --rm        [92m build remote components
-echo [96m 2)[37m -s[90m^|[37m--sign      [92m sign Windows package binaries
-echo [96m 2)[37m -k[90m=[37mPKGDIR      [92m packaging directory ([37mpkg[92m)
 echo.
-echo [96m 1) zou      agent only (     .msbuildproj)
-echo [96m 2) zou pack agent only (.pack.msbuildproj)
+echo [32m  zou agent ([37m.msbuildproj[32m):
+echo [37m    -v             [92m display some debug info
+echo [37m    -p-            [92m do not specify platform
+echo [37m    -a[90m^|[37m--cross     [92m cross build ^([37mWindows[92m,[90mOSX[92m,[90mLinux^[92m)
+echo [37m    -g[90m^|[37m--goblin    [92m build goblins
+echo [37m       --rm        [92m build remote components
 echo.
-echo [92mAdvanced options:
-echo [37m    -v             [92m display zou debug info
-echo [37m    -#             [92m display %_zouCmd% script internal variables
+echo [32m  zou pack agent ([37m.pack.msbuildproj[32m):
+echo [37m    -s[90m^|[37m--sign      [92m sign Windows package binaries
+echo [37m    -k[90m=[37mPKGDIR      [92m package root  directory ([37mpkg[92m)
+echo [37m    --kb[90m=[37mPKGBINDIR [92m package bin   directory ([37mpkg\^<CONFIG^>\bin[92m)
+echo [37m    --kd[90m=[37mPKGDBGDIR [92m package debug directory ([37mpkg\^<CONFIG^>\dbg[92m)
+echo.
+echo [32m  various:
+echo [37m    -#             [92m display script internal variables
 echo [37m       --boost     [92m update [37mboost[92m nuget packages
 echo [37m       --bl        [92m create build log ([37m.binlog[92m)
 echo [37m       --pp        [92m create preprocessed XML (does not build)
@@ -145,6 +148,28 @@ if /i '%_arg:~0,2%' == '-k' (
     set val=%1
   )
   set _pkgDir=!val!
+  goto :Parse
+)
+
+rem PKGBINDIR : --kb PKGBINDIR
+if /i '%_arg:~0,4%' == '--kb' (
+  set val=!_arg:~4!
+  if '!val!' == '' (
+    shift
+    set val=%1
+  )
+  set _pkgBinDir=!val!
+  goto :Parse
+)
+
+rem PKGDBGDIR : --kd PKGDBGDIR
+if /i '%_arg:~0,4%' == '--kd' (
+  set val=!_arg:~4!
+  if '!val!' == '' (
+    shift
+    set val=%1
+  )
+  set _pkgDbgDir=!val!
   goto :Parse
 )
 
@@ -274,6 +299,8 @@ if '%_goblin%'     neq '' set _props=%_props%;BuildGoblins=%_goblin%
 if '%_rome%'       neq '' set _props=%_props%;BuildRome=%_rome%
 if '%_verbose%'    neq '' set _props=%_props%;RedistDebug=%_verbose%;ZouDebug=%_verbose%
 if '%_pkgDir%'     neq '' set _props=%_props%;PkgDir=%_pkgDir%
+if '%_pkgBinDir%'  neq '' set _props=%_props%;PkgBinDir=%_pkgBinDir%
+if '%_pkgDbgDir%'  neq '' set _props=%_props%;PkgDbgDir=%_pkgDbgDir%
 if '%_boost%'      neq '' set _props=%_props%;BoostUpdate=%_boost%
 
 rem create msbuild command
@@ -283,6 +310,7 @@ set command=%command% %_opts% %_project% -p:%_props%
 if '%_debug%' == 'true' (
   echo [33m[%_zouCmd%][90m _project    = %_project%[0m
   echo [33m[%_zouCmd%][90m _pkgDir     = %_pkgDir%[0m
+  echo [33m[%_zouCmd%][90m _pkgBinDir  = %_pkgBinDir%[0m
   echo [33m[%_zouCmd%][90m _cpuCount   = %_cpuCount%[0m
   echo [33m[%_zouCmd%][90m _build      = %_build%[0m
   echo [33m[%_zouCmd%][90m _clean      = %_clean%[0m
