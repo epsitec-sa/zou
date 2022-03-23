@@ -1,0 +1,33 @@
+<!--
+Enable T4 template transform
+Use msbuild '-p:TransformOnBuild=true' to transform T4 templates on the command line
+(see cresus-dev\swissdec\linq-to-xsd.bat)
+-->
+<Project InitialTargets="TraceT4Targets">
+
+  <PropertyGroup>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(TransformOnBuild)' == 'true'">
+    <TransformOutOfDateOnly>true</TransformOutOfDateOnly>
+    <OverwriteReadOnlyOutputFiles>true</OverwriteReadOnlyOutputFiles>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(TransformOnBuild)' == 'true'">
+    <T4ParameterValues Include="TargetDir">
+      <Value>$(TargetDir)</Value>
+      <Visible>false</Visible>
+    </T4ParameterValues>
+  </ItemGroup>
+  <Import Condition="'$(TransformOnBuild)' == 'true'" Project="$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\TextTemplating\Microsoft.TextTemplating.targets" />
+
+  <Target Name="TraceT4Targets" Condition="'$(ZouTrace)' == 'true'">
+    <Message Importance="high" Text="zou/T4.targets [$(MSBuildProjectFile)]" />
+    <Message Importance="high" Text="--------------" />
+    <Message Importance="high" Text="TransformOnBuild             = $(TransformOnBuild)" />
+    <Message Importance="high" Text="CopyLocalLockFileAssemblies  = $(CopyLocalLockFileAssemblies)" />
+    <Message Importance="high" Text="TransformOutOfDateOnly       = $(TransformOutOfDateOnly)" />
+    <Message Importance="high" Text="OverwriteReadOnlyOutputFiles = $(OverwriteReadOnlyOutputFiles)" />
+    <Message Importance="high" Text="@T4ParameterValues           = %(T4ParameterValues.Identity)" />
+    <Message Importance="high" Text=" " />
+  </Target>
+</Project>
