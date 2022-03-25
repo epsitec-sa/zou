@@ -71,6 +71,13 @@
       <ImportProject Remove="@(ImportProject)" />
       <ImportProject Include="@(_ImportProject)" />
       <_ImportProject Remove="@(_ImportProject)" />
+
+      <!-- Do not forward RID if Build target is specified or if its a WindowsDesktop app -->
+      <ImportProject>
+        <RuntimeIdentifier Condition="'%(ImportProject.Targets)' != '' And $([System.String]::new('%(ImportProject.Targets)').IndexOf('Build', StringComparison.OrdinalIgnoreCase)) >= 0" />
+        <RuntimeIdentifier Condition="'$(RuntimePlatform)' == 'x64' And '%(ImportProject.RedistX64Framework)' == '$(WindowsTargetFramework)'" />
+        <RuntimeIdentifier Condition="'$(RuntimePlatform)' == 'x86' And '%(ImportProject.RedistX86Framework)' == '$(WindowsTargetFramework)'" />
+      </ImportProject>
     </ItemGroup>
 
     <LogItems Condition="'$(ZouDebug)' == 'true'" Items="@(ImportProject)" Title="ImportProjectCrossBuild.ImportProject" />
