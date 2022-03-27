@@ -42,9 +42,6 @@
       <PlatformToolset  >$(PlatformToolset)</PlatformToolset>
       <RuntimeIdentifier>$(RuntimeIdentifier)</RuntimeIdentifier>
 
-      <RedistX86Framework>$(FullTargetFramework)</RedistX86Framework>
-      <RedistX64Framework>$(CoreTargetFramework)</RedistX64Framework>
-
       <RedistDebug      >$(RedistDebug)</RedistDebug>
       <ZouDebug         >$(ZouDebug)</ZouDebug>
     </ImportProject>
@@ -54,10 +51,23 @@
     <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] ImportProjectInit" />
 
     <ItemGroup>
+      <!-- Force runtime type for C++ projects -->
       <ImportProject>
-        <Platform    Condition="'%(ImportProject.Platform)' == '' And $([System.String]::new(%(ImportProject.RuntimeIdentifier)).EndsWith('x86'))">x86</Platform>
-        <Platform    Condition="'%(ImportProject.Platform)' == '' And $([System.String]::new(%(ImportProject.RuntimeIdentifier)).EndsWith('x64'))">x64</Platform>
         <RuntimeType Condition="'%(ImportProject.Extension)' == '.vcxproj'">Full</RuntimeType>
+      </ImportProject>
+      <!--
+      Set default redistribution frameworks only for C# projects (avoid a publish of other project types).
+      For redistribution projects, the target framework is deduced from the redistribution framework
+      and the publish target is used if the target framework is defined (see Redist.ImportProject.targets)
+      -->
+      <ImportProject>
+        <RedistX86Framework Condition="'%(ImportProject.RedistX86Framework)' == '' And '%(Extension)' == '.csproj'">$(FullTargetFramework)</RedistX86Framework>
+        <RedistX64Framework Condition="'%(ImportProject.RedistX64Framework)' == '' And '%(Extension)' == '.csproj'">$(CoreTargetFramework)</RedistX64Framework>
+      </ImportProject>
+      <!-- Get default platform from runtime identifier -->
+      <ImportProject>
+        <Platform Condition="'%(ImportProject.Platform)' == '' And $([System.String]::new(%(ImportProject.RuntimeIdentifier)).EndsWith('x86'))">x86</Platform>
+        <Platform Condition="'%(ImportProject.Platform)' == '' And $([System.String]::new(%(ImportProject.RuntimeIdentifier)).EndsWith('x64'))">x64</Platform>
       </ImportProject>
     </ItemGroup>
   </Target>
