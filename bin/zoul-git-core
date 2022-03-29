@@ -162,6 +162,16 @@ gitx()
   return $ec
 }
 
+git_get_composite_sha()
+{
+  local algo=${1:-sha256}
+  (git rev-parse HEAD; git submodule status --recursive | cut -c 2- | cut -d' ' -f1) | ${algo}sum | cut -d ' ' -f1
+}
+git_clone()
+{
+  [[ -z $ZOUL_GIT_OPTIONS ]] && . zoul-git-options
+  gitx -C "$1" clone $(gitx_cache_option) "${@:2}" 2>&1 | _git_sm_out_filter
+}
 git_sm_clone()
 {
   [[ -z $ZOUL_GIT_OPTIONS ]] && . zoul-git-options
