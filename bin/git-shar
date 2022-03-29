@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+
+[[ -z $ZOUL_GIT_CORE ]] && . zoul-git-core
+
+shar_parse()
+{
+  local arg verbose
+  while [[ "$#" > 0 ]]; do case "$1" in
+    -h|--help)    zou-help $0; exit 0;;
+    -v|--verbose) verbose='true';;
+    --vlast|\
+    --vnext|\
+    --dev)  skuMode="$1";;
+    --url*) arg="${1:5}"; url="${arg//=}"; path=${url##*/}; path=${path%.git};;
+    --sku*) arg="${1:5}"; sku="${arg//=}";;
+    -1)     algo='sha1';;
+    -*)     io_error "unknown option ${VC}$1${Red}\n"; io_help $0; return 1;;
+    *)      path="$1";;
+  esac; shift; done
+
+  if [[ -z $url && -z $path ]]; then
+    io_error 'at least one of <url> or <path> should be specified\n'
+    io_help $0
+    exit 1
+  fi
+  [[ -z $verbose ]] && source zoul-quiet
+  io_trace "shar_parse -- $(print_vars algo verbose url path skuMode)"
+}
+shar_run()
+{
+  local url sku='master' skuMode='--dev' algo='sha256' path="$PWD" quiet redir
+  shar_parse "$@" || return $?
+
+  if [ -d "$path" ]; then
+    if [ -d "$path/.git" ]; then
+      cd "$path"
+      git sync -r -p
+    else
+      printf "%b\n" "${VC}$path${Red} is not a git repository"
+      exit 1
+    fi
+  else
+    git_clone "$PWD" "$url" "$path"
+    cd "$path"
+  fi
+  git sku enter "$sku" "$skuMode"
+  git_get_composite_sha "$algo"
+}
+
+shar_run "$@"

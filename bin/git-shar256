@@ -1,3 +1,5 @@
 #!/usr/bin/env bash
 
-(git rev-parse HEAD; git submodule status --recursive | cut -c 2- | cut -d' ' -f1) | sha256sum | cut -d ' ' -f1
+[[ -z $ZOUL_GIT_CORE ]] && . zoul-git-core
+
+git_get_composite_sha 'sha256'
