@@ -25,7 +25,8 @@ shar_parse()
     exit 1
   fi
   [[ -z $verbose ]] && source zoul-quiet
-  io_trace "shar_parse -- $(print_vars algo verbose url path skuMode)"
+  
+  # io_trace "shar_parse -- $(print_vars algo verbose url path skuMode)"
 }
 shar_run()
 {
@@ -35,7 +36,7 @@ shar_run()
   if [ -d "$path" ]; then
     if [ -d "$path/.git" ]; then
       cd "$path"
-      git sync -r -p
+      git sync -a -r -p
     else
       printf "%b\n" "${VC}$path${Red} is not a git repository"
       exit 1
@@ -44,7 +45,7 @@ shar_run()
     git_clone "$PWD" "$url" "$path"
     cd "$path"
   fi
-  git sku enter "$sku" "$skuMode"
+  git sku enter -a "$sku" "$skuMode"
   git_get_composite_sha "$algo"
 }
 
