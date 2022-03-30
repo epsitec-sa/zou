@@ -6,12 +6,13 @@ Compute the composite SHA of a SKU:
     - if <path> is null then path = <url> file name
     - if <path> exists  then synchronize with 'git sync -r -p' else clone with 'git clone <url> <path>' 
 - enter the SKU with 'git sku enter sku --(vlast|vnext|dev)'
-- finally compute the composite SHA with 'git shar256' or 'git shar1'.
+- finally compute the composite SHA with 'shasum'.
 
 options:
     -h|--help               display help
     -v|--verbose            display progress and SHA (default to SHA only)
-    -1                      compute SHA1 (default to SHA256)
+    -1                      use SHA 1 algorithm (default to 256)
+    -a=<algo>               use specific SHA algorithm (default to 256)
     --url=<url>             the remote URL 
     --sku=<sku>             the SKU (default to master)
     --vlast                 enter last version - checkout last version tags

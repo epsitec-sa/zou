@@ -13,7 +13,8 @@ shar_parse()
     --dev)  skuMode="$1";;
     --url*) arg="${1:5}"; url="${arg//=}"; path=${url##*/}; path=${path%.git};;
     --sku*) arg="${1:5}"; sku="${arg//=}";;
-    -1)     algo='sha1';;
+    -a*)    arg="${1:2}"; algo="${arg//=}";;
+    -1)     algo='1';;
     -*)     io_error "unknown option ${VC}$1${Red}\n"; io_help $0; return 1;;
     *)      path="$1";;
   esac; shift; done
@@ -28,7 +29,7 @@ shar_parse()
 }
 shar_run()
 {
-  local url sku='master' skuMode='--dev' algo='sha256' path="$PWD" quiet redir
+  local url sku='master' skuMode='--dev' algo='256' path="$PWD" quiet redir
   shar_parse "$@" || return $?
 
   if [ -d "$path" ]; then
