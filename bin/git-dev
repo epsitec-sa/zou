@@ -22,6 +22,7 @@ dev_parse()
     --rc)           prerelPrefix='rc';;
     --rtm)          prerelPrefix='rtm';;
     --vcommit)      vcommit=true;;
+    --cosm)         commitSubmodules=true;;
     attach)         subcommand=$1;;
     enter)          subcommand=$1;;
     release)        subcommand=$1;;
@@ -53,8 +54,8 @@ dev_run()
   local jobsCount recursive command='dev' subcommand \
         cmdScopes=( prod_scope config_scope cosm_scope ) \
         noSkuFilter incrementKind defaultVersion='0.1' \
-        forceRelease prerelPrefix vcommit devModulePaths=()
-        cliArgs="$@"
+        forceRelease prerelPrefix vcommit devModulePaths=() \
+        commitSubmodules cliArgs="$@"
 
   dev_parse "$@" || return $?
   
@@ -125,7 +126,7 @@ dev_release_epilog()
   # io_trace "dev_release_epilog -1- $(print_vars forceRelease incrementKind moduleDevBranchPath prodBranchPath)"
   module_is_bundle && _cmd_is_recursive && prod_reset_scope
   if [[ $forceRelease == true ]] || [[ -n $incrementKind ]] || cosm_has_unstaged_clean_submodules || ! ref_equals "$moduleDevBranchPath" "$prodBranchPath"; then
-    # io_trace "dev_release_epilog -2- $(print_vars forceRelease incrementKind moduleDevBranchPath prodBranchPath releaseStatus)"
+    # io_trace "dev_release_epilog -2- $(print_vars commitSubmodules forceRelease incrementKind moduleDevBranchPath prodBranchPath releaseStatus)"
     _dev_check_releasable || return $?
     dev_checkout false "$moduleDevBranch"
     prod_ensure_vbranch "$defaultVersion" "$incrementKind"
@@ -141,6 +142,10 @@ dev_release_epilog()
       else
         mio_warning "No need to force a new release"
       fi
+    fi
+    # io_trace "dev_release_epilog -5- $(print_vars commitSubmodules forceRelease incrementKind moduleDevBranchPath prodBranchPath releaseStatus)"
+    if [[ $commitSubmodules == true ]]; then
+      cosm_commit_unstaged_submodules true
     fi
     branch_merge "$moduleDevBranchPath" "$prodBranchPath" '-Xtheirs' \
     && branch_merge_ff "$prodBranchPath" "$moduleDevBranchPath" \

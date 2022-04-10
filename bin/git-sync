@@ -15,7 +15,6 @@ sync_parse()
     -c|--clean)     cleanLocalBranches=true;;
     -C)             cleanLocalBranches=true; deleteBrokenTrackingInfoBranches=true;;
     -p|--pull)      syncNoPush=true;;
-    --cosm)         syncSubmodules=true;;
     --)             shift; break;;
     -*) io_error "unknown option '$1'"; return 1;;
     *)  args+=( "$1" );;
@@ -31,7 +30,7 @@ sync_run()
   # parse command line
   local jobsCount recursive command='sync' subcommand='do' \
         cmdScopes=( config_scope cosm_scope ) syncModulePaths=() \
-        deleteBrokenTrackingInfoBranches syncNoPush syncSubmodules
+        deleteBrokenTrackingInfoBranches syncNoPush
 
   sync_parse "$@" || return $?
   
@@ -83,11 +82,8 @@ sync_do_xprolog()
 _sync_commit()
 {
   local r=$1 l=$2 i=$3 ec=0
-  # io_trace ">>> _sync_commit ${*@Q} -- $(print_vars r l i syncSubmodules) PWD=$PWD"
+  # io_trace ">>> _sync_commit ${*@Q} -- $(print_vars r l i) PWD=$PWD"
   if [[ $i == '' || $i =~ (\=|\>)$ ]]; then
-    if [[ $syncSubmodules == true ]]; then
-      cosm_commit_unstaged_submodules true; ec=$?
-    fi
     [ $ec -eq 0 ] || gitx push --follow-tags ${r%%/*} $l &>>"$stdallRedir"
   fi
 }
