@@ -229,6 +229,8 @@ prod_release_root_scope()
     local rstatusParentGate rstatusLookupPath rstatusParentLookupPath principalReleaseStatus
 
     local anyNeedsPush=false
+    local topLevelModuleBundlePath
+
     # io_trace "prod_release_root_scope -1- $(print_vars forcePrincipalRelease checkoutType prodCheckoutType prodBranch modulePrerelPrefix)"
   fi
 
@@ -245,7 +247,8 @@ prod_release_scope()
   [[ -z $stayInProd ]] && module_in_strict_dev_mode && wasInDevMode=0
   cmd_is_top_level; cmdIsTopLevel=$?
   
-  # io_trace "prod_release_scope -- $(print_vars wasInDevMode cmdIsTopLevel releaseStatus devEqualsProd checkoutType prodCheckoutType prodBranch)"
+  [ $cmdIsTopLevel -eq 0 ] && topLevelModuleBundlePath="$moduleBundlePath"
+  # io_trace "prod_release_scope -- $(print_vars topLevelModuleBundlePath moduleBundlePath cmdIsTopLevel wasInDevMode releaseStatus devEqualsProd checkoutType prodCheckoutType prodBranch)"
 
   if module_is_bundle; then
     # io_trace "prod_release_scope BUNDLE -- $(print_vars prodCheckoutType modulePrerelPrefix)"
@@ -376,7 +379,7 @@ prod_release_finally()
     if config_has_internal_submodules; then
       # checkout dev branch for registerd child submodules
       . "$smInProdPath" # deserialize
-      # io_trace "prod_release_finally TOP LEVEL -- $(print_vars smInProd[@] smInProdPath)"
+      # io_trace "prod_release_finally TOP LEVEL -- $(print_vars topLevelModuleBundlePath smInProd[@] smInProdPath)"
       module_visit_submodules_async 'smInProd[@]' module_scope _prod_dev_checkout
     fi
     [ $wasInDevMode -eq 0 ] && dev_checkout false "$moduleDevBranch"
@@ -387,8 +390,9 @@ prod_release_finally()
     # fi
   elif [ $wasInDevMode -eq 0 ] && ! module_dev_attach; then
     # defer dev checkout to top level module
-    # io_trace "prod_release_finally NON TOP LEVEL -- $(print_vars moduleBundlePath moduleHead smInProdPath)"
-    _sm_in_prod_update "$moduleBundlePath"
+    local moduleRelPath=${moduleBundlePath#$topLevelModuleBundlePath/}
+    # io_trace "prod_release_finally NON TOP LEVEL -- $(print_vars topLevelModuleBundlePath moduleRelPath moduleBundlePath moduleHead smInProdPath)"
+    _sm_in_prod_update "$moduleRelPath"
   fi
   branch_show_status
   _prod_synchronize_message
