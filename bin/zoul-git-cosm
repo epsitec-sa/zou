@@ -59,6 +59,7 @@ cosm_scope()
 }
 cosm_has_unstaged_submodules()
 {
+  # io_trace "cosm_has_unstaged_submodules -- $(print_vars unstagedCleanIncludedSubmodules[@] unstagedDirtyIncludedSubmodules[@])"
   [ ${#unstagedCleanIncludedSubmodules[@]} -gt 0 ] || [ ${#unstagedDirtyIncludedSubmodules[@]} -gt 0 ]
 }
 cosm_has_unstaged_clean_submodules()
@@ -134,15 +135,16 @@ cosm_discard_unstaged_clean_external_submodules()
 
 cosm_commit_unstaged_submodules()
 {
+  # io_trace "cosm_commit_unstaged_submodules -1- $(print_vars moduleSubmodulePaths[@] unstagedCleanSubmodules[@] unstagedCleanIncludedSubmodules[@])"
   # recursively commit unstaged clean submodules
   [ ${#moduleSubmodulePaths[@]} -eq 0 ] && return 0
 
   local commitAll=$1 clean
   if [[ $commitAll == true ]]; then
-    clean=( ${unstagedCleanSubmodules[@]} )
+    clean=( "${unstagedCleanSubmodules[@]}" )
   else
-    clean=( ${unstagedCleanIncludedSubmodules[@]} )
+    clean=( "${unstagedCleanIncludedSubmodules[@]}" )
   fi
-  # io_trace "cosm_commit_unstaged_submodules $(print_vars commitAll clean[@])"
+  # io_trace "cosm_commit_unstaged_submodules -2- $(print_vars commitAll clean[@])"
   repo_commit_submodules "$moduleRoot" "${clean[@]}"
 }

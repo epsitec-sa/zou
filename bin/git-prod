@@ -322,6 +322,7 @@ prod_release_prolog()
       fi
       ;;
     error)
+      # io_trace "prod_release_prolog -2- $(print_vars prodBranch releaseStatus)"
       mio_error "Branch ${VC}$moduleDevBranch${Red} cannot be released."
       mio_info "  use ${VC}git dev release${Cyan} to release some development code."
       return 1
@@ -335,24 +336,26 @@ prod_release_prolog()
     if [ $ec -ne 0 ]; then
       mio_warning "Unable to switch to branch ${VC}$prodBranch${Brown}"
     fi
-    # io_trace "prod_release_prolog -2- $(print_vars prodCheckoutType prodBranch releaseStatus)"
+    # io_trace "prod_release_prolog -3- $(print_vars prodCheckoutType prodBranch releaseStatus)"
   fi
   return $ec
 }
 prod_release_epilog()
 {
-  # io_trace "prod_release_epilog ${*@Q} -- $(print_vars prodBranch releaseStatus)"
+  # io_trace "prod_release_epilog ${*@Q} -1- $(print_vars prodBranch releaseStatus)"
   local repoIsClean repoIsMerging hasDirtySubmodules
   repo_is_clean; repoIsClean=$?
   repo_is_merging; repoIsMerging=$?
   cosm_has_unstaged_dirty_submodules; hasDirtySubmodules=$?
   if [ $repoIsClean -eq 0 ] && [ $repoIsMerging -ne 0 ] && [ $hasDirtySubmodules -ne 0 ]; then
+    # io_trace "prod_release_epilog -2.1- $(print_vars prodBranch releaseStatus)"
     _prod_fix_release_status
+    # io_trace "prod_release_epilog -2.2- $(print_vars prodBranch releaseStatus)"
     _prod_release || io_trace_error 'prod_release_epilog 1' || return $?
     _vtable_update || io_trace_error 'prod_release_epilog 2' || return $?
   else
     io_lock_enter
-    # io_trace_unsafe "prod_release_epilog -2- $(print_vars repoIsClean repoIsMerging unstagedDirtyIncludedSubmodules[@])"
+    # io_trace "prod_release_epilog -3- $(print_vars repoIsClean repoIsMerging unstagedDirtyIncludedSubmodules[@])"
     mio_error_unsafe  "Branch ${VC}${prodBranch:-$moduleDevBranch}${Red} cannot be released."
     if [ $hasDirtySubmodules -eq 0 ]; then
       io_warning_unsafe "  Some submodules are dirty (${VC}$(string_join ', ' "${unstagedDirtyIncludedSubmodules[@]}}")${Brown})." "$moduleTracePrefix"
