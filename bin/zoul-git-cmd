@@ -139,7 +139,7 @@ _cmd_visit_tree()
   # allow override of configInternalSubmodules and configExternalSubmodules arrays (submodules to visit)
   # - see git-cosm for an exemple
   local include exclude includeArrayName='configInternalSubmodules[@]' excludeArrayName='configExternalSubmodules[@]'
-  if [[ ${#configInternalSubmodules[@]} -gt 0 && $(type -t "${command}_${subcommand}_select") == 'function' ]]; then
+  if [[ ${#configInternalSubmodules[@]} -gt 0 || ${#moduleSubmodulePaths[@]} -eq 0 ]] && [[ $(type -t "${command}_${subcommand}_select") == 'function' ]]; then
     include=($(${command}_${subcommand}_select 'configInternalSubmodules[@]'))
     includeArrayName='include[@]'
   fi
