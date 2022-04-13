@@ -30,6 +30,8 @@ prod_parse()
     --beta)         prerelPrefix='beta';;
     --rc)           prerelPrefix='rc';;
     --rtm)          prerelPrefix='rtm';;
+    --nomsg)        noMessage='true';;
+    --nofetch)      noFetch='true';;
     attach|select)  subcommand=$1;;
     enter|release)  subcommand=$1;;
     --)             shift; break;;
@@ -69,10 +71,10 @@ prod_run()
         cmdScopes=( prod_scope config_scope cosm_scope ) \
         mergeIntoDev vtable prerelPrefix dryRun prodModulePaths=() \
         checkoutType='vnext' attachMode='auto' forcePrincipalRelease \
-        prodSelectSpec refSymbol refType stayInProd=true
+        prodSelectSpec refSymbol refType stayInProd=true noMessage noFetch
 
   prod_parse "$@" || return $?
-  prod_startup_message
+  [[ $noMessage == 'true' ]] || prod_startup_message
 
   bundle_scope prod_command
 }
@@ -108,7 +110,7 @@ prod_command()
       noSubmodulesInit=true
       ;;
     release)
-      branchFetchAll='true'
+      [[ $noFetch == 'true' ]] || branchFetchAll='true'
       recursive=true
       unset noSkuFilter
       ;;
@@ -398,7 +400,7 @@ prod_release_finally()
     _sm_in_prod_update "$moduleRelPath"
   fi
   branch_show_status
-  _prod_synchronize_message
+  [[ $noMessage == 'true' ]] || _prod_synchronize_message
 }
 prod_release_xepilog()  { _vtable_update; }
 prod_release_xfinally() { branch_show_status; }

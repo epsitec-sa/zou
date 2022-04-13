@@ -22,7 +22,9 @@ dev_parse()
     --rc)           prerelPrefix='rc';;
     --rtm)          prerelPrefix='rtm';;
     --vcommit)      vcommit=true;;
-    --cosm)         commitSubmodules=true;;
+    --cosm)         commitSubmodules='true';;
+    --nomsg)        noMessage='true';;
+    --nofetch)      noFetch='true';;
     attach)         subcommand=$1;;
     enter)          subcommand=$1;;
     release)        subcommand=$1;;
@@ -55,10 +57,15 @@ dev_run()
         cmdScopes=( prod_scope config_scope cosm_scope ) \
         noSkuFilter incrementKind defaultVersion='0.1' \
         forceRelease prerelPrefix vcommit devModulePaths=() \
-        commitSubmodules cliArgs="$@"
+        commitSubmodules noMessage noFetch cliArgs="$@"
 
   dev_parse "$@" || return $?
-  
+  [[ $noMessage == 'true' ]] || dev_startup_message
+
+  bundle_scope dev_command
+}
+dev_startup_message()
+{
   case $subcommand in
     attach)  startupMessage="Attaching to development, please wait...";;
     enter)   startupMessage="Entering development, please wait...";;
@@ -66,7 +73,6 @@ dev_run()
     vupdate) startupMessage="Updating version, please wait...";;
   esac
 
-  bundle_scope dev_command
 }
 dev_command()
 {
@@ -74,7 +80,7 @@ dev_command()
   cmd_register_module_paths "$recursive" "${devModulePaths[@]}"
   case $subcommand in
     attach|enter) cmd_register_module_paths false "$bundleRoot";;
-    release)      branchFetchAll='true';;
+    release)      [[ $noFetch == 'true' ]] || branchFetchAll='true';;
   esac
 
   cmd_visit_modules
@@ -159,7 +165,7 @@ dev_release_epilog()
 }
 dev_release_finally()
 {
-  _dev_synchronize_message
+  [[ $noMessage == 'true' ]] || _dev_synchronize_message
 }
 dev_release_xepilog()  { :; }
 dev_release_xfinally() { branch_show_status; }
