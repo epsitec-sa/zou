@@ -250,7 +250,9 @@ _prod_init_prod()
   if [ $prod2dev -eq 0 ]; then
     prod2dev=$(( -$(gitx rev-list --count $moduleDevBranchPath..$prodBranchPath 2>>"$stderrRedir") ))
   fi
-  # io_trace "_prod_init_prod -3- $(print_vars prodBranchPath moduleDevBranchPath prod2dev)"
+  # io_trace "_prod_init_prod -3- $(print_vars prodBranchPath moduleDevBranchPath vtag2dev vtag2prod prod2dev)"
+  vtag2dev=$(( $vtag2prod + $prod2dev ))
+  # io_trace "_prod_init_prod -4- $(print_vars vtag2dev vtag2prod prod2dev)"
   vtag_format_alias "$prodBranch" "$prod2dev"
   prod2devAlias=$alias
   vtag_format_alias "$moduleDevBranchPath" "$((-$prod2dev))"
