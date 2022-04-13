@@ -517,8 +517,10 @@ prod_ensure_vbranch()
   module_in_wip_mode && return 0
 
   local version=$1 incrementKind=$2 vbranch graftPoint ec
+  module_is_principal && [[ -z "$version" ]] && version=${bundleProdBranch##*/}
+
   prod_set_vbranch "$version" "$incrementKind"; ec=$?
-  # io_trace "prod_ensure_vbranch -1- -- $(print_vars version incrementKind vbranch graftPoint ec)"
+  # io_trace "prod_ensure_vbranch -1- -- $(print_vars version incrementKind vbranch graftPoint bundleProdBranch ec)"
   case $ec in
     0) ;; # vbranch exists
     1) vbranch_create "$vbranch" "$graftPoint";;
@@ -529,6 +531,7 @@ prod_ensure_vbranch()
 _prod_ensure_bundle_vbranch()
 {
   module_is_principal || return 0
+  [[ $prodBranch == $bundleProdBranch ]] && return 0
   # io_trace "_prod_ensure_bundle_vbranch -- $(print_vars moduleId principalModuleId prodBranch)"
   local bundleScopes=( prod_scope )
   module_visit "$bundleRoot" "${bundleScopes[@]}" _prod_ensure_bundle_vbranch_core "$prodBranch"
@@ -591,7 +594,7 @@ prod_increment_release_version()
 {
   local prerelPrefix=$1 noIncrement ec=0
   # get principal module version
-  # io_trace "prod_increment_release_version -1- $(print_vars pmProdHTag)"
+  # io_trace "prod_increment_release_version -1- $(print_vars pmProdHTag bundleVTag)"
   _prod_refresh_bundle_htag; ec=$?  # -> prodHTag bundleHTag noIncrement
   [ $ec -eq 1 ] && return 1
   _prod_increment_release_version "$prerelPrefix" "$noIncrement" # -> releaseVTag releasePrerelPrefix
@@ -642,12 +645,13 @@ _prod_refresh_bundle_htag()
         principalScopes=( prod_scope )
 
   # get principal module release info
-  pinfo=$(module_visit "$principalModuleId" "${principalScopes[@]}" _prod_get_principal_module_release_info)
+  pinfo=$(module_visit "$principalModuleId" "${principalScopes[@]}" _prod_get_principal_module_release_info "$prodBranch")
   read -r pstatus pvtag phtag <<< "$pinfo"
   # io_trace "_prod_refresh_bundle_htag -0- PM -- $(print_vars pstatus pvtag phtag)"
 
-  if [[ $pstatus == 'unreleased' || -z "$pvtag" || -z "$phtag" ]]; then
-    mio_error "Invalid operation in ${VC}_prod_refresh_bundle_htag${Red} (principal module ${VC}$principalModuleId${Red} should be released), aborting..."
+  if [[ $pstatus == 'unreleased' || $pstatus == 'unreleasable' || -z "$pvtag" || -z "$phtag" ]]; then
+    mio_error  "Principal module ${VC}$principalModuleId${Red} must be published at least once."
+    io_message "Use ${VC}git dev release${Red} and ${VC}git prod release${Red} to publish it." "$moduleTracePrefix" ${Red}
     return 1
   fi
 
@@ -694,12 +698,31 @@ _prod_refresh_bundle_htag()
 # run in principal module context
 _prod_get_principal_module_release_info()
 {
-  # io_trace "_prod_get_principal_module_release_info -1- $(print_vars releaseStatus prodVTag prodHTag releaseVTag)"
+  # _prod_ensure_principal_module_released "$@"
   # [[ $dryRun == true && -n $principalReleaseStatus ]] && releaseStatus=$principalReleaseStatus
-  # io_trace "_prod_get_principal_module_release_info -2- $(print_vars lbranch vbranch vtag htag delta status nextHead releaseStatus)"
+  # io_trace "_prod_get_principal_module_release_info -1- $(print_vars lbranch vbranch vtag htag delta status nextHead releaseStatus)"
   _prod_increment_release_version
-  # io_trace "_prod_get_principal_module_release_info -3- $(print_vars bundleReleaseStatus releaseStatus prodVTag prodHTag releaseVTag)"
+  # io_trace "_prod_get_principal_module_release_info -2- $(print_vars bundleReleaseStatus releaseStatus prodVTag prodHTag releaseVTag)"
   echo "$releaseStatus" "$prodVTag" "$releaseVTag"
+}
+_prod_ensure_principal_module_released()
+{
+  case "$releaseStatus" in
+    unreleas*)
+      mio_warning "Releasing principal module ${VC}$moduleId${Brown}"
+      local bundleProdBranch=$1
+      io_trace "_prod_ensure_principal_module_released -1- $(print_vars bundleProdBranch releaseStatus)"
+      case "$releaseStatus" in
+        unreleased)
+          git-prod release --nomsg --nofetch \
+          && prod_reset_scope;;
+        unreleasable)
+          git-dev release --nomsg --nofetch -v"$bundleProdBranch" \
+          && git-prod release --nomsg --nofetch \
+          && prod_reset_scope;;
+      esac
+      ;;
+  esac
 }
 
 # Compute next version and prerelease
