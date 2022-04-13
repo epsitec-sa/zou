@@ -18,6 +18,7 @@ sku_parse()
     --vlast)        checkoutType='vlast';;
     --vnext)        checkoutType='vnext';;
     --dev)          checkoutType='dev';;
+    -u|--pub)       publishInfo='true';;
     enter)          subcommand=$1;;
     info)           subcommand=$1;;
     config)         subcommand=$1;;
@@ -60,7 +61,7 @@ sku_run()
         cmdScopes=( prod_scope config_scope cosm_scope ) \
         skuConfigListOnly skuConfigMode skuConfigInclude=() skuConfigExclude=() configPrincipalModuleId \
         noSkuFilter skuSpec skuModulePaths=() \
-        checkoutType='dev'
+        checkoutType='dev' publishInfo
 
   sku_parse "$@" || return $?
   sku_startup_message
@@ -129,7 +130,7 @@ sku_command()
 _sku_on_prod_preinit() { prodCheckoutType=$checkoutType; }
 
 sku_enter_finally()  { _sku_any_finally; _sku_check_synchronized; }
-sku_info_finally()   { _sku_any_finally; }
+sku_info_finally()   { [[ $publishInfo == 'true' ]] || _sku_any_finally; }
 sku_config_finally() { _sku_any_finally; }
 sku_enter_xprolog()  { :; }
 
@@ -168,28 +169,64 @@ _sku_check_synchronized()
 
 sku_info_prolog()
 {
-  local label sku skus=() acolor=${LightGreen} icolor=${DarkGray} bcolor=${Cyan}
-  for sku in $(branch_list_all_flatten); do
-    [[ $sku =~ ^(master|sku/.*dev)$ ]] || continue
-    skus+=( "$sku" )
-  done
-  if [ ${#skus[@]} -gt 0 ]; then
-    local i skuList skuName devBranch=$(wip_to_ref $moduleDevBranch)
-    for i in "${!skus[@]}"; do
-      sku=${skus[$i]}
-      skuName=${sku%/dev}
-      skuName=${skuName#sku/}
-      # io_trace "sku_info_prolog -- $(print_vars sku skuName moduleDevBranch)"
-      if [[ $sku == $devBranch ]]; then
-        skus[$i]=${acolor}$skuName${bcolor}
-      else
-        skus[$i]=${icolor}$skuName${bcolor}
-      fi
-    done
-    skuList=$(string_join ', ' $(array_sort skus[@]))
-  fi
+  if [[ $publishInfo == 'true' ]]; then
+    # io_trace "sku_info_prolog -1- $(print_vars vtag2prod prod2dev)"
+    local hasUnstagedSubmodules
+    cosm_has_unstaged_submodules && hasUnstagedSubmodules='true'
+    if [ "$vtag2prod" -ne 0 ] || [ "$prod2dev" -ne 0 ] || [[ $hasUnstagedSubmodules == 'true' ]]; then
+      local pubs="$vtag2prod" work="$prod2dev" mcolor=${Cyan} pcolor wcolor spubs swork
 
-  mio_message "[${skuList}]" "${bcolor}"
+      if [ "$pubs" -eq 0 ]; then
+        if [[ $hasUnstagedSubmodules == 'true' ]]; then
+          # submodule refs to publish
+          (( pubs+=1 ))
+        else
+          # nothing to publish
+          [ "$work" -eq 0 ] && pcolor=${DarkGray} || pcolor=${Brown}
+        fi
+      else
+        # something to publish
+        pcolor=${Green}
+      fi
+
+      if [ "$work" -eq 0 ]; then
+        # everything published
+        wcolor=${DarkGray}
+        pcolor=${LightGreen}
+      else
+        # some work not published
+        wcolor=${Brown}
+      fi
+
+      spubs=${pcolor}$(printf "%3s" "$pubs")${mcolor}
+      swork=${wcolor}$(printf "%-3s" "$work")${mcolor}
+      # local message=$(printf "vtag2dev=%-3s vtag2prod=%-3s prod2dev=%-3s" $vtag2dev $vtag2prod $prod2dev)
+      local message=$(printf "%b | %b" "$spubs" "$swork")
+      mio_message "$message"
+    fi
+  else
+    local label sku skus=() acolor=${LightGreen} icolor=${DarkGray} bcolor=${Cyan}
+    for sku in $(branch_list_all_flatten); do
+      [[ $sku =~ ^(master|sku/.*dev)$ ]] || continue
+      skus+=( "$sku" )
+    done
+    if [ ${#skus[@]} -gt 0 ]; then
+      local i skuList skuName devBranch=$(wip_to_ref $moduleDevBranch)
+      for i in "${!skus[@]}"; do
+        sku=${skus[$i]}
+        skuName=${sku%/dev}
+        skuName=${skuName#sku/}
+        # io_trace "sku_info_prolog -- $(print_vars sku skuName moduleDevBranch)"
+        if [[ $sku == $devBranch ]]; then
+          skus[$i]=${acolor}$skuName${bcolor}
+        else
+          skus[$i]=${icolor}$skuName${bcolor}
+        fi
+      done
+      skuList=$(string_join ', ' $(array_sort skus[@]))
+    fi
+    mio_message "[${skuList}]" "${bcolor}"
+  fi
 }
 
 ########
@@ -217,6 +254,15 @@ sku_config_prolog()
 
   if [[ -n $configPrincipalModuleId ]]; then
     if [ -d "$bundleRoot/$configPrincipalModuleId" ]; then
+
+      # ensure principal module is internal
+      local pmParent=${configPrincipalModuleId%/*}
+      if [ -n "$pmParent" ]; then
+        module_visit "$bundleRoot/$pmParent" _sku_config_make_internal "$configPrincipalModuleId"
+      else
+        _sku_config_make_internal "$configPrincipalModuleId"
+      fi
+
       config_sku_set_principal_module_id "$configPrincipalModuleId"
       principalModuleId="$configPrincipalModuleId"
     else
@@ -226,6 +272,21 @@ sku_config_prolog()
     config_sku_status 'pmid'
   else
     config_sku_status "$skuConfigMode"
+  fi
+}
+_sku_config_make_internal()
+{
+  # context: parent of principal module
+  local pmId="${1##*/}"
+  if [[ -z "$prodBranch" ]]; then
+    config_select_include_single "$pmId"
+  else
+    # io_trace "_sku_config_make_internal -1- $(print_vars moduleId pmId moduleHead prodBranch prodBranchPath)"
+    local currentHead="$moduleHead"
+    branch_checkout "$prodBranch" &>>"$stdallRedir"
+    config_select_include_single "$pmId"
+    branch_checkout "$currentHead" &>>"$stdallRedir"
+    branch_merge "$prodBranchPath" "$currentHead" &>>"$stdallRedir"
   fi
 }
 
