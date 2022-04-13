@@ -228,7 +228,7 @@ config_select_list_excluded()
 {
   local configFile="$(_config_select_file_path)" submodules included
   if _config_select_level0; then
-    gitx config --file "$configFile" --get-all "select.exclude" &>>"$stdallRedir" || true
+    gitx config --file "$configFile" --get-all "select.exclude" 2>>"$stderrRedir" || true
   else
     [[ -n $1 ]] && submodules=( "${!1}" ) || submodules=( $(repo_list_submodule_paths) )
     included=( $(gitx config --file "$configFile" --get-all "select.include" 2>>"$stderrRedir") )
