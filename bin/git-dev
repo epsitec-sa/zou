@@ -69,7 +69,10 @@ dev_startup_message()
   case $subcommand in
     attach)  startupMessage="Attaching to development, please wait...";;
     enter)   startupMessage="Entering development, please wait...";;
-    release) startupMessage="Releasing development, please wait...";;
+    release)
+      local what="$incrementKind"
+      [ -z "$what" ] && what='patch'
+      startupMessage="Releasing development as ${Brown}$what${White}, please wait...";;
     vupdate) startupMessage="Updating version, please wait...";;
   esac
 
