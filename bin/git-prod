@@ -464,8 +464,9 @@ _prod_release_unreleased()
 {
   # io_trace ">>>> _prod_release_unreleased -1- $(print_vars modulePrerelPrefix releaseStatus)"
   # head will change
-  prod_increment_release_version "$modulePrerelPrefix"
-  [ $? -eq 127 ] && _prod_force_release_of_principal_module
+  prod_increment_release_version "$modulePrerelPrefix"; ec=$?
+  [ $ec -eq 1 ] && return 1
+  [ $ec -eq 127 ] && _prod_force_release_of_principal_module
   # io_trace "#### _prod_release_unreleased -2- $(print_vars modulePrerelPrefix releaseStatus releaseVTag pmProdHTag)"
 
   if [[ $dryRun == true ]]; then
@@ -494,10 +495,20 @@ _prod_release_unimplemented()
 }
 _prod_force_release_of_principal_module()
 {
-  # io_trace "_prod_force_release_of_principal_module -- $(print_vars pmProdHTagRoot pmProdHTag)"
+  # io_trace "_prod_force_release_of_principal_module -1- $(print_vars principalModuleId pmProdHTagRoot pmProdHTag)"
   mio_warning "Forcing release of principal module ${VC}$principalModuleId"
-  local forcePrincipalRelease=true
+  local forcePrincipalRelease=true branchFetchAll=false
   cmd_visit_module "$principalModuleId"
+
+  # release principal module ancestors
+  local smId="$principalModuleId" cmdNotRecursive=true
+  # io_trace "_prod_force_release_of_principal_module -2- $(print_vars principalModuleId smId)"
+  while [[ $smId == */* ]]; do
+    smId=${smId%/*}
+    # io_trace "_prod_force_release_of_principal_module -3- $(print_vars smId)"
+    cmd_visit_module "$smId"
+  done
+
   cosm_reset_scope
 }
 _prod_merge_into_dev()
