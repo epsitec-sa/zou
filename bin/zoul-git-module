@@ -12,6 +12,7 @@ ZOUL_GIT_MODULE=true
 [[ -z $ZOUL_GIT_BRANCH_SYNC ]]   && . zoul-git-branch-sync
 [[ -z $ZOUL_GIT_HOOKS ]]         && . zoul-git-hooks
 [[ -z $ZOUL_GIT_NOTES ]]         && . zoul-git-notes
+[[ -z $ZOUL_GIT_VTAG ]]          && . zoul-git-vtag
 
 # global variables
 startupMessage=''
@@ -228,6 +229,7 @@ _module_trace()
     io_trace "$1 -- $(print_vars bundleId principalModuleId)"
     io_trace "$1 -- $(print_vars bundleHead bundleHeadType)"
     io_trace "$1 -- $(print_vars bundleDevBranch bundleDevBranchPath)"
+    io_trace "$1 -- $(print_vars bundleProdBranch bundleProdBranchPath bundleVTag)"
     io_trace "$1 -- $(print_vars bundleUrl bundleUrlName bundleRoot)"
     io_trace "$1 -- $(print_vars moduleInSku)"
     # io_trace "$1 -- $(print_vars bundleTracePrefix)"
@@ -236,6 +238,7 @@ _module_trace()
     io_trace "$1 -- $(print_vars bundleId principalModuleId)"
     io_trace "$1 -- $(print_vars bundleHead bundleHeadType)"
     io_trace "$1 -- $(print_vars bundleDevBranch bundleDevBranchPath)"
+    io_trace "$1 -- $(print_vars bundleProdBranch bundleProdBranchPath bundleVTag)"
     io_trace "$1 -- $(print_vars moduleInSku)"
     # io_trace "$1 -- $(print_vars bundleTracePrefix)"
     ;;
@@ -298,6 +301,7 @@ bundle_scope()
         bundleId bundleRoot \
         bundleHead bundleHeadType \
         bundleDevBranch bundleDevBranchPath\
+        bundleProdBranch bundleProdBranchPath bundleVTag\
         bundleUrl bundleUrlName \
         bundleTracePrefix \
         principalModuleId \
@@ -465,8 +469,9 @@ _module_set_bundle_dev_branch()
     ltag=$(gitx describe --tags --match '*v[0-9]*' 2>>"$stderrRedir" | head -n1)
     stag=${ltag%-*-g*}
     _bundle_vref_to_dev "$stag" || bundleDevBranch='master'
-    # io_trace "_module_set_bundle_dev_branch -1- $(print_vars bundleHead bundleDevBranch)"
+    # io_trace "_module_set_bundle_dev_branch -1- $(print_vars bundleHead bundleDevBranch ltag stag)"
   elif [[ $bundleHead == $(gitx rev-parse --abbrev-ref "$bundleHead" 2>>"$stderrRedir") ]]; then
+    local ltag stag folder
     _bundle_vref_to_dev "$bundleHead" || bundleDevBranch=$bundleHead
     # io_trace "_module_set_bundle_dev_branch -2- $(print_vars bundleHead bundleDevBranch)"
   elif ! _bundle_vref_to_dev "$bundleHead"; then
@@ -476,7 +481,19 @@ _module_set_bundle_dev_branch()
   local branch lbranch bref
   branch_set_realize "$bundleDevBranch"
   bundleDevBranchPath=$branch
-  # io_trace "_module_set_bundle_sdev_branch -4- $(print_vars bundleHead bundleDevBranch bundleDevBranchPath)"
+  # io_trace "_module_set_bundle_dev_branch -4- $(print_vars bundleHead bundleDevBranch bundleDevBranchPath)"
+
+  # initialize bundle prod info
+  local vbranch vtag delta
+  vtag_set_describe "$bundleDevBranchPath" "$bundleDevBranch" 'auto' "true" # -> vbranch vtag delta
+  if [[ -n "$vbranch" ]]; then
+    bundleProdBranch="$vbranch"
+    bundleVTag="$vtag"
+    branch_set_realize "$bundleProdBranch"
+    bundleProdBranchPath=$branch
+    # io_trace "_module_set_bundle_dev_branch -5- $(print_vars bundleProdBranch bundleProdBranchPath bundleVTag)"
+  fi
+
   cd - >/dev/null
 }
 _bundle_vref_to_dev()
