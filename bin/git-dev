@@ -136,7 +136,10 @@ dev_release_epilog()
   module_is_bundle && _cmd_is_recursive && prod_reset_scope
   if [[ $forceRelease == true ]] || [[ -n $incrementKind ]] || cosm_has_unstaged_clean_submodules || ! ref_equals "$moduleDevBranchPath" "$prodBranchPath"; then
     # io_trace "dev_release_epilog -2- $(print_vars commitSubmodules forceRelease incrementKind moduleDevBranchPath prodBranchPath releaseStatus)"
-    _dev_check_releasable || return $?
+
+    _dev_ensure_patch_is_published
+    # [[ $forceRelease == 'true' ]] || _dev_check_releasable || return $?
+    
     dev_checkout false "$moduleDevBranch"
     prod_ensure_vbranch "$defaultVersion" "$incrementKind"
     if [[ $forceRelease == true && -z $incrementKind ]] && ref_equals "$moduleDevBranchPath" "$prodBranchPath"; then
@@ -173,6 +176,16 @@ dev_release_finally()
 dev_release_xepilog()  { :; }
 dev_release_xfinally() { branch_show_status; }
 
+_dev_ensure_patch_is_published()
+{
+    # we cannot create a minor or major branch if actual branch is not released
+    if [[ -n $incrementKind ]] && [[ $releaseStatus == 'unreleased' ]]; then
+      mio_warning "Releasing current ${VC}patch${Brown} before creating ${VC}$incrementKind${Brown} branch..."
+      git-prod release --nomsg --nofetch -
+      prod_reset_scope
+    fi
+    return 0
+}
 _dev_check_releasable()
 {
     # we cannot create a minor or major branch if actual branch is not released
