@@ -72,7 +72,7 @@
   <Import Project="Wim.targets"  Condition="'$(WimTargetsImported)'  == ''" />
   <Import Project="Zip.targets"  Condition="'$(ZipTargetsImported)'  == ''" />
 
-  <Target Name="DeleteProjectAssets" BeforeTargets="Clean">
+  <Target Name="DeleteProjectAssets" BeforeTargets="Clean" Condition="'$(BuildingInsideVisualStudio)' == ''">
     <Delete Files="obj\project.assets.json" />
   </Target>
 
