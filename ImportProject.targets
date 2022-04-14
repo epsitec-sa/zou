@@ -18,13 +18,6 @@
   -->
   <ItemDefinitionGroup>
     <ImportProject>
-      <!--
-      Defines which build application is used:
-      - Full -> 'msbuild'
-      - Core -> 'dotnet build'
-      -->
-      <RuntimeType      >$(MSBuildRuntimeType)</RuntimeType>
-
       <Verbosity        >$(Verbosity)</Verbosity>
       <MaxCpuCount      >$(MaxCpuCount)</MaxCpuCount>
 
@@ -51,10 +44,23 @@
     <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] ImportProjectInit" />
 
     <ItemGroup>
-      <!-- Force runtime type for C++ projects -->
+      <!--
+      RuntimeType defines which build application is used:
+        - Full -> 'msbuild'
+        - Core -> 'dotnet build'
+      
+      Force 'msbuild' usage for:
+        - C++ projects and solution initially processed by msbuild (MSBuildRuntimeType == Full)
+        - C# projects with TargetFramework == (Full|Windows)TargetFramework (see Redist.ImportProject.targets/RedistImportProjectInit)
+      -->
       <ImportProject>
         <RuntimeType Condition="'%(ImportProject.Extension)' == '.vcxproj'">Full</RuntimeType>
+        <RuntimeType Condition="'%(ImportProject.Extension)' == '.sln' And '$(MSBuildRuntimeType)' == 'Full'">Full</RuntimeType>
       </ImportProject>
+      <ImportProject>
+        <RuntimeType Condition="'%(ImportProject.RuntimeType)' == ''">Core</RuntimeType>
+      </ImportProject>
+
       <!--
       Set default redistribution frameworks only for C# projects (avoid a publish of other project types).
       For redistribution projects, the target framework is deduced from the redistribution framework
@@ -70,6 +76,8 @@
         <Platform Condition="'%(ImportProject.Platform)' == '' And $([System.String]::new(%(ImportProject.RuntimeIdentifier)).EndsWith('x64'))">x64</Platform>
       </ImportProject>
     </ItemGroup>
+    <LogItems Condition="'$(ZouDebug)' == 'true'" Items="@(ImportProject)" Title="ImportProjectInit[2].ImportProject" />
+    <Message  Condition="'$(ZouDebug)' == 'true'" Importance="high"  Text=" " />
   </Target>
 
   <Target Name="ImportProjectCrossBuild" DependsOnTargets="ImportProjectInit">
