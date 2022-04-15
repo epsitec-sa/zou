@@ -44,10 +44,13 @@
   </PropertyGroup>
   
   <!-- TargetFrameworks -->
-  <PropertyGroup Condition="'$(TargetFrameworks)' == '*Undefined*'">
-    <TargetFrameworks Condition="'$(BuildingInsideVisualStudio)' != ''" />
-    <TargetFrameworks Condition="'$(BuildingInsideVisualStudio)' == ''">$(FullTargetFramework);$(CoreTargetFramework);netstandard2.0;netstandard2.1</TargetFrameworks>
-    <TargetFrameworks Condition="'$(BuildingInsideVisualStudio)' == '' And $(TargetFrameworks.IndexOf('$(TargetFramework)')) &lt; 0">$(TargetFramework);$(TargetFrameworks)</TargetFrameworks>
+  <PropertyGroup Condition="'$(TargetFrameworks)' == '*Undefined*' And '$(BuildingInsideVisualStudio)' != ''">
+    <TargetFrameworks />
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(TargetFrameworks)' == '*Undefined*' And '$(BuildingInsideVisualStudio)' == ''">
+    <TargetFrameworks />
+    <TargetFrameworks Condition="'$(TargetFrameworkImport)' == '$(FullTargetFramework)'">$(FullTargetFramework);netstandard2.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(TargetFrameworkImport)' == '$(CoreTargetFramework)'">$(CoreTargetFramework);netstandard2.0;netstandard2.1</TargetFrameworks>
   </PropertyGroup>
 
   <!-- Exclude git metadata from project -->
@@ -81,6 +84,7 @@
     <Message Importance="high" Text="-----------------------------------" />
     <Message Importance="high" Text="ProjectName               = $(ProjectName)" />
     <Message Importance="high" Text="MSBuildRuntimeType        = $(MSBuildRuntimeType)" />
+    <Message Importance="high" Text="TargetFrameworkImport     = $(TargetFrameworkImport)" />
     <Message Importance="high" Text="TargetFramework           = $(TargetFramework)" />
     <Message Importance="high" Text="TargetFrameworks          = $(TargetFrameworks)" />
     <Message Importance="high" Text="TargetFrameworkIdentifier = $(TargetFrameworkIdentifier)" />
