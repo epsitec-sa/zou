@@ -155,6 +155,12 @@
       <MSBuildProject>
         <Options Condition="'%(MSBuildProject.Properties)' != ''">%(Options) %(MSBuildProject.PropertyOptions)</Options>
       </MSBuildProject>
+
+      <MSBuildProject>
+        <Prefix Condition="'%(MSBuildProject.RuntimeIdentifier)' == '' And '$(Platform)' == ''">$(Configuration)|custom</Prefix>
+        <Prefix Condition="'%(MSBuildProject.RuntimeIdentifier)' == '' And '$(Platform)' != ''">$(Configuration)|$(Platform)</Prefix>
+        <Prefix Condition="'%(MSBuildProject.RuntimeIdentifier)' != ''"                        >$(Configuration)|%(RuntimeIdentifier)</Prefix>
+      </MSBuildProject>
     </ItemGroup>
 
     <!--<LogItems Items="@(MSBuildProject)" Title="UpdateMSBuildProjects.MSBuildProject" AllMetadata="true"/>
@@ -182,13 +188,18 @@
 
   <Target Name="ImportProject" Condition="$(BuildAny) And @(ImportProject->Count()) > 0" DependsOnTargets="UpdateMSBuildProjects" Returns="%(MSBuildProject.Identity)">
     <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] ImportProject" />
+    <!-- Append RuntimeType and TargetFramework to MSBuildProject.Prefix -->
+    <ItemGroup>
+      <MSBuildProject>
+        <Prefix Condition="'%(MSBuildProject.RuntimeType)' != ''">%(Prefix)|%(MSBuildProject.RuntimeType)</Prefix>
+      </MSBuildProject>
+      <MSBuildProject>
+        <Prefix Condition="'%(MSBuildProject.TargetFramework)' != ''">%(Prefix)|%(MSBuildProject.TargetFramework)</Prefix>
+      </MSBuildProject>
+    </ItemGroup>
 
-    <Message Condition="'%(MSBuildProject.BundleRelativeDstDir)' == '' And '%(RuntimeIdentifier)' == '' And '$(Platform)' == ''" Importance="high" Text="$(L1b)[$(Configuration)|custom] $(T3)%(MSBuildProject.BundleRelativeSrcDir)%(RecursiveDir)$(T2)%(FileName)%(Extension)$(XC)" />
-    <Message Condition="'%(MSBuildProject.BundleRelativeDstDir)' != '' And '%(RuntimeIdentifier)' == '' And '$(Platform)' == ''" Importance="high" Text="$(L1b)[$(Configuration)|custom] $(T3)%(MSBuildProject.BundleRelativeSrcDir)%(RecursiveDir)$(T2)%(FileName)%(Extension) $(T3)-> %(MSBuildProject.BundleRelativeDstDir)%(RecursiveDir)$(XC)" />
-    <Message Condition="'%(MSBuildProject.BundleRelativeDstDir)' == '' And '%(RuntimeIdentifier)' == '' And '$(Platform)' != ''" Importance="high" Text="$(L1b)[$(Configuration)|$(Platform)] $(T3)%(MSBuildProject.BundleRelativeSrcDir)%(RecursiveDir)$(T2)%(FileName)%(Extension)$(XC)" />
-    <Message Condition="'%(MSBuildProject.BundleRelativeDstDir)' != '' And '%(RuntimeIdentifier)' == '' And '$(Platform)' != ''" Importance="high" Text="$(L1b)[$(Configuration)|$(Platform)] $(T3)%(MSBuildProject.BundleRelativeSrcDir)%(RecursiveDir)$(T2)%(FileName)%(Extension) $(T3)-> %(MSBuildProject.BundleRelativeDstDir)%(RecursiveDir)$(XC)" />
-    <Message Condition="'%(MSBuildProject.BundleRelativeDstDir)' == '' And '%(RuntimeIdentifier)' != ''"                         Importance="high" Text="$(L1b)[$(Configuration)|%(RuntimeIdentifier)] $(T3)%(MSBuildProject.BundleRelativeSrcDir)%(RecursiveDir)$(T2)%(FileName)%(Extension)$(XC)" />
-    <Message Condition="'%(MSBuildProject.BundleRelativeDstDir)' != '' And '%(RuntimeIdentifier)' != ''"                         Importance="high" Text="$(L1b)[$(Configuration)|%(RuntimeIdentifier)] $(T3)%(MSBuildProject.BundleRelativeSrcDir)%(RecursiveDir)$(T2)%(FileName)%(Extension) $(T3)-> %(MSBuildProject.BundleRelativeDstDir)%(RecursiveDir)$(XC)" />
+    <Message Condition="'%(MSBuildProject.BundleRelativeDstDir)' == ''" Importance="high" Text="$(L1b)[%(Prefix)] $(T3)%(MSBuildProject.BundleRelativeSrcDir)%(RecursiveDir)$(T2)%(FileName)%(Extension)$(XC)" />
+    <Message Condition="'%(MSBuildProject.BundleRelativeDstDir)' != ''" Importance="high" Text="$(L1b)[%(Prefix)] $(T3)%(MSBuildProject.BundleRelativeSrcDir)%(RecursiveDir)$(T2)%(FileName)%(Extension) $(T3)-> %(MSBuildProject.BundleRelativeDstDir)%(RecursiveDir)$(XC)" />
 
     <!-- Restore nuget packages for solution... -->
     <Exec Condition="'%(MSBuildProject.Extension)' == '.sln'"
@@ -215,9 +226,7 @@
     <Exec Command='%(Command) %(Options) "%(MSBuildProject.Identity)"' />
     <CallTarget Targets="_DeleteLastBuildState" Condition="'$(BuildingInsideVisualStudio)'=='true'" />
 
-    <Message Condition="'%(RuntimeIdentifier)' == '' And '$(Platform)' == ''" Importance="high" Text="$(L1e)[$(Configuration)|custom] $(T3)%(MSBuildProject.BundleRelativeSrcDir)%(RecursiveDir)%(FileName)%(Extension)$(NC)" />
-    <Message Condition="'%(RuntimeIdentifier)' == '' And '$(Platform)' != ''" Importance="high" Text="$(L1e)[$(Configuration)|$(Platform)] $(T3)%(MSBuildProject.BundleRelativeSrcDir)%(RecursiveDir)%(FileName)%(Extension)$(NC)" />
-    <Message Condition="'%(RuntimeIdentifier)' != ''"                         Importance="high" Text="$(L1e)[$(Configuration)|%(RuntimeIdentifier)] $(T3)%(MSBuildProject.BundleRelativeSrcDir)%(RecursiveDir)%(FileName)%(Extension)$(NC)" />
+    <Message Importance="high" Text="$(L1e)[%(Prefix)] $(T3)%(MSBuildProject.BundleRelativeSrcDir)%(RecursiveDir)%(FileName)%(Extension)$(NC)" />
   </Target>
 
   <Target Name="_ImportProject"      BeforeTargets="Build" DependsOnTargets="ImportProject" />
