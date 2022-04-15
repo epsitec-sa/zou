@@ -392,7 +392,6 @@ repo_discard_submodules()
   [[ $# -eq 0 ]] && return 0
   # io_trace "repo_discard_submodules ${*@Q}"
   echo "$@" | xargs git-sm update -C "${moduleRoot}" -- || io_trace_error "<<<< repo_discard_submodules ${*@Q}" || return $?
-  repo_raise_submodule_changed_event "$@"
 }
 
 repo_remove_dangling_submodule()
