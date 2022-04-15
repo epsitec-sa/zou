@@ -199,8 +199,8 @@
           Command='"$(ZouBinzOsDir)nuget" restore "%(MSBuildProject.RootDir)%(Directory)packages.config" -Verbosity quiet -PackagesDirectory "$(NugetPackagesDir)."'/>
 
     <!-- ...or when using msbuild with a .csproj. -->
-    <Exec Condition="'%(MSBuildProject.Extension)' == '.csproj' And '%(RuntimeType)' == 'Full'"
-          Command='dotnet restore "%(MSBuildProject.Identity)"'/>
+    <Exec Condition="'%(MSBuildProject.Extension)' == '.csproj'"
+          Command='dotnet restore "%(MSBuildProject.Identity)"' EnvironmentVariables="TargetFrameworkImport=%(MSBuildProject.TargetFramework)"/>
 
     <!--
     The MSBuild task does not determine the build order but MSBuild.exe and Visual Studio do:
