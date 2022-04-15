@@ -206,6 +206,11 @@ _prod_select_epilog()
 #######
 
 prod_enter_epilog() { prod_checkout "$checkoutType" true || io_trace_error 'prod_enter_prolog'; }
+prod_enter_xepilog()
+{
+  cosm_discard_unstaged_clean_external_submodules
+  mio_message 'External' ${DarkGray}
+}
 
 #########
 # RELEASE

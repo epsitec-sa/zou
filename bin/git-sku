@@ -132,7 +132,6 @@ _sku_on_prod_preinit() { prodCheckoutType=$checkoutType; }
 sku_enter_finally()  { _sku_any_finally; _sku_check_synchronized; }
 sku_info_finally()   { [[ $publishInfo == 'true' ]] || _sku_any_finally; }
 sku_config_finally() { _sku_any_finally; }
-sku_enter_xprolog()  { :; }
 
 _sku_any_finally()
 {
@@ -151,9 +150,15 @@ sku_enter_prolog()
   # io_trace "sku_enter_prolog -- $(print_vars moduleSku)"
   sku_checkout "$moduleSku" "$prodCheckoutType" true
   module_sync_upd_sync_uninitialized_submodules
-
   cosm_discard_unstaged_clean_external_submodules
   notes_pull_all
+}
+sku_enter_xprolog()
+{
+  # io_trace "sku_enter_xprolog -- $(print_vars moduleSku)"
+  module_sync_upd_sync_uninitialized_submodules
+  cosm_discard_unstaged_clean_external_submodules
+  mio_message 'External' ${DarkGray}
 }
 _sku_check_synchronized()
 {

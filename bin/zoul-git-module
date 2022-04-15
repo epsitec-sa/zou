@@ -133,6 +133,8 @@ bundle_in_prod_mode()   { [[ $bundleHead =~ ^(.*/)?v?[0-9]+\.[0-9] ]]; }
 module_in_hotfix_mode() { [[ $moduleHead =~ ^(.*/)?hotfix/ ]]; }
 bundle_in_hotfix_mode() { [[ $bundleHead =~ ^(.*/)?hotfix/ ]]; }
 module_is_startup()     { [[ $moduleRoot == $startupRoot ]]; }
+module_is_internal()    { [[ $moduleIsExternal != true ]]; }
+module_is_external()    { [[ $moduleIsExternal == true ]]; }
 
 module_in_strict_dev_mode() { [[ $moduleHead == $(wip_to_ref $moduleDevBranch) ]]; }
 bundle_in_strict_dev_mode() { [[ $bundleHead == $(wip_to_ref $bundleDevBranch) ]]; }
@@ -205,10 +207,12 @@ module_prod_attach()
 
   if [[ -n $vref ]]; then
     branch_checkout "$vref" true
-  elif [[ -n $branch ]]; then
-    mio_warning "Still in development on ${VC}$branch"
-  else
-    mio_warning "Detached HEAD at ${VC}$ref"
+  elif [[ $moduleIsExternal != 'true' ]]; then
+    if [[ -n $branch ]]; then
+      mio_warning "Still in development on ${VC}$branch"
+    else
+      mio_warning "Detached HEAD at ${VC}$ref"
+    fi
   fi
 
   return 0
