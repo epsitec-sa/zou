@@ -175,6 +175,9 @@ _sku_check_synchronized()
 sku_info_prolog()
 {
   if [[ $publishInfo == 'true' ]]; then
+    if cmd_is_top_level; then
+      mio_message "${LightGreen}pub${White} | ${Brown}wrk"
+    fi
     # io_trace "sku_info_prolog -1- $(print_vars vtag2prod prod2dev)"
     local hasUnstagedSubmodules
     cosm_has_unstaged_submodules && hasUnstagedSubmodules='true'
