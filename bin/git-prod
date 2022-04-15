@@ -150,13 +150,34 @@ prod_attach_xprolog() { module_prod_attach "$attachMode" || io_trace_error 'prod
 # SELECT
 ########
 
-prod_select_select()   { _prod_select_select || io_trace_error 'prod_select_select'; }
-prod_select_xselect()  { _prod_select_select || io_trace_error 'prod_select_xselect'; }
-prod_select_prolog()   { _prod_select_prolog || io_trace_error 'prod_select_prolog'; }
-prod_select_epilog()   { _prod_select_epilog || io_trace_error 'prod_select_epilog'; }
-prod_select_xepilog()  { _prod_select_epilog || io_trace_error 'prod_select_xepilog'; }
-prod_select_finally()  { branch_show_status  || io_trace_error 'prod_select_finally'; }
-prod_select_xfinally() { branch_show_status  || io_trace_error 'prod_select_xfinally'; }
+prod_select_xprolog()
+{
+  # io_trace "prod_select_xprolog ${*@Q}"
+  prod_select_prolog
+}
+prod_select_epilog()
+{
+  # io_trace "prod_select_epilog ${*@Q}"
+  repo_remove_dangling_submodules
+  return 0
+}
+prod_select_xepilog()
+{
+  # io_trace "prod_select_xepilog ${*@Q}"
+  repo_remove_dangling_submodules
+  mio_message 'External' ${DarkGray}
+  return 0
+}
+prod_select_finally()
+{
+  # io_trace "prod_select_finally ${*@Q}"
+  branch_show_status || io_trace_error 'prod_select_finally'
+}
+prod_select_xfinally()
+{
+  # io_trace "prod_select_xfinally ${*@Q}"
+  branch_show_status || io_trace_error 'prod_select_xfinally'
+}
 
 prod_select_root_scope()
 {
@@ -174,31 +195,21 @@ prod_select_root_scope()
   # execute next russian doll
   $1 "${@:2}"
 }
-_prod_select_select()
+prod_select_prolog()
 {
+  # io_trace ">>>> prod_select_prolog -- $(print_vars attachMode moduleId)"
   if cmd_is_top_level; then
-    # io_trace "_prod_select_select -1- $(print_vars prodSelectSpec attachMode)"
     branch_checkout "$prodSelectSpec" true
+    # io_trace "prod_select_prolog -1- $(print_vars prodSelectSpec attachMode)"
   else
-    # io_trace "_prod_select_select -2- $(print_vars prodSelectSpec attachMode)"
+    # io_trace "prod_select_prolog -2- $(print_vars prodSelectSpec attachMode)"
     module_prod_attach "$attachMode"
   fi
   # deferred submodules initialisation (see noSubmodulesInit)
   module_upd_sync_unitialized_submodules
-
-  # io_trace "_prod_select_select -3- $(print_vars configIncludedSubmodules[@])"
-  printf '%s\n' "${configIncludedSubmodules[@]}"
-}
-_prod_select_prolog()
-{
-  # io_trace "_prod_select_prolog -- $(print_vars attachMode moduleId)"
-  cmd_is_top_level || module_prod_attach "$attachMode"
+  cosm_discard_unstaged_clean_submodules
+  # io_trace "<<<< prod_select_prolog -- $(print_vars attachMode moduleId)"
   return 0
-}
-_prod_select_epilog()
-{
-  # io_trace "_prod_select_epilog -- $(print_vars attachMode moduleId)"
-  repo_remove_dangling_submodules
 }
 
 #######
