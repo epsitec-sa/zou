@@ -41,11 +41,6 @@ Outputs:
         <PublishDir Condition="'%(ImportProject.PublishDir)' == ''">%(ImportProject.OutDir)</PublishDir>
       </ImportProject>
 
-      <ImportProject Condition="'%(RuntimeOs)' != 'win'">
-        <!-- Use 'dotnet build' on OSX and linux -->
-        <RuntimeType>Core</RuntimeType>
-      </ImportProject>
-
       <!-- x86|AnyCPU -->
       <ImportProject Condition="!$(TargetFramework.StartsWith('netstandard')) And '$(RuntimePlatform)' == 'x86'">
         <TargetFramework Condition="'%(ImportProject.RedistX86Framework)' != ''">%(ImportProject.RedistX86Framework)</TargetFramework>
@@ -56,17 +51,21 @@ Outputs:
       </ImportProject>
 
       <!--
-      Force 'msbuild' usage for:
+      Force 'msbuild' usage on Windows for:
+        - solution
         - C# projects with TargetFramework == (Full|Windows)TargetFramework
           Avoid errors like this one: MSB4803: The task "FormatUrl" is not supported on the .NET Core version of MSBuild. Please use the .NET Framework version of MSBuild
 
       See ImportProject.targets/ImportProjectInit for other conditions
       -->
-      <ImportProject Condition="'%(RuntimeOs)' == 'win'">
+      <ImportProject Condition="$([MSBuild]::IsOsPlatform(Windows))">
         <RuntimeType Condition="'%(ImportProject.Extension)' == '.csproj' And '%(ImportProject.TargetFramework)' == '$(FullTargetFramework)'">Full</RuntimeType>
         <RuntimeType Condition="'%(ImportProject.Extension)' == '.csproj' And '%(ImportProject.TargetFramework)' == '$(WindowsTargetFramework)'">Full</RuntimeType>
       </ImportProject>
-
+      <ImportProject>
+        <!-- Use 'dotnet build' by default -->
+        <RuntimeType Condition="'%(ImportProject.RuntimeType)' == ''">Core</RuntimeType>
+      </ImportProject>
     </ItemGroup>
   </Target>
 

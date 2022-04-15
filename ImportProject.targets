@@ -49,16 +49,15 @@
         - Full -> 'msbuild'
         - Core -> 'dotnet build'
       
-      Force 'msbuild' usage for:
-        - C++ projects and solution initially processed by msbuild (MSBuildRuntimeType == Full)
+      Force 'msbuild' usage on Windows for:
+        - C++ projects and solution
         - C# projects with TargetFramework == (Full|Windows)TargetFramework (see Redist.ImportProject.targets/RedistImportProjectInit)
       -->
-      <ImportProject>
-        <RuntimeType Condition="'%(ImportProject.Extension)' == '.vcxproj'">Full</RuntimeType>
-        <RuntimeType Condition="'%(ImportProject.Extension)' == '.sln' And '$(MSBuildRuntimeType)' == 'Full'">Full</RuntimeType>
+      <ImportProject Condition="$([MSBuild]::IsOsPlatform(Windows))">
+        <RuntimeType Condition="'%(ImportProject.Extension)' == '.vcxproj' Or '%(ImportProject.Extension)' == '.sln'">Full</RuntimeType>
       </ImportProject>
-      <ImportProject>
-        <RuntimeType Condition="'%(ImportProject.RuntimeType)' == ''">Core</RuntimeType>
+      <ImportProject Condition="!$([MSBuild]::IsOsPlatform(Windows))">
+        <RuntimeType>Core</RuntimeType>
       </ImportProject>
 
       <!--
@@ -136,8 +135,8 @@
         <Command Condition="Exists('$(MSBuildToolsPath)\msbuild.exe')">"$(MSBuildToolsPath)\msbuild"</Command>
       </MSBuildProject>
       <MSBuildProject>
-        <Command Condition="'%(RuntimeType)' == 'Full' And '%(MSBuildProject.Command)' == ''">msbuild</Command>
-        <Command Condition="'%(RuntimeType)' != 'Full' Or !$([MSBuild]::IsOsPlatform(Windows))">dotnet build</Command>
+        <Command Condition="'%(MSBuildProject.RuntimeType)' == 'Full' And '%(MSBuildProject.Command)' == ''">msbuild</Command>
+        <Command Condition="'%(MSBuildProject.RuntimeType)' != 'Full' And '%(MSBuildProject.Command)' == ''">dotnet build</Command>
         <!-- Do not reuse MSBuild nodes after a build -->
         <Options>-nologo -nr:false</Options>
       </MSBuildProject>
