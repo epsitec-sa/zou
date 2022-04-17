@@ -48,6 +48,7 @@ cosm_scope()
 {
   # setup cosm context
   local unstagedCleanIncludedSubmodules unstagedDirtyIncludedSubmodules \
+        unstagedCleanExcludedSubmodules unstagedDirtyExcludedSubmodules \
         unstagedCleanExternalSubmodules unstagedDirtyExternalSubmodules \
         unstagedCleanSubmodules unstagedDirtySubmodules \
         cosmScopeInitialized=true
@@ -79,12 +80,16 @@ cosm_reset_scope()
   unstagedDirtySubmodules=()
   unstagedCleanIncludedSubmodules=()
   unstagedDirtyIncludedSubmodules=()
+  unstagedCleanExcludedSubmodules=()
+  unstagedDirtyExcludedSubmodules=()
   unstagedCleanExternalSubmodules=()
   unstagedDirtyExternalSubmodules=()
   [ ${#moduleSubmodulePaths[@]} -eq 0 ] && return 0
   repo_split_unstaged_submodules "$moduleRoot"
   unstagedCleanIncludedSubmodules=( $(array_remove_array 'unstagedCleanSubmodules[@]' 'configExcludedSubmodules[@]') )
   unstagedDirtyIncludedSubmodules=( $(array_remove_array 'unstagedDirtySubmodules[@]' 'configExcludedSubmodules[@]') )
+  unstagedCleanExcludedSubmodules=( $(array_remove_array 'unstagedCleanSubmodules[@]' 'configIncludedSubmodules[@]') )
+  unstagedDirtyExcludedSubmodules=( $(array_remove_array 'unstagedDirtySubmodules[@]' 'configIncludedSubmodules[@]') )
   unstagedCleanExternalSubmodules=( $(array_intersect_array 'unstagedCleanSubmodules[@]' 'configExternalSubmodules[@]') )
   unstagedDirtyExternalSubmodules=( $(array_intersect_array 'unstagedDirtySubmodules[@]' 'configExternalSubmodules[@]') )
 
@@ -99,6 +104,8 @@ _cosm_trace()
   io_trace "cosm_reset_scope -- $(print_vars unstagedDirtySubmodules[@])"
   io_trace "cosm_reset_scope -- $(print_vars unstagedCleanIncludedSubmodules[@])"
   io_trace "cosm_reset_scope -- $(print_vars unstagedDirtyIncludedSubmodules[@])"
+  io_trace "cosm_reset_scope -- $(print_vars unstagedCleanExcludedSubmodules[@])"
+  io_trace "cosm_reset_scope -- $(print_vars unstagedDirtyExcludedSubmodules[@])"
   io_trace "cosm_reset_scope -- $(print_vars unstagedCleanExternalSubmodules[@])"
   io_trace "cosm_reset_scope -- $(print_vars unstagedDirtyExternalSubmodules[@])"
   io_lock_exit
@@ -121,11 +128,13 @@ _cosm_sync_submodules()
 
 cosm_discard_unstaged_clean_submodules()
 {
+  # io_trace "cosm_discard_unstaged_clean_submodules -- $(print_vars unstagedCleanIncludedSubmodules[@] unstagedCleanExcludedSubmodules[@] unstagedCleanExternalSubmodules[@])"
   repo_discard_submodules "${unstagedCleanIncludedSubmodules[@]}" "${unstagedCleanExternalSubmodules[@]}"
+  repo_discard_submodules_recursive "${unstagedCleanExcludedSubmodules[@]}"
 }
 cosm_discard_unstaged_clean_external_submodules()
 {
-  # io_trace "cosm_discard_unstaged_clean_external_submodules "
+  # io_trace "cosm_discard_unstaged_clean_external_submodules -- $(print_vars unstagedCleanExternalSubmodules)"
   repo_discard_submodules "${unstagedCleanExternalSubmodules[@]}"
 }
 

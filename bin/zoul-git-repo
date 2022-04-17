@@ -391,7 +391,13 @@ repo_discard_submodules()
 {
   [[ $# -eq 0 ]] && return 0
   # io_trace "repo_discard_submodules ${*@Q}"
-  echo "$@" | xargs git-sm update -C "${moduleRoot}" -- || io_trace_error "<<<< repo_discard_submodules ${*@Q}" || return $?
+  echo "$@" | xargs git-sm update -C "${moduleRoot}" --recursive -- || io_trace_error "<<<< repo_discard_submodules ${*@Q}" || return $?
+}
+repo_discard_submodules_recursive()
+{
+  [[ $# -eq 0 ]] && return 0
+  # io_trace "repo_discard_submodules_recursive ${*@Q}"
+  echo "$@" | xargs git-sm update -C "${moduleRoot}" --recursive -- || io_trace_error "<<<< repo_discard_submodules_recursive ${*@Q}" || return $?
 }
 
 repo_remove_dangling_submodule()
