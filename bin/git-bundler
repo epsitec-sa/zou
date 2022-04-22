@@ -22,7 +22,7 @@ bundler_parse()
     *)  paths+=("$1")
   esac; shift; done
 
-  _bundler_add_bundle_paths "${paths[@]}"
+  bundle_add_bundle_paths "${paths[@]}"
 }
 
 bundler_run()
@@ -36,7 +36,13 @@ bundler_run()
 
   bundler_parse "$@"
   
-  [[ -z $allBundles ]] && ! repo_bundle_root && allBundles=true
+  local broot
+  broot=$(repo_bundle_root)
+  if [ $? -ne 0 ]; then
+    allBundles=true
+    broot=$(repo_bundle_root "$zouDir")
+  fi
+  io_trace "bundler_run -- $(print_vars broot)"
 
   _bundler_process_registration
   if [ ${#bundleRegisteredPaths[@]} -eq 0 ]; then
@@ -54,25 +60,8 @@ bundler_run()
   fi
 }
 
-# Filter and normalize bundle paths
-#
 # in:
-#   $@:paths
-# in-out:
-#   bundlePaths
-_bundler_add_bundle_paths()
-{
-  local path ec=0
-  for path; do
-    path="$(repo_bundle_root "$path")"; ec=$?
-    if [ $ec -eq 0 ] && [ -d "$path/zou" ] && ! array_contains_element "$path" "${bundlePaths[@]}"; then
-      bundlePaths+=( "$(abspath "$path")" )
-    fi
-  done
-  return $ec
-}
-
-# in:
+#   broot
 #   resetRegisteredBundles
 #   allBundles
 #   unregister
@@ -81,40 +70,23 @@ _bundler_add_bundle_paths()
 #   bundleRegisteredPaths
 _bundler_process_registration()
 {
-  local broot=$(repo_bundle_root) path
+  local path
 
   # process registration
   [[ $resetRegisteredBundles == true ]] && bundle_unregister_all
 
   if [[ $allBundles == true ]]; then
-    # get sibling bundles
-    local root="$(abspath $broot/..)" path
-    _bundler_add_bundle_paths $(ls -d $root/*) "$PWD"
+    bundle_set_siblings "$broot"
   fi
   [ ${#bundlePaths[@]} -eq 0 ] && bundlePaths+=("$broot")
   # io_trace "_bundler_process_registration -1- $(print_vars bundlePaths[@])"
 
   for path in "${bundlePaths[@]}"; do
-    _bundler_register "$path" "$unregister"
+    bundle_register_bundle "$path" "$unregister"
   done
 
   bundle_set_registered_paths # -> bundleRegisteredPaths
   # io_trace "_bundler_process_registration -2- $(print_vars bundleRegisteredPaths[@])"
-}
-_bundler_register()
-{
-  # io_trace "_bundler_register ${*@Q}"
-  local bundlePath="$1" unregister=$2 url
-  [[ -z $bundlePath ]] && return 0
-
-  url=$(gitx -C "$bundlePath" config remote.origin.url)
-  if [[ $unregister == true ]]; then
-    # io_trace "_bundler_register -1- $(print_vars url bundlePath unregister)"
-    bundle_unregister "$url" "$bundlePath"
-  else
-    # io_trace "_bundler_register -2- $(print_vars url bundlePath)"
-    bundle_register "$url" "$bundlePath"
-  fi
 }
 
 _bundler_config()

@@ -10,6 +10,50 @@ ZOUL_GIT_BUNDLE=true
 
 gitConfigGate=$(lock_init "${zouConfigFile}_lock")
 
+# Get sibling bundles
+#
+# in:
+#   $1:broot -- any bundle root
+# in-out:
+#   bundlePaths -- array of bundle siblings pathes
+bundle_set_siblings()
+{
+  local broot="${1:-"$(repo_bundle_root "$zouDir")"}" root
+  root="$(abspath $broot/..)"
+  bundle_add_bundle_paths $(ls -d $root/*) "$PWD"
+}
+# Filter and normalize bundle paths
+#
+# in:
+#   $@:paths
+# in-out:
+#   bundlePaths
+bundle_add_bundle_paths()
+{
+  local path ec=0
+  for path; do
+    path="$(repo_bundle_root "$path")"; ec=$?
+    if [ $ec -eq 0 ] && [ -d "$path/zou" ] && ! array_contains_element "$path" "${bundlePaths[@]}"; then
+      bundlePaths+=( "$(abspath "$path")" )
+    fi
+  done
+  return $ec
+}
+bundle_register_bundle()
+{
+  # io_trace "bundle_register_bundle ${*@Q}"
+  local bundlePath="$1" unregister=$2 url
+  [[ -z $bundlePath ]] && return 0
+
+  url=$(gitx -C "$bundlePath" config remote.origin.url)
+  if [[ $unregister == true ]]; then
+    # io_trace "bundle_register_bundle -1- $(print_vars url bundlePath unregister)"
+    bundle_unregister "$url" "$bundlePath"
+  else
+    # io_trace "bundle_register_bundle -2- $(print_vars url bundlePath)"
+    bundle_register "$url" "$bundlePath"
+  fi
+}
 bundle_register()
 {
   local url=$1 path=$2
