@@ -3,15 +3,17 @@ usage: git sync [<options>] -- <module-paths>
 Synchronize changes with remote.
 
     -h|--help               display help
-    -j<n>                   number of submodules synchronized in parallel (default to 32)
-    -a|--all                visit all submodules (ignore SKU filter)
+    -j<n>                   number of parallel jobs
     -g|--global             visit all bundles
     -r|--recursive          visit specified modules recursively
+    -a|--all                visit all submodules (ignore SKU filter)
 
-    -c|--clean              clean local branches (delete redondant ones)
-    -C                      delete local branches with broken tracking info
     -p|--pull               pull only - do not push local modifications
-    <module-paths>          specific modules to visit (default to current module)
+    -c|--clean              clean local branches (delete redondant ones)
+                            delete local branches with broken tracking info
+                            remove dangling submodules
+
+    -- <module-paths>       specific modules to visit (default to current module)
     
 example:
     git sync                # synchronize current module
@@ -19,3 +21,4 @@ example:
     git sync -r -- ../m1    # synchronize sibling module 'm1' recursively
     git sync --pull         # pull only - do not push
     git sync -g -r          # synchronize all bundles recursively
+    git sync -g -- zou      # synchronize zou in all bundles

@@ -10,6 +10,12 @@ ZOUL_GIT_BUNDLE=true
 
 gitConfigGate=$(lock_init "${zouConfigFile}_lock")
 
+bundle_visit_all()
+{
+    local bundlePaths
+    bundle_set_siblings
+    bundle_visit 'bundlePaths[@]' "$@"
+}
 # Get sibling bundles
 #
 # in:
@@ -139,6 +145,8 @@ bundle_visit()
 _bundle_visitor()
 {
   # io_trace "bundle_visitor ${*@Q}"
+  moduleTracePrefix=$bundleTracePrefix;
+
   cd "$1" &>>"$stdallRedir" || {
     mio_error "No such bundle directory '$1'"
     return 1

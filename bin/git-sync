@@ -10,12 +10,11 @@ sync_parse()
   while [[ "$#" -gt 0 ]]; do case "$1" in
     -h|--help) zou-help "$0"; exit 0;;
     -j*)            jobsCount=${1#-j};;
+    -g|--global)    visitBundles=true;;
     -r|--recursive) recursive=true;;
     -a|--all)       noSkuFilter=true;;
-    -c|--clean)     cleanLocalBranches=true;;
-    -C)             cleanLocalBranches=true; deleteBrokenTrackingInfoBranches=true;;
+    -c|--clean)     clean=true;;
     -p|--pull)      syncNoPush=true;;
-    -g|--global)    syncBundles=true;;
     --)             shift; break;;
     -*) io_error "unknown option '$1'"; return 1;;
     *)  args+=( "$1" );;
@@ -24,34 +23,23 @@ sync_parse()
   cmd_check_args "${args[@]}"
   
   syncModulePaths=( "$@" )
-  # io_trace "sync_parse -- $(print_vars noSkuFilter cleanLocalBranches deleteBrokenTrackingInfoBranches syncNoPush syncModulePaths[@])"
+  # io_trace "sync_parse -- $(print_vars syncNoPush syncModulePaths[@])"
 }
 sync_run()
 {
   # parse command line
-  local jobsCount recursive command='sync' subcommand='do' \
+  local jobsCount visitBundles recursive command='sync' subcommand='do' \
         cmdScopes=( config_scope cosm_scope ) syncModulePaths=() \
-        deleteBrokenTrackingInfoBranches syncNoPush syncBundles
+        clean syncNoPush
 
   sync_parse "$@" || return $?
+  startupMessage="Synchronizing, please wait..."
 
-  if [[ $syncBundles == 'true' ]]; then
-    [[ -z $ZOUL_GIT_BUNDLE ]] && . zoul-git-bundle
-    local bundlePaths bundlePath
-    bundle_set_siblings
-    # io_trace "sync_run -BUNDLES- $(print_vars bundlePaths[@])"
-    bundle_visit_async 'bundlePaths[@]' _sync_sync_bundle
+  if [[ $visitBundles == 'true' ]]; then
+    bundle_visit_all sync_command
   else
-    startupMessage="Synchronizing, please wait..."
     bundle_scope sync_command
   fi
-}
-_sync_sync_bundle()
-{
-  # io_trace "_sync_sync_bundle ${*@Q} -- $(print_vars bundleRoot)"
-  moduleTracePrefix=$bundleTracePrefix;
-  mio_message "Synchronizing, please wait..." ${White}
-  sync_command
 }
 sync_command()
 {
@@ -76,9 +64,9 @@ sync_do_scope()
 sync_do_prolog()
 {
   # io_trace ">>> sync_do_prolog ${*@Q} -1- PWD=$PWD"
-  branch_sync_all "$deleteBrokenTrackingInfoBranches"
+  branch_sync_all "$clean"
   # io_trace "### sync_do_prolog -2- $(print_vars branchSyncVisitInfo[@]) PWD=$PWD"
-  _sync_clean
+  [[ $clean == 'true' ]] && _sync_clean
   # io_trace "<<< sync_do_prolog -3- $(print_vars branchSyncVisitInfo[@]) PWD=$PWD"
 }
 sync_do_epilog()
@@ -109,13 +97,8 @@ _sync_commit()
 }
 _sync_clean()
 {
-  [[ $cleanLocalBranches == true ]] || return 0
-  local branch
-  for branch in $(branch_list_local_can_delete); do
-    local info
-    info=$(gitx branch -D "$branch" 2>>"$stderrRedir")
-    [[ -n $info ]] && mio_warning "$info"
-  done
+  repo_remove_dangling_submodules_async
+  branch_clean_local
 }
 
 sync_run "$@"
