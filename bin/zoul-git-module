@@ -372,10 +372,10 @@ module_scope()
   fi
 
   _module_set_head
+  _module_set_is_external
   repo_is_merging
   _module_set_trace_prefix $?
   _module_set_module_dev_branch
-  _module_set_is_external
 
   module_configure true
 
@@ -410,10 +410,10 @@ _module_reset_scope()
 
   _module_set_submodule_paths
   _module_set_head "$1"
+  _module_set_is_external
   repo_is_merging
   _module_set_trace_prefix $?
   _module_set_module_dev_branch
-  _module_set_is_external
   
   _module_trace '_module_reset_scope'
 }
@@ -435,6 +435,7 @@ _module_set_is_external()
     gitx config --file "$parentConfigFile" --get "select.include" "$modulePath" &>>"$stdallRedir"
     [ $? -ne 0 ] && moduleIsExternal=true
   fi
+  # io_trace "_module_set_is_external -4- $(print_vars moduleIsExternal)"
   return 0
 }
 
@@ -780,11 +781,15 @@ _module_set_trace_prefix()
     moduleTracePrefix=$bundleTracePrefix;
     # io_trace "_module_set_trace_prefix -1- $(print_vars moduleTracePrefix)"
   else
-    local repoIsMerging=$1
-    local mcolor=${LightCyan}
-    local sid bcolor mid=$moduleId bid=$moduleHead
+    local repoIsMerging=$1 sid mcolor bcolor mid=$moduleId bid=$moduleHead
     [ $repoIsMerging -eq 0 ] && bid="$bid|MERGING"
-    _module_set_bcolor 'module' "$moduleHeadType"
+    if [[ $moduleIsExternal == 'true' ]]; then
+      mcolor=${DarkGray}
+      bcolor=${DarkGray}
+    else
+      mcolor=${LightCyan}
+      _module_set_bcolor 'module' "$moduleHeadType"
+    fi
     _module_set_smart_id2 42 "$mid" "$mcolor" "$bid" "$bcolor"
     moduleTracePrefix=$sid
     # io_trace "_module_set_trace_prefix -2- $(print_vars repoIsMerging mid bid moduleHead)"
