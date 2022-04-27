@@ -9,7 +9,7 @@ ZOUL_GIT_CONFIG_VERSION=true
 
 version_parse()
 {
-  local version=$1 varray=()
+  local version=$1
   if [[ $version =~ ^(.*/)?v([0-9]+)\.([0-9]+)\.([0-9]+)(-[[:alnum:]]+)?(\+.+)?$ ]]; then
     echo ${BASH_REMATCH[0]} ${BASH_REMATCH[@]:2}  # skip prefix
   else
@@ -21,7 +21,8 @@ version_technical()       { shift; echo "${1}.${2}.${3}.$(date +%y%V)${4}${5}"; 
 version_technical_short() { shift; echo "${1}.${2}.${3}.$(date +%y%V)"; }
 version_commit_files()
 {
-  local techver=$1; shift
+  local techver="$1"; shift
+  # io_trace "version_commit_files ${*@Q} -- $(print_vars techver)"
   [ $# -ne 0 ] && {
     git_commit "update technical version to $techver" "$@" \
     && mio_success "Updated technical version to ${VC}$techver${NC}"
@@ -38,7 +39,7 @@ version_commit_files()
 # <ApplicationVersion>1.2.3.1926</ApplicationVersion>
 version_update_csproj()
 {
-  local file=$1 stechver=$4 script="\
+  local file="$1" stechver="$4" script="\
   0,/<ProductVersion>/{s,(<ProductVersion>).*(</ProductVersion>),\1$stechver\2,};\
   0,/<ApplicationVersion>/{s,(<ApplicationVersion>).*(</ApplicationVersion>),\1$stechver\2,}"
 
@@ -57,7 +58,7 @@ version_update_csproj()
 # [assembly: AssemblyFileVersion ("1.2.3.1926")]
 version_update_assembly_info()
 {
-  local file=$1 stechver=$4 script="\
+  local file="$1" stechver="$4" script="\
   s,^(\[assembly:[[:blank:]]*AssemblyVersion[[:blank:]]*\(\").*(\"\)\]),\1$stechver\2,;\
   s,^(\[assembly:[[:blank:]]*AssemblyFileVersion[[:blank:]]*\(\").*(\"\)\]),\1$stechver\2,"
 
@@ -77,7 +78,7 @@ version_update_assembly_info()
 # ...
 version_update_version_props()
 {
-  local file=$1 techver=$3 script="\
+  local file="$1" techver="$3" script="\
   s,(<Version>).*(</Version>),\1$techver\2,;\
   s,(<AssemblyVersion>).*(</AssemblyVersion>),\1$techver\2,"
 
@@ -97,8 +98,8 @@ version_update_version_props()
 # ...
 version_update_package_json()
 {
-  local file=$1 varray=( ${!2} ) techver script
-  techver=${varray[1]}.${varray[2]}.${varray[3]}${varray[4]}
+  local file="$1" varray=( "${!2}" ) techver script
+  techver="${varray[1]}.${varray[2]}.${varray[3]}${varray[4]}"
 
   script="\
   0,/^[[:blank:]]*\"version\"/{s/(^[[:blank:]]*\"version\":[[:blank:]]*\").*(\",?)/\1$techver\2/}"
@@ -123,10 +124,10 @@ version_update_package_json()
 # ...
 version_update_rc()
 {
-  local file=$1 varray=( ${!2} ) major minor patch yyww=$(date +%y%V)
-  major=${varray[1]}
-  minor=${varray[2]}
-  patch=${varray[3]}
+  local file="$1" varray=( "${!2}" ) major minor patch yyww="$(date +%y%V)"
+  major="${varray[1]}"
+  minor="${varray[2]}"
+  patch="${varray[3]}"
 
   local script="\
   s/([[:blank:]]+FILEVERSION[[:blank:]]+)[^a-zA-Z\"\\]+(.*)$/\1$major,$minor,$patch,$yyww\2/;\
@@ -155,10 +156,10 @@ version_update_rc()
 version_update_rc_mmop()
 {
   # major.minor.0.patch
-  local file=$1 varray=( ${!2} ) major minor patch
-  major=${varray[1]}
-  minor=${varray[2]}
-  patch=${varray[3]}
+  local file="$1" varray=( "${!2}" ) major minor patch
+  major="${varray[1]}"
+  minor="${varray[2]}"
+  patch="${varray[3]}"
 
   local script="\
   s/([[:blank:]]+FILEVERSION[[:blank:]]+)[^a-zA-Z\"\\]+(.*)$/\1$major,$minor,0,$patch\2/;\
@@ -181,10 +182,10 @@ version_update_rc_mmop()
 # ...
 version_update_plist()
 {
-  local file=$1 varray=( ${!2} ) major minor patch yyww=$(date +%y%V)
-  major=${varray[1]}
-  minor=${varray[2]}
-  patch=${varray[3]}
+  local file="$1" varray=( "${!2}" ) major minor patch
+  major="${varray[1]}"
+  minor="${varray[2]}"
+  patch="${varray[3]}"
 
   local script="\
   /[[:blank:]]*<key>CFBundleShortVersionString/\
@@ -198,14 +199,14 @@ version_update_plist()
 }
 version_update_custom()
 {
-  local techver=$1 varray=( ${!2} ) updater="${3:-$PWD/update-version}"
+  local techver="$1" varray=( "${!2}" ) updater="${3:-$PWD/update-version}"
   if [[ -f "$updater" ]]; then
     source "$updater" "${varray[@]}"
   fi
 }
 version_create_custom()
 {
-  local dir=${1:-.}
+  local dir="${1:-.}"
   local file="$dir/update-version"
   [ -f "$file" ] || {
     mkdir -p "$dir"
@@ -248,7 +249,7 @@ update_version()
 
 update_version "$@"
 EOF
-    abspath $file
+    abspath "$file"
   }
 }
 
@@ -300,19 +301,26 @@ version_update()
 {
   version_verify_context 'version_update'
   local version=$1 varray techver stechver kv kvs key value
+  IFS=' '
   varray=( $(version_parse "$1") ) || return 1
+  IFS=$OIFS
   techver=$(version_technical "${varray[@]}")
   stechver=$(version_technical_short "${varray[@]}")
-  IFS=$'\n' kvs=( $(version_list_all_files) ); IFS=$OIFS
+  # io_trace "version_update -- $(print_vars version varray[@] techver stechver)"
+  IFS=$'\n'
+  kvs=( $(version_list_all_files) )
+  # io_trace "version_update -- $(print_vars kvs[@])"
   for kv in "${kvs[@]}"; do
-    kv=${kv#update-version.}
-    key=${kv%% *}; key=${key//-/_}
-    value=${kv#* }
+    kv="${kv#update-version.}"
+    key="${kv%% *}"; key="${key//-/_}"
+    value="${kv#* }"
+    # io_trace "version_update_$key -- $(print_vars key value)"
     # io_trace "version_update -- $(print_vars key value varray[@] techver stechver)"
     "version_update_$key" "$value" 'varray[@]' "$techver" "$stechver"
   done
   # execute custom updater (use git config-version --custom to create one)
   version_update_custom "$techver" 'varray[@]' './update-version'
+  IFS=$OIFS
 }
 version_list_resources()
 {
