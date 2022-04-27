@@ -11,7 +11,8 @@ config_setup()
   config_git_tools
 
   # remove obsolete value
-  gitx config --global --unset 'zou.initialized'
+  gitx config --global --unset zou.initialized
+  gitx config --global --unset credential.git.epsitec.ch.provider
 
   # zou-flow semantic versioning
   gitx config --global --remove-section versionsort &>>"$stdallRedir"
@@ -25,7 +26,7 @@ config_setup()
 
   # update zou aliases
   local alias
-  for alias in hotfix zh sb sbx sbw csku csel cver cpub smaster spull sclean oprune publish select attach vbranch config-sku; do
+  for alias in hotfix zh sb sbx sbw csku csel cver cpub spub smaster spull sclean oprune publish select attach vbranch config-sku; do
     gitx config --global --unset-all alias.$alias
   done
   gitx config --global alias.hotfix 'wip --hotfix'
@@ -44,9 +45,6 @@ config_setup()
   gitx config --global alias.oprune 'fetch origin --prune'
   gitx config --global alias.smartlog "log --graph --pretty=format:'commit: %C(bold red)%h%Creset %C(red)<%H>%Creset %C(bold magenta)%d %Creset%ndate: %C(bold yellow)%cd %Creset%C(yellow)%cr%Creset%nauthor: %C(bold blue)%an%Creset %C(blue)<%ae>%Creset%n%C(cyan)%s%n%Creset'"
   gitx config --global alias.logline "log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit"
-  gitx config --global alias.select '!printf '"'"'%b\n'"'"' '"'"'\e[0;31mThis command is deprecated, use \e[0;37mgit (wip|dev|prod) enter\e[0;31m instead\e[0m'"'"''
-  gitx config --global alias.attach '!printf '"'"'%b\n'"'"' '"'"'\e[0;31mThis command is deprecated, use \e[0;37mgit dev attach\e[0;31m instead\e[0m'"'"''
-  gitx config --global alias.config-sku '!printf '"'"'%b\n'"'"' '"'"'\e[0;31mThis command is deprecated, use \e[0;37mgit sku config\e[0;31m instead\e[0m'"'"''
 }
 config_git_tools()
 {
@@ -63,12 +61,6 @@ config_git_tools()
       if [[ -z $actualCredentialManagerPath || $actualCredentialManagerPath =~ git-credential-manager ]]; then
         actualCredentialManagerPath="$(printf '%q' "$credentialManagerPath")"
         gitx config --global credential.helper "$actualCredentialManagerPath"
-      fi
-      # avoid the git credential manager trying to guess which git server is hiding behind the repository URL
-      if [[ $actualCredentialManagerPath =~ git-credential-manager ]]; then
-        gitx config --global credential.git.epsitec.ch.provider generic
-      else
-        gitx config --global --unset credential.git.epsitec.ch.provider
       fi
     fi
     # bc4 tools
