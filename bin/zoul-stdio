@@ -87,22 +87,22 @@ io_debug() { [[ $debug == 'true' ]] && io_message_unsafe "$1 = ${!1}" "${2:-debu
 
 print_vars()
 {
-  local param value
-  for param in "$@"; do
-    if [[ $param =~ \[@\]$ ]]; then
-      value=( $(io_remove_colors "${!param}") )
-      param="${param%\[@\]}"
-      if [ ${#value[@]} -eq 0 ]; then
-        printf '%b ' "$param=()"
+  local _param _value
+  for _param in "$@"; do
+    if [[ $_param =~ \[@\]$ ]]; then
+      _value=( $(io_remove_colors "${!_param}") )
+      _param="${_param%\[@\]}"
+      if [ ${#_value[@]} -eq 0 ]; then
+        printf '%b ' "$_param=()"
       else
-        printf '%b ' "$param=(${value[@]@Q})"
+        printf '%b ' "$_param=(${_value[@]@Q})"
       fi
     else
-      value=$(io_remove_colors "${!param}")
-      if [[ -z $value ]]; then
-        printf '%b ' "$param=''"
+      _value=$(io_remove_colors "${!_param}")
+      if [[ -z $_value ]]; then
+        printf '%b ' "$_param=''"
       else
-        printf '%b ' "$param='$value'"
+        printf '%b ' "$_param='$_value'"
       fi
     fi
   done
