@@ -144,7 +144,7 @@ git_commit()
   content+=( "- zou-flow (v$version)" )
   printf -v footer '%s \n' "${content[@]}"
   # io_trace "git_commit -- $(print_vars header content[@] footer)"
-  gitx add -f -- "$@" &>>"$stdallRedir" \
+  gitx add -- "$@" &>>"$stdallRedir" \
   && gitx commit -m "$header" -m "$footer" "${options[@]}" &>>"$stdallRedir"
 }
 
