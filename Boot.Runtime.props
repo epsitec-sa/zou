@@ -28,6 +28,11 @@ Outputs
 
   <!-- Supported RuntimeIdentifier prefix  -->
   <PropertyGroup>
+    <RuntimeIdentifiers Condition="'$(RuntimeIdentifiers)' == ''">win7-x86;win-x86;win7-x64;win-x64;osx-x64;linux-x64</RuntimeIdentifiers>
+  </PropertyGroup>
+
+  <!-- Supported RuntimeIdentifier prefix  -->
+  <PropertyGroup>
     <WinRuntimePrefix   Condition="'$(WinRuntimePrefix)'   == ''">win7</WinRuntimePrefix>
     <OsxRuntimePrefix   Condition="'$(OsxRuntimePrefix)'   == ''">osx</OsxRuntimePrefix>
     <LinuxRuntimePrefix Condition="'$(LinuxRuntimePrefix)' == ''">linux</LinuxRuntimePrefix>
@@ -98,11 +103,12 @@ Outputs
     <Message Importance="high" Text="RuntimePlatform    = $(RuntimePlatform)"    Condition="'$(RuntimePlatform)'   != ''" />
     <Message Importance="high" Text="RuntimeFolder      = $(RuntimeFolder)"      Condition="'$(RuntimeFolder)'     != ''" />
     <Message Importance="high" Text="RuntimeIdentifier  = $(RuntimeIdentifier)"  Condition="'$(RuntimeIdentifier)' != ''" />
+    <Message Importance="high" Text="RuntimeIdentifiers = $(RuntimeIdentifiers)" Condition="'$(RuntimeIdentifiers)' != ''" />
     <Message Importance="high" Text="OutDir             = $(OutDir)" />
     <Message Importance="high" Text="OutputPath         = $(OutputPath)" />
 
     <LogItems Items="@(RuntimeOs)" Title="@RuntimeOs" />
-    <Message Importance="high"  Text=" " />
+    <Message Importance="high" Text=" " />
   </Target>
 
 </Project>

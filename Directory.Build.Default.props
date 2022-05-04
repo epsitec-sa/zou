@@ -6,7 +6,6 @@
   <!-- Default properties (can be overloaded in bundle after importing this script) -->
   <PropertyGroup>
     <TargetFramework    Condition="'$(TargetFramework)'    == '' And '$(ZouAgentType)' == ''">$(CoreTargetFramework)</TargetFramework>
-    <RuntimeIdentifiers Condition="'$(RuntimeIdentifiers)' == ''">win7-x86;win-x86;win7-x64;win-x64;osx-x64;linux-x64</RuntimeIdentifiers>
     <RazorLangVersion   Condition="'$(RazorLangVersion)'   == ''">3.0</RazorLangVersion>
     <Company>Epsitec</Company>
   </PropertyGroup>
@@ -47,12 +46,10 @@
   <PropertyGroup Condition ="'$(AssemblyVersion)' != ''">
     <VersionPrefix>$(AssemblyVersion)</VersionPrefix>
   </PropertyGroup>
-  
+
   <Target Name="TraceVersion" AfterTargets="GetAssemblyAttributes" Condition="'$(ZouTrace)' == 'true' Or '$(TraceVersion)' == 'true'">
-    <Message Importance="high" Text="FullTargetFramework    = $(FullTargetFramework)" />
-    <Message Importance="high" Text="CoreTargetFramework    = $(CoreTargetFramework)" />
-    <Message Importance="high" Text="WindowsTargetFramework = $(WindowsTargetFramework)" />
-    <Message Importance="high" Text="RuntimeIdentifiers     = $(RuntimeIdentifiers)" />
+    <Message Importance="high" Text="zou/Directory.Build.Default.props [$(MSBuildProjectFile)]" />
+    <Message Importance="high" Text="---------------------------------" />
     <Message Importance="high" Text="RazorLangVersion       = $(RazorLangVersion)" />
     <Message Importance="high" Text="VersionPrefix          = $(VersionPrefix)" />
     <Message Importance="high" Text="VersionSuffix          = $(VersionSuffix)" />
@@ -61,6 +58,7 @@
     <Message Importance="high" Text="FileVersion            = $(FileVersion)" />
     <Message Importance="high" Text="InformationalVersion   = $(InformationalVersion)" />
     <Message Importance="high" Text="PackageVersion         = $(PackageVersion)" />
+    <Message Importance="high" Text=" " />
   </Target>
 
 </Project>
