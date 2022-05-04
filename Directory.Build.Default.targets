@@ -19,7 +19,7 @@
     <Description Condition="'$(RuntimeIdentifier)' != ''">$(Description)-$(RuntimeIdentifier)</Description>
     <DefaultLanguage Condition="'$(DefaultLanguage)' == ''">en-US</DefaultLanguage>
     <PackageId Condition="'$(PackageId)' == ''">$(ProjectName)</PackageId>
-    <PackageId Condition="!$(PackageId.StartsWith('$(Company)'))">$(Company).$(PackageId)</PackageId>
+    <PackageId Condition="!$(PackageId.StartsWith('$(Company)')) And !$(Company.Contains(' '))">$(Company).$(PackageId)</PackageId>
     <DefaultPackageTags>$(PackageId.Replace('.', ';'))</DefaultPackageTags>
     <PackageTags Condition="'$(PackageTags)' != ''">$(DefaultPackageTags);$(PackageTags)</PackageTags>
     <PackageTags Condition="'$(PackageTags)' == ''">$(DefaultPackageTags)</PackageTags>
@@ -82,11 +82,11 @@
   <Target Name="TraceDirectoryBuildDefaultTargets" Condition="'$(ZouTrace)' == 'true'">
     <Message Importance="high" Text="zou/Directory.Build.Default.targets [$(MSBuildProjectFile)]" />
     <Message Importance="high" Text="-----------------------------------" />
-    <Message Importance="high" Text="ProjectName               = $(ProjectName)" />
     <Message Importance="high" Text="MSBuildRuntimeType        = $(MSBuildRuntimeType)" />
+    <Message Importance="high" Text="FullTargetFramework       = $(FullTargetFramework)" />
+    <Message Importance="high" Text="CoreTargetFramework       = $(CoreTargetFramework)" />
+    <Message Importance="high" Text="WindowsTargetFramework    = $(WindowsTargetFramework)" />
     <Message Importance="high" Text="TargetFrameworkImport     = $(TargetFrameworkImport)" />
-    <Message Importance="high" Text="TargetFramework           = $(TargetFramework)" />
-    <Message Importance="high" Text="TargetFrameworks          = $(TargetFrameworks)" />
     <Message Importance="high" Text="TargetFrameworkIdentifier = $(TargetFrameworkIdentifier)" />
     <Message Importance="high" Text="TargetFrameworkVersion    = $(TargetFrameworkVersion)" />
     <Message Importance="high" Text=" " />
