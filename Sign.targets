@@ -11,7 +11,7 @@ Input:
 Operations:
   RemoveDuplicates( @(SignFolder) += $(SignFolder) )
 -->
-<Project TreatAsLocalProperty="Sign;SignToolBroker">
+<Project TreatAsLocalProperty="Sign;SignToolBroker" InitialTargets="TraceSignTargets">
   <PropertyGroup>
     <SignTargetsImported>true</SignTargetsImported>
   </PropertyGroup>
@@ -96,6 +96,23 @@ Operations:
     <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] SignFolder" />
     <Message Condition="'$(ZouDebug)' == 'true' And '%(Command)' != ''" Importance="high" Text="%(SignFolder.Command)" />
     <Exec    Condition="'$(ZouDebug)' != 'true' And '%(Command)' != ''" Command="%(SignFolder.Command)" />
+  </Target>
+
+  <!-- Sign dotnet tools before packaging  -->
+  <Target Name="SignDotnetTool" BeforeTargets="GenerateNuspec" Condition="'$(Sign)'=='true' And '$(PackAsTool)'=='true'">
+    <Exec Command="esign --nologo -r -l -v --$(SignToolBroker) &quot;$(OutDir)publish&quot;" />
+  </Target>
+
+  <Target Name="TraceSignTargets" Condition="'$(ZouTrace)' == 'true'">
+    <Message Importance="high" Text="zou/Sign.targets [$(MSBuildProjectFile)]" />
+    <Message Importance="high" Text="----------------" />
+    <Message Importance="high" Text="Sign           = $(Sign)" />
+    <Message Importance="high" Text="SignToolBroker = $(SignToolBroker)" />
+    <Message Importance="high" Text="OutDir         = $(OutDir)" />
+    <Message Importance="high" Text="OutputPath     = $(OutputPath)" />
+    
+    <LogItems Items="@(SignFolder)" Title="@SignFolder" />
+    <Message Importance="high" Text=" " />
   </Target>
 
 </Project>
