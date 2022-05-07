@@ -222,7 +222,7 @@ _git_sm_out_filter()
   io_lock_enter
   while read -r line; do
     if [[ $error == true ]]; then
-      io_message_unsafe "${indent}$line" "$moduleTracePrefix" ${Brown}
+      io_message_unsafe "${indent}$line" "$moduleTracePrefix" ${Gray}
     else
       if [[ $line =~ ^((Cloning|Synchronizing)[^\']+)\'([^\']+)\'(.*) ]]; then
         line="${DarkGray}${BASH_REMATCH[1]}${VC}${BASH_REMATCH[3]}${DarkGray}${BASH_REMATCH[4]}"
@@ -231,9 +231,10 @@ _git_sm_out_filter()
         io_message_unsafe "${indent}$line" "$moduleTracePrefix" ${Brown}
       elif [[ $line =~ (error|fatal|usage:) ]]; then
         error=true
-        io_message_unsafe "${indent}$line" "$moduleTracePrefix" ${Brown}
+        io_message_unsafe "${indent}$line" "$moduleTracePrefix" ${Red}
       fi
     fi
   done
   io_lock_exit
+  [[ $error == 'true' ]] && return 1
 }
