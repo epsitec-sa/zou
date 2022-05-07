@@ -230,7 +230,7 @@ _module_trace()
   case $1 in
   bundle_scope)
     io_trace "$1 -- $(print_vars startupDir startupRoot)"
-    io_trace "$1 -- $(print_vars bundleId principalModuleId)"
+    io_trace "$1 -- $(print_vars skuId bundleId principalModuleId)"
     io_trace "$1 -- $(print_vars bundleHead bundleHeadType)"
     io_trace "$1 -- $(print_vars bundleDevBranch bundleDevBranchPath)"
     io_trace "$1 -- $(print_vars bundleProdBranch bundleProdBranchPath bundleVTag)"
@@ -239,7 +239,7 @@ _module_trace()
     # io_trace "$1 -- $(print_vars bundleTracePrefix)"
     ;;
   _bundle_reset_scope)
-    io_trace "$1 -- $(print_vars bundleId principalModuleId)"
+    io_trace "$1 -- $(print_vars skuId bundleId principalModuleId)"
     io_trace "$1 -- $(print_vars bundleHead bundleHeadType)"
     io_trace "$1 -- $(print_vars bundleDevBranch bundleDevBranchPath)"
     io_trace "$1 -- $(print_vars bundleProdBranch bundleProdBranchPath bundleVTag)"
@@ -247,7 +247,7 @@ _module_trace()
     # io_trace "$1 -- $(print_vars bundleTracePrefix)"
     ;;
   module_scope)
-    io_trace "$1 -- $(print_vars moduleId)"
+    io_trace "$1 -- $(print_vars skuId moduleId)"
     io_trace "$1 -- $(print_vars moduleInSku moduleIsExternal)"
     io_trace "$1 -- $(print_vars moduleSubmodulePaths[@])"
     io_trace "$1 -- $(print_vars moduleHead moduleHeadType)"
@@ -257,7 +257,7 @@ _module_trace()
     # io_trace "$1 -- $(print_vars moduleTracePrefix)"
     ;;
   _module_reset_scope)
-    io_trace "$1 -- $(print_vars moduleId)"
+    io_trace "$1 -- $(print_vars skuId moduleId)"
     io_trace "$1 -- $(print_vars moduleInSku moduleIsExternal)"
     io_trace "$1 -- $(print_vars moduleHead moduleHeadType)"
     io_trace "$1 -- $(print_vars moduleDevBranch moduleDevBranchPath)"
@@ -268,6 +268,7 @@ _module_trace()
     io_trace "$1 -- $(print_vars startupDir)"
     io_trace "$1 -- $(print_vars startupRoot)"
     io_trace "$1 -- $(print_vars bundleRoot)"
+    io_trace "$1 -- $(print_vars skuId)"
     io_trace "$1 -- $(print_vars bundleId)"
     io_trace "$1 -- $(print_vars principalModuleId)"
     io_trace "$1 -- $(print_vars bundleHead)"
@@ -302,7 +303,7 @@ bundle_scope()
 {
   # setup startup context
   local startupDir=$PWD startupRoot \
-        bundleId bundleRoot \
+        skuId bundleId bundleRoot \
         bundleHead bundleHeadType \
         bundleDevBranch bundleDevBranchPath\
         bundleProdBranch bundleProdBranchPath bundleVTag\
@@ -482,6 +483,8 @@ _module_set_bundle_dev_branch()
   elif ! _bundle_vref_to_dev "$bundleHead"; then
     bundleDevBranch='master'
   fi
+  skuId=${bundleDevBranch#*/}
+  skuId=${skuId%/*}
   # io_trace "_module_set_bundle_dev_branch -3- $(print_vars bundleHead bundleDevBranch)"
   local branch lbranch bref
   branch_set_realize "$bundleDevBranch"
