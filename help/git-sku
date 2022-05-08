@@ -1,9 +1,10 @@
-usage: git sku enter  [-a] [--(vlast|vnext|dev)] [<sku-spec>]
-   or: git sku info   [-a] [-r]                 [-- <module-paths> ]
-   or: git sku config [-a] [-r] [-i ..] [-x ..] [-- <module-paths> ]
-   or: git sku config -m PMID
+usage: git sku enter  [<clone-options>] [-a] [--(vlast|vnext|dev)] [<sku>]
+   or: git sku info   [<clone-options>] [-a] [-r] [--pub]         [-- <module-paths> ]
+   or: git sku config [<clone-options>] [-a] [-r] [-i ..] [-x ..] [-- <module-paths> ]
+   or: git sku config [<clone-options>] -m PMID
 
 Select and manage SKUs.
+- see 'git clonex -h' for more information on <clone-options>
 
 commands:
     enter                   enter SKU
@@ -15,8 +16,16 @@ options:
     -r|--recursive          visit specified modules recursively
     -a|--all                visit all submodules (skip SKU filter)
 
+clone options:
+    --url=<url>             the remote URL (optional if <work-dir> exists)
+    --wrk=<work-dir>        the working directory (optional if <url> is specified)
+    --sku=<sku>             the SKU (default to master)
+    --vlast                 enter last version - checkout most recent version tags
+    --vnext                 enter next version - checkout PROD branches
+    --dev                   enter developement - checkout DEV branches (default)
+
 enter:
-    --vlast                 enter last version - checkout last version tags
+    --vlast                 enter last version - checkout most recent version tags
     --vnext                 enter next version - checkout PROD branches
     --dev                   enter developement - checkout DEV branches (default)
 
@@ -28,21 +37,21 @@ config:
                                 default == fact   if SKU == fact/std (sku/fact/std/dev)
                                 default == cresus if SKU == master && bundle == cresus-*
 info:
-    --pub                   display info for submodules that have changed since last publication (vlast)
+    --pub                   display info for submodules that have changed since last prod release (vlast)
 
 arguments:
-    <sku-spec>              SKU specification
+    <sku>                   same as '--sku' option
     <module-paths>          specific modules to visit (default to current module)
     
 example:
-    git sku enter sal             # enter last version of 'sal' SKU
-                                  # checkout vtag 'sku/sal/<version>' of bundle and fallback vtags of submodules
-    git sku enter                 # enter last version of current SKU 
-    git sku enter sal --vnext     # enter next version of 'sal' SKU
-                                  # checkout PROD branch 'sku/sal/<version>' of bundle and fallback PROD branches of submodules
-    git sku enter --vnext         # enter next version of current SKU
-    git sku enter --dev           # enter development mode in current SKU
-                                  # checkout DEV branch 'sku/sal/dev' of bundle and fallback DEV branches of submodules
+    git sku enter sal --vlast     # enter last version recursively in SKU 'sal'
+                                  # checkout 'sku/sal/vX.Y.Z' vtags and/or derived
+    git sku enter sal --vnext     # enter next version recursively in SKU 'sal'
+                                  # checkout 'sku/sal/X.Y' branches and/or derived
+    git sku enter sal --dev       # enter development recursively in SKU 'sal'
+                                  # checkout 'sku/sal/dev' branches and/or derived
+    git sku enter                 # enter development recursively in current SKU 
+    git sku enter --vnext         # enter next version in current SKU
     
     git sku info                  # display SKU info of bundle and current module
     git sku info -- ../m1         # display SKU info of bundle and sibling module 'm1'

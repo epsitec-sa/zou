@@ -9,12 +9,15 @@ prodPreinitEvent+=( _sku_on_prod_preinit )
 
 sku_parse()
 {
-  local args=()
+  local arg args=()
   while [[ "$#" -gt 0 ]]; do case "$1" in
     -h|--help) zou-help $0; exit 0;;
     -j*)            jobsCount=${1#-j};;
     -r|--recursive) recursive=true;;
     -a|--all)       noSkuFilter=true;;
+    --url*)         clone='true'; arg="${1:5}"; url="${arg//=}";;
+    --wrk*)         clone='true'; arg="${1:5}"; wrkDir="${arg//=}";;
+    --sku*)         arg="${1:5}"; arg="${arg//=}"; args+=("$arg");;
     --vlast)        checkoutType='vlast';;
     --vnext)        checkoutType='vnext';;
     --dev)          checkoutType='dev';;
@@ -46,7 +49,8 @@ sku_parse()
   skuModulePaths=( "$@" )
   sku_parse_sku "${args[@]}"
   cmd_check_args "${args[@]:1}"
-  # io_trace "sku_parse -- $(print_vars skuSpec vnext subcommand skuModulePaths[@])"
+
+  # io_trace "sku_parse -- $(print_vars url wrkDir skuSpec vnext subcommand skuModulePaths[@] args[@])"
 }
 sku_parse_sku()
 {
@@ -57,14 +61,14 @@ sku_parse_sku()
 sku_run()
 {
   # parse command line
-  local jobsCount recursive command='sku' subcommand \
-        cmdScopes=( prod_scope config_scope cosm_scope ) \
+  local jobsCount recursive noSkuFilter clone url wrkDir checkoutType='dev' \
+        command='sku' subcommand cmdScopes=( prod_scope config_scope cosm_scope ) \
         skuConfigListOnly skuConfigMode skuConfigInclude=() skuConfigExclude=() configPrincipalModuleId \
-        noSkuFilter skuSpec skuModulePaths=() \
-        checkoutType='dev' publishInfo
+        skuSpec skuModulePaths=() publishInfo
 
   sku_parse "$@" || return $?
   sku_startup_message
+  [[ $clone == 'true' ]] && git_clonex "$url" "$wrkDir"
 
   bundle_scope sku_command
 }

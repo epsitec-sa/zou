@@ -1,26 +1,24 @@
-usage: git shar [-v] [-1] [--url=<url>] [--sku=<sku>] [--(vlast|vnext|dev)] [<path>]
+usage: git shar [-v] [-1] [-a=<algo>] [<clone-options>>] [<work-dir>]
 
 Compute the composite SHA of a SKU:
-- clone or synchronize a git repository
-    - at least one of <url> or <path> should be specified
-    - if <path> is null then path = <url> file name
-    - if <path> exists  then synchronize with 'git sync -r -p' else clone with 'git clone <url> <path>' 
-- enter the SKU with 'git sku enter sku --(vlast|vnext|dev)'
-- finally compute the composite SHA with 'shasum'.
+- see 'git clonex -h' for more information on <clone-options>.
 
 options:
     -h|--help               display help
     -v|--verbose            display progress and SHA (default to SHA only)
     -1                      use SHA 1 algorithm (default to 256)
     -a=<algo>               use specific SHA algorithm (default to 256)
-    --url=<url>             the remote URL 
+
+clone options:
+    --url=<url>             the remote URL (optional if <work-dir> exists)
+    --wrk=<work-dir>        the working directory (optional if <url> is specified)
     --sku=<sku>             the SKU (default to master)
-    --vlast                 enter last version - checkout last version tags
+    --vlast                 enter last version - checkout most recent version tags
     --vnext                 enter next version - checkout PROD branches
     --dev                   enter developement - checkout DEV branches (default)
 
 arguments:
-    <path>                  the local path (optional if <url> is specified)
+    <work-dir>              same as '--wrk' option
     
 example:
     git shar --url=.../cresus-dev.git        # compute the SHA256 of the bundle 'cresus-dev' in the SKU 'master' in 'dev' mode

@@ -1,10 +1,11 @@
-usage: git prod attach [-r] [--vtag] [-- <module-paths>]
-   or: git prod select [--vtag] [<ref>] [-- <module-paths>]
-   or: git prod enter [-r] [--vnext] [-- <module-paths>]
-   or: git prod release [-n] [--vlast] [--vtable] [--merge] [--force]
+usage: git prod attach  [<clone-options>>] [-r] [--vtag] [-- <module-paths>]
+   or: git prod select  [<clone-options>>] [--vtag] [<ref>] [-- <module-paths>]
+   or: git prod enter   [<clone-options>>] [-r] [--vnext] [-- <module-paths>]
+   or: git prod release [<clone-options>>] [-n] [--vlast] [--vtable] [--merge] [--force]
        [--(reuse|alpha|beta|rc|rtm)] [-- <module-paths>]
 
 Manage production mode.
+- see 'git clonex -h' for more information on <clone-options>.
 
 commands:
     attach                  attach to PROD branch / VTAG in specified modules
@@ -18,6 +19,15 @@ options:
     -h|--help               display help
     -r|--recursive          visit specified modules recursively
     -n|--dry-run            do not really release
+
+clone-options:
+    --url=<url>             the remote URL (optional if <work-dir> exists)
+    --wrk=<work-dir>        the working directory (optional if <url> is specified)
+    --sku=<sku>             SKU specification
+    --vlast                 enter last version - checkout most recent version tags
+    --vnext                 enter next version - checkout PROD branches
+
+arguments:
     <module-paths>          specific modules to visit (default to current module)
 
 attach:

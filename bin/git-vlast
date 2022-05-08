@@ -3,11 +3,35 @@
 [[ -z $ZOUL_GIT_MODULE ]] && . zoul-git-module
 [[ -z $ZOUL_GIT_PROD ]]   && . zoul-git-prod
 
-while [[ "$#" > 0 ]]; do case "$1" in
-  -h|--help) zou-help $0; exit 0;;
-  -*) echo "unknown option: $1" >&2; exit 1;;
-esac; shift; done
+vlast_parse()
+{
+  local arg
+  while [[ "$#" > 0 ]]; do case "$1" in
+    -h|--help)    zou-help $0; exit 0;;
+    -v|--verbose) verbose='true';;
+    --url*) clone='true'; arg="${1:5}"; url="${arg//=}";;
+    --wrk*) clone='true'; arg="${1:5}"; wrkDir="${arg//=}";;
+    --sku*) clone='true'; arg="${1:5}"; sku="${arg//=}";;
+    --vlast|--vnext|--dev) skuMode="$1";;
+    -*)     io_error "unknown option ${VC}$1${Red}\n"; io_help $0; return 1;;
+    *)      wrkDir="$1";;
+  esac; shift; done
+  
+  # io_trace "vlast_parse -- $(print_vars verbose url wrkDir sku skuMode)"
+  return 0
+}
+vlast_run()
+{
+  local clone url wrkDir sku skuMode noSkuFilter='true' \
+        verbose quiet
+
+  vlast_parse "$@" || return $?
+  [[ -z "$verbose" ]] && . zoul-quiet
+
+  [[ $clone == 'true' ]] && git_clonex "$url" "$wrkDir" "$sku" "$skuMode"
+  module_run prod_scope vlast_display
+}
 
 vlast_display() { echo $prodVTag; }
 
-module_run prod_scope vlast_display
+vlast_run "$@"

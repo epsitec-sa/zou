@@ -20,6 +20,9 @@ prod_parse()
     -n|--dry-run)   dryRun=true;;
     -)              unset stayInProd;;
     --merge)        mergeIntoDev=true;;
+    --url*)         clone='true'; arg="${1:5}"; url="${arg//=}";;
+    --wrk*)         clone='true'; arg="${1:5}"; wrkDir="${arg//=}";;
+    --sku*)         clone='true'; arg="${1:5}"; sku="${arg//=}";;
     --vlast)        checkoutType='vlast';;
     --vnext)        checkoutType='vnext';;
     --vtag)         attachMode='vtag';;
@@ -67,14 +70,14 @@ prod_parse()
 prod_run()
 {
   # parse command line
-  local jobsCount recursive noSkuFilter command='prod' subcommand \
-        cmdScopes=( prod_scope config_scope cosm_scope ) \
-        mergeIntoDev vtable prerelPrefix dryRun prodModulePaths=() \
-        checkoutType='vnext' attachMode='auto' forcePrincipalRelease \
+  local jobsCount recursive noSkuFilter clone url wrkDir checkoutType='vnext' attachMode='auto' \
+        command='prod' subcommand cmdScopes=( prod_scope config_scope cosm_scope ) \
+        mergeIntoDev vtable prerelPrefix dryRun prodModulePaths=() forcePrincipalRelease \
         prodSelectSpec refSymbol refType stayInProd=true noMessage noFetch
 
   prod_parse "$@" || return $?
   [[ $noMessage == 'true' ]] || prod_startup_message
+  [[ $clone == 'true' ]] && git_clonex "$url" "$wrkDir" "$sku" "--$checkoutType"
 
   bundle_scope prod_command
 }
@@ -136,9 +139,9 @@ _prod_on_preinit()
 # ATTACH
 ########
 
-prod_attach_prolog()  { module_prod_attach "$attachMode" || io_trace_error 'prod_attach_prolog'; }
+prod_attach_prolog()   { module_prod_attach "$attachMode" || io_trace_error 'prod_attach_prolog'; }
 prod_attach_finally()  { branch_show_status; }
-prod_attach_xprolog() { module_prod_attach "$attachMode" || io_trace_error 'prod_attach_xprolog'; }
+prod_attach_xprolog()  { module_prod_attach "$attachMode" || io_trace_error 'prod_attach_xprolog'; }
 prod_attach_xfinally() { branch_show_status; }
 
 ########
@@ -187,7 +190,7 @@ prod_select_epilog()
 {
   # io_trace "prod_select_epilog ${*@Q}"
   repo_remove_dangling_submodules
-  # handles the case where the initial prod branch was created inside prod_ensure_vbranch (see sku_checkout)
+  # handles the case where the initial prod branch was created inside prod_ensure_vbranch
   if [[ -z $prevProdBranch && -n $prodBranch ]]; then
     cosm_commit_unstaged_submodules 'true'
     branch_merge "$moduleDevBranchPath" "$prodBranchPath" '-Xours' \
@@ -247,7 +250,7 @@ prod_enter_epilog()
 {
   cosm_discard_unstaged_clean_external_submodules
   if [[ $prevProdBranch != $prodBranch ]]; then
-    # handles the case where the initial prod branch was created during prolog (see sku_checkout)
+    # handles the case where the initial prod branch was created inside prod_ensure_vbranch
     cosm_commit_unstaged_submodules 'true'
     branch_merge "$moduleDevBranchPath" "$prodBranchPath" '-Xours' \
     && branch_merge_ff "$prodBranchPath" "$moduleDevBranchPath" \
