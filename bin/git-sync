@@ -15,6 +15,7 @@ sync_parse()
     -r|--recursive) recursive=true;;
     -c|--clean)     clean=true;;
     -p|--pull)      syncNoPush=true;;
+    -f|--force)     forcePush=true;;
     --)             shift; break;;
     -*) io_error "unknown option '$1'"; return 1;;
     *)  args+=( "$1" );;
@@ -30,7 +31,7 @@ sync_run()
   # parse command line
   local jobsCount visitBundles recursive noSkuFilter='true' command='sync' subcommand='do' \
         cmdScopes=( config_scope cosm_scope ) syncModulePaths=() \
-        clean syncNoPush
+        clean syncNoPush forcePush
 
   sync_parse "$@" || return $?
   sync_startup_message
@@ -84,7 +85,7 @@ sync_do_epilog()
 }
 sync_do_xprolog()
 {
-  syncNoPush=true
+  [[ $forcePush == 'true' ]] || syncNoPush=true
   sync_do_prolog
 }
 sync_do_xepilog()
