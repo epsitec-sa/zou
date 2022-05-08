@@ -170,8 +170,8 @@ sku_enter_epilog()
     cosm_commit_unstaged_submodules 'true'
     branch_merge "$moduleDevBranchPath" "$prodBranchPath" '-Xours' \
     && branch_merge_ff "$prodBranchPath" "$moduleDevBranchPath" \
-    && branch_sync_all \
     || io_trace_error 'sku_enter_epilog'
+    anyNeedsPush='true'
   fi
 }
 sku_enter_xprolog()

@@ -174,13 +174,7 @@ dev_release_epilog()
     branch_merge "$moduleDevBranchPath" "$prodBranchPath" '-Xtheirs' \
     && branch_merge_ff "$prodBranchPath" "$moduleDevBranchPath" \
     || io_trace_error 'dev_release_epilog'
-
-    # handles the case where the initial prod branch was created inside prod_ensure_vbranch
-    if [[ -z $prevProdBranch && -n $prodBranch ]]; then
-      branch_sync_all
-    else
-      anyNeedsPush=true
-    fi
+    anyNeedsPush=true
   else
     mio_message "Already released" ${LightBlue}
   fi

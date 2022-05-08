@@ -195,8 +195,8 @@ prod_select_epilog()
     cosm_commit_unstaged_submodules 'true'
     branch_merge "$moduleDevBranchPath" "$prodBranchPath" '-Xours' \
     && branch_merge_ff "$prodBranchPath" "$moduleDevBranchPath" \
-    && branch_sync_all \
     || io_trace_error 'prod_select_epilog'
+    anyNeedsPush='true'
   fi
   return 0
 }
@@ -254,8 +254,8 @@ prod_enter_epilog()
     cosm_commit_unstaged_submodules 'true'
     branch_merge "$moduleDevBranchPath" "$prodBranchPath" '-Xours' \
     && branch_merge_ff "$prodBranchPath" "$moduleDevBranchPath" \
-    && branch_sync_all \
     || io_trace_error 'sku_enter_epilog'
+    anyNeedsPush='true'
   fi
 }
 prod_enter_finally() { branch_show_status; }
@@ -396,12 +396,6 @@ prod_release_epilog()
     # io_trace "prod_release_epilog -2.2- $(print_vars prodBranch releaseStatus)"
     _prod_release || io_trace_error 'prod_release_epilog 1' || return $?
     _vtable_update || io_trace_error 'prod_release_epilog 2' || return $?
-    
-    # handles the case where the initial prod branch was created inside prod_ensure_vbranch
-    if [[ -z $prevProdBranch ]]; then
-      branch_sync_all
-      unset anyNeedsPush
-    fi
   else
     io_lock_enter
     # io_trace "prod_release_epilog -3- $(print_vars repoIsClean repoIsMerging unstagedDirtyIncludedSubmodules[@])"
