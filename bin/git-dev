@@ -89,26 +89,34 @@ dev_command()
   cmd_visit_modules
 }
 
-dev_attach_finally()  { branch_show_status; }
-dev_enter_finally()   { branch_show_status; }
-dev_vupdate_finally() { branch_show_status; }
-
 ########
 # ATTACH
 ########
 
 dev_attach_prolog()  { module_dev_attach true || io_trace_error 'dev_attach_prolog'; }
+dev_attach_finally()  { branch_show_status; }
+dev_attach_xprolog()  { module_dev_attach true || io_trace_error 'dev_attach_xprolog'; }
+dev_attach_xfinally() { branch_show_status; }
 
 #######
 # ENTER
 #######
 
-dev_enter_epilog()  { dev_checkout true  || io_trace_error 'dev_enter_prolog'; }
+dev_enter_prolog()
+{
+  dev_checkout true  || io_trace_error 'dev_enter_prolog'
+}
+dev_enter_epilog()
+{
+  cosm_discard_unstaged_clean_external_submodules
+}
+dev_enter_finally() { branch_show_status; }
 dev_enter_xepilog()
 {
   cosm_discard_unstaged_clean_external_submodules
   mio_message 'External' ${DarkGray}
 }
+dev_enter_xfinally() { branch_show_status; }
 
 #########
 # RELEASE
@@ -128,7 +136,7 @@ dev_release_root_scope()
 }
 dev_release_prolog()
 {
-   dev_checkout true  || io_trace_error 'dev_enter_prolog';
+   dev_checkout true  || io_trace_error 'dev_release_prolog';
 }
 dev_release_epilog()
 {
@@ -178,7 +186,7 @@ dev_release_finally()
 {
   [[ $noMessage == 'true' ]] || _dev_synchronize_message
 }
-dev_release_xepilog()  { :; }
+
 dev_release_xfinally() { branch_show_status; }
 
 _dev_ensure_patch_is_published()
@@ -223,6 +231,7 @@ dev_vupdate_epilog()
   prod_increment_update_version "$vbranch" "$prerelPrefix" "$vcommit" # -> vtag vnext
   # io_trace "dev_vupdate_epilog -2- -- $(print_vars vtag vnext)"
 }
+dev_vupdate_finally() { branch_show_status; }
 
 #########
 # HELPERS

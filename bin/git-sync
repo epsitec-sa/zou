@@ -11,8 +11,8 @@ sync_parse()
     -h|--help) zou-help "$0"; exit 0;;
     -j*)            jobsCount=${1#-j};;
     -g|--global)    visitBundles=true;;
-    -r|--recursive) recursive=true;;
     -a|--all)       noSkuFilter=true;;
+    -r|--recursive) recursive=true;;
     -c|--clean)     clean=true;;
     -p|--pull)      syncNoPush=true;;
     --)             shift; break;;
@@ -28,18 +28,24 @@ sync_parse()
 sync_run()
 {
   # parse command line
-  local jobsCount visitBundles recursive command='sync' subcommand='do' \
+  local jobsCount visitBundles recursive noSkuFilter='true' command='sync' subcommand='do' \
         cmdScopes=( config_scope cosm_scope ) syncModulePaths=() \
         clean syncNoPush
 
   sync_parse "$@" || return $?
-  startupMessage="Synchronizing, please wait..."
+  sync_startup_message
 
   if [[ $visitBundles == 'true' ]]; then
     bundle_visit_all sync_command
   else
     bundle_scope sync_command
   fi
+}
+sync_startup_message()
+{
+  local verb='Synchronizing'
+  [[ $syncNoPush == 'true' ]] && verb='Pulling'
+  startupMessage="${verb}, please wait..."
 }
 sync_command()
 {

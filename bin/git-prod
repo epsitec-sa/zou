@@ -132,19 +132,14 @@ _prod_on_preinit()
   fi
 }
 
-prod_attach_finally()   { branch_show_status; }
-prod_attach_xfinally()  { branch_show_status; }
-prod_select_finally()   { branch_show_status; }
-prod_select_xfinally()  { branch_show_status; }
-prod_enter_finally()    { branch_show_status; }
-prod_release_xfinally() { branch_show_status; }
-
 ########
 # ATTACH
 ########
 
 prod_attach_prolog()  { module_prod_attach "$attachMode" || io_trace_error 'prod_attach_prolog'; }
+prod_attach_finally()  { branch_show_status; }
 prod_attach_xprolog() { module_prod_attach "$attachMode" || io_trace_error 'prod_attach_xprolog'; }
+prod_attach_xfinally() { branch_show_status; }
 
 ########
 # SELECT
@@ -217,6 +212,8 @@ prod_select_prolog()
 #######
 
 prod_enter_epilog() { prod_checkout "$checkoutType" true || io_trace_error 'prod_enter_prolog'; }
+prod_enter_finally() { branch_show_status; }
+
 prod_enter_xepilog()
 {
   cosm_discard_unstaged_clean_external_submodules
@@ -307,25 +304,6 @@ prod_release_scope()
   # execute next russian doll
   $1 "${@:2}"
 }
-_prod_is_release_completed()
-{
-  # it's not completed if status != released
-  [[ $releaseStatus == 'released' ]] || return 1
-  # it's not completed if dev != prod
-  ref_equals "$moduleDevBranchPath" "$prodBranchPath" || return 1
-  # status == released && dev == prod
-  # io_trace "_prod_is_release_completed -1- $(print_vars moduleDevBranchPath prodBranchPath)"
-
-  # check if a release of principal module is necessary
-  if module_is_principal; then
-    # io_trace "_prod_is_release_completed PRINCIPAL -2- $(print_vars pmProdHTag releaseVTag)"
-    # bundle and principal module versions are not synchronized
-    [[ -n $pmProdHTag && $pmProdHTag != $releaseVTag ]] && return 1
-  fi
-
-  return 0
-}
-
 prod_release_prolog()
 {
   # io_trace "prod_release_prolog -1- $(print_vars prodBranch releaseStatus)"
@@ -418,6 +396,7 @@ prod_release_finally()
   branch_show_status
   [[ $noMessage == 'true' ]] || _prod_synchronize_message
 }
+
 prod_release_xepilog()  { _vtable_update; }
 prod_release_xfinally() { branch_show_status; }
 
@@ -425,6 +404,24 @@ prod_release_xfinally() { branch_show_status; }
 # Release helpers
 #################
 
+_prod_is_release_completed()
+{
+  # it's not completed if status != released
+  [[ $releaseStatus == 'released' ]] || return 1
+  # it's not completed if dev != prod
+  ref_equals "$moduleDevBranchPath" "$prodBranchPath" || return 1
+  # status == released && dev == prod
+  # io_trace "_prod_is_release_completed -1- $(print_vars moduleDevBranchPath prodBranchPath)"
+
+  # check if a release of principal module is necessary
+  if module_is_principal; then
+    # io_trace "_prod_is_release_completed PRINCIPAL -2- $(print_vars pmProdHTag releaseVTag)"
+    # bundle and principal module versions are not synchronized
+    [[ -n $pmProdHTag && $pmProdHTag != $releaseVTag ]] && return 1
+  fi
+
+  return 0
+}
 _prod_check_synchronized()
 {
   branch_any_needs_pull || return 0
