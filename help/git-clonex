@@ -1,12 +1,28 @@
-usage: git clonex [<options>] [<clone-arguments>]
+usage: git clonex [<options>] [[--wrk=]<work-dir>]
 
-Clone repository
+Clone or synchronize a repository recursively.
+- optionally enter a SKU in specified mode (dev|vnext|vlast)
 
 options:
     -h|--help               display help
-    -C <work-dir>           same as git '-C' option
     -j<jobs-count>          same as 'git clone' '-j' option (default depends on system)
-    -r|--recursive          clone submodules recursively
+    -a|--all                visit all submodules (skip SKU filter)
+    --url=<url>             the remote URL (optional if <work-dir> exists)
+    --wrk=<work-dir>        the working directory (optional if <url> is specified)
+    --sku=<sku>             SKU specification (default to master)
+    --vlast                 enter last version - checkout most recent version tags
+    --vnext                 enter next version - checkout PROD branches
+    --dev                   enter developement - checkout DEV branches (default)
+
+arguments:
+    <work-dir>              same as '--wrk' option
+
+remarks:
+    - at least one of <url> or <work-dir> should be specified
+    - if <work-dir> exists then synchronize with 'git sync -r -p' else clone with 'git clone <url>[ <work-dir>]' 
+    - if any SKU option is specified then enter SKU with 'git sku enter <sku> [-a] [--(dev|vnext|vlast)]'
     
 example:
-    git clonex -r           clone submodules recursively
+    git clonex --url=.../cresus-dev.git                     # clone URL in new '.\cresus-dev' folder recursively and enter development in SKU 'master'
+    git clonex --url=.../cresus-dev.git --sku=sal --vnext   # clone URL in new '.\cresus-dev' folder recursively and enter next version in SKU 'sal'
+    git clonex --wrk=cresus-sal --sku=sal                   # pull repo in existing '.\cresus-sal' directory recursively and enter development in SKU 'sal'

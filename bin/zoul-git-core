@@ -163,6 +163,60 @@ gitx()
   return $ec
 }
 
+# Clone/synchronize a git repository and enter SKU
+# - at least one of <url> or <wrkDir> should be specified
+# - if <wrkDir> is null then <wrkDir> = <url-file-name>
+# - if <wrkDir> exists  then synchronize with 'git sync -r -p' else clone with 'git clone <url> <wrkDir>' 
+# - enter the SKU with 'git sku enter <sku> --(dev|vnext|vlast)'
+git_clonex()
+{
+  local url="$1" wrkDir="$2" sku="$3" skuMode="$4" synchronized
+  [[ -z "$url" && -z "$wrkDir" ]] && return 0
+  if [[ -n "$url" ]]; then
+    if [[ -z "$wrkDir" ]]; then
+      wrkDir=${url##*/}
+      wrkDir=${wrkDir%.git};
+    fi
+  fi
+  # io_trace "git_clonex -1- $(print_vars noSkuFilter wrkDir url)"
+  if [ -d "$wrkDir" ]; then
+    if [ -d "$wrkDir/.git" ]; then
+      cd "$wrkDir"
+      if [[ -n "$url" ]]; then
+        local currentUrl=$(git_url_from_path)
+        if [[ "$url" != "$currentUrl" ]]; then
+          printf "%b\n" "${Red}error : the specified URL ${VC}$url${Red} is wrong."
+          printf "%b\n" "${Brown}  The correct one is ${VC}$currentUrl${Brown}."
+          printf "%b\n" "${Brown}  Ther is no need to specify an URL when the given directory exists."
+          exit 1
+        fi
+      fi
+      if [[ $noSkuFilter == 'true' ]]; then
+        git-sync -r -p -a
+      else
+        git-sync -r -p
+      fi
+      synchronized='true'
+    else
+      printf "%b\n" "${Red}error : the path ${VC}$wrkDir${Red} should point to a git working directory (containing a '.git' folder)"
+      exit 1
+    fi
+  elif [[ -z "$url" ]]; then
+    printf "%b\n" "${Red}error : the path ${VC}$wrkDir${Red} does not exist and the ${VC}URL${Red} is missing."
+    exit 1
+  else
+    git_clone "$PWD" "$url" "$wrkDir"
+    cd "$wrkDir" &>/dev/null || exit 1
+  fi
+  [[ ("$command" == 'sku' && "$subcommand" == "enter") || ($synchronized == 'true' && -z "$sku" && -z "$skuMode") ]] && return 0
+  # io_trace "git_clonex -2- $(print_vars command subcommand synchronized sku skuMode)"
+  local params=()
+  [[ -n "$sku" ]] && params+=( "$sku" )
+  [[ -n "$skuMode" ]] && params+=( "$skuMode" )
+  [[ $noSkuFilter == 'true' ]] && params+=( '-a' )
+  git-sku enter "${params[@]}"
+}
+
 git_get_composite_sha()
 {
   local algo=${1:-256} shaSum

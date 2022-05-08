@@ -1,37 +1,36 @@
 #!/usr/bin/env bash
 
-[[ -z $ZOUL_SYSTEM ]]      && . zoul-system
-[[ -z $ZOUL_STDIO ]]       && . zoul-stdio
-[[ -z $ZOUL_LOG ]]         && . zoul-log
-[[ -z $ZOUL_GIT_OPTIONS ]] && . zoul-git-options
-[[ -z $ZOUL_GIT_CORE ]]    && . zoul-git-core
+[[ -z $ZOUL_GIT_CORE ]] && . zoul-git-core
 
-clonex_run()
+clonex_parse()
 {
-  local workDir="$PWD" jobsCount=$zouJobsCount recurseOpt args=() IFS=$'\n'
-
+  local arg
   while [[ "$#" > 0 ]]; do case "$1" in
-    -h|--help)      zou-help $0; exit 0;;
+    -h|--help)    zou-help $0; exit 0;;
     -j*)            jobsCount=${1#-j};;
-    -r|--recursive) recurseOpt='--recurse-submodules';;
-    -C)             shift; workDir="$1";;
-    *)              args+=("$1");;
+    -a|--all)       noSkuFilter='true';;
+    --url*)         arg="${1:5}"; url="${arg//=}";;
+    --wrk*)         arg="${1:5}"; wrkDir="${arg//=}";;
+    --sku*)         arg="${1:5}"; sku="${arg//=}";;
+    --vlast|--vnext|--dev) skuMode="$1";;
+    -*)             io_error "unknown option ${VC}$1${Red}\n"; io_help $0; return 1;;
+    *)              wrkDir="$1";;
   esac; shift; done
 
-  gitx -C "$workDir" clone $(gitx_cache_option) $recurseOpt -j"$jobsCount" "${args[@]}" 2>&1 | _clonex_out_filter
+  if [[ -z $url && -z $wrkDir ]]; then
+    io_error 'at least one of <url> or <path> should be specified\n'
+    io_help $0
+    exit 1
+  fi
+  
+  # io_trace "clonex_parse -- $(print_vars noSkuFilter sync wrkDir url skuMode)"
 }
-
-_clonex_out_filter()
+clonex_run()
 {
-  local line indent
-  [[ -z $moduleTracePrefix ]] || indent='  '
-  while read -r line; do
-    if [[ $line =~ ^(Cloning[^\']+)\'([^\']+)\'(.*) ]]; then
-      line="${BASH_REMATCH[1]}${VC}${BASH_REMATCH[2]}${DarkGray}${BASH_REMATCH[3]}"
-      io_message_unsafe "${indent}$line" "$moduleTracePrefix" ${DarkGray}
-    fi
-  done
-}
+  local jobsCount recursive noSkuFilter url wrkDir sku skuMode
 
+  clonex_parse "$@" || return $?
+  git_clonex "$url" "$wrkDir" "$sku" "$skuMode"
+}
 
 clonex_run "$@"
