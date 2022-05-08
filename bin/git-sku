@@ -265,7 +265,7 @@ sku_config_prolog()
 
       # ensure principal module is internal
       local pmParent=${configPrincipalModuleId%/*}
-      if [ -n "$pmParent" ]; then
+      if [[ $pmParent != $configPrincipalModuleId ]]; then
         module_visit "$bundleRoot/$pmParent" _sku_config_make_internal "$configPrincipalModuleId"
       else
         _sku_config_make_internal "$configPrincipalModuleId"
