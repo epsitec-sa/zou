@@ -381,16 +381,22 @@ prod_checkout()
   local prodCheckoutType=$1 forceCheckout=$2 devFallback=$3 \
         vnodeCheckoutProd=${4:-true} pmProdHTag0=$pmProdHTag ec=0
   # io_trace ">>>> prod_checkout -- $(print_vars prodCheckoutType forceCheckout devFallback vnodeCheckoutProd vtagStatus prodBranch prodVTag moduleHead moduleDevBranch pmProdHTag)"
-  
+
 
   if [[ -n $devFallback && $moduleDevBranch != $devFallback ]]; then
     local branch lbranch bref
     branch_set_realize "$devFallback"
-    # io_trace "_prod_checkout -2- $(print_vars devFallback moduleDevBranch branch lbranch )"
+    # io_trace "prod_checkout -2- $(print_vars devFallback moduleDevBranch branch lbranch )"
     _prod_init_scope "$branch" "$lbranch" true
   else
-    # io_trace "_prod_checkout -3- $(print_vars moduleHead moduleDevBranch )"
+    # io_trace "prod_checkout -3- $(print_vars moduleHead moduleDevBranch )"
     _prod_init_scope "$moduleDevBranchPath" "$moduleDevBranch" true
+  fi
+
+  if [[ -z "$prodBranch" ]]; then
+    # io_trace "prod_checkout -4- $(print_vars prodCheckoutType vtagStatus prodBranch prodVTag)"
+    dev_checkout "$forceCheckout" "$devFallback" || ec=$?
+    prod_ensure_vbranch
   fi
 
   case $prodCheckoutType in

@@ -143,15 +143,32 @@ _sku_any_finally()
 # ENTER
 #######
 
+sku_enter_scope()
+{
+  local prevProdBranch="$prodBranch"
+  $1 "${@:2}"
+}
 sku_enter_prolog()
 {
   local moduleSku='master'
   ( [[ $moduleInSku == true ]] || module_is_bundle ) && moduleSku="$sku"
-  # io_trace "sku_enter_prolog -- $(print_vars moduleSku)"
+  # io_trace "sku_enter_prolog -1- $(print_vars moduleSku prodCheckoutType prodBranch)"
   sku_checkout "$moduleSku" "$prodCheckoutType" true
+  # io_trace "sku_enter_prolog -2- $(print_vars moduleSku prodCheckoutType prodBranch)"
   module_sync_upd_sync_uninitialized_submodules
   cosm_discard_unstaged_clean_external_submodules
   notes_pull_all
+}
+sku_enter_epilog()
+{
+  # handles the case where the initial prod branch was created inside prod_ensure_vbranch (see sku_checkout)
+  if [[ -z $prevProdBranch && -n $prodBranch ]]; then
+    cosm_commit_unstaged_submodules 'true'
+    branch_merge "$moduleDevBranchPath" "$prodBranchPath" '-Xours' \
+    && branch_merge_ff "$prodBranchPath" "$moduleDevBranchPath" \
+    && branch_sync_all \
+    || io_trace_error 'sku_enter_epilog'
+  fi
 }
 sku_enter_xprolog()
 {

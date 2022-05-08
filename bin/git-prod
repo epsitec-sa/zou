@@ -145,38 +145,9 @@ prod_attach_xfinally() { branch_show_status; }
 # SELECT
 ########
 
-prod_select_xprolog()
-{
-  # io_trace "prod_select_xprolog ${*@Q}"
-  prod_select_prolog
-}
-prod_select_epilog()
-{
-  # io_trace "prod_select_epilog ${*@Q}"
-  repo_remove_dangling_submodules
-  return 0
-}
-prod_select_xepilog()
-{
-  # io_trace "prod_select_xepilog ${*@Q}"
-  repo_remove_dangling_submodules
-  mio_message 'External' ${DarkGray}
-  return 0
-}
-prod_select_finally()
-{
-  # io_trace "prod_select_finally ${*@Q}"
-  branch_show_status || io_trace_error 'prod_select_finally'
-}
-prod_select_xfinally()
-{
-  # io_trace "prod_select_xfinally ${*@Q}"
-  branch_show_status || io_trace_error 'prod_select_xfinally'
-}
-
 prod_select_root_scope()
 {
-  # io_trace "prod_select_root_scope -1- $(print_vars prodSelectSpec attachMode)"
+  # io_trace "prod_select_root_scope -1- $(print_vars prodSelectSpec attachMode prodVTag prodBranchPath)"
   if [[ -z $prodSelectSpec ]]; then
     case $attachMode in
       vtag) prodSelectSpec=$prodVTag;;
@@ -185,17 +156,23 @@ prod_select_root_scope()
   else
     [[ $attachMode == 'auto' ]] && vtag_is_semver $prodSelectSpec && attachMode='vtag'
   fi
-  # io_trace "prod_select_root_scope -2- $(print_vars prodSelectSpec attachMode)"
 
   # execute next russian doll
+  $1 "${@:2}"
+}
+
+prod_select_scope()
+{
+  local prevProdBranch="$prodBranch"
   $1 "${@:2}"
 }
 prod_select_prolog()
 {
   # io_trace ">>>> prod_select_prolog -- $(print_vars attachMode moduleId)"
-  if cmd_is_top_level; then
+  if [[ -z "$prodBranch" ]]; then
+    prod_checkout "$checkoutType" true || io_trace_error 'prod_select_prolog'
+  elif cmd_is_top_level; then
     branch_checkout "$prodSelectSpec" true
-    # io_trace "prod_select_prolog -1- $(print_vars prodSelectSpec attachMode)"
   else
     # io_trace "prod_select_prolog -2- $(print_vars prodSelectSpec attachMode)"
     module_prod_attach "$attachMode"
@@ -206,12 +183,78 @@ prod_select_prolog()
   # io_trace "<<<< prod_select_prolog -- $(print_vars attachMode moduleId)"
   return 0
 }
+prod_select_epilog()
+{
+  # io_trace "prod_select_epilog ${*@Q}"
+  repo_remove_dangling_submodules
+  # handles the case where the initial prod branch was created inside prod_ensure_vbranch (see sku_checkout)
+  if [[ -z $prevProdBranch && -n $prodBranch ]]; then
+    cosm_commit_unstaged_submodules 'true'
+    branch_merge "$moduleDevBranchPath" "$prodBranchPath" '-Xours' \
+    && branch_merge_ff "$prodBranchPath" "$moduleDevBranchPath" \
+    && branch_sync_all \
+    || io_trace_error 'prod_select_epilog'
+  fi
+  return 0
+}
+prod_select_finally()
+{
+  # io_trace "prod_select_finally ${*@Q}"
+  branch_show_status || io_trace_error 'prod_select_finally'
+}
+
+prod_select_xprolog()
+{
+  # io_trace "prod_select_xprolog ${*@Q}"
+  # io_trace ">>>> prod_select_prolog -- $(print_vars attachMode moduleId)"
+  module_prod_attach "$attachMode"
+  # deferred submodules initialisation (see noSubmodulesInit)
+  module_upd_sync_unitialized_submodules
+  cosm_discard_unstaged_clean_submodules
+  # io_trace "<<<< prod_select_prolog -- $(print_vars attachMode moduleId)"
+  return 0
+}
+prod_select_xepilog()
+{
+  # io_trace "prod_select_xepilog ${*@Q}"
+  repo_remove_dangling_submodules
+  mio_message 'External' ${DarkGray}
+  return 0
+}
+prod_select_xfinally()
+{
+  # io_trace "prod_select_xfinally ${*@Q}"
+  branch_show_status || io_trace_error 'prod_select_xfinally'
+}
 
 #######
 # ENTER
 #######
 
-prod_enter_epilog() { prod_checkout "$checkoutType" true || io_trace_error 'prod_enter_prolog'; }
+prod_enter_scope()
+{
+  # handles the case where the initial prod branch was created during prolog (see sku_checkout)
+  local prevProdBranch="$prodBranch"
+  $1 "${@:2}"
+}
+prod_enter_prolog()
+{
+  prod_checkout "$checkoutType" true || io_trace_error 'prod_enter_prolog'
+  module_sync_upd_sync_uninitialized_submodules
+  notes_pull_all
+}
+prod_enter_epilog()
+{
+  cosm_discard_unstaged_clean_external_submodules
+  if [[ $prevProdBranch != $prodBranch ]]; then
+    # handles the case where the initial prod branch was created during prolog (see sku_checkout)
+    cosm_commit_unstaged_submodules 'true'
+    branch_merge "$moduleDevBranchPath" "$prodBranchPath" '-Xours' \
+    && branch_merge_ff "$prodBranchPath" "$moduleDevBranchPath" \
+    && branch_sync_all \
+    || io_trace_error 'sku_enter_epilog'
+  fi
+}
 prod_enter_finally() { branch_show_status; }
 
 prod_enter_xepilog()
@@ -257,7 +300,8 @@ prod_release_scope()
   _prod_check_synchronized || return 1
 
   local modulePrerelPrefix=$prerelPrefix cmdIsTopLevel \
-        wasInDevMode=1 hasBeenReleased forceRelease pmProdHTag
+        wasInDevMode=1 hasBeenReleased forceRelease pmProdHTag \
+        prevProdBranch="$prodBranch"
 
   [[ -z $stayInProd ]] && module_in_strict_dev_mode && wasInDevMode=0
   cmd_is_top_level; cmdIsTopLevel=$?
@@ -349,6 +393,12 @@ prod_release_epilog()
     # io_trace "prod_release_epilog -2.2- $(print_vars prodBranch releaseStatus)"
     _prod_release || io_trace_error 'prod_release_epilog 1' || return $?
     _vtable_update || io_trace_error 'prod_release_epilog 2' || return $?
+    
+    # handles the case where the initial prod branch was created inside prod_ensure_vbranch
+    if [[ -z $prevProdBranch ]]; then
+      branch_sync_all
+      unset anyNeedsPush
+    fi
   else
     io_lock_enter
     # io_trace "prod_release_epilog -3- $(print_vars repoIsClean repoIsMerging unstagedDirtyIncludedSubmodules[@])"

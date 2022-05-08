@@ -154,6 +154,7 @@ dev_release_epilog()
     # [[ $forceRelease == 'true' ]] || _dev_check_releasable || return $?
     
     dev_checkout false "$moduleDevBranch"
+    local prevProdBranch="$prodBranch"
     prod_ensure_vbranch "$defaultVersion" "$incrementKind"
     if [[ $forceRelease == true && -z $incrementKind ]] && ref_equals "$moduleDevBranchPath" "$prodBranchPath"; then
       local vbranch vtag delta graftPoint vnext releaseVTag
@@ -176,7 +177,12 @@ dev_release_epilog()
     && branch_merge_ff "$prodBranchPath" "$moduleDevBranchPath" \
     || io_trace_error 'dev_release_epilog'
 
+    # handles the case where the initial prod branch was created inside prod_ensure_vbranch
+    if [[ -z $prevProdBranch && -n $prodBranch ]]; then
+      branch_sync_all
+    else
     anyNeedsPush=true
+    fi
   else
     mio_message "Already released" ${LightBlue}
   fi
