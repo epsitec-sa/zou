@@ -142,6 +142,7 @@ dev_release_epilog()
   # release only modules in dev mode
   _dev_check_in_strict_dev_mode || return 1
   _dev_check_synchronized || return 1
+  _dev_check_no_dirty_submodules || return 1
 
   # a submodule can create a vbranch in the bundle without refreshing the prod scope (run in a subshell)
   # io_trace "dev_release_epilog -1- $(print_vars forceRelease incrementKind moduleDevBranchPath prodBranchPath)"
@@ -273,6 +274,14 @@ _dev_check_synchronized()
   branch_any_needs_pull || return 0
   local recursiveOption=''; module_has_submodules && recursiveOption=' -r'
   io_error "ERROR: please synchronize ${VC}${moduleId}${Red} with ${VC}git sync${recursiveOption} [-p]${Red} before releasing ${VC}$(wip_to_ref $moduleDevBranch)${Red}" "$moduleTracePrefix"
+  return 1
+}
+_dev_check_no_dirty_submodules()
+{
+  [ ${#unstagedDirtySubmodules[@]} -eq 0 ] && return 0
+  local verb='is'
+  [ ${#unstagedDirtySubmodules[@]} -gt 1 ] && verb='are'
+  io_error "ERROR: cannot release ${VC}$moduleHead${Red} because ${VC}$(string_join ', ' ${unstagedDirtySubmodules[@]})${Red} $verb dirty" "$moduleTracePrefix"
   return 1
 }
 
