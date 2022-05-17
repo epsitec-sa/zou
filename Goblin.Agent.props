@@ -64,12 +64,13 @@ Input:
   </PropertyGroup>
 
   <PropertyGroup>
-    <GoblinBundleDir  Condition="'$(GoblinBundleDir)'  == ''">$([System.IO.Path]::GetFullPath('$(BundleDir)..\westeros-dev\'))</GoblinBundleDir>
+    <GoblinBundleDir  Condition="'$(GoblinBundleDir)'  == ''">$([System.IO.Path]::GetFullPath('$(BundleDir)..\cresus-cross-dev\cresus-cross\'))</GoblinBundleDir>
     <GoblinSourceDir  Condition="'$(GoblinSourceDir)'  == ''">$(GoblinBundleDir)lib\$(GoblinName)\</GoblinSourceDir>
     <GoblinBuildId    Condition="'$(GoblinBuildId)'    == ''">$(MSBuildProjectName)</GoblinBuildId>
     <GoblinIntDir     Condition="'$(GoblinIntDir)'     == ''">$(ModuleDir)obj\$(Configuration)\$(ProjectName)\</GoblinIntDir>
     <GoblinOutDir     Condition="'$(GoblinOutDir)'     == ''">$(GoblinIntDir)build\product\win-unpacked\</GoblinOutDir>
     <GoblinTargetPath Condition="'$(GoblinTargetPath)' == ''">$(GoblinOutDir)$(TargetName)$(ZouExeExtension)</GoblinTargetPath>
+    <ZogPath          Condition="'$(ZogPath)'          == ''">$(GoblinBundleDir)node_modules\.bin\zog</ZogPath>
   </PropertyGroup>
 
   <Target Name="CheckGoblinBundleDir">
@@ -88,6 +89,7 @@ Input:
     <Message Importance="high" Text="GoblinIntDir      = $(GoblinIntDir)" />
     <Message Importance="high" Text="GoblinOutDir      = $(GoblinOutDir)" />
     <Message Importance="high" Text="GoblinTargetPath  = $(GoblinTargetPath)" />
+    <Message Importance="high" Text="ZogPath           = $(ZogPath)" />
     <Message Importance="high" Text="#GoblinBuildInput = @(GoblinBuildInput->Count())" />
     <Message Importance="high" Text=" " />
   </Target>
