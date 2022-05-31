@@ -68,7 +68,8 @@ _branch_sync_visitor()
   esac
   if [[ $l == "$current" ]]; then
     _branch_raise_branch_sync_event "$r" "$l" "$i"
-  elif [[ $current ==  $(git rev-parse --short "$r") ]]; then
+  fi
+  if [[ $current ==  $(git rev-parse --short "$r") ]]; then
     branch_checkout "$l" false
   fi
 }
