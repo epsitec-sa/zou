@@ -200,19 +200,19 @@ sku_info_prolog()
       mio_message "${LightGreen}pub${White} | ${Brown}wrk"
     fi
     # io_trace "sku_info_prolog -1- $(print_vars vtag2prod prod2dev)"
-    local hasUnstagedSubmodules
-    cosm_has_unstaged_submodules && hasUnstagedSubmodules='true'
-    if [ "$vtag2prod" -ne 0 ] || [ "$prod2dev" -ne 0 ] || [[ $hasUnstagedSubmodules == 'true' ]]; then
+    local unstagedSubmodulesCount
+    (( unstagedSubmodulesCount = ${#unstagedCleanIncludedSubmodules[@]} + ${#unstagedDirtyIncludedSubmodules[@]} ))
+    if [ "$vtag2prod" -ne 0 ] || [ "$prod2dev" -ne 0 ] || [[ $unstagedSubmodulesCount -gt 0 ]]; then
       local pubs="$vtag2prod" work="$prod2dev" mcolor=${Cyan} pcolor wcolor spubs swork
 
+      if [[ $unstagedSubmodulesCount -gt 0 ]]; then
+        # some submodules not published
+        (( work+=1 ))
+      fi
+
       if [ "$pubs" -eq 0 ]; then
-        if [[ $hasUnstagedSubmodules == 'true' ]]; then
-          # submodule refs to publish
-          (( pubs+=1 ))
-        else
-          # nothing to publish
-          [ "$work" -eq 0 ] && pcolor=${DarkGray} || pcolor=${Brown}
-        fi
+        # nothing to publish
+        [ "$work" -eq 0 ] && pcolor=${DarkGray} || pcolor=${Brown}
       else
         # something to publish
         pcolor=${Green}
