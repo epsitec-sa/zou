@@ -193,7 +193,7 @@ _branch_merge_ff_only()
     # io_trace "_branch_merge_ff_only -2- $(print_vars toMerge intoBranch ref)"
     :
   elif gitx merge-base --is-ancestor "$hashMergeInto" "$hashToMerge" 2>>"$stderrRedir" && repo_is_all_clean; then
-    gitx -c core.autocrlf=false stash push -q --all -m "zou-flow: save current state before resetting (${hashMergeInto::7}) to (${hashToMerge::7})"
+    gitx -c core.autocrlf=false stash push -q --include-untracked -m "zou-flow: save current state before resetting (${hashMergeInto::7}) to (${hashToMerge::7})"
     gitx reset --hard "$hashToMerge" &>>"$stderrRedir"
     # io_trace "<<<< _branch_merge_ff -3- $(print_vars toMerge intoBranch ref)"
   else
