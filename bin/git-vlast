@@ -34,9 +34,11 @@ vlast_run()
 
 vlast_command()
 {
-  local sku
-  branch_set_bestmatch_sku "$skuSpec"
-  vlast_checkout "$sku" "$skuMode"
+  if [[ $clone == 'true' ]]; then
+    local sku
+    branch_set_bestmatch_sku "$skuSpec"
+    vlast_checkout "$sku" "$skuMode"
+  fi
   echo $prodVTag
 }
 
