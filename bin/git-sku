@@ -202,8 +202,16 @@ sku_info_prolog()
     # io_trace "sku_info_prolog -1- $(print_vars vtag2prod prod2dev)"
     local unstagedSubmodulesCount
     (( unstagedSubmodulesCount = ${#unstagedCleanIncludedSubmodules[@]} + ${#unstagedDirtyIncludedSubmodules[@]} ))
-    if [ "$vtag2prod" -ne 0 ] || [ "$prod2dev" -ne 0 ] || [[ $unstagedSubmodulesCount -gt 0 ]]; then
-      local pubs="$vtag2prod" work="$prod2dev" mcolor=${Cyan} pcolor wcolor spubs swork
+
+    # adjust vtag2prod when there is just a vnode (use previous branch vtag)
+    local branch lbranch bref
+    branch_set_realize "$prodBranch"
+    local vbranch vtag delta
+    vtag_set_describe "$branch" "$lbranch" 'vtag' # -> vbranch vtag delta
+    # io_trace "sku_info_prolog -2- $(print_vars prodBranch vbranch vtag delta)"
+
+    if [ "$delta" -ne 0 ] || [ "$prod2dev" -ne 0 ] || [[ $unstagedSubmodulesCount -gt 0 ]]; then
+      local pubs="$delta" work="$prod2dev" mcolor=${Cyan} pcolor wcolor spubs swork
 
       if [[ $unstagedSubmodulesCount -gt 0 ]]; then
         # some submodules not published
