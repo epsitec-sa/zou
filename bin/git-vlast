@@ -12,17 +12,16 @@ vlast_parse()
     --url*) clone='true'; arg="${1:5}"; url="${arg//=}";;
     --wrk*) clone='true'; arg="${1:5}"; wrkDir="${arg//=}";;
     --sku*) clone='true'; arg="${1:5}"; skuSpec="${arg//=}";;
-    --vlast|--vnext|--dev) skuMode="$1";;
     -*)     io_error "unknown option ${VC}$1${Red}\n"; io_help $0; return 1;;
     *)      wrkDir="$1";;
   esac; shift; done
 
-  # io_trace "vlast_parse -- $(print_vars verbose url wrkDir sku skuMode clone)"
+  # io_trace "vlast_parse -- $(print_vars verbose url wrkDir sku clone)"
   return 0
 }
 vlast_run()
 {
-  local clone url wrkDir skuSpec skuMode noSkuFilter='true' \
+  local clone url wrkDir skuSpec noSkuFilter='true' \
         verbose synchronized quiet
 
   vlast_parse "$@" || return $?
@@ -46,7 +45,7 @@ vlast_command()
 vlast_sync()
 {
   local url="$1" wrkDir="$2"
-  # io_trace "vlast_sync -1- $(print_vars url wrkDir sku skuMode)"
+  # io_trace "vlast_sync -1- $(print_vars url wrkDir sku)"
   [[ -z "$url" && -z "$wrkDir" ]] && return 0
   if [[ -n "$url" ]]; then
     if [[ -z "$wrkDir" ]]; then
@@ -83,13 +82,10 @@ vlast_sync()
 }
 vlast_checkout()
 {
-  local sku="$1" skuMode="$2" synchronized=$3
-  [[ $synchronized == 'true' && -z "$sku" && -z "$skuMode" ]] && return 0
-  # io_trace "vlast_checkout -1- $(print_vars synchronized sku skuMode)"
-  local params=()
-  [[ -n "$sku" ]] && params+=( "$sku" )
-  [[ -n "$skuMode" ]] && params+=( "$skuMode" )
-  sku_checkout "${params[@]}"
+  local sku="$1"
+  [[ $synchronized == 'true' && -z "$sku" ]] && return 0
+  # io_trace "vlast_checkout -1- $(print_vars synchronized sku)"
+  sku_checkout "$sku"
 }
 
 vlast_run "$@"
