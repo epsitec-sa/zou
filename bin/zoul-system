@@ -35,7 +35,7 @@ sys_init()
 abspath()
 {
   local path
-  path="$(realpath "$@")" || return $?
+  path="$(readlink -f -- "$@")" || return $?
   [ $zouWin -eq 0 ] && path="$(cygpath "$path")"
   printf '%s\n' $path
 }
