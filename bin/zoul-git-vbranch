@@ -83,9 +83,20 @@ vbranch_set_vnode()
     return 1
   fi
 }
+vbranch_exists_at()
+{
+  local ref=${1:-HEAD}
+  for vbranch in $(branch_list_all_at_flatten "$ref"); do
+    vbranch_is_vbranch $vbranch && return 0
+  done
+  return 1
+}
 vbranch_create()
 {
   local branch=$1 commit=${2:-$moduleHead} message=$3 vnode
+  if vbranch_exists_at "$commit"; then
+    git_commit --allow-empty "create vbranch '$1'."
+  fi
   vbranch_set_vnode "$branch" || return $?
   # create vnode
   tag_new "$vnode" "$commit" "$message"
