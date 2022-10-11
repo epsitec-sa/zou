@@ -221,7 +221,7 @@ git_get_composite_sha()
 {
   local algo=${1:-256} shaSum
   command -v 'shasum' &>/dev/null && shaSum=('shasum' -a$algo) || shaSum=("sha${algo}sum")
-  (git rev-parse HEAD; git submodule status --recursive | cut -c 2- | cut -d' ' -f1) | ${shaSum[@]} -t | cut -d ' ' -f1
+  (git rev-parse HEAD; git submodule status --recursive | cut -c 2- | cut -d' ' -f1) | tr -d '\n\r' | ${shaSum[@]} -t | cut -d ' ' -f1
 }
 git_clone()
 {
