@@ -95,12 +95,19 @@ Operations:
   <Target Name="SignFolder" DependsOnTargets="_InitSignFolder" AfterTargets="PackBuild" Outputs="%(SignFolder.Identity)">
     <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] SignFolder" />
     <Message Condition="'$(ZouDebug)' == 'true' And '%(Command)' != ''" Importance="high" Text="%(SignFolder.Command)" />
+
+    <Message Condition="'$(ZouDebug)' != 'true' And '%(Command)' != ''" Importance="high" Text=" " />
+    <Message Condition="'$(ZouDebug)' != 'true' And '%(Command)' != ''" Importance="high" Text="$(L2p)Signing $(T1)%(SignFolder.Identity)$(XC)" />
     <Exec    Condition="'$(ZouDebug)' != 'true' And '%(Command)' != ''" Command="%(SignFolder.Command)" />
+    <Message Condition="'$(ZouDebug)' != 'true' And '%(Command)' != ''" Importance="high" Text="$(NC)" />
   </Target>
 
   <!-- Sign dotnet tools before packaging  -->
-  <Target Name="SignDotnetTool" BeforeTargets="GenerateNuspec" Condition="'$(Sign)'=='true' And '$(PackAsTool)'=='true'">
-    <Exec Command="esign --nologo -r -l -v --$(SignToolBroker) &quot;$(OutDir)publish&quot;" />
+  <Target Name="SignDotnetTool" AfterTargets="Build" BeforeTargets="PackTool" Condition="'$(Sign)'=='true' And '$(PackAsTool)'=='true' And Exists('$(PublishDir)')">
+    <Message Importance="high" Text=" " />
+    <Message Importance="high" Text="$(L2p)Signing $(T1)$(PublishDir).$(XC)" />
+    <Exec Command="esign --nologo -r -l -v --$(SignToolBroker) &quot;$(PublishDir).&quot;" />
+    <Message Importance="high" Text="$(NC)" />
   </Target>
 
   <Target Name="TraceSignTargets" Condition="'$(ZouTrace)' == 'true'">
@@ -108,6 +115,7 @@ Operations:
     <Message Importance="high" Text="----------------" />
     <Message Importance="high" Text="Sign           = $(Sign)" />
     <Message Importance="high" Text="SignToolBroker = $(SignToolBroker)" />
+    <Message Importance="high" Text="PublishDir     = $(PublishDir)" />
     <Message Importance="high" Text="OutDir         = $(OutDir)" />
     <Message Importance="high" Text="OutputPath     = $(OutputPath)" />
     
