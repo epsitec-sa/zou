@@ -3,8 +3,8 @@
 
   <Import Project="Boot.Runtime.props" Condition="'$(BootRuntimeImported)' == ''"/>
 
-  <PropertyGroup>
     <!-- Package default properties -->
+  <PropertyGroup>
     <AssemblyTitle Condition="'$(AssemblyTitle)' == ''">$(AssemblyName)</AssemblyTitle>
     <AssemblyTitle>$(AssemblyTitle) ($(RuntimeIdentifier).$(TargetFramework))</AssemblyTitle>
     <FirstCopyrightYear Condition="'$(FirstCopyrightYear)' == ''"></FirstCopyrightYear>
@@ -18,6 +18,9 @@
     <Description>$(Description) - $(Version) $(TargetFramework)</Description>
     <Description Condition="'$(RuntimeIdentifier)' != ''">$(Description)-$(RuntimeIdentifier)</Description>
     <DefaultLanguage Condition="'$(DefaultLanguage)' == ''">en-US</DefaultLanguage>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(IsPackable)' != 'false'">
     <PackageId Condition="'$(PackageId)' == ''">$(ProjectName)</PackageId>
     <PackageId Condition="!$(PackageId.StartsWith('$(Company)')) And !$(Company.Contains(' '))">$(Company).$(PackageId)</PackageId>
     <DefaultPackageTags>$(PackageId.Replace('.', ';'))</DefaultPackageTags>
