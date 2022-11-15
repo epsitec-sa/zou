@@ -5,12 +5,7 @@
 
   <!-- Default properties (can be overloaded in bundle after importing this script) -->
   <PropertyGroup>
-    <TargetFramework    Condition="'$(TargetFramework)'    == '' And '$(ZouAgentType)' == ''">$(CoreTargetFramework)</TargetFramework>
     <Company>Epsitec</Company>
-  </PropertyGroup>
-  
-  <PropertyGroup>
-    <TargetFrameworks>*Undefined*</TargetFrameworks>
   </PropertyGroup>
 
   <!-- Debug info-->
@@ -45,7 +40,7 @@
   <PropertyGroup Condition ="'$(AssemblyVersion)' != ''">
     <VersionPrefix>$(AssemblyVersion)</VersionPrefix>
   </PropertyGroup>
-
+  
   <Target Name="TraceVersion" AfterTargets="GetAssemblyAttributes" Condition="'$(ZouTrace)' == 'true' Or '$(TraceVersion)' == 'true'">
     <Message Importance="high" Text="zou/Directory.Build.Default.props [$(MSBuildProjectFile)]" />
     <Message Importance="high" Text="---------------------------------" />

@@ -1,0 +1,60 @@
+<Project InitialTargets="TraceTFM">
+  <!--
+  TargetFrameworks
+  TFMx = TargetFrameworkSystem
+  TFMs = TargetFrameworks
+  ZAG  = ZouAgentType
+  CLI  = Command Line build
+  VST  = Visual Studio build
+  
+  TFMx TFMs ZAG -> TFM   TFMs
+   0    0    0      1     0
+   0    0    1      0     0
+   0    1           0     1
+   1    0           1     0
+   1    1   CLI     1     1
+   1    1   VST     1     0
+  -->
+  <PropertyGroup>
+    <_TfmSysSpecified>true</_TfmSysSpecified>
+    <_TfmSysSpecified Condition="'$(TargetFrameworkSystem)' == ''">false</_TfmSysSpecified>
+    <_TfmsSpecified>true</_TfmsSpecified>
+    <_TfmsSpecified Condition="'$(TargetFrameworks)' == '*Undefined*' Or '$(TargetFrameworks)' == ''">false</_TfmsSpecified>
+  </PropertyGroup>
+
+  <Choose>
+    <When Condition="!$(_TfmSysSpecified) And !$(_TfmsSpecified)">
+      <PropertyGroup Condition="'$(ZouAgentType)' == ''">
+        <Tfm0>1 TFMx=0 TFMs=0</Tfm0>
+      </PropertyGroup>
+    </When>
+    <When Condition="!$(_TfmSysSpecified) And $(_TfmsSpecified)">
+      <PropertyGroup>
+        <Tfm0>2 TFMx=0 TFMs=1</Tfm0>
+      </PropertyGroup>
+    </When>
+    <When Condition="$(_TfmSysSpecified) And !$(_TfmsSpecified)">
+      <PropertyGroup>
+        <Tfm0>3 TFMx=1 TFMs=0</Tfm0>
+      </PropertyGroup>
+    </When>
+    <When Condition="$(_TfmSysSpecified) And $(_TfmsSpecified)">
+      <PropertyGroup Condition="'$(BuildingInsideVisualStudio)' == ''">
+        <Tfm0>4 TFMx=1 TFMs=1</Tfm0>
+      </PropertyGroup>
+    </When>
+  </Choose>
+
+  <Import Project="TargetFramework.targets"/>
+
+  <PropertyGroup>
+    <BuildLoc>VST</BuildLoc>
+    <BuildLoc Condition="'$(BuildingInsideVisualStudio)' == ''">CLI</BuildLoc>
+    <Tfm1>TFMSys='$(TargetFrameworkSystem)' TFM='$(TargetFramework)' TFMs='$(TargetFrameworks)'</Tfm1>
+  </PropertyGroup>
+
+  <Target Name="TraceTFM">
+    <Message Importance="high" Text="$(Tfm0) $(BuildLoc) $(Tfm1) : $(MSBuildProjectFile)" />
+  </Target>
+
+</Project>

@@ -5,4 +5,15 @@
     <WineTargetFramework    Condition="'$(WineTargetFramework)'    == ''">netcoreapp3.1</WineTargetFramework>
     <WindowsTargetFramework Condition="'$(WindowsTargetFramework)' == ''">$(CoreTargetFramework)-windows</WindowsTargetFramework>
   </PropertyGroup>
+
+  <PropertyGroup>
+    <TargetFrameworkSystem Condition="'$(ZouDebug)' == 'true'">$(TargetFramework)</TargetFrameworkSystem>
+
+    <!-- Ensure TargetFramework is initialized when building inside Visual Studio -->
+    <TargetFramework Condition="'$(TargetFramework)' == '' And '$(ZouAgentType)' == '' And '$(BuildingInsideVisualStudio)' != ''">$(CoreTargetFramework)</TargetFramework>
+
+    <!-- Allow initialization detection -->
+    <TargetFrameworks>*Undefined*</TargetFrameworks>
+  </PropertyGroup>
+
 </Project>

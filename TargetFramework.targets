@@ -1,0 +1,11 @@
+<Project>
+  <!-- TargetFrameworks -->
+  <PropertyGroup Condition="'$(TargetFrameworks)' == '*Undefined*' And '$(BuildingInsideVisualStudio)' != ''">
+    <TargetFrameworks />
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(TargetFrameworks)' == '*Undefined*' And '$(BuildingInsideVisualStudio)' == ''">
+    <TargetFrameworks />
+    <TargetFrameworks Condition="'$(TargetFrameworkImport)' == '$(FullTargetFramework)'">$(FullTargetFramework);netstandard2.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(TargetFrameworkImport)' == '$(CoreTargetFramework)'">$(CoreTargetFramework);netstandard2.0;netstandard2.1</TargetFrameworks>
+  </PropertyGroup>
+</Project>
