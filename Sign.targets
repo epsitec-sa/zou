@@ -96,10 +96,10 @@ Operations:
     <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] SignFolder" />
     <Message Condition="'$(ZouDebug)' == 'true' And '%(Command)' != ''" Importance="high" Text="%(SignFolder.Command)" />
 
-    <Message Condition="'$(ZouDebug)' != 'true' And '%(Command)' != ''" Importance="high" Text=" " />
-    <Message Condition="'$(ZouDebug)' != 'true' And '%(Command)' != ''" Importance="high" Text="$(L2p)Signing $(T1)%(SignFolder.Identity)$(XC)" />
-    <Exec    Condition="'$(ZouDebug)' != 'true' And '%(Command)' != ''" Command="%(SignFolder.Command)" />
-    <Message Condition="'$(ZouDebug)' != 'true' And '%(Command)' != ''" Importance="high" Text="$(NC)" />
+    <Message Condition="'$(ZouDebug)' != 'true' And '%(SignFolder.Command)' != ''" Importance="high" Text=" " />
+    <Message Condition="'$(ZouDebug)' != 'true' And '%(SignFolder.Command)' != ''" Importance="high" Text="$(L2p)Signing $(T1)%(SignFolder.Identity)$(XC)" />
+    <Exec    Condition="'$(ZouDebug)' != 'true' And '%(SignFolder.Command)' != ''" Command="%(SignFolder.Command)" />
+    <Message Condition="'$(ZouDebug)' != 'true' And '%(SignFolder.Command)' != ''" Importance="high" Text="$(NC)" />
   </Target>
 
   <!-- Sign dotnet tools before packaging  -->
