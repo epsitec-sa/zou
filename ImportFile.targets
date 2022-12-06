@@ -13,12 +13,16 @@ Input parameters:
     <ImportFileTargetsImported>true</ImportFileTargetsImported>
   </PropertyGroup>
 
-  <!-- Define imported files default metadata -->
+  <!-- Define default metadata for ImportFile and CustomBuild items-->
   <ItemDefinitionGroup>
     <ImportFile>
       <ImportDir>$(OutDir)</ImportDir>
       <RedistFolder>$(RedistFolder)</RedistFolder>
     </ImportFile>
+    <CustomBuild>
+      <ImportFile>%(FileName)%(Extension)</ImportFile>
+      <ImportDir>$(OutDir)</ImportDir>
+    </CustomBuild>
   </ItemDefinitionGroup>
 
   <Target Name="ImportFileInit">
