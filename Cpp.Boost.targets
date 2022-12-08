@@ -20,7 +20,7 @@
     </PropertyGroup>
     
     <Error Condition="'$(_BoostVersionCompare)' == '1'" Text="Boost version mismatch. Expected: $(BoostVersion). Actual: $(_BoostExistingVersion). Did you synchronize bundle?" />
-    <!--<Message Importance="high" Text="BoostVersion         = $(BoostVersion)" />
+    <!--<Message Importance="high" Text="BoostVersion          = $(BoostVersion)" />
     <Message Importance="high" Text="_BoostExistingVersion = $(_BoostExistingVersion)" />
     <Message Importance="high" Text="_BoostVersionCompare  = $(_BoostVersionCompare)" />-->
     
@@ -37,7 +37,7 @@
   </Target>
   
   <Target Name="_BoostCreateBoostOnlyPackagesConfig">
-    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] _BoostCreateBoostOnlyPackagesConfig" />
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] _BoostCreateBoostOnlyPackagesConfig(In: $(_BoostTemplatePathPrefix).packages.config), Out: $(_BoostOnlyPackagesConfigFile))" />
     
     <Copy SourceFiles="$(_BoostTemplatePathPrefix).packages.config" DestinationFiles="$(_BoostOnlyPackagesConfigFile)" />
   </Target>
@@ -61,8 +61,8 @@
                 IgnoreCase="true" />
   </Target>
   
-  <Target Name="_BoostUpdateExistingPackagesConfig" DependsOnTargets="_BoostUpdateBoostOnlyPackagesConfig" Inputs="$(_BoostOnlyPackagesConfigFile)" Outputs="$(PackagesConfigFile)" >
-    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] _BoostUpdateExistingPackagesConfig" />
+  <Target Name="_BoostUpdateExistingPackagesConfig" DependsOnTargets="_BoostUpdateBoostOnlyPackagesConfig" >
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] _BoostUpdateExistingPackagesConfig(In: $(_BoostOnlyPackagesConfigFile), Out: $(PackagesConfigFile))" />
     
     <Copy Condition="!$(_PackagesConfigExists)" SourceFiles="$(_BoostOnlyPackagesConfigFile)" DestinationFiles="$(PackagesConfigFile)"/>
     <!-- Remove previous boost packages -->
@@ -77,7 +77,7 @@
   </Target>
   
   <Target Name="_BoostCheckPackagesConfigChanged" Condition="$(BundleIsGit)" DependsOnTargets="_BoostUpdateExistingPackagesConfig" >
-    <Exec Command='git add "$(PackagesConfigFile)"' StandardOutputImportance="low" />
+    <Exec Command='git add "$(PackagesConfigFile)"' StandardOutputImportance="low" ContinueOnError='true' />
     <Exec Command='git diff-index --quiet HEAD "$(PackagesConfigFile)' ContinueOnError='true' IgnoreExitCode='true'>
       <Output TaskParameter="ExitCode" PropertyName="_GitDiffPackagesConfigExitCode" />
     </Exec>
@@ -89,11 +89,7 @@
   </Target>
   
   <Target Name="_BoostCommitPackagesConfigChanged" Condition="$(BundleIsGit)" >
-    <!-- abort if we are not in dev mode -->
-    <Exec Command='git in-dev-mode' ContinueOnError='true' IgnoreExitCode='true'>
-      <Output TaskParameter="ExitCode" PropertyName="GitInDevMode" />
-    </Exec>
-    <Error Condition="'$(GitInDevMode)' != '0'" Text="Switch $(ModuleName) to development mode for boost to be updated." />
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] _BoostCommitPackagesConfigChanged" />
     
     <!-- Commit packages.config -->
     <PropertyGroup>
@@ -112,6 +108,7 @@
     copy temp file to packages.config
   -->
   <Target Name="UpdateBoostPackages" DependsOnTargets="_BoostUpdateExistingPackagesConfig;_BoostCheckPackagesConfigChanged" BeforeTargets="_CppBoostHeadersImportCheck;_CppBoostLibsImportCheck">
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] UpdateBoostPackages" />
 
     <CallTarget Condition="$(_PackagesConfigChanged)" Targets="_BoostCommitPackagesConfigChanged" />
 
