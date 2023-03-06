@@ -105,8 +105,8 @@ bundle_set_registered_paths()
     [[ $kv =~ ^zou\.([^[:blank:]]+)\.path[[:blank:]]+(.*)$ ]]
     url=${BASH_REMATCH[1]}
     path=${BASH_REMATCH[2]}
-    # io_trace "bundle_set_registered_paths -- $(print_vars kv url path)"
-    if [[ -d "$path/.git" && (-d "$path/zou" || "$path" == "$PWD") ]]; then
+    # io_trace "bundle_set_registered_paths -- $(print_vars kv url path PWD)"
+    if [[ -d "$path/.git" && (-d "$path/zou" || "$(cygpath "$path")" == "$PWD") ]]; then
       bundleRegisteredPaths+=( $path )
     else
       gitx config --file "$zouConfigFile" --unset "zou.$url.path" "$path" &>>"$stdallRedir"
