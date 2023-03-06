@@ -23,8 +23,10 @@ if [[ -z "$zouStartupPath" ]]; then
     zouStartupFileName="${zouStartupPath##*/}"
   fi
   export zouStartupDir="${zouStartupPath%/*}"
-  export zouBinDir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
-  export zouDir="$(abspath "$zouBinDir/..")"
+  export zouBashBinDir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+  export zouBashDir="$(abspath "$zouBashBinDir/..")"
+  export zouDir="$(abspath "$zouBashDir/..")"
+  export zouBinDir="$zouDir/bin"
   export zouBinzDir="$zouDir/binz/$zouOs"
   export zouCommand="${zouStartupFileName##git-}"
   export zouConfigFile="$(abspath ~)/.zou-flow"
