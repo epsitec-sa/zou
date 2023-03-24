@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+
+# WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
+#
+# 'zou.bash' has been replaced by 'zou.net' but some libraries are still useful
+# To use them you need to begin your script by including this slightly modified
+# version of the original one.
+#
+# [[ -z $ZOUL_BOOT  ]] && . zoul-boot
+#
+# 'zou.bash' has been moved from the 'zou/bin' folder to 'zou/zou.bash/bin' which is
+# not anymore in the 'PATH'. The 'zouBashBinDir' value has been modified to redirect
+# to the new 'zou.bash' home.
+#
+# WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
+
+ZOUL_BOOT=true
+
+[[ -z $ZOUL_SYSTEM ]]  && . zoul-system
+
+# work with default IFS
+IFS=$' \t\n'
+OIFS=$IFS
+
+# force git to use invariant language
+export LANGUAGE=en_US
+export LANG="$LANGUAGE.UTF-8"
+
+if [[ -z "$zouStartupPath" ]]; then
+  # declare startup constants
+  export zouStartupPath=$(abspath "${BASH_SOURCE[-1]}")
+  export zouStartupFileName="${zouStartupPath##*/}"
+  if [[ "$zouStartupFileName" == bashdb ]]; then
+    zouStartupPath=$(abspath "${BASH_SOURCE[-2]}")
+    zouStartupFileName="${zouStartupPath##*/}"
+  fi
+  export zouStartupDir="${zouStartupPath%/*}"
+  # redirect to new 'zou.bash' home
+  export zouBashBinDir="$( cd "$( dirname "${BASH_SOURCE[0]}" )/../zou.bash/bin" >/dev/null && pwd )"
+  export zouBashDir="$(abspath "$zouBashBinDir/..")"
+  export zouDir="$(abspath "$zouBashDir/..")"
+  export zouBinDir="$zouDir/bin"
+  export zouBinzDir="$zouDir/binz/$zouOs"
+  export zouCommand="${zouStartupFileName##git-}"
+  export zouConfigFile="$(abspath ~)/.zou-flow"
+  export zouArguments="$*"
+fi
+
+# export zou.bash
+export PATH="$zouBashBinDir:$PATH"
+
+# echo zouStartupPath="$zouStartupPath"
+# echo zouStartupFileName="$zouStartupFileName"
+# echo zouStartupDir="$zouStartupDir"
+# echo zouBashBinDir="$zouBashBinDir"
+# echo zouBashDir="$zouBashDir"
+# echo zouDir="$zouDir"
+# echo zouBinDir="$zouBinDir"
+# echo zouBinzDir="$zouBinzDir"
+# echo zouCommand="$zouCommand"
+# echo zouConfigFile="$zouConfigFile"
+# echo zouArguments="$*"
