@@ -19,7 +19,9 @@ Exemples:
   </ItemGroup>
   
   <ItemGroup>
-    <ZipFolder Include="Data/mail-template-qrtest-*/*" />
+    <ZipFolder Include="Data/mail-template-qrtest-*/*">
+      <OutDir>$(ProjectDir)$(OutputPath)%(RelativeDir)</OutDir>
+    </ZipFolder>
   </ItemGroup>
 
   <ItemGroup>
@@ -49,9 +51,15 @@ Exemples:
       <!-- Merge $(ZipFolder) (semi-colon separated) into @(ZipFolder) -->
       <ZipFolder Include="$(ZipFolder)" Condition="'$(ZipFolder)' != ''" />
       <!-- Discriminate files from directories (CreatedTime metadata is empty for a directory) -->
-      <_ZipFolder Condition="'%(ZipFolder.CreatedTime)' == '' And Exists('%(Identity)')" Include="%(Identity)" />
-      <_ZipFolder Condition="'%(ZipFolder.CreatedTime)' != '' And Exists('%(RelativeDir)')" Include="%(RelativeDir)" />
-      <_ZipFolderNormalized Include="$([System.String]::new('%(_ZipFolder.Identity)').TrimEnd('\/').Replace('\', '/'))" />
+      <_ZipFolder Condition="'%(ZipFolder.CreatedTime)' == '' And Exists('%(Identity)')" Include="%(Identity)">
+        <OutDir>%(ZipFolder.OutDir)</OutDir>
+      </_ZipFolder>
+      <_ZipFolder Condition="'%(ZipFolder.CreatedTime)' != '' And Exists('%(RelativeDir)')" Include="%(RelativeDir)">
+        <OutDir>%(ZipFolder.OutDir)</OutDir>
+      </_ZipFolder>
+      <_ZipFolderNormalized Include="$([System.String]::new('%(_ZipFolder.Identity)').TrimEnd('\/').Replace('\', '/'))">
+        <OutDir>%(_ZipFolder.OutDir)</OutDir>
+      </_ZipFolderNormalized>
       <_ZipFolder Remove="@(_ZipFolder)" />
        <!--Process ZipFolder items--> 
       <ZipFolder Remove="@(ZipFolder)" />
@@ -60,12 +68,13 @@ Exemples:
        <!--Compute ZipDir and ZipPath (item metadata)--> 
       <ZipFolder>
         <ZipDir>$([System.String]::new('%(FullPath)').TrimEnd('\/'))</ZipDir>
+        <OutDir Condition="'%(ZipFolder.OutDir)' == ''">$(ProjectDir)$(OutputPath)%(RelativeDir)</OutDir>
       </ZipFolder>
       <ZipFolder>
-        <ZipPath>%(ZipDir).zip</ZipPath>
+        <ZipPath>%(ZipFolder.OutDir)%(FileName).zip</ZipPath>
       </ZipFolder>
     
-      <ZipFile Include="%(ZipFolder.ZipDir)\**\*" Condition="'@(ZipFolder)' != ''">
+      <ZipFile Include="%(ZipFolder.ZipDir)\**\*" Condition="@(ZipFolder->Count()) > 0">
         <ArchivePath>%(ZipFolder.ZipPath)</ArchivePath>
       </ZipFile>
       <ZipFile>
@@ -73,12 +82,13 @@ Exemples:
       </ZipFile>
     </ItemGroup>
     
-    <!--<LogItems Items="@(ZipFolder)" Title="ZipFolder" AllMetadata="true"/>
-    <LogItems Items="@(ZipFile)" Title="ZipFile"  AllMetadata="true" />-->
+    <!--<LogItems Items="@(ZipFolder)" Title="ZipFolder" AllMetadata="true"/>-->
+    <!--<LogItems Items="@(ZipFile)" Title="ZipFile"  AllMetadata="true" />-->
   </Target>
 
   <Target Name="ZipFileBuild" DependsOnTargets="ProcessZipFolder" BeforeTargets="Build">
     <Zip Files="@(ZipFile)" />
+    <Message Importance="high" Text="$(L2p)[+] %(ZipFolder.ZipPath)$(XC)" Condition="@(ZipFolder->Count()) > 0" />
   </Target>
   
   <Target Name="ZipFileClean" DependsOnTargets="ProcessZipFolder" AfterTargets="Clean">
