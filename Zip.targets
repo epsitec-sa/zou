@@ -1,97 +1,105 @@
 <!--
 The Zip.targets can be used to zip files and/or folders.
 
-Exemples:
-  
-  <PropertyGroup>
-    <ZipFolder>Foo;Bar1;Bar2</ZipFolder>
-  </PropertyGroup>
-  
-  <PropertyGroup>
-    <ZipFolder>Foo;Bar*/*</ZipFolder>
-  </PropertyGroup>
-  
-  <ItemGroup>
-    <ZipFolder Include="Data/mail-template-qrtest-de" />
-    <ZipFolder Include="Data/mail-template-qrtest-en" />
-    <ZipFolder Include="Data/mail-template-qrtest-fr" />
-    <ZipFolder Include="Data/mail-template-qrtest-it" />
-  </ItemGroup>
-  
-  <ItemGroup>
-    <ZipFolder Include="Data/mail-template-qrtest-*/*">
-      <OutDir>$(ProjectDir)$(OutputPath)%(RelativeDir)</OutDir>
-    </ZipFolder>
-  </ItemGroup>
+Example 1:
+  Zip 'data\folder' recursively to $(OutputPath)data\folder.zip
 
   <ItemGroup>
-    <ZipFile Include="folder\**\*">
-      <ArchivePath>folder.zip</ArchivePath>
+    <ZipFolder Include="data\folder\**\*" />
+  </ItemGroup>
+  
+Example 2:
+  Zip 'data\folder' recursively to $(OutputPath)foo.zip
+  - 'EntryName' is optional
+  
+  <ItemGroup>
+    <ZipFile Include="data\folder\**\*">
+      <ArchivePath>foo.zip</ArchivePath>
       <EntryName>%(RecursiveDir)%(FileName)%(Extension)</EntryName>
     </ZipFile>
-    <ZipFile Include="*.exe">
-      <ArchivePath>Exe.zip</ZipPath>
-    </ZipFile>
-    <ZipFile Include="*.dll">
-      <ArchivePath>Dll.zip</ZipPath>
-    </ZipFile>
   </ItemGroup>
-
 -->
-<Project>
+
+<Project InitialTargets="ZipCheck">
+
   <PropertyGroup>
     <ZipTargetsImported>true</ZipTargetsImported>
   </PropertyGroup>
   <Import Project="zou.props" Condition="'$(ZouImported)' == ''" />
 
-  <!-- Convert ZipFolder to ZipFile -->
-  <Target Name="ProcessZipFolder">
-    <!-- Preprocess @(ZipFolder) items and $(ZipFolder) property-->
-    <ItemGroup>
-      <!-- Merge $(ZipFolder) (semi-colon separated) into @(ZipFolder) -->
-      <ZipFolder Include="$(ZipFolder)" Condition="'$(ZipFolder)' != ''" />
-      <!-- Discriminate files from directories (CreatedTime metadata is empty for a directory) -->
-      <_ZipFolder Condition="'%(ZipFolder.CreatedTime)' == '' And Exists('%(Identity)')" Include="%(Identity)">
-        <OutDir>%(ZipFolder.OutDir)</OutDir>
-      </_ZipFolder>
-      <_ZipFolder Condition="'%(ZipFolder.CreatedTime)' != '' And Exists('%(RelativeDir)')" Include="%(RelativeDir)">
-        <OutDir>%(ZipFolder.OutDir)</OutDir>
-      </_ZipFolder>
-      <_ZipFolderNormalized Include="$([System.String]::new('%(_ZipFolder.Identity)').TrimEnd('\/').Replace('\', '/'))">
-        <OutDir>%(_ZipFolder.OutDir)</OutDir>
-      </_ZipFolderNormalized>
-      <_ZipFolder Remove="@(_ZipFolder)" />
-       <!--Process ZipFolder items--> 
-      <ZipFolder Remove="@(ZipFolder)" />
-      <ZipFolder Include="@(_ZipFolderNormalized)" />
-      <_ZipFolderNormalized Remove="@(_ZipFolderNormalized)" />
-       <!--Compute ZipDir and ZipPath (item metadata)--> 
-      <ZipFolder>
-        <ZipDir>$([System.String]::new('%(FullPath)').TrimEnd('\/'))</ZipDir>
-        <OutDir Condition="'%(ZipFolder.OutDir)' == ''">$(ProjectDir)$(OutputPath)%(RelativeDir)</OutDir>
-      </ZipFolder>
-      <ZipFolder>
-        <ZipPath>%(ZipFolder.OutDir)%(FileName).zip</ZipPath>
-      </ZipFolder>
+  <!-- ======================================================================================= -->
+
+  <ItemGroup>
+    <_ZipFolder Include="@(ZipFolder)">
+      <!-- Folder = RelativeDir.TrimEnd(RecursiveDir) -->
+      <Folder Condition="'%(RecursiveDir)' == ''">%(RelativeDir)</Folder>
+      <Folder Condition="'%(RecursiveDir)' != ''">$([System.String]::new('%(RelativeDir)').Substring(0, $([System.String]::new('%(RelativeDir)').LastIndexOf('%(RecursiveDir)'))))</Folder>
+
+      <!--
+      Compute 'Link' metadata for 'Content' item.
+      The 'Link' metadata represents the relative path of the zip archive
+      where project consumers will get a copy of it through the 'Content' items
+      -->
+      <Link>$([System.String]::new('%(Folder)').TrimEnd('\/')).zip</Link>
+      <ArchivePath>$(ProjectDir)$(OutputPath)%(Link)</ArchivePath>
+    </_ZipFolder>
+
+    <_ZipArchive Include="@(_ZipFolder->'%(ArchivePath)'->Distinct())" />
     
-      <ZipFile Include="%(ZipFolder.ZipDir)\**\*" Condition="@(ZipFolder->Count()) > 0">
-        <ArchivePath>%(ZipFolder.ZipPath)</ArchivePath>
+    <!-- Enable project consumers to get a copy of zip archives -->
+    <Content Include="@(_ZipArchive)" Visible="false" >
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+
+  </ItemGroup>
+  
+  <Target Name="_InitZipFile" Condition="@(_ZipArchive->Count()) > 0">
+    <!--<Message Importance="high" Text="_InitZipFile" />-->
+    <!--<LogItems Items="@(_ZipFolder)" Title="_ZipFolder"/>-->
+    <!--<LogItems Items="@(_ZipArchive)" Title="_ZipArchive"/>-->
+
+    <ItemGroup>
+      <ZipFile Include="@(_ZipFolder)">
+        <ArchivePath>%(_ZipFolder.ArchivePath)</ArchivePath>
       </ZipFile>
       <ZipFile>
         <EntryName>%(RecursiveDir)%(FileName)%(Extension)</EntryName>
       </ZipFile>
     </ItemGroup>
     
-    <!--<LogItems Items="@(ZipFolder)" Title="ZipFolder" AllMetadata="true"/>-->
-    <!--<LogItems Items="@(ZipFile)" Title="ZipFile"  AllMetadata="true" />-->
+    <!--<LogItems Items="@(Content)" Title="Content"/>-->
+    <!--<LogItems Items="@(ZipFile)" Title="ZipFile"/>-->
   </Target>
 
-  <Target Name="ZipFileBuild" DependsOnTargets="ProcessZipFolder" BeforeTargets="Build">
+  <Target Name="ZipBuild"
+          DependsOnTargets="_InitZipFile"
+          BeforeTargets="PrepareForBuild"
+          Inputs="@(ZipFile->'%(FullPath)')"
+          Outputs="@(ZipFile->'%(ArchivePath)')">
+
     <Zip Files="@(ZipFile)" />
-    <Message Importance="high" Text="$(L2p)[+] %(ZipFolder.ZipPath)$(XC)" Condition="@(ZipFolder->Count()) > 0" />
   </Target>
+
+  <Target Name="ZipCheck">
+    <Error Condition="'$(ZipFolder)' != ''" Text="'ZipFolder' property is obsolete. Use 'ZipFolder' item instead (see zou\Zip.Targets examples)." />
+  </Target>
+
+  <!-- ============================== FAST UPDATE CHECK ====================================== -->
+  <!-- https://github.com/dotnet/project-system/blob/main/docs/up-to-date-check.md -->
+
+  <!--<PropertyGroup>
+    <DisableFastUpToDateCheck>@(ZipFolder->Count()) > 0</DisableFastUpToDateCheck>
+  </PropertyGroup>-->
   
-  <Target Name="ZipFileClean" DependsOnTargets="ProcessZipFolder" AfterTargets="Clean">
-    <Delete Files="@(ZipFile->'%(ArchivePath)')" ContinueOnError="true" />
+  <Target Name="CollectUpToDateCheckInputDesignTime" DependsOnTargets="CompileDesignTime;_InitZipFile" Returns="@(UpToDateCheckInput)">
+    <ItemGroup>
+      <UpToDateCheckInput Include="@(ZipFile->'%(FullPath)')" />
+    </ItemGroup>
   </Target>
+  <Target Name="CollectUpToDateCheckOutputDesignTime" DependsOnTargets="CompileDesignTime;_InitZipFile" Returns="@(UpToDateCheckOutput)">
+    <ItemGroup>
+      <UpToDateCheckOutput Include="@(ZipFile->'%(ArchivePath)')" />
+    </ItemGroup>
+  </Target>
+
 </Project>
