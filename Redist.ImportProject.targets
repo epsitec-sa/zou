@@ -151,8 +151,13 @@ Outputs:
       
       <!-- Keep only one of OutDir or PublishDir -->
       <ImportProject>
-        <OutDir     Condition="%(_UseBuildTarget) == false" />
-        <PublishDir Condition="%(_UseBuildTarget) == true" />
+        <OutDir        Condition="%(_UseBuildTarget) == false" />
+        <PublishDir    Condition="%(_UseBuildTarget) == true" />
+      </ImportProject>
+
+      <!-- Set SelfContained to true by default when publishing -->
+      <ImportProject>
+        <SelfContained Condition="'%(ImportProject.SelfContained)' == ''">%(_UseBuildTarget)</SelfContained>
       </ImportProject>
 
       <!-- Remove temporary metadata -->
