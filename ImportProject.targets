@@ -132,11 +132,11 @@
 
     <ItemGroup>
       <MSBuildProject>
-        <Command Condition="Exists('$(MSBuildToolsPath)\msbuild.exe')">"$(MSBuildToolsPath)\msbuild"</Command>
+        <Command Condition="'%(MSBuildProject.RuntimeType)' == 'Full' And Exists('$(MSBuildToolsPath)\msbuild.exe')">"$(MSBuildToolsPath)\msbuild"</Command>
       </MSBuildProject>
       <MSBuildProject>
         <Command Condition="'%(MSBuildProject.RuntimeType)' == 'Full' And '%(MSBuildProject.Command)' == ''">msbuild</Command>
-        <Command Condition="'%(MSBuildProject.RuntimeType)' != 'Full' And '%(MSBuildProject.Command)' == ''">dotnet build</Command>
+        <Command Condition="'%(MSBuildProject.RuntimeType)' != 'Full'">dotnet build</Command>
         <!-- Do not reuse MSBuild nodes after a build -->
         <Options>-nologo -nr:false</Options>
       </MSBuildProject>
