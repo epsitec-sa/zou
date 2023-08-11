@@ -210,7 +210,7 @@
           Command='"$(ZouBinzOsDir)nuget" restore "%(MSBuildProject.RootDir)%(Directory)packages.config" -Verbosity quiet -PackagesDirectory "$(NugetPackagesDir)."'/>
 
     <!-- ...or when using msbuild with a .csproj. -->
-    <Exec Condition="'%(MSBuildProject.Extension)' == '.csproj'"
+    <Exec Condition="'%(MSBuildProject.Extension)' == '.csproj' And '%(MSBuildProject.RuntimeType)' == 'Full'"
           Command='dotnet restore "%(MSBuildProject.Identity)"' EnvironmentVariables="TargetFrameworkImport=%(MSBuildProject.TargetFramework)"/>
 
     <!--
