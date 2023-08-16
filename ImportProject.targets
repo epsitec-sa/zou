@@ -54,7 +54,7 @@
         - C# projects with TargetFramework == (Full|Windows)TargetFramework (see Redist.ImportProject.targets/RedistImportProjectInit)
       -->
       <ImportProject Condition="$([MSBuild]::IsOsPlatform(Windows))">
-        <RuntimeType Condition="'%(ImportProject.Extension)' == '.vcxproj' Or '%(ImportProject.Extension)' == '.sln'">Full</RuntimeType>
+        <RuntimeType Condition="'%(ImportProject.Extension)' == '.vcxproj' Or '%(ImportProject.Extension)' == '.sln' Or '$(ZouAgentType)' == 'Cpp'">Full</RuntimeType>
       </ImportProject>
       <ImportProject Condition="!$([MSBuild]::IsOsPlatform(Windows))">
         <RuntimeType>Core</RuntimeType>
