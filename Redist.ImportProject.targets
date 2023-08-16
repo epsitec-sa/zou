@@ -157,7 +157,7 @@ Outputs:
 
       <!-- Set SelfContained to true by default when publishing -->
       <ImportProject>
-        <SelfContained Condition="'%(ImportProject.SelfContained)' == ''">%(_UseBuildTarget)</SelfContained>
+        <SelfContained Condition="'%(ImportProject.SelfContained)' == '' And %(_UseBuildTarget) == false">true</SelfContained>
       </ImportProject>
 
       <!-- Remove temporary metadata -->
