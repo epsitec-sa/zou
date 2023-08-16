@@ -54,7 +54,7 @@
         - C# projects with TargetFramework == (Full|Windows)TargetFramework (see Redist.ImportProject.targets/RedistImportProjectInit)
       -->
       <ImportProject Condition="$([MSBuild]::IsOsPlatform(Windows))">
-        <RuntimeType Condition="'%(ImportProject.Extension)' == '.vcxproj' Or '%(ImportProject.Extension)' == '.sln'">Full</RuntimeType>
+        <RuntimeType Condition="'%(ImportProject.Extension)' == '.vcxproj' Or '%(ImportProject.Extension)' == '.sln' Or '$(ZouAgentType)' == 'Cpp'">Full</RuntimeType>
       </ImportProject>
       <ImportProject Condition="!$([MSBuild]::IsOsPlatform(Windows))">
         <RuntimeType>Core</RuntimeType>
@@ -132,11 +132,11 @@
 
     <ItemGroup>
       <MSBuildProject>
-        <Command Condition="Exists('$(MSBuildToolsPath)\msbuild.exe')">"$(MSBuildToolsPath)\msbuild"</Command>
+        <Command Condition="'%(MSBuildProject.RuntimeType)' == 'Full' And Exists('$(MSBuildToolsPath)\msbuild.exe')">"$(MSBuildToolsPath)\msbuild"</Command>
       </MSBuildProject>
       <MSBuildProject>
         <Command Condition="'%(MSBuildProject.RuntimeType)' == 'Full' And '%(MSBuildProject.Command)' == ''">msbuild</Command>
-        <Command Condition="'%(MSBuildProject.RuntimeType)' != 'Full' And '%(MSBuildProject.Command)' == ''">dotnet build</Command>
+        <Command Condition="'%(MSBuildProject.RuntimeType)' != 'Full'">dotnet build</Command>
         <!-- Do not reuse MSBuild nodes after a build -->
         <Options>-nologo -nr:false</Options>
       </MSBuildProject>
@@ -205,6 +205,7 @@
     <Message Condition="'$(ZouCmd)' == 'true' And '%(MSBuildProject.Extension)' == '.sln'"
              Importance="high"
              Text='### [$(MSBuildProjectFile)] "$(ZouBinzOsDir)nuget" restore "%(MSBuildProject.Identity)"'/>
+    
     <Exec Condition="'%(MSBuildProject.Extension)' == '.sln'"
           Command='"$(ZouBinzOsDir)nuget" restore "%(MSBuildProject.Identity)"'/>
 
@@ -216,10 +217,10 @@
           Command='"$(ZouBinzOsDir)nuget" restore "%(MSBuildProject.RootDir)%(Directory)packages.config" -Verbosity quiet -PackagesDirectory "$(NugetPackagesDir)."'/>
 
     <!-- ...or when using msbuild with a .csproj. -->
-    <Message Condition="'$(ZouCmd)' == 'true' And '%(MSBuildProject.Extension)' == '.csproj'"
+    <Message Condition="'$(ZouCmd)' == 'true' And '%(MSBuildProject.Extension)' == '.csproj' And '%(MSBuildProject.RuntimeType)' == 'Full'"
              Importance="high"
              Text='### [$(MSBuildProjectFile)] dotnet restore "%(MSBuildProject.Identity)"'/>
-    <Exec Condition="'%(MSBuildProject.Extension)' == '.csproj'"
+    <Exec Condition="'%(MSBuildProject.Extension)' == '.csproj' And '%(MSBuildProject.RuntimeType)' == 'Full'"
           Command='dotnet restore "%(MSBuildProject.Identity)"' EnvironmentVariables="TargetFrameworkImport=%(MSBuildProject.TargetFramework)"/>
 
     <!--
@@ -229,9 +230,8 @@
         <MSBuild Projects="%(MSBuildProject.Identity)" Targets="Build" Properties="OutDir=%(OutDir);Configuration=%(Configuration);Platform=%(Platform) " />
     Instead with use the Exec task which starts the MSBuild process.
     -->
-    <Message Condition="'$(ZouCmd)' == 'true'"
-             Importance="high"
-             Text='### [$(MSBuildProjectFile)] %(Command) %(Options) "%(MSBuildProject.Identity)"' />
+    <Message Condition="'$(ZouCmd)' == 'true'" Importance="high" Text='### [$(MSBuildProjectFile)] %(Command) %(Options) "%(MSBuildProject.Identity)"' />
+    <!--<Message Condition="'$(ZouCmd)' == 'true'" Importance="high" Text=' ' />-->
     
     <Exec Command='%(Command) %(Options) "%(MSBuildProject.Identity)"' />
     <CallTarget Targets="_DeleteLastBuildState" Condition="'$(BuildingInsideVisualStudio)'=='true'" />
