@@ -202,14 +202,24 @@
     <Message Condition="'%(MSBuildProject.BundleRelativeDstDir)' != ''" Importance="high" Text="$(L1b)[%(Prefix)] $(T3)%(MSBuildProject.BundleRelativeSrcDir)%(RecursiveDir)$(T2)%(FileName)%(Extension) $(T3)-> %(MSBuildProject.BundleRelativeDstDir)%(RecursiveDir)$(XC)" />
 
     <!-- Restore nuget packages for solution... -->
+    <Message Condition="'$(ZouCmd)' == 'true' And '%(MSBuildProject.Extension)' == '.sln'"
+             Importance="high"
+             Text='### [$(MSBuildProjectFile)] "$(ZouBinzOsDir)nuget" restore "%(MSBuildProject.Identity)"'/>
+    
     <Exec Condition="'%(MSBuildProject.Extension)' == '.sln'"
           Command='"$(ZouBinzOsDir)nuget" restore "%(MSBuildProject.Identity)"'/>
 
     <!-- ...or project with solution. -->
+    <Message Condition="'$(ZouCmd)' == 'true' And '%(MSBuildProject.Extension)' != '.sln' And ('$(SolutionDir)' != '*Undefined*' And '$(SolutionDir)' != '') And Exists('%(RootDir)%(Directory)packages.config')"
+             Importance="high"
+             Text='### [$(MSBuildProjectFile)] "$(ZouBinzOsDir)nuget" restore "%(MSBuildProject.RootDir)%(Directory)packages.config" -Verbosity quiet -PackagesDirectory "$(NugetPackagesDir)."'/>
     <Exec Condition="'%(MSBuildProject.Extension)' != '.sln' And ('$(SolutionDir)' != '*Undefined*' And '$(SolutionDir)' != '') And Exists('%(RootDir)%(Directory)packages.config')"
           Command='"$(ZouBinzOsDir)nuget" restore "%(MSBuildProject.RootDir)%(Directory)packages.config" -Verbosity quiet -PackagesDirectory "$(NugetPackagesDir)."'/>
 
     <!-- ...or when using msbuild with a .csproj. -->
+    <Message Condition="'$(ZouCmd)' == 'true' And '%(MSBuildProject.Extension)' == '.csproj' And '%(MSBuildProject.RuntimeType)' == 'Full'"
+             Importance="high"
+             Text='### [$(MSBuildProjectFile)] dotnet restore "%(MSBuildProject.Identity)"'/>
     <Exec Condition="'%(MSBuildProject.Extension)' == '.csproj' And '%(MSBuildProject.RuntimeType)' == 'Full'"
           Command='dotnet restore "%(MSBuildProject.Identity)"' EnvironmentVariables="TargetFrameworkImport=%(MSBuildProject.TargetFramework)"/>
 
@@ -220,8 +230,8 @@
         <MSBuild Projects="%(MSBuildProject.Identity)" Targets="Build" Properties="OutDir=%(OutDir);Configuration=%(Configuration);Platform=%(Platform) " />
     Instead with use the Exec task which starts the MSBuild process.
     -->
-    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text='### [$(MSBuildProjectFile)] %(Command) %(Options) "%(MSBuildProject.Identity)"' />
-    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text=' ' />
+    <Message Condition="'$(ZouCmd)' == 'true'" Importance="high" Text='### [$(MSBuildProjectFile)] %(Command) %(Options) "%(MSBuildProject.Identity)"' />
+    <!--<Message Condition="'$(ZouCmd)' == 'true'" Importance="high" Text=' ' />-->
     
     <Exec Command='%(Command) %(Options) "%(MSBuildProject.Identity)"' />
     <CallTarget Targets="_DeleteLastBuildState" Condition="'$(BuildingInsideVisualStudio)'=='true'" />
