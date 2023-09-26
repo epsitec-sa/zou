@@ -13,7 +13,6 @@ Input parameters:
   <!-- Define copy files default metadata -->
   <ItemDefinitionGroup>
     <CopyFile>
-      <TargetFile>%(FileName)%(Extension)</TargetFile>
       <TargetDir>$(OutDir)</TargetDir>
       <RedistFolder>$(RedistFolder)</RedistFolder>
     </CopyFile>
@@ -24,6 +23,10 @@ Input parameters:
 
     <ItemGroup>
       <CopyFile>
+        <!--
+        Do not create the default for 'TargetFile' in an 'ItemDefinitionGroup' as it does not work in linux with platform x86
+        -->
+        <TargetFile Condition="'%(CopyFile.TargetFile)' == ''">%(FileName)%(Extension)</TargetFile>
         <BundleRelativeSrcDir>$([MSBuild]::MakeRelative('$(BundleDir)', '%(RootDir)%(Directory)'))</BundleRelativeSrcDir>
         <BundleRelativeDstDir>$([MSBuild]::MakeRelative('$(BundleDir)', '%(TargetDir)'))</BundleRelativeDstDir>
         <!--
