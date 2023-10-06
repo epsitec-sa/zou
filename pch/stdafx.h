@@ -5,6 +5,8 @@
 
 #pragma once
 
+#define NOMINMAX
+
 //----------------------------------------------------------------------------- Warnings
 
 #pragma warning(disable: 4503)  // "identifier": decorated name length exceeded, name was truncated
@@ -53,14 +55,14 @@
 #include <afxmt.h>   // MFC Multithreaded Extensions
 
 #ifndef _AFX_NO_OLE_SUPPORT
-#include <afxdtctl.h> // Prise en charge MFC pour les contrôles communs Internet Explorer 4
+#include <afxdtctl.h> // Prise en charge MFC pour les contrÃ´les communs Internet ExplorerÂ 4
 #endif
 #ifndef _AFX_NO_AFXCMN_SUPPORT
-#include <afxcmn.h> // Prise en charge des MFC pour les contrôles communs Windows
+#include <afxcmn.h> // Prise en charge des MFC pour les contrÃ´les communs Windows
 #endif // _AFX_NO_AFXCMN_SUPPORT
 
 #include <afxpriv.h> // MFC support for Windows 95 Common Controls
-//#include <afxcontrolbars.h> // prise en charge des MFC pour les rubans et les barres de contrôles
+//#include <afxcontrolbars.h> // prise en charge des MFC pour les rubans et les barres de contrÃ´les
 
 
 #ifdef _UNICODE
