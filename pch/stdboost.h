@@ -29,7 +29,8 @@
 #include <boost/interprocess/windows_shared_memory.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/locale.hpp>
-#include <boost/multiprecision/cpp_dec_float.hpp>
+// avoid warning STL4038: The contents of <stdfloat> are available only with C++23 or later.
+//#include <boost/multiprecision/cpp_dec_float.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
