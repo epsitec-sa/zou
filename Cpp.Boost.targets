@@ -71,17 +71,20 @@
                 Regex='^\s*&lt;package\s+id="boost\S*".*$'
                 ReplacementTextEmpty="true"
                 Multiline="true"
-                IgnoreCase="true">
-    </FileUpdate>
+                IgnoreCase="true" />
     <MergePackagesConfig MergeFiles="$(_BoostOnlyPackagesConfigFile)"
                          IntoFile="$(PackagesConfigFile)" />
   </Target>
-  
+
   <Target Name="_BoostCheckPackagesConfigChanged" Condition="$(BundleIsGit)" DependsOnTargets="_BoostUpdateExistingPackagesConfig" >
+    <!-- Serialize git commands -->
+    <Lock Name="$(ModuleDir)" Timeout="10000"/>
     <Exec Command='git add "$(PackagesConfigFile)"' StandardOutputImportance="low" ContinueOnError='true' />
     <Exec Command='git diff-index --quiet HEAD "$(PackagesConfigFile)' ContinueOnError='true' IgnoreExitCode='true'>
       <Output TaskParameter="ExitCode" PropertyName="_GitDiffPackagesConfigExitCode" />
     </Exec>
+    <Unlock Name="$(ModuleDir)" />
+
     <PropertyGroup>
       <_PackagesConfigChanged Condition="'$(_GitDiffPackagesConfigExitCode)' != '0'">true</_PackagesConfigChanged>
     </PropertyGroup>
@@ -97,7 +100,11 @@
       <_GitCommitMessage>zou-build: update boost $(BoostToolset) to v$(BoostVersion) in $(BundleRelativeProjectDir)$(PackagesConfigFile)</_GitCommitMessage>
     </PropertyGroup>
     <Message Condition="'$(_PackagesConfigChanged)' == 'true'" Importance="high" Text="$(Cyan)$(_GitCommitMessage)$(NC)" />
+
+    <!-- Serialize git commands -->
+    <Lock Name="$(ModuleDir)" Timeout="10000"/>
     <Exec Command='git commit "-m$(_GitCommitMessage)" "$(PackagesConfigFile)"' StandardOutputImportance="low" />
+    <Unlock Name="$(ModuleDir)" />
   </Target>
 
   <!--
