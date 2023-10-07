@@ -26,14 +26,12 @@ Summary:
     </None>
   </ItemGroup>
 
-  <!-- Import standard nuget boost imports -->
-  <Import Project="Cpp.Boost.props" Condition="'$(DoNotUseBoost)' != 'true' And '$(BoostToolset)' == '' And ('$(ConfigurationType)' == 'StaticLibrary' Or '$(ConfigurationType)' == 'DynamicLibrary' Or '$(ConfigurationType)' == 'Application')"/>
-
-  <!-- Enable boost update -->
-  <PropertyGroup>
-    <BoostUpdate Condition="'$(BoostUpdate)' == ''">false</BoostUpdate>
-  </PropertyGroup>
-  <Import Project="Cpp.Boost.targets" Condition="'$(BoostUpdate)' == 'true' And ('$(ConfigurationType)' == 'StaticLibrary' Or '$(ConfigurationType)' == 'DynamicLibrary' Or '$(ConfigurationType)' == 'Application')"/>
+  <ImportGroup Condition="'$(DoNotUseBoost)' != 'true' And '$(BoostToolset)' == '' And ('$(ConfigurationType)' == 'StaticLibrary' Or '$(ConfigurationType)' == 'DynamicLibrary' Or '$(ConfigurationType)' == 'Application')">
+    <!-- Import standard nuget boost imports -->
+    <Import Project="Cpp.Boost.props"/>
+    <!-- Update boost packages in 'packages.config' files -->
+    <Import Project="Cpp.Boost.targets" Condition="'$(BoostUpdate)' == 'true'"/>
+  </ImportGroup>
 
   <!-- Optional VLD -->
   <Import Project="Cpp.Vld.targets" Condition="'$(EnableVLD)' == 'true' And ('$(ConfigurationType)' == 'Application' Or '$(ConfigurationType)' == 'DynamicLibrary')"/>

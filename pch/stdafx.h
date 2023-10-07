@@ -5,8 +5,6 @@
 
 #pragma once
 
-#define NOMINMAX
-
 //----------------------------------------------------------------------------- Warnings
 
 #pragma warning(disable: 4503)  // "identifier": decorated name length exceeded, name was truncated
@@ -49,6 +47,19 @@
 
 #include "targetver.h"
 
+// Disable infamous 'min' and 'max' macros
+// WARNING:
+// - 'afxcontrolbars.h' use them -> include header before disabling them
+// - opt-in by defining '_AFX_CONTROL_BARS' before including 'zou/pch/stdafx'
+// Example:
+//   #pragma once
+//   #define _AFX_CONTROL_BARS
+//   #include "zou/pch/stdafx.h"
+#ifdef _AFX_CONTROL_BARS
+#include <afxcontrolbars.h> // prise en charge des MFC pour les rubans et les barres de contrôles
+#endif
+#define NOMINMAX
+
 #include <afxwin.h>  // MFC core and standard components
 #include <afxext.h>  // MFC extensions
 #include <afxdisp.h> // MFC Automation
@@ -62,8 +73,6 @@
 #endif // _AFX_NO_AFXCMN_SUPPORT
 
 #include <afxpriv.h> // MFC support for Windows 95 Common Controls
-//#include <afxcontrolbars.h> // prise en charge des MFC pour les rubans et les barres de contrôles
-
 
 #ifdef _UNICODE
 #if defined _M_IX86

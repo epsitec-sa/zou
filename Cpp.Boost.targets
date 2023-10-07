@@ -38,13 +38,13 @@
   </Target>
   
   <Target Name="_BoostCreateBoostOnlyPackagesConfig">
-    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] _BoostCreateBoostOnlyPackagesConfig(In: $(_BoostTemplatePathPrefix).packages.config), Out: $(_BoostOnlyPackagesConfigFile))" />
+    <Message Condition="'$(BoostDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] _BoostCreateBoostOnlyPackagesConfig(In: $(_BoostTemplatePathPrefix).packages.config), Out: $(_BoostOnlyPackagesConfigFile))" />
     
     <Copy SourceFiles="$(_BoostTemplatePathPrefix).packages.config" DestinationFiles="$(_BoostOnlyPackagesConfigFile)" />
   </Target>
 
   <Target Name="_BoostUpdateBoostOnlyPackagesConfig" DependsOnTargets="_BoostCreateBoostOnlyPackagesConfig" >
-    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] _BoostUpdateBoostOnlyPackagesConfig(_BoostOnlyPackagesConfigFile=$(_BoostOnlyPackagesConfigFile))" />
+    <Message Condition="'$(BoostDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] _BoostUpdateBoostOnlyPackagesConfig(_BoostOnlyPackagesConfigFile=$(_BoostOnlyPackagesConfigFile))" />
     
     <!-- Update version -->
     <FileUpdate Files="$(_BoostOnlyPackagesConfigFile)"
@@ -63,7 +63,7 @@
   </Target>
   
   <Target Name="_BoostUpdateExistingPackagesConfig" DependsOnTargets="_BoostUpdateBoostOnlyPackagesConfig" >
-    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] _BoostUpdateExistingPackagesConfig(In: $(_BoostOnlyPackagesConfigFile), Out: $(PackagesConfigFile))" />
+    <Message Condition="'$(BoostDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] _BoostUpdateExistingPackagesConfig(In: $(_BoostOnlyPackagesConfigFile), Out: $(PackagesConfigFile))" />
     
     <Copy Condition="!$(_PackagesConfigExists)" SourceFiles="$(_BoostOnlyPackagesConfigFile)" DestinationFiles="$(PackagesConfigFile)"/>
     <!-- Remove previous boost packages -->
@@ -71,33 +71,40 @@
                 Regex='^\s*&lt;package\s+id="boost\S*".*$'
                 ReplacementTextEmpty="true"
                 Multiline="true"
-                IgnoreCase="true">
-    </FileUpdate>
+                IgnoreCase="true" />
     <MergePackagesConfig MergeFiles="$(_BoostOnlyPackagesConfigFile)"
                          IntoFile="$(PackagesConfigFile)" />
   </Target>
-  
+
   <Target Name="_BoostCheckPackagesConfigChanged" Condition="$(BundleIsGit)" DependsOnTargets="_BoostUpdateExistingPackagesConfig" >
+    <!-- Serialize git commands -->
+    <Lock Name="$(ModuleDir)" Timeout="10000"/>
     <Exec Command='git add "$(PackagesConfigFile)"' StandardOutputImportance="low" ContinueOnError='true' />
     <Exec Command='git diff-index --quiet HEAD "$(PackagesConfigFile)' ContinueOnError='true' IgnoreExitCode='true'>
       <Output TaskParameter="ExitCode" PropertyName="_GitDiffPackagesConfigExitCode" />
     </Exec>
+    <Unlock Name="$(ModuleDir)" />
+
     <PropertyGroup>
       <_PackagesConfigChanged Condition="'$(_GitDiffPackagesConfigExitCode)' != '0'">true</_PackagesConfigChanged>
     </PropertyGroup>
     
-    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] _BoostCheckPackagesConfigChanged.End(_PackagesConfigChanged=$(_PackagesConfigChanged))" />
+    <Message Condition="'$(BoostDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] _BoostCheckPackagesConfigChanged.End(_PackagesConfigChanged=$(_PackagesConfigChanged))" />
   </Target>
   
   <Target Name="_BoostCommitPackagesConfigChanged" Condition="$(BundleIsGit)" >
-    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] _BoostCommitPackagesConfigChanged" />
+    <Message Condition="'$(BoostDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] _BoostCommitPackagesConfigChanged" />
     
     <!-- Commit packages.config -->
     <PropertyGroup>
       <_GitCommitMessage>zou-build: update boost $(BoostToolset) to v$(BoostVersion) in $(BundleRelativeProjectDir)$(PackagesConfigFile)</_GitCommitMessage>
     </PropertyGroup>
     <Message Condition="'$(_PackagesConfigChanged)' == 'true'" Importance="high" Text="$(Cyan)$(_GitCommitMessage)$(NC)" />
+
+    <!-- Serialize git commands -->
+    <Lock Name="$(ModuleDir)" Timeout="10000"/>
     <Exec Command='git commit "-m$(_GitCommitMessage)" "$(PackagesConfigFile)"' StandardOutputImportance="low" />
+    <Unlock Name="$(ModuleDir)" />
   </Target>
 
   <!--
@@ -109,7 +116,7 @@
     copy temp file to packages.config
   -->
   <Target Name="UpdateBoostPackages" DependsOnTargets="_BoostUpdateExistingPackagesConfig;_BoostCheckPackagesConfigChanged" BeforeTargets="_CppBoostHeadersImportCheck;_CppBoostLibsImportCheck">
-    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] UpdateBoostPackages" />
+    <Message Condition="'$(BoostDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] UpdateBoostPackages" />
 
     <CallTarget Condition="$(_PackagesConfigChanged)" Targets="_BoostCommitPackagesConfigChanged" />
 
