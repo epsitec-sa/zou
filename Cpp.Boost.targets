@@ -38,13 +38,13 @@
   </Target>
   
   <Target Name="_BoostCreateBoostOnlyPackagesConfig">
-    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] _BoostCreateBoostOnlyPackagesConfig(In: $(_BoostTemplatePathPrefix).packages.config), Out: $(_BoostOnlyPackagesConfigFile))" />
+    <Message Condition="'$(BoostDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] _BoostCreateBoostOnlyPackagesConfig(In: $(_BoostTemplatePathPrefix).packages.config), Out: $(_BoostOnlyPackagesConfigFile))" />
     
     <Copy SourceFiles="$(_BoostTemplatePathPrefix).packages.config" DestinationFiles="$(_BoostOnlyPackagesConfigFile)" />
   </Target>
 
   <Target Name="_BoostUpdateBoostOnlyPackagesConfig" DependsOnTargets="_BoostCreateBoostOnlyPackagesConfig" >
-    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] _BoostUpdateBoostOnlyPackagesConfig(_BoostOnlyPackagesConfigFile=$(_BoostOnlyPackagesConfigFile))" />
+    <Message Condition="'$(BoostDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] _BoostUpdateBoostOnlyPackagesConfig(_BoostOnlyPackagesConfigFile=$(_BoostOnlyPackagesConfigFile))" />
     
     <!-- Update version -->
     <FileUpdate Files="$(_BoostOnlyPackagesConfigFile)"
@@ -63,7 +63,7 @@
   </Target>
   
   <Target Name="_BoostUpdateExistingPackagesConfig" DependsOnTargets="_BoostUpdateBoostOnlyPackagesConfig" >
-    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] _BoostUpdateExistingPackagesConfig(In: $(_BoostOnlyPackagesConfigFile), Out: $(PackagesConfigFile))" />
+    <Message Condition="'$(BoostDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] _BoostUpdateExistingPackagesConfig(In: $(_BoostOnlyPackagesConfigFile), Out: $(PackagesConfigFile))" />
     
     <Copy Condition="!$(_PackagesConfigExists)" SourceFiles="$(_BoostOnlyPackagesConfigFile)" DestinationFiles="$(PackagesConfigFile)"/>
     <!-- Remove previous boost packages -->
@@ -89,11 +89,11 @@
       <_PackagesConfigChanged Condition="'$(_GitDiffPackagesConfigExitCode)' != '0'">true</_PackagesConfigChanged>
     </PropertyGroup>
     
-    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] _BoostCheckPackagesConfigChanged.End(_PackagesConfigChanged=$(_PackagesConfigChanged))" />
+    <Message Condition="'$(BoostDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] _BoostCheckPackagesConfigChanged.End(_PackagesConfigChanged=$(_PackagesConfigChanged))" />
   </Target>
   
   <Target Name="_BoostCommitPackagesConfigChanged" Condition="$(BundleIsGit)" >
-    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] _BoostCommitPackagesConfigChanged" />
+    <Message Condition="'$(BoostDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] _BoostCommitPackagesConfigChanged" />
     
     <!-- Commit packages.config -->
     <PropertyGroup>
@@ -116,7 +116,7 @@
     copy temp file to packages.config
   -->
   <Target Name="UpdateBoostPackages" DependsOnTargets="_BoostUpdateExistingPackagesConfig;_BoostCheckPackagesConfigChanged" BeforeTargets="_CppBoostHeadersImportCheck;_CppBoostLibsImportCheck">
-    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] UpdateBoostPackages" />
+    <Message Condition="'$(BoostDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] UpdateBoostPackages" />
 
     <CallTarget Condition="$(_PackagesConfigChanged)" Targets="_BoostCommitPackagesConfigChanged" />
 
