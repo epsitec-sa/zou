@@ -13,7 +13,6 @@ Input parameters:
   <!-- Define copy files default metadata -->
   <ItemDefinitionGroup>
     <CopyFile>
-      <TargetFile>%(FileName)%(Extension)</TargetFile>
       <TargetDir>$(OutDir)</TargetDir>
       <RedistFolder>$(RedistFolder)</RedistFolder>
     </CopyFile>
@@ -24,8 +23,17 @@ Input parameters:
 
     <ItemGroup>
       <CopyFile>
+        <!--
+        Do not create the default for 'TargetFile' in an 'ItemDefinitionGroup' as it does not work in linux with platform x86
+        -->
+        <TargetFile Condition="'%(CopyFile.TargetFile)' == ''">%(FileName)%(Extension)</TargetFile>
         <BundleRelativeSrcDir>$([MSBuild]::MakeRelative('$(BundleDir)', '%(RootDir)%(Directory)'))</BundleRelativeSrcDir>
         <BundleRelativeDstDir>$([MSBuild]::MakeRelative('$(BundleDir)', '%(TargetDir)'))</BundleRelativeDstDir>
+        <!--
+        The 'MulJoin' task used in the 'CopyFileCrossBuild' target does not copy builtin metadata like 'RecursiveDir'
+        The trick here is to create a custom metadata named 'RecursiveFolder' and to use it 
+        -->
+        <RecursiveFolder>%(CopyFile.RecursiveDir)</RecursiveFolder>
       </CopyFile>
     </ItemGroup>
   </Target>
@@ -52,7 +60,7 @@ Input parameters:
 
     <!-- Display deleted files by extension  -->
     <ItemGroup>
-      <_Message Include="$(T3)%(CopyFile.TargetDir)%(RecursiveDir)%2A%(Extension)" Condition="Exists('%(CopyFile.TargetDir)%(RecursiveDir)%(FileName)%(Extension)')" />
+      <_Message Include="$(T3)%(CopyFile.TargetDir)%(RecursiveFolder)%2A%(Extension)" Condition="Exists('%(CopyFile.TargetDir)%(RecursiveFolder)%(FileName)%(Extension)')" />
     </ItemGroup>
     <RemoveDuplicates Inputs="@(_Message)">
       <Output TaskParameter="Filtered" ItemName="_Message"/>
@@ -62,16 +70,16 @@ Input parameters:
       <_Message Remove="@(_Message)" />
     </ItemGroup>
 
-    <Delete  Files="@(CopyFile->'%(TargetDir)%(RecursiveDir)%(TargetFile)')" />
+    <Delete  Files="@(CopyFile->'%(TargetDir)%(RecursiveFolder)%(TargetFile)')" />
   </Target>
 
-  <Target Name="CopyFile" Inputs="@(CopyFile.Identity)" Outputs="@(CopyFile->'%(TargetDir)%(RecursiveDir)%(TargetFile)')" BeforeTargets="Build" DependsOnTargets="CopyFileCrossBuild">
+  <Target Name="CopyFile" Inputs="@(CopyFile.Identity)" Outputs="@(CopyFile->'%(TargetDir)%(RecursiveFolder)%(TargetFile)')" BeforeTargets="Build" DependsOnTargets="CopyFileCrossBuild">
     <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] CopyFile" />
-    <Copy SourceFiles="@(CopyFile)" DestinationFiles="@(CopyFile->'%(TargetDir)%(RecursiveDir)%(TargetFile)')" ContinueOnError="true" />
+    <Copy SourceFiles="@(CopyFile)" DestinationFiles="@(CopyFile->'%(TargetDir)%(RecursiveFolder)%(TargetFile)')" ContinueOnError="true" />
 
     <!-- Display file copy by extension  -->
     <ItemGroup>
-      <_Message Include="@(CopyFile->'$(T3)%(BundleRelativeSrcDir)%(RecursiveDir)%2A%(Extension) -> %(BundleRelativeDstDir)$(T3)%(RecursiveDir)%2A%(Extension)')" />
+      <_Message Include="@(CopyFile->'$(T3)%(BundleRelativeSrcDir)%(RecursiveFolder)%2A%(Extension) -> %(BundleRelativeDstDir)$(T3)%(RecursiveFolder)%2A%(Extension)')" />
     </ItemGroup>
     <RemoveDuplicates Inputs="@(_Message)">
       <Output TaskParameter="Filtered" ItemName="_Message"/>
