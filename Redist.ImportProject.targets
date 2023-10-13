@@ -44,10 +44,12 @@ Outputs:
       <!-- x86|AnyCPU -->
       <ImportProject Condition="!$(TargetFramework.StartsWith('netstandard')) And '$(RuntimePlatform)' == 'x86'">
         <TargetFramework Condition="'%(ImportProject.RedistX86Framework)' != ''">%(ImportProject.RedistX86Framework)</TargetFramework>
+        <RuntimeIdentifiers Condition="'%(ImportProject.RedistX86Framework)' != ''">win-x86</RuntimeIdentifiers>
       </ImportProject>
       <!-- x64 -->
       <ImportProject Condition="!$(TargetFramework.StartsWith('netstandard')) And '$(RuntimePlatform)' == 'x64'">
         <TargetFramework Condition="'%(ImportProject.RedistX64Framework)' != ''">%(ImportProject.RedistX64Framework)</TargetFramework>
+        <RuntimeIdentifiers Condition="'%(ImportProject.RedistX64Framework)' != ''">win-x64</RuntimeIdentifiers>
       </ImportProject>
 
       <!--
