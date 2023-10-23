@@ -57,6 +57,8 @@
 //   #include "zou/pch/stdafx.h"
 #ifdef _AFX_CONTROL_BARS
 #include <afxcontrolbars.h> // prise en charge des MFC pour les rubans et les barres de contrôles
+#undef min
+#undef max
 #endif
 #define NOMINMAX
 
