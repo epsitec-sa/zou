@@ -23,7 +23,16 @@
 
   <!-- Compiler -->
   <PropertyGroup>
+    <!--
+    Use the C# language version associated with the target framework in use
+    https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/compiler-options/language#langversion
+    https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/configure-language-version#defaults
+    -->
     <LangVersion>latest</LangVersion>
+    <!--<LangVersion Condition="$(CoreTargetFramework.StartsWith('net6'))">10.0</LangVersion>
+    <LangVersion Condition="$(CoreTargetFramework.StartsWith('net7'))">11.0</LangVersion>
+    <LangVersion Condition="$(CoreTargetFramework.StartsWith('net8'))">12.0</LangVersion>-->
+
     <Deterministic>true</Deterministic>
     <SuppressNETCoreSdkPreviewMessage>true</SuppressNETCoreSdkPreviewMessage>
     <!-- .NET Analyzers -->
