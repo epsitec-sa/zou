@@ -51,7 +51,36 @@
     -->
     <PlatformTarget Condition="$(TargetFramework.StartsWith('netstandard'))" />
   </PropertyGroup>
+
+  <!--
+  Disable NET analysers when running outside of VS
+  -->
+  <PropertyGroup Condition="'$(BuildingInsideVisualStudio)' == ''">
+    <EnableNETAnalyzers>false</EnableNETAnalyzers>
+  </PropertyGroup>
   
+  <!--
+  Disable some warnings when 'EnableNETAnalyzers' is true (opt-in)
+  -->
+  <PropertyGroup Condition="'$(BuildingInsideVisualStudio)' == 'true' And '$(EnableNETAnalyzers)' == 'true'">
+    <!--
+    =======================================================================
+    Don't change the suppression list, without talking to [PA] first.
+    Some of the warnings simply don't make much sense or are too strict
+    for a real-world code base.
+    =======================================================================
+    - S125   = Remove commented out code https://rules.sonarsource.com/csharp/RSPEC-125
+    - S1075  = URIs should not be hardcoded https://rules.sonarsource.com/csharp/RSPEC-1075
+    - S1117  = Local variables should not shadow class fields https://rules.sonarsource.com/csharp/RSPEC-1117
+    - S1125  = Remove unnecessary boolean litteral https://rules.sonarsource.com/csharp/RSPEC-1125
+    - S3267  = Loops should be simplified with "LINQ" expressions https://rules.sonarsource.com/csharp/RSPEC-3267
+    - S4457  = Parameter validation in "async"/"await" methods should be wrapped https://rules.sonarsource.com/csharp/RSPEC-4457
+    - S4663  = Remove empty comments https://rules.sonarsource.com/csharp/RSPEC-4663
+    - CA1024 = Use properties where appropriate https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca1024
+    - CA1848 = Use the LoggerMessage delegates https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca1848
+    -->
+    <NoWarn>S125;S1075;S1117;S1125;S3267;S4457;S4663;CA1024;CA1848</NoWarn>
+  </PropertyGroup>
 
   <!-- Exclude git metadata from project -->
   <ItemGroup>
@@ -79,7 +108,8 @@
     <Delete Files="obj\project.assets.json" />
   </Target>
 
-  <Target Name="TraceDirectoryBuildDefaultTargets" Condition="'$(ZouTrace)' == 'true'">
+  <Target Name="TraceDirectoryBuildDefaultTargets"
+          Condition="'$(ZouTrace)' == 'true' Or '$(ZouDirectoryBuild)' == 'true'">
     <Message Importance="high" Text="zou/Directory.Build.Default.targets [$(MSBuildProjectFile)]" />
     <Message Importance="high" Text="-----------------------------------" />
     <Message Importance="high" Text="MSBuildRuntimeType        = $(MSBuildRuntimeType)" />
@@ -90,5 +120,8 @@
     <Message Importance="high" Text="TargetFrameworkIdentifier = $(TargetFrameworkIdentifier)" />
     <Message Importance="high" Text="TargetFrameworkVersion    = $(TargetFrameworkVersion)" />
     <Message Importance="high" Text=" " />
+    <Message Importance="high" Text="EnableNETAnalyzers        = $(EnableNETAnalyzers)" />
+    <Message Importance="high" Text="AnalysisMode              = $(AnalysisMode)" />
+    <Message Importance="high" Text="AnalysisLevel             = $(AnalysisLevel)" />
   </Target>
 </Project>
