@@ -1,5 +1,6 @@
 <!-- Defines the default metadata for .NET projects (prolog) -->
-<Project>
+<Project InitialTargets="TraceDirectoryBuildDefaultProps">
+
   <Import Project="zou.props"             Condition="'$(ZouImported)' == ''" />
   <Import Project="TargetFramework.props" Condition="'$(CoreTargetFramework)' == ''" />
 
@@ -29,20 +30,45 @@
     https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/configure-language-version#defaults
     -->
     <LangVersion>latest</LangVersion>
-    <!--<LangVersion Condition="$(CoreTargetFramework.StartsWith('net6'))">10.0</LangVersion>
+    <!--
+    <LangVersion Condition="$(CoreTargetFramework.StartsWith('net6'))">10.0</LangVersion>
     <LangVersion Condition="$(CoreTargetFramework.StartsWith('net7'))">11.0</LangVersion>
-    <LangVersion Condition="$(CoreTargetFramework.StartsWith('net8'))">12.0</LangVersion>-->
+    <LangVersion Condition="$(CoreTargetFramework.StartsWith('net8'))">12.0</LangVersion>
+    -->
 
     <Deterministic>true</Deterministic>
+    <!--
+      If you target a framework earlier than .NET 5 (including .NET Framework and .NET Standard),
+      you should set ProduceReferenceAssembly to true in order to speed incremental builds.
+      If you multi-target and any target is before .NET 5, you need this.
+      Even if you target .NET 5 or later, having this property is fine.
+    -->
+    <ProduceReferenceAssembly>true</ProduceReferenceAssembly>
+
     <SuppressNETCoreSdkPreviewMessage>true</SuppressNETCoreSdkPreviewMessage>
-    <!-- .NET Analyzers -->
-    <EnableNETAnalyzers>false</EnableNETAnalyzers>
-    <AnalysisMode>AllEnabledByDefault</AnalysisMode>
+
     <!-- Prevent missing await on async methods -->
     <WarningsAsErrors>CS4014;$(WarningsAsErrors)</WarningsAsErrors>
     
     <!-- Avoid warning NETSDK1138: The target framework 'netcoreapp3.1' is out of support -->
     <CheckEolTargetFramework>false</CheckEolTargetFramework>
+
+    <!--
+    For TargetLatestRuntimePatch usage, see:
+    - https://codeblog.dotsandbrackets.com/package-downgrade-issue/
+    - https://learn.microsoft.com/en-us/dotnet/core/deploying/runtime-patch-selection
+    -->
+    <TargetLatestRuntimePatch>true</TargetLatestRuntimePatch>
+
+    <!--
+    For AccelerateBuildsInVisualStudio, see:
+    - https://github.com/dotnet/project-system/blob/main/docs/build-acceleration.md
+    -->
+    <AccelerateBuildsInVisualStudio>true</AccelerateBuildsInVisualStudio>
+
+    <EnableNETAnalyzers>false</EnableNETAnalyzers>
+    <AnalysisMode>recommended</AnalysisMode>
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
   </PropertyGroup>
 
   <!-- Versioning -->
@@ -52,11 +78,11 @@
   <PropertyGroup Condition ="'$(AssemblyVersion)' != ''">
     <VersionPrefix>$(AssemblyVersion)</VersionPrefix>
   </PropertyGroup>
-  
-  <Target Name="TraceVersion" AfterTargets="GetAssemblyAttributes" Condition="'$(ZouTrace)' == 'true' Or '$(TraceVersion)' == 'true'">
+
+  <Target Name="TraceVersion" AfterTargets="GetAssemblyAttributes"
+          Condition="'$(ZouTrace)' == 'true' Or '$(ZouTraceVersion)' == 'true'">
     <Message Importance="high" Text="zou/Directory.Build.Default.props [$(MSBuildProjectFile)]" />
     <Message Importance="high" Text="---------------------------------" />
-    <Message Importance="high" Text="RazorLangVersion       = $(RazorLangVersion)" />
     <Message Importance="high" Text="VersionPrefix          = $(VersionPrefix)" />
     <Message Importance="high" Text="VersionSuffix          = $(VersionSuffix)" />
     <Message Importance="high" Text="Version                = $(Version)" />
@@ -64,6 +90,19 @@
     <Message Importance="high" Text="FileVersion            = $(FileVersion)" />
     <Message Importance="high" Text="InformationalVersion   = $(InformationalVersion)" />
     <Message Importance="high" Text="PackageVersion         = $(PackageVersion)" />
+    <Message Importance="high" Text=" " />
+  </Target>
+
+  <Target Name="TraceDirectoryBuildDefaultProps"
+          Condition="'$(ZouTrace)' == 'true' Or '$(ZouDirectoryBuild)' == 'true'">
+    <Message Importance="high" Text="zou/Directory.Build.Default.props [$(MSBuildProjectFile)]" />
+    <Message Importance="high" Text="---------------------------------" />
+    <Message Importance="high" Text="LangVersion                    = $(LangVersion)" />
+    <Message Importance="high" Text="RazorLangVersion               = $(RazorLangVersion)" />
+    <Message Importance="high" Text="Deterministic                  = $(Deterministic)" />
+    <Message Importance="high" Text="ProduceReferenceAssembly       = $(ProduceReferenceAssembly)" />
+    <Message Importance="high" Text="TargetLatestRuntimePatch       = $(TargetLatestRuntimePatch)" />
+    <Message Importance="high" Text="AccelerateBuildsInVisualStudio = $(AccelerateBuildsInVisualStudio)" />
     <Message Importance="high" Text=" " />
   </Target>
 
