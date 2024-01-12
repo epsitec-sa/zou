@@ -34,35 +34,14 @@
 
   <!-- Disable some warnings -->
   <PropertyGroup>
-    <!-- warning CS8981: The type name 'grpc' only contains lower-cased ascii characters. Such names may become reserved for the language.-->
-    <NoWarn>$(NoWarn);8981</NoWarn>
-
     <!-- Suppress following C# warning because we use a subset of the semantic versioning format - major.minor.patch -->
     <!-- warning CS7035: The specified version string does not conform to the recommended format - major.minor.build.revision -->
     <NoWarn>$(NoWarn);7035</NoWarn>
     
-    <!-- Suppress following C# warning because we use a a preview of C# 8.0 (VS 2019 and .NET Core 3.0 previews) -->
+    <!-- For now, suppress following C# warning due to partial nullability implementation in our code base -->
     <!-- warning CS8632: The annotation for nullable reference types should only be used in code within a '#nullable' context. -->
     <NoWarn>$(NoWarn);8632</NoWarn>
-    
-    <!--
-    Avoid warning MSB3270: There was a mismatch between the processor architecture of the project being built "MSIL"
-    and the processor architecture of the reference "...\bin\x64\Release\netstandard2.0\foo.dll", "AMD64"
-    -->
-    <PlatformTarget Condition="$(TargetFramework.StartsWith('netstandard'))" />
-  </PropertyGroup>
 
-  <!--
-  Disable NET analysers when running outside of VS
-  -->
-  <PropertyGroup Condition="'$(BuildingInsideVisualStudio)' == ''">
-    <EnableNETAnalyzers>false</EnableNETAnalyzers>
-  </PropertyGroup>
-  
-  <!--
-  Disable some warnings when 'EnableNETAnalyzers' is true (opt-in)
-  -->
-  <PropertyGroup Condition="'$(BuildingInsideVisualStudio)' == 'true' And '$(EnableNETAnalyzers)' == 'true'">
     <!--
     =======================================================================
     Don't change the suppression list, without talking to [PA] first.
@@ -79,9 +58,20 @@
     - CA1024 = Use properties where appropriate https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca1024
     - CA1848 = Use the LoggerMessage delegates https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca1848
     -->
-    <NoWarn>S125;S1075;S1117;S1125;S3267;S4457;S4663;CA1024;CA1848</NoWarn>
+    <NoWarn>$(NoWarn);S125;S1075;S1117;S1125;S3267;S4457;S4663;CA1024;CA1848</NoWarn>
+
+    <!-- Avoid warning MSB3270: There was a mismatch between the processor architecture of the project being built "MSIL" -->
+    <!-- and the processor architecture of the reference "...\bin\x64\Release\netstandard2.0\foo.dll", "AMD64" -->
+    <PlatformTarget Condition="$(TargetFramework.StartsWith('netstandard'))" />
   </PropertyGroup>
 
+  <!--
+  Disable NET analysers by default when running outside of VS
+  -->
+  <PropertyGroup Condition="'$(BuildingInsideVisualStudio)' == '' And '$(EnableNETAnalyzers)' == ''">
+    <EnableNETAnalyzers>false</EnableNETAnalyzers>
+  </PropertyGroup>
+  
   <!-- Exclude git metadata from project -->
   <ItemGroup>
     <None Remove=".git*" />
