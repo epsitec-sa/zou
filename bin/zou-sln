@@ -1,0 +1,14 @@
+# create solution
+slnNameWithoutExt=${1:-$(basename "$PWD")}
+slnName="$slnNameWithoutExt".sln
+
+echo slnNameWithoutExt = $slnNameWithoutExt
+echo slnName = $slnName
+
+# create solution
+[[ -f "$slnName" ]] && rm "$slnName" 
+dotnet new sln -n "$slnNameWithoutExt"
+
+# populate with C# projects recursively
+# filter names containg '/.' and '/obj/'
+find . -type f -name '*.csproj' | sed ':/\.[^/]+/:d' | sed ':/obj/:d' | xargs dotnet sln "$slnName" add
