@@ -2,7 +2,7 @@
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <!-- Make Windows builds reproducible (https://github.com/jasonwhite/ducible) -->
   <Target Name="Ducible" AfterTargets="Build"
-    Condition="('$(ConfigurationType)' == 'DynamicLibrary' Or '$(ConfigurationType)' == 'Application') And '$(LinkIncremental)' == 'false'">
+    Condition="'$(Configuration)' == 'Release' And ('$(ConfigurationType)' == 'DynamicLibrary' Or '$(ConfigurationType)' == 'Application') And '$(LinkIncremental)' == 'false'">
     <PropertyGroup>
       <PdbPath Condition="Exists('$(OutDir)$(TargetName).pdb')">"$(OutDir)$(TargetName).pdb"</PdbPath>
     </PropertyGroup>
