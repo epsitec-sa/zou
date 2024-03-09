@@ -84,8 +84,9 @@
   <!--
   Make assembly internals visible to test projects (MyProject visible to MyProject.Test[s])
   see https://github.com/thomaslevesque/InternalsVisibleTo.MSBuild/blob/master/README.md
+  Does not support signed assemblies
   -->
-  <ItemGroup>
+  <ItemGroup Condition="'$(SignAssembly)' != 'true'">
     <InternalsVisibleTo Include="$(MSBuildProjectName).Test" />
     <InternalsVisibleTo Include="$(MSBuildProjectName).Tests" />
   </ItemGroup>
