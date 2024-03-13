@@ -87,8 +87,9 @@
 
     <PropertyGroup>
       <_PackagesConfigChanged Condition="'$(_GitDiffPackagesConfigExitCode)' != '0'">true</_PackagesConfigChanged>
+      <_PackagesConfigChangedMessage>[#] $(BundleRelativeProjectDir)$(PackagesConfigFile): update boost $(BoostToolset) to v$(BoostVersion)</_PackagesConfigChangedMessage>
     </PropertyGroup>
-    
+    <Message Condition="'$(_PackagesConfigChanged)' == 'true'" Importance="high" Text="$(Cyan)$(_PackagesConfigChangedMessage)$(NC)" />
     <Message Condition="'$(BoostDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] _BoostCheckPackagesConfigChanged.End(_PackagesConfigChanged=$(_PackagesConfigChanged))" />
   </Target>
   
@@ -118,7 +119,7 @@
   <Target Name="UpdateBoostPackages" DependsOnTargets="_BoostUpdateExistingPackagesConfig;_BoostCheckPackagesConfigChanged" BeforeTargets="_CppBoostHeadersImportCheck;_CppBoostLibsImportCheck">
     <Message Condition="'$(BoostDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] UpdateBoostPackages" />
 
-    <CallTarget Condition="$(_PackagesConfigChanged)" Targets="_BoostCommitPackagesConfigChanged" />
+    <CallTarget Condition="$(_PackagesConfigChanged) And '$(BoostCommit)' != ''" Targets="_BoostCommitPackagesConfigChanged" />
 
     <!-- Restore nuget packages if necessary... -->
     <Exec Condition="$(_PackagesConfigChanged)" Command='"$(ZouBinzOsDir)nuget" restore "$(PackagesConfigFile)" -PackagesDirectory "$(NugetPackagesDir.TrimEnd(\/))"' />
