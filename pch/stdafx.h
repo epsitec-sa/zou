@@ -19,7 +19,7 @@
 #define _AFX_ALL_WARNINGS
 
 // Error with C++ 17 Standard
-#define _SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING
+///// #define _SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING
 
 //----------------------------------------------------------------------------- Memory Leak Detection
 
