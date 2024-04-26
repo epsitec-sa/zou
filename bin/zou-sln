@@ -11,4 +11,4 @@ dotnet new sln -n "$slnNameWithoutExt"
 
 # populate with C# projects recursively
 # filter names containg '/.' and '/obj/'
-find . -type f -name '*.csproj' | sed ':/\.[^/]+/:d' | sed ':/obj/:d' | xargs dotnet sln "$slnName" add
+find . -type f -name '*.csproj' | sed ':/\.[^/]+/:d' | sed ':/obj/:d' | sed ':/zou/:d' | xargs -I {} dotnet sln "$slnName" add {}
