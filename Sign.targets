@@ -77,10 +77,10 @@ Operations:
 
     <ItemGroup>
       <SignFolder>
-        <Command>esign --nologo --porcelain --verbose --%(Broker)</Command>
+        <Command>esign --%(Broker) -l</Command>
       </SignFolder>
       <SignFolder>
-        <Command Condition="%(Recursive)">%(Command) --recursive</Command>
+        <Command Condition="%(Recursive)">%(Command) -r</Command>
       </SignFolder>
       <SignFolder>
         <Command>%(Command) "%(Identity)"</Command>
@@ -106,7 +106,7 @@ Operations:
   <Target Name="SignDotnetTool" AfterTargets="Build" BeforeTargets="PackTool" Condition="'$(Sign)'=='true' And '$(PackAsTool)'=='true' And Exists('$(PublishDir)')">
     <Message Importance="high" Text=" " />
     <Message Importance="high" Text="$(L2p)Signing $(T1)$(PublishDir).$(XC)" />
-    <Exec Command="esign --nologo -r -l -v --$(SignToolBroker) &quot;$(PublishDir).&quot;" />
+    <Exec Command="esign -lr --$(SignToolBroker) &quot;$(PublishDir).&quot;" />
     <Message Importance="high" Text="$(NC)" />
   </Target>
 
