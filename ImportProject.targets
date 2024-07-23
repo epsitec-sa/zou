@@ -208,7 +208,7 @@
              Importance="high"
              Text='### [$(MSBuildProjectFile)] "$(ZouBinzOsDir)nuget" restore "%(MSBuildProject.Identity)"'/>
     
-    <Exec Condition="'%(MSBuildProject.Extension)' == '.sln'"
+    <Exec Condition="'%(MSBuildProject.Extension)' == '.sln' And Exists('%(RootDir)%(Directory)packages.config')"
           Command='"$(ZouBinzOsDir)nuget" restore "%(MSBuildProject.Identity)"'/>
 
     <!-- ...or project with solution. -->
