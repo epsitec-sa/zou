@@ -3,23 +3,10 @@ Layout:
 =======
 
   {native-project}
-    Win32\v120_xp\bin\Debug\{native-files}
+    obj\interop\x64\Debug\{native-files}
 
   where:
-    Win32     $(InteropPlatform)
-    v120_xp   $(PlatformToolset)
-    
-  ====
-  
-  {mixed-platform-solution}
-    Win32\Interop\{native-project-name}\Debug\{native-files}
-      
-  {managed-project}
-    bin\Debug\{native-files}
-
-  where:
-    Win32     $(InteropPlatform)
-    
+    x64     $(InteropPlatform)
 -->
 <Project>
 
@@ -33,6 +20,7 @@ Layout:
 
   <PropertyGroup>
     <TargetFrameworks />
+    <InteropOutDir Condition="'$(InteropOutDir)' == ''">obj\interop\$(InteropPlatform)\$(Configuration)\</InteropOutDir>
   </PropertyGroup>
   
   <Import Project="ImportProject.targets" />
@@ -40,14 +28,14 @@ Layout:
   <ItemDefinitionGroup>
     <ImportProject>
       <Platform>$(InteropPlatform)</Platform>
-      <OutDir>bin\interop\$(InteropPlatform)\$(Configuration)\</OutDir>
+      <OutDir>$(InteropOutDir)</OutDir>
     </ImportProject>
   </ItemDefinitionGroup>
 
   <Target Name="CreateInteropContent" DependsOnTargets="ImportProject">
     <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] CreateInteropContent" />
     <ItemGroup>
-      <_InteropContent Include="bin\interop\$(InteropPlatform)\$(Configuration)\**\*" />
+      <_InteropContent Include="$(InteropOutDir)**\*" />
       <_InteropContent>
         <Link>%(FileName)%(Extension)</Link>
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -62,7 +50,7 @@ Layout:
   </Target>
 
   <ItemGroup>
-    <_InteropContent Include="bin\interop\$(InteropPlatform)\$(Configuration)\**\*">
+    <_InteropContent Include="$(InteropOutDir)**\*">
       <Link>%(FileName)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Visible>false</Visible>
@@ -76,10 +64,11 @@ Layout:
     <!--<LogItems Items="@(Content)" Title="InteropBuild.Content" AllMetadata="true" />
     <Message Importance="high"  Text=" " />-->
   </Target>
+
   <Target Name="InteropClean" BeforeTargets="Clean" DependsOnTargets="ImportProjectInit">
     <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] InteropClean(%(ImportProject.OutDir))" />
     <ItemGroup>
-      <InteropClean Include="bin\interop\$(InteropPlatform)\$(Configuration)\**\*" />
+      <InteropClean Include="$(InteropOutDir)**\*" />
     </ItemGroup>
     <!--<LogItems Items="@(InteropClean)" Title="InteropClean" />
     <Message Importance="high"  Text=" " />-->
