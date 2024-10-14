@@ -37,11 +37,11 @@ Input parameters:
         <RecursiveFolder>%(CopyFile.RecursiveDir)</RecursiveFolder>
       </CopyFile>
     </ItemGroup>
-    <!--<LogItems Items="@(CopyFile)" Title="CopyFileInit.CopyFile" AllMetadata="true" />
+    <!--<LogItems Items="@(CopyFile)" Title="CopyFileInit.CopyFile" AllMetadata="false" />
     <Message Importance="high"  Text=" " />-->
   </Target>
 
-  <Target Name="CopyFileCrossBuild" DependsOnTargets="CopyFileInit">
+  <Target Name="CopyFileCrossBuild" DependsOnTargets="CopyFileInit" Condition="'@(RuntimeOs)' != ''">
     <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] CopyFileCrossBuild(CrossBuild=$(CrossBuild))" />
 
     <!-- CopyFile x RuntimeOs (defined in Boot.Runtime.props ) -->
@@ -76,10 +76,10 @@ Input parameters:
     <Delete  Files="@(CopyFile->'%(TargetDir)%(RecursiveFolder)%(TargetFile)')" />
   </Target>
 
-  <Target Name="CopyFile" Inputs="@(CopyFile.Identity)" Outputs="@(CopyFile->'%(TargetDir)%(RecursiveFolder)%(TargetFile)')" BeforeTargets="Build" DependsOnTargets="CopyFileCrossBuild">
+  <Target Name="CopyFile" Inputs="@(CopyFile.Identity)" Outputs="@(CopyFile->'%(TargetDir)%(RecursiveFolder)%(TargetFile)')" BeforeTargets="Build" DependsOnTargets="CopyFileCrossBuild;CopyFileInit">
     <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] CopyFile" />
     
-    <!--<LogItems Items="@(CopyFile)" Title="CopyFile.CopyFile" AllMetadata="true" />
+    <!--<LogItems Items="@(CopyFile)" Title="CopyFile.CopyFile" AllMetadata="false" />
     <Message Importance="high"  Text=" " />-->
     
     <Copy SourceFiles="@(CopyFile)" DestinationFiles="@(CopyFile->'%(TargetDir)%(RecursiveFolder)%(TargetFile)')" ContinueOnError="true" />
