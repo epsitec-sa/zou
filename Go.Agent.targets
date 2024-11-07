@@ -1,4 +1,39 @@
-<Project>
+<!--
+  References:
+    https://gist.github.com/asukakenji/f15ba7e588ac42795f421b48b8aede63
+    https://stackoverflow.com/questions/49078510/trouble-compiling-windows-dll-using-golang-1-10
+
+Summary
+
+Input:
+  Product
+  TargetName
+  BuildMode
+
++ GoSourceDir
++ GoResourceDir
+  TargetDir += BuildMode
++ TargetExt
++ TargetName
++ TargetExt
++ TargetFileName
++ TargetPath
+
+-->
+<Project InitialTargets="TraceGoAgent">
+
+  <PropertyGroup>
+    <TargetName    Condition="'$(TargetName)' == ''">$(MSBuildProjectName)</TargetName>
+    <TargetDir     Condition="'$(BuildMode)'  != '' And !$(ProjectRelativeTargetDir.Contains('$(BuildMode)'))">$([MSBuild]::EnsureTrailingSlash('$(TargetDir)$(BuildMode)'))</TargetDir>
+    <TargetExt     >$(ZouExeExtension)</TargetExt>
+    <TargetFileName>$(TargetName)$(TargetExt)</TargetFileName>
+    <TargetPath    >$(TargetDir)$(TargetFileName)</TargetPath>
+  </PropertyGroup>
+  
+  <PropertyGroup>
+    <GoSourceDir   Condition="'$(GoSourceDir)'   == ''">$(ProjectDir)</GoSourceDir>
+    <GoResourceDir Condition="'$(GoResourceDir)' == ''">$(ProjectDir)resources\</GoResourceDir>
+  </PropertyGroup>
 
   <ItemGroup>
     <GoSource   Include="$(GoSourceDir)**\*.go"  />
@@ -50,4 +85,21 @@
   
   <Target Name="Rebuild" DependsOnTargets="Clean;Build" />
 
+
+  <Target Name="TraceGoAgent" Condition="'$(ZouTraceGo)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
+    <Message Importance="high" Text="zou/Go.Agent.targets [$(MSBuildProjectFile)]" />
+    <Message Importance="high" Text="--------------------" />
+    <Message Importance="high" Text="BuildMode      = $(BuildMode)" />
+    <Message Importance="high" Text="TargetDir      = $(TargetDir)" />
+    <Message Importance="high" Text="TargetName     = $(TargetName)" />
+    <Message Importance="high" Text="TargetExt      = $(TargetExt)" />
+    <Message Importance="high" Text="TargetFileName = $(TargetFileName)" />
+    <Message Importance="high" Text="TargetPath     = $(TargetPath)" />
+    <Message Importance="high" Text="GoSourceDir    = $(GoSourceDir)" />
+    <Message Importance="high" Text="GoResourceDir  = $(GoResourceDir)" />
+    <Message Importance="high" Text=" " />
+
+    <LogItems Items="@(GoBuildEnv)" Title="GoBuildEnv" />
+    <Message Importance="high"  Text=" " />
+  </Target>
 </Project>

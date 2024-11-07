@@ -1,23 +1,23 @@
 <Project InitialTargets="CheckGoEnv;ToolsGoTrace">
 
-  <Import Project="zou.props" Condition="'$(V)' == ''" />
+  <Import Project="zou.props" Condition="'$(ZouImported)' == ''" />
 
   <Choose>
     <When Condition="$([MSBuild]::IsOSPlatform(Windows))">
       <PropertyGroup>
-        <GOPATH Condition="'$(GOPATH)' == ''">$(USERPROFILE)$(V)go</GOPATH>
+        <GOPATH Condition="'$(GOPATH)' == ''">$(USERPROFILE)\go</GOPATH>
         <GoOS   Condition="'$(GoOS)'   == ''">windows</GoOS>
       </PropertyGroup>
     </When>
     <When Condition="$([MSBuild]::IsOSPlatform(OSX))">
       <PropertyGroup>
-        <GOPATH Condition="'$(GOPATH)' == ''">$(HOME)$(V)go</GOPATH>
+        <GOPATH Condition="'$(GOPATH)' == ''">$(HOME)\go</GOPATH>
         <GoOS   Condition="'$(GoOS)'   == ''">darwin</GoOS>
       </PropertyGroup>
     </When>
     <When Condition="$([MSBuild]::IsOSPlatform(Linux))">
       <PropertyGroup>
-        <GOPATH Condition="'$(GOPATH)' == ''">$(HOME)$(V)go</GOPATH>
+        <GOPATH Condition="'$(GOPATH)' == ''">$(HOME)\go</GOPATH>
         <GoOS   Condition="'$(GoOS)'   == ''">linux</GoOS>
       </PropertyGroup>
     </When>
@@ -28,10 +28,8 @@
 
     <GoBinDir>$([System.IO.Path]::Combine($(GOPATH),'bin'))</GoBinDir>
 
-    <GoWorkspace Condition="'$(GoWorkspace)' == ''">$(ModuleDir)src$(V)</GoWorkspace>
+    <GoWorkspace Condition="'$(GoWorkspace)' == ''">$(ModuleDir)src\</GoWorkspace>
     <GoWorkspace Condition="!Exists('$(GoWorkspace)')">$(ModuleDir)</GoWorkspace>
-    <GoResourceDir Condition="'$(GoResourceDir)' == ''">$(ProjectDir)resources$(V)</GoResourceDir>
-    
     
     <GoArch Condition="'$(Platform)' == 'Win32' Or '$(Platform)' == 'x86'">386</GoArch>
     <GoArch Condition="'$(GoArch)' == ''">amd64</GoArch>
@@ -101,9 +99,8 @@
   
   <Target Name="GoGetTools" DependsOnTargets="GoGetRice;GoGetVersionInfo;GoGetSwag" BeforeTargets="Build" />
 
-  <Target Name="ToolsGoTrace" Condition="'$(ZouTrace)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
+  <Target Name="ToolsGoTrace" Condition="'$(ZouTraceGo)' == 'true' Or '$(ZouTrace)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
     <Message Importance="normal" Text="GoWorkspace   = $(GoWorkspace)" />
-    <Message Importance="normal" Text="GoResourceDir = $(GoResourceDir)" />
     <Message Importance="normal" Text="GoBinDir      = $(GoBinDir)" />
     <Message Importance="normal" Text="GOPATH        = $(GOPATH)" />
     <Message Importance="normal" Text="GOROOT        = $(GOROOT)" />
