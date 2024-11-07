@@ -43,7 +43,7 @@
   </ItemDefinitionGroup>
 
   <Target Name="ImportProjectInit">
-    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] ImportProjectInit" />
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="%24 [$(MSBuildProjectFile)] ImportProjectInit" />
 
     <ItemGroup>
       <!--
@@ -56,10 +56,17 @@
         - C# projects with TargetFramework == (Full|Windows)TargetFramework (see Redist.ImportProject.targets/RedistImportProjectInit)
       -->
       <ImportProject Condition="$([MSBuild]::IsOsPlatform(Windows))">
-        <RuntimeType Condition="'%(ImportProject.Extension)' == '.vcxproj' Or '%(ImportProject.Extension)' == '.sln' Or '$(ZouAgentType)' == 'Cpp'">Full</RuntimeType>
+        <RuntimeType Condition="'%(ImportProject.Extension)' == '.vcxproj' Or '%(ImportProject.Extension)' == '.sln'">Full</RuntimeType>
       </ImportProject>
       <ImportProject Condition="!$([MSBuild]::IsOsPlatform(Windows))">
         <RuntimeType>Core</RuntimeType>
+      </ImportProject>
+
+      <ImportProject>
+        <UseMsBuildTask Condition="'%(ImportProject.Extension)' == '.msbuildproj' Or '%(Extension)' == '.goproj'">true</UseMsBuildTask>
+      </ImportProject>
+      <ImportProject>
+        <UseMsBuildTask Condition="'%(ImportProject.UseMsBuildTask)' == ''">false</UseMsBuildTask>
       </ImportProject>
 
       <!--
@@ -82,7 +89,7 @@
   </Target>
 
   <Target Name="ImportProjectCrossBuild" DependsOnTargets="ImportProjectInit">
-    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] ImportProjectCrossBuild(CrossBuild=$(CrossBuild))" />
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="%24 [$(MSBuildProjectFile)] ImportProjectCrossBuild(CrossBuild=$(CrossBuild))" />
 
     <!-- ImportFile x RuntimeOs (defined in Boot.Runtime.props ) -->
     <MulJoin Input="@(ImportProject)" Items="@(RuntimeOs)" ItemName="RuntimeOs" >
@@ -109,7 +116,7 @@
   <!-- ================ MSBuildProject ================ -->
 
   <Target Name="CreateMSBuildProjects" DependsOnTargets="ImportProjectCrossBuild">
-    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] CreateMSBuildProjects" />
+    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="%24 [$(MSBuildProjectFile)] CreateMSBuildProjects" />
 
     <!-- Preprocess build options and add a 'Properties' metadata -->
     <AddBuildOptions Projects="@(ImportProject)">
@@ -125,7 +132,7 @@
       </MSBuildProject>
     </ItemGroup>
 
-    <!--<LogItems Items="@(MSBuildProject)" Title="CreateMSBuildProjects.MSBuildProject" />
+    <!--<LogItems Items="@(MSBuildProject)" Title="$(XC)CreateMSBuildProjects.MSBuildProject" />
     <Message Importance="high" Text=" " />-->
   </Target>
 
@@ -189,6 +196,10 @@
   <!-- ================ ImportProject ================ -->
 
   <Target Name="ImportProject" Condition="$(BuildAny) And @(ImportProject->Count()) > 0" DependsOnTargets="UpdateMSBuildProjects" Returns="%(MSBuildProject.Identity)">
+    <PropertyGroup>
+      <CmdPrompt>$(Cyan)$(MSBuildProjectFile)$(Yellow) %24 $(XC)</CmdPrompt>
+    </PropertyGroup>
+
     <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] ImportProject" />
     <!-- Append RuntimeType and TargetFramework to MSBuildProject.Prefix -->
     <ItemGroup>
@@ -204,38 +215,41 @@
     <Message Condition="'%(MSBuildProject.BundleRelativeDstDir)' != ''" Importance="high" Text="$(L1b)[%(Prefix)] $(T3)%(MSBuildProject.BundleRelativeSrcDir)%(RecursiveDir)$(T2)%(FileName)%(Extension) $(T3)-> %(MSBuildProject.BundleRelativeDstDir)%(RecursiveDir)$(XC)" />
 
     <!-- Restore nuget packages for solution... -->
-    <Message Condition="'$(ZouCmd)' == 'true' And '%(MSBuildProject.Extension)' == '.sln'"
+    <Message Condition="'$(ZouCmd)' == 'true' And !%(MSBuildProject.UseMsBuildTask) And '%(Extension)' == '.sln' And Exists('%(RootDir)%(Directory)packages.config')"
              Importance="high"
-             Text='### [$(MSBuildProjectFile)] "$(ZouBinzOsDir)nuget" restore "%(MSBuildProject.Identity)"'/>
+             Text='$(CmdPrompt)$(T2)"$(ZouBinzOsDir)nuget" restore$(XC) "%(MSBuildProject.Identity)"'/>
     
-    <Exec Condition="'%(MSBuildProject.Extension)' == '.sln' And Exists('%(RootDir)%(Directory)packages.config')"
+    <Exec Condition="!%(MSBuildProject.UseMsBuildTask) And '%(Extension)' == '.sln' And Exists('%(RootDir)%(Directory)packages.config')"
           Command='"$(ZouBinzOsDir)nuget" restore "%(MSBuildProject.Identity)"'/>
 
     <!-- ...or project with solution. -->
-    <Message Condition="'$(ZouCmd)' == 'true' And '%(MSBuildProject.Extension)' != '.sln' And ('$(SolutionDir)' != '*Undefined*' And '$(SolutionDir)' != '') And Exists('%(RootDir)%(Directory)packages.config')"
+    <Message Condition="'$(ZouCmd)' == 'true' And !%(MSBuildProject.UseMsBuildTask) And '%(Extension)' != '.sln' And ('$(SolutionDir)' != '*Undefined*' And '$(SolutionDir)' != '') And Exists('%(RootDir)%(Directory)packages.config')"
              Importance="high"
-             Text='### [$(MSBuildProjectFile)] "$(ZouBinzOsDir)nuget" restore "%(MSBuildProject.RootDir)%(Directory)packages.config" -Verbosity quiet -PackagesDirectory "$(NugetPackagesDir)."'/>
-    <Exec Condition="'%(MSBuildProject.Extension)' != '.sln' And ('$(SolutionDir)' != '*Undefined*' And '$(SolutionDir)' != '') And Exists('%(RootDir)%(Directory)packages.config')"
+             Text='$(CmdPrompt)$(T2)"$(ZouBinzOsDir)nuget" restore$(XC) "%(MSBuildProject.RootDir)%(Directory)packages.config" -Verbosity quiet -PackagesDirectory "$(NugetPackagesDir)."'/>
+    <Exec Condition="!%(MSBuildProject.UseMsBuildTask) And '%(Extension)' != '.sln' And ('$(SolutionDir)' != '*Undefined*' And '$(SolutionDir)' != '') And Exists('%(RootDir)%(Directory)packages.config')"
           Command='"$(ZouBinzOsDir)nuget" restore "%(MSBuildProject.RootDir)%(Directory)packages.config" -Verbosity quiet -PackagesDirectory "$(NugetPackagesDir)."'/>
 
     <!-- ...or when using msbuild with a .csproj. -->
-    <Message Condition="'$(ZouCmd)' == 'true' And '%(MSBuildProject.Extension)' == '.csproj' And '%(MSBuildProject.RuntimeType)' == 'Full'"
+    <Message Condition="'$(ZouCmd)' == 'true' And !%(MSBuildProject.UseMsBuildTask) And '%(Extension)' == '.csproj' And '%(MSBuildProject.RuntimeType)' == 'Full'"
              Importance="high"
-             Text='### [$(MSBuildProjectFile)] dotnet restore "%(MSBuildProject.Identity)"'/>
-    <Exec Condition="'%(MSBuildProject.Extension)' == '.csproj' And '%(MSBuildProject.RuntimeType)' == 'Full'"
+             Text='$(CmdPrompt)$(T2)dotnet restore$(XC) "%(MSBuildProject.Identity)"'/>
+    <Exec Condition="!%(MSBuildProject.UseMsBuildTask) And '%(Extension)' == '.csproj' And '%(MSBuildProject.RuntimeType)' == 'Full'"
           Command='dotnet restore "%(MSBuildProject.Identity)"' EnvironmentVariables="TargetFrameworkImport=%(MSBuildProject.TargetFramework)"/>
 
     <!--
     The MSBuild task does not determine the build order but MSBuild.exe and Visual Studio do:
     https://maximelabelle.wordpress.com/2011/11/29/building-multiple-projects-in-order-with-msbuild/
     We cannot use the following MSBuild task:
-        <MSBuild Projects="%(MSBuildProject.Identity)" Targets="Build" Properties="OutDir=%(OutDir);Configuration=%(Configuration);Platform=%(Platform) " />
+        <MSBuild Projects="%(MSBuildProject.Identity)" Targets="Build" Properties="%(Properties)" />
     Instead with use the Exec task which starts the MSBuild process.
     -->
-    <Message Condition="'$(ZouCmd)' == 'true'" Importance="high" Text='### [$(MSBuildProjectFile)] %(Command) %(Options) "%(MSBuildProject.Identity)"' />
-    <!--<Message Condition="'$(ZouCmd)' == 'true'" Importance="high" Text=' ' />-->
     
-    <Exec Command='%(Command) %(Options) "%(MSBuildProject.Identity)"' />
+    <Message Condition="!%(MSBuildProject.UseMSBuildTask) And '$(ZouCmd)' == 'true'" Importance="high" Text='$(CmdPrompt)$(T2)%(Command)$(XC) %(Options) "%(MSBuildProject.Identity)"' />
+    <Exec    Condition="!%(MSBuildProject.UseMSBuildTask)" Command='%(Command) %(Options) "%(MSBuildProject.Identity)"' />
+
+    <Message Condition="%(MSBuildProject.UseMSBuildTask) And '$(ZouCmd)' == 'true'" Importance="high" Text='$(CmdPrompt)$(T2)MSBuild$(XC) Projects="%(MSBuildProject.Identity)" Properties="%(Properties)"' />
+    <MSBuild Condition="%(MSBuildProject.UseMSBuildTask)" Targets="Build" Projects="%(MSBuildProject.Identity)" Properties="%(Properties)" />
+    
     <CallTarget Targets="_DeleteLastBuildState" Condition="'$(BuildingInsideVisualStudio)'=='true'" />
 
     <Message Importance="high" Text="$(L1e)[%(Prefix)] $(T3)%(MSBuildProject.BundleRelativeSrcDir)%(RecursiveDir)%(FileName)%(Extension)$(NC)" />
