@@ -6,7 +6,7 @@
 
   <!-- Default properties (can be overloaded in bundle after importing this script) -->
   <PropertyGroup>
-    <Company>Epsitec</Company>
+    <Company Condition="'$(Company)' == ''">Epsitec</Company>
   </PropertyGroup>
 
   <!-- Debug info-->
@@ -29,23 +29,23 @@
     https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/compiler-options/language#langversion
     https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/configure-language-version#defaults
     -->
-    <LangVersion>latest</LangVersion>
+    <LangVersion Condition="'$(LangVersion)' == ''">latest</LangVersion>
     <!--
     <LangVersion Condition="$(CoreTargetFramework.StartsWith('net6'))">10.0</LangVersion>
     <LangVersion Condition="$(CoreTargetFramework.StartsWith('net7'))">11.0</LangVersion>
     <LangVersion Condition="$(CoreTargetFramework.StartsWith('net8'))">12.0</LangVersion>
     -->
 
-    <Deterministic>true</Deterministic>
+    <Deterministic Condition="'$(Deterministic)' == ''">true</Deterministic>
     <!--
       If you target a framework earlier than .NET 5 (including .NET Framework and .NET Standard),
       you should set ProduceReferenceAssembly to true in order to speed incremental builds.
       If you multi-target and any target is before .NET 5, you need this.
       Even if you target .NET 5 or later, having this property is fine.
     -->
-    <ProduceReferenceAssembly>true</ProduceReferenceAssembly>
+    <ProduceReferenceAssembly Condition="'$(ProduceReferenceAssembly)' == ''">true</ProduceReferenceAssembly>
 
-    <SuppressNETCoreSdkPreviewMessage>true</SuppressNETCoreSdkPreviewMessage>
+    <SuppressNETCoreSdkPreviewMessage Condition="'$(SuppressNETCoreSdkPreviewMessage)' == ''">true</SuppressNETCoreSdkPreviewMessage>
 
     <!-- Prevent missing await on async methods -->
     <WarningsAsErrors>CS4014;$(WarningsAsErrors)</WarningsAsErrors>
@@ -58,17 +58,20 @@
     - https://codeblog.dotsandbrackets.com/package-downgrade-issue/
     - https://learn.microsoft.com/en-us/dotnet/core/deploying/runtime-patch-selection
     -->
-    <TargetLatestRuntimePatch>true</TargetLatestRuntimePatch>
+    <TargetLatestRuntimePatch Condition="'$(TargetLatestRuntimePatch)' == ''">true</TargetLatestRuntimePatch>
 
     <!--
     For AccelerateBuildsInVisualStudio, see:
     - https://github.com/dotnet/project-system/blob/main/docs/build-acceleration.md
     -->
-    <AccelerateBuildsInVisualStudio>true</AccelerateBuildsInVisualStudio>
+    <AccelerateBuildsInVisualStudio Condition="'$(AccelerateBuildsInVisualStudio)' == ''">true</AccelerateBuildsInVisualStudio>
+  </PropertyGroup>
 
-    <EnableNETAnalyzers>false</EnableNETAnalyzers>
-    <AnalysisMode>recommended</AnalysisMode>
-    <AnalysisLevel>latest-recommended</AnalysisLevel>
+  <!-- Code analysis -->
+  <PropertyGroup>
+    <EnableNETAnalyzers Condition="'$(EnableNETAnalyzers)' == ''">false</EnableNETAnalyzers>
+    <AnalysisMode Condition="'$(AnalysisMode)' == ''">recommended</AnalysisMode>
+    <AnalysisLevel Condition="'$(AnalysisLevel)' == ''">latest-recommended</AnalysisLevel>
   </PropertyGroup>
 
   <!-- Versioning -->
