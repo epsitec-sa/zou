@@ -1,0 +1,58 @@
+# To import following rules:
+#
+# - for all bundle projects, modify 'bundle/Directory.Build.Props'
+#
+#   <Import Project="zou\Directory.Build.Default.props" />
+#   <Import Project="zou\GlobalAnalyserConfig.Default.props" Condition="'$(ZouAnalyzerConfigFile)' == ''" />
+#
+# - for all module projects, modify 'module/Directory.Build.Props'
+#
+#   <Import Project="$([MSBuild]::GetPathOfFileAbove('$(MSBuildThisFile)', '$(MSBuildThisFileDirectory)../'))" />
+#   <Import Project="$(ZouDir)GlobalAnalyserConfig.Default.props" Condition="'$(ZouAnalyzerConfigFile)' == ''" />
+#
+# See also:
+#   https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/configuration-files#global-analyzerconfig
+
+# Configure precedence - https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/configuration-files#precedence
+# can be overriden in bundle -> set global_level = 100 (default)
+# can be overriden in module -> set global_level = 200
+global_level = 0
+
+# see https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/configuration-files#format
+is_global = true
+
+# IDE0007: Use implicit type
+dotnet_diagnostic.IDE0007.severity = suggestion
+
+# IDE0008: Use explicit type
+dotnet_diagnostic.IDE0008.severity = none
+
+# IDE0011: Add braces
+dotnet_diagnostic.IDE0011.severity = suggestion
+
+# IDE0022: Use block body for method
+dotnet_diagnostic.IDE0022.severity = suggestion
+
+# IDE0039: Use local function
+dotnet_diagnostic.IDE0039.severity = suggestion
+
+# IDE0045: Convert to conditional expression
+dotnet_diagnostic.IDE0045.severity = suggestion
+
+# IDE0046: Convert to conditional expression
+dotnet_diagnostic.IDE0046.severity = suggestion
+
+# IDE0051: Remove unused private members
+dotnet_diagnostic.IDE0051.severity = suggestion
+
+# IDE0055: Fix formatting
+dotnet_diagnostic.IDE0055.severity = none
+
+# IDE0061: Use block body for local function
+dotnet_diagnostic.IDE0061.severity = none
+
+# IDE0130: Namespace does not match folder structure
+dotnet_diagnostic.IDE0130.severity = none
+
+# IDE0200: Remove unnecessary lambda expression
+dotnet_diagnostic.IDE0200.severity = suggestion

@@ -1,0 +1,33 @@
+<!--
+To enable Default GlobalAnalyzerConfig
+
+- for all bundle projects, modify 'bundle/Directory.Build.Props'
+
+  <Import Project="zou\Directory.Build.Default.props" />
+  <Import Project="zou\GlobalAnalyzerConfig.Default.props" Condition="'$(ZouAnalyzerConfigFile)' == ''" />
+
+- for all module projects, modify 'module/Directory.Build.Props'
+
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('$(MSBuildThisFile)', '$(MSBuildThisFileDirectory)../'))" />
+  <Import Project="$(ZouDir)GlobalAnalyzerConfig.Default.props" Condition="'$(ZouAnalyzerConfigFile)' == ''" />
+
+See also:
+  https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/configuration-files#global-analyzerconfig
+-->
+
+<Project InitialTargets="TraceGlobalAnalyzerConfigFiles">
+
+  <PropertyGroup>
+    <ZouAnalyzerConfigFile>$(MSBuildThisFileDirectory).zou.default.globalconfig</ZouAnalyzerConfigFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- avoid duplicates with the 'Exclude' trick -->
+    <GlobalAnalyzerConfigFiles Include="$(ZouAnalyzerConfigFile)" Exclude="@(GlobalAnalyzerConfigFiles)" />
+  </ItemGroup>
+
+  <Target Name="TraceGlobalAnalyzerConfigFiles"
+          Condition="'$(ZouTrace)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
+    <Message Importance="high" Text="### [$(MSBuildProjectFile)] -&gt; GlobalAnalyzerConfigFile = %(GlobalAnalyzerConfigFiles.Identity)" Condition="Exists('%(GlobalAnalyzerConfigFiles.Identity)')" />
+  </Target>
+
+</Project>
