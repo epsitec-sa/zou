@@ -92,6 +92,7 @@
 
 #include <string>
 
+// containers
 #include <array>
 #include <list>
 #include <map>
@@ -100,3 +101,27 @@
 #include <vector>
 #include <unordered_map>
 #include <unordered_set>
+
+// streams
+#include <iostream>
+#include <fstream>
+#include <ostream>
+#include <sstream>
+
+// threading
+#include <atomic>
+#include <future>
+#include <mutex>
+#include <thread>
+
+// various
+#include <algorithm>
+#include <chrono>
+#include <exception>
+#include <limits>
+#include <locale>
+#include <functional>
+#include <memory>
+#include <random>
+#include <regex>
+#include <stdexcept>
