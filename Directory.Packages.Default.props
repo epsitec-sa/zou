@@ -272,7 +272,7 @@
     <PackageVersion Include="Toolbelt.Blazor.HeadElement"                             Version="7.3.1" />            <!-- net5, netstandard -->
     <PackageVersion Include="Toolbelt.Blazor.HeadElement.ServerPrerendering"          Version="7.3.1" />            <!-- net5, netstandard -->
     <PackageVersion Include="Toolbelt.Blazor.LocalizedDataAnnotationsValidator"       Version="1.0.1.1" />          <!-- netstandard -->
-    <PackageVersion Include="Toolbelt.Blazor.I18nText"                                Version="13.0.0" />           <!-- net6, net8 -->
+    <PackageVersion Include="Toolbelt.Blazor.I18nText"                                Version="13.0.0" />           <!-- net6, net8, BUGGY -->
     <PackageVersion Include="WebSocket4Net"                                           Version="0.15.2" />
     <PackageVersion Include="WinInsider.System.Net.Http.Formatting"                   Version="1.0.14" />
     <PackageVersion Include="XObjectsCore"                                            Version="3.4.7" />
@@ -349,5 +349,14 @@
     <PackageVersion Update="Nancy"                                                    Version="1.4.5" />            <!-- ? -->
     <PackageVersion Update="Nancy.Hosting.Self"                                       Version="1.4.1" />            <!-- ? -->
     <PackageVersion Update="Portable.BouncyCastle"                                    Version="1.8.5.2" />
+  </ItemGroup>
+
+  <!-- Update problematic package versions -->
+  <ItemGroup>
+    <!--
+    see https://github.com/dotnet/sdk/issues/43225
+    use the latest version that does not depend on Toolbelt.Blazor.I18nText.SourceGenerator
+    -->
+    <PackageVersion Update="Toolbelt.Blazor.I18nText"                                 Version="12.0.2" />           <!-- net6, netstandard -->
   </ItemGroup>
 </Project>
