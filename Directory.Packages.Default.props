@@ -4,14 +4,17 @@
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
   </PropertyGroup>
 
-  <!-- netstandard or >= net6 -->
+  <!-- netstandard or >= net6 (deprecated) -->
   <ItemGroup>
     <PackageVersion Include="Microsoft.AspNetCore.Http.Abstractions"                  Version="2.2.0" />            <!-- netstandard, DEPRECATED -->
     <PackageVersion Include="Microsoft.AspNetCore.Localization"                       Version="2.2.0" />            <!-- netstandard, DEPRECATED -->
     <PackageVersion Include="Microsoft.AspNetCore.Mvc.Core"                           Version="2.2.5" />            <!-- netstandard, DEPRECATED -->
     <PackageVersion Include="Microsoft.AspNetCore.Routing"                            Version="2.2.2" />            <!-- netstandard, DEPRECATED -->
     <PackageVersion Include="Microsoft.AspNetCore.WebUtilities"                       Version="2.2.0" />            <!-- netstandard, DEPRECATED -->
+  </ItemGroup>
 
+  <!-- netstandard or >= net6 -->
+  <ItemGroup>
     <PackageVersion Include="Autofac"                                                 Version="8.1.1" />            <!-- net6, net8, netstandard -->
     <PackageVersion Include="Azure.Identity"                                          Version="1.13.1" />           <!-- netstandard -->
     <PackageVersion Include="Azure.Storage.Blobs"                                     Version="12.22.2" />          <!-- net6, netstandard -->
@@ -32,10 +35,7 @@
     <PackageVersion Include="ExcelDataReader.DataSet"                                 Version="3.7.0" />            <!-- netstandard -->
     <PackageVersion Include="GdPicture.API"                                           Version="14.2.94" />          <!-- net6 -->
     <PackageVersion Include="Google.Protobuf"                                         Version="3.28.3" />           <!-- net5, netstandard -->
-
-    <!-- DO NOT update GrapeCity.Documents.Imaging version due to a specific license key. -->
     <PackageVersion Include="GrapeCity.Documents.Imaging"                             Version="4.2.0.727" />        <!-- netstandard -->
-
     <PackageVersion Include="Grpc"                                                    Version="2.46.6" />           <!-- netstandard -->
     <PackageVersion Include="Grpc.Tools"                                              Version="2.67.0" />           <!-- netstandard -->
     <PackageVersion Include="HarfBuzzSharp.NativeAssets.Linux"                        Version="7.3.0.3" />          <!-- net6, netstandard -->
@@ -79,8 +79,6 @@
     <PackageVersion Include="Microsoft.CodeAnalysis.Workspaces.Common"                Version="4.9.2" />            <!-- net6, netstandard -->
     <PackageVersion Include="Microsoft.CodeAnalysis.Workspaces.MSBuild"               Version="4.9.2" />            <!-- net6, netstandard -->
     <PackageVersion Include="Microsoft.CSharp"                                        Version="4.7.0" />            <!-- netstandard -->
-
-     <!-- DO NOT update following packages version. It must stay on 7.0.2 until we stop supporting old mac versions. See https://git.epsitec.ch/cresus.tools/Banking/-/issues/606 -->
     <PackageVersion Include="Microsoft.Data.SQLite"                                   Version="7.0.2" />            <!-- netstandard -->
     <PackageVersion Include="Microsoft.Data.Sqlite.Core"                              Version="7.0.2" />            <!-- net6, netstandard -->
     <PackageVersion Include="Microsoft.EntityFrameworkCore"                           Version="7.0.2" />            <!-- net6 -->
@@ -190,9 +188,7 @@
     <PackageVersion Include="SkiaSharp.NativeAssets.Linux.NoDependencies"             Version="2.88.9" />           <!-- net6, netstandard -->
     <PackageVersion Include="SkiaSharp.Views.Blazor"                                  Version="2.88.9" />           <!-- net6 -->
 
-    <!-- DO NOT update Spire.PDF version due to a specific license key. See rezo/office/Office.Pdf/CoreEngine.cs -->
     <PackageVersion Include="Spire.PDF"                                               Version="7.6.15" />           <!-- net5, netstandard -->
-
     <PackageVersion Include="StyleCop.Analyzers"                                      Version="1.1.118" />
     <PackageVersion Include="SuperSocket.ClientEngine.Core"                           Version="0.10.0" />
     <PackageVersion Include="Swashbuckle.AspNetCore"                                  Version="6.9.0" />            <!-- netstandard -->
@@ -352,12 +348,26 @@
     <PackageVersion Update="Portable.BouncyCastle"                                    Version="1.8.5.2" />
   </ItemGroup>
 
-  <!-- Update problematic package versions -->
+  <!-- Licensed packages -->
   <ItemGroup>
-    <!--
-    see https://github.com/dotnet/sdk/issues/43225
-    use the latest version that does not depend on Toolbelt.Blazor.I18nText.SourceGenerator
-    -->
+    <PackageVersion Update="GrapeCity.Documents.Imaging"          Version="4.2.0.727" />  <!-- netstandard -->
+    <PackageVersion Update="Spire.PDF"                            Version="7.6.15" />     <!-- net5, netstandard -->
+  </ItemGroup>
+
+  <!-- Problematic packages -->
+  <ItemGroup>
+    <!-- Should not depend on Toolbelt.Blazor.I18nText.SourceGenerator - see https://github.com/dotnet/sdk/issues/43225 -->
     <PackageVersion Update="Toolbelt.Blazor.I18nText"                                 Version="12.0.2" />           <!-- net6, netstandard -->
+  </ItemGroup>
+
+  <!-- Problematic packages -->
+  <ItemGroup Condition="$(TargetFramework.StartsWith('net6'))">
+     <!-- Old mac versions support - see https://git.epsitec.ch/cresus.tools/Banking/-/issues/606 -->
+    <PackageVersion Update="Microsoft.Data.SQLite"                Version="7.0.2" />      <!-- netstandard -->
+    <PackageVersion Update="Microsoft.Data.Sqlite.Core"           Version="7.0.2" />      <!-- net6, netstandard -->
+    <PackageVersion Update="Microsoft.EntityFrameworkCore"        Version="7.0.2" />      <!-- net6 -->
+    <PackageVersion Update="Microsoft.EntityFrameworkCore.Design" Version="7.0.2" />      <!-- net6 -->
+    <PackageVersion Update="Microsoft.EntityFrameworkCore.Sqlite" Version="7.0.2" />      <!-- net6 -->
+    <PackageVersion Update="Microsoft.EntityFrameworkCore.Tools"  Version="7.0.2" />      <!-- net6 -->
   </ItemGroup>
 </Project>
