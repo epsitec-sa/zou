@@ -103,10 +103,18 @@ Operations:
   </Target>
 
   <!-- Sign dotnet tools before packaging  -->
-  <Target Name="SignDotnetTool" AfterTargets="Build" BeforeTargets="PackTool" Condition="'$(Sign)'=='true' And '$(PackAsTool)'=='true' And Exists('$(PublishDir)')">
+  <Target Name="NugetSignDotnetTool" AfterTargets="Build" BeforeTargets="PackTool" Condition="'$(Sign)'=='true' And '$(PackAsTool)'=='true' And Exists('$(PublishDir)')">
     <Message Importance="high" Text=" " />
     <Message Importance="high" Text="$(L2p)Signing $(T1)$(PublishDir).$(XC)" />
     <Exec Command="esign -lr --$(SignToolBroker) &quot;$(PublishDir).&quot;" />
+    <Message Importance="high" Text="$(NC)" />
+  </Target>
+
+  <!-- Sign libraries before packaging  -->
+  <Target Name="NugetSignLibrary" AfterTargets="Build" BeforeTargets="GenerateNuspec" Condition="'$(Sign)'=='true' And '$(Pack)'=='true' And '$(PackAsTool)'!='true'">
+    <Message Importance="high" Text=" " />
+    <Message Importance="high" Text="$(L2p)Signing $(T1)$(OutDir).$(XC)" />
+    <Exec Command="esign -lr --$(SignToolBroker) &quot;$(OutDir).&quot;" />
     <Message Importance="high" Text="$(NC)" />
   </Target>
 
@@ -114,6 +122,8 @@ Operations:
     <Message Importance="high" Text="zou/Sign.targets [$(MSBuildProjectFile)]" />
     <Message Importance="high" Text="----------------" />
     <Message Importance="high" Text="Sign           = $(Sign)" />
+    <Message Importance="high" Text="Pack           = $(Pack)" />
+    <Message Importance="high" Text="PackAsTool     = $(PackAsTool)" />
     <Message Importance="high" Text="SignToolBroker = $(SignToolBroker)" />
     <Message Importance="high" Text="PublishDir     = $(PublishDir)" />
     <Message Importance="high" Text="OutDir         = $(OutDir)" />
