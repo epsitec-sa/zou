@@ -1,0 +1,22 @@
+# To import following rules:
+#
+# - for all bundle projects, modify 'bundle/Directory.Build.Props'
+#
+#   <Import Project="zou\Directory.Build.Default.props" />
+#   <Import Project="zou\GlobalAnalyserConfig.Default.props" />
+#
+# - for all module projects, modify 'module/Directory.Build.Props'
+#
+#   <Import Project="$([MSBuild]::GetPathOfFileAbove('$(MSBuildThisFile)', '$(MSBuildThisFileDirectory)../'))" />
+#   <Import Project="$(ZouDir)GlobalAnalyserConfig.Default.props" />
+#
+# See also:
+#   https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/configuration-files#global-analyzerconfig
+
+# Configure precedence - https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/configuration-files#precedence
+# can be overriden in bundle -> set global_level = 100 (default)
+# can be overriden in module -> set global_level = 200
+global_level = 0
+
+# see https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/configuration-files#format
+is_global = true
