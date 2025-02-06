@@ -16,7 +16,7 @@
     <PackageVersion Include="Microsoft.AspNetCore.Routing"                            Version="2.2.2" />            <!-- netstandard, DEPRECATED -->
     <PackageVersion Include="VocaDb.ResXFileCodeGenerator"                            Version="3.2.1" />            <!-- netstandard, DEPRECATED -->
   </ItemGroup>
-
+  
   <!-- netstandard or TFM >= net6 -->
   <ItemGroup>
     <PackageVersion Include="Autofac"                                                 Version="8.2.0" />            <!-- netstandard, net6, net8 -->
@@ -142,9 +142,10 @@
     <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions"    Version="8.0.0" />            <!-- netstandard, net6, net8 -->
     <PackageVersion Include="Microsoft.Extensions.Options.DataAnnotations"            Version="8.0.0" />            <!-- netstandard, net6, net8 -->
 
-    <PackageVersion Include="Microsoft.IdentityModel.Tokens"                          Version="8.3.0" />            <!-- netstandard, net6, net8, net9 -->
-    <PackageVersion Include="Microsoft.IdentityModel.JsonWebTokens"                   Version="8.3.0" />            <!-- netstandard, net6, net8, net9 -->
-    <PackageVersion Include="Microsoft.IdentityModel.Protocols.OpenIdConnect"         Version="8.3.0" />            <!-- netstandard, net6, net8, net9 -->
+    <PackageVersion Include="Microsoft.IdentityModel.Tokens"                          Version="8.3.1" />            <!-- netstandard, net6, net8, net9 -->
+    <PackageVersion Include="Microsoft.IdentityModel.JsonWebTokens"                   Version="8.3.1" />            <!-- netstandard, net6, net8, net9 -->
+    <PackageVersion Include="Microsoft.IdentityModel.Protocols.OpenIdConnect"         Version="8.3.1" />            <!-- netstandard, net6, net8, net9 -->
+
     <PackageVersion Include="Microsoft.NET.Test.Sdk"                                  Version="17.12.0" />          <!-- netcoreapp3.1 -->
     <PackageVersion Include="Microsoft.Office.Interop.Word"                           Version="15.0.4797.1004" />   <!-- netstandard -->
     <PackageVersion Include="Microsoft.Playwright"                                    Version="1.49.0" />           <!-- netstandard -->
@@ -253,7 +254,7 @@
     <PackageVersion Include="System.Formats.Asn1"                                     Version="8.0.1" />            <!-- netstandard, net6, net8 -->
     <PackageVersion Include="System.Globalization.Extensions"                         Version="4.3.0" />            <!-- netstandard, * -->
 
-    <PackageVersion Include="System.IdentityModel.Tokens.Jwt"                         Version="8.3.0" />            <!-- netstandard, net6, net8, net9 -->
+    <PackageVersion Include="System.IdentityModel.Tokens.Jwt"                         Version="8.3.1" />            <!-- netstandard, net6, net8, net9 -->
     <PackageVersion Include="System.Interactive"                                      Version="6.0.1" />            <!-- netstandard, net6 -->
     <PackageVersion Include="System.IO.FileSystem.Primitives"                         Version="4.3.0" />            <!-- netstandard, * -->
     <PackageVersion Include="System.IO.Packaging"                                     Version="8.0.1" />            <!-- netstandard, net6, net8 -->
@@ -486,11 +487,18 @@
   <!-- Problematic packages (net6) -->
   <ItemGroup Condition="$(CoreTargetFramework.StartsWith('net6')) Or $(TargetFramework.StartsWith('net6'))">
      <!-- Old mac versions support - see https://git.epsitec.ch/cresus.tools/Banking/-/issues/606 -->
-    <PackageVersion Update="Microsoft.Data.SQLite"                Version="7.0.2" />      <!-- netstandard -->
-    <PackageVersion Update="Microsoft.Data.Sqlite.Core"           Version="7.0.2" />      <!-- netstandard, net6 -->
-    <PackageVersion Update="Microsoft.EntityFrameworkCore"        Version="7.0.2" />      <!-- net6 -->
-    <PackageVersion Update="Microsoft.EntityFrameworkCore.Design" Version="7.0.2" />      <!-- net6 -->
-    <PackageVersion Update="Microsoft.EntityFrameworkCore.Sqlite" Version="7.0.2" />      <!-- net6 -->
-    <PackageVersion Update="Microsoft.EntityFrameworkCore.Tools"  Version="7.0.2" />      <!-- net6 -->
+    <PackageVersion Update="Microsoft.Data.SQLite"                                    Version="7.0.2" />            <!-- netstandard -->
+    <PackageVersion Update="Microsoft.Data.Sqlite.Core"                               Version="7.0.2" />            <!-- netstandard, net6 -->
+    <PackageVersion Update="Microsoft.EntityFrameworkCore"                            Version="7.0.2" />            <!-- net6 -->
+    <PackageVersion Update="Microsoft.EntityFrameworkCore.Design"                     Version="7.0.2" />            <!-- net6 -->
+    <PackageVersion Update="Microsoft.EntityFrameworkCore.Sqlite"                     Version="7.0.2" />            <!-- net6 -->
+    <PackageVersion Update="Microsoft.EntityFrameworkCore.Tools"                      Version="7.0.2" />            <!-- net6 -->
+    
+    <!-- Version 8.3.1 DOES NOT SUPPORT net6 (even if they say so) due to Microsoft.Bcl.Memory(>= 9.0.0) dependency -->
+    <PackageVersion Update="Microsoft.IdentityModel.Tokens"                           Version="8.3.0" />            <!-- netstandard, net6, net8, net9 -->
+    <PackageVersion Update="Microsoft.IdentityModel.JsonWebTokens"                    Version="8.3.0" />            <!-- netstandard, net6, net8, net9 -->
+    <PackageVersion Update="Microsoft.IdentityModel.Protocols.OpenIdConnect"          Version="8.3.0" />            <!-- netstandard, net6, net8, net9 -->
+    <PackageVersion Update="System.IdentityModel.Tokens.Jwt"                          Version="8.3.0" />            <!-- netstandard, net6, net8, net9 -->
   </ItemGroup>
+
 </Project>
