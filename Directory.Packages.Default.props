@@ -330,7 +330,7 @@
   </ItemGroup>
 
   <!-- TFM >= net8 -->
-  <ItemGroup Condition="$(TargetFramework.StartsWith('net8')) Or $(TargetFramework.StartsWith('net9'))">
+  <ItemGroup Condition="$(CoreTargetFramework.StartsWith('net8')) Or $(TargetFramework.StartsWith('net8')) Or $(CoreTargetFramework.StartsWith('net9')) Or $(TargetFramework.StartsWith('net9'))">
     <PackageVersion Update="EFCore.NamingConventions"                                 Version="9.0.0" />            <!-- net8 -->
 
     <PackageVersion Update="Microsoft.AspNetCore.Authentication.JwtBearer"            Version="8.0.12" />           <!-- net8 -->
@@ -433,7 +433,7 @@
   </ItemGroup>
 
   <!-- TFM >= net9 -->
-  <ItemGroup Condition="$(CoreTargetFramework.StartsWith('net9'))">
+  <ItemGroup Condition="$(CoreTargetFramework.StartsWith('net9')) Or $(TargetFramework.StartsWith('net9'))">
     <PackageVersion Update="Microsoft.AspNetCore.OpenApi"                             Version="9.0.1" />            <!-- net9 -->
     
     <PackageVersion Update="Microsoft.AspNetCore.Authentication.JwtBearer"            Version="9.0.1" />            <!-- net9 -->
@@ -483,7 +483,7 @@
   </ItemGroup>
   
   <!-- Problematic packages (net6) -->
-  <ItemGroup Condition="$(CoreTargetFramework.StartsWith('net6'))">
+  <ItemGroup Condition="$(CoreTargetFramework.StartsWith('net6')) Or $(TargetFramework.StartsWith('net6'))">
      <!-- Old mac versions support - see https://git.epsitec.ch/cresus.tools/Banking/-/issues/606 -->
     <PackageVersion Update="Microsoft.Data.SQLite"                Version="7.0.2" />      <!-- netstandard -->
     <PackageVersion Update="Microsoft.Data.Sqlite.Core"           Version="7.0.2" />      <!-- netstandard, net6 -->
