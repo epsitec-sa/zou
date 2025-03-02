@@ -1,5 +1,15 @@
 <!-- Defines the default metadata for .NET projects (epilog) -->
 <Project  InitialTargets="TraceDirectoryBuildDefaultTargets">
+  
+  <PropertyGroup>
+    <!--
+    Make lock file part of your source repository:
+      - https://learn.microsoft.com/en-us/nuget/consume-packages/package-references-in-project-files#make-lock-file-part-of-your-source-repository
+    -->
+    <RestorePackagesWithLockFile Condition="'$(RestorePackagesWithLockFile)' == '' And Exists('$(ProjectDir)packages.lock.json')">true</RestorePackagesWithLockFile>
+    <RestorePackagesWithLockFile Condition="'$(RestorePackagesWithLockFile)' == '' And '$(CentralPackageFloatingVersionsEnabled)' == 'true' And $(OutputType.EndsWith('Exe'))">true</RestorePackagesWithLockFile>
+    <RestorePackagesWithLockFile Condition="'$(RestorePackagesWithLockFile)' == ''">false</RestorePackagesWithLockFile>
+  </PropertyGroup>
 
   <Import Project="TargetFramework.targets"/>
   <Import Project="Boot.Runtime.props" Condition="'$(BootRuntimeImported)' == ''"/>
@@ -106,6 +116,7 @@
           Condition="'$(ZouTrace)' == 'true' Or '$(ZouDirectoryBuild)' == 'true'">
     <Message Importance="high" Text="zou/Directory.Build.Default.targets [$(MSBuildProjectFile)]" />
     <Message Importance="high" Text="-----------------------------------" />
+    <Message Importance="high" Text="OutputType                = $(OutputType)" />
     <Message Importance="high" Text="MSBuildRuntimeType        = $(MSBuildRuntimeType)" />
     <Message Importance="high" Text="FullTargetFramework       = $(FullTargetFramework)" />
     <Message Importance="high" Text="CoreTargetFramework       = $(CoreTargetFramework)" />
@@ -117,5 +128,10 @@
     <Message Importance="high" Text="EnableNETAnalyzers        = $(EnableNETAnalyzers)" />
     <Message Importance="high" Text="AnalysisMode              = $(AnalysisMode)" />
     <Message Importance="high" Text="AnalysisLevel             = $(AnalysisLevel)" />
+    <Message Importance="high" Text=" " />
+    <Message Importance="high" Text="RestorePackagesWithLockFile            = $(RestorePackagesWithLockFile)" />
+    <Message Importance="high" Text="ManagePackageVersionsCentrally         = $(ManagePackageVersionsCentrally)" />
+    <Message Importance="high" Text="CentralPackageTransitivePinningEnabled = $(CentralPackageTransitivePinningEnabled)" />
+    <Message Importance="high" Text="CentralPackageFloatingVersionsEnabled  = $(CentralPackageFloatingVersionsEnabled)" />
   </Target>
 </Project>

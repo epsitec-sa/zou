@@ -1,500 +1,513 @@
+<!--
+An introduction to NuGet: https://learn.microsoft.com/en-us/nuget/what-is-nuget
+
+Package versioning: https://learn.microsoft.com/en-us/nuget/concepts/package-versioning
+
+How NuGet resolves package dependencies: https://learn.microsoft.com/en-us/nuget/concepts/dependency-resolution
+Dependency resolution rules: https://learn.microsoft.com/en-us/nuget/concepts/dependency-resolution#dependency-resolution-rules
+
+Locking dependencies: https://learn.microsoft.com/en-us/nuget/consume-packages/package-references-in-project-files#locking-dependencies
+
+NuGet Error NU1011: https://learn.microsoft.com/en-us/nuget/reference/errors-and-warnings/nu1011
+-->
 <Project>
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+    <CentralPackageFloatingVersionsEnabled>true</CentralPackageFloatingVersionsEnabled>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageVersion Include="Epsitec.Mailer.Core"                                     Version="2.9.0.2424" />       <!-- net8 ONLY -->
-    <PackageVersion Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets"   Version="1.21.0" />           <!-- NET 4.7 -->
-    <PackageVersion Include="Nancy.Hosting.Self"                                      Version="2.0.0" />            <!-- NET 4.5 -->
-    <PackageVersion Include="System.Reactive.Windows.Forms"                           Version="6.0.1" />            <!-- NET 4.7 -->
+    <PackageVersion Include="Epsitec.Mailer.Core"                                     Version="2.9.*" />            <!-- net8 ONLY -->
+    <PackageVersion Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets"   Version="1.21.*" />           <!-- NET 4.7 -->
+    <PackageVersion Include="Nancy.Hosting.Self"                                      Version="2.0.*" />            <!-- NET 4.5 -->
+    <PackageVersion Include="System.Reactive.Windows.Forms"                           Version="6.0.*" />            <!-- NET 4.7 -->
   </ItemGroup>
 
   <!-- netstandard (deprecated) -->
   <ItemGroup>
-    <PackageVersion Include="Microsoft.AspNetCore.Routing"                            Version="2.2.2" />            <!-- netstandard, DEPRECATED -->
-    <PackageVersion Include="VocaDb.ResXFileCodeGenerator"                            Version="3.2.1" />            <!-- netstandard, DEPRECATED -->
+    <PackageVersion Include="Microsoft.AspNetCore.Routing"                            Version="2.2.*" />            <!-- netstandard, DEPRECATED -->
+    <PackageVersion Include="VocaDb.ResXFileCodeGenerator"                            Version="3.2.*" />            <!-- netstandard, DEPRECATED -->
   </ItemGroup>
 
   <!-- netstandard 2.0 only -->
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
-    <PackageVersion Include="Microsoft.Bcl.AsyncInterfaces"                           Version="9.0.2" />            <!-- netstandard2.0 -->
+    <PackageVersion Include="Microsoft.Bcl.AsyncInterfaces"                           Version="9.0.*" />            <!-- netstandard2.0 -->
   </ItemGroup>
   
   <!-- netstandard or TFM >= net6 -->
   <ItemGroup>
-    <PackageVersion Include="Autofac"                                                 Version="8.2.0" />            <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="Azure.Identity"                                          Version="1.13.2" />           <!-- netstandard -->
-    <PackageVersion Include="Azure.Storage.Blobs"                                     Version="12.23.0" />          <!-- netstandard, net6 -->
-    <PackageVersion Include="BenchmarkDotNet"                                         Version="0.14.0" />           <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="BenchmarkDotNet.TestAdapter"                             Version="0.14.0" />           <!-- netstandard -->
-    <PackageVersion Include="Blazored.LocalStorage"                                   Version="4.5.0" />            <!-- net6, net8 -->
-    <PackageVersion Include="BouncyCastle.Cryptography"                               Version="2.5.1" />            <!-- netstandard, net6 -->
-    <PackageVersion Include="BouncyCastle.NetCore"                                    Version="2.2.1" />            <!-- netstandard -->
-    <PackageVersion Include="Certes"                                                  Version="3.0.4" />            <!-- netstandard, net6 -->
-    <PackageVersion Include="ChartJs.Blazor.Fork"                                     Version="2.0.2" />            <!-- netstandard -->
-    <PackageVersion Include="ClosedXML"                                               Version="0.104.2" />          <!-- netstandard -->
-    <PackageVersion Include="Core.System.Configuration.Install"                       Version="1.1.0" />            <!-- netstandard -->
-    <PackageVersion Include="coverlet.collector"                                      Version="6.0.4" />            <!-- NO DEPS -->
-    <PackageVersion Include="coverlet.msbuild"                                        Version="6.0.4" />            <!-- NO DEPS -->
-    <PackageVersion Include="CurrieTechnologies.Razor.SweetAlert2"                    Version="5.6.0" />            <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="Dapper"                                                  Version="2.1.35" />           <!-- netstandard, net5 -->
-    <PackageVersion Include="Destructurama.Attributed"                                Version="5.0.1" />            <!-- netstandard -->
-    <PackageVersion Include="DnsClient"                                               Version="1.8.0" />            <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="DocumentFormat.OpenXml"                                  Version="3.2.0" />            <!-- netstandard, net8 -->
-    <PackageVersion Include="EFCore.NamingConventions"                                Version="7.0.2" />            <!-- net6 -->
-    <PackageVersion Include="Epsitec.Apache.Avro"                                     Version="0.9.0.7" />          <!-- netstandard -->
-    <PackageVersion Include="Epsitec.LiteDB"                                          Version="3.1.11" />           <!-- netstandard -->
-    <PackageVersion Include="Epsitec.Net.Json.Serialization"                          Version="7.9.4.2421" />       <!-- net6 -->
-    <PackageVersion Include="Epsitec.Nito.Async"                                      Version="2.2.3.2447" />       <!-- netstandard -->
-    <PackageVersion Include="Epsitec.Tools.IBAN4NetStandard"                          Version="1.0.0" />            <!-- netstandard -->
-    <PackageVersion Include="ExcelDataReader.DataSet"                                 Version="3.7.0" />            <!-- netstandard -->
-    <PackageVersion Include="FluentAssertions"                                        Version="7.0.0" />            <!-- netstandard, net6 -->
-    <PackageVersion Include="GdPicture.API"                                           Version="14.2.98" />          <!-- net6 -->
-    <PackageVersion Include="Google.Protobuf"                                         Version="3.29.3" />           <!-- netstandard, net5 -->
-    <PackageVersion Include="GrapeCity.Documents.Imaging"                             Version="7.2.3" />            <!-- netstandard -->
-    <PackageVersion Include="Grpc"                                                    Version="2.46.6" />           <!-- netstandard -->
-    <PackageVersion Include="Grpc.Tools"                                              Version="2.69.0" />           <!-- netstandard -->
-    <PackageVersion Include="HarfBuzzSharp.NativeAssets.Linux"                        Version="8.3.0.1" />          <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="HtmlAgilityPack"                                         Version="1.11.72" />          <!-- netstandard -->
-    <PackageVersion Include="IBAN4Net"                                                Version="2.0.6" />            <!-- netstandard, net6 -->
-    <PackageVersion Include="Ibex.PDF.Creator"                                        Version="6.10.1.3" />         <!-- net6, net8, net9 -->
-    <PackageVersion Include="Ionic.Zlib.Core"                                         Version="1.0.0" />            <!-- netstandard -->
-    <PackageVersion Include="IronOcr"                                                 Version="2024.10.3" />        <!-- * -->
-    <PackageVersion Include="JsonSubTypes"                                            Version="2.0.1" />            <!-- netstandard -->
-    <PackageVersion Include="JunitXml.TestLogger"                                     Version="5.0.0" />            <!-- NO DEPS -->
-    <PackageVersion Include="Leadtools.Barcode"                                       Version="23.0.0.4" />         <!-- netstandard, net6 -->
-    <PackageVersion Include="Lexical.Localization"                                    Version="0.28.3" />           <!-- netstandard -->
-    <PackageVersion Include="MailKit"                                                 Version="4.8.0" />            <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="MediatR"                                                 Version="12.4.1" />           <!-- netstandard, net6 -->
+    <PackageVersion Include="Autofac"                                                 Version="8.2.*" />            <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="Azure.Identity"                                          Version="1.13.*" />           <!-- netstandard -->
+    <PackageVersion Include="Azure.Storage.Blobs"                                     Version="12.23.*" />          <!-- netstandard, net6 -->
+    <PackageVersion Include="BenchmarkDotNet"                                         Version="0.14.*" />           <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="BenchmarkDotNet.TestAdapter"                             Version="0.14.*" />           <!-- netstandard -->
+    <PackageVersion Include="Blazored.LocalStorage"                                   Version="4.5.*" />            <!-- net6, net8 -->
+    <PackageVersion Include="BouncyCastle.Cryptography"                               Version="2.5.*" />            <!-- netstandard, net6 -->
+    <PackageVersion Include="BouncyCastle.NetCore"                                    Version="2.2.*" />            <!-- netstandard -->
+    <PackageVersion Include="Certes"                                                  Version="3.0.*" />            <!-- netstandard, net6 -->
+    <PackageVersion Include="ChartJs.Blazor.Fork"                                     Version="2.0.*" />            <!-- netstandard -->
+    <PackageVersion Include="ClosedXML"                                               Version="0.104.*" />          <!-- netstandard -->
+    <PackageVersion Include="Core.System.Configuration.Install"                       Version="1.1.*" />            <!-- netstandard -->
+    <PackageVersion Include="coverlet.collector"                                      Version="6.0.*" />            <!-- NO DEPS -->
+    <PackageVersion Include="coverlet.msbuild"                                        Version="6.0.*" />            <!-- NO DEPS -->
+    <PackageVersion Include="CurrieTechnologies.Razor.SweetAlert2"                    Version="5.6.*" />            <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="Dapper"                                                  Version="2.15.*" />           <!-- netstandard, net5 -->
+    <PackageVersion Include="Destructurama.Attributed"                                Version="5.0.*" />            <!-- netstandard -->
+    <PackageVersion Include="DnsClient"                                               Version="1.8.*" />            <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="DocumentFormat.OpenXml"                                  Version="3.2.*" />            <!-- netstandard, net8 -->
+    <PackageVersion Include="EFCore.NamingConventions"                                Version="7.0.*" />            <!-- net6 -->
+    <PackageVersion Include="Epsitec.Apache.Avro"                                     Version="0.9.*" />            <!-- netstandard -->
+    <PackageVersion Include="Epsitec.LiteDB"                                          Version="3.1.*" />            <!-- netstandard -->
+    <PackageVersion Include="Epsitec.Net.Json.Serialization"                          Version="7.9.*" />            <!-- net6 -->
+    <PackageVersion Include="Epsitec.Nito.Async"                                      Version="2.2.*" />            <!-- netstandard -->
+    <PackageVersion Include="Epsitec.Tools.IBAN4NetStandard"                          Version="1.0.*" />            <!-- netstandard -->
+    <PackageVersion Include="ExcelDataReader.DataSet"                                 Version="3.7.*" />            <!-- netstandard -->
+    <PackageVersion Include="FluentAssertions"                                        Version="7.0.*" />            <!-- netstandard, net6 -->
+    <PackageVersion Include="GdPicture.API"                                           Version="14.2.*" />           <!-- net6 -->
+    <PackageVersion Include="Google.Protobuf"                                         Version="3.29.*" />           <!-- netstandard, net5 -->
+    <PackageVersion Include="GrapeCity.Documents.Imaging"                             Version="7.2.*" />            <!-- netstandard -->
+    <PackageVersion Include="Grpc"                                                    Version="2.46.*" />           <!-- netstandard -->
+    <PackageVersion Include="Grpc.Tools"                                              Version="2.69.*" />           <!-- netstandard -->
+    <PackageVersion Include="HarfBuzzSharp.NativeAssets.Linux"                        Version="8.3.*" />            <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="HtmlAgilityPack"                                         Version="1.11.*" />           <!-- netstandard -->
+    <PackageVersion Include="IBAN4Net"                                                Version="2.0.*" />            <!-- netstandard, net6 -->
+    <PackageVersion Include="Ibex.PDF.Creator"                                        Version="6.10.*" />           <!-- net6, net8, net9 -->
+    <PackageVersion Include="Ionic.Zlib.Core"                                         Version="1.0.*" />            <!-- netstandard -->
+    <PackageVersion Include="IronOcr"                                                 Version="2024.10.*" />        <!-- * -->
+    <PackageVersion Include="JsonSubTypes"                                            Version="2.0.*" />            <!-- netstandard -->
+    <PackageVersion Include="JunitXml.TestLogger"                                     Version="5.0.*" />            <!-- NO DEPS -->
+    <PackageVersion Include="Leadtools.Barcode"                                       Version="23.0.*" />           <!-- netstandard, net6 -->
+    <PackageVersion Include="Lexical.Localization"                                    Version="0.28.*" />           <!-- netstandard -->
+    <PackageVersion Include="MailKit"                                                 Version="4.8.*" />            <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="MediatR"                                                 Version="12.4.*" />           <!-- netstandard, net6 -->
 
-    <PackageVersion Include="Microsoft.AspNet.WebApi.Client"                          Version="6.0.0" />            <!-- netstandard -->
-    <PackageVersion Include="Microsoft.AspNetCore.Authentication.Abstractions"        Version="2.3.0" />            <!-- netstandard -->
-    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer"           Version="6.0.36" />           <!-- net6 -->
-    <PackageVersion Include="Microsoft.AspNetCore.Components"                         Version="6.0.36" />           <!-- net6 -->
-    <PackageVersion Include="Microsoft.AspNetCore.Components.Authorization"           Version="6.0.36" />           <!-- net6 -->
-    <PackageVersion Include="Microsoft.AspNetCore.Components.DataAnnotations.Validation" Version="3.2.0-rc1.20223.4" /> <!-- netstandard -->
-    <PackageVersion Include="Microsoft.AspNetCore.Components.Forms"                   Version="6.0.36" />           <!-- net6 -->
-    <PackageVersion Include="Microsoft.AspNetCore.Components.Web"                     Version="6.0.36" />           <!-- net6 -->
-    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly"             Version="6.0.36" />           <!-- net6 -->
-    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer"   Version="6.0.36" />           <!-- net6 -->
-    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Server"      Version="6.0.36" />           <!-- net6 -->
-    <PackageVersion Include="Microsoft.AspNetCore.Http.Abstractions"                  Version="2.3.0" />            <!-- netstandard -->
-    <PackageVersion Include="Microsoft.AspNetCore.Http.Connections.Client"            Version="6.0.36" />           <!-- netstandard, net6 -->
-    <PackageVersion Include="Microsoft.AspNetCore.Http.Connections.Common"            Version="6.0.36" />           <!-- netstandard, net6 -->
-    <PackageVersion Include="Microsoft.AspNetCore.Hosting.Abstractions"               Version="2.3.0" />            <!-- netstandard -->
-    <PackageVersion Include="Microsoft.AspNetCore.Localization"                       Version="2.3.0" />            <!-- netstandard -->
-    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Abstractions"                   Version="2.3.0" />            <!-- netstandard -->
-    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Core"                           Version="2.3.0" />            <!-- netstandard -->
-    <PackageVersion Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson"                 Version="6.0.36" />           <!-- net6 -->
-    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing"                        Version="6.0.36" />           <!-- net6 -->
-    <PackageVersion Include="Microsoft.AspNetCore.OpenApi"                            Version="8.0.13" />           <!-- net8 ONLY, NOT FOUND IN PROJS? -->
-    <PackageVersion Include="Microsoft.AspNetCore.SignalR.Client"                     Version="6.0.36" />           <!-- netstandard, net6 -->
-    <PackageVersion Include="Microsoft.AspNetCore.SignalR.Protocols.Json"             Version="6.0.36" />           <!-- netstandard, net6 -->
-    <PackageVersion Include="Microsoft.AspNetCore.SignalR.Protocols.NewtonsoftJson"   Version="6.0.36" />           <!-- netstandard, net6 -->
-    <PackageVersion Include="Microsoft.AspNetCore.TestHost"                           Version="6.0.36" />           <!-- net6 -->
-    <PackageVersion Include="Microsoft.AspNetCore.WebUtilities"                       Version="2.3.0" />            <!-- netstandard -->
+    <PackageVersion Include="Microsoft.AspNet.WebApi.Client"                          Version="6.0.*" />            <!-- netstandard -->
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.Abstractions"        Version="2.3.*" />            <!-- netstandard -->
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer"           Version="6.0.*" />            <!-- net6 -->
+    <PackageVersion Include="Microsoft.AspNetCore.Components"                         Version="6.0.*" />            <!-- net6 -->
+    <PackageVersion Include="Microsoft.AspNetCore.Components.Authorization"           Version="6.0.*" />            <!-- net6 -->
+    <PackageVersion Include="Microsoft.AspNetCore.Components.DataAnnotations.Validation" Version="3.2.*-*" />       <!-- netstandard -->
+    <PackageVersion Include="Microsoft.AspNetCore.Components.Forms"                   Version="6.0.*" />            <!-- net6 -->
+    <PackageVersion Include="Microsoft.AspNetCore.Components.Web"                     Version="6.0.*" />            <!-- net6 -->
+    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly"             Version="6.0.*" />            <!-- net6 -->
+    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer"   Version="6.0.*" />            <!-- net6 -->
+    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Server"      Version="6.0.*" />            <!-- net6 -->
+    <PackageVersion Include="Microsoft.AspNetCore.Http.Abstractions"                  Version="2.3.*" />            <!-- netstandard -->
+    <PackageVersion Include="Microsoft.AspNetCore.Http.Connections.Client"            Version="6.0.*" />            <!-- netstandard, net6 -->
+    <PackageVersion Include="Microsoft.AspNetCore.Http.Connections.Common"            Version="6.0.*" />            <!-- netstandard, net6 -->
+    <PackageVersion Include="Microsoft.AspNetCore.Hosting.Abstractions"               Version="2.3.*" />            <!-- netstandard -->
+    <PackageVersion Include="Microsoft.AspNetCore.Localization"                       Version="2.3.*" />            <!-- netstandard -->
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Abstractions"                   Version="2.3.*" />            <!-- netstandard -->
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Core"                           Version="2.3.*" />            <!-- netstandard -->
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson"                 Version="6.0.*" />            <!-- net6 -->
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing"                        Version="6.0.*" />            <!-- net6 -->
+    <PackageVersion Include="Microsoft.AspNetCore.OpenApi"                            Version="8.0.*" />            <!-- net8 ONLY, NOT FOUND IN PROJS? -->
+    <PackageVersion Include="Microsoft.AspNetCore.SignalR.Client"                     Version="6.0.*" />            <!-- netstandard, net6 -->
+    <PackageVersion Include="Microsoft.AspNetCore.SignalR.Protocols.Json"             Version="6.0.*" />            <!-- netstandard, net6 -->
+    <PackageVersion Include="Microsoft.AspNetCore.SignalR.Protocols.NewtonsoftJson"   Version="6.0.*" />            <!-- netstandard, net6 -->
+    <PackageVersion Include="Microsoft.AspNetCore.TestHost"                           Version="6.0.*" />            <!-- net6 -->
+    <PackageVersion Include="Microsoft.AspNetCore.WebUtilities"                       Version="2.3.*" />            <!-- netstandard -->
 
-    <PackageVersion Include="Microsoft.Build"                                         Version="17.3.2" />           <!-- net6 -->
-    <PackageVersion Include="Microsoft.Build.Locator"                                 Version="1.7.8" />            <!-- net6 -->
-    <PackageVersion Include="Microsoft.Build.Tasks.Core"                              Version="17.3.2" />           <!-- net6 -->
-    <PackageVersion Include="Microsoft.Build.Utilities.Core"                          Version="17.3.2" />           <!-- netstandard, net6 -->
-    <PackageVersion Include="Microsoft.CodeAnalysis.Common"                           Version="4.9.2" />            <!-- netstandard, net6 -->
-    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp"                           Version="4.9.2" />            <!-- netstandard, net6 -->
-    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Features"                  Version="4.9.2" />            <!-- netstandard, net6 -->
-    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces"                Version="4.9.2" />            <!-- netstandard, net6 -->
-    <PackageVersion Include="Microsoft.CodeAnalysis.Features"                         Version="4.9.2" />            <!-- netstandard, net6 -->
-    <PackageVersion Include="Microsoft.CodeAnalysis.Scripting.Common"                 Version="4.9.2" />            <!-- netstandard, net6 -->
-    <PackageVersion Include="Microsoft.CodeAnalysis.VisualBasic.Workspaces"           Version="4.9.2" />            <!-- netstandard, net6 -->
-    <PackageVersion Include="Microsoft.CodeAnalysis.Workspaces.Common"                Version="4.9.2" />            <!-- netstandard, net6 -->
-    <PackageVersion Include="Microsoft.CodeAnalysis.Workspaces.MSBuild"               Version="4.9.2" />            <!-- netstandard, net6 -->
-    <PackageVersion Include="Microsoft.CSharp"                                        Version="4.7.0" />            <!-- netstandard -->
-    <PackageVersion Include="Microsoft.Data.SQLite"                                   Version="9.0.2" />            <!-- netstandard -->
-    <PackageVersion Include="Microsoft.Data.Sqlite.Core"                              Version="9.0.2" />            <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="Microsoft.EntityFrameworkCore"                           Version="7.0.20" />           <!-- net6 -->
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design"                    Version="7.0.20" />           <!-- net6 -->
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite"                    Version="7.0.20" />           <!-- net6 -->
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer"                 Version="7.0.20" />           <!-- net6 -->
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Tools"                     Version="7.0.20" />           <!-- net6 -->
+    <PackageVersion Include="Microsoft.Build"                                         Version="17.3.*" />           <!-- net6 -->
+    <PackageVersion Include="Microsoft.Build.Locator"                                 Version="1.7.*" />            <!-- net6 -->
+    <PackageVersion Include="Microsoft.Build.Tasks.Core"                              Version="17.3.*" />           <!-- net6 -->
+    <PackageVersion Include="Microsoft.Build.Utilities.Core"                          Version="17.3.*" />           <!-- netstandard, net6 -->
+    <PackageVersion Include="Microsoft.CodeAnalysis.Common"                           Version="4.9.*" />            <!-- netstandard, net6 -->
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp"                           Version="4.9.*" />            <!-- netstandard, net6 -->
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Features"                  Version="4.9.*" />            <!-- netstandard, net6 -->
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces"                Version="4.9.*" />            <!-- netstandard, net6 -->
+    <PackageVersion Include="Microsoft.CodeAnalysis.Features"                         Version="4.9.*" />            <!-- netstandard, net6 -->
+    <PackageVersion Include="Microsoft.CodeAnalysis.Scripting.Common"                 Version="4.9.*" />            <!-- netstandard, net6 -->
+    <PackageVersion Include="Microsoft.CodeAnalysis.VisualBasic.Workspaces"           Version="4.9.*" />            <!-- netstandard, net6 -->
+    <PackageVersion Include="Microsoft.CodeAnalysis.Workspaces.Common"                Version="4.9.*" />            <!-- netstandard, net6 -->
+    <PackageVersion Include="Microsoft.CodeAnalysis.Workspaces.MSBuild"               Version="4.9.*" />            <!-- netstandard, net6 -->
+    <PackageVersion Include="Microsoft.CSharp"                                        Version="4.7.*" />            <!-- netstandard -->
+    <PackageVersion Include="Microsoft.Data.SQLite"                                   Version="9.0.*" />            <!-- netstandard -->
+    <PackageVersion Include="Microsoft.Data.Sqlite.Core"                              Version="9.0.*" />            <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="Microsoft.EntityFrameworkCore"                           Version="7.0.*" />            <!-- net6 -->
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design"                    Version="7.0.*" />            <!-- net6 -->
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite"                    Version="7.0.*" />            <!-- net6 -->
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer"                 Version="7.0.*" />            <!-- net6 -->
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Tools"                     Version="7.0.*" />            <!-- net6 -->
 
-    <PackageVersion Include="Microsoft.Extensions.ApiDescription.Server"              Version="9.0.2" />            <!-- NO DEPS -->
-    <PackageVersion Include="Microsoft.Extensions.Caching.Memory"                     Version="8.0.1" />            <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="Microsoft.Extensions.Configuration"                      Version="8.0.0" />            <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions"         Version="8.0.0" />            <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="Microsoft.Extensions.Configuration.Binder"               Version="8.0.2" />            <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="Microsoft.Extensions.Configuration.CommandLine"          Version="8.0.0" />            <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="8.0.0" />            <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="Microsoft.Extensions.Configuration.Json"                 Version="8.0.1" />            <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="Microsoft.Extensions.Configuration.UserSecrets"          Version="8.0.1" />            <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection"                Version="8.0.1" />            <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions"   Version="8.0.2" />            <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="Microsoft.Extensions.FileProviders.Embedded"             Version="6.0.36" />           <!-- netstandard, net6 -->
-    <PackageVersion Include="Microsoft.Extensions.Hosting"                            Version="8.0.1" />            <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions"               Version="8.0.1" />            <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="Microsoft.Extensions.Http"                               Version="8.0.1" />            <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="Microsoft.Extensions.Http.Polly"                         Version="8.0.10" />           <!-- netstandard -->
-    <PackageVersion Include="Microsoft.Extensions.Localization"                       Version="6.0.36" />           <!-- netstandard, net6 -->
-    <PackageVersion Include="Microsoft.Extensions.Localization.Abstractions"          Version="6.0.36" />           <!-- netstandard, net6 -->
-    <PackageVersion Include="Microsoft.Extensions.Logging"                            Version="8.0.1" />            <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions"               Version="8.0.2" />            <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="Microsoft.Extensions.Logging.Configuration"              Version="8.0.1" />            <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="Microsoft.Extensions.Logging.Console"                    Version="8.0.1" />            <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="Microsoft.Extensions.Logging.Debug"                      Version="8.0.1" />            <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="Microsoft.Extensions.Logging.TraceSource"                Version="8.0.1" />            <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="Microsoft.Extensions.ObjectPool"                         Version="6.0.36" />           <!-- netstandard, net6 -->
-    <PackageVersion Include="Microsoft.Extensions.Options"                            Version="8.0.2" />            <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions"    Version="8.0.0" />            <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="Microsoft.Extensions.Options.DataAnnotations"            Version="8.0.0" />            <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="Microsoft.Extensions.ApiDescription.Server"              Version="9.0.*" />            <!-- NO DEPS -->
+    <PackageVersion Include="Microsoft.Extensions.Caching.Memory"                     Version="8.0.*" />            <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="Microsoft.Extensions.Configuration"                      Version="8.0.*" />            <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions"         Version="8.0.*" />            <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Binder"               Version="8.0.*" />            <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="Microsoft.Extensions.Configuration.CommandLine"          Version="8.0.*" />            <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="8.0.*" />            <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Json"                 Version="8.0.*" />            <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="Microsoft.Extensions.Configuration.UserSecrets"          Version="8.0.*" />            <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection"                Version="8.0.*" />            <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions"   Version="8.0.*" />            <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="Microsoft.Extensions.FileProviders.Embedded"             Version="6.0.*" />            <!-- netstandard, net6 -->
+    <PackageVersion Include="Microsoft.Extensions.Hosting"                            Version="8.0.*" />            <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions"               Version="8.0.*" />            <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="Microsoft.Extensions.Http"                               Version="8.0.*" />            <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="Microsoft.Extensions.Http.Polly"                         Version="8.0.*" />            <!-- netstandard -->
+    <PackageVersion Include="Microsoft.Extensions.Localization"                       Version="6.0.*" />            <!-- netstandard, net6 -->
+    <PackageVersion Include="Microsoft.Extensions.Localization.Abstractions"          Version="6.0.*" />            <!-- netstandard, net6 -->
+    <PackageVersion Include="Microsoft.Extensions.Logging"                            Version="8.0.*" />            <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions"               Version="8.0.*" />            <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="Microsoft.Extensions.Logging.Configuration"              Version="8.0.*" />            <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="Microsoft.Extensions.Logging.Console"                    Version="8.0.*" />            <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="Microsoft.Extensions.Logging.Debug"                      Version="8.0.*" />            <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="Microsoft.Extensions.Logging.TraceSource"                Version="8.0.*" />            <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="Microsoft.Extensions.ObjectPool"                         Version="6.0.*" />            <!-- netstandard, net6 -->
+    <PackageVersion Include="Microsoft.Extensions.Options"                            Version="8.0.*" />            <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions"    Version="8.0.*" />            <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="Microsoft.Extensions.Options.DataAnnotations"            Version="8.0.*" />            <!-- netstandard, net6, net8 -->
 
-    <PackageVersion Include="Microsoft.IdentityModel.Tokens"                          Version="8.5.0" />            <!-- netstandard, net6, net8, net9 -->
-    <PackageVersion Include="Microsoft.IdentityModel.JsonWebTokens"                   Version="8.5.0" />            <!-- netstandard, net6, net8, net9 -->
-    <PackageVersion Include="Microsoft.IdentityModel.Protocols.OpenIdConnect"         Version="8.5.0" />            <!-- netstandard, net6, net8, net9 -->
+    <PackageVersion Include="Microsoft.IdentityModel.Tokens"                          Version="8.5.*" />            <!-- netstandard, net6, net8, net9 -->
+    <PackageVersion Include="Microsoft.IdentityModel.JsonWebTokens"                   Version="8.5.*" />            <!-- netstandard, net6, net8, net9 -->
+    <PackageVersion Include="Microsoft.IdentityModel.Protocols.OpenIdConnect"         Version="8.5.*" />            <!-- netstandard, net6, net8, net9 -->
 
-    <PackageVersion Include="Microsoft.NET.Test.Sdk"                                  Version="17.13.0" />          <!-- netcoreapp3.1 -->
-    <PackageVersion Include="Microsoft.Office.Interop.Word"                           Version="15.0.4797.1004" />   <!-- netstandard -->
-    <PackageVersion Include="Microsoft.Playwright"                                    Version="1.49.0" />           <!-- netstandard -->
-    <PackageVersion Include="Microsoft.QualityTools.Testing.Fakes"                    Version="16.11.230815" />     <!-- netstandard -->
-    <PackageVersion Include="Microsoft.Reactive.Testing"                              Version="6.0.1" />            <!-- net4, netstandard, net6 -->
-    <PackageVersion Include="Microsoft.VisualStudio.Web.CodeGeneration.Design"        Version="6.0.18" />           <!-- net6 -->
-    <PackageVersion Include="Microsoft.Web.Services3"                                 Version="3.0.0" />            <!-- NO DEPS -->
-    <PackageVersion Include="Microsoft.Win32.Registry"                                Version="5.0.0" />            <!-- netstandard, * -->
+    <PackageVersion Include="Microsoft.NET.Test.Sdk"                                  Version="17.13.*" />          <!-- netcoreapp3.1 -->
+    <PackageVersion Include="Microsoft.Office.Interop.Word"                           Version="15.0.*" />           <!-- netstandard -->
+    <PackageVersion Include="Microsoft.Playwright"                                    Version="1.49.*" />           <!-- netstandard -->
+    <PackageVersion Include="Microsoft.QualityTools.Testing.Fakes"                    Version="16.11.*" />          <!-- netstandard -->
+    <PackageVersion Include="Microsoft.Reactive.Testing"                              Version="6.0.*" />            <!-- net4, netstandard, net6 -->
+    <PackageVersion Include="Microsoft.VisualStudio.Web.CodeGeneration.Design"        Version="6.0.*" />            <!-- net6 -->
+    <PackageVersion Include="Microsoft.Web.Services3"                                 Version="3.0.*" />            <!-- NO DEPS -->
+    <PackageVersion Include="Microsoft.Win32.Registry"                                Version="5.0.*" />            <!-- netstandard, * -->
 
-    <PackageVersion Include="Moq"                                                     Version="4.20.72" />          <!-- netstandard, net6 -->
-    <PackageVersion Include="MSTest.TestAdapter"                                      Version="3.8.2" />            <!-- netstandard, net6, net8, net9 -->
-    <PackageVersion Include="MSTest.TestFramework"                                    Version="3.8.2" />            <!-- netstandard, net6, net8, net9 -->
-    <PackageVersion Include="MudBlazor"                                               Version="6.21.0" />           <!-- net6, net8 -->
-    <PackageVersion Include="MudBlazor.ThemeManager"                                  Version="1.1.0" />            <!-- net6 -->
-    <PackageVersion Include="Mvp.Xml"                                                 Version="3.1.0" />            <!-- netstandard -->
+    <PackageVersion Include="Moq"                                                     Version="4.20.*" />           <!-- netstandard, net6 -->
+    <PackageVersion Include="MSTest.TestAdapter"                                      Version="3.8.*" />            <!-- netstandard, net6, net8, net9 -->
+    <PackageVersion Include="MSTest.TestFramework"                                    Version="3.8.*" />            <!-- netstandard, net6, net8, net9 -->
+    <PackageVersion Include="MudBlazor"                                               Version="6.21.*" />           <!-- net6, net8 -->
+    <PackageVersion Include="MudBlazor.ThemeManager"                                  Version="1.1.*" />            <!-- net6 -->
+    <PackageVersion Include="Mvp.Xml"                                                 Version="3.1.*" />            <!-- netstandard -->
 
-    <PackageVersion Include="Nancy"                                                   Version="2.0.0" />            <!-- netstandard, NET4.5 -->
-    <PackageVersion Include="NEventStore"                                             Version="9.2.0" />            <!-- netstandard -->
-    <PackageVersion Include="NEventStore.Persistence.Sql"                             Version="9.3.1" />            <!-- netstandard -->
-    <PackageVersion Include="Newtonsoft.Json"                                         Version="13.0.3" />           <!-- netstandard, net6 -->
-    <PackageVersion Include="NGettext"                                                Version="0.6.7" />            <!-- netstandard, * -->
-    <PackageVersion Include="Nito.Disposables"                                        Version="2.5.0" />            <!-- netstandard, net8 -->
-    <PackageVersion Include="Npgsql"                                                  Version="9.0.2" />            <!-- net6, net8 -->
-    <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL"                   Version="7.0.18" />           <!-- net6 -->
-    <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL.Design"            Version="1.1.0" />            <!-- netstandard -->
-    <PackageVersion Include="NLog"                                                    Version="5.4.0" />            <!-- netstandard -->
-    <PackageVersion Include="NLog.Web.AspNetCore"                                     Version="5.4.0" />            <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="NUnit"                                                   Version="4.3.2" />            <!-- net6, net8 -->
-    <PackageVersion Include="NUnit3TestAdapter"                                       Version="4.6.0" />            <!-- NO DEPS -->
-    <PackageVersion Include="ObjectsComparer"                                         Version="1.4.1" />            <!-- netstandard -->
-    <PackageVersion Include="OneOf"                                                   Version="3.0.271" />          <!-- netstandard -->
-    <PackageVersion Include="OneOf.Extended"                                          Version="3.0.271" />          <!-- netstandard -->
-    <PackageVersion Include="OneOf.SourceGenerator"                                   Version="3.0.271" />          <!-- netstandard -->
+    <PackageVersion Include="Nancy"                                                   Version="2.0.*" />            <!-- netstandard, NET4.5 -->
+    <PackageVersion Include="NEventStore"                                             Version="9.2.*" />            <!-- netstandard -->
+    <PackageVersion Include="NEventStore.Persistence.Sql"                             Version="9.3.*" />            <!-- netstandard -->
+    <PackageVersion Include="Newtonsoft.Json"                                         Version="13.0.*" />           <!-- netstandard, net6 -->
+    <PackageVersion Include="NGettext"                                                Version="0.6.*" />            <!-- netstandard, * -->
+    <PackageVersion Include="Nito.Disposables"                                        Version="2.5.*" />            <!-- netstandard, net8 -->
+    <PackageVersion Include="Npgsql"                                                  Version="9.0.*" />            <!-- net6, net8 -->
+    <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL"                   Version="7.0.*" />            <!-- net6 -->
+    <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL.Design"            Version="1.1.*" />            <!-- netstandard -->
+    <PackageVersion Include="NLog"                                                    Version="5.4.*" />            <!-- netstandard -->
+    <PackageVersion Include="NLog.Web.AspNetCore"                                     Version="5.4.*" />            <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="NUnit"                                                   Version="4.3.*" />            <!-- net6, net8 -->
+    <PackageVersion Include="NUnit3TestAdapter"                                       Version="4.6.*" />            <!-- NO DEPS -->
+    <PackageVersion Include="ObjectsComparer"                                         Version="1.4.*" />            <!-- netstandard -->
+    <PackageVersion Include="OneOf"                                                   Version="3.0.*" />            <!-- netstandard -->
+    <PackageVersion Include="OneOf.Extended"                                          Version="3.0.*" />            <!-- netstandard -->
+    <PackageVersion Include="OneOf.SourceGenerator"                                   Version="3.0.*" />            <!-- netstandard -->
 
-    <PackageVersion Include="OpenTelemetry"                                           Version="1.9.0" />            <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="OpenTelemetry.Api"                                       Version="1.9.0" />            <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="OpenTelemetry.Exporter.Console"                          Version="1.9.0" />            <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol"            Version="1.9.0" />            <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="OpenTelemetry.Extensions.Hosting"                        Version="1.9.0" />            <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore"                Version="1.9.0" />            <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="OpenTelemetry.Instrumentation.EntityFrameworkCore"       Version="1.0.0-beta.12" />    <!-- netstandard -->
-    <PackageVersion Include="OpenTelemetry.Instrumentation.Http"                      Version="1.9.0" />            <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="OpenTelemetry"                                           Version="1.9.*" />            <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="OpenTelemetry.Api"                                       Version="1.9.*" />            <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="OpenTelemetry.Exporter.Console"                          Version="1.9.*" />            <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol"            Version="1.9.*" />            <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting"                        Version="1.9.*" />            <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore"                Version="1.9.*" />            <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="OpenTelemetry.Instrumentation.EntityFrameworkCore"       Version="1.0.*-*" />          <!-- netstandard -->
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Http"                      Version="1.9.*" />            <!-- netstandard, net6, net8 -->
 
-    <PackageVersion Include="OrchardCore.Localization.Core"                           Version="1.7.2" />            <!-- net6 -->
-    <PackageVersion Include="PemUtils"                                                Version="3.0.0.82" />         <!-- netstandard -->
-    <PackageVersion Include="Polly"                                                   Version="8.5.2" />            <!-- netstandard, net6 -->
-    <PackageVersion Include="Portable.BouncyCastle"                                   Version="1.9.0" />            <!-- netstandard -->
-    <PackageVersion Include="QRCoder"                                                 Version="1.6.0" />            <!-- netstandard, net6, net6-win -->
-    <PackageVersion Include="QRCoder-ImageSharp"                                      Version="0.10.0" />           <!-- netstandard, net8, NOT USED -> REPLACEMENT? -->
-    <PackageVersion Include="Quartz"                                                  Version="3.13.1" />           <!-- netstandard, net6 -->
-    <PackageVersion Include="Quartz.AspNetCore"                                       Version="3.13.1" />           <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="ReactiveUI"                                              Version="20.1.63" />          <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="ReactiveUI.WPF"                                          Version="19.5.41" />          <!-- net6-win, net8-win -->
-    <PackageVersion Include="ReHackt.Extensions.Options.Validation"                   Version="8.0.3" />            <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="OrchardCore.Localization.Core"                           Version="1.7.*" />            <!-- net6 -->
+    <PackageVersion Include="PemUtils"                                                Version="3.0.*" />            <!-- netstandard -->
+    <PackageVersion Include="Polly"                                                   Version="8.5.*" />            <!-- netstandard, net6 -->
+    <PackageVersion Include="Portable.BouncyCastle"                                   Version="1.9.*" />            <!-- netstandard -->
+    <PackageVersion Include="QRCoder"                                                 Version="1.6.*" />            <!-- netstandard, net6, net6-win -->
+    <PackageVersion Include="QRCoder-ImageSharp"                                      Version="0.10.*" />           <!-- netstandard, net8, NOT USED -> REPLACEMENT? -->
+    <PackageVersion Include="Quartz"                                                  Version="3.13.*" />           <!-- netstandard, net6 -->
+    <PackageVersion Include="Quartz.AspNetCore"                                       Version="3.13.*" />           <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="ReactiveUI"                                              Version="20.1.*" />           <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="ReactiveUI.WPF"                                          Version="19.5.*" />           <!-- net6-win, net8-win -->
+    <PackageVersion Include="ReHackt.Extensions.Options.Validation"                   Version="8.0.*" />            <!-- netstandard, net6, net8 -->
 
-    <PackageVersion Include="Serilog"                                                 Version="4.2.0" />            <!-- netstandard, net6, net8, net9 -->
-    <PackageVersion Include="Serilog.AspNetCore"                                      Version="8.0.3" />            <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="Serilog.Enrichers.CorrelationId"                         Version="3.0.1" />            <!-- netstandard -->
-    <PackageVersion Include="Serilog.Exceptions"                                      Version="8.4.0" />            <!-- netstandard, net6 -->
-    <PackageVersion Include="Serilog.Expressions"                                     Version="5.0.0" />            <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="Serilog.Extensions.Hosting"                              Version="8.0.0" />            <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="Serilog.Formatting.Compact"                              Version="3.0.0" />            <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="Serilog.Settings.Configuration"                          Version="8.0.4" />            <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="Serilog.Sinks.Async"                                     Version="2.1.0" />            <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="Serilog.Sinks.Console"                                   Version="6.0.0" />            <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="Serilog.Sinks.Debug"                                     Version="3.0.0" />            <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="Serilog.Sinks.File"                                      Version="6.0.0" />            <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="Serilog.Sinks.File.Archive"                              Version="1.0.6" />            <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="Serilog.Sinks.Seq"                                       Version="8.0.0" />            <!-- netstandard, net6 -->
-    <PackageVersion Include="SerilogTraceListener"                                    Version="3.2.0" />            <!-- netstandard -->
+    <PackageVersion Include="Serilog"                                                 Version="4.2.*" />            <!-- netstandard, net6, net8, net9 -->
+    <PackageVersion Include="Serilog.AspNetCore"                                      Version="8.0.*" />            <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="Serilog.Enrichers.CorrelationId"                         Version="3.0.*" />            <!-- netstandard -->
+    <PackageVersion Include="Serilog.Exceptions"                                      Version="8.4.*" />            <!-- netstandard, net6 -->
+    <PackageVersion Include="Serilog.Expressions"                                     Version="5.0.*" />            <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="Serilog.Extensions.Hosting"                              Version="8.0.*" />            <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="Serilog.Formatting.Compact"                              Version="3.0.*" />            <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="Serilog.Settings.Configuration"                          Version="8.0.*" />            <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="Serilog.Sinks.Async"                                     Version="2.1.*" />            <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="Serilog.Sinks.Console"                                   Version="6.0.*" />            <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="Serilog.Sinks.Debug"                                     Version="3.0.*" />            <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="Serilog.Sinks.File"                                      Version="6.0.*" />            <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="Serilog.Sinks.File.Archive"                              Version="1.0.*" />            <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="Serilog.Sinks.Seq"                                       Version="8.0.*" />            <!-- netstandard, net6 -->
+    <PackageVersion Include="SerilogTraceListener"                                    Version="3.2.*" />            <!-- netstandard -->
 
-    <PackageVersion Include="SharpZipLib"                                             Version="1.4.2" />            <!-- netstandard, net6 -->
-    <PackageVersion Include="SharpZipLib.NETStandard"                                 Version="1.0.7" />            <!-- netstandard -->
-    <PackageVersion Include="ShellProgressBar"                                        Version="5.2.0" />            <!-- netstandard -->
-    <PackageVersion Include="SixLabors.ImageSharp"                                    Version="3.1.6" />            <!-- net6 -->
-    <PackageVersion Include="SixLabors.ImageSharp.Drawing"                            Version="2.1.5" />            <!-- net6 -->
-    <PackageVersion Include="SkiaSharp"                                               Version="3.116.1" />          <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="SkiaSharp.NativeAssets.Linux"                            Version="3.116.1" />          <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="SkiaSharp.NativeAssets.Linux.NoDependencies"             Version="3.116.1" />          <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="SkiaSharp.Views.Blazor"                                  Version="3.116.1" />          <!-- net6, net8 -->
+    <PackageVersion Include="SharpZipLib"                                             Version="1.4.*" />            <!-- netstandard, net6 -->
+    <PackageVersion Include="SharpZipLib.NETStandard"                                 Version="1.0.*" />            <!-- netstandard -->
+    <PackageVersion Include="ShellProgressBar"                                        Version="5.2.*" />            <!-- netstandard -->
+    <PackageVersion Include="SixLabors.ImageSharp"                                    Version="3.1.*" />            <!-- net6 -->
+    <PackageVersion Include="SixLabors.ImageSharp.Drawing"                            Version="2.1.*" />            <!-- net6 -->
+    <PackageVersion Include="SkiaSharp"                                               Version="3.116.*" />          <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="SkiaSharp.NativeAssets.Linux"                            Version="3.116.*" />          <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="SkiaSharp.NativeAssets.Linux.NoDependencies"             Version="3.116.*" />          <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="SkiaSharp.Views.Blazor"                                  Version="3.116.*" />          <!-- net6, net8 -->
 
-    <PackageVersion Include="SonarAnalyzer.CSharp"                                    Version="10.4.0.108396" />    <!-- NO DEPS -->
-    <PackageVersion Include="Spire.PDF"                                               Version="10.11.1" />          <!-- net6 -->
-    <PackageVersion Include="StyleCop.Analyzers"                                      Version="1.1.118" />          <!-- NO DEPS -->
-    <PackageVersion Include="SuperSocket.ClientEngine.Core"                           Version="0.10.0" />           <!-- netstandard -->
-    <PackageVersion Include="Swashbuckle.AspNetCore"                                  Version="7.2.0" />            <!-- netstandard -->
-    <PackageVersion Include="Swashbuckle.AspNetCore.SwaggerGen"                       Version="7.2.0" />            <!-- netstandard, net6, net8, net9 -->
-    <PackageVersion Include="Swashbuckle.AspNetCore.SwaggerUI"                        Version="7.2.0" />            <!-- netstandard, net6, net8, net9 -->
+    <PackageVersion Include="SonarAnalyzer.CSharp"                                    Version="10.4.*" />           <!-- NO DEPS -->
+    <PackageVersion Include="Spire.PDF"                                               Version="10.11.*" />          <!-- net6 -->
+    <PackageVersion Include="StyleCop.Analyzers"                                      Version="1.1.*" />            <!-- NO DEPS -->
+    <PackageVersion Include="SuperSocket.ClientEngine.Core"                           Version="0.10.*" />           <!-- netstandard -->
+    <PackageVersion Include="Swashbuckle.AspNetCore"                                  Version="7.2.*" />            <!-- netstandard -->
+    <PackageVersion Include="Swashbuckle.AspNetCore.SwaggerGen"                       Version="7.2.*" />            <!-- netstandard, net6, net8, net9 -->
+    <PackageVersion Include="Swashbuckle.AspNetCore.SwaggerUI"                        Version="7.2.*" />            <!-- netstandard, net6, net8, net9 -->
 
-    <PackageVersion Include="Syncfusion.Blazor.SfPdfViewer"                           Version="28.1.39" />          <!-- net6, net8, net9 -->
-    <PackageVersion Include="Syncfusion.Blazor.Themes"                                Version="28.1.39" />          <!-- net6, net8, net9 -->
-    <PackageVersion Include="Syncfusion.DocIO.Net.Core"                               Version="28.1.39" />          <!-- net6, net8, net9 -->
-    <PackageVersion Include="Syncfusion.DocIORenderer.Net.Core"                       Version="28.1.39" />          <!-- net6, net8, net9 -->
-    <PackageVersion Include="Syncfusion.EJ2.PdfViewer.AspNet.Core.Windows"            Version="28.1.37" />          <!-- net6, net8, net9 (DEPRECATED) -->
-    <PackageVersion Include="Syncfusion.Licensing"                                    Version="28.1.39" />          <!-- NO DEPS -->
-    <PackageVersion Include="Syncfusion.Pdf.Imaging.Net.Core"                         Version="28.1.39" />          <!-- netstandard, net6, net8, net9  -->
+    <PackageVersion Include="Syncfusion.Blazor.SfPdfViewer"                           Version="28.1.*" />           <!-- net6, net8, net9 -->
+    <PackageVersion Include="Syncfusion.Blazor.Themes"                                Version="28.1.*" />           <!-- net6, net8, net9 -->
+    <PackageVersion Include="Syncfusion.DocIO.Net.Core"                               Version="28.1.*" />           <!-- net6, net8, net9 -->
+    <PackageVersion Include="Syncfusion.DocIORenderer.Net.Core"                       Version="28.1.*" />           <!-- net6, net8, net9 -->
+    <PackageVersion Include="Syncfusion.EJ2.PdfViewer.AspNet.Core.Windows"            Version="28.1.*" />           <!-- net6, net8, net9 (DEPRECATED) -->
+    <PackageVersion Include="Syncfusion.Licensing"                                    Version="28.1.*" />           <!-- NO DEPS -->
+    <PackageVersion Include="Syncfusion.Pdf.Imaging.Net.Core"                         Version="28.1.*" />           <!-- netstandard, net6, net8, net9  -->
 
-    <PackageVersion Include="System.Buffers"                                          Version="4.6.0" />            <!-- netstandard -->
-    <PackageVersion Include="System.Collections"                                      Version="4.3.0" />            <!-- netstandard -->
-    <PackageVersion Include="System.Collections.Immutable"                            Version="8.0.0" />            <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="System.ComponentModel.Annotations"                       Version="5.0.0" />            <!-- netstandard, * -->
-    <PackageVersion Include="System.Configuration.ConfigurationManager"               Version="8.0.1" />            <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="System.Buffers"                                          Version="4.6.*" />            <!-- netstandard -->
+    <PackageVersion Include="System.Collections"                                      Version="4.3.*" />            <!-- netstandard -->
+    <PackageVersion Include="System.Collections.Immutable"                            Version="8.0.*" />            <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="System.ComponentModel.Annotations"                       Version="5.0.*" />            <!-- netstandard, * -->
+    <PackageVersion Include="System.Configuration.ConfigurationManager"               Version="8.0.*" />            <!-- netstandard, net6, net8 -->
 
-    <PackageVersion Include="System.Data.SqlClient"                                   Version="4.9.0" />            <!-- netstandard, net6, net8  -->
-    <PackageVersion Include="System.Data.SQLite"                                      Version="1.0.119" />          <!-- netstandard -->
-    <PackageVersion Include="System.Data.SQLite.Core"                                 Version="1.0.119" />          <!-- netstandard -->
-    <PackageVersion Include="System.Diagnostics.Debug"                                Version="4.3.0" />            <!-- netstandard, * -->
-    <PackageVersion Include="System.Diagnostics.Process"                              Version="4.3.0" />            <!-- netstandard, * -->
-    <PackageVersion Include="System.Diagnostics.TextWriterTraceListener"              Version="4.3.0" />            <!-- netstandard, * -->
-    <PackageVersion Include="System.Diagnostics.TraceSource"                          Version="4.3.0" />            <!-- netstandard, * -->
-    <PackageVersion Include="System.Drawing.Common"                                   Version="8.0.13" />           <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="System.Formats.Asn1"                                     Version="8.0.2" />            <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="System.Globalization.Extensions"                         Version="4.3.0" />            <!-- netstandard, * -->
+    <PackageVersion Include="System.Data.SqlClient"                                   Version="4.9.*" />            <!-- netstandard, net6, net8  -->
+    <PackageVersion Include="System.Data.SQLite"                                      Version="1.0.*" />            <!-- netstandard -->
+    <PackageVersion Include="System.Data.SQLite.Core"                                 Version="1.0.*" />            <!-- netstandard -->
+    <PackageVersion Include="System.Diagnostics.Debug"                                Version="4.3.*" />            <!-- netstandard, * -->
+    <PackageVersion Include="System.Diagnostics.Process"                              Version="4.3.*" />            <!-- netstandard, * -->
+    <PackageVersion Include="System.Diagnostics.TextWriterTraceListener"              Version="4.3.*" />            <!-- netstandard, * -->
+    <PackageVersion Include="System.Diagnostics.TraceSource"                          Version="4.3.*" />            <!-- netstandard, * -->
+    <PackageVersion Include="System.Drawing.Common"                                   Version="8.0.*" />            <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="System.Formats.Asn1"                                     Version="8.0.*" />            <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="System.Globalization.Extensions"                         Version="4.3.*" />            <!-- netstandard, * -->
 
-    <PackageVersion Include="System.IdentityModel.Tokens.Jwt"                         Version="8.5.0" />            <!-- netstandard, net6, net8, net9 -->
-    <PackageVersion Include="System.Interactive"                                      Version="6.0.1" />            <!-- netstandard, net6 -->
-    <PackageVersion Include="System.IO.FileSystem.Primitives"                         Version="4.3.0" />            <!-- netstandard, * -->
-    <PackageVersion Include="System.IO.Packaging"                                     Version="8.0.1" />            <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="System.IO.Pipelines"                                     Version="8.0.0" />            <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="System.Linq.Async"                                       Version="6.0.1" />            <!-- netstandard, net6 -->
-    <PackageVersion Include="System.Management"                                       Version="8.0.0" />            <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="System.Memory"                                           Version="4.5.5" />            <!-- netstandard -->
-    <PackageVersion Include="System.Net.Http"                                         Version="4.3.4" />            <!-- netstandard, * -->
-    <PackageVersion Include="System.Net.Http.Json"                                    Version="8.0.1" />            <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="System.Net.Requests"                                     Version="4.3.0" />            <!-- netstandard, * -->
-    <PackageVersion Include="System.Net.Security"                                     Version="4.3.2" />            <!-- netstandard, * -->
-    <PackageVersion Include="System.Numerics.Vectors"                                 Version="4.5.0" />            <!-- netstandard -->
-    <PackageVersion Include="System.Private.Uri"                                      Version="4.3.2" />            <!-- NO DEPS -->
-    <PackageVersion Include="System.Reactive"                                         Version="6.0.1" />            <!-- netstandard, net6, net6-win -->
-    <PackageVersion Include="System.Reactive.Core"                                    Version="6.0.1" />            <!-- netstandard -->
-    <PackageVersion Include="System.Resources.Extensions"                             Version="8.0.0" />            <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="System.Runtime.Caching"                                  Version="8.0.1" />            <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="System.Runtime.Extensions"                               Version="4.3.1" />            <!-- netstandard, * -->
-    <PackageVersion Include="System.Runtime.InteropServices"                          Version="4.3.0" />            <!-- netstandard, * -->
-    <PackageVersion Include="System.Runtime.Loader"                                   Version="4.3.0" />            <!-- netstandard, * -->
-    <PackageVersion Include="System.Security.AccessControl"                           Version="6.0.1" />            <!-- netstandard, net6 -->
-    <PackageVersion Include="System.Security.Claims"                                  Version="4.3.0" />            <!-- netstandard, * -->
-    <PackageVersion Include="System.Security.Cryptography.Algorithms"                 Version="4.3.1" />            <!-- netstandard, * -->
-    <PackageVersion Include="System.Security.Cryptography.Encoding"                   Version="4.3.0" />            <!-- netstandard, * -->
-    <PackageVersion Include="System.Security.Cryptography.Pkcs"                       Version="8.0.1" />            <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="System.Security.Cryptography.Primitives"                 Version="4.3.0" />            <!-- netstandard, * -->
-    <PackageVersion Include="System.Security.Cryptography.ProtectedData"              Version="8.0.0" />            <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="System.Security.Cryptography.Xml"                        Version="8.0.2" />            <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="System.Security.Principal.Windows"                       Version="5.0.0" />            <!-- netstandard, * -->
-    <PackageVersion Include="System.ServiceModel.Duplex"                              Version="4.10.3" />           <!-- netstandard, * -->
-    <PackageVersion Include="System.ServiceModel.Federation"                          Version="6.2.0" />            <!-- net6 -->
-    <PackageVersion Include="System.ServiceModel.Http"                                Version="6.2.0" />            <!-- net6 -->
-    <PackageVersion Include="System.ServiceModel.NetTcp"                              Version="6.2.0" />            <!-- net6 -->
-    <PackageVersion Include="System.ServiceModel.Primitives"                          Version="6.2.0" />            <!-- net6 -->
-    <PackageVersion Include="System.ServiceModel.Security"                            Version="6.0.0" />            <!-- net6 -->
-    <PackageVersion Include="System.Text.Encoding"                                    Version="4.3.0" />            <!-- netstandard, * -->
-    <PackageVersion Include="System.Text.Encoding.CodePages"                          Version="8.0.0" />            <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="System.Text.Encodings.Web"                               Version="8.0.0" />            <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="System.Text.Json"                                        Version="8.0.5" />            <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="System.Text.RegularExpressions"                          Version="4.3.1" />            <!-- netstandard, * -->
-    <PackageVersion Include="System.Threading.Tasks.Dataflow"                         Version="8.0.1" />            <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="System.Threading.Timer"                                  Version="4.3.0" />            <!-- netstandard, * -->
-    <PackageVersion Include="System.ValueTuple"                                       Version="4.5.0" />            <!-- netstandard, * -->
-    <PackageVersion Include="System.Windows.Extensions"                               Version="8.0.0" />            <!-- net6, net8 -->
-    <PackageVersion Include="System.Xml.XDocument"                                    Version="4.3.0" />            <!-- netstandard, * -->
-    <PackageVersion Include="System.Xml.XmlSerializer"                                Version="4.3.0" />            <!-- netstandard, * -->
+    <PackageVersion Include="System.IdentityModel.Tokens.Jwt"                         Version="8.5.*" />            <!-- netstandard, net6, net8, net9 -->
+    <PackageVersion Include="System.Interactive"                                      Version="6.0.*" />            <!-- netstandard, net6 -->
+    <PackageVersion Include="System.IO.FileSystem.Primitives"                         Version="4.3.*" />            <!-- netstandard, * -->
+    <PackageVersion Include="System.IO.Packaging"                                     Version="8.0.*" />            <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="System.IO.Pipelines"                                     Version="8.0.*" />            <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="System.Linq.Async"                                       Version="6.0.*" />            <!-- netstandard, net6 -->
+    <PackageVersion Include="System.Management"                                       Version="8.0.*" />            <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="System.Memory"                                           Version="4.5.*" />            <!-- netstandard -->
+    <PackageVersion Include="System.Net.Http"                                         Version="4.3.*" />            <!-- netstandard, * -->
+    <PackageVersion Include="System.Net.Http.Json"                                    Version="8.0.*" />            <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="System.Net.Requests"                                     Version="4.3.*" />            <!-- netstandard, * -->
+    <PackageVersion Include="System.Net.Security"                                     Version="4.3.*" />            <!-- netstandard, * -->
+    <PackageVersion Include="System.Numerics.Vectors"                                 Version="4.5.*" />            <!-- netstandard -->
+    <PackageVersion Include="System.Private.Uri"                                      Version="4.3.*" />            <!-- NO DEPS -->
+    <PackageVersion Include="System.Reactive"                                         Version="6.0.*" />            <!-- netstandard, net6, net6-win -->
+    <PackageVersion Include="System.Reactive.Core"                                    Version="6.0.*" />            <!-- netstandard -->
+    <PackageVersion Include="System.Resources.Extensions"                             Version="8.0.*" />            <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="System.Runtime.Caching"                                  Version="8.0.*" />            <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="System.Runtime.Extensions"                               Version="4.3.*" />            <!-- netstandard, * -->
+    <PackageVersion Include="System.Runtime.InteropServices"                          Version="4.3.*" />            <!-- netstandard, * -->
+    <PackageVersion Include="System.Runtime.Loader"                                   Version="4.3.*" />            <!-- netstandard, * -->
+    <PackageVersion Include="System.Security.AccessControl"                           Version="6.0.*" />            <!-- netstandard, net6 -->
+    <PackageVersion Include="System.Security.Claims"                                  Version="4.3.*" />            <!-- netstandard, * -->
+    <PackageVersion Include="System.Security.Cryptography.Algorithms"                 Version="4.3.*" />            <!-- netstandard, * -->
+    <PackageVersion Include="System.Security.Cryptography.Encoding"                   Version="4.3.*" />            <!-- netstandard, * -->
+    <PackageVersion Include="System.Security.Cryptography.Pkcs"                       Version="8.0.*" />            <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="System.Security.Cryptography.Primitives"                 Version="4.3.*" />            <!-- netstandard, * -->
+    <PackageVersion Include="System.Security.Cryptography.ProtectedData"              Version="8.0.*" />            <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="System.Security.Cryptography.Xml"                        Version="8.0.*" />            <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="System.Security.Principal.Windows"                       Version="5.0.*" />            <!-- netstandard, * -->
+    <PackageVersion Include="System.ServiceModel.Duplex"                              Version="4.10.*" />           <!-- netstandard, * -->
+    <PackageVersion Include="System.ServiceModel.Federation"                          Version="6.2.*" />            <!-- net6 -->
+    <PackageVersion Include="System.ServiceModel.Http"                                Version="6.2.*" />            <!-- net6 -->
+    <PackageVersion Include="System.ServiceModel.NetTcp"                              Version="6.2.*" />            <!-- net6 -->
+    <PackageVersion Include="System.ServiceModel.Primitives"                          Version="6.2.*" />            <!-- net6 -->
+    <PackageVersion Include="System.ServiceModel.Security"                            Version="6.0.*" />            <!-- net6 -->
+    <PackageVersion Include="System.Text.Encoding"                                    Version="4.3.*" />            <!-- netstandard, * -->
+    <PackageVersion Include="System.Text.Encoding.CodePages"                          Version="8.0.*" />            <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="System.Text.Encodings.Web"                               Version="8.0.*" />            <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="System.Text.Json"                                        Version="8.0.*" />            <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="System.Text.RegularExpressions"                          Version="4.3.*" />            <!-- netstandard, * -->
+    <PackageVersion Include="System.Threading.Tasks.Dataflow"                         Version="8.0.*" />            <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="System.Threading.Timer"                                  Version="4.3.*" />            <!-- netstandard, * -->
+    <PackageVersion Include="System.ValueTuple"                                       Version="4.5.*" />            <!-- netstandard, * -->
+    <PackageVersion Include="System.Windows.Extensions"                               Version="8.0.*" />            <!-- net6, net8 -->
+    <PackageVersion Include="System.Xml.XDocument"                                    Version="4.3.*" />            <!-- netstandard, * -->
+    <PackageVersion Include="System.Xml.XmlSerializer"                                Version="4.3.*" />            <!-- netstandard, * -->
 
-    <PackageVersion Include="TinyCsvParser"                                           Version="2.6.2" />            <!-- netstandard, net6 -->
-    <PackageVersion Include="Toolbelt.AspNetCore.CssLiveReloader"                     Version="1.1.4" />            <!-- netstandard -->
-    <PackageVersion Include="Toolbelt.Blazor.HeadElement"                             Version="7.3.1" />            <!-- netstandard, net5 -->
-    <PackageVersion Include="Toolbelt.Blazor.HeadElement.ServerPrerendering"          Version="7.3.1" />            <!-- netstandard, net5 -->
-    <PackageVersion Include="Toolbelt.Blazor.LocalizedDataAnnotationsValidator"       Version="1.0.1.1" />          <!-- netstandard -->
-    <PackageVersion Include="Toolbelt.Blazor.I18nText"                                Version="13.0.0" />           <!-- net6, net8, BUGGY -->
+    <PackageVersion Include="TinyCsvParser"                                           Version="2.6.*" />            <!-- netstandard, net6 -->
+    <PackageVersion Include="Toolbelt.AspNetCore.CssLiveReloader"                     Version="1.1.*" />            <!-- netstandard -->
+    <PackageVersion Include="Toolbelt.Blazor.HeadElement"                             Version="7.3.*" />            <!-- netstandard, net5 -->
+    <PackageVersion Include="Toolbelt.Blazor.HeadElement.ServerPrerendering"          Version="7.3.*" />            <!-- netstandard, net5 -->
+    <PackageVersion Include="Toolbelt.Blazor.LocalizedDataAnnotationsValidator"       Version="1.0.*" />            <!-- netstandard -->
+    <PackageVersion Include="Toolbelt.Blazor.I18nText"                                Version="13.0.*" />           <!-- net6, net8, BUGGY -->
 
-    <PackageVersion Include="ValueOf"                                                 Version="2.0.31" />           <!-- netstandard -->
+    <PackageVersion Include="ValueOf"                                                 Version="2.0.*" />            <!-- netstandard -->
 
-    <PackageVersion Include="WebSocket4Net"                                           Version="0.15.2" />           <!-- netstandard -->
-    <PackageVersion Include="WinInsider.System.Net.Http.Formatting"                   Version="1.0.14" />           <!-- netstandard -->
-    <PackageVersion Include="XObjectsCore"                                            Version="3.4.7" />            <!-- netstandard, net6 -->
+    <PackageVersion Include="WebSocket4Net"                                           Version="0.15.*" />           <!-- netstandard -->
+    <PackageVersion Include="WinInsider.System.Net.Http.Formatting"                   Version="1.0.*" />            <!-- netstandard -->
+    <PackageVersion Include="XObjectsCore"                                            Version="3.4.*" />            <!-- netstandard, net6 -->
 
-    <PackageVersion Include="xunit"                                                   Version="2.9.3" />            <!-- NO DEPS -->
-    <PackageVersion Include="xunit.console"                                           Version="2.9.3" />            <!-- netcoreapp -->
-    <PackageVersion Include="xunit.runner.console"                                    Version="2.9.3" />            <!-- NO DEPS -->
-    <PackageVersion Include="xunit.runner.visualstudio"                               Version="3.0.2" />            <!-- net6 -->
+    <PackageVersion Include="xunit"                                                   Version="2.9.*" />            <!-- NO DEPS -->
+    <PackageVersion Include="xunit.console"                                           Version="2.9.*" />            <!-- netcoreapp -->
+    <PackageVersion Include="xunit.runner.console"                                    Version="2.9.*" />            <!-- NO DEPS -->
+    <PackageVersion Include="xunit.runner.visualstudio"                               Version="3.0.*" />            <!-- net6 -->
 
-    <PackageVersion Include="YamlDotNet"                                              Version="16.3.0" />           <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="Yarp.ReverseProxy"                                       Version="2.2.0" />            <!-- net6, net8 -->
-    <PackageVersion Include="Yarp.Telemetry.Consumption"                              Version="2.2.0" />            <!-- net6, net8 -->
-    <PackageVersion Include="ZXing.Net"                                               Version="0.16.10" />          <!-- netstandard, * -->
+    <PackageVersion Include="YamlDotNet"                                              Version="16.3.*" />           <!-- netstandard, net6, net8 -->
+    <PackageVersion Include="Yarp.ReverseProxy"                                       Version="2.2.*" />            <!-- net6, net8 -->
+    <PackageVersion Include="Yarp.Telemetry.Consumption"                              Version="2.2.*" />            <!-- net6, net8 -->
+    <PackageVersion Include="ZXing.Net"                                               Version="0.16.*" />           <!-- netstandard, * -->
   </ItemGroup>
 
   <ItemGroup>
     <!-- TEST : does this work with net6 ? -->
-    <PackageVersion Update="Microsoft.AspNetCore.Routing"                             Version="2.3.0" />            <!-- netstandard, Microsoft.Extensions.ObjectPool >= 8.0.11 -->
-    <PackageVersion Update="Microsoft.Extensions.ObjectPool"                          Version="8.0.13" />           <!-- netstandard, net8 -->
+    <PackageVersion Update="Microsoft.AspNetCore.Routing"                             Version="2.3.*" />            <!-- netstandard, Microsoft.Extensions.ObjectPool >= 8.0.11 -->
+    <PackageVersion Update="Microsoft.Extensions.ObjectPool"                          Version="8.0.*" />            <!-- netstandard, net8 -->
   </ItemGroup>
 
   <!-- TFM >= net8 -->
   <ItemGroup Condition="$(CoreTargetFramework.StartsWith('net8')) Or $(TargetFramework.StartsWith('net8')) Or $(CoreTargetFramework.StartsWith('net9')) Or $(TargetFramework.StartsWith('net9'))">
-    <PackageVersion Update="EFCore.NamingConventions"                                 Version="9.0.0" />            <!-- net8 -->
-    <PackageVersion Update="MailKit"                                                  Version="4.10.0" />           <!-- netstandard, net8 -->
+    <PackageVersion Update="EFCore.NamingConventions"                                 Version="9.0.*" />            <!-- net8 -->
+    <PackageVersion Update="MailKit"                                                  Version="4.10.*" />           <!-- netstandard, net8 -->
 
-    <PackageVersion Update="Microsoft.AspNetCore.Authentication.JwtBearer"            Version="8.0.13" />           <!-- net8 -->
-    <PackageVersion Update="Microsoft.AspNetCore.Components"                          Version="8.0.13" />           <!-- net8 -->
-    <PackageVersion Update="Microsoft.AspNetCore.Components.Authorization"            Version="8.0.13" />           <!-- net8 -->
-    <PackageVersion Update="Microsoft.AspNetCore.Components.Forms"                    Version="8.0.13" />           <!-- net8 -->
-    <PackageVersion Update="Microsoft.AspNetCore.Components.Web"                      Version="8.0.13" />           <!-- net8 -->
-    <PackageVersion Update="Microsoft.AspNetCore.Components.WebAssembly"              Version="8.0.13" />           <!-- net8 -->
-    <PackageVersion Update="Microsoft.AspNetCore.Components.WebAssembly.DevServer"    Version="8.0.13" />           <!-- net8 -->
-    <PackageVersion Update="Microsoft.AspNetCore.Components.WebAssembly.Server"       Version="8.0.13" />           <!-- net8 -->
-    <PackageVersion Update="Microsoft.AspNetCore.Http.Connections.Client"             Version="8.0.13" />           <!-- netstandard, net8 -->
-    <PackageVersion Update="Microsoft.AspNetCore.Http.Connections.Common"             Version="8.0.13" />           <!-- netstandard, net8 -->
-    <PackageVersion Update="Microsoft.AspNetCore.Mvc.Testing"                         Version="8.0.13" />           <!-- net8 -->
-    <PackageVersion Update="Microsoft.AspNetCore.Mvc.NewtonsoftJson"                  Version="8.0.13" />           <!-- net8 -->
-    <PackageVersion Update="Microsoft.AspNetCore.Routing"                             Version="2.3.0" />            <!-- netstandard -->
-    <PackageVersion Update="Microsoft.AspNetCore.SignalR.Client"                      Version="8.0.13" />           <!-- netstandard, net8 -->
-    <PackageVersion Update="Microsoft.AspNetCore.SignalR.Protocols.Json"              Version="8.0.13" />           <!-- netstandard, net8 -->
-    <PackageVersion Update="Microsoft.AspNetCore.SignalR.Protocols.NewtonsoftJson"    Version="8.0.13" />           <!-- netstandard, net8 -->
-    <PackageVersion Update="Microsoft.AspNetCore.TestHost"                            Version="8.0.13" />           <!-- net8 -->
-    <PackageVersion Update="Microsoft.AspNetCore.WebUtilities"                        Version="8.0.13" />           <!-- net8 -->
+    <PackageVersion Update="Microsoft.AspNetCore.Authentication.JwtBearer"            Version="8.0.*" />            <!-- net8 -->
+    <PackageVersion Update="Microsoft.AspNetCore.Components"                          Version="8.0.*" />            <!-- net8 -->
+    <PackageVersion Update="Microsoft.AspNetCore.Components.Authorization"            Version="8.0.*" />            <!-- net8 -->
+    <PackageVersion Update="Microsoft.AspNetCore.Components.Forms"                    Version="8.0.*" />            <!-- net8 -->
+    <PackageVersion Update="Microsoft.AspNetCore.Components.Web"                      Version="8.0.*" />            <!-- net8 -->
+    <PackageVersion Update="Microsoft.AspNetCore.Components.WebAssembly"              Version="8.0.*" />            <!-- net8 -->
+    <PackageVersion Update="Microsoft.AspNetCore.Components.WebAssembly.DevServer"    Version="8.0.*" />            <!-- net8 -->
+    <PackageVersion Update="Microsoft.AspNetCore.Components.WebAssembly.Server"       Version="8.0.*" />            <!-- net8 -->
+    <PackageVersion Update="Microsoft.AspNetCore.Http.Connections.Client"             Version="8.0.*" />            <!-- netstandard, net8 -->
+    <PackageVersion Update="Microsoft.AspNetCore.Http.Connections.Common"             Version="8.0.*" />            <!-- netstandard, net8 -->
+    <PackageVersion Update="Microsoft.AspNetCore.Mvc.Testing"                         Version="8.0.*" />            <!-- net8 -->
+    <PackageVersion Update="Microsoft.AspNetCore.Mvc.NewtonsoftJson"                  Version="8.0.*" />            <!-- net8 -->
+    <PackageVersion Update="Microsoft.AspNetCore.Routing"                             Version="2.3.*" />            <!-- netstandard -->
+    <PackageVersion Update="Microsoft.AspNetCore.SignalR.Client"                      Version="8.0.*" />            <!-- netstandard, net8 -->
+    <PackageVersion Update="Microsoft.AspNetCore.SignalR.Protocols.Json"              Version="8.0.*" />            <!-- netstandard, net8 -->
+    <PackageVersion Update="Microsoft.AspNetCore.SignalR.Protocols.NewtonsoftJson"    Version="8.0.*" />            <!-- netstandard, net8 -->
+    <PackageVersion Update="Microsoft.AspNetCore.TestHost"                            Version="8.0.*" />            <!-- net8 -->
+    <PackageVersion Update="Microsoft.AspNetCore.WebUtilities"                        Version="8.0.*" />            <!-- net8 -->
 
-    <PackageVersion Update="Microsoft.Build"                                          Version="17.11.4" />          <!-- net8 -->
-    <PackageVersion Update="Microsoft.Build.Tasks.Core"                               Version="17.11.4" />          <!-- net8 -->
-    <PackageVersion Update="Microsoft.Build.Utilities.Core"                           Version="17.11.4" />          <!-- netstandard, net8 -->
-    <PackageVersion Update="Microsoft.CodeAnalysis.Common"                            Version="4.12.0" />           <!-- netstandard, net8 -->
-    <PackageVersion Update="Microsoft.CodeAnalysis.CSharp"                            Version="4.12.0" />           <!-- netstandard, net8 -->
-    <PackageVersion Update="Microsoft.CodeAnalysis.CSharp.Features"                   Version="4.12.0" />           <!-- netstandard, net8 -->
-    <PackageVersion Update="Microsoft.CodeAnalysis.CSharp.Workspaces"                 Version="4.12.0" />           <!-- netstandard, net8 -->
-    <PackageVersion Update="Microsoft.CodeAnalysis.Features"                          Version="4.12.0" />           <!-- netstandard, net8 -->
-    <PackageVersion Update="Microsoft.CodeAnalysis.Scripting.Common"                  Version="4.12.0" />           <!-- netstandard, net8 -->
-    <PackageVersion Update="Microsoft.CodeAnalysis.VisualBasic.Workspaces"            Version="4.12.0" />           <!-- netstandard, net8 -->
-    <PackageVersion Update="Microsoft.CodeAnalysis.Workspaces.Common"                 Version="4.12.0" />           <!-- netstandard, net8 -->
-    <PackageVersion Update="Microsoft.CodeAnalysis.Workspaces.MSBuild"                Version="4.12.0" />           <!-- netstandard, net8 -->
+    <PackageVersion Update="Microsoft.Build"                                          Version="17.11.*" />          <!-- net8 -->
+    <PackageVersion Update="Microsoft.Build.Tasks.Core"                               Version="17.11.*" />          <!-- net8 -->
+    <PackageVersion Update="Microsoft.Build.Utilities.Core"                           Version="17.11.*" />          <!-- netstandard, net8 -->
+    <PackageVersion Update="Microsoft.CodeAnalysis.Common"                            Version="4.12.*" />           <!-- netstandard, net8 -->
+    <PackageVersion Update="Microsoft.CodeAnalysis.CSharp"                            Version="4.12.*" />           <!-- netstandard, net8 -->
+    <PackageVersion Update="Microsoft.CodeAnalysis.CSharp.Features"                   Version="4.12.*" />           <!-- netstandard, net8 -->
+    <PackageVersion Update="Microsoft.CodeAnalysis.CSharp.Workspaces"                 Version="4.12.*" />           <!-- netstandard, net8 -->
+    <PackageVersion Update="Microsoft.CodeAnalysis.Features"                          Version="4.12.*" />           <!-- netstandard, net8 -->
+    <PackageVersion Update="Microsoft.CodeAnalysis.Scripting.Common"                  Version="4.12.*" />           <!-- netstandard, net8 -->
+    <PackageVersion Update="Microsoft.CodeAnalysis.VisualBasic.Workspaces"            Version="4.12.*" />           <!-- netstandard, net8 -->
+    <PackageVersion Update="Microsoft.CodeAnalysis.Workspaces.Common"                 Version="4.12.*" />           <!-- netstandard, net8 -->
+    <PackageVersion Update="Microsoft.CodeAnalysis.Workspaces.MSBuild"                Version="4.12.*" />           <!-- netstandard, net8 -->
 
-    <PackageVersion Update="Microsoft.EntityFrameworkCore"                            Version="9.0.2" />            <!-- net8 -->
-    <PackageVersion Update="Microsoft.EntityFrameworkCore.Design"                     Version="9.0.2" />            <!-- net8 -->
-    <PackageVersion Update="Microsoft.EntityFrameworkCore.Sqlite"                     Version="9.0.2" />            <!-- net8 -->
-    <PackageVersion Update="Microsoft.EntityFrameworkCore.SqlServer"                  Version="9.0.2" />            <!-- net8 -->
-    <PackageVersion Update="Microsoft.EntityFrameworkCore.Tools"                      Version="9.0.2" />            <!-- net8 -->
+    <PackageVersion Update="Microsoft.EntityFrameworkCore"                            Version="9.0.*" />            <!-- net8 -->
+    <PackageVersion Update="Microsoft.EntityFrameworkCore.Design"                     Version="9.0.*" />            <!-- net8 -->
+    <PackageVersion Update="Microsoft.EntityFrameworkCore.Sqlite"                     Version="9.0.*" />            <!-- net8 -->
+    <PackageVersion Update="Microsoft.EntityFrameworkCore.SqlServer"                  Version="9.0.*" />            <!-- net8 -->
+    <PackageVersion Update="Microsoft.EntityFrameworkCore.Tools"                      Version="9.0.*" />            <!-- net8 -->
 
-    <PackageVersion Update="Microsoft.Extensions.Caching.Memory"                      Version="9.0.2" />            <!-- netstandard, net8, net9 -->
-    <PackageVersion Update="Microsoft.Extensions.Configuration"                       Version="9.0.2" />            <!-- netstandard, net8, net9 -->
-    <PackageVersion Update="Microsoft.Extensions.Configuration.Abstractions"          Version="9.0.2" />            <!-- netstandard, net8, net9 -->
-    <PackageVersion Update="Microsoft.Extensions.Configuration.Binder"                Version="9.0.2" />            <!-- netstandard, net8, net9 -->
-    <PackageVersion Update="Microsoft.Extensions.Configuration.CommandLine"           Version="9.0.2" />            <!-- netstandard, net8, net9 -->
-    <PackageVersion Update="Microsoft.Extensions.Configuration.EnvironmentVariables"  Version="9.0.2" />            <!-- netstandard, net8, net9 -->
-    <PackageVersion Update="Microsoft.Extensions.Configuration.Json"                  Version="9.0.2" />            <!-- netstandard, net8, net9 -->
-    <PackageVersion Update="Microsoft.Extensions.Configuration.UserSecrets"           Version="9.0.2" />            <!-- netstandard, net8, net9 -->
-    <PackageVersion Update="Microsoft.Extensions.DependencyInjection"                 Version="9.0.2" />            <!-- netstandard, net8, net9 -->
-    <PackageVersion Update="Microsoft.Extensions.DependencyInjection.Abstractions"    Version="9.0.2" />            <!-- netstandard, net8, net9 -->
-    <PackageVersion Update="Microsoft.Extensions.FileProviders.Embedded"              Version="8.0.13" />           <!-- netstandard, net8 -->
-    <PackageVersion Update="Microsoft.Extensions.Hosting"                             Version="9.0.2" />            <!-- netstandard, net8, net9 -->
-    <PackageVersion Update="Microsoft.Extensions.Hosting.Abstractions"                Version="9.0.2" />            <!-- netstandard, net8, net9 -->
-    <PackageVersion Update="Microsoft.Extensions.Http"                                Version="9.0.2" />            <!-- netstandard, net8, net9 -->
-    <PackageVersion Update="Microsoft.Extensions.Http.Polly"                          Version="9.0.2" />            <!-- netstandard -->
-    <PackageVersion Update="Microsoft.Extensions.Localization"                        Version="8.0.13" />           <!-- netstandard, net8 -->
-    <PackageVersion Update="Microsoft.Extensions.Localization.Abstractions"           Version="8.0.13" />           <!-- netstandard, net8 -->
-    <PackageVersion Update="Microsoft.Extensions.Logging"                             Version="9.0.2" />            <!-- netstandard, net8, net9 -->
-    <PackageVersion Update="Microsoft.Extensions.Logging.Abstractions"                Version="9.0.2" />            <!-- netstandard, net8, net9 -->
-    <PackageVersion Update="Microsoft.Extensions.Logging.Configuration"               Version="9.0.2" />            <!-- netstandard, net8, net9 -->
-    <PackageVersion Update="Microsoft.Extensions.Logging.Console"                     Version="9.0.2" />            <!-- netstandard, net8, net9 -->
-    <PackageVersion Update="Microsoft.Extensions.Logging.Debug"                       Version="9.0.2" />            <!-- netstandard, net8, net9 -->
-    <PackageVersion Update="Microsoft.Extensions.Logging.TraceSource"                 Version="9.0.2" />            <!-- netstandard, net8, net9 -->
-    <PackageVersion Update="Microsoft.Extensions.ObjectPool"                          Version="8.0.13" />           <!-- netstandard, net8 -->
-    <PackageVersion Update="Microsoft.Extensions.Options"                             Version="9.0.2" />            <!-- netstandard, net8, net9 -->
-    <PackageVersion Update="Microsoft.Extensions.Options.ConfigurationExtensions"     Version="9.0.2" />            <!-- netstandard, net8, net9 -->
-    <PackageVersion Update="Microsoft.Extensions.Options.DataAnnotations"             Version="9.0.2" />            <!-- netstandard, net8, net9 -->
+    <PackageVersion Update="Microsoft.Extensions.Caching.Memory"                      Version="9.0.*" />            <!-- netstandard, net8, net9 -->
+    <PackageVersion Update="Microsoft.Extensions.Configuration"                       Version="9.0.*" />            <!-- netstandard, net8, net9 -->
+    <PackageVersion Update="Microsoft.Extensions.Configuration.Abstractions"          Version="9.0.*" />            <!-- netstandard, net8, net9 -->
+    <PackageVersion Update="Microsoft.Extensions.Configuration.Binder"                Version="9.0.*" />            <!-- netstandard, net8, net9 -->
+    <PackageVersion Update="Microsoft.Extensions.Configuration.CommandLine"           Version="9.0.*" />            <!-- netstandard, net8, net9 -->
+    <PackageVersion Update="Microsoft.Extensions.Configuration.EnvironmentVariables"  Version="9.0.*" />            <!-- netstandard, net8, net9 -->
+    <PackageVersion Update="Microsoft.Extensions.Configuration.Json"                  Version="9.0.*" />            <!-- netstandard, net8, net9 -->
+    <PackageVersion Update="Microsoft.Extensions.Configuration.UserSecrets"           Version="9.0.*" />            <!-- netstandard, net8, net9 -->
+    <PackageVersion Update="Microsoft.Extensions.DependencyInjection"                 Version="9.0.*" />            <!-- netstandard, net8, net9 -->
+    <PackageVersion Update="Microsoft.Extensions.DependencyInjection.Abstractions"    Version="9.0.*" />            <!-- netstandard, net8, net9 -->
+    <PackageVersion Update="Microsoft.Extensions.FileProviders.Embedded"              Version="8.0.*" />            <!-- netstandard, net8 -->
+    <PackageVersion Update="Microsoft.Extensions.Hosting"                             Version="9.0.*" />            <!-- netstandard, net8, net9 -->
+    <PackageVersion Update="Microsoft.Extensions.Hosting.Abstractions"                Version="9.0.*" />            <!-- netstandard, net8, net9 -->
+    <PackageVersion Update="Microsoft.Extensions.Http"                                Version="9.0.*" />            <!-- netstandard, net8, net9 -->
+    <PackageVersion Update="Microsoft.Extensions.Http.Polly"                          Version="9.0.*" />            <!-- netstandard -->
+    <PackageVersion Update="Microsoft.Extensions.Localization"                        Version="8.0.*" />            <!-- netstandard, net8 -->
+    <PackageVersion Update="Microsoft.Extensions.Localization.Abstractions"           Version="8.0.*" />            <!-- netstandard, net8 -->
+    <PackageVersion Update="Microsoft.Extensions.Logging"                             Version="9.0.*" />            <!-- netstandard, net8, net9 -->
+    <PackageVersion Update="Microsoft.Extensions.Logging.Abstractions"                Version="9.0.*" />            <!-- netstandard, net8, net9 -->
+    <PackageVersion Update="Microsoft.Extensions.Logging.Configuration"               Version="9.0.*" />            <!-- netstandard, net8, net9 -->
+    <PackageVersion Update="Microsoft.Extensions.Logging.Console"                     Version="9.0.*" />            <!-- netstandard, net8, net9 -->
+    <PackageVersion Update="Microsoft.Extensions.Logging.Debug"                       Version="9.0.*" />            <!-- netstandard, net8, net9 -->
+    <PackageVersion Update="Microsoft.Extensions.Logging.TraceSource"                 Version="9.0.*" />            <!-- netstandard, net8, net9 -->
+    <PackageVersion Update="Microsoft.Extensions.ObjectPool"                          Version="8.0.*" />            <!-- netstandard, net8 -->
+    <PackageVersion Update="Microsoft.Extensions.Options"                             Version="9.0.*" />            <!-- netstandard, net8, net9 -->
+    <PackageVersion Update="Microsoft.Extensions.Options.ConfigurationExtensions"     Version="9.0.*" />            <!-- netstandard, net8, net9 -->
+    <PackageVersion Update="Microsoft.Extensions.Options.DataAnnotations"             Version="9.0.*" />            <!-- netstandard, net8, net9 -->
 
-    <PackageVersion Update="Microsoft.VisualStudio.Web.CodeGeneration.Design"         Version="8.0.6" />            <!-- net8 -->
+    <PackageVersion Update="Microsoft.VisualStudio.Web.CodeGeneration.Design"         Version="8.0.*" />            <!-- net8 -->
 
-    <PackageVersion Update="MudBlazor"                                                Version="8.2.0" />            <!-- net8, net9 -->
-    <PackageVersion Update="MudBlazor.ThemeManager"                                   Version="3.0.0" />            <!-- net8, net9 -->
-    <PackageVersion Update="Npgsql.EntityFrameworkCore.PostgreSQL"                    Version="9.0.2" />            <!-- net8 -->
-    <PackageVersion Update="OrchardCore.Localization.Core"                            Version="2.0.2" />            <!-- net8 -->
-    <PackageVersion Update="ReHackt.Extensions.Options.Validation"                    Version="9.0.0" />            <!-- netstandard, net8, net9 -->
+    <PackageVersion Update="MudBlazor"                                                Version="8.2.*" />            <!-- net8, net9 -->
+    <PackageVersion Update="MudBlazor.ThemeManager"                                   Version="3.0.*" />            <!-- net8, net9 -->
+    <PackageVersion Update="Npgsql.EntityFrameworkCore.PostgreSQL"                    Version="9.0.*" />            <!-- net8 -->
+    <PackageVersion Update="OrchardCore.Localization.Core"                            Version="2.0.*" />            <!-- net8 -->
+    <PackageVersion Update="ReHackt.Extensions.Options.Validation"                    Version="9.0.*" />            <!-- netstandard, net8, net9 -->
 
-    <PackageVersion Update="Serilog.AspNetCore"                                       Version="9.0.0" />            <!-- netstandard, net8, net9 -->
-    <PackageVersion Update="Serilog.Extensions.Hosting"                               Version="9.0.0" />            <!-- netstandard, net8, net9 -->
-    <PackageVersion Update="Serilog.Settings.Configuration"                           Version="9.0.0" />            <!-- netstandard, net8, net9 -->
+    <PackageVersion Update="Serilog.AspNetCore"                                       Version="9.0.*" />            <!-- netstandard, net8, net9 -->
+    <PackageVersion Update="Serilog.Extensions.Hosting"                               Version="9.0.*" />            <!-- netstandard, net8, net9 -->
+    <PackageVersion Update="Serilog.Settings.Configuration"                           Version="9.0.*" />            <!-- netstandard, net8, net9 -->
 
-    <PackageVersion Update="System.Collections.Immutable"                             Version="9.0.2" />            <!-- netstandard, net8, net9 -->
-    <PackageVersion Update="System.Drawing.Common"                                    Version="9.0.2" />            <!-- netstandard, net8, net9 -->
-    <PackageVersion Update="System.Formats.Asn1"                                      Version="9.0.2" />            <!-- netstandard, net8, net9 -->
-    <PackageVersion Update="System.IO.Pipelines"                                      Version="9.0.2" />            <!-- netstandard, net8, net9 -->
-    <PackageVersion Update="System.Net.Http.Json"                                     Version="9.0.2" />            <!-- netstandard, net8, net9 -->
-    <PackageVersion Update="System.Resources.Extensions"                              Version="9.0.2" />            <!-- netstandard, net8, net9 -->
-    <PackageVersion Update="System.Security.Cryptography.Pkcs"                        Version="9.0.2" />            <!-- netstandard, net8, net9 -->
-    <PackageVersion Update="System.Security.Cryptography.Xml"                         Version="9.0.2" />            <!-- netstandard, net8, net9 -->
-    <PackageVersion Update="System.Security.Cryptography.ProtectedData"               Version="9.0.2" />            <!-- netstandard, net8, net9 -->
-    <PackageVersion Update="System.ServiceModel.Federation"                           Version="8.1.1" />            <!-- net8 -->
-    <PackageVersion Update="System.ServiceModel.Http"                                 Version="8.1.1" />            <!-- netstandard, net8 -->
-    <PackageVersion Update="System.ServiceModel.NetTcp"                               Version="8.1.1" />            <!-- netstandard, net8 -->
-    <PackageVersion Update="System.ServiceModel.Primitives"                           Version="8.1.1" />            <!-- netstandard, net8 -->
-    <PackageVersion Update="System.Text.Encoding.CodePages"                           Version="9.0.2" />            <!-- netstandard, net8, net9 -->
-    <PackageVersion Update="System.Text.Encodings.Web"                                Version="9.0.2" />            <!-- netstandard, net8, net9 -->
-    <PackageVersion Update="System.Text.Json"                                         Version="9.0.2" />            <!-- netstandard, net8, net9 -->
-    <PackageVersion Update="System.Threading.Tasks.Dataflow"                          Version="9.0.2" />            <!-- netstandard, net8, net9 -->
+    <PackageVersion Update="System.Collections.Immutable"                             Version="9.0.*" />            <!-- netstandard, net8, net9 -->
+    <PackageVersion Update="System.Drawing.Common"                                    Version="9.0.*" />            <!-- netstandard, net8, net9 -->
+    <PackageVersion Update="System.Formats.Asn1"                                      Version="9.0.*" />            <!-- netstandard, net8, net9 -->
+    <PackageVersion Update="System.IO.Pipelines"                                      Version="9.0.*" />            <!-- netstandard, net8, net9 -->
+    <PackageVersion Update="System.Net.Http.Json"                                     Version="9.0.*" />            <!-- netstandard, net8, net9 -->
+    <PackageVersion Update="System.Resources.Extensions"                              Version="9.0.*" />            <!-- netstandard, net8, net9 -->
+    <PackageVersion Update="System.Security.Cryptography.Pkcs"                        Version="9.0.*" />            <!-- netstandard, net8, net9 -->
+    <PackageVersion Update="System.Security.Cryptography.Xml"                         Version="9.0.*" />            <!-- netstandard, net8, net9 -->
+    <PackageVersion Update="System.Security.Cryptography.ProtectedData"               Version="9.0.*" />            <!-- netstandard, net8, net9 -->
+    <PackageVersion Update="System.ServiceModel.Federation"                           Version="8.1.*" />            <!-- net8 -->
+    <PackageVersion Update="System.ServiceModel.Http"                                 Version="8.1.*" />            <!-- netstandard, net8 -->
+    <PackageVersion Update="System.ServiceModel.NetTcp"                               Version="8.1.*" />            <!-- netstandard, net8 -->
+    <PackageVersion Update="System.ServiceModel.Primitives"                           Version="8.1.*" />            <!-- netstandard, net8 -->
+    <PackageVersion Update="System.Text.Encoding.CodePages"                           Version="9.0.*" />            <!-- netstandard, net8, net9 -->
+    <PackageVersion Update="System.Text.Encodings.Web"                                Version="9.0.*" />            <!-- netstandard, net8, net9 -->
+    <PackageVersion Update="System.Text.Json"                                         Version="9.0.*" />            <!-- netstandard, net8, net9 -->
+    <PackageVersion Update="System.Threading.Tasks.Dataflow"                          Version="9.0.*" />            <!-- netstandard, net8, net9 -->
 
-    <PackageVersion Update="TinyCsvParser"                                            Version="2.7.1" />            <!-- netstandard, net8 -->
+    <PackageVersion Update="TinyCsvParser"                                            Version="2.7.*" />            <!-- netstandard, net8 -->
   </ItemGroup>
 
   <!-- TFM >= net9 -->
   <ItemGroup Condition="$(CoreTargetFramework.StartsWith('net9')) Or $(TargetFramework.StartsWith('net9'))">
-    <PackageVersion Update="Microsoft.AspNetCore.OpenApi"                             Version="9.0.2" />            <!-- net9 -->
+    <PackageVersion Update="Microsoft.AspNetCore.OpenApi"                             Version="9.0.*" />            <!-- net9 -->
     
-    <PackageVersion Update="Microsoft.AspNetCore.Authentication.JwtBearer"            Version="9.0.2" />            <!-- net9 -->
-    <PackageVersion Update="Microsoft.AspNetCore.Components"                          Version="9.0.2" />            <!-- net9 -->
-    <PackageVersion Update="Microsoft.AspNetCore.Components.Authorization"            Version="9.0.2" />            <!-- net9 -->
-    <PackageVersion Update="Microsoft.AspNetCore.Components.Forms"                    Version="9.0.2" />            <!-- net9 -->
-    <PackageVersion Update="Microsoft.AspNetCore.Components.Web"                      Version="9.0.2" />            <!-- net9 -->
-    <PackageVersion Update="Microsoft.AspNetCore.Components.WebAssembly"              Version="9.0.2" />            <!-- net9 -->
-    <PackageVersion Update="Microsoft.AspNetCore.Components.WebAssembly.DevServer"    Version="9.0.2" />            <!-- net9 -->
-    <PackageVersion Update="Microsoft.AspNetCore.Components.WebAssembly.Server"       Version="9.0.2" />            <!-- net9 -->
-    <PackageVersion Update="Microsoft.AspNetCore.Http.Connections.Client"             Version="9.0.2" />            <!-- netstandard, net9 -->
-    <PackageVersion Update="Microsoft.AspNetCore.Http.Connections.Common"             Version="9.0.2" />            <!-- netstandard, net9 -->
-    <PackageVersion Update="Microsoft.AspNetCore.Mvc.Testing"                         Version="9.0.2" />            <!-- net9 -->
-    <PackageVersion Update="Microsoft.AspNetCore.Mvc.NewtonsoftJson"                  Version="9.0.2" />            <!-- net9 -->
-    <PackageVersion Update="Microsoft.AspNetCore.SignalR.Client"                      Version="9.0.2" />            <!-- netstandard, net9 -->
-    <PackageVersion Update="Microsoft.AspNetCore.SignalR.Protocols.Json"              Version="9.0.2" />            <!-- netstandard, net9 -->
-    <PackageVersion Update="Microsoft.AspNetCore.SignalR.Protocols.NewtonsoftJson"    Version="9.0.2" />            <!-- netstandard, net9 -->
-    <PackageVersion Update="Microsoft.AspNetCore.TestHost"                            Version="9.0.2" />            <!-- net9 -->
-    <PackageVersion Update="Microsoft.AspNetCore.WebUtilities"                        Version="9.0.2" />            <!-- net9 -->
+    <PackageVersion Update="Microsoft.AspNetCore.Authentication.JwtBearer"            Version="9.0.*" />            <!-- net9 -->
+    <PackageVersion Update="Microsoft.AspNetCore.Components"                          Version="9.0.*" />            <!-- net9 -->
+    <PackageVersion Update="Microsoft.AspNetCore.Components.Authorization"            Version="9.0.*" />            <!-- net9 -->
+    <PackageVersion Update="Microsoft.AspNetCore.Components.Forms"                    Version="9.0.*" />            <!-- net9 -->
+    <PackageVersion Update="Microsoft.AspNetCore.Components.Web"                      Version="9.0.*" />            <!-- net9 -->
+    <PackageVersion Update="Microsoft.AspNetCore.Components.WebAssembly"              Version="9.0.*" />            <!-- net9 -->
+    <PackageVersion Update="Microsoft.AspNetCore.Components.WebAssembly.DevServer"    Version="9.0.*" />            <!-- net9 -->
+    <PackageVersion Update="Microsoft.AspNetCore.Components.WebAssembly.Server"       Version="9.0.*" />            <!-- net9 -->
+    <PackageVersion Update="Microsoft.AspNetCore.Http.Connections.Client"             Version="9.0.*" />            <!-- netstandard, net9 -->
+    <PackageVersion Update="Microsoft.AspNetCore.Http.Connections.Common"             Version="9.0.*" />            <!-- netstandard, net9 -->
+    <PackageVersion Update="Microsoft.AspNetCore.Mvc.Testing"                         Version="9.0.*" />            <!-- net9 -->
+    <PackageVersion Update="Microsoft.AspNetCore.Mvc.NewtonsoftJson"                  Version="9.0.*" />            <!-- net9 -->
+    <PackageVersion Update="Microsoft.AspNetCore.SignalR.Client"                      Version="9.0.*" />            <!-- netstandard, net9 -->
+    <PackageVersion Update="Microsoft.AspNetCore.SignalR.Protocols.Json"              Version="9.0.*" />            <!-- netstandard, net9 -->
+    <PackageVersion Update="Microsoft.AspNetCore.SignalR.Protocols.NewtonsoftJson"    Version="9.0.*" />            <!-- netstandard, net9 -->
+    <PackageVersion Update="Microsoft.AspNetCore.TestHost"                            Version="9.0.*" />            <!-- net9 -->
+    <PackageVersion Update="Microsoft.AspNetCore.WebUtilities"                        Version="9.0.*" />            <!-- net9 -->
     
-    <PackageVersion Update="Microsoft.Build"                                          Version="17.13.9" />          <!-- net9 -->
-    <PackageVersion Update="Microsoft.Build.Utilities.Core"                           Version="17.13.9" />          <!-- netstandard, net9 -->
-    <PackageVersion Update="Microsoft.Build.Tasks.Core"                               Version="17.13.9" />          <!-- netstandard, net9 -->
-    <PackageVersion Update="Microsoft.Extensions.Localization"                        Version="9.0.2" />            <!-- netstandard, net9 -->
-    <PackageVersion Update="Microsoft.Extensions.Localization.Abstractions"           Version="9.0.2" />            <!-- netstandard, net9 -->
-    <PackageVersion Update="Microsoft.Extensions.ObjectPool"                          Version="9.0.2" />            <!-- netstandard, net9 -->
+    <PackageVersion Update="Microsoft.Build"                                          Version="17.13.*" />          <!-- net9 -->
+    <PackageVersion Update="Microsoft.Build.Utilities.Core"                           Version="17.13.*" />          <!-- netstandard, net9 -->
+    <PackageVersion Update="Microsoft.Build.Tasks.Core"                               Version="17.13.*" />          <!-- netstandard, net9 -->
+    <PackageVersion Update="Microsoft.Extensions.Localization"                        Version="9.0.*" />            <!-- netstandard, net9 -->
+    <PackageVersion Update="Microsoft.Extensions.Localization.Abstractions"           Version="9.0.*" />            <!-- netstandard, net9 -->
+    <PackageVersion Update="Microsoft.Extensions.ObjectPool"                          Version="9.0.*" />            <!-- netstandard, net9 -->
   </ItemGroup>
 
   <!-- Licensed packages -->
   <ItemGroup>
-    <PackageVersion Update="GdPicture.API"                                            Version="14.2.100" />         <!-- net6 -->
-    <PackageVersion Update="GrapeCity.Documents.Imaging"                              Version="4.2.0.727" />        <!-- netstandard -->
-    <PackageVersion Update="Spire.PDF"                                                Version="7.6.15" />           <!-- netstandard, net5 -->
-    <PackageVersion Update="Syncfusion.Blazor.SfPdfViewer"                            Version="27.2.5" />           <!-- net6, net8, net9 -->
-    <PackageVersion Update="Syncfusion.Blazor.Themes"                                 Version="27.2.5" />           <!-- net6, net8, net9 -->
-    <PackageVersion Update="Syncfusion.DocIO.Net.Core"                                Version="27.2.5" />           <!-- net6, net8, net9 -->
-    <PackageVersion Update="Syncfusion.DocIORenderer.Net.Core"                        Version="27.2.5" />           <!-- net6, net8, net9 -->
-    <PackageVersion Update="Syncfusion.EJ2.PdfViewer.AspNet.Core.Windows"             Version="27.2.5" />           <!-- netstandard, net6, net8, net9 -->
-    <PackageVersion Update="Syncfusion.Licensing"                                     Version="27.2.5" />           <!-- NO DEPS -->
-    <PackageVersion Update="Syncfusion.Pdf.Imaging.Net.Core"                          Version="27.2.5" />           <!-- netstandard, net6, net8, net9  -->
+    <PackageVersion Update="GdPicture.API"                                            Version="14.2.*" />           <!-- net6 -->
+    <PackageVersion Update="GrapeCity.Documents.Imaging"                              Version="4.2.*" />            <!-- netstandard -->
+    <PackageVersion Update="Spire.PDF"                                                Version="7.6.*" />            <!-- netstandard, net5 -->
+    <PackageVersion Update="Syncfusion.Blazor.SfPdfViewer"                            Version="27.2.*" />           <!-- net6, net8, net9 -->
+    <PackageVersion Update="Syncfusion.Blazor.Themes"                                 Version="27.2.*" />           <!-- net6, net8, net9 -->
+    <PackageVersion Update="Syncfusion.DocIO.Net.Core"                                Version="27.2.*" />           <!-- net6, net8, net9 -->
+    <PackageVersion Update="Syncfusion.DocIORenderer.Net.Core"                        Version="27.2.*" />           <!-- net6, net8, net9 -->
+    <PackageVersion Update="Syncfusion.EJ2.PdfViewer.AspNet.Core.Windows"             Version="27.2.*" />           <!-- netstandard, net6, net8, net9 -->
+    <PackageVersion Update="Syncfusion.Licensing"                                     Version="27.2.*" />           <!-- NO DEPS -->
+    <PackageVersion Update="Syncfusion.Pdf.Imaging.Net.Core"                          Version="27.2.*" />           <!-- netstandard, net6, net8, net9  -->
   </ItemGroup>
 
   <!-- Problematic packages (temporary) -->
   <ItemGroup>
     <!-- Should not depend on Toolbelt.Blazor.I18nText.SourceGenerator - see https://github.com/dotnet/sdk/issues/43225 -->
-    <PackageVersion Update="Toolbelt.Blazor.I18nText"                                 Version="12.0.2" />           <!-- netstandard, net6 -->
+    <PackageVersion Update="Toolbelt.Blazor.I18nText"                                 Version="14.0.*" />           <!-- netstandard, net6 -->
   </ItemGroup>
   
   <!-- Problematic packages (net6) -->
@@ -517,9 +530,9 @@
     Version 3.116.1 is not compatible with licensed version of SyncFusion
     see: https://github.com/epsitec-sa/zou/pull/2
     -->
-    <PackageVersion Update="SkiaSharp"                                                Version="2.88.9" />           <!-- netstandard, net6 -->
-    <PackageVersion Update="SkiaSharp.NativeAssets.Linux"                             Version="2.88.9" />           <!-- netstandard, net6 -->
-    <PackageVersion Update="SkiaSharp.NativeAssets.Linux.NoDependencies"              Version="2.88.9" />           <!-- netstandard, net6 -->
-    <PackageVersion Update="SkiaSharp.Views.Blazor"                                   Version="2.88.9" />           <!-- net6 -->
+    <PackageVersion Update="SkiaSharp"                                                Version="2.88.*" />           <!-- netstandard, net6 -->
+    <PackageVersion Update="SkiaSharp.NativeAssets.Linux"                             Version="2.88.*" />           <!-- netstandard, net6 -->
+    <PackageVersion Update="SkiaSharp.NativeAssets.Linux.NoDependencies"              Version="2.88.*" />           <!-- netstandard, net6 -->
+    <PackageVersion Update="SkiaSharp.Views.Blazor"                                   Version="2.88.*" />           <!-- net6 -->
   </ItemGroup>
 </Project>
