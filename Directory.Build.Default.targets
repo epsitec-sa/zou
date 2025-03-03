@@ -3,11 +3,11 @@
   
   <!--
   Make lock file part of your source repository: https://learn.microsoft.com/en-us/nuget/consume-packages/package-references-in-project-files#make-lock-file-part-of-your-source-repository
+
+  Use following command to re-evaluate dependencies and update packages lock files:
+  'dotnet restore &dash;&dash;force-evaluate'
   -->
   <PropertyGroup>
-    <!-- Use following command to re-evaluate dependencies and update packages lock files -->
-    <![CDATA['dotnet restore --force-evaluate']]>
-
     <!-- Avoid creating packages lock file from inside Visual Studio (OutputType is modified by VS for projects referencing test frameworks) -->
     <RestorePackagesWithLockFile Condition="'$(BuildingInsideVisualStudio)'  != '' And !Exists('$(ProjectDir)packages.lock.json')">false</RestorePackagesWithLockFile>
     <RestorePackagesWithLockFile Condition="'$(RestorePackagesWithLockFile)' == '' And  Exists('$(ProjectDir)packages.lock.json')">true</RestorePackagesWithLockFile>
