@@ -18,7 +18,7 @@ NuGet Error NU1011: https://learn.microsoft.com/en-us/nuget/reference/errors-and
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageVersion Include="Epsitec.Mailer.Core"                                     Version="2.9.*" />            <!-- net8 ONLY -->
+    <PackageVersion Include="Microsoft.Web.Services3"                                 Version="3.0.*" />            <!-- NO DEPS -->
     <PackageVersion Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets"   Version="1.21.*" />           <!-- NET 4.7 -->
     <PackageVersion Include="Nancy.Hosting.Self"                                      Version="2.0.*" />            <!-- NET 4.5 -->
     <PackageVersion Include="System.Reactive.Windows.Forms"                           Version="6.0.*" />            <!-- NET 4.7 -->
@@ -26,7 +26,6 @@ NuGet Error NU1011: https://learn.microsoft.com/en-us/nuget/reference/errors-and
 
   <!-- netstandard (deprecated) -->
   <ItemGroup>
-    <PackageVersion Include="Microsoft.AspNetCore.Routing"                            Version="2.2.*" />            <!-- netstandard, DEPRECATED -->
     <PackageVersion Include="VocaDb.ResXFileCodeGenerator"                            Version="3.2.*" />            <!-- netstandard, DEPRECATED -->
   </ItemGroup>
 
@@ -52,7 +51,7 @@ NuGet Error NU1011: https://learn.microsoft.com/en-us/nuget/reference/errors-and
     <PackageVersion Include="coverlet.collector"                                      Version="6.0.*" />            <!-- NO DEPS -->
     <PackageVersion Include="coverlet.msbuild"                                        Version="6.0.*" />            <!-- NO DEPS -->
     <PackageVersion Include="CurrieTechnologies.Razor.SweetAlert2"                    Version="5.6.*" />            <!-- netstandard, net6, net8 -->
-    <PackageVersion Include="Dapper"                                                  Version="2.15.*" />           <!-- netstandard, net5 -->
+    <PackageVersion Include="Dapper"                                                  Version="2.1.35" />           <!-- netstandard, net5 -->
     <PackageVersion Include="Destructurama.Attributed"                                Version="5.0.*" />            <!-- netstandard -->
     <PackageVersion Include="DnsClient"                                               Version="1.8.*" />            <!-- netstandard, net6, net8 -->
     <PackageVersion Include="DocumentFormat.OpenXml"                                  Version="3.2.*" />            <!-- netstandard, net8 -->
@@ -97,12 +96,12 @@ NuGet Error NU1011: https://learn.microsoft.com/en-us/nuget/reference/errors-and
     <PackageVersion Include="Microsoft.AspNetCore.Http.Connections.Client"            Version="6.0.*" />            <!-- netstandard, net6 -->
     <PackageVersion Include="Microsoft.AspNetCore.Http.Connections.Common"            Version="6.0.*" />            <!-- netstandard, net6 -->
     <PackageVersion Include="Microsoft.AspNetCore.Hosting.Abstractions"               Version="2.3.*" />            <!-- netstandard -->
-    <PackageVersion Include="Microsoft.AspNetCore.Localization"                       Version="2.3.*" />            <!-- netstandard -->
+    <PackageVersion Include="Microsoft.AspNetCore.Localization"                       Version="2.1.*" />            <!-- netstandard -->
     <PackageVersion Include="Microsoft.AspNetCore.Mvc.Abstractions"                   Version="2.3.*" />            <!-- netstandard -->
     <PackageVersion Include="Microsoft.AspNetCore.Mvc.Core"                           Version="2.3.*" />            <!-- netstandard -->
     <PackageVersion Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson"                 Version="6.0.*" />            <!-- net6 -->
     <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing"                        Version="6.0.*" />            <!-- net6 -->
-    <PackageVersion Include="Microsoft.AspNetCore.OpenApi"                            Version="8.0.*" />            <!-- net8 ONLY, NOT FOUND IN PROJS? -->
+    <PackageVersion Include="Microsoft.AspNetCore.Routing"                            Version="2.1.*" />            <!-- netstandard -->
     <PackageVersion Include="Microsoft.AspNetCore.SignalR.Client"                     Version="6.0.*" />            <!-- netstandard, net6 -->
     <PackageVersion Include="Microsoft.AspNetCore.SignalR.Protocols.Json"             Version="6.0.*" />            <!-- netstandard, net6 -->
     <PackageVersion Include="Microsoft.AspNetCore.SignalR.Protocols.NewtonsoftJson"   Version="6.0.*" />            <!-- netstandard, net6 -->
@@ -171,7 +170,6 @@ NuGet Error NU1011: https://learn.microsoft.com/en-us/nuget/reference/errors-and
     <PackageVersion Include="Microsoft.QualityTools.Testing.Fakes"                    Version="16.11.*" />          <!-- netstandard -->
     <PackageVersion Include="Microsoft.Reactive.Testing"                              Version="6.0.*" />            <!-- net4, netstandard, net6 -->
     <PackageVersion Include="Microsoft.VisualStudio.Web.CodeGeneration.Design"        Version="6.0.*" />            <!-- net6 -->
-    <PackageVersion Include="Microsoft.Web.Services3"                                 Version="3.0.*" />            <!-- NO DEPS -->
     <PackageVersion Include="Microsoft.Win32.Registry"                                Version="5.0.*" />            <!-- netstandard, * -->
 
     <PackageVersion Include="Moq"                                                     Version="4.20.*" />           <!-- netstandard, net6 -->
@@ -189,7 +187,6 @@ NuGet Error NU1011: https://learn.microsoft.com/en-us/nuget/reference/errors-and
     <PackageVersion Include="Nito.Disposables"                                        Version="2.5.*" />            <!-- netstandard, net8 -->
     <PackageVersion Include="Npgsql"                                                  Version="9.0.*" />            <!-- net6, net8 -->
     <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL"                   Version="7.0.*" />            <!-- net6 -->
-    <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL.Design"            Version="1.1.*" />            <!-- netstandard -->
     <PackageVersion Include="NLog"                                                    Version="5.4.*" />            <!-- netstandard -->
     <PackageVersion Include="NLog.Web.AspNetCore"                                     Version="5.4.*" />            <!-- netstandard, net6, net8 -->
     <PackageVersion Include="NUnit"                                                   Version="4.3.*" />            <!-- net6, net8 -->
@@ -352,14 +349,23 @@ NuGet Error NU1011: https://learn.microsoft.com/en-us/nuget/reference/errors-and
     <PackageVersion Include="ZXing.Net"                                               Version="0.16.*" />           <!-- netstandard, * -->
   </ItemGroup>
 
+  <!-- TFM >= net8 but still undefined -->
+  <ItemGroup Condition="$(CoreTargetFramework.StartsWith('net8')) Or $(TargetFramework.StartsWith('net8')) Or $(CoreTargetFramework.StartsWith('net9')) Or $(TargetFramework.StartsWith('net9'))">
+    <PackageVersion Include="Epsitec.Mailer.Core"                                     Version="2.9.*" />            <!-- net8 ONLY -->
+    <PackageVersion Include="Microsoft.AspNetCore.OpenApi"                            Version="8.0.*" />            <!-- net8 ONLY -->
+  </ItemGroup>
+
+  <!-- TEST : does this work with net6 ? -->
   <ItemGroup>
-    <!-- TEST : does this work with net6 ? -->
-    <PackageVersion Update="Microsoft.AspNetCore.Routing"                             Version="2.3.*" />            <!-- netstandard, Microsoft.Extensions.ObjectPool >= 8.0.11 -->
+    <!-- Microsoft.AspNetCore.Mvc.Core 2.3.0 -> Microsoft.AspNetCore.Routing (>= 2.3.0) -->
+    <PackageVersion Update="Microsoft.AspNetCore.Routing"                             Version="2.3.*" />            <!-- netstandard -->
+    <!-- Microsoft.AspNetCore.Mvc.Core 2.3.0 -> Microsoft.AspNetCore.Http 2.3.0 -> Microsoft.Extensions.ObjectPool (>= 8.0.11) -->
     <PackageVersion Update="Microsoft.Extensions.ObjectPool"                          Version="8.0.*" />            <!-- netstandard, net8 -->
   </ItemGroup>
 
   <!-- TFM >= net8 -->
   <ItemGroup Condition="$(CoreTargetFramework.StartsWith('net8')) Or $(TargetFramework.StartsWith('net8')) Or $(CoreTargetFramework.StartsWith('net9')) Or $(TargetFramework.StartsWith('net9'))">
+    <PackageVersion Update="Dapper"                                                   Version="2.1.*" />            <!-- netstandard, net8 -->
     <PackageVersion Update="EFCore.NamingConventions"                                 Version="9.0.*" />            <!-- net8 -->
     <PackageVersion Update="MailKit"                                                  Version="4.10.*" />           <!-- netstandard, net8 -->
 
@@ -522,7 +528,9 @@ NuGet Error NU1011: https://learn.microsoft.com/en-us/nuget/reference/errors-and
     <PackageVersion Update="Microsoft.EntityFrameworkCore"                            Version="7.0.2" />            <!-- net6 -->
     <PackageVersion Update="Microsoft.EntityFrameworkCore.Design"                     Version="7.0.2" />            <!-- net6 -->
     <PackageVersion Update="Microsoft.EntityFrameworkCore.Sqlite"                     Version="7.0.2" />            <!-- net6 -->
+    <PackageVersion Update="Microsoft.EntityFrameworkCore.SqlServer"                  Version="7.0.2" />            <!-- net6 -->
     <PackageVersion Update="Microsoft.EntityFrameworkCore.Tools"                      Version="7.0.2" />            <!-- net6 -->
+    <PackageVersion Update="Npgsql.EntityFrameworkCore.PostgreSQL"                    Version="7.0.1" />            <!-- net6 -->
     
     <!-- Version 8.3.1 DOES NOT SUPPORT net6 (even if they say so) due to Microsoft.Bcl.Memory(>= 9.0.0) dependency -->
     <PackageVersion Update="Microsoft.IdentityModel.Tokens"                           Version="8.3.0" />            <!-- netstandard, net6, net8, net9 -->
