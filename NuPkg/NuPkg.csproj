@@ -1,0 +1,28 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <IsPackable>false</IsPackable>
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+    <!-- warning NU1701: Package ... was restored using '.NETFramework,Version=... -->
+    <NoWarn>$(NoWarn);NU1701</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="@(PackageVersion)" />
+  </ItemGroup>
+    
+  <ItemGroup>
+    <PackageReference Update="Microsoft.Build"                ExcludeAssets="runtime" />
+    <PackageReference Update="Microsoft.Build.Locator"        ExcludeAssets="runtime" />
+    <PackageReference Update="Microsoft.Build.Tasks.Core"     ExcludeAssets="runtime" />
+    <PackageReference Update="Microsoft.Build.Utilities.Core" ExcludeAssets="runtime" />
+  </ItemGroup>
+
+  <Target Name="TracePackageVersions" BeforeTargets="Restore;CollectPackageReferences" Condition="'$(TraceNuPkg)' != ''">
+    <Message Importance="high" Text="%(PackageReference.Identity) %(Version)" />
+    <!--<LogItems Items="@(PackageReference)" AllMetadata="false" />
+    <Message Importance="high" Text=" " />-->
+  </Target>
+
+</Project>
