@@ -1,15 +1,28 @@
 <!--
+
 An introduction to NuGet: https://learn.microsoft.com/en-us/nuget/what-is-nuget
-
 Package versioning: https://learn.microsoft.com/en-us/nuget/concepts/package-versioning
-
 How NuGet resolves package dependencies: https://learn.microsoft.com/en-us/nuget/concepts/dependency-resolution
 Dependency resolution rules: https://learn.microsoft.com/en-us/nuget/concepts/dependency-resolution#dependency-resolution-rules
+NuGet Error NU1011: https://learn.microsoft.com/en-us/nuget/reference/errors-and-warnings/nu1011
 
 Locking dependencies: https://learn.microsoft.com/en-us/nuget/consume-packages/package-references-in-project-files#locking-dependencies
-
-NuGet Error NU1011: https://learn.microsoft.com/en-us/nuget/reference/errors-and-warnings/nu1011
+Make lock file part of your source repository: https://learn.microsoft.com/en-us/nuget/consume-packages/package-references-in-project-files#make-lock-file-part-of-your-source-repository
 -->
+
+<!--
+Packages lock files are controlled with the 'RestorePackagesWithLockFile' MSBuild property.
+which is defined in the 'Directory.Build.Default.targets' script.
+
+The property is set to true:
+- if the 'CentralPackageFloatingVersionsEnabled' is true (that's the case with this file)
+- and if the project is an executable (OutputType=Exe|WinExe).
+It is set to false when running inside Visual Studio if no lock file exists.
+
+Lock files are created the first time that 'dotnet restore' is executed (outside of Visual Studio).
+Lock files can be updated by using the '——force-evaluate' option.
+-->
+
 <Project>
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
