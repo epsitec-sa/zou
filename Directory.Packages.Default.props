@@ -28,6 +28,9 @@ Lock files can be updated by using the '——force-evaluate' option.
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
     <CentralPackageFloatingVersionsEnabled>true</CentralPackageFloatingVersionsEnabled>
+    
+    <TFM>$(TargetFramework)</TFM>
+    <TFM Condition="$(TFM.StartsWith('netstandard'))">$(CoreTargetFramework)</TFM>
   </PropertyGroup>
 
   <ItemGroup>
@@ -43,7 +46,7 @@ Lock files can be updated by using the '——force-evaluate' option.
   </ItemGroup>
 
   <!-- netstandard 2.0 only -->
-  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+  <ItemGroup Condition="$(TargetFramework.StartsWith('netstandard'))">
     <PackageVersion Include="Microsoft.Bcl.AsyncInterfaces"                           Version="9.0.*" />            <!-- netstandard2.0 -->
   </ItemGroup>
   
@@ -77,7 +80,7 @@ Lock files can be updated by using the '——force-evaluate' option.
     <PackageVersion Include="ExcelDataReader.DataSet"                                 Version="3.7.*" />            <!-- netstandard -->
     <PackageVersion Include="FluentAssertions"                                        Version="7.0.*" />            <!-- netstandard, net6 -->
     <PackageVersion Include="GdPicture.API"                                           Version="14.2.*" />           <!-- net6 -->
-    <PackageVersion Include="Google.Protobuf"                                         Version="3.29.*" />           <!-- netstandard, net5 -->
+    <PackageVersion Include="Google.Protobuf"                                         Version="3.30.*" />           <!-- netstandard, net5 -->
     <PackageVersion Include="GrapeCity.Documents.Imaging"                             Version="7.2.*" />            <!-- netstandard -->
     <PackageVersion Include="Grpc"                                                    Version="2.46.*" />           <!-- netstandard -->
     <PackageVersion Include="Grpc.Tools"                                              Version="2.70.*" />           <!-- netstandard -->
@@ -203,7 +206,7 @@ Lock files can be updated by using the '——force-evaluate' option.
     <PackageVersion Include="NLog"                                                    Version="5.4.*" />            <!-- netstandard -->
     <PackageVersion Include="NLog.Web.AspNetCore"                                     Version="5.4.*" />            <!-- netstandard, net6, net8 -->
     <PackageVersion Include="NUnit"                                                   Version="4.3.*" />            <!-- net6, net8 -->
-    <PackageVersion Include="NUnit3TestAdapter"                                       Version="4.6.*" />            <!-- NO DEPS -->
+    <PackageVersion Include="NUnit3TestAdapter"                                       Version="5.0.*" />            <!-- NO DEPS -->
     <PackageVersion Include="ObjectsComparer"                                         Version="1.4.*" />            <!-- netstandard -->
     <PackageVersion Include="OneOf"                                                   Version="3.0.*" />            <!-- netstandard -->
     <PackageVersion Include="OneOf.Extended"                                          Version="3.0.*" />            <!-- netstandard -->
@@ -320,7 +323,7 @@ Lock files can be updated by using the '——force-evaluate' option.
     <PackageVersion Include="System.Security.Cryptography.ProtectedData"              Version="8.0.*" />            <!-- netstandard, net6, net8 -->
     <PackageVersion Include="System.Security.Cryptography.Xml"                        Version="8.0.*" />            <!-- netstandard, net6, net8 -->
     <PackageVersion Include="System.Security.Principal.Windows"                       Version="5.0.*" />            <!-- netstandard, * -->
-    <PackageVersion Include="System.ServiceModel.Duplex"                              Version="4.10.*" />           <!-- netstandard, * -->
+    <PackageVersion Include="System.ServiceModel.Duplex"                              Version="6.0.*" />            <!-- net6 -->
     <PackageVersion Include="System.ServiceModel.Federation"                          Version="6.2.*" />            <!-- net6 -->
     <PackageVersion Include="System.ServiceModel.Http"                                Version="6.2.*" />            <!-- net6 -->
     <PackageVersion Include="System.ServiceModel.NetTcp"                              Version="6.2.*" />            <!-- net6 -->
@@ -363,7 +366,7 @@ Lock files can be updated by using the '——force-evaluate' option.
   </ItemGroup>
 
   <!-- TFM >= net8 but still undefined -->
-  <ItemGroup Condition="$(CoreTargetFramework.StartsWith('net8')) Or $(TargetFramework.StartsWith('net8')) Or $(CoreTargetFramework.StartsWith('net9')) Or $(TargetFramework.StartsWith('net9'))">
+  <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TFM)', 'net8'))">
     <PackageVersion Include="Epsitec.Mailer.Core"                                     Version="2.9.*" />            <!-- net8 ONLY -->
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi"                            Version="8.0.*" />            <!-- net8 ONLY -->
   </ItemGroup>
@@ -377,7 +380,7 @@ Lock files can be updated by using the '——force-evaluate' option.
   </ItemGroup>
 
   <!-- TFM >= net8 -->
-  <ItemGroup Condition="$(CoreTargetFramework.StartsWith('net8')) Or $(TargetFramework.StartsWith('net8')) Or $(CoreTargetFramework.StartsWith('net9')) Or $(TargetFramework.StartsWith('net9'))">
+  <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TFM)', 'net8'))">
     <PackageVersion Update="Dapper"                                                   Version="2.1.*" />            <!-- netstandard, net8 -->
     <PackageVersion Update="EFCore.NamingConventions"                                 Version="9.0.*" />            <!-- net8 -->
     <PackageVersion Update="MailKit"                                                  Version="4.10.*" />           <!-- netstandard, net8 -->
@@ -462,11 +465,13 @@ Lock files can be updated by using the '——force-evaluate' option.
     <PackageVersion Update="Serilog.Settings.Configuration"                           Version="9.0.*" />            <!-- netstandard, net8, net9 -->
 
     <PackageVersion Update="System.Collections.Immutable"                             Version="9.0.*" />            <!-- netstandard, net8, net9 -->
+    <PackageVersion Update="System.Configuration.ConfigurationManager"                Version="9.0.*" />            <!-- netstandard, net8, net9 -->
     <PackageVersion Update="System.Drawing.Common"                                    Version="9.0.*" />            <!-- netstandard, net8, net9 -->
     <PackageVersion Update="System.Formats.Asn1"                                      Version="9.0.*" />            <!-- netstandard, net8, net9 -->
     <PackageVersion Update="System.IO.Pipelines"                                      Version="9.0.*" />            <!-- netstandard, net8, net9 -->
     <PackageVersion Update="System.Net.Http.Json"                                     Version="9.0.*" />            <!-- netstandard, net8, net9 -->
     <PackageVersion Update="System.Resources.Extensions"                              Version="9.0.*" />            <!-- netstandard, net8, net9 -->
+    <PackageVersion Update="System.Runtime.Caching"                                   Version="9.0.*" />            <!-- netstandard, net8, net9 -->
     <PackageVersion Update="System.Security.Cryptography.Pkcs"                        Version="9.0.*" />            <!-- netstandard, net8, net9 -->
     <PackageVersion Update="System.Security.Cryptography.Xml"                         Version="9.0.*" />            <!-- netstandard, net8, net9 -->
     <PackageVersion Update="System.Security.Cryptography.ProtectedData"               Version="9.0.*" />            <!-- netstandard, net8, net9 -->
@@ -483,7 +488,7 @@ Lock files can be updated by using the '——force-evaluate' option.
   </ItemGroup>
 
   <!-- TFM >= net9 -->
-  <ItemGroup Condition="$(CoreTargetFramework.StartsWith('net9')) Or $(TargetFramework.StartsWith('net9'))">
+  <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TFM)', 'net9'))">
     <PackageVersion Update="Microsoft.AspNetCore.OpenApi"                             Version="9.0.*" />            <!-- net9 -->
     
     <PackageVersion Update="Microsoft.AspNetCore.Authentication.JwtBearer"            Version="9.0.*" />            <!-- net9 -->
@@ -533,8 +538,8 @@ Lock files can be updated by using the '——force-evaluate' option.
     <PackageVersion Update="Toolbelt.Blazor.I18nText"                                 Version="14.0.*" />           <!-- netstandard, net6 -->
   </ItemGroup>
   
-  <!-- Problematic packages (net6) -->
-  <ItemGroup Condition="$(CoreTargetFramework.StartsWith('net6')) Or $(TargetFramework.StartsWith('net6'))">
+  <!-- Problematic packages (TFM <= net6) -->
+  <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('net6', '$(TFM)'))">
      <!-- Old mac versions support - see https://git.epsitec.ch/cresus.tools/Banking/-/issues/606 -->
     <PackageVersion Update="Microsoft.Data.SQLite"                                    Version="7.0.2" />            <!-- netstandard -->
     <PackageVersion Update="Microsoft.Data.Sqlite.Core"                               Version="7.0.2" />            <!-- netstandard, net6 -->
