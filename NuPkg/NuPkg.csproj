@@ -20,10 +20,36 @@
     <PackageReference Update="Microsoft.Build.Utilities.Core" ExcludeAssets="runtime" />
   </ItemGroup>
 
-  <Target Name="TracePackageVersions" BeforeTargets="Restore;CollectPackageReferences" Condition="'$(TraceNuPkg)' != ''">
+  <Target Name="TraceNuPkg" BeforeTargets="CollectPackageReferences" Condition="'$(TraceNuPkg)' != ''">
+    <PropertyGroup>
+      <TFMVersion>$([MSBuild]::GetTargetFrameworkVersion('$(TargetFramework)'))</TFMVersion>
+    </PropertyGroup>
+
+    <Message Importance="high" Text=" " />
+    <Message Importance="high" Text="CoreTargetFramework = $(CoreTargetFramework)" />
+    <Message Importance="high" Text="TargetFramework     = $(TargetFramework)" />
+
+    <!--<Message Importance="high" Text="TFMVersion = $(TFMVersion)" />
+    <Message Importance="high" Text="VersionGreaterThanOrEquals(TFM=$(TargetFramework), 6.0) = $([MSBuild]::VersionGreaterThanOrEquals('$(TFMVersion)', '6.0'))" />
+    <Message Importance="high" Text="VersionGreaterThanOrEquals(TFM=$(TargetFramework), 8.0) = $([MSBuild]::VersionGreaterThanOrEquals('$(TFMVersion)', '8.0'))" />
+    <Message Importance="high" Text="VersionGreaterThanOrEquals(TFM=$(TargetFramework), 9.0) = $([MSBuild]::VersionGreaterThanOrEquals('$(TFMVersion)', '9.0'))" />-->
+
+    <Message Importance="high" Text=" " />
+    <Message Importance="high" Text="IsTargetFrameworkCompatible(netS, TFM=$(TargetFramework)) = $([MSBuild]::IsTargetFrameworkCompatible('netstandard2.0', '$(TargetFramework)'))" />
+    <Message Importance="high" Text="IsTargetFrameworkCompatible(net6, TFM=$(TargetFramework)) = $([MSBuild]::IsTargetFrameworkCompatible('net6', '$(TargetFramework)'))" />
+    <Message Importance="high" Text="IsTargetFrameworkCompatible(net8, TFM=$(TargetFramework)) = $([MSBuild]::IsTargetFrameworkCompatible('net8', '$(TargetFramework)'))" />
+    <Message Importance="high" Text="IsTargetFrameworkCompatible(net9, TFM=$(TargetFramework)) = $([MSBuild]::IsTargetFrameworkCompatible('net9', '$(TargetFramework)'))" />
+    <Message Importance="high" Text=" " />
+    <Message Importance="high" Text="IsTargetFrameworkCompatible(TFM=$(TargetFramework), netS) = $([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'netstandard2.0'))" />
+    <Message Importance="high" Text="IsTargetFrameworkCompatible(TFM=$(TargetFramework), net6) = $([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net6'))" />
+    <Message Importance="high" Text="IsTargetFrameworkCompatible(TFM=$(TargetFramework), net8) = $([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8'))" />
+    <Message Importance="high" Text="IsTargetFrameworkCompatible(TFM=$(TargetFramework), net9) = $([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net9'))" />
+    <Message Importance="high" Text=" " />
+
     <Message Importance="high" Text="%(PackageReference.Identity) %(Version)" />
     <!--<LogItems Items="@(PackageReference)" AllMetadata="false" />
     <Message Importance="high" Text=" " />-->
+    <Message Importance="high" Text=" " />
   </Target>
 
 </Project>
