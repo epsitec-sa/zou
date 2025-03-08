@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
@@ -21,18 +21,11 @@
   </ItemGroup>
 
   <Target Name="TraceNuPkg" BeforeTargets="CollectPackageReferences" Condition="'$(TraceNuPkg)' != ''">
-    <PropertyGroup>
-      <TFMVersion>$([MSBuild]::GetTargetFrameworkVersion('$(TargetFramework)'))</TFMVersion>
-    </PropertyGroup>
-
+    <Message Importance="high" Text="$(T0)$(MSBuildProjectFile)$(NC)" />
     <Message Importance="high" Text=" " />
     <Message Importance="high" Text="CoreTargetFramework = $(CoreTargetFramework)" />
     <Message Importance="high" Text="TargetFramework     = $(TargetFramework)" />
-
-    <!--<Message Importance="high" Text="TFMVersion = $(TFMVersion)" />
-    <Message Importance="high" Text="VersionGreaterThanOrEquals(TFM=$(TargetFramework), 6.0) = $([MSBuild]::VersionGreaterThanOrEquals('$(TFMVersion)', '6.0'))" />
-    <Message Importance="high" Text="VersionGreaterThanOrEquals(TFM=$(TargetFramework), 8.0) = $([MSBuild]::VersionGreaterThanOrEquals('$(TFMVersion)', '8.0'))" />
-    <Message Importance="high" Text="VersionGreaterThanOrEquals(TFM=$(TargetFramework), 9.0) = $([MSBuild]::VersionGreaterThanOrEquals('$(TFMVersion)', '9.0'))" />-->
+    <Message Importance="high" Text="TFM                 = $(TFM)" />
 
     <Message Importance="high" Text=" " />
     <Message Importance="high" Text="IsTargetFrameworkCompatible(netS, TFM=$(TargetFramework)) = $([MSBuild]::IsTargetFrameworkCompatible('netstandard2.0', '$(TargetFramework)'))" />
@@ -46,7 +39,7 @@
     <Message Importance="high" Text="IsTargetFrameworkCompatible(TFM=$(TargetFramework), net9) = $([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net9'))" />
     <Message Importance="high" Text=" " />
 
-    <Message Importance="high" Text="%(PackageReference.Identity) %(Version)" />
+    <!--<Message Importance="high" Text="%(PackageReference.Identity) %(Version)" />-->
     <!--<LogItems Items="@(PackageReference)" AllMetadata="false" />
     <Message Importance="high" Text=" " />-->
     <Message Importance="high" Text=" " />
