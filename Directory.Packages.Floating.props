@@ -25,8 +25,6 @@ Lock files can be updated by using the '——force-evaluate' option.
 
 <Project>
   <PropertyGroup>
-    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
     <CentralPackageFloatingVersionsEnabled>true</CentralPackageFloatingVersionsEnabled>
   </PropertyGroup>
 
@@ -47,7 +45,7 @@ Lock files can be updated by using the '——force-evaluate' option.
     <PackageVersion Include="Microsoft.Bcl.AsyncInterfaces"                           Version="9.0.*" />            <!-- netstandard2.0 -->
   </ItemGroup>
   
-  <!-- netstandard or TFM >= net6 -->
+  <!-- netstandard or CpmTFM >= net6 -->
   <ItemGroup>
     <PackageVersion Include="Autofac"                                                 Version="8.2.*" />            <!-- netstandard, net6, net8 -->
     <PackageVersion Include="Azure.Identity"                                          Version="1.13.*" />           <!-- netstandard -->
@@ -362,8 +360,8 @@ Lock files can be updated by using the '——force-evaluate' option.
     <PackageVersion Include="ZXing.Net"                                               Version="0.16.*" />           <!-- netstandard, * -->
   </ItemGroup>
 
-  <!-- TFM >= net8 but still undefined -->
-  <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TFM)', 'net8'))">
+  <!-- CpmTFM >= net8 but still undefined -->
+  <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(CpmTFM)', 'net8'))">
     <PackageVersion Include="Epsitec.Mailer.Core"                                     Version="2.9.*" />            <!-- net8 ONLY -->
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi"                            Version="8.0.*" />            <!-- net8 ONLY -->
   </ItemGroup>
@@ -378,8 +376,8 @@ Lock files can be updated by using the '——force-evaluate' option.
     <PackageVersion Update="Microsoft.Extensions.ObjectPool"                          Version="8.0.*" />            <!-- netstandard, net8 -->
   </ItemGroup>
 
-  <!-- TFM >= net8 -->
-  <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TFM)', 'net8'))">
+  <!-- CpmTFM >= net8 -->
+  <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(CpmTFM)', 'net8'))">
     <PackageVersion Update="Dapper"                                                   Version="2.1.*" />            <!-- netstandard, net8 -->
     <PackageVersion Update="DocumentFormat.OpenXml"                                   Version="3.3.*" />            <!-- netstandard, net8 -->
     <PackageVersion Update="EFCore.NamingConventions"                                 Version="9.0.*" />            <!-- net8 -->
@@ -500,8 +498,8 @@ Lock files can be updated by using the '——force-evaluate' option.
     <PackageVersion Update="TinyCsvParser"                                            Version="2.7.*" />            <!-- netstandard, net8 -->
   </ItemGroup>
 
-  <!-- TFM >= net9 -->
-  <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TFM)', 'net9'))">
+  <!-- CpmTFM >= net9 -->
+  <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(CpmTFM)', 'net9'))">
     <PackageVersion Update="Microsoft.AspNetCore.OpenApi"                             Version="9.0.*" />            <!-- net9 -->
     
     <PackageVersion Update="Microsoft.AspNetCore.Authentication.JwtBearer"            Version="9.0.*" />            <!-- net9 -->
@@ -556,8 +554,8 @@ Lock files can be updated by using the '——force-evaluate' option.
     <PackageVersion Update="Toolbelt.Blazor.I18nText"                                 Version="14.0.*" />           <!-- netstandard, net6 -->
   </ItemGroup>
   
-  <!-- Problematic packages (TFM <= net6) -->
-  <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('net6', '$(TFM)'))">
+  <!-- Problematic packages (CpmTFM <= net6) -->
+  <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('net6', '$(CpmTFM)'))">
     
     <!-- Version 2.3.* DOES NOT SUPPORT net6 due to Microsoft.AspNetCore.Localization 2.3.0 -> Microsoft.Extensions.Localization.Abstractions (>= 8.0.11) -->
     <PackageVersion Update="Microsoft.AspNetCore.Localization"                        Version="2.1.*" />            <!-- netstandard -->

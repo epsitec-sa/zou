@@ -96,10 +96,8 @@
     <Message Importance="high" Text=" " />
   </Target>
 
-  <Target Name="TraceDirectoryBuildDefaultProps"
-          Condition="'$(ZouTrace)' == 'true' Or '$(ZouDirectoryBuild)' == 'true'">
-    <Message Importance="high" Text="zou/Directory.Build.Default.props [$(MSBuildProjectFile)]" />
-    <Message Importance="high" Text="---------------------------------" />
+  <Target Name="TraceDirectoryBuildDefaultProps" Condition="'$(ZouTrace)' == 'true' Or '$(ZouDirectoryBuild)' == 'true'">
+    <Message Importance="high" Text="$(T0)$(MSBuildThisFile) ($(MSBuildProjectFile))$(NC)" />
     <Message Importance="high" Text="LangVersion                    = $(LangVersion)" />
     <Message Importance="high" Text="RazorLangVersion               = $(RazorLangVersion)" />
     <Message Importance="high" Text="Deterministic                  = $(Deterministic)" />

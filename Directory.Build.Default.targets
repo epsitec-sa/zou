@@ -32,17 +32,11 @@
     <RepositoryUrl Condition="'$(RepositoryUrl)' == '' And '$(PackageProjectUrl)' != ''">$(PackageProjectUrl).$(RepositoryType)</RepositoryUrl>
   </PropertyGroup>
 
-  <!-- Nuget packages restore and locking  -->
+  <!-- Nuget packages restore  -->
   <PropertyGroup>
-    <!-- Avoid creating packages lock file from inside Visual Studio (OutputType is modified by VS for projects referencing test frameworks) -->
-    <RestorePackagesWithLockFile Condition="'$(BuildingInsideVisualStudio)'  != '' And !Exists('$(ProjectDir)packages.lock.json')">false</RestorePackagesWithLockFile>
-    <RestorePackagesWithLockFile Condition="'$(RestorePackagesWithLockFile)' == '' And  Exists('$(ProjectDir)packages.lock.json')">true</RestorePackagesWithLockFile>
-    <RestorePackagesWithLockFile Condition="'$(RestorePackagesWithLockFile)' == '' And '$(CentralPackageFloatingVersionsEnabled)' == 'true' And $(OutputType.EndsWith('Exe'))">true</RestorePackagesWithLockFile>
-    <RestorePackagesWithLockFile Condition="'$(RestorePackagesWithLockFile)' == ''">false</RestorePackagesWithLockFile>
-
-    <!-- Compute TFM used for package restore conditions (see Directory.Packages.default.props) -->
-    <TFM>$(TargetFramework)</TFM>
-    <TFM Condition="$(TargetFramework.StartsWith('netstandard'))">$(CoreTargetFramework)</TFM>
+    <!-- Compute CpmTFM used for package restore conditions (see Directory.Packages.Floating.props) -->
+    <CpmTFM>$(TargetFramework)</CpmTFM>
+    <CpmTFM Condition="$(TargetFramework.StartsWith('netstandard'))">$(CoreTargetFramework)</CpmTFM>
   </PropertyGroup>
 
   <!-- Disable some warnings -->

@@ -1,3 +1,35 @@
 <Project>
-  <Import Project="Directory.Packages.Floating.props" />
+  <PropertyGroup>
+    <CpmTFM>$(TargetFramework)</CpmTFM>
+    <CpmTFM Condition="$(TargetFramework.StartsWith('netstandard'))">$(CoreTargetFramework)</CpmTFM>
+    <CpmVer>$([MSBuild]::GetTargetFrameworkVersion('$(CpmTFM)', 1))</CpmVer>
+    <CpmId Condition="'$(CpmId)'== ''">net$(CpmVer)</CpmId>
+    <CpmPath>$(MSBuildThisFileDirectory)Directory.Packages.$(CpmId).props</CpmPath>
+    <CpmPath Condition="!Exists('$(CpmPath)')">$(MSBuildThisFileDirectory)Directory.Packages.Floating.props</CpmPath>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+  </PropertyGroup>
+
+  <Import Project="$(CpmPath)" />
+
+  <Target Name="TraceDirectoryPackagesDefault" BeforeTargets="CollectPackageReferences" Condition="'$(TraceCpm)' != ''">
+    <Message Importance="high" Text="$(T0)$(MSBuildThisFile) ($(MSBuildProjectFile))$(NC)" />
+
+    <!--<ItemGroup>
+      <CpmFile
+        Include="$(MSBuildThisFileDirectory)Directory.Packages.*.props"
+        Exclude="$(MSBuildThisFileDirectory)Directory.Packages.Default.props;$(MSBuildThisFileDirectory)Directory.Packages.Floating.props" />
+    </ItemGroup>
+    <LogItems Items="@(CpmFile)" AllMetadata="false" />
+    <Message Importance="high" Text=" " />-->
+
+    <Message Importance="high" Text="CpmTFM  = $(CpmTFM)" />
+    <Message Importance="high" Text="CpmVer  = $(CpmVer)" />
+    <Message Importance="high" Text="CpmId   = $(CpmId)" />
+    <Message Importance="high" Text="CpmPath = $(CpmPath)" />
+    <Message Importance="high" Text=" " />
+  </Target>
 </Project>
