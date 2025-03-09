@@ -32,13 +32,6 @@
     <RepositoryUrl Condition="'$(RepositoryUrl)' == '' And '$(PackageProjectUrl)' != ''">$(PackageProjectUrl).$(RepositoryType)</RepositoryUrl>
   </PropertyGroup>
 
-  <!-- Nuget packages restore  -->
-  <PropertyGroup>
-    <!-- Compute CpmTFM used for package restore conditions (see Directory.Packages.Floating.props) -->
-    <CpmTFM>$(TargetFramework)</CpmTFM>
-    <CpmTFM Condition="$(TargetFramework.StartsWith('netstandard'))">$(CoreTargetFramework)</CpmTFM>
-  </PropertyGroup>
-
   <!-- Disable some warnings -->
   <PropertyGroup>
     <!-- Suppress following C# warning because we use a subset of the semantic versioning format - major.minor.patch -->
