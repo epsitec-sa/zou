@@ -78,7 +78,7 @@ Lock files can be updated by using the '——force-evaluate' option.
     <PackageVersion Include="Google.Protobuf"                                         Version="3.30.*" />           <!-- netstandard, net5 -->
     <PackageVersion Include="GrapeCity.Documents.Imaging"                             Version="7.2.*" />            <!-- netstandard -->
     <PackageVersion Include="Grpc"                                                    Version="2.46.*" />           <!-- netstandard -->
-    <PackageVersion Include="Grpc.Tools"                                              Version="2.70.*" />           <!-- netstandard -->
+    <PackageVersion Include="Grpc.Tools"                                              Version="2.71.*" />           <!-- netstandard -->
     <PackageVersion Include="HarfBuzzSharp.NativeAssets.Linux"                        Version="8.3.*" />            <!-- netstandard, net6, net8 -->
     <PackageVersion Include="HtmlAgilityPack"                                         Version="1.12.*" />           <!-- netstandard -->
     <PackageVersion Include="IBAN4Net"                                                Version="2.0.*" />            <!-- netstandard, net6 -->
@@ -552,6 +552,12 @@ Lock files can be updated by using the '——force-evaluate' option.
 
   <!-- Problematic packages (temporary) -->
   <ItemGroup>
+    <!--
+    Version 2.71.0 fails on the build system
+    - nuget\grpc.tools\2.71.0\build\_protobuf\Google.Protobuf.Tools.targets(291,5):
+    - error MSB6006: "nuget\grpc.tools\2.71.0\tools\windows_x64\protoc.exe" exited with code -1073741819.
+    -->
+    <PackageVersion Update="Grpc.Tools"                                               Version="2.70.*" />           <!-- netstandard -->
     <!-- Should not depend on Toolbelt.Blazor.I18nText.SourceGenerator - see https://github.com/dotnet/sdk/issues/43225 -->
     <PackageVersion Update="Toolbelt.Blazor.I18nText"                                 Version="14.0.*" />           <!-- netstandard, net6 -->
   </ItemGroup>
