@@ -9,6 +9,7 @@
     <!-- Compute TFM used for package restore conditions (see Directory.Packages.Floating.props) -->
     <CpmTFM>$(TargetFramework)</CpmTFM>
     <CpmTFM Condition="$(TargetFramework.StartsWith('netstandard'))">$(CoreTargetFramework)</CpmTFM>
+    <CpmTFM Condition="$(TargetFramework.StartsWith('net4'))">net6</CpmTFM>
 
     <CpmVer>$([MSBuild]::GetTargetFrameworkVersion('$(CpmTFM)', 1))</CpmVer>
     <CpmId Condition="'$(CpmId)'== ''">net$(CpmVer)</CpmId>
