@@ -560,12 +560,14 @@ Lock files can be updated by using the '——force-evaluate' option.
     <PackageVersion Update="Microsoft.VisualStudio.Web.CodeGeneration.Design"         Version="9.0.*" />            <!-- net9 -->
   </ItemGroup>
 
-  <!-- Licensed / charged packages -->
+  <!-- Charged packages -->
   <ItemGroup>
     <!-- FluentAssertions 8.0.* is not free anymore (https://www.youtube.com/watch?v=ZFc6jcaM6Ms) -->
     <PackageVersion Update="FluentAssertions"                                         Version="7.2.*" />            <!-- netstandard, net6 -->
+  </ItemGroup>
     
-    <!-- Licensed packages -->
+  <!-- Licensed packages -->
+  <ItemGroup>
     <PackageVersion Update="GdPicture.API"                                            Version="14.2.*" />           <!-- net6 -->
     <PackageVersion Update="GrapeCity.Documents.Imaging"                              Version="7.2.*" />            <!-- netstandard -->
     <PackageVersion Update="Syncfusion.Blazor.SfPdfViewer"                            Version="28.2.*" />           <!-- net6, net8, net9 -->
@@ -575,6 +577,10 @@ Lock files can be updated by using the '——force-evaluate' option.
     <PackageVersion Update="Syncfusion.EJ2.PdfViewer.AspNet.Core"                     Version="28.2.*" />           <!-- netstandard, net6, net8, net9 -->
     <PackageVersion Update="Syncfusion.Licensing"                                     Version="28.2.*" />           <!-- NO DEPS -->
     <PackageVersion Update="Syncfusion.Pdf.Imaging.Net.Core"                          Version="28.2.*" />           <!-- netstandard, net6, net8, net9  -->
+  </ItemGroup>
+  <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(CpmTFM)', 'net8'))">
+    <PackageVersion Update="GdPicture.API"                                            Version="14.3.*" />           <!-- net8 -->
+    <!-- Syncfusion 29.1.* which is compatible with net8.0 breaks some unit tests -->
   </ItemGroup>
 
   <!-- Problematic packages (temporary) -->
