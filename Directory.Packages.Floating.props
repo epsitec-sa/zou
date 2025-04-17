@@ -590,11 +590,11 @@ Lock files can be updated by using the '——force-evaluate' option.
   <!-- Problematic packages (temporary) -->
   <ItemGroup>
     <!--
-    Version 2.71.0 fails on the build system
+    If the build of Grpc.Tools version 2.71 fails on the build system, set environment variable GrpcToolsVer=2.70
     - nuget\grpc.tools\2.71.0\build\_protobuf\Google.Protobuf.Tools.targets(291,5):
     - error MSB6006: "nuget\grpc.tools\2.71.0\tools\windows_x64\protoc.exe" exited with code -1073741819.
     -->
-    <PackageVersion Update="Grpc.Tools"                                               Version="2.70.*" />           <!-- netstandard -->
+    <PackageVersion Condition="'$(GrpcToolsVer)' != ''" Update="Grpc.Tools" Version="$(GrpcToolsVer).*" /> <!-- netstandard -->
   </ItemGroup>
   
   <!-- Problematic packages (CpmTFM <= net6) -->
