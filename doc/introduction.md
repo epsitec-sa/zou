@@ -1,4 +1,4 @@
-# [<](../ReadMe)&emsp;&emsp;[>](logic-model)
+# [<](../ReadMe.md)&emsp;&emsp;[>](logic-model.md)
 
 # Introduction
 
@@ -15,4 +15,4 @@ Une solution serait de créer plusieurs branches *git* dans chaque sous-module, 
 - il suggère une certaine organisation des différents composants.
 
 ---
-# [<](../ReadMe)&emsp;&emsp;[>](logic-model)
+# [<](../ReadMe.md)&emsp;&emsp;[>](logic-model.md)

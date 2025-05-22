@@ -1,4 +1,4 @@
-# [<](introduction)&emsp;&emsp;[>](property-sheets)
+# [<](introduction.md)&emsp;&emsp;[>](property-sheets.md)
 
 # Le modèle logique ou la trinité *zou*
 
@@ -60,4 +60,4 @@ Similairement au *contexte d'exécution*, le **contexte de configuration** ***zo
 > - la propriété `ZouSolutionDir` n'est pas initialisée lorsque l'on exécute un projet. Dans ce cas sa valeur est vide.
 
 ---
-# [<](introduction)&emsp;&emsp;[>](property-sheets)
+# [<](introduction.md)&emsp;&emsp;[>](property-sheets.md)
