@@ -1,4 +1,4 @@
-# [<](property-sheets)&emsp;&emsp;[>](property-sheet-overload)
+# [<](property-sheets.md)&emsp;&emsp;[>](property-sheet-overload.md)
 
 # Feuilles de propriétés *virtuelles*
 
@@ -99,4 +99,4 @@ La macro de configuration `Platform` ne peut pas être virtualisées par zou:
 `msbuild /p:Platform=Win32;PlatformToolset=vc120_xp...`
 
 ---
-# [<](property-sheets)&emsp;&emsp;[>](property-sheet-overload)
+# [<](property-sheets.md)&emsp;&emsp;[>](property-sheet-overload.md)

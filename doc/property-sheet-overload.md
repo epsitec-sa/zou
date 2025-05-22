@@ -1,4 +1,4 @@
-# [<](virtual-property-sheets)&emsp;&emsp;[>](property-sheet-shared-overload)
+# [<](virtual-property-sheets.md)&emsp;&emsp;[>](property-sheet-shared-overload.md)
 
 # Surcharge d'une feuille de propriétés
 
@@ -58,4 +58,4 @@ est la surcharge stockée *localement* dans
 [fact/zou.cfg/Cpp.NTVersion.props](https://git.epsitec.ch/cresus-suite/fact/blob/master/zou.cfg/Cpp.NTVersion.props).
 
 ---
-# [<](virtual-property-sheets)&emsp;&emsp;[>](property-sheet-shared-overload)
+# [<](virtual-property-sheets.md)&emsp;&emsp;[>](property-sheet-shared-overload.md)

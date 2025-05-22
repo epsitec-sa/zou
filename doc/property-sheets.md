@@ -1,4 +1,4 @@
-# [<](logic-model)&emsp;&emsp;[>](virtual-property-sheets)
+# [<](logic-model.md)&emsp;&emsp;[>](virtual-property-sheets.md)
 
 # Feuilles de propriétés
 
@@ -54,4 +54,4 @@ Lors de cette opération, *Visual Studio* a aussi modifié le fichier du projet 
 Le label `PropertySheets` permet au gestionnaire de propriétés de rassembler et de hiérarchiser les feuilles de propriétés liées au projet.
 
 ---
-# [<](logic-model)&emsp;&emsp;[>](virtual-property-sheets)
+# [<](logic-model.md)&emsp;&emsp;[>](virtual-property-sheets.md)
