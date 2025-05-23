@@ -602,6 +602,19 @@ Lock files can be updated by using the '——force-evaluate' option.
     <PackageVersion Update="Syncfusion.Pdf.Imaging.Net.Core"                          Version="29.2.*" />           <!-- netstandard, net8, net9  -->
   </ItemGroup>
 
+  <!-- Problematic packages (OS <= Win8) -->
+  <ItemGroup>
+    <!--
+    Downgrade to 3.116 to support Windows 8.
+    Version 3.119 has a native dependency on d3d12.dll (DirectX 12) which is not available on Windows <= 8
+    Seee https://github.com/mono/SkiaSharp/issues/3267
+    -->
+    <PackageVersion Update="SkiaSharp"                                                Version="3.116.*" />          <!-- netstandard, net6, net8 -->
+    <PackageVersion Update="SkiaSharp.NativeAssets.Linux"                             Version="3.116.*" />          <!-- netstandard, net6, net8 -->
+    <PackageVersion Update="SkiaSharp.NativeAssets.Linux.NoDependencies"              Version="3.116.*" />          <!-- netstandard, net6, net8 -->
+    <PackageVersion Update="SkiaSharp.Views.Blazor"                                   Version="3.116.*" />          <!-- net6, net8 -->
+  </ItemGroup>
+  
   <!-- Problematic packages (CpmTFM <= net6) -->
   <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('net6', '$(CpmTFM)'))">
     
