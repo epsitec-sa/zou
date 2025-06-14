@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
@@ -7,6 +7,7 @@
     <!-- warning NU1701: Package ... was restored using '.NETFramework,Version=... -->
     <!-- warning SA0001: XML comment analysis is disabled due to project configuration (https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA0001.md) -->
     <NoWarn>$(NoWarn);NU1701;SA0001</NoWarn>
+    <SuppressTfmSupportBuildErrors Condition="'$(CpmVer)' == '6'">true</SuppressTfmSupportBuildErrors>
   </PropertyGroup>
 
   <ItemGroup>
@@ -22,11 +23,20 @@
 
   <Target Name="TraceNuPkg" BeforeTargets="CollectPackageReferences" Condition="'$(TraceNuPkg)' != ''">
     <Message Importance="high" Text="$(T0)$(MSBuildProjectFile)$(NC)" />
+    
+    <Message Importance="high" Condition="'$(SuppressTfmSupportBuildErrors)' != ''" Text="SuppressTfmSupportBuildErrors = $(SuppressTfmSupportBuildErrors)" />
+    <Message Importance="high" Condition="'$(SuppressTfmSupportBuildErrors)' != ''" Text=" " />
+    
     <Message Importance="high" Text="CoreTargetFramework = $(CoreTargetFramework)" />
     <Message Importance="high" Text="TargetFramework     = $(TargetFramework)" />
-    <Message Importance="high" Text="TFM                 = $(TFM)" />
-
     <Message Importance="high" Text=" " />
+    
+    <Message Importance="high" Text="CpmTFM  = $(CpmTFM)" />
+    <Message Importance="high" Text="CpmVer  = $(CpmVer)" />
+    <Message Importance="high" Text="CpmId   = $(CpmId)" />
+    <Message Importance="high" Text="CpmPath = $(CpmPath)" />
+    <Message Importance="high" Text=" " />
+
     <Message Importance="high" Text="IsTargetFrameworkCompatible(netS, TFM=$(TargetFramework)) = $([MSBuild]::IsTargetFrameworkCompatible('netstandard2.0', '$(TargetFramework)'))" />
     <Message Importance="high" Text="IsTargetFrameworkCompatible(net4, TFM=$(TargetFramework)) = $([MSBuild]::IsTargetFrameworkCompatible('net48', '$(TargetFramework)'))" />
     <Message Importance="high" Text="IsTargetFrameworkCompatible(net6, TFM=$(TargetFramework)) = $([MSBuild]::IsTargetFrameworkCompatible('net6', '$(TargetFramework)'))" />
