@@ -58,7 +58,7 @@ Input parameters:
     <Message Importance="high"  Text=" " />-->
   </Target>
 
-  <Target Name="CopyFileClean" AfterTargets="Clean" DependsOnTargets="CopyFileCrossBuild">
+  <Target Name="CopyFileClean" AfterTargets="Clean" DependsOnTargets="CopyFileCrossBuild;CopyFileInit">
     <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] CopyFileClean(@(CopyFile->Count()), @(CopyFile))" />
 
     <!-- Display deleted files by extension  -->
