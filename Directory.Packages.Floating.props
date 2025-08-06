@@ -587,7 +587,12 @@ Lock files can be updated by using the '——force-evaluate' option.
     <PackageVersion Update="Microsoft.VisualStudio.Web.CodeGeneration.Design"         Version="9.0.*" />            <!-- net9 -->
   </ItemGroup>
 
-  <!-- Charged packages -->
+
+  <!-- CpmTFM >= net10 -->
+  <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(CpmTFM)', 'net10'))">
+  </ItemGroup>
+
+    <!-- Charged packages -->
   <ItemGroup>
     <!-- FluentAssertions 8.0.* is not free anymore (https://www.youtube.com/watch?v=ZFc6jcaM6Ms) -->
     <PackageVersion Update="FluentAssertions"                                         Version="7.2.*" />            <!-- netstandard, net6 -->
