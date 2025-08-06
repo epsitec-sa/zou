@@ -1,3 +1,11 @@
+<!--
+  This file is used to select and import the CPM database (CpmPath).
+  
+  CpmTFM  ::= (net6|net7.0|net8.0|net9.0|net10.0 ...)
+  CpmVer  ::= (6|7|8|9|10 ...)
+  CpmId   ::= (net6|net7|net8|net9|net10 ...)
+  CpmPath ::= Directory.Packages.$(CpmId).props ?? Directory.Packages.Floating.props
+  -->
 <Project>
 
   <PropertyGroup>
@@ -6,7 +14,6 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <!-- Compute TFM used for package restore conditions (see Directory.Packages.Floating.props) -->
     <CpmTFM>$(TargetFramework)</CpmTFM>
     <CpmTFM Condition="$(TargetFramework.StartsWith('netstandard'))">$(CoreTargetFramework)</CpmTFM>
     <CpmTFM Condition="$(TargetFramework.StartsWith('net4'))">net6</CpmTFM>
@@ -31,8 +38,10 @@
     <LogItems Items="@(CpmFile)" AllMetadata="false" />
     <Message Importance="high" Text=" " />-->
 
-    <Message Importance="high" Text="TargetFramework     = $(TargetFramework)" />
-    <Message Importance="high" Text="CoreTargetFramework = $(CoreTargetFramework)" />
+    <Message Importance="high" Text="TargetFramework           = $(TargetFramework)" />
+    <Message Importance="high" Text="CoreTargetFramework       = $(CoreTargetFramework)" />
+    <Message Importance="high" Text="TargetFrameworkIdentifier = $(TargetFrameworkIdentifier)" />
+    <Message Importance="high" Text="TargetFrameworkVersion    = $(TargetFrameworkVersion)" />
     
     <Message Importance="high" Text="CpmTFM  = $(CpmTFM)" />
     <Message Importance="high" Text="CpmVer  = $(CpmVer)" />
