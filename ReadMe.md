@@ -10,8 +10,8 @@ A submodule designed to streamline and improve the process of building projects 
 ### [Feuilles de propriétés virtuelles](doc/virtual-property-sheets.md)
 ### [Surcharge d'une feuille de propriétés](doc/property-sheet-overload.md)
 ### [Surcharge *partagée* d'une feuille de propriétés](doc/property-sheet-shared-overload.md)
-### [Zouification d'un projet C++](doc/vcxproj-zouification.md)
-### [Gestion des paquets nuget](doc/cpm.md)
+### [Zouification d'un projet `C++`](doc/vcxproj-zouification.md)
+### [Gestion des versions des paquets `nuget`](doc/cpm.md)
 
 ---
 # &ensp;&emsp;&emsp;[>](doc/introduction.md)

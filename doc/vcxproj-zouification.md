@@ -1,4 +1,4 @@
-# [<](property-sheet-shared-overload)&emsp;&emsp;[>](cpm)
+# [<](property-sheet-shared-overload.md)&emsp;&emsp;[>](cpm.md)
 
 # Zouification d'un projet C++
 
@@ -49,4 +49,4 @@ Les feuilles de propriétés de *zou* importées dans l'étape précédente norm
 - Traverser les feuilles de propriétés.
 
 ---
-# [<](property-sheet-shared-overload)&emsp;&emsp;[>](cpm)
+# [<](property-sheet-shared-overload.md)&emsp;&emsp;[>](cpm.md)
