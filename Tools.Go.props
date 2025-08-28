@@ -40,16 +40,12 @@
   <Choose>
     <When Condition="$([MSBuild]::IsOSPlatform(Windows))">
       <PropertyGroup>
-        <GoRicePath>$([System.IO.Path]::GetFullPath('$(GoBinDir)\rice.exe'))</GoRicePath>
         <GoVerInfoPath>$([System.IO.Path]::GetFullPath('$(GoBinDir)\goversioninfo.exe'))</GoVerInfoPath>
-        <GoSwagPath>$([System.IO.Path]::GetFullPath('$(GoBinDir)\swag.exe'))</GoSwagPath>
       </PropertyGroup>
     </When>
     <Otherwise>
       <PropertyGroup>
-        <GoRicePath>$([System.IO.Path]::GetFullPath('$(GoBinDir)\rice'))</GoRicePath>
         <GoVerInfoPath>$([System.IO.Path]::GetFullPath('$(GoBinDir)\goversioninfo'))</GoVerInfoPath>
-        <GoSwagPath>$([System.IO.Path]::GetFullPath('$(GoBinDir)\swag'))</GoSwagPath>
       </PropertyGroup>
     </Otherwise>
   </Choose>
@@ -85,19 +81,11 @@
   </Target>
 
   <!-- get some go tools -->
-  <Target Name="GoGetRice" Condition="$(ForceGoGet) Or !Exists('$(GoRicePath)')">
-    <Exec Command="go get -u github.com/GeertJohan/go.rice/rice" />
-  </Target>
-
   <Target Name="GoGetVersionInfo" Condition="$(ForceGoGet) Or !Exists('$(GoVerInfoPath)')">
     <Exec Command="go get -u github.com/josephspurrier/goversioninfo/cmd/goversioninfo" />
   </Target>
-
-  <Target Name="GoGetSwag" Condition="$(ForceGoGet) Or !Exists('$(GoSwagPath)')">
-    <Exec Command="go get -u github.com/swaggo/swag/cmd/swag" />
-  </Target>
   
-  <Target Name="GoGetTools" DependsOnTargets="GoGetRice;GoGetVersionInfo;GoGetSwag" BeforeTargets="Build" />
+  <Target Name="GoGetTools" DependsOnTargets="GoGetVersionInfo" BeforeTargets="Build" />
 
   <Target Name="ToolsGoTrace" Condition="'$(ZouTraceGo)' == 'true' Or '$(ZouTrace)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
     <Message Importance="normal" Text="GoWorkspace   = $(GoWorkspace)" />
@@ -105,8 +93,6 @@
     <Message Importance="normal" Text="GOPATH        = $(GOPATH)" />
     <Message Importance="normal" Text="GOROOT        = $(GOROOT)" />
     <Message Importance="normal" Text="GoExePath     = $(GoExePath)" />
-    <Message Importance="normal" Text="GoRicePath    = $(GoRicePath)" />
-    <Message Importance="normal" Text="GoSwagPath    = $(GoSwagPath)" />
     <Message Importance="normal" Text="GoVerInfoPath = $(GoVerInfoPath)" />
     <Message Importance="normal" Text="GoOS          = $(GoOS)" />
     <Message Importance="normal" Text="GoArch        = $(GoArch)" />
