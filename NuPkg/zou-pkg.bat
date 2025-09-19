@@ -1,6 +1,6 @@
 @echo off
 
-for %%x in (net6 net8 net9) do (
+for %%x in (net8 net9 net10) do (
   echo [0;1;4mRestoring [92m%%x[37m packages[0m
   
   dotnet restore NuPkg.csproj --tl:off /p:CoreTargetFramework=%%x
