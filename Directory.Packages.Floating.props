@@ -710,7 +710,17 @@ Lock files can be updated by using the '——force-evaluate' option.
     <PackageVersion Update="SkiaSharp.NativeAssets.Linux"                             Version="3.116.*" />          <!-- netstandard, net6, net8 -->
     <PackageVersion Update="SkiaSharp.NativeAssets.Linux.NoDependencies"              Version="3.116.*" />          <!-- netstandard, net6, net8 -->
     <PackageVersion Update="SkiaSharp.Views.Blazor"                                   Version="3.116.*" />          <!-- net6, net8 -->
-  </ItemGroup>
+</ItemGroup>
+
+  <!-- Problematic packages (CpmTFM >= net8.0) -->
+  <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(CpmTFM)', 'net8.0'))">
+    <!--
+    There is a bug in the nuget package 0.15.3 buid script 'build\BenchmarkDotNet.TestAdapter.props' line 5, missing an equal sign in the condition
+        <TestTfmsInParallel Condition="'$(TestTfmsInParallel)' = ''">false</TestTfmsInParallel>
+    -->
+    <PackageVersion Update="BenchmarkDotNet"                                          Version="0.15.2" />           <!-- netstandard, net6, net8 -->
+    <PackageVersion Update="BenchmarkDotNet.TestAdapter"                              Version="0.15.2" />           <!-- netstandard -->
+</ItemGroup>
 
   <!-- Problematic packages (CpmTFM <= net6) -->
   <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('net6', '$(CpmTFM)'))">
