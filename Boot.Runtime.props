@@ -26,8 +26,13 @@ Outputs
   <Import Project="Boot.Platform.props" />
   <Import Project="Boot.CrossBuild.props" />
 
-  <!-- Supported RuntimeIdentifier prefix  -->
-  <PropertyGroup Condition="!$(RuntimeIdentifier.StartsWith('browser'))">
+  <!--
+  Supported RuntimeIdentifier prefix
+  Starting with .NET10, when packing as a tool, the 'RuntimeIdentifiers' property should not be set
+  to avoid creates RID-specific packages.
+  see https://learn.microsoft.com/en-us/dotnet/core/compatibility/sdk/10.0/dotnet-tool-pack-publish
+  -->
+  <PropertyGroup Condition="!$(RuntimeIdentifier.StartsWith('browser')) And '$(PackAsTool)' != 'true'">
     <RuntimeIdentifiers Condition="'$(RuntimeIdentifiers)' == ''">win-x86;win-x64;osx-x64;linux-x64</RuntimeIdentifiers>
   </PropertyGroup>
 
