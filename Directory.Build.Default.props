@@ -4,6 +4,11 @@
   <Import Project="zou.props"             Condition="'$(ZouImported)' == ''" />
   <Import Project="TargetFramework.props" Condition="'$(TargetFrameworkImported)' == ''" />
 
+  <PropertyGroup>
+    <!-- Uncomment to trace build properties -->
+    <!--<ZouTraceDirectoryBuild>true</ZouTraceDirectoryBuild>-->
+  </PropertyGroup>
+  
   <!-- Default properties (can be overloaded in bundle after importing this script) -->
   <PropertyGroup>
     <Company Condition="'$(Company)' == ''">Epsitec</Company>
@@ -22,20 +27,30 @@
     <!--<MSBuildWarningsAsMessages>MSB3277</MSBuildWarningsAsMessages>-->
   </PropertyGroup>
 
+  <!-- Language version -->
+  <PropertyGroup Condition="'$(LangVersion)' == ''">
+    <!--
+    Setting the LangVersion element to latest is discouraged.
+    The latest setting means the installed compiler uses its latest version.
+    The value of latest can change from machine to machine, making builds unreliable.
+    In addition, it enables language features that might require runtime or library features
+    not included in the current SDK.
+    https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/configure-language-version
+
+    It may also introduce breaking changes when a new C# version is released.
+    https://learn.microsoft.com/en-us/dotnet/csharp/whats-new/breaking-changes/compiler%20breaking%20changes%20-%20dotnet%2010#enumerablereverse
+    
+    Use the C# language version associated with the target framework in use
+    -->
+    <LangVersion Condition="$(CoreTargetFramework.StartsWith('net6'))">10</LangVersion>
+    <LangVersion Condition="$(CoreTargetFramework.StartsWith('net7'))">11</LangVersion>
+    <LangVersion Condition="$(CoreTargetFramework.StartsWith('net8'))">12</LangVersion>
+    <LangVersion Condition="$(CoreTargetFramework.StartsWith('net9'))">13</LangVersion>
+    <LangVersion Condition="$(CoreTargetFramework.StartsWith('net10'))">14</LangVersion>
+  </PropertyGroup>
+
   <!-- Compiler -->
   <PropertyGroup>
-    <!--
-    Use the C# language version associated with the target framework in use
-    https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/compiler-options/language#langversion
-    https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/configure-language-version#defaults
-    -->
-    <LangVersion Condition="'$(LangVersion)' == ''">latest</LangVersion>
-    <!--
-    <LangVersion Condition="$(CoreTargetFramework.StartsWith('net6'))">10.0</LangVersion>
-    <LangVersion Condition="$(CoreTargetFramework.StartsWith('net7'))">11.0</LangVersion>
-    <LangVersion Condition="$(CoreTargetFramework.StartsWith('net8'))">12.0</LangVersion>
-    -->
-
     <Deterministic Condition="'$(Deterministic)' == ''">true</Deterministic>
     <!--
       If you target a framework earlier than .NET 5 (including .NET Framework and .NET Standard),
@@ -84,8 +99,7 @@
 
   <Target Name="TraceVersion" AfterTargets="GetAssemblyAttributes"
           Condition="'$(ZouTrace)' == 'true' Or '$(ZouTraceVersion)' == 'true'">
-    <Message Importance="high" Text="zou/Directory.Build.Default.props [$(MSBuildProjectFile)]" />
-    <Message Importance="high" Text="---------------------------------" />
+    <Message Importance="high" Text="$(T0)$(MSBuildThisFile) ($(MSBuildProjectFile))$(NC)" />
     <Message Importance="high" Text="VersionPrefix          = $(VersionPrefix)" />
     <Message Importance="high" Text="VersionSuffix          = $(VersionSuffix)" />
     <Message Importance="high" Text="Version                = $(Version)" />
@@ -96,10 +110,10 @@
     <Message Importance="high" Text=" " />
   </Target>
 
-  <Target Name="TraceDirectoryBuildDefaultProps" Condition="'$(ZouTrace)' == 'true' Or '$(ZouDirectoryBuild)' == 'true'">
+  <Target Name="TraceDirectoryBuildDefaultProps"
+          Condition="'$(ZouTrace)' == 'true' Or '$(ZouTraceDirectoryBuild)' == 'true'">
     <Message Importance="high" Text="$(T0)$(MSBuildThisFile) ($(MSBuildProjectFile))$(NC)" />
     <Message Importance="high" Text="LangVersion                    = $(LangVersion)" />
-    <Message Importance="high" Text="RazorLangVersion               = $(RazorLangVersion)" />
     <Message Importance="high" Text="Deterministic                  = $(Deterministic)" />
     <Message Importance="high" Text="ProduceReferenceAssembly       = $(ProduceReferenceAssembly)" />
     <Message Importance="high" Text="TargetLatestRuntimePatch       = $(TargetLatestRuntimePatch)" />
