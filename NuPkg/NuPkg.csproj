@@ -1,4 +1,10 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project>
+  
+  <PropertyGroup>
+    <CoreTargetFramework Condition="'$(CoreTargetFramework)' == ''">net10.0</CoreTargetFramework>
+    <CpmId Condition="'$(CpmId)' == ''">Floating</CpmId>
+  </PropertyGroup>
+  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
@@ -6,7 +12,8 @@
     <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
     <!-- warning NU1701: Package ... was restored using '.NETFramework,Version=... -->
     <!-- warning SA0001: XML comment analysis is disabled due to project configuration (https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA0001.md) -->
-    <NoWarn>$(NoWarn);NU1701;SA0001</NoWarn>
+    <!-- warning MSTEST0001: Explicitly enable or disable tests parallelization (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0001)-->
+    <NoWarn>$(NoWarn);NU1701;SA0001;MSTEST0001</NoWarn>
     <!-- Disable following warnings for .net 6.0 -->
     <!-- warning NU1903: Package 'Microsoft.Build.Tasks.Core' 17.3.2 has a known high severity vulnerability -->
     <!-- warning MSB3277: Found conflicts between different versions of ... that could not be resolved-->
@@ -63,4 +70,5 @@
     <Message Importance="high" Text=" " />
   </Target>
 
+  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
 </Project>
