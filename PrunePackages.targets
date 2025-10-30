@@ -1,16 +1,18 @@
 <!--
 This file is included by Directory.Build.Default.targets to remove unnecessary PackageReferences
 when targeting .NET 10.0 or higher, to avoid NU1510 warnings.
-It should be kept in sync with the list of NU1510 warnings generated during the build of NuPkg.csproj.
+
+It should be kept in sync with the list of NU1510 warnings generated
+during the build of NuPkg.csproj inside Visual Studio.
 -->
 <Project>
 
   <PropertyGroup>
     <PrunePackagesTargetsImported>true</PrunePackagesTargetsImported>
   </PropertyGroup>
-  
-  <!-- CpmTFM >= net10.0 -->
-  <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(CpmTFM)', 'net10.0'))">
+
+  <!-- CpmTFM >= net10 && TFM != netstandard -->
+  <ItemGroup Condition="$(CpmVer) >= 10 And !$(TargetFramework.StartsWith('netstandard', StringComparison.OrdinalIgnoreCase))">
     <!-- warning NU1510: PackageReference ... will not be pruned. Consider removing this package from your dependencies, as it is likely unnecessary. -->
     <PackageReference Remove="Microsoft.CSharp" />
     <PackageReference Remove="Microsoft.Win32.Registry" />

@@ -1,9 +1,12 @@
 ﻿<Project>
   
   <PropertyGroup>
+    <!--<TraceNuPkg>true</TraceNuPkg>-->
     <CoreTargetFramework Condition="'$(CoreTargetFramework)' == ''">net10.0</CoreTargetFramework>
     <CpmId Condition="'$(CpmId)' == ''">Floating</CpmId>
+    <NoPrunePackagReferences Condition="'$(BuildingInsideVisualStudio)' == ''">true</NoPrunePackagReferences>
   </PropertyGroup>
+  
   <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
 
   <PropertyGroup>
@@ -18,8 +21,10 @@
     <!-- warning NU1903: Package 'Microsoft.Build.Tasks.Core' 17.3.2 has a known high severity vulnerability -->
     <!-- warning MSB3277: Found conflicts between different versions of ... that could not be resolved-->
     <NoWarn Condition="'$(CpmVer)' == '6'">$(NoWarn);NU1903;MSB3277</NoWarn>
+    <!-- Disable following warnings for .net >= 10.0 when building outside VisualStudio -->
+    <!-- warning NU1510: PackageReference ... will not be pruned. Consider removing this package from your dependencies, as it is likely unnecessary. -->
+    <NoWarn Condition="'$(CpmVer)' >= '10' And '$(BuildingInsideVisualStudio)' == ''">$(NoWarn);NU1510</NoWarn>
     <SuppressTfmSupportBuildErrors Condition="'$(CpmVer)' == '6'">true</SuppressTfmSupportBuildErrors>
-    <!--<TraceNuPkg>true</TraceNuPkg>-->
   </PropertyGroup>
 
   <ItemGroup>
@@ -36,6 +41,9 @@
   <Target Name="TraceNuPkg" BeforeTargets="CollectPackageReferences" Condition="'$(TraceNuPkg)' != ''">
     <Message Importance="high" Text="$(T0)$(MSBuildProjectFile)$(NC)" />
     
+    <Message Importance="high" Condition="'$(NoWarn)' != ''" Text="NoWarn = $(NoWarn)" />
+    
+    <Message Importance="high" Condition="'$(NoPrunePackagReferences)'       != ''" Text="NoPrunePackagReferences       = $(NoPrunePackagReferences)" />
     <Message Importance="high" Condition="'$(SuppressTfmSupportBuildErrors)' != ''" Text="SuppressTfmSupportBuildErrors = $(SuppressTfmSupportBuildErrors)" />
     <Message Importance="high" Condition="'$(SuppressTfmSupportBuildErrors)' != ''" Text=" " />
     
