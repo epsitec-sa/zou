@@ -452,16 +452,16 @@ Lock files can be updated by using the '——force-evaluate' option.
     <PackageVersion Update="Microsoft.Build.Locator"                                  Version="1.10.*" />           <!-- net8 -->
     <PackageVersion Update="Microsoft.Build.Tasks.Core"                               Version="17.11.*" />          <!-- net8 -->
     <PackageVersion Update="Microsoft.Build.Utilities.Core"                           Version="17.11.*" />          <!-- netstandard, net8, net9 -->
-    <PackageVersion Update="Microsoft.CodeAnalysis"                                   Version="5.0.*-*" />           <!-- netstandard -->
-    <PackageVersion Update="Microsoft.CodeAnalysis.Common"                            Version="5.0.*-*" />           <!-- netstandard, net8, net9 -->
-    <PackageVersion Update="Microsoft.CodeAnalysis.CSharp"                            Version="5.0.*-*" />           <!-- netstandard, net8, net9 -->
-    <PackageVersion Update="Microsoft.CodeAnalysis.CSharp.Features"                   Version="5.0.*-*" />           <!-- netstandard, net8, net9 -->
-    <PackageVersion Update="Microsoft.CodeAnalysis.CSharp.Workspaces"                 Version="5.0.*-*" />           <!-- netstandard, net8, net9 -->
-    <PackageVersion Update="Microsoft.CodeAnalysis.Features"                          Version="5.0.*-*" />           <!-- netstandard, net8, net9 -->
-    <PackageVersion Update="Microsoft.CodeAnalysis.Scripting.Common"                  Version="5.0.*-*" />           <!-- netstandard, net8, net9 -->
-    <PackageVersion Update="Microsoft.CodeAnalysis.VisualBasic.Workspaces"            Version="5.0.*-*" />           <!-- netstandard, net8, net9 -->
-    <PackageVersion Update="Microsoft.CodeAnalysis.Workspaces.Common"                 Version="5.0.*-*" />           <!-- netstandard, net8, net9 -->
-    <PackageVersion Update="Microsoft.CodeAnalysis.Workspaces.MSBuild"                Version="5.0.*-*" />           <!-- netstandard, net8, net9 -->
+    <PackageVersion Update="Microsoft.CodeAnalysis"                                   Version="5.0.*-*" />          <!-- netstandard -->
+    <PackageVersion Update="Microsoft.CodeAnalysis.Common"                            Version="5.0.*-*" />          <!-- netstandard, net8, net9 -->
+    <PackageVersion Update="Microsoft.CodeAnalysis.CSharp"                            Version="5.0.*-*" />          <!-- netstandard, net8, net9 -->
+    <PackageVersion Update="Microsoft.CodeAnalysis.CSharp.Features"                   Version="5.0.*-*" />          <!-- netstandard, net8, net9 -->
+    <PackageVersion Update="Microsoft.CodeAnalysis.CSharp.Workspaces"                 Version="5.0.*-*" />          <!-- netstandard, net8, net9 -->
+    <PackageVersion Update="Microsoft.CodeAnalysis.Features"                          Version="5.0.*-*" />          <!-- netstandard, net8, net9 -->
+    <PackageVersion Update="Microsoft.CodeAnalysis.Scripting.Common"                  Version="5.0.*-*" />          <!-- netstandard, net8, net9 -->
+    <PackageVersion Update="Microsoft.CodeAnalysis.VisualBasic.Workspaces"            Version="5.0.*-*" />          <!-- netstandard, net8, net9 -->
+    <PackageVersion Update="Microsoft.CodeAnalysis.Workspaces.Common"                 Version="5.0.*-*" />          <!-- netstandard, net8, net9 -->
+    <PackageVersion Update="Microsoft.CodeAnalysis.Workspaces.MSBuild"                Version="5.0.*-*" />          <!-- netstandard, net8, net9 -->
 
     <PackageVersion Update="Microsoft.EntityFrameworkCore"                            Version="9.0.*" />            <!-- net8 -->
     <PackageVersion Update="Microsoft.EntityFrameworkCore.Design"                     Version="9.0.*" />            <!-- net8 -->
@@ -697,19 +697,19 @@ Lock files can be updated by using the '——force-evaluate' option.
   <!-- Licensed packages (CpmTFM >= net8.0) -->
   <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(CpmTFM)', 'net8.0'))">
     <PackageVersion Update="GdPicture.API"                                            Version="14.3.*" />           <!-- net8 -->
-    <PackageVersion Update="Syncfusion.Blazor.SfPdfViewer"                            Version="31.2.*" />           <!-- net8, net9 -->
-    <PackageVersion Update="Syncfusion.Blazor.Themes"                                 Version="31.2.*" />           <!-- net8, net9 -->
-    <PackageVersion Update="Syncfusion.DocIO.Net.Core"                                Version="31.2.*" />           <!-- netstandard, net8, net9 -->
-    <PackageVersion Update="Syncfusion.DocIORenderer.Net.Core"                        Version="31.2.*" />           <!-- netstandard, net8, net9 -->
-    <PackageVersion Update="Syncfusion.EJ2.PdfViewer.AspNet.Core"                     Version="31.2.*" />           <!-- netstandard, net8, net9 -->
+    <PackageVersion Update="Syncfusion.Blazor.SfPdfViewer"                            Version="31.2.*" />           <!-- net8, net9, net10 -->
+    <PackageVersion Update="Syncfusion.Blazor.Themes"                                 Version="31.2.*" />           <!-- net8, net9, net10 -->
+    <PackageVersion Update="Syncfusion.DocIO.Net.Core"                                Version="31.2.*" />           <!-- netstandard, net8, net9, net10 -->
+    <PackageVersion Update="Syncfusion.DocIORenderer.Net.Core"                        Version="31.2.*" />           <!-- netstandard, net8, net9, net10 -->
+    <PackageVersion Update="Syncfusion.EJ2.PdfViewer.AspNet.Core"                     Version="31.2.*" />           <!-- netstandard, net8, net9, net10 -->
     <PackageVersion Update="Syncfusion.Licensing"                                     Version="31.2.*" />           <!-- NO DEPS -->
-    <PackageVersion Update="Syncfusion.Pdf.Imaging.Net.Core"                          Version="31.2.*" />           <!-- netstandard, net8, net9  -->
+    <PackageVersion Update="Syncfusion.Pdf.Imaging.Net.Core"                          Version="31.2.*" />           <!-- netstandard, net8, net9, net10  -->
   </ItemGroup>
 
   <!-- Problematic packages (OS <= Win8) -->
   <ItemGroup>
     <!--
-    Downgrade to 3.116 to support Windows 8.
+    Downgrade SkiaSharp to 3.116 to support Windows 8.
     Version 3.119 has a native dependency on d3d12.dll (DirectX 12) which is not available on Windows <= 8
     See https://github.com/mono/SkiaSharp/issues/3267
     -->
@@ -722,18 +722,10 @@ Lock files can be updated by using the '——force-evaluate' option.
   <!-- Problematic packages (OS <= Win8 && CpmTFM >= net8) -->
   <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(CpmTFM)', 'net8.0'))">
     <!--
-    Syncfusion.EJ2.PdfViewer.AspNet.Core 31.2.10
-    -> Syncfusion.PdfToImageConverter.Net >= 31.2.10
-    -> SkiaSharp >= 3.119.1
-    -> Windows > Win8
+    Downgrade Syncfusion.EJ2.PdfViewer.AspNet.Core to 31.2.5 because version >= 31.2.10 has a transitive dependency on SkiaSharp >= 3.119.1
+    Syncfusion.EJ2.PdfViewer.AspNet.Core >= 31.2.10 -> Syncfusion.PdfToImageConverter.Net >= 31.2.10 -> SkiaSharp >= 3.119.1
     -->
-    <PackageVersion Update="Syncfusion.Blazor.SfPdfViewer"                            Version="31.2.*" />           <!-- net8, net9 -->
-    <PackageVersion Update="Syncfusion.Blazor.Themes"                                 Version="31.2.*" />           <!-- net8, net9 -->
-    <PackageVersion Update="Syncfusion.DocIO.Net.Core"                                Version="31.2.*" />           <!-- netstandard, net8, net9 -->
-    <PackageVersion Update="Syncfusion.DocIORenderer.Net.Core"                        Version="31.2.*" />           <!-- netstandard, net8, net9 -->
     <PackageVersion Update="Syncfusion.EJ2.PdfViewer.AspNet.Core"                     Version="31.2.5" />           <!-- netstandard, net8, net9 -->
-    <PackageVersion Update="Syncfusion.Licensing"                                     Version="31.2.*" />           <!-- NO DEPS -->
-    <PackageVersion Update="Syncfusion.Pdf.Imaging.Net.Core"                          Version="31.2.*" />           <!-- netstandard, net8, net9  -->
 </ItemGroup>
 
   <!-- Problematic packages (CpmTFM <= net6) -->
