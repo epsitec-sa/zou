@@ -117,7 +117,7 @@ Outputs:
         <PublishDir>$([System.IO.Path]::GetFullPath('%(ImportProject.PublishDir)%(_OutputFolder)'))</PublishDir>
       </ImportProject>
       <ImportProject>
-        <AsmDir Condition="'%(Extension)' == '.vcxproj' Or '%(Extension)' == '.sln'">%(OutDir).cod\</AsmDir>
+        <AsmDir Condition="'%(Extension)' == '.vcxproj' Or $([System.String]::Copy('%(Extension)').StartsWith('.sln'))">%(OutDir).cod\</AsmDir>
       </ImportProject>
 
       <!-- Remove temporary metadata -->
