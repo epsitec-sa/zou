@@ -570,7 +570,7 @@ Lock files can be updated by using the '——force-evaluate' option.
     <PackageVersion Update="Syncfusion.Pdf.Imaging.Net.Core"                          Version="33.2.*" />           <!-- netstandard, net8, net9, net10  -->
   </ItemGroup>
 
-  <!-- Problematic packages (OS <= Win8) -->
+  <!-- Packages not compatible with OS <= Win8 -->
   <ItemGroup>
     <!--
     Downgrade SkiaSharp to 3.116 to support Windows 8.
@@ -596,6 +596,16 @@ Lock files can be updated by using the '——force-evaluate' option.
     Downgrade Syncfusion.EJ2.PdfViewer.AspNet.Core to 31.2.5 because version >= 31.2.10 has a transitive dependency on SkiaSharp >= 3.119.1
     -->
     <PackageVersion Update="Syncfusion.EJ2.PdfViewer.AspNet.Core"                     Version="31.2.5" />           <!-- netstandard, net8, net9 -->
+  </ItemGroup>
+  
+  <!-- Packages not compatible with linux::glibc < 2.38 -->
+  <ItemGroup>
+    <!--
+    Downgrade GdPicture.API to 14.3.* because version 14.4.* has a native dependency on glibc >= 2.38
+    (glibc < 2.38 lacks the __isoc23_strtol symbol)
+    Needed to support 'Linux web4a 6.1.0-39-amd64' which has glibc 2.36
+    -->
+    <PackageVersion Update="GdPicture.API"                                            Version="14.3.*" />           <!-- net8, net10 -->
   </ItemGroup>
 
 </Project>
