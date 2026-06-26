@@ -64,7 +64,7 @@ namespace Zou.Tasks
                 try
                 {
                     // FileShare.None denies any concurrent open: a second process
-                    // (or build node) blocks here until the holder releases.
+                    // (or build node) gets an IOException and retries until release.
                     return new FileStream(path, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
                 }
                 catch (IOException)
