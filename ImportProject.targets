@@ -164,6 +164,12 @@
         <Options Condition="'%(MSBuildProject.Verbosity)' != ''">%(Options) -v:%(MSBuildProject.Verbosity)</Options>
       </MSBuildProject>
       <MSBuildProject>
+        <Options Condition="'%(MSBuildProject.RuntimeType)' == 'Full'">%(Options) -t:Restore</Options>
+      </MSBuildProject>
+      <MSBuildProject>
+        <Options Condition="'%(MSBuildProject.RuntimeType)' == 'Full' And Exists('%(RootDir)%(Directory)packages.config')">%(Options) -p:RestorePackagesConfig=true</Options>
+      </MSBuildProject>
+      <MSBuildProject>
         <Options Condition="'%(MSBuildProject.Targets)' != ''">%(Options) -t:%(MSBuildProject.Targets)</Options>
       </MSBuildProject>
       <MSBuildProject>
@@ -218,28 +224,6 @@
 
     <Message Condition="'%(MSBuildProject.BundleRelativeDstDir)' == ''" Importance="high" Text="$(L1b)[%(Prefix)] $(T3)%(MSBuildProject.BundleRelativeSrcDir)%(RecursiveDir)$(T2)%(FileName)%(Extension)$(XC)" />
     <Message Condition="'%(MSBuildProject.BundleRelativeDstDir)' != ''" Importance="high" Text="$(L1b)[%(Prefix)] $(T3)%(MSBuildProject.BundleRelativeSrcDir)%(RecursiveDir)$(T2)%(FileName)%(Extension) $(T3)-> %(MSBuildProject.BundleRelativeDstDir)%(RecursiveDir)$(XC)" />
-
-    <!-- Restore nuget packages for solution... -->
-    <Message Condition="'$(ZouCmd)' == 'true' And !%(MSBuildProject.UseMsBuildTask) And $([System.String]::Copy('%(Extension)').StartsWith('.sln')) And Exists('%(RootDir)%(Directory)packages.config')"
-             Importance="high"
-             Text='$(CmdPrompt)$(T2)"$(ZouBinzOsDir)nuget" restore$(XC) "%(MSBuildProject.Identity)"'/>
-
-    <Exec Condition="!%(MSBuildProject.UseMsBuildTask) And $([System.String]::Copy('%(Extension)').StartsWith('.sln')) And Exists('%(RootDir)%(Directory)packages.config')"
-          Command='"$(ZouBinzOsDir)nuget" restore "%(MSBuildProject.Identity)"'/>
-
-    <!-- ...or project with solution. -->
-    <Message Condition="'$(ZouCmd)' == 'true' And !%(MSBuildProject.UseMsBuildTask) And $([System.String]::Copy('%(Extension)').StartsWith('.sln')) And ('$(SolutionDir)' != '*Undefined*' And '$(SolutionDir)' != '') And Exists('%(RootDir)%(Directory)packages.config')"
-             Importance="high"
-             Text='$(CmdPrompt)$(T2)"$(ZouBinzOsDir)nuget" restore$(XC) "%(MSBuildProject.RootDir)%(Directory)packages.config" -Verbosity quiet -PackagesDirectory "$(NugetPackagesDir)."'/>
-    <Exec Condition="!%(MSBuildProject.UseMsBuildTask) And $([System.String]::Copy('%(Extension)').StartsWith('.sln')) And ('$(SolutionDir)' != '*Undefined*' And '$(SolutionDir)' != '') And Exists('%(RootDir)%(Directory)packages.config')"
-          Command='"$(ZouBinzOsDir)nuget" restore "%(MSBuildProject.RootDir)%(Directory)packages.config" -Verbosity quiet -PackagesDirectory "$(NugetPackagesDir)."'/>
-
-    <!-- ...or when using msbuild with a .csproj. -->
-    <Message Condition="'$(ZouCmd)' == 'true' And !%(MSBuildProject.UseMsBuildTask) And '%(Extension)' == '.csproj' And '%(MSBuildProject.RuntimeType)' == 'Full'"
-             Importance="high"
-             Text='$(CmdPrompt)$(T2)dotnet restore$(XC) "%(MSBuildProject.Identity)"'/>
-    <Exec Condition="!%(MSBuildProject.UseMsBuildTask) And '%(Extension)' == '.csproj' And '%(MSBuildProject.RuntimeType)' == 'Full'"
-          Command='dotnet restore "%(MSBuildProject.Identity)"' EnvironmentVariables="TargetFrameworkImport=%(MSBuildProject.TargetFramework)"/>
 
     <!--
     The MSBuild task does not determine the build order but MSBuild.exe and Visual Studio do:
