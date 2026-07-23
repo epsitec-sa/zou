@@ -9,13 +9,30 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <TargetFrameworkSystem Condition="'$(ZouDebug)' == 'true'">$(TargetFramework)</TargetFrameworkSystem>
+    <!--
+    This is the default for C# projects that do not define the TargetFramework property.
+    You can override this in your project file or in a Directory.Build.props file.
+    If you want to build for multiple frameworks, you can set the TargetFrameworks
+    property instead of TargetFramework in your project file or in a Directory.Build.props file.
+    In that case, the TargetFramework property will not be set and the project will
+    build for all frameworks defined in TargetFrameworks.
+    -->
+    <TargetFramework Condition="'$(TargetFramework)' == '' And '$(TargetFrameworks)' == ''">$(CoreTargetFramework)</TargetFramework>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <MultiTargeting Condition="'$(MultiTargeting)' == '' And '$(TargetFrameworks)' == ''">false</MultiTargeting>
+    <MultiTargeting Condition="'$(MultiTargeting)' == ''">true</MultiTargeting>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!--<TargetFrameworkSystem Condition="'$(ZouDebug)' == 'true'">$(TargetFramework)</TargetFrameworkSystem>-->
 
     <!-- Ensure TargetFramework is initialized when building inside Visual Studio -->
-    <TargetFramework Condition="'$(TargetFramework)' == '' And '$(ZouAgentType)' == '' And '$(BuildingInsideVisualStudio)' != ''">$(CoreTargetFramework)</TargetFramework>
+    <!--<TargetFramework Condition="'$(TargetFramework)' == '' And '$(ZouAgentType)' == '' And '$(BuildingInsideVisualStudio)' != ''">$(CoreTargetFramework)</TargetFramework>-->
 
     <!-- Allow initialization detection -->
-    <TargetFrameworks>*Undefined*</TargetFrameworks>
+    <!--<TargetFrameworks>*Undefined*</TargetFrameworks>-->
   </PropertyGroup>
 
 </Project>
