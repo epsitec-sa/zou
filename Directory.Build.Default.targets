@@ -23,7 +23,7 @@
 
   <PropertyGroup Condition="'$(IsPackable)' != 'false'">
     <PackageId Condition="'$(PackageId)' == ''">$(ProjectName)</PackageId>
-    <PackageId Condition="!$(PackageId.StartsWith('$(Company)')) And !$(Company.Contains(' '))">$(Company).$(PackageId)</PackageId>
+    <PackageId Condition="'$(PackageId)' != '' And !$(PackageId.StartsWith('$(Company)')) And !$(Company.Contains(' '))">$(Company).$(PackageId)</PackageId>
     <DefaultPackageTags>$(PackageId.Replace('.', ';'))</DefaultPackageTags>
     <PackageTags Condition="'$(PackageTags)' != ''">$(DefaultPackageTags);$(PackageTags)</PackageTags>
     <PackageTags Condition="'$(PackageTags)' == ''">$(DefaultPackageTags)</PackageTags>
