@@ -1,7 +1,10 @@
-<Project>
+<Project InitialTargets="TraceTargetFrameworkProps">
+  
   <PropertyGroup>
     <TargetFrameworkImported>true</TargetFrameworkImported>
     
+    <MultiTargeting         Condition="'$(MultiTargeting)'         == ''">false</MultiTargeting>
+
     <FullTargetFramework    Condition="'$(FullTargetFramework)'    == ''">net48</FullTargetFramework>
     <CoreTargetFramework    Condition="'$(CoreTargetFramework)'    == ''">net10.0</CoreTargetFramework>
     <WineTargetFramework    Condition="'$(WineTargetFramework)'    == ''">netcoreapp3.1</WineTargetFramework>
@@ -22,8 +25,37 @@
   In that case, the TargetFramework property will not be set and the project will
   build for all frameworks defined in TargetFrameworks.
   -->
-  <PropertyGroup Condition="'$(TargetFramework)' == '' And '$(TargetFrameworks)' == ''">
-    <TargetFramework>$(CoreTargetFramework)</TargetFramework>
-  </PropertyGroup>
+  <Choose>
+    <When Condition="'$(MultiTargeting)' == 'true'">
+      <PropertyGroup Condition="'$(TargetFramework)' == '' And '$(TargetFrameworks)' == ''">
+        <TargetFramework>$(CoreTargetFramework)</TargetFramework>
+      </PropertyGroup>
+    </When>
+    <Otherwise>
+      <!-- Single-targeting -->
+      <PropertyGroup Condition="'$(TargetFramework)' == '' And '$(TargetFrameworks)' != ''">
+        <!-- Force TargetFramework to the first framework in TargetFrameworks -->
+        <TargetFramework>$(TargetFrameworks.Split(';')[0])</TargetFramework>
+        <TargetFrameworks />
+      </PropertyGroup>
+      <PropertyGroup Condition="'$(TargetFramework)' == '' And '$(TargetFrameworks)' == ''">
+        <TargetFramework>$(CoreTargetFramework)</TargetFramework>
+      </PropertyGroup>
+    </Otherwise>
+  </Choose>
+  
 
+  <Target Name="TraceTargetFrameworkProps" Condition="'$(TfmDebug)' == 'true'">
+    <Message Importance="high" Text="$(T0)$(MSBuildThisFile) ($(MSBuildProjectFile))$(NC)" />
+    <!--<Message Importance="high" Text="CoreTargetFramework     = $(CoreTargetFramework)" />
+    <Message Importance="high" Text="FullTargetFramework     = $(FullTargetFramework)" />
+    <Message Importance="high" Text="WindowsTargetFramework  = $(WindowsTargetFramework)" />
+    <Message Importance="high" Text="CoreTargetFrameworks    = $(CoreTargetFrameworks)" />
+    <Message Importance="high" Text="WindowsTargetFrameworks = $(WindowsTargetFrameworks)" />
+    <Message Importance="high" Text=" " />-->
+    <Message Importance="high" Text="MultiTargeting          = $(MultiTargeting)" />
+    <Message Importance="high" Text="TargetFramework         = $(TargetFramework)" />
+    <Message Importance="high" Text="TargetFrameworks        = $(TargetFrameworks)" />
+    <Message Importance="high" Text=" " />
+  </Target>
 </Project>
