@@ -39,6 +39,7 @@ Outputs:
         
       <ImportProject>
         <PublishDir Condition="'%(ImportProject.PublishDir)' == ''">%(ImportProject.OutDir)</PublishDir>
+        <PublishUrl Condition="'%(ImportProject.PublishUrl)' == ''">%(ImportProject.OutDir)</PublishUrl>
       </ImportProject>
 
       <!-- x86|AnyCPU -->
@@ -111,10 +112,12 @@ Outputs:
       <ImportProject Condition="$(RedistByRuntime)">
         <OutDir    >$([System.String]::new('%(ImportProject.OutDir)').Replace('%(Platform)\', ''))</OutDir>
         <PublishDir>$([System.String]::new('%(ImportProject.PublishDir)').Replace('%(Platform)\', ''))</PublishDir>
+        <PublishUrl>$([System.String]::new('%(ImportProject.PublishUrl)').Replace('%(Platform)\', ''))</PublishUrl>
       </ImportProject>
       <ImportProject>
         <OutDir    >$([System.IO.Path]::GetFullPath('%(ImportProject.OutDir)%(_OutputFolder)'))</OutDir>
         <PublishDir>$([System.IO.Path]::GetFullPath('%(ImportProject.PublishDir)%(_OutputFolder)'))</PublishDir>
+        <PublishUrl>$([System.IO.Path]::GetFullPath('%(ImportProject.PublishUrl)%(_OutputFolder)'))</PublishUrl>
       </ImportProject>
       <ImportProject>
         <AsmDir Condition="'%(Extension)' == '.vcxproj' Or $([System.String]::Copy('%(Extension)').StartsWith('.sln'))">%(OutDir).cod\</AsmDir>
@@ -151,10 +154,11 @@ Outputs:
         <Targets Condition="'%(ImportProject.Targets)' == '' And %(_UseBuildTarget)">Build</Targets>
       </ImportProject>
       
-      <!-- Keep only one of OutDir or PublishDir -->
+      <!-- Keep only one of OutDir or PublishDir-PublishUrl -->
       <ImportProject>
         <OutDir        Condition="%(_UseBuildTarget) == false" />
         <PublishDir    Condition="%(_UseBuildTarget) == true" />
+        <PublishUrl    Condition="%(_UseBuildTarget) == true" />
       </ImportProject>
 
       <!-- Set SelfContained to true by default when publishing -->
