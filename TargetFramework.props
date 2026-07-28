@@ -34,8 +34,12 @@
     <Otherwise>
       <!-- Single-targeting -->
       <PropertyGroup Condition="'$(TargetFramework)' == '' And '$(TargetFrameworks)' != ''">
-        <!-- Force TargetFramework to the first framework in TargetFrameworks -->
-        <TargetFramework>$(TargetFrameworks.Split(';')[0])</TargetFramework>
+        <!-- Surround with ';' to avoid false positives (e.g. net8.0 which would match net8.0-windows) -->
+        <_TFWithDelimiters>;$(TargetFrameworks);</_TFWithDelimiters>
+        <TargetFramework Condition="$(_TFWithDelimiters.Contains(';$(CoreTargetFramework);'))">$(CoreTargetFramework)</TargetFramework>
+        <!-- Fallback to netstandard2.0 if CoreTargetFramework is not in TargetFrameworks -->
+        <TargetFramework Condition="'$(TargetFramework)' == ''">netstandard2.0</TargetFramework>
+        <!-- Neutralize TargetFrameworks so that the SDK does not go into multi-targeting mode -->
         <TargetFrameworks />
       </PropertyGroup>
       <PropertyGroup Condition="'$(TargetFramework)' == '' And '$(TargetFrameworks)' == ''">
