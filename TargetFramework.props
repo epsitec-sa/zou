@@ -9,9 +9,11 @@
     <CoreTargetFramework     Condition="'$(CoreTargetFramework)'     == ''">net10.0</CoreTargetFramework>
     <WineTargetFramework     Condition="'$(WineTargetFramework)'     == ''">netcoreapp3.1</WineTargetFramework>
     <WindowsTargetFramework  Condition="'$(WindowsTargetFramework)'  == ''">$(CoreTargetFramework)-windows</WindowsTargetFramework>
+    <BrowserTargetFramework  Condition="'$(BrowserTargetFramework)'  == ''">$(CoreTargetFramework)-browser</BrowserTargetFramework>
 
     <CoreTargetFrameworks    Condition="'$(CoreTargetFrameworks)'    == ''">net8.0;net10.0</CoreTargetFrameworks>
     <WindowsTargetFrameworks Condition="'$(WindowsTargetFrameworks)' == ''">net8.0-windows;net10.0-windows</WindowsTargetFrameworks>
+    <BrowserTargetFrameworks Condition="'$(BrowserTargetFrameworks)' == ''">net8.0-browser;net10.0-browser</BrowserTargetFrameworks>
   </PropertyGroup>
 
   <!--
@@ -54,7 +56,10 @@
         <!-- 2. Exact match on the Windows variant (e.g. net8.0-windows) -->
         <TargetFramework Condition="'$(TargetFramework)' == '' And $(_TFWithDelimiters.Contains(';$(WindowsTargetFramework);'))">$(WindowsTargetFramework)</TargetFramework>
 
-        <!-- 3. Fallback to netstandard2.0 or netstandard2.1, only if the project actually
+        <!-- 3. Exact match on the Browser variant (e.g. net8.0-browser) -->
+        <TargetFramework Condition="'$(TargetFramework)' == '' And $(_TFWithDelimiters.Contains(';$(BrowserTargetFramework);'))">$(BrowserTargetFramework)</TargetFramework>
+
+        <!-- 4. Fallback to netstandard2.0 or netstandard2.1, only if the project actually
              lists it. A project is expected to declare only one of the two, never both. -->
         <TargetFramework Condition="'$(TargetFramework)' == '' And $(_TFWithDelimiters.Contains(';netstandard2.0;'))">netstandard2.0</TargetFramework>
         <TargetFramework Condition="'$(TargetFramework)' == '' And $(_TFWithDelimiters.Contains(';netstandard2.1;'))">netstandard2.1</TargetFramework>
