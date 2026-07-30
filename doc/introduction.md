@@ -1,3 +1,7 @@
+---
+author: Roger VUISTINER
+---
+
 # [<](../ReadMe.md)&emsp;&emsp;[>](logic-model.md)
 
 # Introduction

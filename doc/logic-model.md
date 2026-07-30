@@ -1,3 +1,7 @@
+---
+author: Roger VUISTINER
+---
+
 # [<](introduction.md)&emsp;&emsp;[>](property-sheets.md)
 
 # Le modèle logique ou la trinité *zou*

@@ -1,3 +1,7 @@
+---
+author: Roger VUISTINER
+---
+
 # [<](virtual-property-sheets.md)&emsp;&emsp;[>](property-sheet-shared-overload.md)
 
 # Surcharge d'une feuille de propriétés

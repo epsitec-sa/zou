@@ -1,3 +1,7 @@
+---
+author: Roger VUISTINER
+---
+
 # [<](property-sheet-shared-overload.md)&emsp;&emsp;[>](cpm.md)
 
 # Zouification d'un projet C++
