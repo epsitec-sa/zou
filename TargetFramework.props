@@ -17,6 +17,19 @@
   </PropertyGroup>
 
   <!--
+  For test projects deletes netstandard TFMs (keep it if it is the only one).
+  The reason is that test projects are not expected to run on netstandard,
+  and it is confusing to have a test project that does not build for the
+  same TFMs as the main project.
+  The IsTestProject property is set by 'zou.props' based on the project name
+  (e.g. MyProject.Test[s]).
+  -->
+  <PropertyGroup Condition="$(IsTestProject) And $(TargetFrameworks.Contains(';')) == 'true'">
+    <TargetFrameworks>$([System.Text.RegularExpressions.Regex]::Replace('$(TargetFrameworks)', 'netstandard[^;]*(;|$)', ''))</TargetFrameworks>
+    <TargetFrameworks>$([System.Text.RegularExpressions.Regex]::Replace('$(TargetFrameworks)', '^;|;$', ''))</TargetFrameworks>
+  </PropertyGroup>
+  
+  <!--
     This is the default for C# projects that do not define the TargetFramework property.
     You can override this in a Directory.Build.props file (before this import)
     or in your project file (after this import).
@@ -38,14 +51,25 @@
     single TargetFramework matching CoreTargetFramework/WindowsTargetFramework, so that
     build machines only need the SDK for that one framework installed.
   -->
+  <PropertyGroup Condition="'$(TfmDebug)' == 'true'">
+    <TFM1>$(TargetFramework)</TFM1>
+    <TFMs1>$(TargetFrameworks)</TFMs1>
+  </PropertyGroup>
   <Choose>
     <When Condition="'$(MultiTargeting)' == 'true'">
-      <PropertyGroup Condition="'$(TargetFramework)' == '' And '$(TargetFrameworks)' == ''">
-        <TargetFramework>$(CoreTargetFramework)</TargetFramework>
+      <PropertyGroup>
+        <TargetingMode>MultiTargeting</TargetingMode>
+      </PropertyGroup>
+      <PropertyGroup>
+        <TargetFramework Condition="'$(TargetFramework)' == '' And '$(TargetFrameworks)' == ''">$(CoreTargetFramework)</TargetFramework>
+        <TargetFramework Condition="'$(TargetFrameworks)' != ''" />
       </PropertyGroup>
     </When>
     <Otherwise>
       <!-- Single-targeting: collapse TargetFrameworks down to one TargetFramework -->
+      <PropertyGroup>
+        <TargetingMode>SingleTargeting</TargetingMode>
+      </PropertyGroup>
       <PropertyGroup Condition="'$(TargetFramework)' == '' And '$(TargetFrameworks)' != ''">
         <!-- Surround with ';' to avoid false positives (e.g. net8.0 which would match net8.0-windows) -->
         <_TFWithDelimiters>;$(TargetFrameworks);</_TFWithDelimiters>
@@ -77,6 +101,11 @@
     </Otherwise>
   </Choose>
 
+  <PropertyGroup Condition="'$(TfmDebug)' == 'true'">
+    <TFM2>$(TargetFramework)</TFM2>
+    <TFMs2>$(TargetFrameworks)</TFMs2>
+  </PropertyGroup>
+  
   <!--
     Guard: in single-targeting mode, if a project declared TargetFrameworks but none of the
     candidates above (CoreTargetFramework, WindowsTargetFramework, netstandard2.x) matched,
@@ -97,9 +126,12 @@
     <Message Importance="high" Text="WindowsTargetFrameworks = $(WindowsTargetFrameworks)" />
     <Message Importance="high" Text=" " />
     -->
+    <Message Importance="high" Text="TargetingMode    = $(TargetingMode)" />
     <Message Importance="high" Text="MultiTargeting   = $(MultiTargeting)" />
     <Message Importance="high" Text="TargetFramework  = $(TargetFramework)" />
     <Message Importance="high" Text="TargetFrameworks = $(TargetFrameworks)" />
+    <!--<Message Importance="high" Text="TFM1  -> TFM2    = ($(TFM1)) -> ($(TFM2))" />
+    <Message Importance="high" Text="TFMs1 -> TFMs2   = ($(TFMs1)) -> ($(TFMs2))" />-->
     <Message Importance="high" Text=" " />
   </Target>
 
