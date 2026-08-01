@@ -1,3 +1,7 @@
+---
+author: Roger VUISTINER
+---
+
 # [<](property-sheets.md)&emsp;&emsp;[>](property-sheet-overload.md)
 
 # Feuilles de propriétés *virtuelles*

@@ -1,7 +1,19 @@
-<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project InitialTargets="TraceZouErrorsProps">
+
   <PropertyGroup>
     <ErrorPoNoMessageIdCode>ZOU1000</ErrorPoNoMessageIdCode>
     <ErrorPoNoMessageId>The command "xgettext" did not find any message IDs in source files.</ErrorPoNoMessageId>
+    
+    <ErrorInvalidTfmIdCode>ZOU1001</ErrorInvalidTfmIdCode>
+    <ErrorInvalidTfmId>Project '$(MSBuildProjectName)' does not support any compatible TFM among its declared TargetFrameworks</ErrorInvalidTfmId>
   </PropertyGroup>
+
+  <Target Name="TraceZouErrorsProps" Condition="'$(ZouErrorsDebug)' == 'true'">
+    <Message Importance="high" Text="$(T0)$(MSBuildThisFile) ($(MSBuildProjectFile))$(NC)" />
+    <Message Importance="high" Text="ErrorPoNoMessageIdCode = $(ErrorPoNoMessageIdCode)" />
+    <Message Importance="high" Text="ErrorPoNoMessageId     = $(ErrorPoNoMessageId)" />
+    <Message Importance="high" Text="ErrorInvalidTfmIdCode  = $(ErrorInvalidTfmIdCode)" />
+    <Message Importance="high" Text="ErrorInvalidTfmId      = $(ErrorInvalidTfmId)" />
+    <Message Importance="high" Text=" " />
+  </Target>
 </Project>

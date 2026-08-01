@@ -1,3 +1,7 @@
+---
+author: Roger VUISTINER
+---
+
 # [<](property-sheet-overload.md)&emsp;&emsp;[>](vcxproj-zouification.md)
 
 # Surcharge *partagée* d'une feuille de propriétés - *en construction*.

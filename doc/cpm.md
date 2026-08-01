@@ -1,3 +1,7 @@
+---
+author: Roger VUISTINER
+---
+
 # [<](vcxproj-zouification.md)
 
 # Gestion centralisée des paquets nuget ([CPM](https://learn.microsoft.com/en-us/nuget/consume-packages/central-package-management))

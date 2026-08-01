@@ -35,8 +35,8 @@
   </Choose>
 
   <!-- Various -->
-  <Import Project="zou.errors.props" />
   <Import Project="zou.colors.props" />
+  <Import Project="zou.errors.props" />
 
   <PropertyGroup>
     <!-- Do not trace during restore (too much output) -->
@@ -156,7 +156,19 @@
       </PropertyGroup>
     </Otherwise>
   </Choose>
-  
+
+  <!--
+  Test project detection.
+    We cannot use the $(IsTestProject) property directly to know if it's a test project
+    because it is defined (or not) in the body of the project file which is still not
+    evaluated, so we use a regex on the project name instead.
+    By convention, test projects are named with a suffix of .Test or .Tests.
+  -->
+  <PropertyGroup>
+    <IsTestProject Condition="'$(IsTestProject)' == '' And $([System.Text.RegularExpressions.Regex]::IsMatch('$(MSBuildProjectName)', '\.(Test|Tests)$'))">true</IsTestProject>
+    <IsTestProject Condition="'$(IsTestProject)' == ''">false</IsTestProject>
+  </PropertyGroup>
+
   <!-- Dummy target used by zou, provided by Microsoft.Cpp.Targets but not by Microsoft.CSharp.targets -->
   <Target Name="_PrepareForClean" Condition="'$(MSBuildProjectExtension)' != '.vcxproj'" />
   <Target Name="_DeleteLastBuildState" DependsOnTargets="_PrepareForClean" />
@@ -279,6 +291,7 @@
     <Message Importance="high" Text="+ ModuleRelativeProjectDir   = $(ModuleRelativeProjectDir)" />
     <Message Importance="high" Text="+ ModuleRelativeProjectName  = $(ModuleRelativeProjectName)" />
     <Message Importance="high" Text="+ ModuleRelativeProjectPath  = $(ModuleRelativeProjectPath)" />
+    <Message Importance="high" Text="+ IsTestProject              = $(IsTestProject)" />
     <Message Importance="high" Text="Execution time" />
     <Message Importance="high" Text="==============" />
     <Message Importance="high" Text="  Configuration              = $(Configuration)" />

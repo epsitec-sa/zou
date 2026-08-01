@@ -2,100 +2,29 @@
 
   <PropertyGroup>
     <TargetFrameworkImported>true</TargetFrameworkImported>
-
+    
     <MultiTargeting          Condition="'$(MultiTargeting)'          == ''">false</MultiTargeting>
 
     <FullTargetFramework     Condition="'$(FullTargetFramework)'     == ''">net48</FullTargetFramework>
     <CoreTargetFramework     Condition="'$(CoreTargetFramework)'     == ''">net10.0</CoreTargetFramework>
     <WineTargetFramework     Condition="'$(WineTargetFramework)'     == ''">netcoreapp3.1</WineTargetFramework>
     <WindowsTargetFramework  Condition="'$(WindowsTargetFramework)'  == ''">$(CoreTargetFramework)-windows</WindowsTargetFramework>
+    <BrowserTargetFramework  Condition="'$(BrowserTargetFramework)'  == ''">$(CoreTargetFramework)-browser</BrowserTargetFramework>
 
     <CoreTargetFrameworks    Condition="'$(CoreTargetFrameworks)'    == ''">net8.0;net10.0</CoreTargetFrameworks>
     <WindowsTargetFrameworks Condition="'$(WindowsTargetFrameworks)' == ''">net8.0-windows;net10.0-windows</WindowsTargetFrameworks>
+    <BrowserTargetFrameworks Condition="'$(BrowserTargetFrameworks)' == ''">net8.0-browser;net10.0-browser</BrowserTargetFrameworks>
   </PropertyGroup>
 
-  <!--
-    This is the default for C# projects that do not define the TargetFramework property.
-    You can override this in a Directory.Build.props file (before this import)
-    or in your project file (after this import).
-
-    Single-targeting projects may instead opt into one of these fixed values:
-      TargetFramework=$(FullTargetFramework)     e.g. net48
-      TargetFramework=$(WindowsTargetFramework)  e.g. net8.0-windows / net10.0-windows
-      TargetFramework=$(WineTargetFramework)     e.g. netcoreapp3.1 (for projects running inside a Wine bottle on Mac)
-
-    If you want to build for multiple frameworks, set the TargetFrameworks
-    property instead of TargetFramework in a Directory.Build.props file (before this import)
-    or in your project file (after this import), typically as one of:
-      TargetFrameworks=$(CoreTargetFrameworks)
-      TargetFrameworks=netstandard2.0;$(CoreTargetFrameworks)
-
-    In that case, when MultiTargeting is true, TargetFramework is left unset and the
-    project builds for all frameworks listed in TargetFrameworks.
-    When MultiTargeting is false (default), TargetFrameworks is collapsed down to a
-    single TargetFramework matching CoreTargetFramework/WindowsTargetFramework, so that
-    build machines only need the SDK for that one framework installed.
-  -->
-  <Choose>
-    <When Condition="'$(MultiTargeting)' == 'true'">
-      <PropertyGroup Condition="'$(TargetFramework)' == '' And '$(TargetFrameworks)' == ''">
-        <TargetFramework>$(CoreTargetFramework)</TargetFramework>
-      </PropertyGroup>
-    </When>
-    <Otherwise>
-      <!-- Single-targeting: collapse TargetFrameworks down to one TargetFramework -->
-      <PropertyGroup Condition="'$(TargetFramework)' == '' And '$(TargetFrameworks)' != ''">
-        <!-- Surround with ';' to avoid false positives (e.g. net8.0 which would match net8.0-windows) -->
-        <_TFWithDelimiters>;$(TargetFrameworks);</_TFWithDelimiters>
-
-        <!-- 1. Exact match on CoreTargetFramework (e.g. net8.0) -->
-        <TargetFramework Condition="'$(TargetFramework)' == '' And $(_TFWithDelimiters.Contains(';$(CoreTargetFramework);'))">$(CoreTargetFramework)</TargetFramework>
-
-        <!-- 2. Exact match on the Windows variant (e.g. net8.0-windows) -->
-        <TargetFramework Condition="'$(TargetFramework)' == '' And $(_TFWithDelimiters.Contains(';$(WindowsTargetFramework);'))">$(WindowsTargetFramework)</TargetFramework>
-
-        <!-- 3. Fallback to netstandard2.0 or netstandard2.1, only if the project actually
-             lists it. A project is expected to declare only one of the two, never both. -->
-        <TargetFramework Condition="'$(TargetFramework)' == '' And $(_TFWithDelimiters.Contains(';netstandard2.0;'))">netstandard2.0</TargetFramework>
-        <TargetFramework Condition="'$(TargetFramework)' == '' And $(_TFWithDelimiters.Contains(';netstandard2.1;'))">netstandard2.1</TargetFramework>
-
-        <!-- Neutralize TargetFrameworks so that the SDK does not go into multi-targeting mode.
-             Only done when a candidate actually matched; otherwise TargetFrameworks is left
-             intact so ValidateTargetFramework below can report a clear error instead of the
-             SDK silently falling back to normal multi-targeting on a constrained build machine. -->
-        <TargetFrameworks Condition="'$(TargetFramework)' != ''" />
-      </PropertyGroup>
-
-      <PropertyGroup Condition="'$(TargetFramework)' == '' And '$(TargetFrameworks)' == ''">
-        <TargetFramework>$(CoreTargetFramework)</TargetFramework>
-      </PropertyGroup>
-    </Otherwise>
-  </Choose>
-
-  <!--
-    Guard: in single-targeting mode, if a project declared TargetFrameworks but none of the
-    candidates above (CoreTargetFramework, WindowsTargetFramework, netstandard2.x) matched,
-    fail fast with a clear error instead of silently falling back to multi-targeting, which
-    could break later on a build machine that only has one SDK installed.
-  -->
-  <Target Name="ValidateTargetFramework" BeforeTargets="Build;Restore" Condition="'$(MultiTargeting)' != 'true' And '$(TargetFramework)' == '' And '$(TargetFrameworks)' != ''">
-    <Error Text="Project $(MSBuildProjectName) does not support any compatible TFM (CoreTargetFramework=$(CoreTargetFramework), WindowsTargetFramework=$(WindowsTargetFramework), netstandard2.0, netstandard2.1) among its declared TargetFrameworks=$(TargetFrameworks)." />
-  </Target>
-
-  <Target Name="TraceTargetFrameworkProps" Condition="'$(TfmDebug)' == 'true'">
+  <Target Name="TraceTargetFrameworkProps" Condition="'$(TfmDefDebug)' == 'true'">
     <Message Importance="high" Text="$(T0)$(MSBuildThisFile) ($(MSBuildProjectFile))$(NC)" />
-    <!--
+    <Message Importance="high" Text="MultiTargeting          = $(MultiTargeting)" />
     <Message Importance="high" Text="CoreTargetFramework     = $(CoreTargetFramework)" />
     <Message Importance="high" Text="FullTargetFramework     = $(FullTargetFramework)" />
     <Message Importance="high" Text="WindowsTargetFramework  = $(WindowsTargetFramework)" />
     <Message Importance="high" Text="CoreTargetFrameworks    = $(CoreTargetFrameworks)" />
     <Message Importance="high" Text="WindowsTargetFrameworks = $(WindowsTargetFrameworks)" />
-    <Message Importance="high" Text=" " />
-    -->
-    <Message Importance="high" Text="MultiTargeting   = $(MultiTargeting)" />
-    <Message Importance="high" Text="TargetFramework  = $(TargetFramework)" />
-    <Message Importance="high" Text="TargetFrameworks = $(TargetFrameworks)" />
+    <Message Importance="high" Text="BrowserTargetFrameworks = $(BrowserTargetFrameworks)" />
     <Message Importance="high" Text=" " />
   </Target>
-
 </Project>

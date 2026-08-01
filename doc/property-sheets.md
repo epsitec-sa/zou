@@ -1,3 +1,7 @@
+---
+author: Roger VUISTINER
+---
+
 # [<](logic-model.md)&emsp;&emsp;[>](virtual-property-sheets.md)
 
 # Feuilles de propriétés
