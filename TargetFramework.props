@@ -16,6 +16,9 @@
     <BrowserTargetFrameworks Condition="'$(BrowserTargetFrameworks)' == ''">net8.0-browser;net10.0-browser</BrowserTargetFrameworks>
   </PropertyGroup>
 
+  <!-- Start the TFM babouchka -->
+  <Import Project="hook.zou.build.tfm.props" Condition="'$(ZouBuildTfmProps)' == ''"/>
+
   <Target Name="TraceTargetFrameworkProps" Condition="'$(TfmDefDebug)' == 'true'">
     <Message Importance="high" Text="$(T0)$(MSBuildThisFile) ($(MSBuildProjectFile))$(NC)" />
     <Message Importance="high" Text="MultiTargeting          = $(MultiTargeting)" />

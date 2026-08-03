@@ -1,10 +1,16 @@
 <!--
-Imported by the zou babouchka (zou.build.props chain),
-after the .NET Sdk babouchka (Directory.Build.props chain).
-See: hook.zou.build.props
--->
-<Project>
-  
-  <Import Project="TargetFramework.build.props" Condition="'$(TargetFrameworkBuildImported)' == ''"/>
+Imported by the zou REDIST babouchka (zou.build.props chain) through zou agents
 
-</Project>
+zou AGENT Import Order:
+=======================
+'- module/<agent-project>.msbuildproj
+  '- zou/*.Agent.props
+    '- zou/Agentprolog.props
+      |  zou REDIST babouchka chain:
+      |  ===========================
+      '- zou/hook.zou.build.props
+        '- module/zou.build.props
+          '- bundle/zou.build.props
+            '- zou/zou.build.default.props
+-->
+<Project />
