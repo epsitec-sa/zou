@@ -13,6 +13,8 @@ valeurs par défaut de `TargetFramework(s)` dans `Directory.Build.props`
 entre en conflit avec les surcharges au niveau projet, et le pattern utilisé
 dans ce dépôt pour résoudre ce conflit.
 
+> **Voir aussi** : Pour une vue d'ensemble complète de l'architecture d'importation ZOU (chaînes babouchka SDK + TFM), consultez [Architecture d'importation ZOU](zou-import-architecture-fr.md).
+
 ## Contexte : le problème
 
 Nous centralisons le(s) target framework(s) par défaut dans une feuille de

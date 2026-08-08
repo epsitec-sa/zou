@@ -12,6 +12,8 @@ This document explains the exact MSBuild import order for SDK-style projects
 defaults in `Directory.Build.props` conflicts with per-project overrides, and
 the pattern we use in this repository to resolve that conflict.
 
+> **See also:** For a comprehensive overview of the complete ZOU import architecture (SDK + TFM babouchka chains), refer to [ZOU Import Architecture](zou-import-architecture-en.md).
+
 ## Background: the problem
 
 We centralize default target framework(s) in a shared property sheet
