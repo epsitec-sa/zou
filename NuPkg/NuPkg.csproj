@@ -1,8 +1,9 @@
 ﻿<Project>
   
   <PropertyGroup>
-    <!--<TraceNuPkg>true</TraceNuPkg>-->
-    <CoreTargetFramework Condition="'$(CoreTargetFramework)' == ''">net10.0</CoreTargetFramework>
+    <!--<NuPkgDebug>true</NuPkgDebug>-->
+    <TfmDebug Condition="'$(TfmDebug)' == '' And '$(NuPkgDebug)' == 'true'">true</TfmDebug>
+    
     <CpmId Condition="'$(CpmId)' == ''">Floating</CpmId>
     <NoPrunePackagReferences Condition="'$(BuildingInsideVisualStudio)' == ''">true</NoPrunePackagReferences>
   </PropertyGroup>
@@ -41,26 +42,37 @@
     <PackageReference Update="Nuget.Frameworks"               ExcludeAssets="runtime" />
   </ItemGroup>
 
-  <Target Name="TraceNuPkg" BeforeTargets="CollectPackageReferences" Condition="'$(TraceNuPkg)' != ''">
+  <!-- When using .NET Framework, SQLite cannot be used on AnyCPU platform -->
+  <ItemGroup Condition="'$(Platform)' == 'AnyCPU' And $([MSBuild]::IsTargetFrameworkCompatible('net48', '$(TargetFramework)'))">
+    <PackageReference Remove="Microsoft.Data.SQLite" />
+    <PackageReference Remove="Microsoft.Data.Sqlite.Core" />
+    <PackageReference Remove="Microsoft.EntityFrameworkCore.Sqlite" />
+    <PackageReference Remove="sqlite-vec" />
+    <PackageReference Remove="SQLitePCLRaw.bundle_e_sqlite3" />
+    <PackageReference Remove="SQLitePCLRaw.core" />
+  </ItemGroup>
+
+  <Target Name="TraceNuPkg" BeforeTargets="CollectPackageReferences" Condition="'$(TargetFramework)' != '' And '$(NuPkgDebug)' != ''">
     <Message Importance="high" Text="$(T0)$(MSBuildProjectFile)$(NC)" />
-    
-    <Message Importance="high" Condition="'$(NoWarn)' != ''" Text="NoWarn = $(NoWarn)" />
-    
-    <Message Importance="high" Condition="'$(NoPrunePackagReferences)'       != ''" Text="NoPrunePackagReferences       = $(NoPrunePackagReferences)" />
-    <Message Importance="high" Condition="'$(SuppressTfmSupportBuildErrors)' != ''" Text="SuppressTfmSupportBuildErrors = $(SuppressTfmSupportBuildErrors)" />
-    <Message Importance="high" Condition="'$(SuppressTfmSupportBuildErrors)' != ''" Text=" " />
-    
-    <Message Importance="high" Text="CoreTargetFramework = $(CoreTargetFramework)" />
-    <Message Importance="high" Text="TargetFramework     = $(TargetFramework)" />
-    <Message Importance="high" Text=" " />
-    
-    <Message Importance="high" Text="CpmTFM  = $(CpmTFM)" />
-    <Message Importance="high" Text="CpmVer  = $(CpmVer)" />
-    <Message Importance="high" Text="CpmId   = $(CpmId)" />
-    <Message Importance="high" Text="CpmPath = $(CpmPath)" />
+
+    <Message Importance="high" Text="Configuration = $(Configuration)" />
+    <Message Importance="high" Text="Platform      = $(Platform)" />
     <Message Importance="high" Text=" " />
 
-    <Message Importance="high" Text="IsTargetFrameworkCompatible(net48,   TFM=$(TargetFramework)) = $([MSBuild]::IsTargetFrameworkCompatible('net48', '$(TargetFramework)'))" />
+    <!--<Message Importance="high" Condition="'$(NoWarn)' != ''" Text="NoWarn = $(NoWarn)" />-->
+    
+    <!--<Message Importance="high" Condition="'$(NoPrunePackagReferences)'       != ''" Text="NoPrunePackagReferences       = $(NoPrunePackagReferences)" />
+    <Message Importance="high" Condition="'$(SuppressTfmSupportBuildErrors)' != ''" Text="SuppressTfmSupportBuildErrors = $(SuppressTfmSupportBuildErrors)" />
+    <Message Importance="high" Condition="'$(SuppressTfmSupportBuildErrors)' != ''" Text=" " />-->
+    
+    <Message Importance="high" Text="CpmTFM   = $(CpmTFM)" />
+    <Message Importance="high" Text="CpmVer   = $(CpmVer)" />
+    <Message Importance="high" Text="CpmVerId = $(CpmVerId)" />
+    <Message Importance="high" Text="CpmId    = $(CpmId)" />
+    <Message Importance="high" Text="CpmPath  = $(CpmPath)" />
+    <Message Importance="high" Text=" " />
+
+    <!--<Message Importance="high" Text="IsTargetFrameworkCompatible(net48,   TFM=$(TargetFramework)) = $([MSBuild]::IsTargetFrameworkCompatible('net48', '$(TargetFramework)'))" />
     <Message Importance="high" Text="IsTargetFrameworkCompatible(netS,    TFM=$(TargetFramework)) = $([MSBuild]::IsTargetFrameworkCompatible('netstandard2.0', '$(TargetFramework)'))" />
     <Message Importance="high" Text="IsTargetFrameworkCompatible(net6.0,  TFM=$(TargetFramework)) = $([MSBuild]::IsTargetFrameworkCompatible('net6.0',  '$(TargetFramework)'))" />
     <Message Importance="high" Text="IsTargetFrameworkCompatible(net8.0,  TFM=$(TargetFramework)) = $([MSBuild]::IsTargetFrameworkCompatible('net8.0',  '$(TargetFramework)'))" />
@@ -73,7 +85,7 @@
     <Message Importance="high" Text="IsTargetFrameworkCompatible(TFM=$(TargetFramework), net8.0)  = $([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))" />
     <Message Importance="high" Text="IsTargetFrameworkCompatible(TFM=$(TargetFramework), net9.0)  = $([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net9.0'))" />
     <Message Importance="high" Text="IsTargetFrameworkCompatible(TFM=$(TargetFramework), net10.0) = $([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net10.0'))" />
-    <Message Importance="high" Text=" " />
+    <Message Importance="high" Text=" " />-->
 
     <!--<Message Importance="high" Text="%(PackageReference.Identity) %(Version)" />-->
     <!--<LogItems Items="@(PackageReference)" AllMetadata="false" />
