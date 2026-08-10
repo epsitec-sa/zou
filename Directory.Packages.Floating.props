@@ -516,8 +516,8 @@ Lock files can be updated by using the '——force-evaluate' option.
     <PackageVersion Update="Neo.Cryptography.BLS12_381"                               Version="3.8.*" />            <!-- netstandard, net9 -->
   </ItemGroup>
 
-  <!-- CpmTFM >= net10.0 -->
-  <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(CpmTFM)', 'net10.0'))">
+  <!-- CpmTFM >= net10.0 || CpmFull (TFM <= net4.8) -->
+  <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(CpmTFM)', 'net10.0')) Or $(CpmFull)">
     <PackageVersion Update="EFCore.NamingConventions"                                 Version="10.0.*" />           <!-- net10 -->
     <PackageVersion Update="Epsitec.Rezo.Api"                                         Version="11.6.*" />           <!-- net10 -->
     <PackageVersion Update="Microsoft.Build"                                          Version="18.8.*" />           <!-- net10 -->
@@ -594,6 +594,101 @@ Lock files can be updated by using the '——force-evaluate' option.
     <PackageVersion Update="System.Text.Json"                                         Version="10.0.*" />           <!-- netstandard, net8, net9, net10 -->
     <PackageVersion Update="System.Threading.Tasks.Dataflow"                          Version="10.0.*" />           <!-- netstandard, net8, net9, net10 -->
     <PackageVersion Update="System.Windows.Extensions"                                Version="10.0.*" />           <!-- net8, net9, net10 -->
+  </ItemGroup>
+
+  <!-- CpmTFM <= net4.8 -->
+  <PropertyGroup Condition="$(CpmFull)">
+    <NoWarn>$(NoWarn);MSB3277</NoWarn>
+  </PropertyGroup>
+  <ItemGroup Condition="$(CpmFull)">
+    <PackageVersion Update="Microsoft.EntityFrameworkCore"                            Version="3.1.*" />           <!-- netstandard -->
+    <PackageVersion Update="Microsoft.EntityFrameworkCore.Design"                     Version="3.1.*" />           <!-- netstandard -->
+    <PackageVersion Update="Microsoft.EntityFrameworkCore.Relational"                 Version="3.1.*" />           <!-- netstandard -->
+    <PackageVersion Update="Microsoft.EntityFrameworkCore.Sqlite"                     Version="3.1.*" />           <!-- netstandard -->
+    <PackageVersion Update="Microsoft.EntityFrameworkCore.SqlServer"                  Version="3.1.*" />           <!-- netstandard -->
+    <PackageVersion Update="Microsoft.EntityFrameworkCore.Tools"                      Version="3.1.*" />           <!-- netstandard -->
+
+    <!-- Remove .NET Core only packages -->
+    <PackageVersion Remove="Blazored.LocalStorage" />
+    <PackageVersion Remove="bunit" />
+    <PackageVersion Remove="EFCore.NamingConventions" />
+    <PackageVersion Remove="ElBruno.LocalEmbeddings" />
+    <PackageVersion Remove="ElectronNET.Core.AspNet" />
+    <PackageVersion Remove="Epsitec.Mailer.Core" />
+    <PackageVersion Remove="Epsitec.Net.Json.Serialization" />
+    <PackageVersion Remove="Epsitec.Rezo.Api" />
+    <PackageVersion Remove="GdPicture.API" />
+    <PackageVersion Remove="Grpc.AspNetCore" />
+    <PackageVersion Remove="Microsoft.AspNetCore.Authentication.JwtBearer" />
+    <PackageVersion Remove="Microsoft.AspNetCore.Components" />
+    <PackageVersion Remove="Microsoft.AspNetCore.Components.Authorization" />
+    <PackageVersion Remove="Microsoft.AspNetCore.Components.DataAnnotations.Validation" />
+    <PackageVersion Remove="Microsoft.AspNetCore.Components.Forms" />
+    <PackageVersion Remove="Microsoft.AspNetCore.Components.Web" />
+    <PackageVersion Remove="Microsoft.AspNetCore.Components.WebAssembly" />
+    <PackageVersion Remove="Microsoft.AspNetCore.Mvc.NewtonsoftJson" />
+    <PackageVersion Remove="Microsoft.AspNetCore.Mvc.Testing" />
+    <PackageVersion Remove="Microsoft.AspNetCore.OpenApi" />
+    <PackageVersion Remove="Microsoft.AspNetCore.TestHost" />
+    <PackageVersion Remove="Microsoft.AspNetCore.WebUtilities" />
+
+    <!--<PackageVersion Remove="Microsoft.Extensions.AI.Abstractions" />-->
+    <PackageVersion Remove="Microsoft.Extensions.ApiDescription.Server" />
+    <PackageVersion Remove="Microsoft.Extensions.Caching.Memory" />
+    <PackageVersion Remove="Microsoft.Extensions.Configuration" />
+    <PackageVersion Remove="Microsoft.Extensions.Configuration.Abstractions" />
+    <PackageVersion Remove="Microsoft.Extensions.Configuration.Binder" />
+    <PackageVersion Remove="Microsoft.Extensions.Configuration.CommandLine" />
+    <PackageVersion Remove="Microsoft.Extensions.Configuration.EnvironmentVariables" />
+    <PackageVersion Remove="Microsoft.Extensions.Configuration.Json" />
+    <PackageVersion Remove="Microsoft.Extensions.Configuration.UserSecrets" />
+    <PackageVersion Remove="Microsoft.Extensions.DependencyInjection" />
+    <PackageVersion Remove="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageVersion Remove="Microsoft.Extensions.Diagnostics.Testing" />
+    <PackageVersion Remove="Microsoft.Extensions.FileProviders.Embedded" />
+    <PackageVersion Remove="Microsoft.Extensions.FileSystemGlobbing" />
+    <PackageVersion Remove="Microsoft.Extensions.Hosting" />
+    <PackageVersion Remove="Microsoft.Extensions.Hosting.Abstractions" />
+    <PackageVersion Remove="Microsoft.Extensions.Http" />
+    <PackageVersion Remove="Microsoft.Extensions.Http.Polly" />
+    <PackageVersion Remove="Microsoft.Extensions.Http.Resilience" />
+    <PackageVersion Remove="Microsoft.Extensions.Localization" />
+    <PackageVersion Remove="Microsoft.Extensions.Localization.Abstractions" />
+    <PackageVersion Remove="Microsoft.Extensions.Logging" />
+    <PackageVersion Remove="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageVersion Remove="Microsoft.Extensions.Logging.Configuration" />
+    <PackageVersion Remove="Microsoft.Extensions.Logging.Console" />
+    <PackageVersion Remove="Microsoft.Extensions.Logging.Debug" />
+    <PackageVersion Remove="Microsoft.Extensions.Logging.TraceSource" />
+    <PackageVersion Remove="Microsoft.Extensions.ObjectPool" />
+    <PackageVersion Remove="Microsoft.Extensions.Options" />
+    <PackageVersion Remove="Microsoft.Extensions.Options.ConfigurationExtensions" />
+    <PackageVersion Remove="Microsoft.Extensions.Options.DataAnnotations" />
+    <PackageVersion Remove="Microsoft.Extensions.ServiceDiscovery" />
+
+    <PackageVersion Remove="Microsoft.JSInterop" />
+    <PackageVersion Remove="Microsoft.VisualStudio.Web.CodeGeneration.Design" />
+    <PackageVersion Remove="NSec.Cryptography" />
+    <PackageVersion Remove="Neo.Cryptography.BLS12_381" />
+    <PackageVersion Remove="Npgsql" />
+    <PackageVersion Remove="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageVersion Remove="OrchardCore.Localization.Core" />
+    <PackageVersion Remove="SemanticChunker.NET" />
+    <PackageVersion Remove="SixLabors.ImageSharp.Drawing" />
+    <PackageVersion Remove="Swashbuckle.AspNetCore.SwaggerGen" />
+    <PackageVersion Remove="Swashbuckle.AspNetCore.SwaggerUI" />
+    <PackageVersion Remove="System.ServiceModel.Duplex" />
+    <PackageVersion Remove="System.ServiceModel.Security" />
+    <PackageVersion Remove="System.Windows.Extensions" />
+    <PackageVersion Remove="TinyCsvParser" />
+    <PackageVersion Remove="Toolbelt.AspNetCore.CssLiveReloader" />
+    <PackageVersion Remove="Toolbelt.Blazor.HeadElement" />
+    <PackageVersion Remove="Toolbelt.Blazor.HeadElement.ServerPrerendering" />
+    <PackageVersion Remove="Toolbelt.Blazor.LocalizedDataAnnotationsValidator" />
+    <PackageVersion Remove="Toolbelt.Blazor.I18nText" />
+    <PackageVersion Remove="Yarp.ReverseProxy" />
+    <PackageVersion Remove="Yarp.Telemetry.Consumption" />
+    <PackageVersion Remove="xunit.console" />
   </ItemGroup>
 
   <!-- Charged packages -->
