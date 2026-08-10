@@ -1,10 +1,11 @@
 <!--
   This file is used to select and import the CPM database (CpmPath).
   
-  CpmTFM  ::= (net6|net7.0|net8.0|net9.0|net10.0 ...)
-  CpmVer  ::= (6|7|8|9|10 ...)
-  CpmId   ::= (net6|net7|net8|net9|net10 ...)
-  CpmPath ::= Directory.Packages.$(CpmId).props ?? Directory.Packages.Floating.props
+  CpmTFM   ::= (net6|net7.0|net8.0|net9.0|net10.0 ...)
+  CpmVer   ::= (4.8|8.0|9.0|10.0 ...)
+  CpmVerId ::= (4|8|9|10 ...)
+  CpmId    ::= (Floating|net4|net8|net9|net10 ...)
+  CpmPath  ::= Directory.Packages.$(CpmId).props ?? Directory.Packages.Floating.props
   -->
 <Project>
 
@@ -13,21 +14,25 @@
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
   </PropertyGroup>
 
-  <PropertyGroup>
+  <PropertyGroup Condition="'$(TargetFramework)' != ''">
     <CpmTFM>$(TargetFramework)</CpmTFM>
     <CpmTFM Condition="$(TargetFramework.StartsWith('netstandard', StringComparison.OrdinalIgnoreCase))">$(CoreTargetFramework)</CpmTFM>
-    <CpmTFM Condition="$(TargetFramework.StartsWith('net4', StringComparison.OrdinalIgnoreCase))">net6</CpmTFM>
 
     <CpmVer>$([MSBuild]::GetTargetFrameworkVersion('$(CpmTFM)', 1))</CpmVer>
-    <CpmId Condition="'$(CpmId)'== ''">net$(CpmVer)</CpmId>
+    <CpmFull Condition="'$(CpmVer)' &lt;= '4.8'">true</CpmFull>
+    <CpmFull Condition="'$(CpmFull)' == ''">false</CpmFull>
+
+    <CpmVerId>$(CpmVer)</CpmVerId>
+    <CpmVerId Condition="$(CpmFull)">$(CpmVer.Substring(0, 1))</CpmVerId>
+    <CpmId Condition="'$(CpmId)'== ''">net$(CpmVerId)</CpmId>
 
     <CpmPath>$(MSBuildThisFileDirectory)Directory.Packages.$(CpmId).props</CpmPath>
     <CpmPath Condition="!Exists('$(CpmPath)')">$(MSBuildThisFileDirectory)Directory.Packages.Floating.props</CpmPath>
   </PropertyGroup>
 
-  <Import Project="$(CpmPath)" />
+  <Import Project="$(CpmPath)" Condition="'$(TargetFramework)' != ''" />
 
-  <Target Name="TraceCpm" BeforeTargets="CollectPackageReferences" Condition="'$(TraceCpm)' != ''">
+  <Target Name="TraceCpm" BeforeTargets="CollectPackageReferences" Condition="'$(CpmTFM)' != '' And '$(CpmDebug)' != ''">
     <Message Importance="high" Text="$(T0)$(MSBuildThisFile) ($(MSBuildProjectFile))$(NC)" />
 
     <!--<ItemGroup>
@@ -38,15 +43,12 @@
     <LogItems Items="@(CpmFile)" AllMetadata="false" />
     <Message Importance="high" Text=" " />-->
 
-    <Message Importance="high" Text="TargetFramework           = $(TargetFramework)" />
-    <Message Importance="high" Text="CoreTargetFramework       = $(CoreTargetFramework)" />
-    <Message Importance="high" Text="TargetFrameworkIdentifier = $(TargetFrameworkIdentifier)" />
-    <Message Importance="high" Text="TargetFrameworkVersion    = $(TargetFrameworkVersion)" />
-    
-    <Message Importance="high" Text="CpmTFM  = $(CpmTFM)" />
-    <Message Importance="high" Text="CpmVer  = $(CpmVer)" />
-    <Message Importance="high" Text="CpmId   = $(CpmId)" />
-    <Message Importance="high" Text="CpmPath = $(CpmPath)" />
+    <Message Importance="high" Text="CpmFull  = $(CpmFull)" />
+    <Message Importance="high" Text="CpmTFM   = $(CpmTFM)" />
+    <Message Importance="high" Text="CpmVer   = $(CpmVer)" />
+    <Message Importance="high" Text="CpmVerId = $(CpmVerId)" />
+    <Message Importance="high" Text="CpmId    = $(CpmId)" />
+    <Message Importance="high" Text="CpmPath  = $(CpmPath)" />
     <Message Importance="high" Text=" " />
   </Target>
 
