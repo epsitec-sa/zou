@@ -28,7 +28,7 @@
   </PropertyGroup>
 
   <!-- Language version -->
-  <PropertyGroup Condition="'$(LangVersion)' == ''">
+  <PropertyGroup Condition="'$(LangVersion)' == '' And '$(TargetFramework)' != ''">
     <!--
     Setting the LangVersion element to latest is discouraged.
     The latest setting means the installed compiler uses its latest version.
@@ -47,6 +47,8 @@
     <LangVersion Condition="$(CoreTargetFramework.StartsWith('net8'))">12</LangVersion>
     <LangVersion Condition="$(CoreTargetFramework.StartsWith('net9'))">13</LangVersion>
     <LangVersion Condition="$(CoreTargetFramework.StartsWith('net10'))">14</LangVersion>
+    <!-- Minimal LangVersion with Nullable support -->
+    <LangVersion Condition="'$(LangVersion)' == ''">8</LangVersion>
   </PropertyGroup>
 
   <!-- Compiler -->
