@@ -82,13 +82,13 @@
     fail fast with a clear error instead of silently falling back to multi-targeting, which
     could break later on a build machine that only has one SDK installed.
   -->
-  <Target Name="ValidateTargetFramework"
+  <Target Name="ZouValidateTargetFramework"
           BeforeTargets="Build;Restore"
           Condition="!$(MultiTargeting) And '$(TargetFramework)' == '' And '$(TargetFrameworks)' != ''">
     <Error Text="$(ErrorInvalidTfmId)=($(TargetFrameworks))" Code="$(ErrorInvalidTfmIdCode)"/>
   </Target>
 
-  <Target Name="TraceTargetFrameworkBuildProps" Condition="'$(TfmDebug)' == 'true'">
+  <Target Name="TraceTargetFrameworkBuildProps" Condition="'$(TfmDebug)' == 'true'" BeforeTargets="ZouValidateTargetFramework">
     <Message Importance="high" Text="$(T0)$(MSBuildThisFile) ($(MSBuildProjectFile))$(NC)" />
     <Message Importance="high" Text="BuildType        = $(BuildType)" />
     <Message Importance="high" Text="TargetFramework  = $(TargetFramework)"    Condition="'$(TargetFramework)'  != ''" />
