@@ -101,7 +101,8 @@
 
   <Target Name="TraceVersion" AfterTargets="GetAssemblyAttributes"
           Condition="'$(ZouTrace)' == 'true' Or '$(ZouTraceVersion)' == 'true'">
-    <Message Importance="high" Text="$(T0)$(MSBuildThisFile) ($(MSBuildProjectFile))$(NC)" />
+    <Message Importance="high" Text="$(T0)$([MSBuild]::MakeRelative('$(BundleDir)', '$(MSBuildThisFileFullPath)')) ($(BundleRelativeProjectPath))$(NC)" />
+
     <Message Importance="high" Text="VersionPrefix          = $(VersionPrefix)" />
     <Message Importance="high" Text="VersionSuffix          = $(VersionSuffix)" />
     <Message Importance="high" Text="Version                = $(Version)" />
@@ -114,7 +115,8 @@
 
   <Target Name="TraceDirectoryBuildDefaultProps"
           Condition="'$(ZouTrace)' == 'true' Or '$(ZouTraceDirectoryBuild)' == 'true'">
-    <Message Importance="high" Text="$(T0)$(MSBuildThisFile) ($(MSBuildProjectFile))$(NC)" />
+    <Message Importance="high" Text="$(T0)$([MSBuild]::MakeRelative('$(BundleDir)', '$(MSBuildThisFileFullPath)')) ($(BundleRelativeProjectPath))$(NC)" />
+
     <Message Importance="high" Text="LangVersion                    = $(LangVersion)" />
     <Message Importance="high" Text="Deterministic                  = $(Deterministic)" />
     <Message Importance="high" Text="ProduceReferenceAssembly       = $(ProduceReferenceAssembly)" />

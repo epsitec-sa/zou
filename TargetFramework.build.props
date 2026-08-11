@@ -89,7 +89,8 @@
   </Target>
 
   <Target Name="TraceTargetFrameworkBuildProps" Condition="'$(TfmDebug)' == 'true'" BeforeTargets="ZouValidateTargetFramework">
-    <Message Importance="high" Text="$(T0)$(MSBuildThisFile) ($(MSBuildProjectFile))$(NC)" />
+    <Message Importance="high" Text="$(T0)$([MSBuild]::MakeRelative('$(BundleDir)', '$(MSBuildThisFileFullPath)')) ($(BundleRelativeProjectPath))$(NC)" />
+
     <Message Importance="high" Text="BuildType        = $(BuildType)" />
     <Message Importance="high" Text="TargetFramework  = $(TargetFramework)"    Condition="'$(TargetFramework)'  != ''" />
     <Message Importance="high" Text="TargetFrameworks = ($(TargetFrameworks))" Condition="'$(TargetFrameworks)' != ''" />

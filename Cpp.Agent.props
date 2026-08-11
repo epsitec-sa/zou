@@ -47,8 +47,8 @@ Summary
   <Import Project="Agent.epilog.props" />
   
   <Target Name="TraceCppAgent" Condition="'$(ZouTrace)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
-    <Message Importance="high" Text="zou/Cpp.Agent.props [$(MSBuildProjectFile)]" />
-    <Message Importance="high" Text="-------------------" />
+    <Message Importance="high" Text="$(T0)$([MSBuild]::MakeRelative('$(BundleDir)', '$(MSBuildThisFileFullPath)')) ($(BundleRelativeProjectPath))$(NC)" />
+
     <Message Importance="high" Text="NTVersion          = _WIN32_WINNT = $(NTVersion)" />
     <Message Importance="high" Text="WorkDirSpecified   = $(WorkDirSpecified)" />
     <Message Importance="high" Text="WorkDir            = $(WorkDir)" />

@@ -10,8 +10,8 @@ Import this script at the end of a redist agent
 
   <Target Name="TraceRedistTargets" Condition="$(RedistDebug) Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'"
           BeforeTargets="CreateMSBuildProjects" AfterTargets="RedistImportProjectUpdateTarget">
-    <Message Importance="high" Text="zou/Redist.targets [$(MSBuildProjectFile)]" />
-    <Message Importance="high" Text="------------------" />
+    <Message Importance="high" Text="$(T0)$([MSBuild]::MakeRelative('$(BundleDir)', '$(MSBuildThisFileFullPath)')) ($(BundleRelativeProjectPath))$(NC)" />
+
     <Message Importance="high" Text="ZouBuildRedistProps = $(ZouBuildRedistProps)" />
     <Message Importance="high" Text="CrossBuild          = $(CrossBuild)" />
     <Message Importance="high" Text="BuildWin            = $(BuildWin)" />

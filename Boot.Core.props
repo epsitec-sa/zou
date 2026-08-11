@@ -28,8 +28,8 @@
   </PropertyGroup>
 
   <Target Name="TraceBootCore" Condition="'$(ZouTrace)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
-    <Message Importance="high" Text="zou/Boot.Core.props [$(MSBuildProjectFile)]" />
-    <Message Importance="high" Text="-------------------" />
+    <Message Importance="high" Text="$(T0)$([MSBuild]::MakeRelative('$(BundleDir)', '$(MSBuildThisFileFullPath)')) ($(BundleRelativeProjectPath))$(NC)" />
+
     <Message Importance="high" Text="PlatformToolset = $(PlatformToolset)" />
     <Message Importance="high" Text="Configuration   = $(Configuration)" />
     <Message Importance="high" Text="IsDebug         = $(IsDebug)" />

@@ -60,8 +60,8 @@ Outputs
   </ItemDefinitionGroup>
 
   <Target Name="TraceRedistProps" Condition="$(RedistDebug) Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
-    <Message Importance="high" Text="zou/Redist.props [$(MSBuildProjectFile)]" />
-    <Message Importance="high" Text="----------------" />
+    <Message Importance="high" Text="$(T0)$([MSBuild]::MakeRelative('$(BundleDir)', '$(MSBuildThisFileFullPath)')) ($(BundleRelativeProjectPath))$(NC)" />
+
     <Message Importance="high" Text="SkipCrossBuild    = $(SkipCrossBuild)" />
     <Message Importance="high" Text="CrossBuild        = $(CrossBuild)" />
     <Message Importance="high" Text="RedistByRuntime   = $(RedistByRuntime)" />

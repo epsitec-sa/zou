@@ -59,8 +59,8 @@ Outputs
   </ItemDefinitionGroup>
 
   <Target Name="TraceBootCrossBuild" Condition="'$(ZouTrace)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
-    <Message Importance="high" Text="zou/Boot.CrossBuild.props [$(MSBuildProjectFile)]" />
-    <Message Importance="high" Text="-------------------------" />
+    <Message Importance="high" Text="$(T0)$([MSBuild]::MakeRelative('$(BundleDir)', '$(MSBuildThisFileFullPath)')) ($(BundleRelativeProjectPath))$(NC)" />
+
     <Message Importance="high" Text="ZouAgentType    = $(ZouAgentType)" />
     <Message Importance="high" Text="SkipCrossBuild  = $(SkipCrossBuild)" />
     <Message Importance="high" Text="CrossBuild      = $(CrossBuild)" />

@@ -91,8 +91,8 @@ Outputs
   </ItemGroup>
 
   <Target Name="TraceBootRuntime" Condition="'$(ZouDebug)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
-    <Message Importance="high" Text="zou/Boot.Runtime.props [$(MSBuildProjectFile)]" />
-    <Message Importance="high" Text="----------------------" />
+    <Message Importance="high" Text="$(T0)$([MSBuild]::MakeRelative('$(BundleDir)', '$(MSBuildThisFileFullPath)')) ($(BundleRelativeProjectPath))$(NC)" />
+
     <Message Importance="high" Text="ZouAgentType       = $(ZouAgentType)" Condition="'$(ZouAgentType)' != ''" />
     <Message Importance="high" Text="BuildWin           = $(BuildWin)"     Condition="'$(ZouAgentType)' != ''" />
     <Message Importance="high" Text="BuildOsx           = $(BuildOsx)"     Condition="'$(ZouAgentType)' != ''" />

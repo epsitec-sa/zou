@@ -21,8 +21,8 @@ Use msbuild '-p:TransformOnBuild=true' to transform T4 templates on the command 
   <Import Condition="'$(TransformOnBuild)' == 'true'" Project="$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\TextTemplating\Microsoft.TextTemplating.targets" />
 
   <Target Name="TraceT4Targets" Condition="'$(ZouTrace)' == 'true'">
-    <Message Importance="high" Text="zou/T4.targets [$(MSBuildProjectFile)]" />
-    <Message Importance="high" Text="--------------" />
+    <Message Importance="high" Text="$(T0)$([MSBuild]::MakeRelative('$(BundleDir)', '$(MSBuildThisFileFullPath)')) ($(BundleRelativeProjectPath))$(NC)" />
+
     <Message Importance="high" Text="TransformOnBuild             = $(TransformOnBuild)" />
     <Message Importance="high" Text="CopyLocalLockFileAssemblies  = $(CopyLocalLockFileAssemblies)" />
     <Message Importance="high" Text="TransformOutOfDateOnly       = $(TransformOutOfDateOnly)" />

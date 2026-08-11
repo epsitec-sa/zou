@@ -33,7 +33,7 @@
   <Import Project="$(CpmPath)" Condition="'$(TargetFramework)' != ''" />
 
   <Target Name="TraceCpm" BeforeTargets="CollectPackageReferences" Condition="'$(CpmTFM)' != '' And '$(CpmDebug)' != ''">
-    <Message Importance="high" Text="$(T0)$(MSBuildThisFile) ($(MSBuildProjectFile))$(NC)" />
+    <Message Importance="high" Text="$(T0)$([MSBuild]::MakeRelative('$(BundleDir)', '$(MSBuildThisFileFullPath)')) ($(BundleRelativeProjectPath))$(NC)" />
 
     <!--<ItemGroup>
       <CpmFile

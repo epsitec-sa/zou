@@ -6,7 +6,8 @@
   </PropertyGroup>
 
   <Target Name="TraceReferencesTargets" Condition="'$(RefDebug)' == 'true'">
-    <Message Importance="high" Text="$(T0)$(MSBuildThisFile) ($(MSBuildProjectFile))$(NC)" />
+    <Message Importance="high" Text="$(T0)$([MSBuild]::MakeRelative('$(BundleDir)', '$(MSBuildThisFileFullPath)')) ($(BundleRelativeProjectPath))$(NC)" />
+
     <Message Importance="high" Text="BuildType        = $(BuildType)" />
     <Message Importance="high" Text="TargetFramework  = $(TargetFramework)"  Condition="!$(MultiTargeting)" />
     <Message Importance="high" Text="TargetFrameworks = $(TargetFrameworks)" Condition=" $(MultiTargeting)" />

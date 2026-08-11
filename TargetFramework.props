@@ -20,7 +20,8 @@
   <Import Project="hook.zou.build.tfm.props" Condition="'$(ZouBuildTfmProps)' == ''"/>
 
   <Target Name="TraceTargetFrameworkProps" Condition="'$(TfmDefDebug)' == 'true'">
-    <Message Importance="high" Text="$(T0)$(MSBuildThisFile) ($(MSBuildProjectFile))$(NC)" />
+    <Message Importance="high" Text="$(T0)$([MSBuild]::MakeRelative('$(BundleDir)', '$(MSBuildThisFileFullPath)')) ($(BundleRelativeProjectPath))$(NC)" />
+
     <Message Importance="high" Text="MultiTargeting          = $(MultiTargeting)" />
     <Message Importance="high" Text="CoreTargetFramework     = $(CoreTargetFramework)" />
     <Message Importance="high" Text="FullTargetFramework     = $(FullTargetFramework)" />

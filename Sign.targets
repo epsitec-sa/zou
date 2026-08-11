@@ -119,8 +119,8 @@ Operations:
   </Target>
 
   <Target Name="TraceSignTargets" Condition="'$(ZouTrace)' == 'true'">
-    <Message Importance="high" Text="zou/Sign.targets [$(MSBuildProjectFile)]" />
-    <Message Importance="high" Text="----------------" />
+    <Message Importance="high" Text="$(T0)$([MSBuild]::MakeRelative('$(BundleDir)', '$(MSBuildThisFileFullPath)')) ($(BundleRelativeProjectPath))$(NC)" />
+
     <Message Importance="high" Text="Sign           = $(Sign)" />
     <Message Importance="high" Text="Pack           = $(Pack)" />
     <Message Importance="high" Text="PackAsTool     = $(PackAsTool)" />

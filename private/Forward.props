@@ -12,8 +12,8 @@
   </PropertyGroup>
 
   <Target Name="TraceForward" Condition="'$(ZouTrace)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
-    <Message Importance="normal" Text="zou/Forward.props [$(MSBuildProjectFile)]" />
-    <Message Importance="normal" Text="-----------------" />
+    <Message Importance="high" Text="$(T0)$([MSBuild]::MakeRelative('$(BundleDir)', '$(MSBuildThisFileFullPath)')) ($(BundleRelativeProjectPath))$(NC)" />
+
     <Message Importance="normal" Text="ForwardWorkDir         = $(ForwardWorkDir)" />
     <Message Importance="normal" Text="ForwardPkgDir          = $(ForwardPkgDir)" />
     <Message Importance="normal" Text="ForwardPkgBinDir       = $(ForwardPkgBinDir)" />

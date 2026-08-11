@@ -9,7 +9,8 @@
   </PropertyGroup>
 
   <Target Name="TraceZouErrorsProps" Condition="'$(ZouErrorsDebug)' == 'true'">
-    <Message Importance="high" Text="$(T0)$(MSBuildThisFile) ($(MSBuildProjectFile))$(NC)" />
+    <Message Importance="high" Text="$(T0)$([MSBuild]::MakeRelative('$(BundleDir)', '$(MSBuildThisFileFullPath)')) ($(BundleRelativeProjectPath))$(NC)" />
+
     <Message Importance="high" Text="ErrorPoNoMessageIdCode = $(ErrorPoNoMessageIdCode)" />
     <Message Importance="high" Text="ErrorPoNoMessageId     = $(ErrorPoNoMessageId)" />
     <Message Importance="high" Text="ErrorInvalidTfmIdCode  = $(ErrorInvalidTfmIdCode)" />

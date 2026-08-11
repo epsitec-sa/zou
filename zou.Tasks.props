@@ -55,8 +55,8 @@
   </UsingTask>
   
   <Target Name="TraceZouTasksProps" Condition="'$(ZouTrace)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
-    <Message Importance="high" Text="zou/zou.Tasks.props [$(MSBuildProjectFile)]" />
-    <Message Importance="high" Text="-------------------" />
+    <Message Importance="high" Text="$(T0)$([MSBuild]::MakeRelative('$(BundleDir)', '$(MSBuildThisFileFullPath)')) ($(BundleRelativeProjectPath))$(NC)" />
+
     <Message Importance="high" Text="ZouTasksDebugDllPath = $(ZouTasksDebugDllPath)" />
     <Message Importance="high" Text="ZouTasksDllPath      = $(ZouTasksDllPath)" />
     <Message Importance="high" Text=" " />
