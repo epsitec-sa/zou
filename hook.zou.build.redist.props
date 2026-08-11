@@ -1,14 +1,16 @@
-<Project InitialTargets="TraceHookZouBuildProps">
+<Project InitialTargets="TraceHookZouBuildRedistProps">
   
-  <!-- Import the first 'zou.build.props' found in the local project directory or above -->
+  <!-- Import the first 'zou.build.redist.props' found in the local project directory or above -->
   <PropertyGroup>
-    <ZouBuildProps>$([MSBuild]::GetPathOfFileAbove('zou.build.props', '$(MSBuildProjectDirectory)'))</ZouBuildProps>
+    <ZouBuildRedistProps>$([MSBuild]::GetPathOfFileAbove('zou.build.redist.props', '$(MSBuildProjectDirectory)'))</ZouBuildRedistProps>
+    <!-- For backward compatibility -->
+    <ZouBuildRedistProps Condition="'$(ZouBuildRedistProps)' == ''">$([MSBuild]::GetPathOfFileAbove('zou.build.props', '$(MSBuildProjectDirectory)'))</ZouBuildRedistProps>
   </PropertyGroup>
-  <Import Project="$(ZouBuildProps)" Condition="Exists('$(ZouBuildProps)')" />
+  <Import Project="$(ZouBuildRedistProps)" Condition="Exists('$(ZouBuildRedistProps)')" />
 
-  <Target Name="TraceHookZouBuildProps" Condition="'$(ZouBuildDebug)' != ''">
+  <Target Name="TraceHookZouBuildRedistProps" Condition="'$(RedistDebug)' != ''">
     <Message Importance="high" Text="$(T0)$(MSBuildThisFile) ($(MSBuildProjectFile))$(NC)" />
-    <Message Importance="high" Text="ZouBuildProps = $(ZouBuildProps)" />
+    <Message Importance="high" Text="ZouBuildRedistProps = $(ZouBuildRedistProps)" />
     <Message Importance="high" Text=" " />
   </Target>
 </Project>
