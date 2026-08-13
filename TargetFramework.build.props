@@ -79,6 +79,12 @@
     <BuildType Condition="'$(BuildType)' == '' And '$(TargetFramework)' != '' And '$(TargetFrameworks)' == ''">Standard</BuildType>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(TargetFramework)' != ''">
+    <NetKind Condition="$(TargetFramework.StartsWith('netstandard', StringComparison.OrdinalIgnoreCase))">Standard</NetKind>
+    <NetKind Condition="'$(NetKind)' == '' And $([MSBuild]::GetTargetFrameworkVersion('$(TargetFramework)', 1)) &lt;= 4.8">Full</NetKind>
+    <NetKind Condition="'$(NetKind)' == ''">Core</NetKind>
+  </PropertyGroup>
+
   <!--
     Guard: in single-targeting mode, if a project declared TargetFrameworks but none of the
     candidates above (CoreTargetFramework, WindowsTargetFramework, netstandard2.x) matched,
@@ -94,10 +100,15 @@
   <Target Name="TraceTargetFrameworkBuildProps" Condition="'$(TfmDebug)' == 'true'" BeforeTargets="ZouValidateTargetFramework">
     <Message Importance="high" Text="$(T0)$([MSBuild]::MakeRelative('$(BundleDir)', '$(MSBuildThisFileFullPath)')) ($(BundleRelativeProjectPath))$(NC)" />
 
-    <Message Importance="high" Text="BuildType        = $(BuildType)" />
-    <Message Importance="high" Text="TargetFramework  = $(TargetFramework)"    Condition="'$(TargetFramework)'  != ''" />
-    <Message Importance="high" Text="TargetFrameworks = ($(TargetFrameworks))" Condition="'$(TargetFrameworks)' != ''" />
-    <Message Importance="high" Text=" " />
+    <PropertyGroup>
+      <TfmDbgColor Condition="'$(BuildType)' == 'Multi.Outer'">$(Brown)</TfmDbgColor>
+      <TfmDbgColor Condition="'$(TfmDbgColor)' == ''">$(NC)</TfmDbgColor>
+    </PropertyGroup>
+    <Message Importance="high" Text="$(TfmDbgColor)BuildType        = $(BuildType)" />
+    <Message Importance="high" Text="$(TfmDbgColor)NetKind          = $(NetKind)"                  Condition="'$(TargetFramework)'  != ''" />
+    <Message Importance="high" Text="$(TfmDbgColor)TargetFramework  = $(Green)$(TargetFramework)"  Condition="'$(TargetFramework)'  != ''" />
+    <Message Importance="high" Text="$(TfmDbgColor)TargetFrameworks = ($(TargetFrameworks))"       Condition="'$(TargetFrameworks)' != ''" />
+    <Message Importance="high" Text="$(NC) " />
   </Target>
 
 </Project>
