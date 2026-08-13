@@ -55,14 +55,17 @@
              lists it. A project is expected to declare only one of the two, never both. -->
         <TargetFramework Condition="'$(TargetFramework)' == '' And $(_TFWithDelimiters.Contains(';netstandard2.0;'))">netstandard2.0</TargetFramework>
         <TargetFramework Condition="'$(TargetFramework)' == '' And $(_TFWithDelimiters.Contains(';netstandard2.1;'))">netstandard2.1</TargetFramework>
+      </PropertyGroup>
 
+      <PropertyGroup>
         <!-- Neutralize TargetFrameworks so that the SDK does not go into multi-targeting mode.
              Only done when a candidate actually matched; otherwise TargetFrameworks is left
              intact so ValidateTargetFramework below can report a clear error instead of the
              SDK silently falling back to normal multi-targeting on a constrained build machine. -->
         <TargetFrameworks Condition="'$(TargetFramework)' != ''" />
       </PropertyGroup>
-
+      
+      <!-- In single targeting mode, if neither TargetFramework nor TargetFrameworks is defined, default to CoreTargetFramework -->
       <PropertyGroup Condition="'$(TargetFramework)' == '' And '$(TargetFrameworks)' == ''">
         <TargetFramework>$(CoreTargetFramework)</TargetFramework>
       </PropertyGroup>
