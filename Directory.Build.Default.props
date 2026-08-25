@@ -27,30 +27,6 @@
     <!--<MSBuildWarningsAsMessages>MSB3277</MSBuildWarningsAsMessages>-->
   </PropertyGroup>
 
-  <!-- Language version -->
-  <PropertyGroup Condition="'$(LangVersion)' == '' And '$(TargetFramework)' != ''">
-    <!--
-    Setting the LangVersion element to latest is discouraged.
-    The latest setting means the installed compiler uses its latest version.
-    The value of latest can change from machine to machine, making builds unreliable.
-    In addition, it enables language features that might require runtime or library features
-    not included in the current SDK.
-    https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/configure-language-version
-
-    It may also introduce breaking changes when a new C# version is released.
-    https://learn.microsoft.com/en-us/dotnet/csharp/whats-new/breaking-changes/compiler%20breaking%20changes%20-%20dotnet%2010#enumerablereverse
-    
-    Use the C# language version associated with the target framework in use
-    -->
-    <LangVersion Condition="$(CoreTargetFramework.StartsWith('net6'))">10</LangVersion>
-    <LangVersion Condition="$(CoreTargetFramework.StartsWith('net7'))">11</LangVersion>
-    <LangVersion Condition="$(CoreTargetFramework.StartsWith('net8'))">12</LangVersion>
-    <LangVersion Condition="$(CoreTargetFramework.StartsWith('net9'))">13</LangVersion>
-    <LangVersion Condition="$(CoreTargetFramework.StartsWith('net10'))">14</LangVersion>
-    <!-- Minimal LangVersion with Nullable support -->
-    <LangVersion Condition="'$(LangVersion)' == ''">8</LangVersion>
-  </PropertyGroup>
-
   <!-- Compiler -->
   <PropertyGroup>
     <Deterministic Condition="'$(Deterministic)' == ''">true</Deterministic>

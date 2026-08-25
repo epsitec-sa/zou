@@ -97,18 +97,21 @@
     <Error Text="$(ErrorInvalidTfmId)=($(TargetFrameworks))" Code="$(ErrorInvalidTfmIdCode)"/>
   </Target>
 
+  <Import Project="LangVersions.props" Condition="'$(LangVersion)' == ''"/>
+
   <Target Name="TraceTargetFrameworkBuildProps" Condition="'$(TfmDebug)' == 'true'" BeforeTargets="ZouValidateTargetFramework">
+    <Message Importance="high" Text="$(NC) " />
     <Message Importance="high" Text="$(T0)$([MSBuild]::MakeRelative('$(BundleDir)', '$(MSBuildThisFileFullPath)')) ($(BundleRelativeProjectPath))$(NC)" />
 
     <PropertyGroup>
       <TfmDbgColor Condition="'$(BuildType)' == 'Multi.Outer'">$(Brown)</TfmDbgColor>
       <TfmDbgColor Condition="'$(TfmDbgColor)' == ''">$(NC)</TfmDbgColor>
     </PropertyGroup>
-    <Message Importance="high" Text="$(TfmDbgColor)BuildType        = $(BuildType)" />
-    <Message Importance="high" Text="$(TfmDbgColor)NetKind          = $(NetKind)"                  Condition="'$(TargetFramework)'  != ''" />
-    <Message Importance="high" Text="$(TfmDbgColor)TargetFramework  = $(Green)$(TargetFramework)"  Condition="'$(TargetFramework)'  != ''" />
-    <Message Importance="high" Text="$(TfmDbgColor)TargetFrameworks = ($(TargetFrameworks))"       Condition="'$(TargetFrameworks)' != ''" />
-    <Message Importance="high" Text="$(NC) " />
+    <Message Importance="high" Text="$(TfmDbgColor)BuildType        = $(BuildType)$(NC)" />
+    <Message Importance="high" Text="$(TfmDbgColor)NetKind          = $(NetKind)$(NC)"                      Condition="'$(TargetFramework)'  != ''" />
+    <Message Importance="high" Text="$(TfmDbgColor)LangVersion      = $(Green)C#$(LangVersion)$(NC)"        Condition="'$(BuildType)' != 'Multi.Outer'" />
+    <Message Importance="high" Text="$(TfmDbgColor)TargetFramework  = $(LightGreen)$(TargetFramework)$(NC)" Condition="'$(TargetFramework)'  != ''" />
+    <Message Importance="high" Text="$(TfmDbgColor)TargetFrameworks = ($(TargetFrameworks))$(NC)"           Condition="'$(TargetFrameworks)' != ''" />
   </Target>
 
 </Project>
