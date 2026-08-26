@@ -28,23 +28,11 @@ Lock files can be updated by using the '——force-evaluate' option.
     <CentralPackageFloatingVersionsEnabled>true</CentralPackageFloatingVersionsEnabled>
   </PropertyGroup>
 
-  <ItemGroup>
-    <PackageVersion Include="Microsoft.Web.Services3"                                 Version="3.0.*" />            <!-- NO DEPS -->
-    <PackageVersion Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets"   Version="1.23.*" />           <!-- NET 4.7 -->
-    <PackageVersion Include="Nancy.Hosting.Self"                                      Version="2.0.*" />            <!-- NET 4.5 -->
-  </ItemGroup>
-
-  <!-- netstandard (deprecated) -->
-  <ItemGroup>
-    <PackageVersion Include="VocaDb.ResXFileCodeGenerator"                            Version="3.2.*" />            <!-- netstandard, DEPRECATED -->
-  </ItemGroup>
-
-  <!-- netstandard 2.0 only -->
-  <ItemGroup Condition="$(TargetFramework.StartsWith('netstandard'))">
-    <PackageVersion Include="Microsoft.Bcl.AsyncInterfaces"                           Version="9.0.*" />            <!-- netstandard2.0 -->
-  </ItemGroup>
-
-  <!-- netstandard or CpmTFM >= net8 -->
+  <!--
+    WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
+    Only use 'Include' until the end of this section.
+    Do not 'Update' or 'Remove' packages here.
+  -->
   <ItemGroup>
     <PackageVersion Include="AngleSharp"                                              Version="1.7.*" />            <!-- netstandard, net6, net7, net8, net10 -->
     <PackageVersion Include="ApprovalTests"                                           Version="7.0.*" />            <!-- net6, net8 -->
@@ -152,6 +140,8 @@ Lock files can be updated by using the '——force-evaluate' option.
     <PackageVersion Include="Microsoft.AspNetCore.TestHost"                           Version="8.0.*" />            <!-- net8 -->
     <PackageVersion Include="Microsoft.AspNetCore.WebUtilities"                       Version="8.0.*" />            <!-- net8 -->
 
+    <PackageVersion Include="Microsoft.Bcl.AsyncInterfaces"                           Version="9.0.*"               Condition="$(TargetFramework.StartsWith('netstandard'))" /> <!-- netstandard2.0 -->
+    
     <PackageVersion Include="Microsoft.Build"                                         Version="17.11.*" />          <!-- net8 -->
     <PackageVersion Include="Microsoft.Build.Framework"                               Version="17.11.*" />          <!-- netstandard, net8 -->
     <PackageVersion Include="Microsoft.Build.Locator"                                 Version="1.11.*" />           <!-- net8 -->
@@ -239,7 +229,9 @@ Lock files can be updated by using the '——force-evaluate' option.
     <PackageVersion Include="Microsoft.Testing.Extensions.TrxReport"                  Version="2.3.*" />            <!-- netstandard, net8, net9 -->
     <PackageVersion Include="Microsoft.TypeScript.MSBuild"                            Version="7.0.*" />            <!-- NO DEPS -->
     <PackageVersion Include="Microsoft.VisualStudio.SlnGen"                           Version="12.0.*" />           <!-- net8, net9, net10 -->
+    <PackageVersion Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets"   Version="1.23.*" />           <!-- NET 4.7 -->
     <PackageVersion Include="Microsoft.VisualStudio.Web.CodeGeneration.Design"        Version="9.0.0" />            <!-- net8 -->
+    <PackageVersion Include="Microsoft.Web.Services3"                                 Version="3.0.*" />            <!-- NO DEPS -->
     <PackageVersion Include="Microsoft.Win32.Registry"                                Version="5.0.*" />            <!-- netstandard, * -->
 
     <PackageVersion Include="MinVer"                                                  Version="7.0.*" />            <!-- NO DEPS -->
@@ -254,6 +246,7 @@ Lock files can be updated by using the '——force-evaluate' option.
     <PackageVersion Include="Mvp.Xml"                                                 Version="3.2.*" />            <!-- netstandard -->
 
     <PackageVersion Include="Nancy"                                                   Version="2.0.*" />            <!-- netstandard, NET4.5 -->
+    <PackageVersion Include="Nancy.Hosting.Self"                                      Version="2.0.*" />            <!-- NET 4.5 -->
     <PackageVersion Include="Neo.Cryptography.BLS12_381"                              Version="0.1.*" />            <!-- net6 -->
     <PackageVersion Include="NEventStore"                                             Version="10.2.*" />           <!-- netstandard, net8, net9, net10 -->
     <PackageVersion Include="NEventStore.Persistence.Sql"                             Version="10.2.*" />           <!-- netstandard, net8, net9, net10 -->
@@ -437,6 +430,7 @@ Lock files can be updated by using the '——force-evaluate' option.
     <PackageVersion Include="Toolbelt.Blazor.I18nText"                                Version="14.1.*" />           <!-- net8, net9, net10 -->
 
     <PackageVersion Include="ValueOf"                                                 Version="2.0.*" />            <!-- netstandard -->
+    <PackageVersion Include="VocaDb.ResXFileCodeGenerator"                            Version="3.2.*" />            <!-- netstandard, DEPRECATED -->
 
     <PackageVersion Include="WebSocket4Net"                                           Version="0.15.*" />           <!-- netstandard -->
     <PackageVersion Include="WinInsider.System.Net.Http.Formatting"                   Version="1.0.*" />            <!-- netstandard -->
@@ -453,6 +447,12 @@ Lock files can be updated by using the '——force-evaluate' option.
     <PackageVersion Include="Yarp.Telemetry.Consumption"                              Version="2.3.*" />            <!-- net6, net8 -->
     <PackageVersion Include="ZXing.Net"                                               Version="0.16.*" />           <!-- netstandard, * -->
   </ItemGroup>
+  
+  <!--
+  WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
+  No more 'Include' since this section. All packages must be defined in the above section,
+  and then removed or updated below.
+  -->
 
   <!-- CpmTFM <= net9 -->
   <ItemGroup Condition="'$(CpmVer)' &lt;= '9'">
@@ -714,6 +714,11 @@ Lock files can be updated by using the '——force-evaluate' option.
     <PackageVersion Remove="xunit.console" />
   </ItemGroup>
 
+  <!--
+    WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
+    Following sections are for special cases only (Licenses, compatibility downgrades.
+  -->
+  
   <!-- Charged packages -->
   <ItemGroup>
     <!-- FluentAssertions 8.0.* is not free anymore (https://www.youtube.com/watch?v=ZFc6jcaM6Ms) -->
