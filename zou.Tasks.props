@@ -8,27 +8,14 @@
     <ZouTasksDllPath Condition="'$(ZouTasksDllPath)' == ''">$(ZouTasksBinzDllPath)</ZouTasksDllPath>
   </PropertyGroup>
 
-  <UsingTask TaskName="AddBuildOptions"     AssemblyFile="$(ZouTasksDllPath)" />
-  <UsingTask TaskName="MulJoin"             AssemblyFile="$(ZouTasksDllPath)" />
-  <UsingTask TaskName="LogItems"            AssemblyFile="$(ZouTasksDllPath)" />
-  <UsingTask TaskName="AddFileInfo"         AssemblyFile="$(ZouTasksDllPath)" />
-  <UsingTask TaskName="FileUpdate"          AssemblyFile="$(ZouTasksDllPath)" />
-  <UsingTask TaskName="CleanPoFile"         AssemblyFile="$(ZouTasksDllPath)" />
-  <UsingTask TaskName="CreateHelpMap"       AssemblyFile="$(ZouTasksDllPath)" />
-  <UsingTask TaskName="CreateIndexedSubdir" AssemblyFile="$(ZouTasksDllPath)" />
-  <UsingTask TaskName="MergePackagesConfig" AssemblyFile="$(ZouTasksDllPath)" />
-  <UsingTask TaskName="Lock"                AssemblyFile="$(ZouTasksDllPath)" />
-  <UsingTask TaskName="Unlock"              AssemblyFile="$(ZouTasksDllPath)" />
-  <UsingTask TaskName="Sleep"               AssemblyFile="$(ZouTasksDllPath)" />
-  <UsingTask TaskName="Prompt"              AssemblyFile="$(ZouTasksDllPath)" />
-  <UsingTask TaskName="GroupJoin"           AssemblyFile="$(ZouTasksDllPath)" />
-  <UsingTask TaskName="LeftOuterJoin"       AssemblyFile="$(ZouTasksDllPath)" />
-  <UsingTask TaskName="LoadItems"           AssemblyFile="$(ZouTasksDllPath)" />
-  <UsingTask TaskName="SaveItems"           AssemblyFile="$(ZouTasksDllPath)" />
-  <UsingTask TaskName="SetEnvVar"           AssemblyFile="$(ZouTasksDllPath)" />
-  <UsingTask TaskName="HttpRequest"         AssemblyFile="$(ZouTasksDllPath)" />
-  <UsingTask TaskName="Zip"                 AssemblyFile="$(ZouTasksDllPath)" />
-  <UsingTask TaskName="GetRealPath"         AssemblyFile="$(ZouTasksDllPath)" />
+  <!--
+    Import the appropriate tasks based on whether TaskHostFactory is enabled.
+    
+    - Out of process tasks should be used only when building 'Tasks.csproj' so that MSBuild can load the tasks in a separate process to avoid file in use issues.
+    - Out of process tasks should not be used when building normal projects, due to issues with the 'ItemDefinitionGroup' not being forwarded to the out of process task host.
+  -->
+  <Import Project="zou.Tasks.InProcess.props"    Condition="'$(EnableTaskHostFactory)' != 'true'"/>
+  <Import Project="zou.Tasks.OutOfProcess.props" Condition="'$(EnableTaskHostFactory)' == 'true'"/>
 
   <!-- Launch a Process asynchronously -->
   <UsingTask TaskName="ExecAsync" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">

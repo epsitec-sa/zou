@@ -1,0 +1,11 @@
+<Project>
+  <PropertyGroup>
+    <!--
+    Enable the TaskHostFactory so that the tasks defined by zou.tasks.props are loaded in a separate process.
+    This is required to avoid file-in-use conflicts with MSBuild that already uses the distributed version of Tasks.dll.
+    -->
+    <EnableTaskHostFactory>true</EnableTaskHostFactory>
+  </PropertyGroup>
+  
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('$(MSBuildThisFile)', '$(MSBuildThisFileDirectory)../'))" />
+</Project>
