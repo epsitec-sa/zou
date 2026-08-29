@@ -1,7 +1,61 @@
 <Project  InitialTargets="TraceTargetFrameworkBuildProps">
+  
+  <PropertyGroup>
+    <TargetFrameworkInp>$(TargetFramework)</TargetFrameworkInp>
+    <TargetFrameworksInp>$(TargetFrameworks)</TargetFrameworksInp>
+    <ZouTargetFrameworkInp>$(ZouTargetFramework)</ZouTargetFrameworkInp>
+    <ZouTargetFrameworksInp>$(ZouTargetFrameworks)</ZouTargetFrameworksInp>
+    <MultiTargetingInp>$(MultiTargeting)</MultiTargetingInp>
+  </PropertyGroup>
 
   <PropertyGroup>
     <TargetFrameworkBuildImported>true</TargetFrameworkBuildImported>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <ZouTargetFrameworks Condition="'$(ZouTargetFramework)' != ''" />
+    <!-- Transform 'net8.0+net10.0' to 'net8.0;net10.0' due to MSBuild CLI syntax
+         rejecting ';' and ',' in -p: values; Unescape() undoes the internal escaping
+         MSBuild applies to the ';' introduced by Replace() before it gets split. -->
+    <ZouTargetFrameworksMsBuild Condition="'$(ZouTargetFrameworks)' != ''">$([MSBuild]::Unescape($(ZouTargetFrameworks.Replace('+', ';'))))</ZouTargetFrameworksMsBuild>
+
+    <!--
+      ZouTargetFramework without a platform suffix (e.g. "net8.0", no "-windows"/"-browser"/...)
+      is treated as a bare SDK version selector rather than a literal TargetFramework value.
+      This lets the same "-p:ZouTargetFramework=net8.0" work uniformly across a plain project
+      (TargetFrameworks=net8.0;net10.0;...), a WinForms project (TargetFrameworks=net8.0-windows;
+      net10.0-windows), a Browser/WASM project, etc. — the actual platform-qualified TFM is
+      resolved below, from whatever TargetFrameworks the project's own zou.build.tfm.props already
+      declared, using the same Core/Windows/Browser/NetStd matching logic as the single-targeting
+      collapse further down.
+      With an explicit suffix (e.g. "net8.0-windows"), behavior is unchanged: direct override.
+    -->
+    <_ZouBareTfm Condition="'$(ZouTargetFramework)' != '' And !$(ZouTargetFramework.Contains('-'))">true</_ZouBareTfm>
+
+    <TargetFramework  Condition="'$(ZouTargetFramework)' != '' And '$(_ZouBareTfm)' != 'true'">$(ZouTargetFramework)</TargetFramework>
+    <TargetFrameworks Condition="'$(ZouTargetFramework)' == '' And '$(ZouTargetFrameworks)' != ''">$(ZouTargetFrameworksMsBuild)</TargetFrameworks>
+  </PropertyGroup>
+
+  <!--
+    Bare ZouTargetFramework: narrow TargetFrameworks (already resolved by the project's own
+    zou.build.tfm.props, e.g. to net8.0-windows;net10.0-windows) down to the entries matching
+    this SDK version, across any platform suffix. The Choose/Otherwise below then picks the
+    right candidate (Core/Windows/Browser/NetStd) exactly as it would without this override.
+  -->
+  <PropertyGroup Condition="'$(_ZouBareTfm)' == 'true' And '$(TargetFrameworks)' != ''">
+    <TargetFrameworks>$([MSBuild]::FilterTargetFrameworks('$(TargetFrameworks)', '$(ZouTargetFramework);$(ZouTargetFramework)-windows;$(ZouTargetFramework)-browser'))</TargetFrameworks>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!--
+    Determine if the project is multi-targeting
+    If ZouTargetFrameworks is set, then it is multi-targeting
+    If ZouTargetFramework is set, then it is single-targeting
+    Default to single-targeting
+    -->
+    <MultiTargeting Condition="'$(ZouTargetFrameworks)' != ''">true</MultiTargeting>
+    <MultiTargeting Condition="'$(ZouTargetFramework)'  != ''">false</MultiTargeting>
+    <MultiTargeting Condition="'$(MultiTargeting)'      == ''">false</MultiTargeting>
   </PropertyGroup>
 
   <!--
@@ -26,47 +80,57 @@
     single TargetFramework matching CoreTargetFramework/WindowsTargetFramework, so that
     build machines only need the SDK for that one framework installed.
   -->
+
   <Choose>
     <When Condition="'$(MultiTargeting)' == 'true'">
       <PropertyGroup>
-        <TargetFramework Condition="'$(TargetFramework)' == '' And '$(TargetFrameworks)' == ''">$(CoreTargetFramework)</TargetFramework>
+        <TfmDbgInfo>Multi</TfmDbgInfo>
         <TargetFramework Condition="'$(TargetFrameworks)' != ''" />
       </PropertyGroup>
     </When>
     <Otherwise>
+      <PropertyGroup>
+        <TfmDbgInfo>Single</TfmDbgInfo>
+      </PropertyGroup>
       <!-- Single-targeting: collapse TargetFrameworks down to one TargetFramework -->
       <PropertyGroup Condition="'$(TargetFramework)' == '' And '$(TargetFrameworks)' != ''">
-        <!-- Surround with ';' to avoid false positives (e.g. net8.0 which would match net8.0-windows) -->
-        <_TFWithDelimiters>;$(TargetFrameworks);</_TFWithDelimiters>
+        <TfmDbgInfo>$(TfmDbgInfo);01</TfmDbgInfo>
+        <TargetFramework_01>$(TargetFramework)</TargetFramework_01>
+        <TargetFrameworks_01>$(TargetFrameworks)</TargetFrameworks_01>
 
-        <!-- 1. Exact match on CoreTargetFramework (e.g. net8.0) -->
-        <TargetFramework Condition="'$(TargetFramework)' == '' And $(_TFWithDelimiters.Contains(';$(CoreTargetFramework);'))">$(CoreTargetFramework)</TargetFramework>
+        <_ZouCoreMatch   >$([MSBuild]::FilterTargetFrameworks('$(TargetFrameworks)', '$(CoreTargetFrameworks)'))</_ZouCoreMatch>
+        <_ZouWindowsMatch>$([MSBuild]::FilterTargetFrameworks('$(TargetFrameworks)', '$(WindowsTargetFrameworks)'))</_ZouWindowsMatch>
+        <_ZouBrowserMatch>$([MSBuild]::FilterTargetFrameworks('$(TargetFrameworks)', '$(BrowserTargetFrameworks)'))</_ZouBrowserMatch>
+        <_ZouNetStdMatch >$([MSBuild]::FilterTargetFrameworks('$(TargetFrameworks)', '$(NetStdTargetFrameworks)'))</_ZouNetStdMatch>
 
-        <!-- 2. Exact match on the Windows variant (e.g. net8.0-windows) -->
-        <TargetFramework Condition="'$(TargetFramework)' == '' And $(_TFWithDelimiters.Contains(';$(WindowsTargetFramework);'))">$(WindowsTargetFramework)</TargetFramework>
+        <_ZouCoreFirst   >$([System.Text.RegularExpressions.Regex]::Match('$(_ZouCoreMatch)',    '^[^;]+').Value)</_ZouCoreFirst>
+        <_ZouWindowsFirst>$([System.Text.RegularExpressions.Regex]::Match('$(_ZouWindowsMatch)', '^[^;]+').Value)</_ZouWindowsFirst>
+        <_ZouBrowserFirst>$([System.Text.RegularExpressions.Regex]::Match('$(_ZouBrowserMatch)', '^[^;]+').Value)</_ZouBrowserFirst>
+        <_ZouNetStdFirst >$([System.Text.RegularExpressions.Regex]::Match('$(_ZouNetStdMatch)',  '^[^;]+').Value)</_ZouNetStdFirst>
 
-        <!-- 3. Exact match on the Browser variant (e.g. net8.0-browser) -->
-        <TargetFramework Condition="'$(TargetFramework)' == '' And $(_TFWithDelimiters.Contains(';$(BrowserTargetFramework);'))">$(BrowserTargetFramework)</TargetFramework>
-
-        <!-- 4. Exact match on the Full variant (e.g. net48) -->
-        <TargetFramework Condition="'$(TargetFramework)' == '' And $(_TFWithDelimiters.Contains(';$(FullTargetFramework);'))">$(FullTargetFramework)</TargetFramework>
-
-        <!-- 5. Fallback to netstandard2.0 or netstandard2.1, only if the project actually
-             lists it. A project is expected to declare only one of the two, never both. -->
-        <TargetFramework Condition="'$(TargetFramework)' == '' And $(_TFWithDelimiters.Contains(';netstandard2.0;'))">netstandard2.0</TargetFramework>
-        <TargetFramework Condition="'$(TargetFramework)' == '' And $(_TFWithDelimiters.Contains(';netstandard2.1;'))">netstandard2.1</TargetFramework>
+        <TargetFramework Condition="                               '$(_ZouCoreFirst)'    != ''">$(_ZouCoreFirst)</TargetFramework>
+        <TargetFramework Condition="'$(TargetFramework)' == '' And '$(_ZouWindowsFirst)' != ''">$(_ZouWindowsFirst)</TargetFramework>
+        <TargetFramework Condition="'$(TargetFramework)' == '' And '$(_ZouBrowserFirst)' != ''">$(_ZouBrowserFirst)</TargetFramework>
+        <TargetFramework Condition="'$(TargetFramework)' == '' And '$(_ZouNetStdFirst)'  != ''">$(_ZouNetStdFirst)</TargetFramework>
+        
+        <TargetFramework_02>$(TargetFramework)</TargetFramework_02>
+        <TargetFrameworks_02>$(TargetFrameworks)</TargetFrameworks_02>
       </PropertyGroup>
 
-      <PropertyGroup>
+      <PropertyGroup Condition="'$(TargetFramework)' != ''">
         <!-- Neutralize TargetFrameworks so that the SDK does not go into multi-targeting mode.
              Only done when a candidate actually matched; otherwise TargetFrameworks is left
              intact so ValidateTargetFramework below can report a clear error instead of the
              SDK silently falling back to normal multi-targeting on a constrained build machine. -->
-        <TargetFrameworks Condition="'$(TargetFramework)' != ''" />
+        <TfmDbgInfo>$(TfmDbgInfo);1x</TfmDbgInfo>
+        
+        <TargetFrameworks />
       </PropertyGroup>
       
       <!-- In single targeting mode, if neither TargetFramework nor TargetFrameworks is defined, default to CoreTargetFramework -->
       <PropertyGroup Condition="'$(TargetFramework)' == '' And '$(TargetFrameworks)' == ''">
+        <TfmDbgInfo>$(TfmDbgInfo);00</TfmDbgInfo>
+        
         <TargetFramework>$(CoreTargetFramework)</TargetFramework>
       </PropertyGroup>
     </Otherwise>
@@ -76,7 +140,7 @@
     <BuildType Condition="'$(BuildType)' == '' And '$(TargetFramework)' == '' And '$(TargetFrameworks)' == ''">*Undefined*</BuildType>
     <BuildType Condition="'$(BuildType)' == '' And '$(TargetFramework)' == '' And '$(TargetFrameworks)' != ''">Multi.Outer</BuildType>
     <BuildType Condition="'$(BuildType)' == '' And '$(TargetFramework)' != '' And '$(TargetFrameworks)' != ''">Multi.Inner</BuildType>
-    <BuildType Condition="'$(BuildType)' == '' And '$(TargetFramework)' != '' And '$(TargetFrameworks)' == ''">Standard</BuildType>
+    <BuildType Condition="'$(BuildType)' == '' And '$(TargetFramework)' != '' And '$(TargetFrameworks)' == ''">Single</BuildType>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(TargetFramework)' != ''">
@@ -91,27 +155,74 @@
     fail fast with a clear error instead of silently falling back to multi-targeting, which
     could break later on a build machine that only has one SDK installed.
   -->
-  <Target Name="ZouValidateTargetFramework"
-          BeforeTargets="Build;Restore"
-          Condition="!$(MultiTargeting) And '$(TargetFramework)' == '' And '$(TargetFrameworks)' != ''">
+  <Target Name="ZouValidateTargetFramework" Condition="!$(MultiTargeting) And '$(TargetFramework)' == '' And '$(TargetFrameworks)' != ''" BeforeTargets="Build;Restore">
     <Error Text="$(ErrorInvalidTfmId)=($(TargetFrameworks))" Code="$(ErrorInvalidTfmIdCode)"/>
   </Target>
 
+  <PropertyGroup>
+    <TargetFrameworkOut>$(TargetFramework)</TargetFrameworkOut>
+    <TargetFrameworksOut>$(TargetFrameworks)</TargetFrameworksOut>
+  </PropertyGroup>
+
   <Import Project="LangVersions.props" Condition="'$(LangVersion)' == ''"/>
 
-  <Target Name="TraceTargetFrameworkBuildProps" Condition="'$(TfmDebug)' == 'true'" BeforeTargets="ZouValidateTargetFramework">
+  <!--
+    Warn when TargetFramework's final value (after the whole .csproj has been evaluated,
+    since targets run after evaluation completes) differs from the value zou itself resolved
+    (TargetFrameworkOut). This happens when a project sets <TargetFramework> directly in its
+    .csproj, which silently overrides zou's resolution — bypassing -p:ZouTargetFramework,
+    MultiTargeting, and the ZouValidateTargetFramework guard for that project, with no other
+    feedback. Legitimate fixed-TFM projects (e.g. a legacy tool pinned to net4.8) should set
+    that default in the project's own zou.build.tfm.props instead (TargetFramework
+    Condition="'$(TargetFramework)' == ''" ...), which keeps zou's resolution in the loop; set
+    ZouAllowTargetFrameworkOverride=true there to silence this warning where the override in
+    the .csproj itself is intentional and known.
+  -->
+  <Target Name="ZouWarnTfmOverride"
+          Condition="'$(TargetFramework)' != '$(TargetFrameworkOut)' And '$(ZouAllowTargetFrameworkOverride)' != 'true'"
+          BeforeTargets="Build;Restore">
+    <Warning Text="'$(MSBuildProjectFile)': TargetFramework was overridden to '$(TargetFramework)' after zou's own resolution ('$(TargetFrameworkOut)'), most likely by a &lt;TargetFramework&gt; set directly in the .csproj. This silently bypasses -p:ZouTargetFramework, MultiTargeting, and ZouValidateTargetFramework for this project. If intentional, set ZouAllowTargetFrameworkOverride=true in this project's zou.build.tfm.props to suppress this warning."
+             Code="$(WarnTfmOverrideIdCode)" />
+  </Target>
+
+  <Target Name="TraceTargetFrameworkBuildProps" Condition="'$(TfmDebug)' == 'true'" BeforeTargets="ZouValidateTargetFramework;ZouWarnTfmOverride">
     <Message Importance="high" Text="$(NC) " />
     <Message Importance="high" Text="$(T0)$([MSBuild]::MakeRelative('$(BundleDir)', '$(MSBuildThisFileFullPath)')) ($(BundleRelativeProjectPath))$(NC)" />
 
     <PropertyGroup>
-      <TfmDbgColor Condition="'$(BuildType)' == 'Multi.Outer'">$(Brown)</TfmDbgColor>
-      <TfmDbgColor Condition="'$(TfmDbgColor)' == ''">$(NC)</TfmDbgColor>
+      <TfmMultiColor Condition="'$(BuildType)'        == 'Multi.Outer'">$(Brown)</TfmMultiColor>
+      <TfmMultiColor Condition="'$(TfmMultiColor)'    == ''">$(NC)</TfmMultiColor>
+      
+      <TfmEndColor   Condition="'$(TargetFramework)'  != '$(TargetFrameworkOut)'" >$(Brown)</TfmEndColor>
+      <TfmsEndColor  Condition="'$(TargetFrameworks)' != '$(TargetFrameworksOut)'">$(Brown)</TfmsEndColor>
+      <TfmColor      Condition="'$(TargetFramework)'  != '$(TargetFrameworkOut)'" >$(Yellow)</TfmColor>
+      <TfmsColor     Condition="'$(TargetFrameworks)' != '$(TargetFrameworksOut)'">$(Yellow)</TfmsColor>
+
+      <TfmEndColor   Condition="'$(TfmEndColor)'      == ''">$(Green)</TfmEndColor>
+      <TfmsEndColor  Condition="'$(TfmsEndColor)'     == ''">$(Green)</TfmsEndColor>
+      <TfmColor      Condition="'$(TfmColor)'         == ''">$(LightGreen)</TfmColor>
+      <TfmsColor     Condition="'$(TfmsColor)'        == ''">$(LightGreen)</TfmsColor>
     </PropertyGroup>
-    <Message Importance="high" Text="$(TfmDbgColor)BuildType        = $(BuildType)$(NC)" />
-    <Message Importance="high" Text="$(TfmDbgColor)NetKind          = $(NetKind)$(NC)"                      Condition="'$(TargetFramework)'  != ''" />
-    <Message Importance="high" Text="$(TfmDbgColor)LangVersion      = $(Green)C#$(LangVersion)$(NC)"        Condition="'$(BuildType)' != 'Multi.Outer'" />
-    <Message Importance="high" Text="$(TfmDbgColor)TargetFramework  = $(LightGreen)$(TargetFramework)$(NC)" Condition="'$(TargetFramework)'  != ''" />
-    <Message Importance="high" Text="$(TfmDbgColor)TargetFrameworks = ($(TargetFrameworks))$(NC)"           Condition="'$(TargetFrameworks)' != ''" />
+    <Message Importance="high" Text="$(TfmMultiColor)MaxCpuCount            = $(Purple)$(MaxCpuCount)$(NC)"                 Condition="'$(MaxCpuCount)' != ''" />
+    <Message Importance="high" Text="$(TfmMultiColor)ZouAgentType           = $(Purple)$(ZouAgentType)$(NC)"                Condition="'$(ZouAgentType)' != ''" />
+    <Message Importance="high" Text="$(TfmMultiColor)TfmDbgInfo             = $(Purple)$(TfmDbgInfo)$(NC)"                  Condition="'$(TfmDbgInfo)' != ''" />
+    <Message Importance="high" Text="$(TfmMultiColor)MultiTargeting         = $(Yellow)$(MultiTargeting)$(NC)" />           
+    <Message Importance="high" Text="$(TfmMultiColor)BuildType              = $(BuildType)$(NC)" />                         
+    <Message Importance="high" Text="$(TfmMultiColor)NetKind                = $(NetKind)$(NC)"                              Condition="'$(TargetFramework)'  != ''" />
+                                                                                                                            
+    <Message Importance="high" Text="$(TfmMultiColor)ZouTargetFrameworks    = $(Yellow)($(ZouTargetFrameworks))$(NC)"       Condition="'$(ZouTargetFrameworks)' != ''" />
+    <Message Importance="high" Text="$(TfmMultiColor)ZouTargetFrameworksInp = $(Yellow)($(ZouTargetFrameworksInp))$(NC)"    Condition="'$(ZouTargetFrameworksInp)'  != ''" />
+    <Message Importance="high" Text="$(TfmMultiColor)TargetFrameworksInp    = $(LightBlue)($(TargetFrameworksInp))$(NC)"    Condition="'$(TargetFrameworksInp)' != ''" />
+
+    <Message Importance="high" Text="$(TfmMultiColor)ZouTargetFramework     = $(Yellow)$(ZouTargetFramework)$(NC)"          Condition="'$(ZouTargetFramework)'  != ''" />
+    <Message Importance="high" Text="$(TfmMultiColor)ZouTargetFrameworkInp  = $(Yellow)$(ZouTargetFrameworkInp)$(NC)"       Condition="'$(ZouTargetFrameworkInp)'  != ''" />
+    <Message Importance="high" Text="$(TfmMultiColor)TargetFrameworkInp     = $(LightBlue)$(TargetFrameworkInp)$(NC)"       Condition="'$(TargetFrameworkInp)'  != ''" />
+                                                                                                                            
+    <Message Importance="high" Text="$(TfmMultiColor)LangVersion            = $(Green)C#$(LangVersion)$(NC)"                Condition="'$(BuildType)' != 'Multi.Outer'" />
+    <Message Importance="high" Text="$(TfmMultiColor)TargetFrameworksOut    = $(TfmsEndColor)($(TargetFrameworksOut))$(NC)" Condition="'$(TargetFrameworksOut)' != ''" />
+    <Message Importance="high" Text="$(TfmMultiColor)TargetFrameworks       = $(TfmsColor)($(TargetFrameworks))$(NC)"       Condition="'$(TargetFrameworks)' != ''" />
+    <Message Importance="high" Text="$(TfmMultiColor)TargetFrameworkOut     = $(TfmEndColor)$(TargetFrameworkOut)$(NC)"     Condition="'$(TargetFrameworkOut)'  != ''" />
+    <Message Importance="high" Text="$(TfmMultiColor)TargetFramework        = $(TfmColor)$(TargetFramework)$(NC)"           Condition="'$(TargetFramework)'  != ''" />
   </Target>
 
 </Project>
