@@ -1,8 +1,16 @@
-<!--<Project InitialTargets="TraceTargetFrameworkProps" TreatAsLocalProperty="ZouTargetFramework;ZouTargetFrameworks;TargetFrameworks">-->
 <Project InitialTargets="TraceTargetFrameworkProps">
 
   <PropertyGroup>
     <TargetFrameworkImported>true</TargetFrameworkImported>
+  </PropertyGroup>
+
+  <!--
+  CoreTargetFramework backward compatibility:
+  When CoreTargetFramework is specified, either on the CLI or in the root Directory.Build.props
+  we will use it as the ZouTargetFramework, which is the new property name for the target framework control.
+  -->
+  <PropertyGroup Condition="'$(CoreTargetFramework)' != '' And '$(ZouTargetFramework)' == ''">
+    <ZouTargetFramework>$(CoreTargetFramework)</ZouTargetFramework>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(ZouTargetFramework)' != ''">
