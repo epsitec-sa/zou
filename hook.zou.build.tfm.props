@@ -6,10 +6,10 @@
   </PropertyGroup>
   <Import Project="$(ZouBuildTfmProps)" Condition="Exists('$(ZouBuildTfmProps)')" />
 
-  <Target Name="TraceHookZouBuildTfmProps" Condition="'$(TfmHookDebug)' != ''">
+  <Target Name="TraceHookZouBuildTfmProps" Condition="'$(HookDebug)' == 'true'">
+    <Message Importance="high" Text=" " />
     <Message Importance="high" Text="$(T0)$([MSBuild]::MakeRelative('$(BundleDir)', '$(MSBuildThisFileFullPath)')) ($(BundleRelativeProjectPath))$(NC)" />
 
     <Message Importance="high" Text="ZouBuildTfmProps = $(ZouBuildTfmProps)" />
-    <Message Importance="high" Text=" " />
   </Target>
 </Project>
