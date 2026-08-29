@@ -14,8 +14,8 @@ to remove unnecessary PackageReferences when targeting
     <PrunePackagesTargetsImported>true</PrunePackagesTargetsImported>
   </PropertyGroup>
 
-  <!-- CpmTFM >= net10 && TFM != netstandard -->
-  <ItemGroup Condition="$(CpmVer) >= 10 And !$(TargetFramework.StartsWith('netstandard', StringComparison.OrdinalIgnoreCase))">
+  <!-- CpmTFM >= net10 && TFM >= net5+ -->
+  <ItemGroup Condition="$(CpmVer) >= 10 And '$(TargetFrameworkIdentifier)' == '.NETCoreApp'">
     <PackageReference Remove="Microsoft.CSharp" />
     <PackageReference Remove="Microsoft.Win32.Registry" />
     <PackageReference Remove="System.Buffers" />
