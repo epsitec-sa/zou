@@ -26,8 +26,8 @@
       (TargetFrameworks=net8.0;net10.0;...), a WinForms project (TargetFrameworks=net8.0-windows;
       net10.0-windows), a Browser/WASM project, etc. — the actual platform-qualified TFM is
       resolved below, from whatever TargetFrameworks the project's own zou.build.tfm.props already
-      declared, using the same Core/Windows/Browser/NetStd matching logic as the single-targeting
-      collapse further down.
+      declared, using the same Core/Windows/Browser/Full/NetStd matching logic as the
+      single-targeting collapse further down.
       With an explicit suffix (e.g. "net8.0-windows"), behavior is unchanged: direct override.
     -->
     <_ZouBareTfm Condition="'$(ZouTargetFramework)' != '' And !$(ZouTargetFramework.Contains('-'))">true</_ZouBareTfm>
@@ -40,7 +40,8 @@
     Bare ZouTargetFramework: narrow TargetFrameworks (already resolved by the project's own
     zou.build.tfm.props, e.g. to net8.0-windows;net10.0-windows) down to the entries matching
     this SDK version, across any platform suffix. The Choose/Otherwise below then picks the
-    right candidate (Core/Windows/Browser/NetStd) exactly as it would without this override.
+    right candidate (Core/Windows/Browser/Full/NetStd) exactly as it would without this
+    override.
   -->
   <PropertyGroup Condition="'$(_ZouBareTfm)' == 'true' And '$(TargetFrameworks)' != ''">
     <TargetFrameworks>$([MSBuild]::FilterTargetFrameworks('$(TargetFrameworks)', '$(ZouTargetFramework);$(ZouTargetFramework)-windows;$(ZouTargetFramework)-browser'))</TargetFrameworks>
@@ -101,16 +102,26 @@
         <_ZouCoreMatch   >$([MSBuild]::FilterTargetFrameworks('$(TargetFrameworks)', '$(CoreTargetFrameworks)'))</_ZouCoreMatch>
         <_ZouWindowsMatch>$([MSBuild]::FilterTargetFrameworks('$(TargetFrameworks)', '$(WindowsTargetFrameworks)'))</_ZouWindowsMatch>
         <_ZouBrowserMatch>$([MSBuild]::FilterTargetFrameworks('$(TargetFrameworks)', '$(BrowserTargetFrameworks)'))</_ZouBrowserMatch>
+        <!-- Restored: this candidate was dropped when the original string-Contains matching
+             was refactored to FilterTargetFrameworks, silently breaking single-targeting
+             collapse for net4.8 (only reachable, until now, via a bare ZouTargetFramework or
+             a TargetFrameworks list that happens to include net4.8 without net8.0/net10.0/
+             netstandard also matching first). FullTargetFramework has no plural counterpart
+             (only one .NET Framework version is ever expected), so the filter list is just
+             the single value. -->
+        <_ZouFullMatch   >$([MSBuild]::FilterTargetFrameworks('$(TargetFrameworks)', '$(FullTargetFramework)'))</_ZouFullMatch>
         <_ZouNetStdMatch >$([MSBuild]::FilterTargetFrameworks('$(TargetFrameworks)', '$(NetStdTargetFrameworks)'))</_ZouNetStdMatch>
 
         <_ZouCoreFirst   >$([System.Text.RegularExpressions.Regex]::Match('$(_ZouCoreMatch)',    '^[^;]+').Value)</_ZouCoreFirst>
         <_ZouWindowsFirst>$([System.Text.RegularExpressions.Regex]::Match('$(_ZouWindowsMatch)', '^[^;]+').Value)</_ZouWindowsFirst>
         <_ZouBrowserFirst>$([System.Text.RegularExpressions.Regex]::Match('$(_ZouBrowserMatch)', '^[^;]+').Value)</_ZouBrowserFirst>
+        <_ZouFullFirst   >$([System.Text.RegularExpressions.Regex]::Match('$(_ZouFullMatch)',    '^[^;]+').Value)</_ZouFullFirst>
         <_ZouNetStdFirst >$([System.Text.RegularExpressions.Regex]::Match('$(_ZouNetStdMatch)',  '^[^;]+').Value)</_ZouNetStdFirst>
 
         <TargetFramework Condition="                               '$(_ZouCoreFirst)'    != ''">$(_ZouCoreFirst)</TargetFramework>
         <TargetFramework Condition="'$(TargetFramework)' == '' And '$(_ZouWindowsFirst)' != ''">$(_ZouWindowsFirst)</TargetFramework>
         <TargetFramework Condition="'$(TargetFramework)' == '' And '$(_ZouBrowserFirst)' != ''">$(_ZouBrowserFirst)</TargetFramework>
+        <TargetFramework Condition="'$(TargetFramework)' == '' And '$(_ZouFullFirst)'    != ''">$(_ZouFullFirst)</TargetFramework>
         <TargetFramework Condition="'$(TargetFramework)' == '' And '$(_ZouNetStdFirst)'  != ''">$(_ZouNetStdFirst)</TargetFramework>
         
         <TargetFramework_02>$(TargetFramework)</TargetFramework_02>
@@ -192,7 +203,7 @@
     <PropertyGroup>
       <TfmMultiColor Condition="'$(BuildType)'        == 'Multi.Outer'">$(Brown)</TfmMultiColor>
       <TfmMultiColor Condition="'$(TfmMultiColor)'    == ''">$(NC)</TfmMultiColor>
-      
+
       <TfmEndColor   Condition="'$(TargetFramework)'  != '$(TargetFrameworkOut)'" >$(Brown)</TfmEndColor>
       <TfmsEndColor  Condition="'$(TargetFrameworks)' != '$(TargetFrameworksOut)'">$(Brown)</TfmsEndColor>
       <TfmColor      Condition="'$(TargetFramework)'  != '$(TargetFrameworkOut)'" >$(Yellow)</TfmColor>
@@ -203,21 +214,26 @@
       <TfmColor      Condition="'$(TfmColor)'         == ''">$(LightGreen)</TfmColor>
       <TfmsColor     Condition="'$(TfmsColor)'        == ''">$(LightGreen)</TfmsColor>
     </PropertyGroup>
+
     <Message Importance="high" Text="$(TfmMultiColor)MaxCpuCount            = $(Purple)$(MaxCpuCount)$(NC)"                 Condition="'$(MaxCpuCount)' != ''" />
     <Message Importance="high" Text="$(TfmMultiColor)ZouAgentType           = $(Purple)$(ZouAgentType)$(NC)"                Condition="'$(ZouAgentType)' != ''" />
     <Message Importance="high" Text="$(TfmMultiColor)TfmDbgInfo             = $(Purple)$(TfmDbgInfo)$(NC)"                  Condition="'$(TfmDbgInfo)' != ''" />
     <Message Importance="high" Text="$(TfmMultiColor)MultiTargeting         = $(Yellow)$(MultiTargeting)$(NC)" />           
     <Message Importance="high" Text="$(TfmMultiColor)BuildType              = $(BuildType)$(NC)" />                         
     <Message Importance="high" Text="$(TfmMultiColor)NetKind                = $(NetKind)$(NC)"                              Condition="'$(TargetFramework)'  != ''" />
-                                                                                                                            
+
     <Message Importance="high" Text="$(TfmMultiColor)ZouTargetFrameworks    = $(Yellow)($(ZouTargetFrameworks))$(NC)"       Condition="'$(ZouTargetFrameworks)' != ''" />
     <Message Importance="high" Text="$(TfmMultiColor)ZouTargetFrameworksInp = $(Yellow)($(ZouTargetFrameworksInp))$(NC)"    Condition="'$(ZouTargetFrameworksInp)'  != ''" />
     <Message Importance="high" Text="$(TfmMultiColor)TargetFrameworksInp    = $(LightBlue)($(TargetFrameworksInp))$(NC)"    Condition="'$(TargetFrameworksInp)' != ''" />
+    <Message Importance="high" Text="$(TfmMultiColor)TargetFrameworks_01    = $(LightBlue)($(TargetFrameworks_01))$(NC)"    Condition="'$(TargetFrameworks_01)'  != ''" />
+    <Message Importance="high" Text="$(TfmMultiColor)TargetFrameworks_02    = $(LightBlue)($(TargetFrameworks_02))$(NC)"    Condition="'$(TargetFrameworks_02)'  != ''" />
 
     <Message Importance="high" Text="$(TfmMultiColor)ZouTargetFramework     = $(Yellow)$(ZouTargetFramework)$(NC)"          Condition="'$(ZouTargetFramework)'  != ''" />
     <Message Importance="high" Text="$(TfmMultiColor)ZouTargetFrameworkInp  = $(Yellow)$(ZouTargetFrameworkInp)$(NC)"       Condition="'$(ZouTargetFrameworkInp)'  != ''" />
     <Message Importance="high" Text="$(TfmMultiColor)TargetFrameworkInp     = $(LightBlue)$(TargetFrameworkInp)$(NC)"       Condition="'$(TargetFrameworkInp)'  != ''" />
-                                                                                                                            
+    <Message Importance="high" Text="$(TfmMultiColor)TargetFramework_01     = $(LightBlue)$(TargetFramework_01)$(NC)"       Condition="'$(TargetFramework_01)'  != ''" />
+    <Message Importance="high" Text="$(TfmMultiColor)TargetFramework_02     = $(LightBlue)$(TargetFramework_02)$(NC)"       Condition="'$(TargetFramework_02)'  != ''" />
+
     <Message Importance="high" Text="$(TfmMultiColor)LangVersion            = $(Green)C#$(LangVersion)$(NC)"                Condition="'$(BuildType)' != 'Multi.Outer'" />
     <Message Importance="high" Text="$(TfmMultiColor)TargetFrameworksOut    = $(TfmsEndColor)($(TargetFrameworksOut))$(NC)" Condition="'$(TargetFrameworksOut)' != ''" />
     <Message Importance="high" Text="$(TfmMultiColor)TargetFrameworks       = $(TfmsColor)($(TargetFrameworks))$(NC)"       Condition="'$(TargetFrameworks)' != ''" />
