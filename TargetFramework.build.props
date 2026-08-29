@@ -19,6 +19,13 @@
          MSBuild applies to the ';' introduced by Replace() before it gets split. -->
     <ZouTargetFrameworksMsBuild Condition="'$(ZouTargetFrameworks)' != ''">$([MSBuild]::Unescape($(ZouTargetFrameworks.Replace('+', ';'))))</ZouTargetFrameworksMsBuild>
 
+    <!-- Snapshot of the project's own TargetFrameworks pool (set by its zou.build.tfm.props,
+         e.g. net8.0-windows;net10.0-windows for a WinForms project), captured before any Zou
+         CLI override below replaces TargetFrameworks. Used to resolve bare TFM tokens (no
+         platform suffix) to their platform-qualified form, both for the single-targeting
+         (_ZouBareTfm) and the multi-targeting (ZouTargetFrameworks) case further down. -->
+    <_ZouProjectTargetFrameworks>$(TargetFrameworks)</_ZouProjectTargetFrameworks>
+
     <!--
       ZouTargetFramework without a platform suffix (e.g. "net8.0", no "-windows"/"-browser"/...)
       is treated as a bare SDK version selector rather than a literal TargetFramework value.
@@ -45,6 +52,87 @@
   -->
   <PropertyGroup Condition="'$(_ZouBareTfm)' == 'true' And '$(TargetFrameworks)' != ''">
     <TargetFrameworks>$([MSBuild]::FilterTargetFrameworks('$(TargetFrameworks)', '$(ZouTargetFramework);$(ZouTargetFramework)-windows;$(ZouTargetFramework)-browser'))</TargetFrameworks>
+  </PropertyGroup>
+
+  <!--
+    Multi-targeting case: ZouTargetFrameworks may also contain bare TFM tokens, exactly like
+    the single-targeting _ZouBareTfm case above (e.g. "net8.0+net10.0" on a WinForms project
+    should resolve to "net8.0-windows;net10.0-windows"). Each token is peeled off one at a time
+    via regex (rather than a Split()[i] indexer, to match this file's existing style and stay
+    usable on older MSBuild toolsets) and resolved against the project's own TargetFrameworks
+    pool (_ZouProjectTargetFrameworks): bare tokens are expanded to "<tfm>;<tfm>-windows;
+    <tfm>-browser" and matched against the pool; tokens that already carry a platform suffix
+    pass through unchanged. A token with no match in the pool is kept as-is, so
+    ZouValidateTargetFramework/the SDK can still report a clear error on it downstream instead
+    of it silently vanishing.
+  -->
+  <PropertyGroup Condition="'$(ZouTargetFramework)' == '' And '$(ZouTargetFrameworksMsBuild)' != '' And '$(_ZouProjectTargetFrameworks)' != ''">
+    <_ZouMultiRemain>$(ZouTargetFrameworksMsBuild)</_ZouMultiRemain>
+    <_ZouMultiResolved></_ZouMultiResolved>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(_ZouMultiRemain)' != ''">
+    <_ZouMultiTok>$([System.Text.RegularExpressions.Regex]::Match('$(_ZouMultiRemain)', '^[^;]+').Value)</_ZouMultiTok>
+    <_ZouMultiCandidates Condition="!$(_ZouMultiTok.Contains('-'))">$(_ZouMultiTok);$(_ZouMultiTok)-windows;$(_ZouMultiTok)-browser</_ZouMultiCandidates>
+    <_ZouMultiCandidates Condition="$(_ZouMultiTok.Contains('-'))">$(_ZouMultiTok)</_ZouMultiCandidates>
+    <_ZouMultiMatch>$([MSBuild]::FilterTargetFrameworks('$(_ZouProjectTargetFrameworks)', '$(_ZouMultiCandidates)'))</_ZouMultiMatch>
+    <_ZouMultiResolved Condition="'$(_ZouMultiMatch)' != ''">$(_ZouMultiResolved);$(_ZouMultiMatch)</_ZouMultiResolved>
+    <_ZouMultiResolved Condition="'$(_ZouMultiMatch)' == ''">$(_ZouMultiResolved);$(_ZouMultiTok)</_ZouMultiResolved>
+    <_ZouMultiRemain>$([System.Text.RegularExpressions.Regex]::Replace('$(_ZouMultiRemain)', '^[^;]+;?', ''))</_ZouMultiRemain>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(_ZouMultiRemain)' != ''">
+    <_ZouMultiTok>$([System.Text.RegularExpressions.Regex]::Match('$(_ZouMultiRemain)', '^[^;]+').Value)</_ZouMultiTok>
+    <_ZouMultiCandidates Condition="!$(_ZouMultiTok.Contains('-'))">$(_ZouMultiTok);$(_ZouMultiTok)-windows;$(_ZouMultiTok)-browser</_ZouMultiCandidates>
+    <_ZouMultiCandidates Condition="$(_ZouMultiTok.Contains('-'))">$(_ZouMultiTok)</_ZouMultiCandidates>
+    <_ZouMultiMatch>$([MSBuild]::FilterTargetFrameworks('$(_ZouProjectTargetFrameworks)', '$(_ZouMultiCandidates)'))</_ZouMultiMatch>
+    <_ZouMultiResolved Condition="'$(_ZouMultiMatch)' != ''">$(_ZouMultiResolved);$(_ZouMultiMatch)</_ZouMultiResolved>
+    <_ZouMultiResolved Condition="'$(_ZouMultiMatch)' == ''">$(_ZouMultiResolved);$(_ZouMultiTok)</_ZouMultiResolved>
+    <_ZouMultiRemain>$([System.Text.RegularExpressions.Regex]::Replace('$(_ZouMultiRemain)', '^[^;]+;?', ''))</_ZouMultiRemain>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(_ZouMultiRemain)' != ''">
+    <_ZouMultiTok>$([System.Text.RegularExpressions.Regex]::Match('$(_ZouMultiRemain)', '^[^;]+').Value)</_ZouMultiTok>
+    <_ZouMultiCandidates Condition="!$(_ZouMultiTok.Contains('-'))">$(_ZouMultiTok);$(_ZouMultiTok)-windows;$(_ZouMultiTok)-browser</_ZouMultiCandidates>
+    <_ZouMultiCandidates Condition="$(_ZouMultiTok.Contains('-'))">$(_ZouMultiTok)</_ZouMultiCandidates>
+    <_ZouMultiMatch>$([MSBuild]::FilterTargetFrameworks('$(_ZouProjectTargetFrameworks)', '$(_ZouMultiCandidates)'))</_ZouMultiMatch>
+    <_ZouMultiResolved Condition="'$(_ZouMultiMatch)' != ''">$(_ZouMultiResolved);$(_ZouMultiMatch)</_ZouMultiResolved>
+    <_ZouMultiResolved Condition="'$(_ZouMultiMatch)' == ''">$(_ZouMultiResolved);$(_ZouMultiTok)</_ZouMultiResolved>
+    <_ZouMultiRemain>$([System.Text.RegularExpressions.Regex]::Replace('$(_ZouMultiRemain)', '^[^;]+;?', ''))</_ZouMultiRemain>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(_ZouMultiRemain)' != ''">
+    <_ZouMultiTok>$([System.Text.RegularExpressions.Regex]::Match('$(_ZouMultiRemain)', '^[^;]+').Value)</_ZouMultiTok>
+    <_ZouMultiCandidates Condition="!$(_ZouMultiTok.Contains('-'))">$(_ZouMultiTok);$(_ZouMultiTok)-windows;$(_ZouMultiTok)-browser</_ZouMultiCandidates>
+    <_ZouMultiCandidates Condition="$(_ZouMultiTok.Contains('-'))">$(_ZouMultiTok)</_ZouMultiCandidates>
+    <_ZouMultiMatch>$([MSBuild]::FilterTargetFrameworks('$(_ZouProjectTargetFrameworks)', '$(_ZouMultiCandidates)'))</_ZouMultiMatch>
+    <_ZouMultiResolved Condition="'$(_ZouMultiMatch)' != ''">$(_ZouMultiResolved);$(_ZouMultiMatch)</_ZouMultiResolved>
+    <_ZouMultiResolved Condition="'$(_ZouMultiMatch)' == ''">$(_ZouMultiResolved);$(_ZouMultiTok)</_ZouMultiResolved>
+    <_ZouMultiRemain>$([System.Text.RegularExpressions.Regex]::Replace('$(_ZouMultiRemain)', '^[^;]+;?', ''))</_ZouMultiRemain>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(_ZouMultiRemain)' != ''">
+    <_ZouMultiTok>$([System.Text.RegularExpressions.Regex]::Match('$(_ZouMultiRemain)', '^[^;]+').Value)</_ZouMultiTok>
+    <_ZouMultiCandidates Condition="!$(_ZouMultiTok.Contains('-'))">$(_ZouMultiTok);$(_ZouMultiTok)-windows;$(_ZouMultiTok)-browser</_ZouMultiCandidates>
+    <_ZouMultiCandidates Condition="$(_ZouMultiTok.Contains('-'))">$(_ZouMultiTok)</_ZouMultiCandidates>
+    <_ZouMultiMatch>$([MSBuild]::FilterTargetFrameworks('$(_ZouProjectTargetFrameworks)', '$(_ZouMultiCandidates)'))</_ZouMultiMatch>
+    <_ZouMultiResolved Condition="'$(_ZouMultiMatch)' != ''">$(_ZouMultiResolved);$(_ZouMultiMatch)</_ZouMultiResolved>
+    <_ZouMultiResolved Condition="'$(_ZouMultiMatch)' == ''">$(_ZouMultiResolved);$(_ZouMultiTok)</_ZouMultiResolved>
+    <_ZouMultiRemain>$([System.Text.RegularExpressions.Regex]::Replace('$(_ZouMultiRemain)', '^[^;]+;?', ''))</_ZouMultiRemain>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(_ZouMultiRemain)' != ''">
+    <_ZouMultiTok>$([System.Text.RegularExpressions.Regex]::Match('$(_ZouMultiRemain)', '^[^;]+').Value)</_ZouMultiTok>
+    <_ZouMultiCandidates Condition="!$(_ZouMultiTok.Contains('-'))">$(_ZouMultiTok);$(_ZouMultiTok)-windows;$(_ZouMultiTok)-browser</_ZouMultiCandidates>
+    <_ZouMultiCandidates Condition="$(_ZouMultiTok.Contains('-'))">$(_ZouMultiTok)</_ZouMultiCandidates>
+    <_ZouMultiMatch>$([MSBuild]::FilterTargetFrameworks('$(_ZouProjectTargetFrameworks)', '$(_ZouMultiCandidates)'))</_ZouMultiMatch>
+    <_ZouMultiResolved Condition="'$(_ZouMultiMatch)' != ''">$(_ZouMultiResolved);$(_ZouMultiMatch)</_ZouMultiResolved>
+    <_ZouMultiResolved Condition="'$(_ZouMultiMatch)' == ''">$(_ZouMultiResolved);$(_ZouMultiTok)</_ZouMultiResolved>
+    <_ZouMultiRemain>$([System.Text.RegularExpressions.Regex]::Replace('$(_ZouMultiRemain)', '^[^;]+;?', ''))</_ZouMultiRemain>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(ZouTargetFramework)' == '' And '$(ZouTargetFrameworksMsBuild)' != '' And '$(_ZouMultiResolved)' != ''">
+    <!-- Strip the leading ';' left by the first append, then Unescape() — same reasoning as
+         ZouTargetFrameworksMsBuild above: the ';' characters accumulated through string
+         concatenation across the peeling loop can end up internally escaped, which the .NET
+         SDK's own outer/inner multi-targeting split then fails to parse as a real list
+         (NETSDK1046: "TargetFramework value '...' is not valid"). -->
+    <TargetFrameworks>$([MSBuild]::Unescape($([System.Text.RegularExpressions.Regex]::Replace('$(_ZouMultiResolved)', '^;', ''))))</TargetFrameworks>
   </PropertyGroup>
 
   <PropertyGroup>
