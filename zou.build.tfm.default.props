@@ -17,7 +17,12 @@ after the .NET Sdk babouchka (Directory.Build.props chain).
                 '- zou/TargetFramework.build.props
 -->
 <Project>
-  
+
+  <PropertyGroup>
+    <!-- Serialize output when TFM tracing is enabled -->
+    <MaxCpuCount Condition="'$(TfmDebug)' == 'true'">1</MaxCpuCount>
+  </PropertyGroup>
+
   <Import Project="TargetFramework.build.props" Condition="'$(TargetFrameworkBuildImported)' == ''"/>
 
 </Project>
