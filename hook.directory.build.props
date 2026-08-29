@@ -1,0 +1,15 @@
+<Project InitialTargets="TraceHookZouDirectoryBuildProps">
+  
+  <!-- Import the first 'Directory.Build.props' found in the local project directory or above -->
+  <PropertyGroup>
+    <ZouDirectoryBuildProps>$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildProjectDirectory)'))</ZouDirectoryBuildProps>
+  </PropertyGroup>
+  <Import Project="$(ZouDirectoryBuildProps)" Condition="Exists('$(ZouDirectoryBuildProps)')" />
+
+  <Target Name="TraceHookZouDirectoryBuildProps" Condition="'$(HookDebug)' == 'true'">
+    <Message Importance="high" Text=" " />
+    <Message Importance="high" Text="$(T0)$([MSBuild]::MakeRelative('$(BundleDir)', '$(MSBuildThisFileFullPath)')) ($(BundleRelativeProjectPath))$(NC)" />
+
+    <Message Importance="high" Text="ZouDirectoryBuildProps = $(ZouDirectoryBuildProps)" />
+  </Target>
+</Project>
