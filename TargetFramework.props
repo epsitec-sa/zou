@@ -1,12 +1,13 @@
+<!--<Project InitialTargets="TraceTargetFrameworkProps" TreatAsLocalProperty="ZouTargetFramework;ZouTargetFrameworks;TargetFrameworks">-->
 <Project InitialTargets="TraceTargetFrameworkProps">
 
   <PropertyGroup>
     <TargetFrameworkImported>true</TargetFrameworkImported>
     
-    <MultiTargeting          Condition="'$(MultiTargeting)'          == ''">false</MultiTargeting>
+    <CoreTargetFramework     Condition="'$(ZouTargetFramework)'      != ''">$(ZouTargetFramework)</CoreTargetFramework>
+    <CoreTargetFramework     Condition="'$(CoreTargetFramework)'     == ''">net10.0</CoreTargetFramework>
 
     <FullTargetFramework     Condition="'$(FullTargetFramework)'     == ''">net4.8</FullTargetFramework>
-    <CoreTargetFramework     Condition="'$(CoreTargetFramework)'     == ''">net10.0</CoreTargetFramework>
     <WineTargetFramework     Condition="'$(WineTargetFramework)'     == ''">netcoreapp3.1</WineTargetFramework>
     <WindowsTargetFramework  Condition="'$(WindowsTargetFramework)'  == ''">$(CoreTargetFramework)-windows</WindowsTargetFramework>
     <BrowserTargetFramework  Condition="'$(BrowserTargetFramework)'  == ''">$(CoreTargetFramework)-browser</BrowserTargetFramework>
@@ -14,6 +15,7 @@
     <CoreTargetFrameworks    Condition="'$(CoreTargetFrameworks)'    == ''">net8.0;net10.0</CoreTargetFrameworks>
     <WindowsTargetFrameworks Condition="'$(WindowsTargetFrameworks)' == ''">net8.0-windows;net10.0-windows</WindowsTargetFrameworks>
     <BrowserTargetFrameworks Condition="'$(BrowserTargetFrameworks)' == ''">net8.0-browser;net10.0-browser</BrowserTargetFrameworks>
+    <NetStdTargetFrameworks  Condition="'$(NetStdTargetFrameworks)'  == ''">netstandard2.0;netstandard2.1</NetStdTargetFrameworks>
   </PropertyGroup>
 
   <!-- Start the TFM babouchka -->
@@ -22,13 +24,15 @@
   <Target Name="TraceTargetFrameworkProps" Condition="'$(TfmDefDebug)' == 'true'">
     <Message Importance="high" Text="$(T0)$([MSBuild]::MakeRelative('$(BundleDir)', '$(MSBuildThisFileFullPath)')) ($(BundleRelativeProjectPath))$(NC)" />
 
-    <Message Importance="high" Text="MultiTargeting          = $(MultiTargeting)" />
+    <Message Importance="high" Text="ZouTargetFramework      = $(ZouTargetFramework)" />
     <Message Importance="high" Text="CoreTargetFramework     = $(CoreTargetFramework)" />
     <Message Importance="high" Text="FullTargetFramework     = $(FullTargetFramework)" />
     <Message Importance="high" Text="WindowsTargetFramework  = $(WindowsTargetFramework)" />
+    <Message Importance="high" Text="ZouTargetFrameworks     = $(ZouTargetFrameworks)" />
     <Message Importance="high" Text="CoreTargetFrameworks    = $(CoreTargetFrameworks)" />
     <Message Importance="high" Text="WindowsTargetFrameworks = $(WindowsTargetFrameworks)" />
     <Message Importance="high" Text="BrowserTargetFrameworks = $(BrowserTargetFrameworks)" />
+    <Message Importance="high" Text="NetStdTargetFrameworks  = $(NetStdTargetFrameworks)" />
     <Message Importance="high" Text=" " />
   </Target>
 </Project>
