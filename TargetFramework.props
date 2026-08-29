@@ -3,10 +3,18 @@
 
   <PropertyGroup>
     <TargetFrameworkImported>true</TargetFrameworkImported>
-    
-    <CoreTargetFramework     Condition="'$(ZouTargetFramework)'      != ''">$(ZouTargetFramework)</CoreTargetFramework>
-    <CoreTargetFramework     Condition="'$(CoreTargetFramework)'     == ''">net10.0</CoreTargetFramework>
+  </PropertyGroup>
 
+  <PropertyGroup Condition="'$(ZouTargetFramework)' != ''">
+    <_ZouTfmVer>$([MSBuild]::GetTargetFrameworkVersion('$(ZouTargetFramework)', 1))</_ZouTfmVer>
+    <_ZouTfmFull Condition="'$(_ZouTfmVer)' &lt;= '4.8'">true</_ZouTfmFull>
+    <_ZouTfmFull Condition="'$(_ZouTfmFull)' == ''">false</_ZouTfmFull>
+    <CoreTargetFramework Condition="'$(_ZouTfmFull)' != 'true'">$(ZouTargetFramework)</CoreTargetFramework>
+    <FullTargetFramework Condition="'$(_ZouTfmFull)' == 'true'">$(ZouTargetFramework)</FullTargetFramework>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <CoreTargetFramework     Condition="'$(CoreTargetFramework)'     == ''">net10.0</CoreTargetFramework>
     <FullTargetFramework     Condition="'$(FullTargetFramework)'     == ''">net4.8</FullTargetFramework>
     <WineTargetFramework     Condition="'$(WineTargetFramework)'     == ''">netcoreapp3.1</WineTargetFramework>
     <WindowsTargetFramework  Condition="'$(WindowsTargetFramework)'  == ''">$(CoreTargetFramework)-windows</WindowsTargetFramework>
@@ -24,6 +32,8 @@
   <Target Name="TraceTargetFrameworkProps" Condition="'$(TfmDefDebug)' == 'true'">
     <Message Importance="high" Text="$(T0)$([MSBuild]::MakeRelative('$(BundleDir)', '$(MSBuildThisFileFullPath)')) ($(BundleRelativeProjectPath))$(NC)" />
 
+    <Message Importance="high" Text="_ZouTfmVer              = $(_ZouTfmVer)" />
+    <Message Importance="high" Text="_ZouTfmFull             = $(_ZouTfmFull)" />
     <Message Importance="high" Text="ZouTargetFramework      = $(ZouTargetFramework)" />
     <Message Importance="high" Text="CoreTargetFramework     = $(CoreTargetFramework)" />
     <Message Importance="high" Text="FullTargetFramework     = $(FullTargetFramework)" />
