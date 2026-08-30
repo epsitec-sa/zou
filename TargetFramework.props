@@ -27,12 +27,27 @@
     <WineTargetFramework     Condition="'$(WineTargetFramework)'     == ''">netcoreapp3.1</WineTargetFramework>
     <WindowsTargetFramework  Condition="'$(WindowsTargetFramework)'  == ''">$(CoreTargetFramework)-windows</WindowsTargetFramework>
     <BrowserTargetFramework  Condition="'$(BrowserTargetFramework)'  == ''">$(CoreTargetFramework)-browser</BrowserTargetFramework>
-
-    <CoreTargetFrameworks    Condition="'$(CoreTargetFrameworks)'    == ''">net8.0;net10.0</CoreTargetFrameworks>
-    <WindowsTargetFrameworks Condition="'$(WindowsTargetFrameworks)' == ''">net8.0-windows;net10.0-windows</WindowsTargetFrameworks>
-    <BrowserTargetFrameworks Condition="'$(BrowserTargetFrameworks)' == ''">net8.0-browser;net10.0-browser</BrowserTargetFrameworks>
-    <NetStdTargetFrameworks  Condition="'$(NetStdTargetFrameworks)'  == ''">netstandard2.0;netstandard2.1</NetStdTargetFrameworks>
   </PropertyGroup>
+
+  <!-- Choose the order of target frameworks based on ZouBuildWithLatestTfmFirst -->
+  <Choose>
+    <When Condition="'$(ZouBuildWithLatestTfmFirst)' == 'true'">
+      <PropertyGroup>
+        <CoreTargetFrameworks    Condition="'$(CoreTargetFrameworks)'    == ''">net10.0;net8.0</CoreTargetFrameworks>
+        <WindowsTargetFrameworks Condition="'$(WindowsTargetFrameworks)' == ''">net10.0-windows;net8.0-windows</WindowsTargetFrameworks>
+        <BrowserTargetFrameworks Condition="'$(BrowserTargetFrameworks)' == ''">net10.0-browser;net8.0-browser</BrowserTargetFrameworks>
+        <NetStdTargetFrameworks  Condition="'$(NetStdTargetFrameworks)'  == ''">netstandard2.1;netstandard2.0</NetStdTargetFrameworks>
+      </PropertyGroup>
+    </When>
+    <Otherwise>
+      <PropertyGroup>
+        <CoreTargetFrameworks    Condition="'$(CoreTargetFrameworks)'    == ''">net8.0;net10.0</CoreTargetFrameworks>
+        <WindowsTargetFrameworks Condition="'$(WindowsTargetFrameworks)' == ''">net8.0-windows;net10.0-windows</WindowsTargetFrameworks>
+        <BrowserTargetFrameworks Condition="'$(BrowserTargetFrameworks)' == ''">net8.0-browser;net10.0-browser</BrowserTargetFrameworks>
+        <NetStdTargetFrameworks  Condition="'$(NetStdTargetFrameworks)'  == ''">netstandard2.0;netstandard2.1</NetStdTargetFrameworks>
+      </PropertyGroup>
+    </Otherwise>
+  </Choose>
 
   <!-- Start the TFM babouchka -->
   <Import Project="hook.zou.build.tfm.props" Condition="'$(ZouBuildTfmProps)' == ''"/>
