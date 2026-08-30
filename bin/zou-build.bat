@@ -10,8 +10,11 @@ set _build=true
 set _clean=false
 set _sign=false
 set _config=Release
-set _cpuCount=0
-
+if '%TfmDebug%' == '' (
+  set _cpuCount=0
+) else (
+  set _cpuCount=1
+)
 goto Parse
 
 :Error

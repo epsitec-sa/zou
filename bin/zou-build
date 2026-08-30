@@ -98,6 +98,10 @@ build_parse()
   projExt="${projFileName##*.}"
   [[ $projDir == '' ]] && projDir='.'
   [[ $projExt == $projName ]] && projExt=''
+  
+  for var in $(compgen -e); do
+      [[ ${var,,} == tfmdebug && ${!var,,} == true ]] && cpuCount=1
+  done
 
   [[ ${#platforms[@]} -eq 0 && $noPlatform == 'false' && $anyCpu == '' ]] && platforms=('x86' 'x64')
   if [[ $anyCpu != '' ]]; then
