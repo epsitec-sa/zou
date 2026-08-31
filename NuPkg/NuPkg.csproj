@@ -1,4 +1,4 @@
-﻿<Project>
+<Project>
   
   <PropertyGroup>
     <!--<NuPkgDebug>true</NuPkgDebug>-->
@@ -52,6 +52,10 @@
     <PackageReference Remove="SQLitePCLRaw.core" />
   </ItemGroup>
 
+  <Target Name="DoNotDisableNU1510Warning" BeforeTargets="CollectPackageReferences" Condition="$(CpmVer) >= 10 And '$(BuildingInsideZouNuPkg)' == ''">
+    <Message Importance="high" Text="$(T0)$(Purple)WARNING: do not disable NU1510 warnings, it's used by 'zou nupkg' to generate the 'PrunePackages.targets' file.$(NC)" />
+  </Target>
+  
   <Target Name="TraceNuPkg" BeforeTargets="CollectPackageReferences" Condition="'$(TargetFramework)' != '' And '$(NuPkgDebug)' != ''">
     <Message Importance="high" Text="$(T0)$(MSBuildProjectFile)$(NC)" />
 

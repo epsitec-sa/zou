@@ -1,6 +1,8 @@
 <Project>
   <PropertyGroup>
-    <MultiTargeting>false</MultiTargeting>
+    <!-- Build with the latest TFM first, so that in single-targeting mode or inside Visual Studio, we build with the latest TFM. -->
+    <ZouBuildWithLatestTfmFirst Condition="'$(ZouBuildWithLatestTfmFirst)' == ''">true</ZouBuildWithLatestTfmFirst>
   </PropertyGroup>
+
   <Import Project="$([MSBuild]::GetPathOfFileAbove('$(MSBuildThisFile)', '$(MSBuildThisFileDirectory)../'))" />
 </Project>
