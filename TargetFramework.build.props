@@ -274,13 +274,13 @@
     feedback. Legitimate fixed-TFM projects (e.g. a legacy tool pinned to net4.8) should set
     that default in the project's own zou.build.tfm.props instead (TargetFramework
     Condition="'$(TargetFramework)' == ''" ...), which keeps zou's resolution in the loop; set
-    ZouAllowTargetFrameworkOverride=true there to silence this warning where the override in
+    ZouAllowLegacyTfmOverride=true there to silence this warning where the override in
     the .csproj itself is intentional and known.
   -->
   <Target Name="ZouWarnTfmOverride"
-          Condition="'$(TargetFramework)' != '$(TargetFrameworkOut)' And '$(ZouAllowTargetFrameworkOverride)' != 'true'"
+          Condition="'$(TargetFramework)' != '$(TargetFrameworkOut)' And '$(ZouAllowLegacyTfmOverride)' != 'true'"
           BeforeTargets="Build;Restore">
-    <Warning Text="'$(MSBuildProjectFile)': TargetFramework was overridden to '$(TargetFramework)' after zou's own resolution ('$(TargetFrameworkOut)'), most likely by a &lt;TargetFramework&gt; set directly in the .csproj. This silently bypasses -p:ZouTargetFramework, MultiTargeting, and ZouValidateTargetFramework for this project. If intentional, set ZouAllowTargetFrameworkOverride=true in this project's zou.build.tfm.props to suppress this warning."
+    <Warning Text="'$(MSBuildProjectFile)': TargetFramework was overridden to '$(TargetFramework)' after zou's own resolution ('$(TargetFrameworkOut)'), most likely by a &lt;TargetFramework&gt; set directly in the .csproj. This silently bypasses -p:ZouTargetFramework, MultiTargeting, and ZouValidateTargetFramework for this project. If intentional, set ZouAllowLegacyTfmOverride=true in this project's zou.build.tfm.props to suppress this warning."
              Code="$(WarnTfmOverrideIdCode)" />
   </Target>
 
