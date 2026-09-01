@@ -18,7 +18,16 @@
          rejecting ';' and ',' in -p: values; Unescape() undoes the internal escaping
          MSBuild applies to the ';' introduced by Replace() before it gets split. -->
     <ZouTargetFrameworksMsBuild Condition="'$(ZouTargetFrameworks)' != ''">$([MSBuild]::Unescape($(ZouTargetFrameworks.Replace('+', ';'))))</ZouTargetFrameworksMsBuild>
-
+    
+    <!--
+    Suppress warning NU1510: PackageReference <nuget package> will not be pruned.
+    The warning appears when 'ZouTargetFrameworks' is defined (e.g. net8.0+net10.0)
+    An unescaped character inside the list of target frameworks causes this warning
+    for some nuget packagea like 'Microsoft.CSharp'.
+    The warning is harmless and can be ignored.
+    -->
+    <NoWarn Condition="'$(ZouTargetFrameworks)' != ''">$(NoWarn);NU1510</NoWarn>
+    
     <!-- Snapshot of the project's own TargetFrameworks pool (set by its zou.build.tfm.props,
          e.g. net8.0-windows;net10.0-windows for a WinForms project), captured before any Zou
          CLI override below replaces TargetFrameworks. Used to resolve bare TFM tokens (no
