@@ -49,15 +49,21 @@
     <TargetFrameworks Condition="'$(ZouTargetFramework)' == '' And '$(ZouTargetFrameworks)' != ''">$(ZouTargetFrameworksMsBuild)</TargetFrameworks>
   </PropertyGroup>
 
-  <!--
-    Bare ZouTargetFramework: narrow TargetFrameworks (already resolved by the project's own
-    zou.build.tfm.props, e.g. to net8.0-windows;net10.0-windows) down to the entries matching
-    this SDK version, across any platform suffix. The Choose/Otherwise below then picks the
-    right candidate (Core/Windows/Browser/Full/NetStd) exactly as it would without this
-    override.
-  -->
+  <!-- Bare ZouTargetFramework: narrow TargetFrameworks (already resolved by the project's own
+       zou.build.tfm.props, e.g. to net8.0-windows;net10.0-windows) down to the entries matching
+       this SDK version, across any platform suffix. The Choose/Otherwise below then picks the
+       right candidate (Core/Windows/Browser/Full/NetStd) exactly as it would without this
+       override.
+       Only overwrites TargetFrameworks when the filter actually finds a match — e.g. a
+       netstandard-only project's pool has no net8.0/-windows/-browser entry at all, so the
+       filter legitimately returns empty; blindly assigning that empty result would wipe out
+       the project's real (single-entry) pool and fall through to the CoreTargetFramework
+       global default below instead, silently building the wrong TFM. Leaving TargetFrameworks
+       untouched here lets the collapse logic further down (including the single-TFM shortcut)
+       work from the project's actual declared pool instead. -->
   <PropertyGroup Condition="'$(_ZouBareTfm)' == 'true' And '$(TargetFrameworks)' != ''">
-    <TargetFrameworks>$([MSBuild]::FilterTargetFrameworks('$(TargetFrameworks)', '$(ZouTargetFramework);$(ZouTargetFramework)-windows;$(ZouTargetFramework)-browser'))</TargetFrameworks>
+    <_ZouBareTfmMatch>$([MSBuild]::FilterTargetFrameworks('$(TargetFrameworks)', '$(ZouTargetFramework);$(ZouTargetFramework)-windows;$(ZouTargetFramework)-browser'))</_ZouBareTfmMatch>
+    <TargetFrameworks Condition="'$(_ZouBareTfmMatch)' != ''">$(_ZouBareTfmMatch)</TargetFrameworks>
   </PropertyGroup>
 
   <!-- Multi-targeting case: ZouTargetFrameworks may also contain bare TFM tokens, exactly like
@@ -182,6 +188,22 @@
       <PropertyGroup>
         <TfmDbgInfo>Single</TfmDbgInfo>
       </PropertyGroup>
+
+      <!-- Shortcut: when TargetFrameworks has only one candidate to begin with, there is no
+           ambiguity to resolve — the Core/Windows/Browser/Full/NetStd matching below exists
+           purely to pick the *right* candidate out of several, so skip it entirely and use
+           the lone candidate directly. This also means a project whose single TFM isn't
+           found in any of CoreTargetFrameworks/WindowsTargetFrameworks/etc. (a newer or
+           otherwise nonstandard TFM) still resolves correctly, instead of falling through to
+           the CoreTargetFramework default below or tripping ZouValidateTargetFramework.
+           Setting TargetFramework here makes the next PropertyGroup's own guard condition
+           ('$(TargetFramework)' == '') false, so the whole matching block below is skipped
+           as a unit — no need to touch its individual assignment lines. -->
+      <PropertyGroup Condition="'$(TargetFramework)' == '' And '$(TargetFrameworks)' != '' And !$(TargetFrameworks.Contains(';'))">
+        <TfmDbgInfo>$(TfmDbgInfo);0S</TfmDbgInfo>
+        <TargetFramework>$(TargetFrameworks)</TargetFramework>
+      </PropertyGroup>
+
       <!-- Single-targeting: collapse TargetFrameworks down to one TargetFramework -->
       <PropertyGroup Condition="'$(TargetFramework)' == '' And '$(TargetFrameworks)' != ''">
         <TfmDbgInfo>$(TfmDbgInfo);01</TfmDbgInfo>
@@ -191,13 +213,6 @@
         <_ZouCoreMatch   >$([MSBuild]::FilterTargetFrameworks('$(TargetFrameworks)', '$(CoreTargetFrameworks)'))</_ZouCoreMatch>
         <_ZouWindowsMatch>$([MSBuild]::FilterTargetFrameworks('$(TargetFrameworks)', '$(WindowsTargetFrameworks)'))</_ZouWindowsMatch>
         <_ZouBrowserMatch>$([MSBuild]::FilterTargetFrameworks('$(TargetFrameworks)', '$(BrowserTargetFrameworks)'))</_ZouBrowserMatch>
-        <!-- Restored: this candidate was dropped when the original string-Contains matching
-             was refactored to FilterTargetFrameworks, silently breaking single-targeting
-             collapse for net4.8 (only reachable, until now, via a bare ZouTargetFramework or
-             a TargetFrameworks list that happens to include net4.8 without net8.0/net10.0/
-             netstandard also matching first). FullTargetFramework has no plural counterpart
-             (only one .NET Framework version is ever expected), so the filter list is just
-             the single value. -->
         <_ZouFullMatch   >$([MSBuild]::FilterTargetFrameworks('$(TargetFrameworks)', '$(FullTargetFramework)'))</_ZouFullMatch>
         <_ZouNetStdMatch >$([MSBuild]::FilterTargetFrameworks('$(TargetFrameworks)', '$(NetStdTargetFrameworks)'))</_ZouNetStdMatch>
 
