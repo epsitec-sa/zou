@@ -3,6 +3,7 @@
   <PropertyGroup>
     <TargetFrameworkInp>$(TargetFramework)</TargetFrameworkInp>
     <TargetFrameworksInp>$(TargetFrameworks)</TargetFrameworksInp>
+    
     <ZouTargetFrameworkInp>$(ZouTargetFramework)</ZouTargetFrameworkInp>
     <ZouTargetFrameworksInp>$(ZouTargetFrameworks)</ZouTargetFrameworksInp>
     <MultiTargetingInp>$(MultiTargeting)</MultiTargetingInp>
@@ -19,13 +20,11 @@
          MSBuild applies to the ';' introduced by Replace() before it gets split. -->
     <ZouTargetFrameworksMsBuild Condition="'$(ZouTargetFrameworks)' != ''">$([MSBuild]::Unescape($(ZouTargetFrameworks.Replace('+', ';'))))</ZouTargetFrameworksMsBuild>
     
-    <!--
-    Suppress warning NU1510: PackageReference <nuget package> will not be pruned.
-    The warning appears when 'ZouTargetFrameworks' is defined (e.g. net8.0+net10.0)
-    An unescaped character inside the list of target frameworks causes this warning
-    for some nuget packagea like 'Microsoft.CSharp'.
-    The warning is harmless and can be ignored.
-    -->
+    <!-- Suppress warning NU1510: PackageReference <nuget package> will not be pruned.
+         The warning appears when 'ZouTargetFrameworks' is defined (e.g. net8.0+net10.0)
+         An unescaped character inside the list of target frameworks causes this warning
+         for some nuget packagea like 'Microsoft.CSharp'.
+         The warning is harmless and can be ignored. -->
     <NoWarn Condition="'$(ZouTargetFrameworks)' != ''">$(NoWarn);NU1510</NoWarn>
     
     <!-- Snapshot of the project's own TargetFrameworks pool (set by its zou.build.tfm.props,
@@ -35,17 +34,15 @@
          (_ZouBareTfm) and the multi-targeting (ZouTargetFrameworks) case further down. -->
     <_ZouProjectTargetFrameworks>$(TargetFrameworks)</_ZouProjectTargetFrameworks>
 
-    <!--
-      ZouTargetFramework without a platform suffix (e.g. "net8.0", no "-windows"/"-browser"/...)
-      is treated as a bare SDK version selector rather than a literal TargetFramework value.
-      This lets the same "-p:ZouTargetFramework=net8.0" work uniformly across a plain project
-      (TargetFrameworks=net8.0;net10.0;...), a WinForms project (TargetFrameworks=net8.0-windows;
-      net10.0-windows), a Browser/WASM project, etc. — the actual platform-qualified TFM is
-      resolved below, from whatever TargetFrameworks the project's own zou.build.tfm.props already
-      declared, using the same Core/Windows/Browser/Full/NetStd matching logic as the
-      single-targeting collapse further down.
-      With an explicit suffix (e.g. "net8.0-windows"), behavior is unchanged: direct override.
-    -->
+    <!-- ZouTargetFramework without a platform suffix (e.g. "net8.0", no "-windows"/"-browser"/...)
+         is treated as a bare SDK version selector rather than a literal TargetFramework value.
+         This lets the same "-p:ZouTargetFramework=net8.0" work uniformly across a plain project
+         (TargetFrameworks=net8.0;net10.0;...), a WinForms project (TargetFrameworks=net8.0-windows;
+         net10.0-windows), a Browser/WASM project, etc. — the actual platform-qualified TFM is
+         resolved below, from whatever TargetFrameworks the project's own zou.build.tfm.props already
+         declared, using the same Core/Windows/Browser/Full/NetStd matching logic as the
+         single-targeting collapse further down.
+         With an explicit suffix (e.g. "net8.0-windows"), behavior is unchanged: direct override. -->
     <_ZouBareTfm Condition="'$(ZouTargetFramework)' != '' And !$(ZouTargetFramework.Contains('-'))">true</_ZouBareTfm>
 
     <TargetFramework  Condition="'$(ZouTargetFramework)' != '' And '$(_ZouBareTfm)' != 'true'">$(ZouTargetFramework)</TargetFramework>
@@ -63,18 +60,16 @@
     <TargetFrameworks>$([MSBuild]::FilterTargetFrameworks('$(TargetFrameworks)', '$(ZouTargetFramework);$(ZouTargetFramework)-windows;$(ZouTargetFramework)-browser'))</TargetFrameworks>
   </PropertyGroup>
 
-  <!--
-    Multi-targeting case: ZouTargetFrameworks may also contain bare TFM tokens, exactly like
-    the single-targeting _ZouBareTfm case above (e.g. "net8.0+net10.0" on a WinForms project
-    should resolve to "net8.0-windows;net10.0-windows"). Each token is peeled off one at a time
-    via regex (rather than a Split()[i] indexer, to match this file's existing style and stay
-    usable on older MSBuild toolsets) and resolved against the project's own TargetFrameworks
-    pool (_ZouProjectTargetFrameworks): bare tokens are expanded to "<tfm>;<tfm>-windows;
-    <tfm>-browser" and matched against the pool; tokens that already carry a platform suffix
-    pass through unchanged. A token with no match in the pool is kept as-is, so
-    ZouValidateTargetFramework/the SDK can still report a clear error on it downstream instead
-    of it silently vanishing.
-  -->
+  <!-- Multi-targeting case: ZouTargetFrameworks may also contain bare TFM tokens, exactly like
+       the single-targeting _ZouBareTfm case above (e.g. "net8.0+net10.0" on a WinForms project
+       should resolve to "net8.0-windows;net10.0-windows"). Each token is peeled off one at a time
+       via regex (rather than a Split()[i] indexer, to match this file's existing style and stay
+       usable on older MSBuild toolsets) and resolved against the project's own TargetFrameworks
+       pool (_ZouProjectTargetFrameworks): bare tokens are expanded to "<tfm>;<tfm>-windows;
+       <tfm>-browser" and matched against the pool; tokens that already carry a platform suffix
+       pass through unchanged. A token with no match in the pool is kept as-is, so
+       ZouValidateTargetFramework/the SDK can still report a clear error on it downstream instead
+       of it silently vanishing. -->
   <PropertyGroup Condition="'$(ZouTargetFramework)' == '' And '$(ZouTargetFrameworksMsBuild)' != '' And '$(_ZouProjectTargetFrameworks)' != ''">
     <_ZouMultiRemain>$(ZouTargetFrameworksMsBuild)</_ZouMultiRemain>
     <_ZouMultiResolved></_ZouMultiResolved>
@@ -145,39 +140,35 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <!--
-    Determine if the project is multi-targeting
-    If ZouTargetFrameworks is set, then it is multi-targeting
-    If ZouTargetFramework is set, then it is single-targeting
-    Default to single-targeting
-    -->
+    <!-- Determine if the project is multi-targeting
+         If ZouTargetFrameworks is set, then it is multi-targeting
+         If ZouTargetFramework is set, then it is single-targeting
+         Default to single-targeting -->
     <MultiTargeting Condition="'$(ZouTargetFrameworks)' != ''">true</MultiTargeting>
     <MultiTargeting Condition="'$(ZouTargetFramework)'  != ''">false</MultiTargeting>
     <MultiTargeting Condition="'$(MultiTargeting)'      == ''">false</MultiTargeting>
   </PropertyGroup>
 
-  <!--
-    This is the default for C# projects that do not define the TargetFramework property.
-    You can override this in a Directory.Build.props file (before this import)
-    or in your project file (after this import).
-
-    Single-targeting projects may instead opt into one of these fixed values:
-      TargetFramework=$(FullTargetFramework)     e.g. net48
-      TargetFramework=$(WindowsTargetFramework)  e.g. net8.0-windows / net10.0-windows
-      TargetFramework=$(WineTargetFramework)     e.g. netcoreapp3.1 (for projects running inside a Wine bottle on Mac)
-
-    If you want to build for multiple frameworks, set the TargetFrameworks
-    property instead of TargetFramework in a Directory.Build.props file (before this import)
-    or in your project file (after this import), typically as one of:
-      TargetFrameworks=$(CoreTargetFrameworks)
-      TargetFrameworks=netstandard2.0;$(CoreTargetFrameworks)
-
-    In that case, when MultiTargeting is true, TargetFramework is left unset and the
-    project builds for all frameworks listed in TargetFrameworks.
-    When MultiTargeting is false (default), TargetFrameworks is collapsed down to a
-    single TargetFramework matching CoreTargetFramework/WindowsTargetFramework, so that
-    build machines only need the SDK for that one framework installed.
-  -->
+  <!-- This is the default for C# projects that do not define the TargetFramework property.
+       You can override this in a Directory.Build.props file (before this import)
+       or in your project file (after this import).
+       
+       Single-targeting projects may instead opt into one of these fixed values:
+         TargetFramework=$(FullTargetFramework)     e.g. net48
+         TargetFramework=$(WindowsTargetFramework)  e.g. net8.0-windows / net10.0-windows
+         TargetFramework=$(WineTargetFramework)     e.g. netcoreapp3.1 (for projects running inside a Wine bottle on Mac)
+       
+       If you want to build for multiple frameworks, set the TargetFrameworks
+       property instead of TargetFramework in a Directory.Build.props file (before this import)
+       or in your project file (after this import), typically as one of:
+         TargetFrameworks=$(CoreTargetFrameworks)
+         TargetFrameworks=netstandard2.0;$(CoreTargetFrameworks)
+       
+       In that case, when MultiTargeting is true, TargetFramework is left unset and the
+       project builds for all frameworks listed in TargetFrameworks.
+       When MultiTargeting is false (default), TargetFrameworks is collapsed down to a
+       single TargetFramework matching CoreTargetFramework/WindowsTargetFramework, so that
+       build machines only need the SDK for that one framework installed. -->
 
   <Choose>
     <When Condition="'$(MultiTargeting)' == 'true'">
@@ -258,12 +249,10 @@
     <NetKind Condition="'$(NetKind)' == ''">Core</NetKind>
   </PropertyGroup>
 
-  <!--
-    Guard: in single-targeting mode, if a project declared TargetFrameworks but none of the
-    candidates above (CoreTargetFramework, WindowsTargetFramework, netstandard2.x) matched,
-    fail fast with a clear error instead of silently falling back to multi-targeting, which
-    could break later on a build machine that only has one SDK installed.
-  -->
+  <!-- Guard: in single-targeting mode, if a project declared TargetFrameworks but none of the
+       candidates above (CoreTargetFramework, WindowsTargetFramework, netstandard2.x) matched,
+       fail fast with a clear error instead of silently falling back to multi-targeting, which
+       could break later on a build machine that only has one SDK installed. -->
   <Target Name="ZouValidateTargetFramework" Condition="!$(MultiTargeting) And '$(TargetFramework)' == '' And '$(TargetFrameworks)' != ''" BeforeTargets="Build;Restore">
     <Error Text="$(ErrorInvalidTfmId)=($(TargetFrameworks))" Code="$(ErrorInvalidTfmIdCode)"/>
   </Target>
@@ -275,18 +264,16 @@
 
   <Import Project="LangVersions.props" Condition="'$(LangVersion)' == ''"/>
 
-  <!--
-    Warn when TargetFramework's final value (after the whole .csproj has been evaluated,
-    since targets run after evaluation completes) differs from the value zou itself resolved
-    (TargetFrameworkOut). This happens when a project sets <TargetFramework> directly in its
-    .csproj, which silently overrides zou's resolution — bypassing -p:ZouTargetFramework,
-    MultiTargeting, and the ZouValidateTargetFramework guard for that project, with no other
-    feedback. Legitimate fixed-TFM projects (e.g. a legacy tool pinned to net4.8) should set
-    that default in the project's own zou.build.tfm.props instead (TargetFramework
-    Condition="'$(TargetFramework)' == ''" ...), which keeps zou's resolution in the loop; set
-    ZouAllowLegacyTfmOverride=true there to silence this warning where the override in
-    the .csproj itself is intentional and known.
-  -->
+  <!-- Warn when TargetFramework's final value (after the whole .csproj has been evaluated,
+       since targets run after evaluation completes) differs from the value zou itself resolved
+       (TargetFrameworkOut). This happens when a project sets <TargetFramework> directly in its
+       .csproj, which silently overrides zou's resolution — bypassing -p:ZouTargetFramework,
+       MultiTargeting, and the ZouValidateTargetFramework guard for that project, with no other
+       feedback. Legitimate fixed-TFM projects (e.g. a legacy tool pinned to net4.8) should set
+       that default in the project's own zou.build.tfm.props instead (TargetFramework
+       Condition="'$(TargetFramework)' == ''" ...), which keeps zou's resolution in the loop; set
+       ZouAllowLegacyTfmOverride=true there to silence this warning where the override in
+       the .csproj itself is intentional and known. -->
   <Target Name="ZouWarnTfmOverride"
           Condition="'$(TargetFramework)' != '$(TargetFrameworkOut)' And '$(ZouAllowLegacyTfmOverride)' != 'true'"
           BeforeTargets="Build;Restore">
