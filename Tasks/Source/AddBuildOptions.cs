@@ -48,6 +48,7 @@ namespace Zou.Tasks
         x86,
         x64,
         Arm,
+        Arm64,
         Itanium
     }
 
