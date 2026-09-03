@@ -2,14 +2,15 @@
   # Cpp.PlatformToolset.props
   + Configuration, IsDebug, IsRelease, Solution*, Project*
 -->
-<Project InitialTargets="TraceBootCore">
+<Project>
     
   <!-- PlatformToolset -->
   <Import Project="Cpp.PlatformToolset.props" Condition="'$(PlatformToolset)' == ''"/>
 
   <!-- Configuration, IsDebug, IsRelease -->
   <PropertyGroup>
-    <IsDebug>false</IsDebug> <IsRelease>false</IsRelease>
+    <IsDebug>false</IsDebug>
+    <IsRelease>false</IsRelease>
     
     <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
     <IsDebug       Condition="$(Configuration.StartsWith('Debug',   StringComparison.OrdinalIgnoreCase))">true</IsDebug>
@@ -26,22 +27,5 @@
     <ProjectDir    Condition="'$(ProjectDir)'    == ''">$(SolutionDir)</ProjectDir>
     <ProjectPath   Condition="'$(ProjectPath)'   == ''">$(ProjectDir)$(MSBuildProjectFile)</ProjectPath>
   </PropertyGroup>
-
-  <Target Name="TraceBootCore" Condition="'$(ZouTrace)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
-    <Message Importance="high" Text="$(T0)$([MSBuild]::MakeRelative('$(BundleDir)', '$(MSBuildThisFileFullPath)')) ($(BundleRelativeProjectPath))$(NC)" />
-
-    <Message Importance="high" Text="PlatformToolset = $(PlatformToolset)" />
-    <Message Importance="high" Text="Configuration   = $(Configuration)" />
-    <Message Importance="high" Text="IsDebug         = $(IsDebug)" />
-    <Message Importance="high" Text="IsRelease       = $(IsRelease)" />
-    <Message Importance="high" Text=" " />
-    <Message Importance="high" Text="SolutionName    = $(SolutionName)" />
-    <Message Importance="high" Text="SolutionDir     = $(SolutionDir)" />
-    <Message Importance="high" Text="SolutionPath    = $(SolutionPath)" />
-    <Message Importance="high" Text="ProjectName     = $(ProjectName)" />
-    <Message Importance="high" Text="ProjectDir      = $(ProjectDir)" />
-    <Message Importance="high" Text="ProjectPath     = $(ProjectPath)" />
-    <Message Importance="high" Text=" " />
-  </Target>
 
 </Project>

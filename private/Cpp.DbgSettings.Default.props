@@ -3,7 +3,8 @@
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" TreatAsLocalProperty="AssemblerOutput">
   <PropertyGroup  Condition="'$(IsDebug)'=='true'">
     <_PropertySheetDisplayName Condition="'$(Platform)'=='Win32'">[zou] PDB for Edit and Continue, Enable Browse Information</_PropertySheetDisplayName>
-    <_PropertySheetDisplayName Condition="'$(Platform)'=='x64'">[zou] PDB, Enable Browse Information</_PropertySheetDisplayName>
+    <_PropertySheetDisplayName Condition="'$(Platform)'=='arm64'">[zou] PDB, Enable Browse Information</_PropertySheetDisplayName>
+    <_PropertySheetDisplayName Condition="'$(Platform)'=='x64'"  >[zou] PDB, Enable Browse Information</_PropertySheetDisplayName>
     <DbgSettings>true</DbgSettings>
   </PropertyGroup>
   <PropertyGroup Condition="'$(IsRelease)'=='true'">
@@ -22,7 +23,8 @@
   <ItemDefinitionGroup Condition="'$(IsDebug)'=='true'">
     <ClCompile>
       <DebugInformationFormat Condition="'$(Platform)'=='Win32'">EditAndContinue</DebugInformationFormat>
-      <DebugInformationFormat Condition="'$(Platform)'=='x64'">ProgramDatabase</DebugInformationFormat>
+      <DebugInformationFormat Condition="'$(Platform)'=='arm64'">ProgramDatabase</DebugInformationFormat>
+      <DebugInformationFormat Condition="'$(Platform)'=='x64'"  >ProgramDatabase</DebugInformationFormat>
       <!--
       BrowseInformation prevents large projects from linking with Visual Studio 2026
       <BrowseInformation>true</BrowseInformation>

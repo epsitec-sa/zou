@@ -19,9 +19,10 @@ Inputs:
   $(RedistFolder)       - [optional] - default redist folder
   $(RedistByFramework)  - [optional] - include the target framework   in the output directory  - ex: ...\net6\...
   $(RedistByRuntime)    - [optional] - include the runtime identifier in the output directory  - ex: ...\win-x64\...
-  %(RedistFolder)       - [optional] - append a specific redist folder to the output directory - ex: ...\swissdec\...
+  %(RedistFolder)       - [optional] - append a specific redist folder to the output directory - ex: ...\coursdechange\...
   %(RedistX86Framework) - [optional] - the target framework used for x86 or AnyCPU platforms   - (CoreTargetFramework | FullTargetFramework)
   %(RedistX64Framework) - [optional] - the target framework used for x64 platform              - (CoreTargetFramework | FullTargetFramework)
+  %(RedistArmFramework) - [optional] - the target framework used for arm64 platform            - (CoreTargetFramework | FullTargetFramework)
 
 Outputs:
   %(RedistFolder)       - ex: swissdec
@@ -44,13 +45,18 @@ Outputs:
 
       <!-- x86|AnyCPU -->
       <ImportProject Condition="!$(TargetFramework.StartsWith('netstandard')) And '$(RuntimePlatform)' == 'x86'">
-        <TargetFramework Condition="'%(ImportProject.RedistX86Framework)' != ''">%(ImportProject.RedistX86Framework)</TargetFramework>
+        <TargetFramework    Condition="'%(ImportProject.RedistX86Framework)' != ''">%(ImportProject.RedistX86Framework)</TargetFramework>
         <RuntimeIdentifiers Condition="'%(ImportProject.RedistX86Framework)' != ''">win-x86</RuntimeIdentifiers>
       </ImportProject>
       <!-- x64 -->
       <ImportProject Condition="!$(TargetFramework.StartsWith('netstandard')) And '$(RuntimePlatform)' == 'x64'">
-        <TargetFramework Condition="'%(ImportProject.RedistX64Framework)' != ''">%(ImportProject.RedistX64Framework)</TargetFramework>
+        <TargetFramework    Condition="'%(ImportProject.RedistX64Framework)' != ''">%(ImportProject.RedistX64Framework)</TargetFramework>
         <RuntimeIdentifiers Condition="'%(ImportProject.RedistX64Framework)' != ''">win-x64</RuntimeIdentifiers>
+      </ImportProject>
+      <!-- arm64 -->
+      <ImportProject Condition="!$(TargetFramework.StartsWith('netstandard')) And '$(RuntimePlatform)' == 'arm64'">
+        <TargetFramework    Condition="'%(ImportProject.RedistArm64Framework)' != ''">%(ImportProject.RedistArm64Framework)</TargetFramework>
+        <RuntimeIdentifiers Condition="'%(ImportProject.RedistArm64Framework)' != ''">win-arm64</RuntimeIdentifiers>
       </ImportProject>
 
       <!--
@@ -173,8 +179,8 @@ Outputs:
       <ImportProject RemoveMetadata="_UseBuildTarget" />
     </ItemGroup>
 
-    <LogItems Condition="$(RedistDebug)" Items="@(ImportProject)" Title="RedistUpdateTarget.ImportProject" />
-    <Message  Condition="$(RedistDebug)" Importance="high" Text=" " />
+    <!--<LogItems Condition="$(RedistDebug)" Items="@(ImportProject)" Title="RedistUpdateTarget.ImportProject" />
+    <Message  Condition="$(RedistDebug)" Importance="high" Text=" " />-->
   </Target>
 
 </Project>

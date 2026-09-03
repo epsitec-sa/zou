@@ -22,6 +22,7 @@ Inputs:
   %(RedistFolder)       - [optional] - append a specific redist folder to the output directory - ex: ...\coursdechange\...
   %(RedistX86Framework) - [optional] - the target framework used for x86 or AnyCPU platforms   - (CoreTargetFramework | FullTargetFramework)
   %(RedistX64Framework) - [optional] - the target framework used for x64 platform              - (CoreTargetFramework | FullTargetFramework)
+  %(RedistArmFramework) - [optional] - the target framework used for arm64 platform            - (CoreTargetFramework | FullTargetFramework)
 
 Outputs:
   %(RedistFolder)       - ex: coursdechange
@@ -72,8 +73,8 @@ Outputs:
       <ImportFile RemoveMetadata="_ProjectFolder;_OutputFolder;_OutDir" />
     </ItemGroup>
 
-    <LogItems Condition="$(RedistDebug)" Items="@(ImportFile)" Title="RedistImportFileTransformLayout.ImportFile" />
-    <Message  Condition="$(RedistDebug)" Importance="high" Text=" " />
+    <!--<LogItems Condition="$(RedistDebug)" Items="@(ImportFile)" Title="RedistImportFileTransformLayout.ImportFile" />
+    <Message  Condition="$(RedistDebug)" Importance="high" Text=" " />-->
   </Target>
 
 </Project>

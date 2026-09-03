@@ -9,8 +9,7 @@ Outputs
   BuildOsx
   BuildLinux
 -->
-<Project InitialTargets="TraceBootCrossBuild" 
-         TreatAsLocalProperty="CrossBuild;BuildWin;BuildOsx;BuildLinux">
+<Project TreatAsLocalProperty="CrossBuild;BuildWin;BuildOsx;BuildLinux">
 
   <PropertyGroup>
     <!-- Do not cross-build inside Visual Studio -->
@@ -35,8 +34,8 @@ Outputs
     <BuildLinux>false</BuildLinux>
     <BuildWin Condition="$(CrossBuild) Or $(RuntimeIdentifier.StartsWith('win')) Or ('$(RuntimeIdentifier)'=='' And $([MSBuild]::IsOsPlatform(Windows)))">true</BuildWin>
   </PropertyGroup>
-  <!-- Only x64 platform on OSX and Linux -->
-  <PropertyGroup Condition="$(RuntimePlatform.EndsWith('x64'))">
+  <!-- Only 64-bit platform on OSX and Linux -->
+  <PropertyGroup Condition="$(RuntimePlatform.EndsWith('64'))">
     <BuildOsx    Condition="$(CrossBuild) Or $(RuntimeIdentifier.StartsWith('osx'))   Or ('$(RuntimeIdentifier)'=='' And $([MSBuild]::IsOsPlatform(OSX)))"  >true</BuildOsx>
     <BuildLinux  Condition="$(CrossBuild) Or $(RuntimeIdentifier.StartsWith('linux')) Or ('$(RuntimeIdentifier)'=='' And $([MSBuild]::IsOsPlatform(Linux)))">true</BuildLinux>
   </PropertyGroup>
@@ -57,18 +56,5 @@ Outputs
       <CrossBuild>$(CrossBuild)</CrossBuild>
     </ImportProject>
   </ItemDefinitionGroup>
-
-  <Target Name="TraceBootCrossBuild" Condition="'$(ZouTrace)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
-    <Message Importance="high" Text="$(T0)$([MSBuild]::MakeRelative('$(BundleDir)', '$(MSBuildThisFileFullPath)')) ($(BundleRelativeProjectPath))$(NC)" />
-
-    <Message Importance="high" Text="ZouAgentType    = $(ZouAgentType)" />
-    <Message Importance="high" Text="SkipCrossBuild  = $(SkipCrossBuild)" />
-    <Message Importance="high" Text="CrossBuild      = $(CrossBuild)" />
-    <Message Importance="high" Text="BuildWin        = $(BuildWin)" />
-    <Message Importance="high" Text="BuildOsx        = $(BuildOsx)" />
-    <Message Importance="high" Text="BuildLinux      = $(BuildLinux)" />
-    <Message Importance="high" Text="BuildAny        = $(BuildAny)" />
-    <Message Importance="high" Text=" " />
-  </Target>
 
 </Project>

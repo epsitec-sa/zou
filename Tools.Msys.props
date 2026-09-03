@@ -17,6 +17,11 @@
     <MSysGcc>x86_64-w64-mingw32-gcc</MSysGcc>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Platform)' == 'arm64'">
+    <MSysPath>$(Mingw64Bin);$(MSysUsrBin)</MSysPath>
+    <MSysGcc>arm64-w64-mingw32-gcc</MSysGcc>
+  </PropertyGroup>
+
   <Target Name="CheckMSysEnv" BeforeTargets="Build">
     <Error Text="MSYS not installed" Condition="!$([System.IO.File]::Exists($(MSysRoot)\mingw32.exe))" />
   </Target>

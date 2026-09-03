@@ -37,10 +37,10 @@
       <PlatformToolset  >$(PlatformToolset)</PlatformToolset>
       <RuntimeIdentifier>$(RuntimeIdentifier)</RuntimeIdentifier>
 
-      <Sign>$(Sign)</Sign>
-
-      <RedistDebug      >$(RedistDebug)</RedistDebug>
-      <ZouDebug         >$(ZouDebug)</ZouDebug>
+      <Sign        Condition="'$(Sign)'        != ''">$(Sign)</Sign>
+      <TfmDebug    Condition="'$(TfmDebug)'    != ''">$(TfmDebug)</TfmDebug>
+      <RedistDebug Condition="'$(RedistDebug)' != ''">$(RedistDebug)</RedistDebug>
+      <ZouDebug    Condition="'$(ZouDebug)'    != ''">$(ZouDebug)</ZouDebug>
 
       <ZouTargetFramework>$(ZouTargetFramework)</ZouTargetFramework>
       <ZouTargetFrameworks>$(ZouTargetFrameworks)</ZouTargetFrameworks>
@@ -86,11 +86,13 @@
       <ImportProject>
         <RedistX86Framework Condition="'%(ImportProject.RedistX86Framework)' == '' And '%(Extension)' == '.csproj'">$(FullTargetFramework)</RedistX86Framework>
         <RedistX64Framework Condition="'%(ImportProject.RedistX64Framework)' == '' And '%(Extension)' == '.csproj'">$(CoreTargetFramework)</RedistX64Framework>
+        <RedistArmFramework Condition="'%(ImportProject.RedistArmFramework)' == '' And '%(Extension)' == '.csproj'">$(CoreTargetFramework)</RedistArmFramework>
       </ImportProject>
       <!-- Get default platform from runtime identifier -->
       <ImportProject>
         <Platform Condition="'%(ImportProject.Platform)' == '' And $([System.String]::new(%(ImportProject.RuntimeIdentifier)).EndsWith('x86'))">x86</Platform>
         <Platform Condition="'%(ImportProject.Platform)' == '' And $([System.String]::new(%(ImportProject.RuntimeIdentifier)).EndsWith('x64'))">x64</Platform>
+        <Platform Condition="'%(ImportProject.Platform)' == '' And $([System.String]::new(%(ImportProject.RuntimeIdentifier)).EndsWith('arm64'))">arm64</Platform>
       </ImportProject>
     </ItemGroup>
     <LogItems Condition="'$(ZouDebug)' == 'true'" Items="@(ImportProject)" Title="ImportProjectInit[2].ImportProject" />
@@ -113,8 +115,9 @@
       <!-- Do not forward RID if Build target is specified or if its a WindowsDesktop app -->
       <ImportProject>
         <RuntimeIdentifier Condition="'%(ImportProject.Targets)' != '' And $([System.String]::new('%(ImportProject.Targets)').IndexOf('Build', StringComparison.OrdinalIgnoreCase)) >= 0" />
-        <RuntimeIdentifier Condition="'$(RuntimePlatform)' == 'x64' And '%(ImportProject.RedistX64Framework)' == '$(WindowsTargetFramework)'" />
-        <RuntimeIdentifier Condition="'$(RuntimePlatform)' == 'x86' And '%(ImportProject.RedistX86Framework)' == '$(WindowsTargetFramework)'" />
+        <RuntimeIdentifier Condition="'$(RuntimePlatform)' == 'x64'   And '%(ImportProject.RedistX64Framework)' == '$(WindowsTargetFramework)'" />
+        <RuntimeIdentifier Condition="'$(RuntimePlatform)' == 'x86'   And '%(ImportProject.RedistX86Framework)' == '$(WindowsTargetFramework)'" />
+        <RuntimeIdentifier Condition="'$(RuntimePlatform)' == 'arm64' And '%(ImportProject.RedistArmFramework)' == '$(WindowsTargetFramework)'" />
       </ImportProject>
     </ItemGroup>
 

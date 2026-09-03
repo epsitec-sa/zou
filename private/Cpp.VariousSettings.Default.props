@@ -33,7 +33,7 @@
       <AdditionalOptions    Condition="'$(IsRelease)'=='true'">/bigobj %(AdditionalOptions)</AdditionalOptions>
       <AdditionalOptions>/Zc:strictStrings- %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
-    <ClCompile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile Condition="'$(Configuration)|$(Platform)'=='Release|x64' Or '$(Configuration)|$(Platform)'=='Release|arm64'">
       <!-- Disable type cast and conversion warnings in release|x64 project configuration  -->
       <DisableSpecificWarnings>4244;4267;4302;4311;4312;4313;4477;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
@@ -43,10 +43,12 @@
       <OptimizeReferences   Condition="'$(IsRelease)'=='true'">true</OptimizeReferences>
       <TargetMachine        Condition="'$(Platform)'=='Win32'">MachineX86</TargetMachine>
       <TargetMachine        Condition="'$(Platform)'=='x64'">MachineX64</TargetMachine>
+      <TargetMachine        Condition="'$(Platform)'=='arm64'">MachineARM64</TargetMachine>
     </Link>
     <Lib>
       <TargetMachine        Condition="'$(Platform)'=='Win32'">MachineX86</TargetMachine>
-      <TargetMachine        Condition="'$(Platform)'=='x64'">MachineX64</TargetMachine>
+      <TargetMachine        Condition="'$(Platform)'=='x64'"  >MachineX64</TargetMachine>
+      <TargetMachine        Condition="'$(Platform)'=='arm64'">MachineARM64</TargetMachine>
     </Lib>
     <Midl>
       <MkTypLibCompatible>false</MkTypLibCompatible>
@@ -67,6 +69,8 @@
       <PreprocessorDefinitions Condition="'$(IsDebug)|$(Platform)'=='true|Win32'"  >_LIB;WIN32;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(IsRelease)|$(Platform)'=='true|x64'"  >_LIB;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(IsDebug)|$(Platform)'=='true|x64'"    >_LIB;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(IsRelease)|$(Platform)'=='true|arm64'">_LIB;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(IsDebug)|$(Platform)'=='true|arm64'"  >_LIB;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
 
@@ -76,6 +80,8 @@
       <PreprocessorDefinitions Condition="'$(IsDebug)|$(Platform)'=='true|Win32'"  >_USRDLL;_WINDOWS;WIN32;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(IsRelease)|$(Platform)'=='true|x64'"  >_USRDLL;_WINDOWS;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(IsDebug)|$(Platform)'=='true|x64'"    >_USRDLL;_WINDOWS;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(IsRelease)|$(Platform)'=='true|arm64'">_USRDLL;_WINDOWS;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(IsDebug)|$(Platform)'=='true|arm64'"  >_USRDLL;_WINDOWS;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
 
@@ -85,6 +91,8 @@
       <PreprocessorDefinitions Condition="'$(IsDebug)|$(Platform)'=='true|Win32'"  >_WINDOWS;WIN32;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(IsRelease)|$(Platform)'=='true|x64'"  >_WINDOWS;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(IsDebug)|$(Platform)'=='true|x64'"    >_WINDOWS;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(IsRelease)|$(Platform)'=='true|arm64'">_WINDOWS;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(IsDebug)|$(Platform)'=='true|arm64'"  >_WINDOWS;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
 </Project>

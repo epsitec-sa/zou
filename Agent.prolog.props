@@ -22,7 +22,7 @@ Summary:
     + CoreTargetFramework, FullTargetFramework
   # hook.zou.build.redist.props  
 -->
-<Project TreatAsLocalProperty="RedistFolder">
+<Project InitialTargets="TraceAgentProlog" TreatAsLocalProperty="RedistFolder">
 
   <Import Project="zou.props" Condition="'$(ZouImported)' == ''" />
 
@@ -36,6 +36,7 @@ Summary:
       <Configuration>Release</Configuration>
       <Platform>Win32</Platform>
     </ProjectConfiguration>
+
     <ProjectConfiguration Include="Debug|x86">
       <Configuration>Debug</Configuration>
       <Platform>x86</Platform>
@@ -44,6 +45,7 @@ Summary:
       <Configuration>Release</Configuration>
       <Platform>x86</Platform>
     </ProjectConfiguration>
+
     <ProjectConfiguration Include="Debug|x64">
       <Configuration>Debug</Configuration>
       <Platform>x64</Platform>
@@ -52,6 +54,16 @@ Summary:
       <Configuration>Release</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
+
+    <ProjectConfiguration Include="Debug|arm64">
+      <Configuration>Debug</Configuration>
+      <Platform>arm64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|arm64">
+      <Configuration>Release</Configuration>
+      <Platform>arm64</Platform>
+    </ProjectConfiguration>
+
     <ProjectConfiguration Include="Debug|Any CPU">
       <Configuration>Debug</Configuration>
       <Platform>Any CPU</Platform>
@@ -60,6 +72,7 @@ Summary:
       <Configuration>Release</Configuration>
       <Platform>Any CPU</Platform>
     </ProjectConfiguration>
+
     <ProjectConfiguration Include="Debug|AnyCPU">
       <Configuration>Debug</Configuration>
       <Platform>AnyCPU</Platform>
@@ -128,4 +141,67 @@ Summary:
   <Import Project="TargetFramework.props"       Condition="'$(TargetFrameworkImported)' == ''" />
   <Import Project="hook.zou.build.redist.props" Condition="'$(ZouBuildRedistProps)' == ''"/>
 
+  <Target Name="TraceAgentProlog" Condition="'$(RedistDebug)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
+    <Message Importance="high" Text="$(T0)$([MSBuild]::MakeRelative('$(BundleDir)', '$(MSBuildThisFileFullPath)')) ($(BundleRelativeProjectPath))$(NC)" />
+
+    <!-- (Cs|Cpp|Go|Goblin.Agent.props)-->
+    <Message Importance="high" Text="ZouAgentType       = $(ZouAgentType)"    Condition="'$(ZouAgentType)' != ''" />
+
+    <!-- Cpp.PlatformToolset.props -->
+    <Message Importance="high" Text="PlatformToolset    = $(PlatformToolset)" Condition="'$(ZouAgentType)' == 'Cpp'" />
+    
+    <!-- Boot.Core.props-->
+    <Message Importance="high" Text="Configuration      = $(Configuration)" />
+    <Message Importance="high" Text="IsDebug            = $(IsDebug)" />
+    <Message Importance="high" Text="IsRelease          = $(IsRelease)" />
+    <Message Importance="high" Text=" " />              
+    <Message Importance="high" Text="SolutionName       = $(SolutionName)" />
+    <Message Importance="high" Text="SolutionDir        = $(SolutionDir)" />
+    <Message Importance="high" Text="SolutionPath       = $(SolutionPath)" />
+    <Message Importance="high" Text="ProjectName        = $(ProjectName)" />
+    <Message Importance="high" Text="ProjectDir         = $(ProjectDir)" />
+    <Message Importance="high" Text="ProjectPath        = $(ProjectPath)" />
+    <Message Importance="high" Text=" " />
+    
+    <!-- Boot.Runtime.props -->
+    <Message Importance="high" Text="BuildWin           = $(BuildWin)" />
+    <Message Importance="high" Text="BuildOsx           = $(BuildOsx)" />
+    <Message Importance="high" Text="BuildLinux         = $(BuildLinux)" />
+    <Message Importance="high" Text="BuildAny           = $(BuildAny)" />
+    <Message Importance="high" Text=" " />
+
+    <Message Importance="high" Text="PlatformTarget     = $(PlatformTarget)"     Condition="'$(PlatformTarget)'     != ''"/>
+    <Message Importance="high" Text="Platform           = $(Platform)"           Condition="'$(Platform)'           != ''"/>
+    <Message Importance="high" Text="TargetFramework    = $(TargetFramework)"    Condition="'$(TargetFramework)'    != ''"/>
+    <Message Importance="high" Text="TargetFrameworks   = $(TargetFrameworks)"   Condition="'$(TargetFrameworks)'   != ''"/>
+    <Message Importance="high" Text="RuntimeOs          = $(RuntimeOs)"          Condition="'$(RuntimeOs)'          != ''" />
+    <Message Importance="high" Text="RuntimePlatform    = $(RuntimePlatform)"    Condition="'$(RuntimePlatform)'    != ''" />
+    <Message Importance="high" Text="RuntimeFolder      = $(RuntimeFolder)"      Condition="'$(RuntimeFolder)'      != ''" />
+    <Message Importance="high" Text="RuntimeIdentifier  = $(RuntimeIdentifier)"  Condition="'$(RuntimeIdentifier)'  != ''" />
+    <Message Importance="high" Text="RuntimeIdentifiers = $(RuntimeIdentifiers)" Condition="'$(RuntimeIdentifiers)' != ''" />
+    <Message Importance="high" Text="OutDir             = $(OutDir)" />
+    <Message Importance="high" Text="OutputPath         = $(OutputPath)" />
+
+    <LogItems Items="@(RuntimeOs)" Title="@RuntimeOs" />
+    <Message Importance="high" Text=" " />
+    
+    <!-- Boot.Platform.props -->
+    <Message Importance="high" Text="DebugBootPlatform  = $(DebugBootPlatform)" />
+    <Message Importance="high" Text="ZouAgentType       = $(ZouAgentType)" />
+    <Message Importance="high" Text=" " />
+    <Message Importance="high" Text="Platform           = $(Platform)" />
+    <Message Importance="high" Text="RuntimePlatform    = $(RuntimePlatform)" />
+    <Message Importance="high" Text="ForwardPlatform    = $(ForwardPlatform)" />
+    <Message Importance="high" Text="RuntimeIdentifier  = $(RuntimeIdentifier)"/>
+    <Message Importance="high" Text=" " />
+    
+    <!-- Boot.CrossBuild.props-->
+    <Message Importance="high" Text="SkipCrossBuild     = $(SkipCrossBuild)" />
+    <Message Importance="high" Text="CrossBuild         = $(CrossBuild)" />
+    <Message Importance="high" Text="BuildWin           = $(BuildWin)" />
+    <Message Importance="high" Text="BuildOsx           = $(BuildOsx)" />
+    <Message Importance="high" Text="BuildLinux         = $(BuildLinux)" />
+    <Message Importance="high" Text="BuildAny           = $(BuildAny)" />
+    <Message Importance="high" Text=" " />
+  </Target>
 </Project>

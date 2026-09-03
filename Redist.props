@@ -13,7 +13,7 @@ Outputs
   RedistByFramework
 
 -->
-<Project InitialTargets="TraceRedistProps" TreatAsLocalProperty="RedistByRuntime;RedistByFramework">
+<Project TreatAsLocalProperty="RedistByRuntime;RedistByFramework">
 
   <!-- Defaults-->
   <PropertyGroup>
@@ -58,16 +58,5 @@ Outputs
       <RedistByRuntime>$(RedistByRuntime)</RedistByRuntime>
     </ImportProject>
   </ItemDefinitionGroup>
-
-  <Target Name="TraceRedistProps" Condition="$(RedistDebug) Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
-    <Message Importance="high" Text="$(T0)$([MSBuild]::MakeRelative('$(BundleDir)', '$(MSBuildThisFileFullPath)')) ($(BundleRelativeProjectPath))$(NC)" />
-
-    <Message Importance="high" Text="SkipCrossBuild    = $(SkipCrossBuild)" />
-    <Message Importance="high" Text="CrossBuild        = $(CrossBuild)" />
-    <Message Importance="high" Text="RedistByRuntime   = $(RedistByRuntime)" />
-    <Message Importance="high" Text="RedistByFramework = $(RedistByFramework)" />
-    <Message Importance="high" Text="RedistFolder      = $(RedistFolder)" />
-    <Message Importance="high" Text=" " />
-  </Target>
 
 </Project>

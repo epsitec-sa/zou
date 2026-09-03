@@ -11,7 +11,7 @@ Summary:
   # hook.zou.build.redist.props
 
 -->
-<Project InitialTargets="TraceAgentTargets"
+<Project InitialTargets="TraceAgentEpilog"
          TreatAsLocalProperty="TargetDir;OutputPath;IntermediateOutputPath">
 
   <!-- Ensure following properties are initialized for all zou agents -->
@@ -42,7 +42,7 @@ Summary:
 
   <Import Project="Redist.props" />
 
-  <Target Name="TraceAgentTargets" Condition="'$(ZouTrace)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
+  <Target Name="TraceAgentEpilog" Condition="'$(RedistDebug)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
     <Message Importance="high" Text="$(T0)$([MSBuild]::MakeRelative('$(BundleDir)', '$(MSBuildThisFileFullPath)')) ($(BundleRelativeProjectPath))$(NC)" />
 
     <Message Importance="high" Text="ZouAgentType             = $(ZouAgentType)" />
@@ -58,6 +58,13 @@ Summary:
     <Message Importance="high" Text="IntermediateOutputPath   = $(IntermediateOutputPath)" />
     <Message Importance="high" Text="ProjectRelativeTargetDir = $(ProjectRelativeTargetDir)" />
     <Message Importance="high" Text=" " />
+    
+    <!-- Redist.props -->
+    <Message Importance="high" Text="SkipCrossBuild    = $(SkipCrossBuild)" />
+    <Message Importance="high" Text="CrossBuild        = $(CrossBuild)" />
+    <Message Importance="high" Text="RedistByRuntime   = $(RedistByRuntime)" />
+    <Message Importance="high" Text="RedistByFramework = $(RedistByFramework)" />
+    <Message Importance="high" Text="RedistFolder      = $(RedistFolder)" />
+    <Message Importance="high" Text=" " />
   </Target>
-
 </Project>

@@ -10,11 +10,11 @@ Outputs
   RuntimePlatform
   ForwardPlatform
 -->
-<Project InitialTargets="TraceBootPlatform;BootPlatformCheck" 
+<Project InitialTargets="BootPlatformCheck" 
          TreatAsLocalProperty="Platform;RuntimePlatform">
 
   <PropertyGroup>
-    <Platforms>AnyCPU;x86;x64</Platforms>
+    <Platforms>AnyCPU;x86;x64;arm64</Platforms>
     
     <DebugBootPlatform>Platform='$(Platform)', RuntimeIdentifier='$(RuntimeIdentifier)'</DebugBootPlatform>
   </PropertyGroup>
@@ -38,9 +38,17 @@ Outputs
             <ForwardPlatform>x64</ForwardPlatform>
           </PropertyGroup>
         </When>
-        <Otherwise>
+        <When Condition="$(RuntimeIdentifier.EndsWith('arm64'))">
           <PropertyGroup>
             <DebugBootPlatform>1.3 $(DebugBootPlatform)</DebugBootPlatform>
+            <Platform       >arm64</Platform>
+            <RuntimePlatform>arm64</RuntimePlatform>
+            <ForwardPlatform>arm64</ForwardPlatform>
+          </PropertyGroup>
+        </When>
+        <Otherwise>
+          <PropertyGroup>
+            <DebugBootPlatform>1.4 $(DebugBootPlatform)</DebugBootPlatform>
           </PropertyGroup>
         </Otherwise>
       </Choose>
@@ -52,21 +60,28 @@ Outputs
         <ForwardPlatform>$(Platform)</ForwardPlatform>
       </PropertyGroup>
     </When>
-    <When Condition="'$(Platform)' == 'Win32'">
+    <When Condition="'$(Platform)' == 'arm64'">
       <PropertyGroup>
         <DebugBootPlatform>3 $(DebugBootPlatform)</DebugBootPlatform>
+        <RuntimePlatform>$(Platform)</RuntimePlatform>
+        <ForwardPlatform>$(Platform)</ForwardPlatform>
+      </PropertyGroup>
+    </When>
+    <When Condition="'$(Platform)' == 'Win32'">
+      <PropertyGroup>
+        <DebugBootPlatform>4 $(DebugBootPlatform)</DebugBootPlatform>
         <RuntimePlatform>x86</RuntimePlatform>
         <ForwardPlatform>x86</ForwardPlatform>
       </PropertyGroup>
     </When>
     <When Condition="'$(Platform)' == 'AnyCPU' Or '$(Platform)' == 'Any CPU'">
       <PropertyGroup>
-        <DebugBootPlatform>4 $(DebugBootPlatform)</DebugBootPlatform>
+        <DebugBootPlatform>5 $(DebugBootPlatform)</DebugBootPlatform>
       </PropertyGroup>
     </When>
     <Otherwise>
       <PropertyGroup>
-        <DebugBootPlatform>5 $(DebugBootPlatform)</DebugBootPlatform>
+        <DebugBootPlatform>6 $(DebugBootPlatform)</DebugBootPlatform>
         <Platform       >x64</Platform>
         <RuntimePlatform>x64</RuntimePlatform>
       </PropertyGroup>
@@ -77,21 +92,9 @@ Outputs
     <PropertyGroup>
       <ErrorMessage>"Platform ($(ForwardPlatform)) and RuntimePlatform ($(RuntimePlatform)) are not compatibles"</ErrorMessage>
     </PropertyGroup>
+    <Error Text="$(ErrorMessage)" Condition="('$(ForwardPlatform)' == 'arm64') And '$(RuntimePlatform)' != 'arm64'" />
     <Error Text="$(ErrorMessage)" Condition="('$(ForwardPlatform)' == 'Win32' Or '$(ForwardPlatform)' == 'x86') And '$(RuntimePlatform)' != 'x86'" />
     <Error Text="$(ErrorMessage)" Condition="('$(ForwardPlatform)' == ''      Or '$(ForwardPlatform)' == 'x64') And '$(RuntimePlatform)' != 'x64'" />
-  </Target>
-
-  <Target Name="TraceBootPlatform" Condition="'$(ZouTrace)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
-    <Message Importance="high" Text="$(T0)$([MSBuild]::MakeRelative('$(BundleDir)', '$(MSBuildThisFileFullPath)')) ($(BundleRelativeProjectPath))$(NC)" />
-
-    <Message Importance="high" Text="DebugBootPlatform  = $(DebugBootPlatform)" />
-    <Message Importance="high" Text="ZouAgentType       = $(ZouAgentType)" />
-    <Message Importance="high" Text=" " />
-    <Message Importance="high" Text="Platform           = $(Platform)" />
-    <Message Importance="high" Text="RuntimePlatform    = $(RuntimePlatform)" />
-    <Message Importance="high" Text="ForwardPlatform    = $(ForwardPlatform)" />
-    <Message Importance="high" Text="RuntimeIdentifier  = $(RuntimeIdentifier)"/>
-    <Message Importance="high" Text=" " />
   </Target>
 
 </Project>
