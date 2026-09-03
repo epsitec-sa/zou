@@ -135,23 +135,45 @@ Outputs:
   </Target>
 
   <Target Name="RedistImportProjectUpdateTarget" DependsOnTargets="RedistImportProjectTransformLayout;RedistImportProjectInit" BeforeTargets="CreateMSBuildProjects">
-    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] RedistImportProjectUpdateTarget" />
+    <Message Condition="'$(RedistDebug)' == 'true'" Importance="high" Text="$(T0)[$(MSBuildProjectFile)] RedistImportProjectUpdateTarget$(NC)" />
+    
+    <LogItems Condition="$(RedistDebug)" Items="@(ImportProject)" Title="RedistUpdateTarget.ImportProject.INP" />
+    <Message  Condition="$(RedistDebug)" Importance="high" Text=" " />
+    
     <ItemGroup>
       <ImportProject>
         <!-- if (Targets.Contains(Publish)) use Publish target -->
         <_UseBuildTarget Condition="$([System.String]::new('%(ImportProject.Targets)').IndexOf('Publish', StringComparison.OrdinalIgnoreCase)) >= 0">false</_UseBuildTarget>
+        <_UseBuildTargetDbg Condition="$(RedistDebug) And $([System.String]::new('%(ImportProject.Targets)').IndexOf('Publish', StringComparison.OrdinalIgnoreCase)) >= 0">1</_UseBuildTargetDbg>
       </ImportProject>
       <ImportProject>
         <!-- else if (Targets is not empty) use Build target -->
         <_UseBuildTarget Condition="'%(ImportProject._UseBuildTarget)' == '' And '%(ImportProject.Targets)' != ''">true</_UseBuildTarget>
+        <_UseBuildTargetDbg Condition="$(RedistDebug) And '%(ImportProject._UseBuildTarget)' == '' And '%(ImportProject.Targets)' != ''">2</_UseBuildTargetDbg>
       </ImportProject>
       <ImportProject>
-        <!-- else if (Debug or TargetFramework is empty or Full) use Build target  -->
-        <_UseBuildTarget Condition="'%(ImportProject._UseBuildTarget)' == '' And ( $(Configuration.StartsWith('Debug', StringComparison.OrdinalIgnoreCase)) Or '%(ImportProject.TargetFramework)' == '' Or '%(ImportProject.TargetFramework)' == '$(FullTargetFramework)' )">true</_UseBuildTarget>
+        <!-- else if (Debug or ZouTargetFramework is empty or Full) use Build target  -->
+        <_UseBuildTarget Condition="
+                         '%(ImportProject._UseBuildTarget)' == ''
+                         And
+                         ( $(Configuration.StartsWith('Debug', StringComparison.OrdinalIgnoreCase))
+                         Or '%(ImportProject.ZouTargetFramework)' == ''
+                         Or '%(ImportProject.ZouTargetFramework)' == '$(FullTargetFramework)' )">true</_UseBuildTarget>
+        <_UseBuildTargetDbg Condition="$(RedistDebug) And
+                            '%(ImportProject._UseBuildTarget)' == ''
+                            And
+                            ( $(Configuration.StartsWith('Debug', StringComparison.OrdinalIgnoreCase))
+                            Or '%(ImportProject.ZouTargetFramework)' == ''
+                            Or '%(ImportProject.ZouTargetFramework)' == '$(FullTargetFramework)' )">3</_UseBuildTargetDbg>
+        <_UseBuildTargetCond1 Condition="$(RedistDebug) And '%(ImportProject._UseBuildTarget)' == ''">true</_UseBuildTargetCond1>
+        <_UseBuildTargetCond2 Condition="$(RedistDebug) And $(Configuration.StartsWith('Debug', StringComparison.OrdinalIgnoreCase))">true</_UseBuildTargetCond2>
+        <_UseBuildTargetCond3 Condition="$(RedistDebug) And '%(ImportProject.ZouTargetFramework)' == ''">true</_UseBuildTargetCond3>
+        <_UseBuildTargetCond4 Condition="$(RedistDebug) And '%(ImportProject.ZouTargetFramework)' == '$(FullTargetFramework)'">true</_UseBuildTargetCond4>
       </ImportProject>
       <ImportProject>
         <!-- else use Publish target -->
         <_UseBuildTarget Condition="'%(ImportProject._UseBuildTarget)' == ''">false</_UseBuildTarget>
+        <_UseBuildTargetDbg Condition="$(RedistDebug) And '%(ImportProject._UseBuildTarget)' == ''">4</_UseBuildTargetDbg>
       </ImportProject>
 
       <!-- Set Targets default -->
@@ -176,11 +198,11 @@ Outputs:
       </ImportProject>
 
       <!-- Remove temporary metadata -->
-      <ImportProject RemoveMetadata="_UseBuildTarget" />
+      <ImportProject RemoveMetadata="_UseBuildTarget" Condition="!$(RedistDebug)" />
     </ItemGroup>
 
-    <!--<LogItems Condition="$(RedistDebug)" Items="@(ImportProject)" Title="RedistUpdateTarget.ImportProject" />
-    <Message  Condition="$(RedistDebug)" Importance="high" Text=" " />-->
+    <LogItems Condition="$(RedistDebug)" Items="@(ImportProject)" Title="RedistUpdateTarget.ImportProject.OUT" />
+    <Message  Condition="$(RedistDebug)" Importance="high" Text=" " />
   </Target>
 
 </Project>
