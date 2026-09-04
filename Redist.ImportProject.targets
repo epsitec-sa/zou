@@ -142,38 +142,13 @@ Outputs:
     
     <ItemGroup>
       <ImportProject>
-        <!-- if (Targets.Contains(Publish)) use Publish target -->
-        <_UseBuildTarget Condition="$([System.String]::new('%(ImportProject.Targets)').IndexOf('Publish', StringComparison.OrdinalIgnoreCase)) >= 0">false</_UseBuildTarget>
-        <_UseBuildTargetDbg Condition="$(RedistDebug) And $([System.String]::new('%(ImportProject.Targets)').IndexOf('Publish', StringComparison.OrdinalIgnoreCase)) >= 0">1</_UseBuildTargetDbg>
-      </ImportProject>
-      <ImportProject>
-        <!-- else if (Targets is not empty) use Build target -->
-        <_UseBuildTarget Condition="'%(ImportProject._UseBuildTarget)' == '' And '%(ImportProject.Targets)' != ''">true</_UseBuildTarget>
-        <_UseBuildTargetDbg Condition="$(RedistDebug) And '%(ImportProject._UseBuildTarget)' == '' And '%(ImportProject.Targets)' != ''">2</_UseBuildTargetDbg>
-      </ImportProject>
-      <ImportProject>
-        <!-- else if (Debug or ZouTargetFramework is empty or Full) use Build target  -->
-        <_UseBuildTarget Condition="
-                         '%(ImportProject._UseBuildTarget)' == ''
-                         And
-                         ( $(Configuration.StartsWith('Debug', StringComparison.OrdinalIgnoreCase))
-                         Or '%(ImportProject.ZouTargetFramework)' == ''
-                         Or '%(ImportProject.ZouTargetFramework)' == '$(FullTargetFramework)' )">true</_UseBuildTarget>
-        <_UseBuildTargetDbg Condition="$(RedistDebug) And
-                            '%(ImportProject._UseBuildTarget)' == ''
-                            And
-                            ( $(Configuration.StartsWith('Debug', StringComparison.OrdinalIgnoreCase))
-                            Or '%(ImportProject.ZouTargetFramework)' == ''
-                            Or '%(ImportProject.ZouTargetFramework)' == '$(FullTargetFramework)' )">3</_UseBuildTargetDbg>
-        <_UseBuildTargetCond1 Condition="$(RedistDebug) And '%(ImportProject._UseBuildTarget)' == ''">true</_UseBuildTargetCond1>
-        <_UseBuildTargetCond2 Condition="$(RedistDebug) And $(Configuration.StartsWith('Debug', StringComparison.OrdinalIgnoreCase))">true</_UseBuildTargetCond2>
-        <_UseBuildTargetCond3 Condition="$(RedistDebug) And '%(ImportProject.ZouTargetFramework)' == ''">true</_UseBuildTargetCond3>
-        <_UseBuildTargetCond4 Condition="$(RedistDebug) And '%(ImportProject.ZouTargetFramework)' == '$(FullTargetFramework)'">true</_UseBuildTargetCond4>
+        <_ZouAgentType>$(ZouAgentType)</_ZouAgentType>
+        <!-- If zou agent is CppAgent, use Build target -->
+        <_UseBuildTarget Condition="'$(ZouAgentType)' == 'Cpp'">true</_UseBuildTarget>
       </ImportProject>
       <ImportProject>
         <!-- else use Publish target -->
         <_UseBuildTarget Condition="'%(ImportProject._UseBuildTarget)' == ''">false</_UseBuildTarget>
-        <_UseBuildTargetDbg Condition="$(RedistDebug) And '%(ImportProject._UseBuildTarget)' == ''">4</_UseBuildTargetDbg>
       </ImportProject>
 
       <!-- Set Targets default -->
