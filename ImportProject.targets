@@ -22,8 +22,9 @@
       <MaxCpuCount      >$(MaxCpuCount)</MaxCpuCount>
 
       <!-- Layout -->
+      <AsmDir Condition="'$(ZouAgentType)' == 'Cpp'">$(AsmDir)</AsmDir>
+      
       <WorkDir          >$(WorkDir)</WorkDir>
-      <AsmDir           >$(AsmDir)</AsmDir>
       <OutDir           >$(OutDir)</OutDir>
       <PublishDir       >$(PublishDir)</PublishDir>
       <PublishUrl       >$(PublishUrl)</PublishUrl>
@@ -35,19 +36,20 @@
       <Configuration    >$(Configuration)</Configuration>
       <Platform         >$(Platform)</Platform>
       <PlatformToolset  >$(PlatformToolset)</PlatformToolset>
-      <RuntimeIdentifier>$(RuntimeIdentifier)</RuntimeIdentifier>
 
       <Sign        Condition="'$(Sign)'        != ''">$(Sign)</Sign>
-      <TfmDebug    Condition="'$(TfmDebug)'    != ''">$(TfmDebug)</TfmDebug>
       <RedistDebug Condition="'$(RedistDebug)' != ''">$(RedistDebug)</RedistDebug>
       <ZouDebug    Condition="'$(ZouDebug)'    != ''">$(ZouDebug)</ZouDebug>
 
-      <ZouTargetFramework>$(ZouTargetFramework)</ZouTargetFramework>
-      <ZouTargetFrameworks>$(ZouTargetFrameworks)</ZouTargetFrameworks>
-      <CoreTargetFramework>$(CoreTargetFramework)</CoreTargetFramework>
-      <FullTargetFramework>$(FullTargetFramework)</FullTargetFramework>
-      <WineTargetFramework>$(WineTargetFramework)</WineTargetFramework>
-      <WindowsTargetFramework>$(WindowsTargetFramework)</WindowsTargetFramework>
+      <!-- CSharp only -->
+      <TfmDebug               Condition="'$(ZouAgentType)' == 'CSharp' And '$(TfmDebug)'               != ''">$(TfmDebug)</TfmDebug>
+      <RuntimeIdentifier      Condition="'$(ZouAgentType)' == 'CSharp' And '$(RuntimeIdentifier)'      != ''">$(RuntimeIdentifier)</RuntimeIdentifier>
+      <ZouTargetFramework     Condition="'$(ZouAgentType)' == 'CSharp' And '$(ZouTargetFramework)'     != ''">$(ZouTargetFramework)</ZouTargetFramework>
+      <ZouTargetFrameworks    Condition="'$(ZouAgentType)' == 'CSharp' And '$(ZouTargetFrameworks)'    != ''">$(ZouTargetFrameworks)</ZouTargetFrameworks>
+      <CoreTargetFramework    Condition="'$(ZouAgentType)' == 'CSharp' And '$(CoreTargetFramework)'    != ''">$(CoreTargetFramework)</CoreTargetFramework>
+      <FullTargetFramework    Condition="'$(ZouAgentType)' == 'CSharp' And '$(FullTargetFramework)'    != ''">$(FullTargetFramework)</FullTargetFramework>
+      <WineTargetFramework    Condition="'$(ZouAgentType)' == 'CSharp' And '$(WineTargetFramework)'    != ''">$(WineTargetFramework)</WineTargetFramework>
+      <WindowsTargetFramework Condition="'$(ZouAgentType)' == 'CSharp' And '$(WindowsTargetFramework)' != ''">$(WindowsTargetFramework)</WindowsTargetFramework>
     </ImportProject>
   </ItemDefinitionGroup>
 
