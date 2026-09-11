@@ -292,8 +292,12 @@
   <Target Name="ZouWarnTfmOverride"
           Condition="'$(TargetFramework)' != '$(TargetFrameworkOut)' And '$(ZouAllowLegacyTfmOverride)' != 'true'"
           BeforeTargets="Build;Restore">
-    <Warning Text="'$(MSBuildProjectFile)': TargetFramework was overridden to '$(TargetFramework)' after zou's own resolution ('$(TargetFrameworkOut)'), most likely by a &lt;TargetFramework&gt; set directly in the .csproj. This silently bypasses -p:ZouTargetFramework, MultiTargeting, and ZouValidateTargetFramework for this project. If intentional, set ZouAllowLegacyTfmOverride=true in this project's zou.build.tfm.props to suppress this warning."
-             Code="$(WarnTfmOverrideIdCode)" />
+    <PropertyGroup>
+      <_WarnMsg1>TargetFramework was overridden to '$(TargetFramework)' after zou's own resolution ('$(TargetFrameworkOut)').</_WarnMsg1>
+      <_WarnMsg2>This is most likely due to a &lt;TargetFramework&gt; set directly in the .csproj.</_WarnMsg2>
+      <_WarnMsg3>Start $(Brown)zou tfm migrate$(Yellow) to update the project to use zou's resolution.</_WarnMsg3>
+    </PropertyGroup>
+    <Warning Text="'$(MSBuildProjectFile)': $(_WarnMsg1)%0A$(_WarnMsg2)%0A$(_WarnMsg3)" Code="$(WarnTfmOverrideIdCode)" />
   </Target>
 
   <Target Name="TraceTargetFrameworkBuildProps" Condition="'$(TfmDebug)' == 'true'" BeforeTargets="ZouValidateTargetFramework;ZouWarnTfmOverride">
