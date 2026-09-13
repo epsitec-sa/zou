@@ -1,0 +1,61 @@
+<!--
+
+in:
+- ElectronAppRedistFolder
+- Configuration
+- OutRoot
+- ZouOs
+- PublishUrl
+- RedistFolder
+- WelcomeCheckerFolder
+- PkgBinDir
+- PkgDbgDir
+
+out:
+- PublishDir    - redirected to {out-dir}\tmp\{configuration}\
+- PackSourceDir - redirected to {publish-url}\{redist-folder}\{os-unpacked-folder}\
+- PkgBinDir     - redirected to $(PkgBinDir)\{redist-folder}
+- PkgDbgDir     - redirected to $(PkgDbgDir)\{redist-folder}
+
+-->
+
+<Project TreatAsLocalProperty="PublishDir;PackSourceDir;PkgBinDir;PkgDbgDir;ElectronAppRedistFolder"
+         InitialTargets="TraceZouElectronRedistProps">
+  <!--
+  Electron.NET outputs:
+  - PublishDir -> where Electron.NET publishes the intermediate outputs (unzipped app, bin, node_modules, ...)
+  - PublishUrl -> where Electron.NET publishes the final package (installer, .exe, AppImage, ...)
+  -->
+  <PropertyGroup>
+    <!-- Redirect Electron.NET unzipped outputs so that packing does not interfere with intermediate outputs -->
+    <PublishDir>$(OutRoot)tmp\$(Configuration)\</PublishDir>
+
+    <!-- Determine the OS-specific unpacked folder and adjusts packing source -->
+    <_OSUnpackedFolder>$(ZouOs)-unpacked</_OSUnpackedFolder>
+    <_OSUnpackedFolder Condition="$([MSBuild]::IsOsPlatform('OSX'))">mac</_OSUnpackedFolder>
+    <_RedistFolder>$([System.IO.Path]::Combine('$(RedistFolder)', '$(ElectronAppRedistFolder)'))</_RedistFolder>
+    <PackSourceDir>$(PublishUrl)$(_RedistFolder)\$(_OSUnpackedFolder)\</PackSourceDir>
+
+    <!-- Redirect packaging output to the redistributable folder -->
+    <PkgBinDir>$(PkgBinDir)$(_RedistFolder)\</PkgBinDir>
+    <PkgDbgDir>$(PkgDbgDir)$(_RedistFolder)\</PkgDbgDir>
+  </PropertyGroup>
+
+  <Target Name="TraceZouElectronRedistProps" Condition="'$(RedistDebug)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
+    <Message Importance="high" Text="$(T0)$(MSBuildThisFile) ($(MSBuildProjectFile))$(NC)" />
+    <Message Importance="high" Text="ElectronAppRedistFolder = $(ElectronAppRedistFolder)" />
+    <Message Importance="high" Text=" " />
+    <Message Importance="high" Text="_OSUnpackedFolder = $(_OSUnpackedFolder)" />
+    <Message Importance="high" Text="_RedistFolder     = $(_RedistFolder)" />
+    <Message Importance="high" Text="RedistFolder      = $(RedistFolder)" />
+    <Message Importance="high" Text=" " />
+    <Message Importance="high" Text="PackSourceDir     = $(PackSourceDir)" />
+    <Message Importance="high" Text="PublishDir        = $(PublishDir)" />
+    <Message Importance="high" Text="PublishUrl        = $(PublishUrl)" />
+    <Message Importance="high" Text="PkgBinDir         = $(PkgBinDir)" />
+    <Message Importance="high" Text="PkgDbgDir         = $(PkgDbgDir)" />
+    <Message Importance="high" Text="RuntimePkgBinDir  = $(RuntimePkgBinDir)" />
+    <Message Importance="high" Text="RuntimePkgDbgDir  = $(RuntimePkgDbgDir)" />
+    <Message Importance="high" Text=" " />
+  </Target>
+</Project>
