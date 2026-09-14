@@ -455,65 +455,11 @@ Lock files can be updated by using the '——force-evaluate' option.
   and then removed or updated below.
   -->
 
-  <!-- CpmTFM <= net9 -->
-  <ItemGroup Condition="'$(CpmVer)' &lt;= '9'">
+  <!-- CpmTFM <= net10 -->
+  <ItemGroup Condition="'$(CpmVer)' &lt;= '10'">
     <PackageVersion Remove="Epsitec.Briefcases.Identity" /> <!-- net 10 ONLY -->
     <PackageVersion Remove="Epsitec.Briefcases.Sdk" />      <!-- net 10 ONLY -->
     <PackageVersion Remove="Epsitec.Passport.Shared" />     <!-- net 10 ONLY-->
-  </ItemGroup>
-
-  <!-- CpmTFM == net9 -->
-  <ItemGroup Condition="'$(CpmVer)' == '9'">
-    <!-- Downgrade Microsoft.CodeAnalysis to 5.3 (last version that supports .NET 9) -->
-    <PackageVersion Update="Microsoft.CodeAnalysis"                                   Version="5.3.*" />            <!-- netstandard -->
-    <PackageVersion Update="Microsoft.CodeAnalysis.Common"                            Version="5.3.*" />            <!-- netstandard, net8, net9, net10 -->
-    <PackageVersion Update="Microsoft.CodeAnalysis.CSharp"                            Version="5.3.*" />            <!-- netstandard, net8, net9, net10 -->
-    <PackageVersion Update="Microsoft.CodeAnalysis.CSharp.Features"                   Version="5.3.*" />            <!-- netstandard, net8, net9, net10 -->
-    <PackageVersion Update="Microsoft.CodeAnalysis.CSharp.Workspaces"                 Version="5.3.*" />            <!-- netstandard, net8, net9, net10 -->
-    <PackageVersion Update="Microsoft.CodeAnalysis.Features"                          Version="5.3.*" />            <!-- netstandard, net8, net9, net10 -->
-    <PackageVersion Update="Microsoft.CodeAnalysis.Scripting.Common"                  Version="5.3.*" />            <!-- netstandard, net8, net9, net10 -->
-    <PackageVersion Update="Microsoft.CodeAnalysis.VisualBasic.Workspaces"            Version="5.3.*" />            <!-- netstandard, net8, net9, net10 -->
-    <PackageVersion Update="Microsoft.CodeAnalysis.Workspaces.Common"                 Version="5.3.*" />            <!-- netstandard, net8, net9, net10 -->
-    <PackageVersion Update="Microsoft.CodeAnalysis.Workspaces.MSBuild"                Version="5.3.*" />            <!-- net8, net9, net10 -->
-  </ItemGroup>
-
-  <!-- CpmTFM >= net9.0 -->
-  <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(CpmTFM)', 'net9.0'))">
-    <PackageVersion Update="Microsoft.AspNetCore.Authentication.JwtBearer"            Version="9.0.*" />            <!-- net9 -->
-    <PackageVersion Update="Microsoft.AspNetCore.Components"                          Version="9.0.*" />            <!-- net9 -->
-    <PackageVersion Update="Microsoft.AspNetCore.Components.Authorization"            Version="9.0.*" />            <!-- net9 -->
-    <PackageVersion Update="Microsoft.AspNetCore.Components.Forms"                    Version="9.0.*" />            <!-- net9 -->
-    <PackageVersion Update="Microsoft.AspNetCore.Components.Web"                      Version="9.0.*" />            <!-- net9 -->
-    <PackageVersion Update="Microsoft.AspNetCore.Components.WebAssembly"              Version="9.0.*" />            <!-- net9 -->
-    <PackageVersion Update="Microsoft.AspNetCore.Components.WebAssembly.DevServer"    Version="9.0.*" />            <!-- net9 -->
-    <PackageVersion Update="Microsoft.AspNetCore.Components.WebAssembly.Server"       Version="9.0.*" />            <!-- net9 -->
-    <PackageVersion Update="Microsoft.AspNetCore.Http.Connections.Client"             Version="9.0.*" />            <!-- netstandard, net9 -->
-    <PackageVersion Update="Microsoft.AspNetCore.Http.Connections.Common"             Version="9.0.*" />            <!-- netstandard, net9 -->
-    <PackageVersion Update="Microsoft.AspNetCore.Mvc.Testing"                         Version="9.0.*" />            <!-- net9 -->
-    <PackageVersion Update="Microsoft.AspNetCore.Mvc.NewtonsoftJson"                  Version="9.0.*" />            <!-- net9 -->
-    <PackageVersion Update="Microsoft.AspNetCore.OpenApi"                             Version="9.0.*" />            <!-- net9 -->
-    <PackageVersion Update="Microsoft.AspNetCore.SignalR.Client"                      Version="9.0.*" />            <!-- netstandard, net9 -->
-    <PackageVersion Update="Microsoft.AspNetCore.SignalR.Protocols.Json"              Version="9.0.*" />            <!-- netstandard, net9 -->
-    <PackageVersion Update="Microsoft.AspNetCore.SignalR.Protocols.NewtonsoftJson"    Version="9.0.*" />            <!-- netstandard, net9 -->
-    <PackageVersion Update="Microsoft.AspNetCore.TestHost"                            Version="9.0.*" />            <!-- net9 -->
-    <PackageVersion Update="Microsoft.AspNetCore.WebUtilities"                        Version="9.0.*" />            <!-- net9 -->
-
-    <PackageVersion Update="Microsoft.Build"                                          Version="17.14.*" />          <!-- net9 -->
-    <PackageVersion Update="Microsoft.Build.Framework"                                Version="17.14.*" />          <!-- netstandard, net9 -->
-    <PackageVersion Update="Microsoft.Build.Tasks.Core"                               Version="17.14.*" />          <!-- netstandard, net9 -->
-    <PackageVersion Update="Microsoft.Build.Utilities.Core"                           Version="17.14.*" />          <!-- netstandard, net9 -->
-
-    <PackageVersion Update="Microsoft.Extensions.FileProviders.Embedded"              Version="9.0.*" />            <!-- netstandard, net9 -->
-    <PackageVersion Update="Microsoft.Extensions.Localization"                        Version="9.0.*" />            <!-- netstandard, net9 -->
-    <PackageVersion Update="Microsoft.Extensions.Localization.Abstractions"           Version="9.0.*" />            <!-- netstandard, net9 -->
-    <PackageVersion Update="Microsoft.Extensions.ObjectPool"                          Version="9.0.*" />            <!-- netstandard, net9 -->
-
-    <PackageVersion Update="Microsoft.JSInterop"                                      Version="9.0.*" />            <!-- net9 -->
-    <PackageVersion Update="Microsoft.VisualStudio.Web.CodeGeneration.Design"         Version="9.0.*" />            <!-- net9 -->
-
-    <PackageVersion Update="MudBlazor.ThemeManager"                                   Version="4.0.*" />            <!-- net9, net10 -->
-    <PackageVersion Update="NSec.Cryptography"                                        Version="26.4.*" />           <!-- net9 -->
-    <PackageVersion Update="Neo.Cryptography.BLS12_381"                               Version="3.8.*" />            <!-- netstandard, net9 -->
   </ItemGroup>
 
   <!-- CpmTFM >= net10.0 || CpmFull (TFM <= net4.8) -->
