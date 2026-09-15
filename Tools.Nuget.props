@@ -8,9 +8,11 @@
     <ZouChickenDir>$([System.IO.Path]::GetFullPath('$(BundleDir)..\zou.chicken\'))</ZouChickenDir>
   </PropertyGroup>
 
-  <Target Name="ZouSetupNuget" Condition="'$(ZouEnableCppNuGetConfig)' == 'true' And Exists('$(NugetPackagesDir)')" BeforeTargets="ResolveReferences"
+  <Target Name="ZouSetupNuget" 
+          BeforeTargets="ResolveReferences"
           Inputs="$(ZouDir).Templates$(V)nuget$(V)NuGet.config"
           Outputs="$(BundleDir)NuGet.config">
+    <MakeDir Directories="$(NugetPackagesDir)" Condition="!Exists('$(NugetPackagesDir)')" />
     <Copy SourceFiles="$(ZouDir).Templates$(V)nuget$(V)NuGet.config" DestinationFiles="$(BundleDir)NuGet.config" />
   </Target>
 
