@@ -21,18 +21,11 @@
     <FullTargetFramework Condition="'$(_ZouTfmFull)' == 'true'">$(BareTargetFramework)</FullTargetFramework>
   </PropertyGroup>
 
-  <PropertyGroup>
-    <CoreTargetFramework     Condition="'$(CoreTargetFramework)'     == ''">net10.0</CoreTargetFramework>
-    <FullTargetFramework     Condition="'$(FullTargetFramework)'     == ''">net4.8</FullTargetFramework>
-    <WineTargetFramework     Condition="'$(WineTargetFramework)'     == ''">netcoreapp3.1</WineTargetFramework>
-    <WindowsTargetFramework  Condition="'$(WindowsTargetFramework)'  == ''">$(CoreTargetFramework)-windows</WindowsTargetFramework>
-    <BrowserTargetFramework  Condition="'$(BrowserTargetFramework)'  == ''">$(CoreTargetFramework)-browser</BrowserTargetFramework>
-  </PropertyGroup>
-
   <!-- Choose the order of target frameworks based on UseLatestTfm -->
   <Choose>
     <When Condition="'$(UseLatestTfm)' == 'true'">
       <PropertyGroup>
+        <CoreTargetFramework     Condition="'$(CoreTargetFramework)'     == ''">net10.0</CoreTargetFramework>
         <CoreTargetFrameworks    Condition="'$(CoreTargetFrameworks)'    == ''">net10.0;net8.0</CoreTargetFrameworks>
         <WindowsTargetFrameworks Condition="'$(WindowsTargetFrameworks)' == ''">net10.0-windows;net8.0-windows</WindowsTargetFrameworks>
         <BrowserTargetFrameworks Condition="'$(BrowserTargetFrameworks)' == ''">net10.0-browser;net8.0-browser</BrowserTargetFrameworks>
@@ -41,6 +34,7 @@
     </When>
     <Otherwise>
       <PropertyGroup>
+        <CoreTargetFramework     Condition="'$(CoreTargetFramework)'     == ''">net8.0</CoreTargetFramework>
         <CoreTargetFrameworks    Condition="'$(CoreTargetFrameworks)'    == ''">net8.0;net10.0</CoreTargetFrameworks>
         <WindowsTargetFrameworks Condition="'$(WindowsTargetFrameworks)' == ''">net8.0-windows;net10.0-windows</WindowsTargetFrameworks>
         <BrowserTargetFrameworks Condition="'$(BrowserTargetFrameworks)' == ''">net8.0-browser;net10.0-browser</BrowserTargetFrameworks>
@@ -49,12 +43,20 @@
     </Otherwise>
   </Choose>
 
+  <PropertyGroup>
+    <FullTargetFramework     Condition="'$(FullTargetFramework)'     == ''">net4.8</FullTargetFramework>
+    <WineTargetFramework     Condition="'$(WineTargetFramework)'     == ''">netcoreapp3.1</WineTargetFramework>
+    <WindowsTargetFramework  Condition="'$(WindowsTargetFramework)'  == ''">$(CoreTargetFramework)-windows</WindowsTargetFramework>
+    <BrowserTargetFramework  Condition="'$(BrowserTargetFramework)'  == ''">$(CoreTargetFramework)-browser</BrowserTargetFramework>
+  </PropertyGroup>
+
   <!-- Start the TFM babouchka -->
   <Import Project="hook.zou.build.tfm.props" Condition="'$(ZouBuildTfmProps)' == ''"/>
 
   <Target Name="TraceTargetFrameworkProps" Condition="'$(TfmDefDebug)' == 'true'">
     <Message Importance="high" Text="$(T0)$([MSBuild]::MakeRelative('$(BundleDir)', '$(MSBuildThisFileFullPath)')) ($(BundleRelativeProjectPath))$(NC)" />
 
+    <Message Importance="high" Text="UseLatestTfm            = $(UseLatestTfm)" />
     <Message Importance="high" Text="_ZouTfmVer              = $(_ZouTfmVer)" />
     <Message Importance="high" Text="_ZouTfmFull             = $(_ZouTfmFull)" />
     <Message Importance="high" Text="BareTargetFramework     = $(BareTargetFramework)" />
