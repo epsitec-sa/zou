@@ -7,18 +7,18 @@
   <!--
   CoreTargetFramework backward compatibility:
   When CoreTargetFramework is specified, either on the CLI or in the root Directory.Build.props
-  we will use it as the ZouTargetFramework, which is the new property name for the target framework control.
+  we will use it as the BareTargetFramework, which is the new property name for the target framework control.
   -->
-  <PropertyGroup Condition="'$(CoreTargetFramework)' != '' And '$(ZouTargetFramework)' == '' And '$(MultiTargeting)' != 'true'">
-    <ZouTargetFramework>$(CoreTargetFramework)</ZouTargetFramework>
+  <PropertyGroup Condition="'$(CoreTargetFramework)' != '' And '$(BareTargetFramework)' == '' And '$(MultiTargeting)' != 'true'">
+    <BareTargetFramework>$(CoreTargetFramework)</BareTargetFramework>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(ZouTargetFramework)' != ''">
-    <_ZouTfmVer>$([MSBuild]::GetTargetFrameworkVersion('$(ZouTargetFramework)', 1))</_ZouTfmVer>
+  <PropertyGroup Condition="'$(BareTargetFramework)' != ''">
+    <_ZouTfmVer>$([MSBuild]::GetTargetFrameworkVersion('$(BareTargetFramework)', 1))</_ZouTfmVer>
     <_ZouTfmFull Condition="'$(_ZouTfmVer)' &lt;= '4.8'">true</_ZouTfmFull>
     <_ZouTfmFull Condition="'$(_ZouTfmFull)' == ''">false</_ZouTfmFull>
-    <CoreTargetFramework Condition="'$(_ZouTfmFull)' != 'true'">$(ZouTargetFramework)</CoreTargetFramework>
-    <FullTargetFramework Condition="'$(_ZouTfmFull)' == 'true'">$(ZouTargetFramework)</FullTargetFramework>
+    <CoreTargetFramework Condition="'$(_ZouTfmFull)' != 'true'">$(BareTargetFramework)</CoreTargetFramework>
+    <FullTargetFramework Condition="'$(_ZouTfmFull)' == 'true'">$(BareTargetFramework)</FullTargetFramework>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -57,11 +57,11 @@
 
     <Message Importance="high" Text="_ZouTfmVer              = $(_ZouTfmVer)" />
     <Message Importance="high" Text="_ZouTfmFull             = $(_ZouTfmFull)" />
-    <Message Importance="high" Text="ZouTargetFramework      = $(ZouTargetFramework)" />
+    <Message Importance="high" Text="BareTargetFramework     = $(BareTargetFramework)" />
     <Message Importance="high" Text="CoreTargetFramework     = $(CoreTargetFramework)" />
     <Message Importance="high" Text="FullTargetFramework     = $(FullTargetFramework)" />
     <Message Importance="high" Text="WindowsTargetFramework  = $(WindowsTargetFramework)" />
-    <Message Importance="high" Text="ZouTargetFrameworks     = $(ZouTargetFrameworks)" />
+    <Message Importance="high" Text="BareTargetFrameworks    = $(BareTargetFrameworks)" />
     <Message Importance="high" Text="CoreTargetFrameworks    = $(CoreTargetFrameworks)" />
     <Message Importance="high" Text="WindowsTargetFrameworks = $(WindowsTargetFrameworks)" />
     <Message Importance="high" Text="BrowserTargetFrameworks = $(BrowserTargetFrameworks)" />
