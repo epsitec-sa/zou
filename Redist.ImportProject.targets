@@ -62,14 +62,13 @@ Outputs:
       <!--
       Force 'msbuild' usage on Windows for:
         - solution
-        - C# projects with TargetFramework == (Full|Windows)TargetFramework
+        - C# projects with TargetFramework == FullTargetFramework
           Avoid errors like this one: MSB4803: The task "FormatUrl" is not supported on the .NET Core version of MSBuild. Please use the .NET Framework version of MSBuild
 
       See ImportProject.targets/ImportProjectInit for other conditions
       -->
       <ImportProject Condition="$([MSBuild]::IsOsPlatform(Windows))">
         <RuntimeType Condition="'%(ImportProject.Extension)' == '.csproj' And '%(ImportProject.TargetFramework)' == '$(FullTargetFramework)'">Full</RuntimeType>
-        <RuntimeType Condition="'%(ImportProject.Extension)' == '.csproj' And '%(ImportProject.TargetFramework)' == '$(WindowsTargetFramework)'">Full</RuntimeType>
       </ImportProject>
       <ImportProject>
         <!-- Use 'dotnet build' by default -->
