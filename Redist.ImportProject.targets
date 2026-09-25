@@ -59,19 +59,8 @@ Outputs:
         <RuntimeIdentifiers Condition="'%(ImportProject.RedistArm64Framework)' != ''">win-arm64</RuntimeIdentifiers>
       </ImportProject>
 
-      <!--
-      Force 'msbuild' usage on Windows for:
-        - solution
-        - C# projects with TargetFramework == FullTargetFramework
-          Avoid errors like this one: MSB4803: The task "FormatUrl" is not supported on the .NET Core version of MSBuild. Please use the .NET Framework version of MSBuild
-
-      See ImportProject.targets/ImportProjectInit for other conditions
-      -->
-      <ImportProject Condition="$([MSBuild]::IsOsPlatform(Windows))">
-        <RuntimeType Condition="'%(ImportProject.Extension)' == '.csproj' And '%(ImportProject.TargetFramework)' == '$(FullTargetFramework)'">Full</RuntimeType>
-      </ImportProject>
+      <!-- Use 'dotnet build' by default -->
       <ImportProject>
-        <!-- Use 'dotnet build' by default -->
         <RuntimeType Condition="'%(ImportProject.RuntimeType)' == ''">Core</RuntimeType>
       </ImportProject>
     </ItemGroup>
