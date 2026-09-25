@@ -40,7 +40,7 @@
 
       <Sign        Condition="'$(Sign)'        != ''">$(Sign)</Sign>
       <RedistDebug Condition="'$(RedistDebug)' != ''">$(RedistDebug)</RedistDebug>
-      <ZouDebug    Condition="'$(ZouDebug)'    != ''">$(ZouDebug)</ZouDebug>
+      <ImportDebug Condition="'$(ImportDebug)' != ''">$(ImportDebug)</ImportDebug>
 
       <!-- CSharp only -->
       <TfmDebug               Condition="'$(ZouAgentType)' == 'CSharp' And '$(TfmDebug)'               != ''">$(TfmDebug)</TfmDebug>
@@ -55,7 +55,7 @@
   </ItemDefinitionGroup>
 
   <Target Name="ImportProjectInit">
-    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="%24 [$(MSBuildProjectFile)] ImportProjectInit" />
+    <Message Condition="'$(ImportDebug)' == 'true'" Importance="high" Text="%24 [$(MSBuildProjectFile)] ImportProjectInit" />
 
     <ItemGroup>
       <!--
@@ -65,7 +65,6 @@
       
       Force 'msbuild' usage on Windows for:
         - C++ projects and solution
-        - C# projects with TargetFramework == (Full|Windows)TargetFramework (see Redist.ImportProject.targets/RedistImportProjectInit)
       -->
       <ImportProject Condition="$([MSBuild]::IsOsPlatform(Windows))">
         <RuntimeType Condition="'%(ImportProject.Extension)' == '.vcxproj' Or $([System.String]::Copy('%(ImportProject.Extension)').StartsWith('.sln'))">Full</RuntimeType>
@@ -98,12 +97,12 @@
         <Platform Condition="'%(ImportProject.Platform)' == '' And $([System.String]::new(%(ImportProject.RuntimeIdentifier)).EndsWith('arm64'))">arm64</Platform>
       </ImportProject>
     </ItemGroup>
-    <LogItems Condition="'$(ZouDebug)' == 'true'" Items="@(ImportProject)" Title="ImportProjectInit[2].ImportProject" />
-    <Message  Condition="'$(ZouDebug)' == 'true'" Importance="high"  Text=" " />
+    <LogItems Condition="'$(ImportDebug)' == 'true'" Items="@(ImportProject)" Title="ImportProjectInit[2].ImportProject" />
+    <Message  Condition="'$(ImportDebug)' == 'true'" Importance="high"  Text=" " />
   </Target>
 
   <Target Name="ImportProjectCrossBuild" DependsOnTargets="ImportProjectInit">
-    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="%24 [$(MSBuildProjectFile)] ImportProjectCrossBuild(CrossBuild=$(CrossBuild))" />
+    <Message Condition="'$(ImportDebug)' == 'true'" Importance="high" Text="%24 [$(MSBuildProjectFile)] ImportProjectCrossBuild(CrossBuild=$(CrossBuild))" />
 
     <!-- ImportFile x RuntimeOs (defined in Boot.Runtime.props ) -->
     <MulJoin Input="@(ImportProject)" Items="@(RuntimeOs)" ItemName="RuntimeOs" >
@@ -124,14 +123,14 @@
       </ImportProject>
     </ItemGroup>
 
-    <LogItems Condition="'$(ZouDebug)' == 'true'" Items="@(ImportProject)" Title="ImportProjectCrossBuild.ImportProject" />
-    <Message  Condition="'$(ZouDebug)' == 'true'" Importance="high"  Text=" " />
+    <LogItems Condition="'$(ImportDebug)' == 'true'" Items="@(ImportProject)" Title="ImportProjectCrossBuild.ImportProject" />
+    <Message  Condition="'$(ImportDebug)' == 'true'" Importance="high"  Text=" " />
   </Target>
 
   <!-- ================ MSBuildProject ================ -->
 
   <Target Name="CreateMSBuildProjects" DependsOnTargets="ImportProjectCrossBuild">
-    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="%24 [$(MSBuildProjectFile)] CreateMSBuildProjects" />
+    <Message Condition="'$(ImportDebug)' == 'true'" Importance="high" Text="%24 [$(MSBuildProjectFile)] CreateMSBuildProjects" />
 
     <!-- Preprocess build options and add a 'Properties' metadata -->
     <AddBuildOptions Projects="@(ImportProject)">
@@ -147,12 +146,12 @@
       </MSBuildProject>
     </ItemGroup>
 
-    <!--<LogItems Items="@(MSBuildProject)" Title="$(XC)CreateMSBuildProjects.MSBuildProject" />
-    <Message Importance="high" Text=" " />-->
+    <LogItems Condition="'$(ImportDebug)' == 'true'" Items="@(MSBuildProject)" Title="$(XC)CreateMSBuildProjects.MSBuildProject" />
+    <Message  Condition="'$(ImportDebug)' == 'true'" Importance="high" Text=" " />
   </Target>
 
   <Target Name="UpdateMSBuildProjects" DependsOnTargets="CreateMSBuildProjects">
-    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] UpdateMSBuildProjects" />
+    <Message Condition="'$(ImportDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] UpdateMSBuildProjects" />
 
     <ItemGroup>
       <MSBuildProject>
@@ -193,15 +192,15 @@
       </MSBuildProject>
     </ItemGroup>
 
-    <!--<LogItems Items="@(MSBuildProject)" Title="UpdateMSBuildProjects.MSBuildProject" AllMetadata="true"/>
-    <Message Importance="high" Text=" " />-->
+    <LogItems Condition="'$(ImportDebug)' == 'true'" Items="@(MSBuildProject)" Title="UpdateMSBuildProjects.MSBuildProject" AllMetadata="true"/>
+    <Message  Condition="'$(ImportDebug)' == 'true'" Importance="high" Text=" " />
   </Target>
 
   <!-- ================ ImportProjectClean ================ -->
 
   <!-- Target batching -->
   <Target Name="ImportProjectClean" Condition="@(ImportProject->Count()) > 0" DependsOnTargets="CreateMSBuildProjects" Returns="%(MSBuildProject.Identity)">
-    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] ImportProjectClean.Begin(MSBuildRuntimeType=$(MSBuildRuntimeType), TargetFrameworks=$(TargetFrameworks))" />
+    <Message Condition="'$(ImportDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] ImportProjectClean.Begin(MSBuildRuntimeType=$(MSBuildRuntimeType), TargetFrameworks=$(TargetFrameworks))" />
     
     <Message Condition="'%(RuntimeIdentifier)' == '' And '$(Platform)' == ''" Importance="high" Text="$(L2m)[$(Configuration)|custom] $(T3)%(MSBuildProject.BundleRelativeSrcDir)%(RecursiveDir)$(T2)%(FileName)%(Extension)$(XC)" />
     <Message Condition="'%(RuntimeIdentifier)' == '' And '$(Platform)' != ''" Importance="high" Text="$(L2m)[$(Configuration)|$(Platform)] $(T3)%(MSBuildProject.BundleRelativeSrcDir)%(RecursiveDir)$(T2)%(FileName)%(Extension)$(XC)" />
@@ -211,7 +210,7 @@
 
     <MSBuild Projects="%(MSBuildProject.Identity)" Targets="Clean" Properties="%(Properties)" ContinueOnError="WarnAndContinue" BuildInParallel="true" />
     
-    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] ImportProjectClean.End" />
+    <Message Condition="'$(ImportDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] ImportProjectClean.End" />
   </Target>
   
   <!-- ================ ImportProject ================ -->
@@ -221,7 +220,7 @@
       <CmdPrompt>$(Cyan)$(MSBuildProjectFile)$(Yellow) %24 $(XC)</CmdPrompt>
     </PropertyGroup>
 
-    <Message Condition="'$(ZouDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] ImportProject" />
+    <Message Condition="'$(ImportDebug)' == 'true'" Importance="high" Text="### [$(MSBuildProjectFile)] ImportProject" />
     <!-- Append RuntimeType and TargetFramework to MSBuildProject.Prefix -->
     <ItemGroup>
       <MSBuildProject>
