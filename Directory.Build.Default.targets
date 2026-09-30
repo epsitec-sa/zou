@@ -100,10 +100,6 @@
     <InternalsVisibleTo Include="$(MSBuildProjectName).Tests" />
   </ItemGroup>
 
-  <Target Name="DeleteProjectAssets" BeforeTargets="Clean" Condition="'$(BuildingInsideVisualStudio)' == ''">
-    <Delete Files="obj\project.assets.json" />
-  </Target>
-
   <Target Name="TraceDirectoryBuildDefaultTargets"
           Condition="'$(ZouTrace)' == 'true' Or '$(ZouDirectoryBuild)' == 'true'">
     <Message Importance="high" Text="$(T0)$([MSBuild]::MakeRelative('$(BundleDir)', '$(MSBuildThisFileFullPath)')) ($(BundleRelativeProjectPath))$(NC)" />
