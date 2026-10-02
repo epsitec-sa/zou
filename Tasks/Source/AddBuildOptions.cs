@@ -312,6 +312,7 @@ namespace Zou.Tasks
             { ".pssproj",     ProjectType.PowerShell  },
             { ".shproj",      ProjectType.Shared      },
             { ".sln",         ProjectType.Solution    },
+            { ".slnx",        ProjectType.Solution    },
             { ".sqlproj",     ProjectType.Sql         },
             { ".vbproj",      ProjectType.VisualBasic },
             { ".zouproj",     ProjectType.Zou         },
