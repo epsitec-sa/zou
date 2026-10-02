@@ -183,15 +183,23 @@
         <Options Condition="'%(MSBuildProject.Properties)' != ''">%(Options) %(MSBuildProject.PropertyOptions)</Options>
       </MSBuildProject>
 
+      <!-- Compute Prefix: [Release|win-x64|Core]  -->
       <MSBuildProject>
-        <Prefix Condition="'%(MSBuildProject.RuntimeIdentifier)' == '' And '$(Platform)' == ''">$(Configuration)|custom</Prefix>
-        <Prefix Condition="'%(MSBuildProject.RuntimeIdentifier)' == '' And '$(Platform)' != ''">$(Configuration)|$(Platform)</Prefix>
-        <Prefix Condition="'%(MSBuildProject.RuntimeIdentifier)' != ''"                        >$(Configuration)|%(RuntimeIdentifier)</Prefix>
+        <Prefix Condition="'%(MSBuildProject.Prefix)' == '' And '%(RuntimeIdentifier)' == '' And '$(Platform)' == ''" >$(Configuration)|custom</Prefix>
+      </MSBuildProject>
+      <MSBuildProject>
+        <Prefix Condition="'%(MSBuildProject.Prefix)' == '' And '%(RuntimeIdentifier)' == '' And '$(Platform)' != '' And '%(RuntimeOs)' != ''">$(Configuration)|%(RuntimeOs)-$(Platform)</Prefix>
+      </MSBuildProject>
+      <MSBuildProject>
+        <Prefix Condition="'%(MSBuildProject.Prefix)' == '' And '%(RuntimeIdentifier)' == '' And '$(Platform)' != ''" >$(Configuration)|$(Platform)</Prefix>
+      </MSBuildProject>
+      <MSBuildProject>
+        <Prefix Condition="'%(MSBuildProject.Prefix)' == '' And '%(RuntimeIdentifier)' != ''" >$(Configuration)|%(RuntimeIdentifier)</Prefix>
       </MSBuildProject>
     </ItemGroup>
 
-    <LogItems Condition="'$(ImportDebug)' == 'true'" Items="@(MSBuildProject)" Title="UpdateMSBuildProjects.MSBuildProject" AllMetadata="true"/>
-    <Message  Condition="'$(ImportDebug)' == 'true'" Importance="high" Text=" " />
+    <LogItems Condition="'$(ProjDebug)' == 'true'" Items="@(MSBuildProject)" Title="UpdateMSBuildProjects.MSBuildProject" AllMetadata="true"/>
+    <Message  Condition="'$(ProjDebug)' == 'true'" Importance="high" Text=" " />
   </Target>
 
   <!-- ================ ImportProjectClean ================ -->
@@ -222,10 +230,13 @@
     <!-- Append RuntimeType and TargetFramework to MSBuildProject.Prefix -->
     <ItemGroup>
       <MSBuildProject>
-        <Prefix Condition="'%(MSBuildProject.RuntimeType)' != ''">%(Prefix)|%(MSBuildProject.RuntimeType)</Prefix>
+        <Prefix Condition="'%(MSBuildProject.RuntimeType)' != '' And '$(TargetFramework)' == ''">%(Prefix)|%(MSBuildProject.RuntimeType)</Prefix>
       </MSBuildProject>
       <MSBuildProject>
-        <Prefix Condition="'%(MSBuildProject.BareTargetFramework)' != ''">%(Prefix)|%(MSBuildProject.BareTargetFramework)</Prefix>
+        <Prefix Condition="'%(MSBuildProject.Targets)' != '' And '$(TargetFramework)' != '' And '$(ZouAgentType)' == 'CSharp'">%(Prefix)|$(TargetFramework)</Prefix>
+      </MSBuildProject>
+      <MSBuildProject>
+        <Prefix Condition="'$(ZouAgentType)' == 'Go'">%(Prefix)|go</Prefix>
       </MSBuildProject>
     </ItemGroup>
 
