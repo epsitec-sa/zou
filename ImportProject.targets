@@ -43,14 +43,12 @@
       <ImportDebug Condition="'$(ImportDebug)' != ''">$(ImportDebug)</ImportDebug>
 
       <!-- CSharp only -->
-      <TfmDebug               Condition="'$(ZouAgentType)' == 'CSharp' And '$(TfmDebug)'               != ''">$(TfmDebug)</TfmDebug>
-      <RuntimeIdentifier      Condition="'$(ZouAgentType)' == 'CSharp' And '$(RuntimeIdentifier)'      != ''">$(RuntimeIdentifier)</RuntimeIdentifier>
-      <BareTargetFramework    Condition="'$(ZouAgentType)' == 'CSharp' And '$(BareTargetFramework)'    != ''">$(BareTargetFramework)</BareTargetFramework>
-      <BareTargetFrameworks   Condition="'$(ZouAgentType)' == 'CSharp' And '$(BareTargetFrameworks)'   != ''">$(BareTargetFrameworks)</BareTargetFrameworks>
-      <CoreTargetFramework    Condition="'$(ZouAgentType)' == 'CSharp' And '$(CoreTargetFramework)'    != ''">$(CoreTargetFramework)</CoreTargetFramework>
-      <FullTargetFramework    Condition="'$(ZouAgentType)' == 'CSharp' And '$(FullTargetFramework)'    != ''">$(FullTargetFramework)</FullTargetFramework>
-      <WineTargetFramework    Condition="'$(ZouAgentType)' == 'CSharp' And '$(WineTargetFramework)'    != ''">$(WineTargetFramework)</WineTargetFramework>
-      <WindowsTargetFramework Condition="'$(ZouAgentType)' == 'CSharp' And '$(WindowsTargetFramework)' != ''">$(WindowsTargetFramework)</WindowsTargetFramework>
+      <TfmDebug             Condition="'$(ZouAgentType)' == 'CSharp' And '$(TfmDebug)'               != ''">$(TfmDebug)</TfmDebug>
+      <RuntimeIdentifier    Condition="'$(ZouAgentType)' == 'CSharp' And '$(RuntimeIdentifier)'      != ''">$(RuntimeIdentifier)</RuntimeIdentifier>
+      <BareTargetFramework  Condition="'$(ZouAgentType)' == 'CSharp' And '$(BareTargetFramework)'    != ''">$(BareTargetFramework)</BareTargetFramework>
+      <BareTargetFrameworks Condition="'$(ZouAgentType)' == 'CSharp' And '$(BareTargetFrameworks)'   != ''">$(BareTargetFrameworks)</BareTargetFrameworks>
+      <!-- Backward compatibility -->
+      <CoreTargetFramework  Condition="'$(ZouAgentType)' == 'CSharp' And '$(CoreTargetFramework)'    != ''">$(CoreTargetFramework)</CoreTargetFramework>
     </ImportProject>
   </ItemDefinitionGroup>
 
@@ -227,7 +225,7 @@
         <Prefix Condition="'%(MSBuildProject.RuntimeType)' != ''">%(Prefix)|%(MSBuildProject.RuntimeType)</Prefix>
       </MSBuildProject>
       <MSBuildProject>
-        <Prefix Condition="'%(MSBuildProject.TargetFramework)' != ''">%(Prefix)|%(MSBuildProject.TargetFramework)</Prefix>
+        <Prefix Condition="'%(MSBuildProject.BareTargetFramework)' != ''">%(Prefix)|%(MSBuildProject.BareTargetFramework)</Prefix>
       </MSBuildProject>
     </ItemGroup>
 
