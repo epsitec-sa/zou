@@ -186,7 +186,7 @@
 
   <!-- zou custom tasks -->
   <Import Project="zou.Tasks.props"/>
-  <Import Project="Tools.Nuget.props"/>
+  <Import Project="Tools.Nuget.props" Condition="$([MSBuild]::IsOsPlatform('Windows')) And '$(CppNuget)' == 'true'"/>
   <!-- Various tools -->
   <Import Project="Tools.props"/>
   <!-- Configuration helpers (IsDebug, IsRelease) -->
