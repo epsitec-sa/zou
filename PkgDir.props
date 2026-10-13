@@ -4,17 +4,17 @@
   <PropertyGroup>
     <PkgDir    Condition="'$(PkgDir)'    != ''">$([MSBuild]::EnsureTrailingSlash('$(PkgDir)'))</PkgDir>
     <PkgBinDir Condition="'$(PkgBinDir)' != ''">$([MSBuild]::EnsureTrailingSlash('$(PkgBinDir)'))</PkgBinDir>
-    <PkgBinDir Condition="'$(PkgBinDirSpecified)' == 'true'">$([System.IO.Path]::Combine($(MSBuildStartupDirectory),$(PkgBinDir)))</PkgBinDir>
+    <PkgBinDir Condition="'$(PkgBinDir)' != ''">$([System.IO.Path]::Combine($(MSBuildStartupDirectory),$(PkgBinDir)))</PkgBinDir>
   </PropertyGroup>
 
   <!-- Ensure PkgDir is absolute -->
   <Choose>
-    <When Condition="'$(PkgDirSpecified)' == 'true'">
+    <When Condition="'$(PkgDir)' != ''">
       <PropertyGroup>
         <PkgDir>$([System.IO.Path]::Combine($(MSBuildStartupDirectory),$(PkgDir)))</PkgDir>
       </PropertyGroup>
     </When>
-    <When Condition="'$(WorkDirSpecified)' == 'true'">
+    <When Condition="'$(WorkDir)' != ''">
       <PropertyGroup>
         <PkgDir>$([System.IO.Path]::Combine($(WorkDir),$(PkgDir)))</PkgDir>
       </PropertyGroup>

@@ -2,9 +2,6 @@
          TreatAsLocalProperty="ForwardPlatform">
   
   <PropertyGroup>
-    <ForwardWorkDir         Condition="'$(ForwardWorkDir)'         == '' And '$(WorkDirSpecified)'         == 'true'">$(WorkDir)</ForwardWorkDir>
-    <ForwardPkgDir          Condition="'$(ForwardPkgDir)'          == '' And '$(PkgDirSpecified)'          == 'true'">$(PkgDir)</ForwardPkgDir>
-    <ForwardPkgBinDir       Condition="'$(ForwardPkgBinDir)'       == '' And '$(PkgBinDirSpecified)'       == 'true'">$(PkgBinDir)</ForwardPkgBinDir>
     <ForwardAsmDir          Condition="'$(ForwardAsmDir)'          == '' And '$(AsmDirSpecified)'          == 'true'">$(AsmDir)</ForwardAsmDir>
     <ForwardOutDir          Condition="'$(ForwardOutDir)'          == '' And '$(OutDirSpecified)'          == 'true'">$(OutDir)</ForwardOutDir>
     <ForwardPlatform        Condition="'$(ForwardPlatform)'        == '' And '$(PlatformSpecified)'        == 'true'">$(Platform)</ForwardPlatform>
@@ -14,9 +11,6 @@
   <Target Name="TraceForward" Condition="'$(ZouTrace)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
     <Message Importance="high" Text="$(T0)$([MSBuild]::MakeRelative('$(BundleDir)', '$(MSBuildThisFileFullPath)')) ($(BundleRelativeProjectPath))$(NC)" />
 
-    <Message Importance="normal" Text="ForwardWorkDir         = $(ForwardWorkDir)" />
-    <Message Importance="normal" Text="ForwardPkgDir          = $(ForwardPkgDir)" />
-    <Message Importance="normal" Text="ForwardPkgBinDir       = $(ForwardPkgBinDir)" />
     <Message Importance="normal" Text="ForwardAsmDir          = $(ForwardAsmDir)" />
     <Message Importance="normal" Text="ForwardOutDir          = $(ForwardOutDir)" />
     <Message Importance="normal" Text="ForwardPlatform        = $(ForwardPlatform)" />

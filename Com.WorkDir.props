@@ -3,7 +3,7 @@
 
   <PropertyGroup>
     <_PropertySheetDisplayName>Working Directory</_PropertySheetDisplayName>
-  </PropertyGroup> 
+  </PropertyGroup>
 
   <ImportGroup Label="PropertySheets">
     <Import Project="$(MSBuildProjectDirectory)\..\..\..\..\..\..\..\$(ZouCfg)**\$(MSBuildThisFileName)*$(MSBuildThisFileExtension)" />
@@ -18,11 +18,12 @@
     <Import Project="$(ZouPrivateDir)$(MSBuildThisFileName).Default$(MSBuildThisFileExtension)" />
   </ImportGroup>
 
+  <!-- Ensure WorkDir is absolute -->
   <PropertyGroup>
-    <WorkDir Condition="'$(WorkDir)' == ''">.</WorkDir>
-    <WorkDir>$([MSBuild]::EnsureTrailingSlash('$(WorkDir)'))</WorkDir>
-    <WorkDir Condition="'$(WorkDirSpecified)' != 'true'">$([System.IO.Path]::Combine($(ProjectDir),$(WorkDir)))</WorkDir>
-    <WorkDir Condition="'$(WorkDirSpecified)' == 'true'">$([System.IO.Path]::Combine($(MSBuildStartupDirectory),$(WorkDir)))</WorkDir>
+    <WorkDir Condition="'$(WorkDir)' != ''">$([System.IO.Path]::Combine($(MSBuildStartupDirectory),$(WorkDir)))</WorkDir>
+    <WorkDir Condition="'$(WorkDir)' == ''">$(ProjectDir)</WorkDir>
     <WorkDir>$([System.IO.Path]::GetFullPath('$(WorkDir)'))</WorkDir>
+    <WorkDir>$([MSBuild]::EnsureTrailingSlash('$(WorkDir)'))</WorkDir>
   </PropertyGroup>
+
 </Project>
