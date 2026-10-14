@@ -173,14 +173,6 @@
   <Target Name="_PrepareForClean" Condition="'$(MSBuildProjectExtension)' != '.vcxproj'" />
   <Target Name="_DeleteLastBuildState" DependsOnTargets="_PrepareForClean" />
 
-  <!-- Flag properties that are defined on the command line. -->
-  <PropertyGroup>
-    <AsmDirSpecified          Condition=" '$(AsmDir)'          != '' And '$(AsmDirSpecified)'          == '' ">true</AsmDirSpecified>
-    <OutDirSpecified          Condition=" '$(OutDir)'          != '' And '$(OutDirSpecified)'          == '' ">true</OutDirSpecified>
-    <PlatformSpecified        Condition=" '$(Platform)'        != '' And '$(PlatformSpecified)'        == '' ">true</PlatformSpecified>
-    <PlatformToolsetSpecified Condition=" '$(PlatformToolset)' != '' And '$(PlatformToolsetSpecified)' == '' ">true</PlatformToolsetSpecified>
-  </PropertyGroup>
-
   <!-- zou custom tasks -->
   <Import Project="zou.Tasks.props"/>
   <Import Project="Tools.Nuget.props"/>
@@ -316,14 +308,6 @@
     <Message Importance="high" Text="+ PkgBinDir                  = $(PkgBinDir)" />
     <Message Importance="high" Text="+ PkgDbgDir                  = $(PkgDbgDir)" />
     <Message Importance="high" Text="+ WorkDir                    = $(WorkDir)" />
-    <Message Importance="high" Text="+ AsmDirSpecified            = $(AsmDirSpecified)" />
-    <Message Importance="high" Text="+ OutDirSpecified            = $(OutDirSpecified)" />
-    <Message Importance="high" Text="+ PlatformSpecified          = $(PlatformSpecified)" />
-    <Message Importance="high" Text="+ PlatformToolsetSpecified   = $(PlatformToolsetSpecified)" />
-    <Message Importance="high" Text="+ ForwardAsmDir              = $(ForwardAsmDir)" />
-    <Message Importance="high" Text="+ ForwardOutDir              = $(ForwardOutDir)" />
-    <Message Importance="high" Text="+ ForwardPlatform            = $(ForwardPlatform)" />
-    <Message Importance="high" Text="+ ForwardPlatformToolset     = $(ForwardPlatformToolset)" />
 
     <Error Condition="'$(ZouError)' == 'true'" Text="Base properties error" />
   </Target>

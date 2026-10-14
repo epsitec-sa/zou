@@ -3,12 +3,10 @@ Inputs
   ZouAgentType
   [RuntimeIdentifier]
   [Platform]
-  [ForwardPlatform]
 Outputs
   Platforms
   Platform
   RuntimePlatform
-  ForwardPlatform
 -->
 <Project InitialTargets="BootPlatformCheck" 
          TreatAsLocalProperty="Platform;RuntimePlatform">
@@ -27,7 +25,6 @@ Outputs
             <DebugBootPlatform>1.1 $(DebugBootPlatform)</DebugBootPlatform>
             <Platform       >x86</Platform>
             <RuntimePlatform>x86</RuntimePlatform>
-            <ForwardPlatform>x86</ForwardPlatform>
           </PropertyGroup>
         </When>
         <When Condition="$(RuntimeIdentifier.EndsWith('x64'))">
@@ -35,7 +32,6 @@ Outputs
             <DebugBootPlatform>1.2 $(DebugBootPlatform)</DebugBootPlatform>
             <Platform       >x64</Platform>
             <RuntimePlatform>x64</RuntimePlatform>
-            <ForwardPlatform>x64</ForwardPlatform>
           </PropertyGroup>
         </When>
         <When Condition="$(RuntimeIdentifier.EndsWith('arm64'))">
@@ -43,7 +39,6 @@ Outputs
             <DebugBootPlatform>1.3 $(DebugBootPlatform)</DebugBootPlatform>
             <Platform       >arm64</Platform>
             <RuntimePlatform>arm64</RuntimePlatform>
-            <ForwardPlatform>arm64</ForwardPlatform>
           </PropertyGroup>
         </When>
         <Otherwise>
@@ -57,21 +52,18 @@ Outputs
       <PropertyGroup>
         <DebugBootPlatform>2 $(DebugBootPlatform)</DebugBootPlatform>
         <RuntimePlatform>$(Platform)</RuntimePlatform>
-        <ForwardPlatform>$(Platform)</ForwardPlatform>
       </PropertyGroup>
     </When>
     <When Condition="'$(Platform)' == 'arm64'">
       <PropertyGroup>
         <DebugBootPlatform>3 $(DebugBootPlatform)</DebugBootPlatform>
         <RuntimePlatform>$(Platform)</RuntimePlatform>
-        <ForwardPlatform>$(Platform)</ForwardPlatform>
       </PropertyGroup>
     </When>
     <When Condition="'$(Platform)' == 'Win32'">
       <PropertyGroup>
         <DebugBootPlatform>4 $(DebugBootPlatform)</DebugBootPlatform>
         <RuntimePlatform>x86</RuntimePlatform>
-        <ForwardPlatform>x86</ForwardPlatform>
       </PropertyGroup>
     </When>
     <When Condition="'$(Platform)' == 'AnyCPU' Or '$(Platform)' == 'Any CPU'">
@@ -88,13 +80,13 @@ Outputs
     </Otherwise>
   </Choose>
 
-  <Target Name="BootPlatformCheck" Condition="'$(ForwardPlatform)' != ''">
+  <Target Name="BootPlatformCheck" Condition="'$(Platform)' != ''">
     <PropertyGroup>
-      <ErrorMessage>"Platform ($(ForwardPlatform)) and RuntimePlatform ($(RuntimePlatform)) are not compatibles"</ErrorMessage>
+      <ErrorMessage>"Platform ($(Platform)) and RuntimePlatform ($(RuntimePlatform)) are not compatibles"</ErrorMessage>
     </PropertyGroup>
-    <Error Text="$(ErrorMessage)" Condition="('$(ForwardPlatform)' == 'arm64') And '$(RuntimePlatform)' != 'arm64'" />
-    <Error Text="$(ErrorMessage)" Condition="('$(ForwardPlatform)' == 'Win32' Or '$(ForwardPlatform)' == 'x86') And '$(RuntimePlatform)' != 'x86'" />
-    <Error Text="$(ErrorMessage)" Condition="('$(ForwardPlatform)' == ''      Or '$(ForwardPlatform)' == 'x64') And '$(RuntimePlatform)' != 'x64'" />
+    <Error Text="$(ErrorMessage)" Condition="('$(Platform)' == 'arm64') And '$(RuntimePlatform)' != 'arm64'" />
+    <Error Text="$(ErrorMessage)" Condition="('$(Platform)' == 'Win32' Or '$(Platform)' == 'x86') And '$(RuntimePlatform)' != 'x86'" />
+    <Error Text="$(ErrorMessage)" Condition="('$(Platform)' == ''      Or '$(Platform)' == 'x64') And '$(RuntimePlatform)' != 'x64'" />
   </Target>
 
 </Project>

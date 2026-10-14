@@ -6,7 +6,6 @@ Summary:
   + TargetDir               - local
   + OutputPath              - local
   + IntermediateOutputPath  - local
-  # Forward.props
   # [Microsoft.Cpp.targets] if ImportMicrosoftCppTargets
   # hook.zou.build.redist.props
 
@@ -24,9 +23,6 @@ Summary:
 
     <ProjectRelativeTargetDir>$([MSBuild]::MakeRelative('$(ProjectDir)', '$(TargetDir)'))</ProjectRelativeTargetDir>
   </PropertyGroup>
-
-  <!-- Forward properties specified on the command line -->
-  <Import Project="$(ZouPrivateDir)Forward.props" />
 
   <!-- C++ utility targets: Platform -> *AnyCPU -->
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" Condition="'$(ImportMicrosoftCppTargets)' == 'true' And Exists('$(VCTargetsPath)\Microsoft.Cpp.targets')" />

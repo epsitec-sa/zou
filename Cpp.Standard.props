@@ -20,9 +20,9 @@ Import this script in the middle of a C++ project (.vcxproj)
   </PropertyGroup>
   
   <PropertyGroup>
-    <!-- Reset default OutDir property (defined in Microsoft.Cpp.props) if not specified on the command line -->
-    <!-- WARNING: do not use Microsoft's OutDirWasSpecified property because it is resetted in Microsoft.Cpp.targets! -->
-    <OutDir Condition="'$(OutDirSpecified)' != 'true'" />
+    <!-- Restore the OutDir saved before the import of Microsoft.Cpp.props -->
+    <OutDir>$(ZouOutDir)</OutDir>
+    <ZouOutDir />
   </PropertyGroup>
 
   <!-- WARNING: do not change import order -->
