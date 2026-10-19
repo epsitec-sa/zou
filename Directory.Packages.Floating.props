@@ -322,6 +322,7 @@ Lock files can be updated by using the '——force-evaluate' option.
     <PackageVersion Include="SharpZipLib"                                             Version="1.4.*" />            <!-- netstandard, net6 -->
     <PackageVersion Include="SharpZipLib.NETStandard"                                 Version="1.0.*" />            <!-- netstandard -->
     <PackageVersion Include="ShellProgressBar"                                        Version="5.2.*" />            <!-- netstandard -->
+    <PackageVersion Include="SixLabors.Fonts"                                         Version="3.*" />              <!-- net8 -->
     <PackageVersion Include="SixLabors.ImageSharp"                                    Version="4.*" />              <!-- net8 -->
     <PackageVersion Include="SixLabors.ImageSharp.Drawing"                            Version="3.*" />              <!-- net8 -->
 
@@ -668,6 +669,8 @@ Lock files can be updated by using the '——force-evaluate' option.
     <PackageVersion Remove="OrchardCore.Localization.Core" />
     <PackageVersion Remove="Quartz.AspNetCore" />
     <PackageVersion Remove="SemanticChunker.NET" />
+    <PackageVersion Remove="SixLabors.Fonts" />
+    <PackageVersion Remove="SixLabors.ImageSharp" />
     <PackageVersion Remove="SixLabors.ImageSharp.Drawing" />
     <PackageVersion Remove="Swashbuckle.AspNetCore.SwaggerGen" />
     <PackageVersion Remove="Swashbuckle.AspNetCore.SwaggerUI" />
@@ -700,11 +703,6 @@ Lock files can be updated by using the '——force-evaluate' option.
   <ItemGroup>
     <PackageVersion Update="GdPicture.API"                                            Version="14.4.*" />           <!-- net8, net10 -->
     <PackageVersion Update="GrapeCity.Documents.Imaging"                              Version="7.2.*" />            <!-- netstandard -->
-    <!-- IronOcr > 2026.10.2 use SixLabors.ImageSharp (>= 4.1.3) that needs a license  -->
-    <PackageVersion Update="IronOcr"                                                  Version="2026.10.2" />        <!-- * -->
-    <!-- SixLabors.ImageSharp >= 4.0 & SixLabors.ImageSharp.Drawing >= 3.0 need a license -->
-    <PackageVersion Update="SixLabors.ImageSharp"                                     Version="3.1.*" />            <!-- net6 -->
-    <PackageVersion Update="SixLabors.ImageSharp.Drawing"                             Version="2.1.*" />            <!-- net6 -->
     <!-- SyncFusion packages license are valid until versions 33.*.* -->
     <PackageVersion Update="Syncfusion.Blazor.SfPdfViewer"                            Version="33.2.*" />           <!-- net8, net9, net10 -->
     <PackageVersion Update="Syncfusion.Blazor.Themes"                                 Version="33.2.*" />           <!-- net8, net9, net10 -->
@@ -759,6 +757,31 @@ Lock files can be updated by using the '——force-evaluate' option.
     Downgrade Microsoft.TypeScript.MSBuild to 6.0.* because version 7.0.* causes a build error in Electron.NET projects
     -->
     <PackageVersion Update="Microsoft.TypeScript.MSBuild"                             Version="6.0.*" />            <!-- NO DEPS -->
+  </ItemGroup>
+  
+  <!--
+  Resolve conflicts for SixLabors packages between IronOcr and ClosedXML
+  -->
+  <ItemGroup>
+    <!--
+    ClosedXML 0.105.1 has a dependency on SixLabors.Fonts(>= 1.0.0 && < 3.0.0)
+    IronOcr 2026.10.4 has a dependency on IronSoftware.System.Drawing(>= 2026.11.3)
+      which has a dependency on SixLabors.ImageSharp.Drawing(>= 3.1.3)
+      which has a dependency on SixLabors.Fonts(>= 3.2.0)
+
+    We need to downgrade IronOcr to 2026.10.2
+      which has a dependency on IronSoftware.System.Drawing (>= 2026.8.2)
+      which has a dependency on SixLabors.ImageSharp.Drawing(>= 2.1.7)
+      which has a dependency on SixLabors.Fonts(>= 2.1.3)
+    We need to downgrade SixLabors.Fonts to 2.2.* to satisfy CLosedXML
+    We need to downgrade SixLabors.ImageSharp.Drawing to 2.2.* to satisfy SixLabors.Fonts
+    
+    We can ignore licence warnings for SixLabors.Fonts and SixLabors.ImageSharp.Drawing
+    since they are dependencies of IronOcr/ClosedXML and not used directly in our code.
+    -->
+    <PackageVersion Update="IronOcr"                                                  Version="2026.10.2" />        <!-- * -->
+    <PackageVersion Update="SixLabors.Fonts"                                          Version="2.2.*" />            <!-- net6 -->
+    <PackageVersion Update="SixLabors.ImageSharp.Drawing"                             Version="2.2.*" />            <!-- net6 -->
   </ItemGroup>
 
 </Project>
