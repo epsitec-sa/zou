@@ -14,42 +14,13 @@
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(TargetFramework)' != ''">
-    <CpmTFM>$(TargetFramework)</CpmTFM>
-    <CpmTFM Condition="$(TargetFramework.StartsWith('netstandard', StringComparison.OrdinalIgnoreCase))">$(CoreTargetFramework)</CpmTFM>
-
-    <CpmVer>$([MSBuild]::GetTargetFrameworkVersion('$(CpmTFM)', 1))</CpmVer>
-    <CpmFull Condition="'$(CpmVer)' &lt;= '4.8'">true</CpmFull>
-    <CpmFull Condition="'$(CpmFull)' == ''">false</CpmFull>
-
-    <CpmVerId>$(CpmVer)</CpmVerId>
-    <CpmVerId Condition="$(CpmFull)">$(CpmVer.Substring(0, 1))</CpmVerId>
-    <CpmId Condition="'$(CpmId)'== ''">net$(CpmVerId)</CpmId>
-
+  <Import Project="Cpm.props" Condition="'$(CpmPropsImported)' == ''"/>
+  
+  <PropertyGroup Condition="'$(CpmId)' != ''">
     <CpmPath>$(MSBuildThisFileDirectory)Directory.Packages.$(CpmId).props</CpmPath>
     <CpmPath Condition="!Exists('$(CpmPath)')">$(MSBuildThisFileDirectory)Directory.Packages.Floating.props</CpmPath>
   </PropertyGroup>
 
   <Import Project="$(CpmPath)" Condition="'$(TargetFramework)' != ''" />
-
-  <Target Name="TraceCpm" BeforeTargets="CollectPackageReferences" Condition="'$(CpmTFM)' != '' And '$(CpmDebug)' != ''">
-    <Message Importance="high" Text="$(T0)$([MSBuild]::MakeRelative('$(BundleDir)', '$(MSBuildThisFileFullPath)')) ($(BundleRelativeProjectPath))$(NC)" />
-
-    <!--<ItemGroup>
-      <CpmFile
-        Include="$(MSBuildThisFileDirectory)Directory.Packages.*.props"
-        Exclude="$(MSBuildThisFileDirectory)Directory.Packages.Default.props;$(MSBuildThisFileDirectory)Directory.Packages.Floating.props" />
-    </ItemGroup>
-    <LogItems Items="@(CpmFile)" AllMetadata="false" />
-    <Message Importance="high" Text=" " />-->
-
-    <Message Importance="high" Text="CpmFull  = $(CpmFull)" />
-    <Message Importance="high" Text="CpmTFM   = $(CpmTFM)" />
-    <Message Importance="high" Text="CpmVer   = $(CpmVer)" />
-    <Message Importance="high" Text="CpmVerId = $(CpmVerId)" />
-    <Message Importance="high" Text="CpmId    = $(CpmId)" />
-    <Message Importance="high" Text="CpmPath  = $(CpmPath)" />
-    <Message Importance="high" Text=" " />
-  </Target>
 
 </Project>

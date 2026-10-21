@@ -1,11 +1,11 @@
 <Project>
 
-  <PropertyGroup>
-    <!-- Importation semaphore -->
-    <PrunePackagesTargetsImported>true</PrunePackagesTargetsImported>
-    <PrunePackagesFilename>PrunePackages.$(CpmVerId).targets</PrunePackagesFilename>
+  <Import Project="Cpm.props" Condition="'$(CpmPropsImported)' == ''"/>
+
+  <PropertyGroup Condition="'$(CpmId)' != ''">
+    <PrunePackagesPath>$(MSBuildThisFileDirectory)PrunePackages.$(CpmId).targets</PrunePackagesPath>
   </PropertyGroup>
 
-  <Import Project="$(PrunePackagesFilename)" Condition="Exists('$(PrunePackagesFilename)')" />
+  <Import Project="$(PrunePackagesPath)" Condition="'$(CpmId)' != '' And Exists('$(PrunePackagesPath)')" />
 
 </Project>
