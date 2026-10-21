@@ -98,7 +98,7 @@ Lock files can be updated by using the '——force-evaluate' option.
     <PackageVersion Include="Ibex.PDF.Creator"                                        Version="6.*" />              <!-- net6, net8, net9, net10 -->
 
     <!-- Transitive dependency: use latest prerelease to avoid ICU4N_IDE_0002 warning -->
-    <PackageVersion Include="ICU4N"                                                   Version="60.1.*-*" />         <!-- netstandard -->
+    <PackageVersion Include="ICU4N"                                                   Version="60.1.*-*" />         <!-- netstandard, net4, net8, net9, net10 -->
 
     <PackageVersion Include="Ionic.Zlib.Core"                                         Version="1.0.*" />            <!-- netstandard -->
     <PackageVersion Include="IronOcr"                                                 Version="2026.*" />           <!-- * -->
@@ -141,7 +141,7 @@ Lock files can be updated by using the '——force-evaluate' option.
     <PackageVersion Include="Microsoft.AspNetCore.TestHost"                           Version="8.0.*" />            <!-- net8 -->
     <PackageVersion Include="Microsoft.AspNetCore.WebUtilities"                       Version="8.0.*" />            <!-- net8 -->
 
-    <PackageVersion Include="Microsoft.Bcl.AsyncInterfaces"                           Version="10.0.*" />           <!-- netstandard2.0 -->
+    <PackageVersion Include="Microsoft.Bcl.AsyncInterfaces"                           Version="10.0.*" />           <!-- netstandard, net4 -->
     
     <PackageVersion Include="Microsoft.Build"                                         Version="17.11.*" />          <!-- net8 -->
     <PackageVersion Include="Microsoft.Build.Framework"                               Version="17.11.*" />          <!-- netstandard, net8 -->
@@ -322,6 +322,7 @@ Lock files can be updated by using the '——force-evaluate' option.
     <PackageVersion Include="SharpZipLib"                                             Version="1.4.*" />            <!-- netstandard, net6 -->
     <PackageVersion Include="SharpZipLib.NETStandard"                                 Version="1.0.*" />            <!-- netstandard -->
     <PackageVersion Include="ShellProgressBar"                                        Version="5.2.*" />            <!-- netstandard -->
+
     <PackageVersion Include="SixLabors.Fonts"                                         Version="3.*" />              <!-- net8 -->
     <PackageVersion Include="SixLabors.ImageSharp"                                    Version="4.*" />              <!-- net8 -->
     <PackageVersion Include="SixLabors.ImageSharp.Drawing"                            Version="3.*" />              <!-- net8 -->
@@ -333,17 +334,10 @@ Lock files can be updated by using the '——force-evaluate' option.
 
     <PackageVersion Include="SonarAnalyzer.CSharp"                                    Version="10.*" />             <!-- NO DEPS -->
     <PackageVersion Include="Spire.PDF"                                               Version="12.10.*" />          <!-- net4, net6, net9, net10 -->
-
-    <PackageVersion Include="sqlite-vec"                                              Version="0.1.*-*" />          <!-- NO DEPS -->
-
-    <!-- Fix transitive dependency vulnerability for SQLitePCLRaw.lib.e_sqlite3 -->
-    <PackageVersion Include="SQLitePCLRaw.bundle_e_sqlite3"                           Version="3.0.*" />            <!-- netstandard -->
-    <PackageVersion Include="SQLitePCLRaw.core"                                       Version="3.0.*" />            <!-- netstandard -->
-
     <PackageVersion Include="SSH.NET"                                                 Version="2026.*" />           <!-- netstandard, net4, net8, net9, net10 -->
-
     <PackageVersion Include="StyleCop.Analyzers"                                      Version="1.1.*" />            <!-- NO DEPS -->
     <PackageVersion Include="SuperSocket.ClientEngine.Core"                           Version="0.10.*" />           <!-- netstandard -->
+
     <PackageVersion Include="Swashbuckle.AspNetCore"                                  Version="10.3.*" />           <!-- net8, net9, net10 -->
     <PackageVersion Include="Swashbuckle.AspNetCore.SwaggerGen"                       Version="10.3.*" />           <!-- net8, net9, net10 -->
     <PackageVersion Include="Swashbuckle.AspNetCore.SwaggerUI"                        Version="10.3.*" />           <!-- net8, net9, net10 -->
@@ -462,9 +456,9 @@ Lock files can be updated by using the '——force-evaluate' option.
 
   <!-- CpmTFM < net10 -->
   <ItemGroup Condition="'$(CpmVer)' &lt; '10'">
-    <PackageVersion Remove="Epsitec.Briefcases.Identity" /> <!-- net 10 ONLY -->
-    <PackageVersion Remove="Epsitec.Briefcases.Sdk" />      <!-- net 10 ONLY -->
-    <PackageVersion Remove="Epsitec.Passport.Shared" />     <!-- net 10 ONLY-->
+    <PackageVersion Remove="Epsitec.Briefcases.Identity" /> <!-- net10+ ONLY -->
+    <PackageVersion Remove="Epsitec.Briefcases.Sdk" />      <!-- net10+ ONLY -->
+    <PackageVersion Remove="Epsitec.Passport.Shared" />     <!-- net10+ ONLY-->
   </ItemGroup>
 
   <!-- CpmTFM >= net10.0 || CpmFull (TFM <= net4.8) -->

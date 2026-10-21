@@ -1,4 +1,4 @@
-<Project>
+﻿<Project>
   
   <PropertyGroup>
     <!--<NuPkgDebug>true</NuPkgDebug>-->
@@ -44,13 +44,10 @@
   </ItemGroup>
 
   <!-- When using .NET Framework, SQLite cannot be used on AnyCPU platform -->
-  <ItemGroup Condition="'$(Platform)' == 'AnyCPU' And $([MSBuild]::IsTargetFrameworkCompatible('net48', '$(TargetFramework)'))">
+  <ItemGroup Condition="('$(Platform)' == 'AnyCPU' Or '$(Platform)' == 'Any CPU') And $([MSBuild]::IsTargetFrameworkCompatible('net48', '$(TargetFramework)'))">
     <PackageReference Remove="Microsoft.Data.SQLite" />
     <PackageReference Remove="Microsoft.Data.Sqlite.Core" />
     <PackageReference Remove="Microsoft.EntityFrameworkCore.Sqlite" />
-    <PackageReference Remove="sqlite-vec" />
-    <PackageReference Remove="SQLitePCLRaw.bundle_e_sqlite3" />
-    <PackageReference Remove="SQLitePCLRaw.core" />
   </ItemGroup>
 
   <Target Name="DoNotDisableNU1510Warning" BeforeTargets="CollectPackageReferences" Condition="$(CpmVer) >= 10 And '$(BuildingInsideZouNuPkg)' == ''">
