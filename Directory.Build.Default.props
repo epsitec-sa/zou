@@ -15,11 +15,9 @@
   </PropertyGroup>
 
   <!-- Debug info-->
-  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
-    <DebugType>full</DebugType>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
-    <DebugType>pdbonly</DebugType>
+  <PropertyGroup>
+    <DebugType Condition="$(Configuration.StartsWith('Debug'))">full</DebugType>
+    <DebugType Condition="'$(DebugType)' == ''"                >pdbonly</DebugType>
   </PropertyGroup>
 
   <!-- MSBuild -->
