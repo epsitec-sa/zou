@@ -19,13 +19,16 @@
     <!-- warning SA1633: File should have header -->
     <!-- warning MSTEST0001: Explicitly enable or disable tests parallelization (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0001)-->
     <NoWarn>$(NoWarn);NU1701;SA0001;SA1633;MSTEST0001</NoWarn>
+    
     <!-- Disable following warnings for .net 6.0 -->
     <!-- warning NU1903: Package 'Microsoft.Build.Tasks.Core' 17.3.2 has a known high severity vulnerability -->
     <!-- warning MSB3277: Found conflicts between different versions of ... that could not be resolved-->
     <NoWarn Condition="'$(CpmVer)' == '6'">$(NoWarn);NU1903;MSB3277</NoWarn>
+    
     <!-- Disable following warnings for .net >= 10.0 when building outside VisualStudio -->
     <!-- warning NU1510: PackageReference ... will not be pruned. Consider removing this package from your dependencies, as it is likely unnecessary. -->
-    <!--<NoWarn Condition="'$(CpmVer)' >= '10' And '$(BuildingInsideVisualStudio)' == ''">$(NoWarn);NU1510</NoWarn>-->
+    <NoWarn Condition="'$(CpmVer)' >= '10' And '$(BuildingInsideVisualStudio)' == 'true'">$(NoWarn);NU1510</NoWarn>
+    
     <SuppressTfmSupportBuildErrors Condition="'$(CpmVer)' == '6'">true</SuppressTfmSupportBuildErrors>
   </PropertyGroup>
 
