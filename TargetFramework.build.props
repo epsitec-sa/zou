@@ -15,6 +15,7 @@
 
   <PropertyGroup>
     <BareTargetFrameworks Condition="'$(BareTargetFramework)' != ''" />
+
     <!-- Transform 'net8.0+net10.0' to 'net8.0;net10.0' due to MSBuild CLI syntax
          rejecting ';' and ',' in -p: values; Unescape() undoes the internal escaping
          MSBuild applies to the ';' introduced by Replace() before it gets split. -->
@@ -23,7 +24,7 @@
     <!-- Suppress warning NU1510: PackageReference <nuget package> will not be pruned.
          The warning appears when 'BareTargetFrameworks' is defined (e.g. net8.0+net10.0)
          An unescaped character inside the list of target frameworks causes this warning
-         for some nuget packagea like 'Microsoft.CSharp'.
+         for some nuget packages like 'Microsoft.CSharp'.
          The warning is harmless and can be ignored. -->
     <NoWarn Condition="'$(BareTargetFrameworks)' != ''">$(NoWarn);NU1510</NoWarn>
     
@@ -160,7 +161,7 @@
        or in your project file (after this import).
        
        Single-targeting projects may instead opt into one of these fixed values:
-         TargetFramework=$(FullTargetFramework)     e.g. net48
+         TargetFramework=$(FullTargetFramework)     e.g. net4.8
          TargetFramework=$(WindowsTargetFramework)  e.g. net8.0-windows / net10.0-windows
          TargetFramework=$(WineTargetFramework)     e.g. netcoreapp3.1 (for projects running inside a Wine bottle on Mac)
        
@@ -328,21 +329,21 @@
 
     <Message Importance="high" Text="$(TfmMultiColor)BareTargetFrameworks    = $(Yellow)($(BareTargetFrameworks))$(NC)"      Condition="'$(BareTargetFrameworks)'    != ''" />
     <Message Importance="high" Text="$(TfmMultiColor)BareTargetFrameworksInp = $(Yellow)($(BareTargetFrameworksInp))$(NC)"   Condition="'$(BareTargetFrameworksInp)' != ''" />
-    <Message Importance="high" Text="$(TfmMultiColor)TargetFrameworksInp     = $(LightBlue)($(TargetFrameworksInp))$(NC)"    Condition="'$(TargetFrameworksInp)'    != '' And '$(TargetFrameworksInp)'    != '$(BareTargetFrameworksInp)'" />
-    <Message Importance="high" Text="$(TfmMultiColor)TargetFrameworks_01     = $(LightBlue)($(TargetFrameworks_01))$(NC)"    Condition="'$(TargetFrameworks_01)'    != '' And '$(TargetFrameworks_01)'    != '$(TargetFrameworksInp)'" />
-    <Message Importance="high" Text="$(TfmMultiColor)TargetFrameworks_02     = $(LightBlue)($(TargetFrameworks_02))$(NC)"    Condition="'$(TargetFrameworks_02)'    != '' And '$(TargetFrameworks_02)'    != '$(TargetFrameworks_01)'" />
-    <Message Importance="high" Text="$(TfmMultiColor)TargetFrameworksOut     = $(TfmsEndColor)($(TargetFrameworksOut))$(NC)" Condition="'$(TargetFrameworksOut)'    != '$(TargetFrameworksInp)'" />
+    <Message Importance="high" Text="$(TfmMultiColor)TargetFrameworksInp     = $(LightBlue)($(TargetFrameworksInp))$(NC)"    Condition="'$(TargetFrameworksInp)'     != '' And '$(TargetFrameworksInp)'    != '$(BareTargetFrameworksInp)'" />
+    <Message Importance="high" Text="$(TfmMultiColor)TargetFrameworks_01     = $(LightBlue)($(TargetFrameworks_01))$(NC)"    Condition="'$(TargetFrameworks_01)'     != '' And '$(TargetFrameworks_01)'    != '$(TargetFrameworksInp)'" />
+    <Message Importance="high" Text="$(TfmMultiColor)TargetFrameworks_02     = $(LightBlue)($(TargetFrameworks_02))$(NC)"    Condition="'$(TargetFrameworks_02)'     != '' And '$(TargetFrameworks_02)'    != '$(TargetFrameworks_01)'" />
+    <Message Importance="high" Text="$(TfmMultiColor)TargetFrameworksOut     = $(TfmsEndColor)($(TargetFrameworksOut))$(NC)" Condition="'$(TargetFrameworksOut)'     != '$(TargetFrameworksInp)'" />
 
     <Message Importance="high" Text="$(TfmMultiColor)BareTargetFramework     = $(Yellow)$(BareTargetFramework)$(NC)"         Condition="'$(BareTargetFramework)'    != ''" />
     <Message Importance="high" Text="$(TfmMultiColor)BareTargetFrameworkInp  = $(Yellow)$(BareTargetFrameworkInp)$(NC)"      Condition="'$(BareTargetFrameworkInp)' != ''" />
-    <Message Importance="high" Text="$(TfmMultiColor)TargetFrameworkInp      = $(LightBlue)$(TargetFrameworkInp)$(NC)"       Condition="'$(TargetFrameworkInp)'    != ''" />
-    <Message Importance="high" Text="$(TfmMultiColor)TargetFramework_01      = $(LightBlue)$(TargetFramework_01)$(NC)"       Condition="'$(TargetFramework_01)'    != '' And '$(TargetFramework_01)'    != '$(TargetFrameworkInp)'" />
-    <Message Importance="high" Text="$(TfmMultiColor)TargetFramework_02      = $(LightBlue)$(TargetFramework_02)$(NC)"       Condition="'$(TargetFramework_02)'    != '' And '$(TargetFramework_02)'    != '$(TargetFrameworkOut)'" />
-    <Message Importance="high" Text="$(TfmMultiColor)TargetFrameworkOut      = $(TfmEndColor)$(TargetFrameworkOut)$(NC)"     Condition="'$(TargetFrameworkOut)'    != '' And '$(TargetFrameworkOut)'    != '$(TargetFrameworkInp)'" />
+    <Message Importance="high" Text="$(TfmMultiColor)TargetFrameworkInp      = $(LightBlue)$(TargetFrameworkInp)$(NC)"       Condition="'$(TargetFrameworkInp)'     != ''" />
+    <Message Importance="high" Text="$(TfmMultiColor)TargetFramework_01      = $(LightBlue)$(TargetFramework_01)$(NC)"       Condition="'$(TargetFramework_01)'     != '' And '$(TargetFramework_01)'    != '$(TargetFrameworkInp)'" />
+    <Message Importance="high" Text="$(TfmMultiColor)TargetFramework_02      = $(LightBlue)$(TargetFramework_02)$(NC)"       Condition="'$(TargetFramework_02)'     != '' And '$(TargetFramework_02)'    != '$(TargetFrameworkOut)'" />
+    <Message Importance="high" Text="$(TfmMultiColor)TargetFrameworkOut      = $(TfmEndColor)$(TargetFrameworkOut)$(NC)"     Condition="'$(TargetFrameworkOut)'     != '' And '$(TargetFrameworkOut)'    != '$(TargetFrameworkInp)'" />
 
-    <Message Importance="high" Text="$(TfmMultiColor)LangVersion             = $(Green)C#$(LangVersion)$(NC)"                Condition="'$(BuildType)'        != 'Multi.Outer'" />
-    <Message Importance="high" Text="$(TfmMultiColor)TargetFrameworks        = $(TfmsColor)($(TargetFrameworks))$(NC)"       Condition="'$(TargetFrameworks)' != ''" />
-    <Message Importance="high" Text="$(TfmMultiColor)TargetFramework         = $(TfmColor)$(TargetFramework)$(NC)"           Condition="'$(TargetFramework)'  != ''" />
+    <Message Importance="high" Text="$(TfmMultiColor)LangVersion             = $(Green)C#$(LangVersion)$(NC)"                Condition="'$(BuildType)'          != 'Multi.Outer'" />
+    <Message Importance="high" Text="$(TfmMultiColor)TargetFrameworks        = $(TfmsColor)($(TargetFrameworks))$(NC)"       Condition="'$(TargetFrameworks)'   != ''" />
+    <Message Importance="high" Text="$(TfmMultiColor)TargetFramework         = $(TfmColor)$(TargetFramework)$(NC)"           Condition="'$(TargetFramework)'    != ''" />
   </Target>
 
 </Project>
