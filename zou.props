@@ -44,7 +44,7 @@
     <ZouDebug    Condition="'$(ZouDebug)'    == '' Or '$(MSBuildRestoreSessionId)' != ''">false</ZouDebug>
     <RedistDebug Condition="'$(RedistDebug)' == '' Or '$(MSBuildRestoreSessionId)' != ''">false</RedistDebug>
     
-    <NETSdkVersion>$([System.Text.RegularExpressions.Regex]::Match($(MSBuildToolsPath), '(?&lt;=dotnet[\\/]sdk[\\/])\d+\.\d+\.\d+'))</NETSdkVersion>
+    <NETSdkVersion>$([System.Text.RegularExpressions.Regex]::Match($(MSBuildToolsPath), '(?&lt;=dotnet[\\/]sdk[\\/])\d+\.\d+\.\d+(-.*)?'))</NETSdkVersion>
     <!-- Configuration sub-directory -->
     <ZouCfg>zou.cfg$(V)</ZouCfg>
     <!-- Enable ZouTrace and ZouTraceMSBuild if the command 'msbuild zou.props' is executed -->
