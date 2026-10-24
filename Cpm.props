@@ -12,11 +12,19 @@
   <PropertyGroup>
     <CpmPropsImported>true</CpmPropsImported>
   </PropertyGroup>
-  
+
+  <PropertyGroup>
+    <_CpmBareTFM>$(BareTargetFramework)</_CpmBareTFM>
+    <_CpmBareTFM Condition="'$(_CpmBareTFM)' == '' And '$(BareTargetFrameworks)' != ''">$(BareTargetFrameworks.Split(';')[0])</_CpmBareTFM>
+    <_CpmBareTFM Condition="'$(_CpmBareTFM)' == ''">$(CoreTargetFramework)</_CpmBareTFM>
+  </PropertyGroup>
+
   <PropertyGroup Condition="'$(TargetFramework)' != ''">
     <CpmTFM>$(TargetFramework)</CpmTFM>
-    <CpmTFM Condition="$(TargetFramework.StartsWith('netstandard', StringComparison.OrdinalIgnoreCase))">$(CoreTargetFramework)</CpmTFM>
-
+    <CpmTFM Condition="$(TargetFramework.StartsWith('netstandard', StringComparison.OrdinalIgnoreCase))">$(_CpmBareTFM)</CpmTFM>
+  </PropertyGroup>
+  
+  <PropertyGroup Condition="'$(CpmTFM)' != ''">
     <CpmVer>$([MSBuild]::GetTargetFrameworkVersion('$(CpmTFM)', 1))</CpmVer>
     <CpmFull Condition="'$(CpmVer)' &lt;= '4.8'">true</CpmFull>
     <CpmFull Condition="'$(CpmFull)' == ''">false</CpmFull>
@@ -27,14 +35,16 @@
   </PropertyGroup>
 
   <Target Name="TraceCpm" BeforeTargets="CollectPackageReferences" Condition="'$(CpmTFM)' != '' And '$(CpmDebug)' != ''">
+    <Message Importance="high" Text=" " />
     <Message Importance="high" Text="$(T0)$([MSBuild]::MakeRelative('$(BundleDir)', '$(MSBuildThisFileFullPath)')) ($(BundleRelativeProjectPath))$(NC)" />
 
-    <Message Importance="high" Text="CpmFull  = $(CpmFull)" />
-    <Message Importance="high" Text="CpmTFM   = $(CpmTFM)" />
-    <Message Importance="high" Text="CpmVer   = $(CpmVer)" />
-    <Message Importance="high" Text="CpmVerId = $(CpmVerId)" />
-    <Message Importance="high" Text="CpmId    = $(CpmId)" />
-    <Message Importance="high" Text=" " />
+    <Message Importance="high" Text="TargetFrameworks = {$(TargetFrameworks)}" />
+    <Message Importance="high" Text="TargetFramework  = $(TargetFramework)" />
+    <Message Importance="high" Text="CpmFull          = $(CpmFull)" />
+    <Message Importance="high" Text="CpmTFM           = $(CpmTFM)" />
+    <Message Importance="high" Text="CpmVer           = $(CpmVer)" />
+    <Message Importance="high" Text="CpmVerId         = $(CpmVerId)" />
+    <Message Importance="high" Text="CpmId            = $(CpmId)" />
   </Target>
 
 </Project>
