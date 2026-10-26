@@ -13,15 +13,9 @@
     <CpmPropsImported>true</CpmPropsImported>
   </PropertyGroup>
 
-  <PropertyGroup>
-    <_CpmBareTFM>$(BareTargetFramework)</_CpmBareTFM>
-    <_CpmBareTFM Condition="'$(_CpmBareTFM)' == '' And '$(BareTargetFrameworks)' != ''">$(BareTargetFrameworks.Split(';')[0])</_CpmBareTFM>
-    <_CpmBareTFM Condition="'$(_CpmBareTFM)' == ''">$(CoreTargetFramework)</_CpmBareTFM>
-  </PropertyGroup>
-
   <PropertyGroup Condition="'$(TargetFramework)' != ''">
-    <CpmTFM>$(TargetFramework)</CpmTFM>
-    <CpmTFM Condition="$(TargetFramework.StartsWith('netstandard', StringComparison.OrdinalIgnoreCase))">$(_CpmBareTFM)</CpmTFM>
+    <CpmTFM Condition="$(TargetFramework.StartsWith('netstandard', StringComparison.OrdinalIgnoreCase))">$(BareTfmMin)</CpmTFM>
+    <CpmTFM Condition="'$(CpmTFM)' == ''">$(TargetFramework)</CpmTFM>
   </PropertyGroup>
   
   <PropertyGroup Condition="'$(CpmTFM)' != ''">
@@ -31,7 +25,7 @@
 
     <CpmVerId>$(CpmVer)</CpmVerId>
     <CpmVerId Condition="$(CpmFull)">$(CpmVer.Substring(0, 1))</CpmVerId>
-    <CpmId Condition="'$(CpmId)'== ''">net$(CpmVerId)</CpmId>
+    <CpmId    Condition="'$(CpmId)'== ''">net$(CpmVerId)</CpmId>
   </PropertyGroup>
 
   <Target Name="TraceCpm" BeforeTargets="CollectPackageReferences" Condition="'$(CpmTFM)' != '' And '$(CpmDebug)' != ''">

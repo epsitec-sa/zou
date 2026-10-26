@@ -10,7 +10,7 @@
   we will not use the latest target framework version.
   -->
   <PropertyGroup>
-    <UseLatestTfm Condition="'$(MultiTargeting)' == 'true'">false</UseLatestTfm>
+    <UseLatestTfm Condition="'$(UseLatestTfm)' == '' Or '$(MultiTargeting)' == 'true'">false</UseLatestTfm>
   </PropertyGroup>
 
   <!--
@@ -21,7 +21,7 @@
   <PropertyGroup Condition="'$(CoreTargetFramework)' != '' And '$(BareTargetFramework)' == '' And '$(MultiTargeting)' != 'true'">
     <BareTargetFramework>$(CoreTargetFramework)</BareTargetFramework>
   </PropertyGroup>
-
+  
   <PropertyGroup Condition="'$(BareTargetFramework)' != ''">
     <_ZouTfmVer>$([MSBuild]::GetTargetFrameworkVersion('$(BareTargetFramework)', 1))</_ZouTfmVer>
     <_ZouTfmFull Condition="'$(_ZouTfmVer)' &lt;= '4.8'">true</_ZouTfmFull>
@@ -53,6 +53,12 @@
   </Choose>
 
   <PropertyGroup>
+    <CoreTargetFramework     Condition="'$(CoreTargetFramework)'     == ''">net8.0</CoreTargetFramework>
+    <CoreTargetFrameworks    Condition="'$(CoreTargetFrameworks)'    == ''">net8.0;net10.0;net11.0</CoreTargetFrameworks>
+    <WindowsTargetFrameworks Condition="'$(WindowsTargetFrameworks)' == ''">net8.0-windows;net10.0-windows;net11.0-windows</WindowsTargetFrameworks>
+    <BrowserTargetFrameworks Condition="'$(BrowserTargetFrameworks)' == ''">net8.0-browser;net10.0-browser;net11.0-browser</BrowserTargetFrameworks>
+    <NetStdTargetFrameworks  Condition="'$(NetStdTargetFrameworks)'  == ''">netstandard2.0;netstandard2.1</NetStdTargetFrameworks>
+    
     <FullTargetFramework     Condition="'$(FullTargetFramework)'     == ''">net4.8</FullTargetFramework>
     <WineTargetFramework     Condition="'$(WineTargetFramework)'     == ''">netcoreapp3.1</WineTargetFramework>
     <WindowsTargetFramework  Condition="'$(WindowsTargetFramework)'  == ''">$(CoreTargetFramework)-windows</WindowsTargetFramework>
