@@ -9,8 +9,8 @@
     <Message Importance="high" Text="$(T0)$([MSBuild]::MakeRelative('$(BundleDir)', '$(MSBuildThisFileFullPath)')) ($(BundleRelativeProjectPath))$(NC)" />
 
     <Message Importance="high" Text="BuildType        = $(BuildType)" />
-    <Message Importance="high" Text="TargetFramework  = $(TargetFramework)"  Condition="!$(MultiTargeting)" />
-    <Message Importance="high" Text="TargetFrameworks = $(TargetFrameworks)" Condition=" $(MultiTargeting)" />
+    <Message Importance="high" Text="TargetFramework  = $(TargetFramework)"  Condition="'$(_ZouMultiTargeting)' != 'true'" />
+    <Message Importance="high" Text="TargetFrameworks = $(TargetFrameworks)" Condition="'$(_ZouMultiTargeting)' == 'true'" />
     
     <!--<Message Importance="high" Text=" " Condition="@(ProjectReference->Count()) > 0" />-->
     <LogItems Items="@(ProjectReference)" Title="ProjectReference" />

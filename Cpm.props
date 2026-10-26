@@ -7,15 +7,16 @@
   CpmId    ::= (Floating|net4|net8|net10|net11 ...)
   CpmFull  ::= true if CpmVer <= 4.8, false otherwise
   -->
-<Project>
+<Project InitialTargets="TraceCpm">
 
   <PropertyGroup>
     <CpmPropsImported>true</CpmPropsImported>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(TargetFramework)' != ''">
-    <CpmTFM Condition="$(TargetFramework.StartsWith('netstandard', StringComparison.OrdinalIgnoreCase))">$(BareTfmMin)</CpmTFM>
-    <CpmTFM Condition="'$(CpmTFM)' == ''">$(TargetFramework)</CpmTFM>
+    <CpmTFM>$(TargetFramework)</CpmTFM>
+    <!-- CPM catalogs use a modern .NET baseline for netstandard projects. -->
+    <CpmTFM Condition="$(TargetFramework.StartsWith('netstandard', StringComparison.OrdinalIgnoreCase))">$(CoreTargetFramework)</CpmTFM>
   </PropertyGroup>
   
   <PropertyGroup Condition="'$(CpmTFM)' != ''">
@@ -32,13 +33,15 @@
     <Message Importance="high" Text=" " />
     <Message Importance="high" Text="$(T0)$([MSBuild]::MakeRelative('$(BundleDir)', '$(MSBuildThisFileFullPath)')) ($(BundleRelativeProjectPath))$(NC)" />
 
-    <Message Importance="high" Text="TargetFrameworks = {$(TargetFrameworks)}" />
-    <Message Importance="high" Text="TargetFramework  = $(TargetFramework)" />
-    <Message Importance="high" Text="CpmFull          = $(CpmFull)" />
-    <Message Importance="high" Text="CpmTFM           = $(CpmTFM)" />
-    <Message Importance="high" Text="CpmVer           = $(CpmVer)" />
-    <Message Importance="high" Text="CpmVerId         = $(CpmVerId)" />
-    <Message Importance="high" Text="CpmId            = $(CpmId)" />
+    <Message Importance="high" Text="TargetFrameworks  = {$(TargetFrameworks)}" />
+    <Message Importance="high" Text="TargetFramework   = $(TargetFramework)" />
+    <Message Importance="high" Text="CpmFull           = $(CpmFull)" />
+    <Message Importance="high" Text="CpmTFM            = $(CpmTFM)" />
+    <Message Importance="high" Text="CpmVer            = $(CpmVer)" />
+    <Message Importance="high" Text="CpmVerId          = $(CpmVerId)" />
+    <Message Importance="high" Text="CpmId             = $(CpmId)" />
+    <Message Importance="high" Text="CpmPath           = $(CpmPath)" />
+    <Message Importance="high" Text="PrunePackagesPath = $(PrunePackagesPath)" />
   </Target>
 
 </Project>

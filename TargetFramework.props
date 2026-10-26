@@ -5,15 +5,6 @@
   </PropertyGroup>
 
   <!--
-  UseLatestTfm controls whether to use the latest target framework version.
-  MultiTargeting take precedence over UseLatestTfm, so if MultiTargeting is true,
-  we will not use the latest target framework version.
-  -->
-  <PropertyGroup>
-    <UseLatestTfm Condition="'$(UseLatestTfm)' == '' Or '$(MultiTargeting)' == 'true'">false</UseLatestTfm>
-  </PropertyGroup>
-
-  <!--
   CoreTargetFramework backward compatibility:
   When CoreTargetFramework is specified, either on the CLI or in the root Directory.Build.props
   we will use it as the BareTargetFramework, which is the new property name for the target framework control.
@@ -30,33 +21,12 @@
     <FullTargetFramework Condition="'$(_ZouTfmFull)' == 'true'">$(BareTargetFramework)</FullTargetFramework>
   </PropertyGroup>
 
-  <!-- Choose the order of target frameworks based on UseLatestTfm -->
-  <Choose>
-    <When Condition="'$(UseLatestTfm)' == 'true'">
-      <PropertyGroup>
-        <CoreTargetFramework     Condition="'$(CoreTargetFramework)'     == ''">net10.0</CoreTargetFramework>
-        <CoreTargetFrameworks    Condition="'$(CoreTargetFrameworks)'    == ''">net10.0;net8.0</CoreTargetFrameworks>
-        <WindowsTargetFrameworks Condition="'$(WindowsTargetFrameworks)' == ''">net10.0-windows;net8.0-windows</WindowsTargetFrameworks>
-        <BrowserTargetFrameworks Condition="'$(BrowserTargetFrameworks)' == ''">net10.0-browser;net8.0-browser</BrowserTargetFrameworks>
-        <NetStdTargetFrameworks  Condition="'$(NetStdTargetFrameworks)'  == ''">netstandard2.1;netstandard2.0</NetStdTargetFrameworks>
-      </PropertyGroup>
-    </When>
-    <Otherwise>
-      <PropertyGroup>
-        <CoreTargetFramework     Condition="'$(CoreTargetFramework)'     == ''">net8.0</CoreTargetFramework>
-        <CoreTargetFrameworks    Condition="'$(CoreTargetFrameworks)'    == ''">net8.0;net10.0</CoreTargetFrameworks>
-        <WindowsTargetFrameworks Condition="'$(WindowsTargetFrameworks)' == ''">net8.0-windows;net10.0-windows</WindowsTargetFrameworks>
-        <BrowserTargetFrameworks Condition="'$(BrowserTargetFrameworks)' == ''">net8.0-browser;net10.0-browser</BrowserTargetFrameworks>
-        <NetStdTargetFrameworks  Condition="'$(NetStdTargetFrameworks)'  == ''">netstandard2.0;netstandard2.1</NetStdTargetFrameworks>
-      </PropertyGroup>
-    </Otherwise>
-  </Choose>
-
+  <!-- Keep framework lists in ascending version order; UseLatestTfm selects an endpoint during build resolution. -->
   <PropertyGroup>
     <CoreTargetFramework     Condition="'$(CoreTargetFramework)'     == ''">net8.0</CoreTargetFramework>
-    <CoreTargetFrameworks    Condition="'$(CoreTargetFrameworks)'    == ''">net8.0;net10.0;net11.0</CoreTargetFrameworks>
-    <WindowsTargetFrameworks Condition="'$(WindowsTargetFrameworks)' == ''">net8.0-windows;net10.0-windows;net11.0-windows</WindowsTargetFrameworks>
-    <BrowserTargetFrameworks Condition="'$(BrowserTargetFrameworks)' == ''">net8.0-browser;net10.0-browser;net11.0-browser</BrowserTargetFrameworks>
+    <CoreTargetFrameworks    Condition="'$(CoreTargetFrameworks)'    == ''">net8.0;net10.0</CoreTargetFrameworks>
+    <WindowsTargetFrameworks Condition="'$(WindowsTargetFrameworks)' == ''">net8.0-windows;net10.0-windows</WindowsTargetFrameworks>
+    <BrowserTargetFrameworks Condition="'$(BrowserTargetFrameworks)' == ''">net8.0-browser;net10.0-browser</BrowserTargetFrameworks>
     <NetStdTargetFrameworks  Condition="'$(NetStdTargetFrameworks)'  == ''">netstandard2.0;netstandard2.1</NetStdTargetFrameworks>
     
     <FullTargetFramework     Condition="'$(FullTargetFramework)'     == ''">net4.8</FullTargetFramework>
@@ -71,7 +41,6 @@
   <Target Name="TraceTargetFrameworkProps" Condition="'$(TfmDefDebug)' == 'true'">
     <Message Importance="high" Text="$(T0)$([MSBuild]::MakeRelative('$(BundleDir)', '$(MSBuildThisFileFullPath)')) ($(BundleRelativeProjectPath))$(NC)" />
 
-    <Message Importance="high" Text="UseLatestTfm            = $(UseLatestTfm)" />
     <Message Importance="high" Text="_ZouTfmVer              = $(_ZouTfmVer)" />
     <Message Importance="high" Text="_ZouTfmFull             = $(_ZouTfmFull)" />
     <Message Importance="high" Text="BareTargetFramework     = $(BareTargetFramework)" />

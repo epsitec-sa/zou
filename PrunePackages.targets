@@ -1,4 +1,4 @@
-<Project InitialTargets="TracePrunePackages">
+<Project>
 
   <PropertyGroup>
     <PrunePackagesTargetsImported>true</PrunePackagesTargetsImported>
@@ -11,15 +11,5 @@
   </PropertyGroup>
 
   <Import Project="$(PrunePackagesPath)" Condition="Exists('$(PrunePackagesPath)') And '$(TargetFrameworkIdentifier)' == '.NETCoreApp'" />
-
-  <Target Name="TracePrunePackages" Condition="'$(CpmId)' != '' And '$(CpmDebug)' == 'true'">
-    <Message Importance="high" Text=" " />
-    <Message Importance="high" Text="$(T0)$([MSBuild]::MakeRelative('$(BundleDir)', '$(MSBuildThisFileFullPath)')) ($(BundleRelativeProjectPath))$(NC)" />
-
-    <Message Importance="high" Text="TargetFramework   = $(TargetFramework)" />
-    <Message Importance="high" Text="TargetFrameworks  = $(TargetFrameworks)" />
-    <Message Importance="high" Text="CpmId             = $(CpmId)" />
-    <Message Importance="high" Text="PrunePackagesPath = $(PrunePackagesPath)" />
-  </Target>
 
 </Project>

@@ -10,101 +10,58 @@
 
     <BareTargetFrameworkInp>$(BareTargetFramework)</BareTargetFrameworkInp>
     <BareTargetFrameworksInp>$(BareTargetFrameworks)</BareTargetFrameworksInp>
+    <MultiTargetingInp>$(MultiTargeting)</MultiTargetingInp>
   </PropertyGroup>
 
   <PropertyGroup>
-    <BareTargetFrameworks Condition="'$(BareTargetFramework)' != ''" />
-    <!-- Transform 'net8.0+net10.0' to 'net8.0;net10.0' due to MSBuild CLI syntax
-         rejecting ';' and ',' in -p: values; Unescape() undoes the internal escaping
-         MSBuild applies to the ';' introduced by Replace() before it gets split. -->
-    <BareTargetFrameworksMsBuild Condition="'$(BareTargetFrameworks)' != ''">$([MSBuild]::Unescape($(BareTargetFrameworks.Replace('+', ';'))))</BareTargetFrameworksMsBuild>
+    <UseLatestTfm Condition="'$(UseLatestTfm)' == ''">false</UseLatestTfm>
+
+    <!-- BareTargetFrameworks wins over BareTargetFramework; either wins over mode and latest selection. -->
+    <_ZouBareTargetFramework Condition="'$(BareTargetFrameworksInp)' == ''">$(BareTargetFramework)</_ZouBareTargetFramework>
+    <_ZouBareTargetFrameworks Condition="'$(BareTargetFrameworksInp)' != ''">$(BareTargetFrameworks)</_ZouBareTargetFrameworks>
+
+    <!-- Transform '+' to ';' because semicolons cannot be passed in MSBuild command-line properties. -->
+    <BareTargetFrameworksMsBuild Condition="'$(_ZouBareTargetFrameworks)' != ''">$([MSBuild]::Unescape($(_ZouBareTargetFrameworks.Replace('+', ';'))))</BareTargetFrameworksMsBuild>
+
+    <_ZouMultiTargeting Condition="'$(_ZouBareTargetFrameworks)' != ''">true</_ZouMultiTargeting>
+    <_ZouMultiTargeting Condition="'$(_ZouMultiTargeting)' == '' And '$(_ZouBareTargetFramework)' != ''">false</_ZouMultiTargeting>
+    <_ZouMultiTargeting Condition="'$(_ZouMultiTargeting)' == '' And '$(MultiTargetingInp)' != ''">$(MultiTargetingInp)</_ZouMultiTargeting>
+    <_ZouMultiTargeting Condition="'$(_ZouMultiTargeting)' == ''">false</_ZouMultiTargeting>
+
+    <_ZouUseLatestTfm Condition="'$(_ZouBareTargetFramework)' == '' And '$(_ZouBareTargetFrameworks)' == '' And '$(MultiTargetingInp)' == '' And '$(UseLatestTfm)' == 'true'">true</_ZouUseLatestTfm>
+    <_ZouUseLatestTfm Condition="'$(_ZouUseLatestTfm)' == ''">false</_ZouUseLatestTfm>
+
+    <TargetingMode Condition="'$(_ZouBareTargetFrameworks)' != ''">multi</TargetingMode>
+    <TargetingMode Condition="'$(TargetingMode)' == '' And '$(_ZouBareTargetFramework)' != ''">single</TargetingMode>
+    <TargetingMode Condition="'$(TargetingMode)' == '' And '$(_ZouMultiTargeting)' == 'true'">multi-default</TargetingMode>
+    <TargetingMode Condition="'$(TargetingMode)' == '' And '$(_ZouUseLatestTfm)' == 'true'">single-latest</TargetingMode>
+    <TargetingMode Condition="'$(TargetingMode)' == ''">single-oldest</TargetingMode>
   </PropertyGroup>
-
-  <!-- Determine targeting mode based on the following truth table:
-
-       BTFM  BTFMs Multi Latest
-       0     0     0     0      single-oldest
-       0     0     0     1      single-latest
-       0     0     1     x      multi-default
-       0     1     x     x      multi
-       1     0     x     x      single
-       1     1     0     x      single
-       1     1     1     x      multi
-       
-       BTFM == 0 and BTFMs == 0 and Multi == 0 and	Latest == 0 -> single-oldest -> BTFM  = Min(CoreTargetFrameworks)
-       BTFM == 0 and BTFMs == 0 and Multi == 0 and	Latest == 1 -> single-latest -> BTFM  = Max(CoreTargetFrameworks)
-       BTFM == 0 and BTFMs == 0 and Multi == 1 and	Latest == x -> multi-default -> BTFMs = CoreTargetFrameworks
-       
-       BTFM == 0 and BTFMs == 1 and Multi == x and	Latest == x -> multi         -> BTFMs
-       BTFM == 1 and BTFMs == 0 and Multi == x and	Latest == x -> single        -> BTFM
-       BTFM == 1 and BTFMs == 1 and Multi == 1 and	Latest == x -> multi         -> BTFMs
-       BTFM == 1 and BTFMs == 1 and Multi == 0 and	Latest == x -> single        -> BTFM
-  -->
-  <Choose>
-    <!-- BTFM == 0 and BTFMs == 0 -->
-    <When Condition="'$(BareTargetFramework)' == '' And '$(BareTargetFrameworks)' == ''">
-      <Choose>
-        <!-- Multi == 0 -->
-        <When Condition="'$(MultiTargeting)' != 'true'">
-          <!-- BTFM = Max(CoreTargetFrameworks) or Min(CoreTargetFrameworks) -->
-          <PropertyGroup>
-            <TargetingMode Condition="'$(UseLatestTfm)' == 'true'">single-latest</TargetingMode>
-            <TargetingMode Condition="'$(UseLatestTfm)' != 'true'">single-oldest</TargetingMode>
-          </PropertyGroup>
-        </When>
-        <!-- Multi == 1 -->
-        <Otherwise>
-          <PropertyGroup>
-            <TargetingMode>multi-default</TargetingMode>
-          </PropertyGroup>
-        </Otherwise>
-      </Choose>
-    </When>
-    <!-- BTFM == 0 and BTFMs == 1 -->
-    <When Condition="'$(BareTargetFramework)' == '' And '$(BareTargetFrameworks)' != ''">
-      <PropertyGroup>
-        <TargetingMode>multi</TargetingMode>
-      </PropertyGroup>
-    </When>
-    <!-- BTFM == 1 and BTFMs == 0 -->
-    <When Condition="'$(BareTargetFramework)' != '' And '$(BareTargetFrameworks)' == ''">
-      <PropertyGroup>
-        <TargetingMode>single</TargetingMode>
-      </PropertyGroup>
-    </When>
-    <!-- BTFM == 1 and BTFMs == 1 -->
-    <Otherwise>
-      <PropertyGroup>
-        <TargetingMode Condition="'$(MultiTargeting)' == 'true'">multi</TargetingMode>
-        <TargetingMode Condition="'$(MultiTargeting)' != 'true'">single</TargetingMode>
-      </PropertyGroup>
-    </Otherwise>
-  </Choose>
 
   <PropertyGroup>
     <!-- NU1510 can be triggered by BareTargetFrameworks; it is harmless here. -->
-    <NoWarn Condition="'$(BareTargetFrameworks)' != ''">$(NoWarn);NU1510</NoWarn>
-    
+    <NoWarn Condition="'$(_ZouBareTargetFrameworks)' != ''">$(NoWarn);NU1510</NoWarn>
+
     <!-- Keep the project's original framework pool to resolve bare TFM overrides. -->
     <_ZouProjectTargetFrameworks>$(TargetFrameworks)</_ZouProjectTargetFrameworks>
 
-    <!-- A bare TFM selects the SDK version; its platform suffix (e.g. -windows or -browser) is resolved from the project pool. -->
-    <_ZouBareTfm Condition="'$(BareTargetFramework)' != '' And !$(BareTargetFramework.Contains('-'))">true</_ZouBareTfm>
+    <!-- A bare TFM selects the SDK version; its platform suffix is resolved from the project pool. -->
+    <_ZouBareTfm Condition="'$(_ZouBareTargetFramework)' != '' And !$(_ZouBareTargetFramework.Contains('-'))">true</_ZouBareTfm>
 
-    <TargetFramework  Condition="'$(BareTargetFramework)' != '' And '$(_ZouBareTfm)' != 'true'">$(BareTargetFramework)</TargetFramework>
-    <TargetFrameworks Condition="'$(BareTargetFramework)' == '' And '$(BareTargetFrameworks)' != ''">$(BareTargetFrameworksMsBuild)</TargetFrameworks>
+    <TargetFramework Condition="'$(_ZouBareTargetFramework)' != '' And '$(_ZouBareTfm)' != 'true'">$(_ZouBareTargetFramework)</TargetFramework>
+    <TargetFrameworks Condition="'$(_ZouBareTargetFramework)' == '' And '$(_ZouBareTargetFrameworks)' != ''">$(BareTargetFrameworksMsBuild)</TargetFrameworks>
   </PropertyGroup>
 
   <!-- Narrow the project framework pool to the requested bare TFM and its platform variants.
        Keep the original pool when there is no match, so single-target frameworks remain intact. -->
   <PropertyGroup Condition="'$(_ZouBareTfm)' == 'true' And '$(TargetFrameworks)' != ''">
-    <_ZouBareTfmMatch>$([MSBuild]::FilterTargetFrameworks('$(TargetFrameworks)', '$(BareTargetFramework);$(BareTargetFramework)-windows;$(BareTargetFramework)-browser'))</_ZouBareTfmMatch>
+    <_ZouBareTfmMatch>$([MSBuild]::FilterTargetFrameworks('$(TargetFrameworks)', '$(_ZouBareTargetFramework);$(_ZouBareTargetFramework)-windows;$(_ZouBareTargetFramework)-browser'))</_ZouBareTfmMatch>
     <TargetFrameworks Condition="'$(_ZouBareTfmMatch)' != ''">$(_ZouBareTfmMatch)</TargetFrameworks>
   </PropertyGroup>
 
   <!-- Resolve each bare multi-target TFM against the project's framework pool. Preserve
        unmatched tokens so validation can report them later. -->
-  <PropertyGroup Condition="'$(BareTargetFramework)' == '' And '$(BareTargetFrameworksMsBuild)' != '' And '$(_ZouProjectTargetFrameworks)' != ''">
+  <PropertyGroup Condition="'$(_ZouBareTargetFramework)' == '' And '$(BareTargetFrameworksMsBuild)' != '' And '$(_ZouProjectTargetFrameworks)' != ''">
     <_ZouMultiRemain>$(BareTargetFrameworksMsBuild)</_ZouMultiRemain>
     <_ZouMultiResolved></_ZouMultiResolved>
   </PropertyGroup>
@@ -164,44 +121,20 @@
     <_ZouMultiRemain>$([System.Text.RegularExpressions.Regex]::Replace('$(_ZouMultiRemain)', '^[^;]+;?', ''))</_ZouMultiRemain>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(BareTargetFramework)' == '' And '$(BareTargetFrameworksMsBuild)' != '' And '$(_ZouMultiResolved)' != ''">
+  <PropertyGroup Condition="'$(_ZouBareTargetFramework)' == '' And '$(BareTargetFrameworksMsBuild)' != '' And '$(_ZouMultiResolved)' != ''">
     <!-- Remove the initial separator and unescape the framework list for the SDK. -->
     <TargetFrameworks>$([MSBuild]::Unescape($([System.Text.RegularExpressions.Regex]::Replace('$(_ZouMultiResolved)', '^;', ''))))</TargetFrameworks>
   </PropertyGroup>
 
-  <PropertyGroup>
-    <!-- Determine if the project is multi or single-target - default to single-target -->
-    <MultiTargeting Condition="'$(BareTargetFrameworks)' != ''">true</MultiTargeting>
-    <MultiTargeting Condition="'$(BareTargetFramework)'  != ''">false</MultiTargeting>
-    <MultiTargeting Condition="'$(MultiTargeting)'       == ''">false</MultiTargeting>
-  </PropertyGroup>
-
-  <!-- Compute Min and Max TargetFramework -->
-  <PropertyGroup>
-    <_Tfms Condition="'$(_Tfms)' == '' And '$(BareTargetFramework)'  != ''">;$(BareTargetFramework);</_Tfms>
-    <_Tfms Condition="'$(_Tfms)' == '' And '$(BareTargetFrameworks)' != ''">;$(BareTargetFrameworks);</_Tfms>
-    <_Tfms Condition="'$(_Tfms)' == '' And '$(TargetFramework)'      != ''">;$(TargetFramework);</_Tfms>
-    <_Tfms Condition="'$(_Tfms)' == '' And '$(TargetFrameworks)'     != ''">;$(TargetFrameworks);</_Tfms>
-    <_Tfms Condition="'$(_Tfms)' == ''">;$(CoreTargetFrameworks);</_Tfms>
-
-    <BareTfmMin Condition="'$(BareTfmMin)' == '' And $(_Tfms.Contains(';net4.8;'))">net4.8</BareTfmMin>
-    <BareTfmMin Condition="'$(BareTfmMin)' == '' And $(_Tfms.Contains(';netstandard'))">net8.0</BareTfmMin>
-    <BareTfmMin Condition="'$(BareTfmMin)' == '' And $(_Tfms.Contains(';net8.0'))">net8.0</BareTfmMin>
-    <BareTfmMin Condition="'$(BareTfmMin)' == '' And $(_Tfms.Contains(';net10.0'))">net10.0</BareTfmMin>
-    <BareTfmMin Condition="'$(BareTfmMin)' == '' And $(_Tfms.Contains(';net11.0'))">net11.0</BareTfmMin>
-
-    <BareTfmMax Condition="'$(BareTfmMax)' == '' And $(_Tfms.Contains(';net11.0'))">net11.0</BareTfmMax>
-    <BareTfmMax Condition="'$(BareTfmMax)' == '' And $(_Tfms.Contains(';net10.0'))">net10.0</BareTfmMax>
-    <BareTfmMax Condition="'$(BareTfmMax)' == '' And $(_Tfms.Contains(';net8.0'))">net8.0</BareTfmMax>
-    <BareTfmMax Condition="'$(BareTfmMax)' == '' And $(_Tfms.Contains(';netstandard'))">net8.0</BareTfmMax>
-    <BareTfmMax Condition="'$(BareTfmMax)' == '' And $(_Tfms.Contains(';net4.8;'))">net4.8</BareTfmMax>
+  <PropertyGroup Condition="'$(MultiTargeting)' == '' And '$(_ZouMultiTargeting)' != ''">
+    <MultiTargeting>$(_ZouMultiTargeting)</MultiTargeting>
   </PropertyGroup>
 
   <!-- Set a default TFM for single-target projects. Set TargetFrameworks instead to build
        multiple TFMs; single-target mode selects one matching framework from that list. -->
 
   <Choose>
-    <When Condition="'$(MultiTargeting)' == 'true'">
+    <When Condition="'$(_ZouMultiTargeting)' == 'true'">
       <PropertyGroup>
         <TfmDbgInfo>Multi</TfmDbgInfo>
         <TargetFramework Condition="'$(TargetFrameworks)' != ''" />
@@ -211,6 +144,8 @@
     <Otherwise>
       <PropertyGroup>
         <TfmDbgInfo>Single</TfmDbgInfo>
+        <TargetFrameworks Condition="'$(TargetFramework)' == '' And '$(TargetFrameworks)' == '' And '$(_ZouUseLatestTfm)' == 'true'">$(CoreTargetFrameworks)</TargetFrameworks>
+        <TargetFramework Condition="'$(TargetFramework)' == '' And '$(TargetFrameworks)' == '' And '$(_ZouUseLatestTfm)' != 'true'">$(CoreTargetFramework)</TargetFramework>
       </PropertyGroup>
 
       <!-- A single candidate needs no matching and may use a nonstandard TFM. -->
@@ -235,23 +170,29 @@
             <_ZouFullFirst   >$([System.Text.RegularExpressions.Regex]::Match('$(_ZouFullMatch)',    '^[^;]+').Value)</_ZouFullFirst>
             <_ZouNetStdFirst >$([System.Text.RegularExpressions.Regex]::Match('$(_ZouNetStdMatch)',  '^[^;]+').Value)</_ZouNetStdFirst>
 
-            <TfmSuffix Condition="'$(TfmSuffix)' == '' And $(_ZouWindowsFirst.Contains('-windows'))">-windows</TfmSuffix>
-            <TfmSuffix Condition="'$(TfmSuffix)' == '' And $(_ZouBrowserFirst.Contains('-browser'))">-browser</TfmSuffix>
+            <_ZouCoreLast   >$([System.Text.RegularExpressions.Regex]::Match('$(_ZouCoreMatch)',    '[^;]+$').Value)</_ZouCoreLast>
+            <_ZouWindowsLast>$([System.Text.RegularExpressions.Regex]::Match('$(_ZouWindowsMatch)', '[^;]+$').Value)</_ZouWindowsLast>
+            <_ZouBrowserLast>$([System.Text.RegularExpressions.Regex]::Match('$(_ZouBrowserMatch)', '[^;]+$').Value)</_ZouBrowserLast>
+            <_ZouFullLast   >$([System.Text.RegularExpressions.Regex]::Match('$(_ZouFullMatch)',    '[^;]+$').Value)</_ZouFullLast>
+            <_ZouNetStdLast >$([System.Text.RegularExpressions.Regex]::Match('$(_ZouNetStdMatch)',  '[^;]+$').Value)</_ZouNetStdLast>
+
+            <_ZouCoreSelected Condition="'$(_ZouUseLatestTfm)' == 'true'">$(_ZouCoreLast)</_ZouCoreSelected>
+            <_ZouCoreSelected Condition="'$(_ZouUseLatestTfm)' != 'true'">$(_ZouCoreFirst)</_ZouCoreSelected>
+            <_ZouWindowsSelected Condition="'$(_ZouUseLatestTfm)' == 'true'">$(_ZouWindowsLast)</_ZouWindowsSelected>
+            <_ZouWindowsSelected Condition="'$(_ZouUseLatestTfm)' != 'true'">$(_ZouWindowsFirst)</_ZouWindowsSelected>
+            <_ZouBrowserSelected Condition="'$(_ZouUseLatestTfm)' == 'true'">$(_ZouBrowserLast)</_ZouBrowserSelected>
+            <_ZouBrowserSelected Condition="'$(_ZouUseLatestTfm)' != 'true'">$(_ZouBrowserFirst)</_ZouBrowserSelected>
+            <_ZouFullSelected Condition="'$(_ZouUseLatestTfm)' == 'true'">$(_ZouFullLast)</_ZouFullSelected>
+            <_ZouFullSelected Condition="'$(_ZouUseLatestTfm)' != 'true'">$(_ZouFullFirst)</_ZouFullSelected>
+            <_ZouNetStdSelected Condition="'$(_ZouUseLatestTfm)' == 'true'">$(_ZouNetStdLast)</_ZouNetStdSelected>
+            <_ZouNetStdSelected Condition="'$(_ZouUseLatestTfm)' != 'true'">$(_ZouNetStdFirst)</_ZouNetStdSelected>
+
+            <TargetFramework Condition="'$(TargetFramework)' == '' And '$(_ZouCoreSelected)' != ''">$(_ZouCoreSelected)</TargetFramework>
+            <TargetFramework Condition="'$(TargetFramework)' == '' And '$(_ZouWindowsSelected)' != ''">$(_ZouWindowsSelected)</TargetFramework>
+            <TargetFramework Condition="'$(TargetFramework)' == '' And '$(_ZouBrowserSelected)' != ''">$(_ZouBrowserSelected)</TargetFramework>
+            <TargetFramework Condition="'$(TargetFramework)' == '' And '$(_ZouFullSelected)' != ''">$(_ZouFullSelected)</TargetFramework>
+            <TargetFramework Condition="'$(TargetFramework)' == '' And '$(_ZouNetStdSelected)' != ''">$(_ZouNetStdSelected)</TargetFramework>
           </PropertyGroup>
-          <Choose>
-            <When Condition="'$(UseLatestTfm)' == 'true'">
-              <PropertyGroup>
-                <TfmDbgInfo>$(TfmDbgInfo)-latest;01</TfmDbgInfo>
-                <TargetFramework>$(BareTfmMax)$(TfmSuffix)</TargetFramework>
-              </PropertyGroup>
-            </When>
-            <Otherwise>
-              <PropertyGroup>
-                <TfmDbgInfo>$(TfmDbgInfo)-oldest;01</TfmDbgInfo>
-                <TargetFramework>$(BareTfmMin)$(TfmSuffix)</TargetFramework>
-              </PropertyGroup>
-            </Otherwise>
-          </Choose>
         </When>
 
         <When Condition="'$(TargetFramework)' != ''">
@@ -261,27 +202,13 @@
             <TargetFrameworks />
           </PropertyGroup>
         </When>
-
-        <!-- Default to the configured framework when none is specified. -->
-        <When Condition="'$(TargetFramework)' == '' And '$(TargetFrameworks)' == ''">
-          <Choose>
-            <When Condition="'$(UseLatestTfm)' == 'true'">
-              <PropertyGroup>
-                <TfmDbgInfo>$(TfmDbgInfo)-latest;00</TfmDbgInfo>
-                <TargetFramework>$(BareTfmMax)</TargetFramework>
-              </PropertyGroup>
-            </When>
-            <Otherwise>
-              <PropertyGroup>
-                <TfmDbgInfo>$(TfmDbgInfo)-oldest;00</TfmDbgInfo>
-                <TargetFramework>$(BareTfmMin)</TargetFramework>
-              </PropertyGroup>
-            </Otherwise>
-          </Choose>
-        </When>
       </Choose>
     </Otherwise>
   </Choose>
+
+  <PropertyGroup Condition="'$(_ZouMultiTargeting)' != 'true' And '$(TargetFramework)' != ''">
+    <TargetFrameworks />
+  </PropertyGroup>
 
   <PropertyGroup>
     <BuildType Condition="'$(BuildType)' == '' And '$(TargetFramework)' == '' And '$(TargetFrameworks)' == ''">*Undefined*</BuildType>
@@ -297,7 +224,7 @@
   </PropertyGroup>
 
   <!-- Fail when single-target mode cannot resolve any declared framework. -->
-  <Target Name="ZouValidateTargetFramework" Condition="!$(MultiTargeting) And '$(TargetFramework)' == '' And '$(TargetFrameworks)' != ''" BeforeTargets="Build;Restore">
+  <Target Name="ZouValidateTargetFramework" Condition="'$(_ZouMultiTargeting)' != 'true' And '$(TargetFramework)' == '' And '$(TargetFrameworks)' != ''" BeforeTargets="Build;Restore">
     <Error Text="$(ErrorInvalidTfmId)=($(TargetFrameworks))" Code="$(ErrorInvalidTfmIdCode)"/>
   </Target>
 
@@ -344,8 +271,8 @@
     <Message Importance="high" Text="$(TfmMultiColor)MaxCpuCount             = $(Purple)$(MaxCpuCount)$(NC)"                 Condition="'$(MaxCpuCount)'  != ''" />
     <Message Importance="high" Text="$(TfmMultiColor)ZouAgentType            = $(Purple)$(ZouAgentType)$(NC)"                Condition="'$(ZouAgentType)' != ''" />
     <Message Importance="high" Text="$(TfmMultiColor)TfmDbgInfo              = $(Purple)$(TfmDbgInfo)$(NC)"                  Condition="'$(TfmDbgInfo)'   != ''" />
-    <Message Importance="high" Text="$(TfmMultiColor)MultiTargeting          = $(Yellow)$(MultiTargeting)$(NC)" />
-    <Message Importance="high" Text="$(TfmMultiColor)UseLatestTfm            = $(Yellow)$(UseLatestTfm)$(NC)" />
+    <Message Importance="high" Text="$(TfmMultiColor)MultiTargeting          = $(Yellow)$(_ZouMultiTargeting)$(NC)" />
+    <Message Importance="high" Text="$(TfmMultiColor)UseLatestTfm            = $(Yellow)$(_ZouUseLatestTfm)$(NC)" />
     <Message Importance="high" Text="$(TfmMultiColor)BuildType               = $(BuildType)$(NC)" />
     <Message Importance="high" Text="$(TfmMultiColor)NetKind                 = $(NetKind)$(NC)"                              Condition="'$(TargetFramework)' != ''" />
 
@@ -367,23 +294,6 @@
     <Message Importance="high" Text="$(TfmMultiColor)TargetFrameworks        = $(TfmsColor){$(TargetFrameworks)}$(NC)"       Condition="'$(TargetFrameworks)'   != ''" />
     <Message Importance="high" Text="$(TfmMultiColor)TargetFramework         = $(TfmColor)$(TargetFramework)$(NC)"           Condition="'$(TargetFramework)'    != ''" />
     <Message Importance="high" Text="$(TfmMultiColor)TargetingMode           = $(Brown)$(TargetingMode)$(NC)" />
-
-    <!--
-    <Message Importance="high" Text="$(TfmMultiColor)_ZouCoreMatch           = $(TfmColor)$(_ZouCoreMatch)$(NC)"             Condition="'$(_ZouCoreMatch)'     != ''" />
-    <Message Importance="high" Text="$(TfmMultiColor)_ZouWindowsMatch        = $(TfmColor)$(_ZouWindowsMatch)$(NC)"          Condition="'$(_ZouWindowsMatch)'  != ''" />
-    <Message Importance="high" Text="$(TfmMultiColor)_ZouBrowserMatch        = $(TfmColor)$(_ZouBrowserMatch)$(NC)"          Condition="'$(_ZouBrowserMatch)'  != ''" />
-    <Message Importance="high" Text="$(TfmMultiColor)_ZouFullMatch           = $(TfmColor)$(_ZouFullMatch)$(NC)"             Condition="'$(_ZouFullMatch)'     != ''" />
-    <Message Importance="high" Text="$(TfmMultiColor)_ZouNetStdMatch         = $(TfmColor)$(_ZouNetStdMatch)$(NC)"           Condition="'$(_ZouNetStdMatch)'   != ''" />
-    <Message Importance="high" Text="$(TfmMultiColor)_ZouCoreFirst           = $(TfmColor)$(_ZouCoreFirst)$(NC)"             Condition="'$(_ZouCoreFirst)'     != ''" />
-    <Message Importance="high" Text="$(TfmMultiColor)_ZouWindowsFirst        = $(TfmColor)$(_ZouWindowsFirst)$(NC)"          Condition="'$(_ZouWindowsFirst)'  != ''" />
-    <Message Importance="high" Text="$(TfmMultiColor)_ZouBrowserFirst        = $(TfmColor)$(_ZouBrowserFirst)$(NC)"          Condition="'$(_ZouBrowserFirst)'  != ''" />
-    <Message Importance="high" Text="$(TfmMultiColor)_ZouFullFirst           = $(TfmColor)$(_ZouFullFirst)$(NC)"             Condition="'$(_ZouFullFirst)'     != ''" />
-    <Message Importance="high" Text="$(TfmMultiColor)_ZouNetStdFirst         = $(TfmColor)$(_ZouNetStdFirst)$(NC)"           Condition="'$(_ZouNetStdFirst)'   != ''" />
-    -->
-
-    <Message Importance="high" Text="$(TfmMultiColor)TfmSuffix               = $(TfmColor)$(TfmSuffix)$(NC)"                 Condition="'$(TfmSuffix)'  != ''" />
-    <Message Importance="high" Text="$(TfmMultiColor)BareTfmMin              = $(TfmColor)$(BareTfmMin)$(NC)"                Condition="'$(BareTfmMin)' != ''" />
-    <Message Importance="high" Text="$(TfmMultiColor)BareTfmMax              = $(TfmColor)$(BareTfmMax)$(NC)"                Condition="'$(BareTfmMax)' != ''" />
   </Target>
 
 </Project>
