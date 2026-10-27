@@ -462,7 +462,7 @@ Lock files can be updated by using the '——force-evaluate' option.
   </ItemGroup>
 
   <!-- CpmTFM >= net10.0 || CpmFull (TFM <= net4.8) -->
-  <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(CpmTFM)', 'net10.0')) Or $(CpmFull)">
+  <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(CpmTFM)', 'net10.0')) Or ($(CpmFull) And $(CoreTargetFrameworks.Contains('net10.0')))">
     <PackageVersion Update="EFCore.NamingConventions"                                 Version="10.0.*" />           <!-- net10 -->
 
     <PackageVersion Update="Microsoft.AspNetCore.Authentication.JwtBearer"            Version="10.0.*" />           <!-- net10 -->
@@ -555,7 +555,7 @@ Lock files can be updated by using the '——force-evaluate' option.
   </ItemGroup>
   
   <!-- CpmTFM >= net11.0 || CpmFull (TFM <= net4.8) -->
-  <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(CpmTFM)', 'net11.0')) Or $(CpmFull)">
+  <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(CpmTFM)', 'net11.0')) Or ($(CpmFull) And $(CoreTargetFrameworks.Contains('net11.0')))">
     <PackageVersion Update="Microsoft.AspNetCore.Authentication.JwtBearer"            Version="11.0.*-*" />         <!-- net11 -->
     <PackageVersion Update="Microsoft.AspNetCore.Components"                          Version="11.0.*-*" />         <!-- net11 -->
     <PackageVersion Update="Microsoft.AspNetCore.Components.Authorization"            Version="11.0.*-*" />         <!-- net11 -->
