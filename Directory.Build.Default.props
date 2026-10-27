@@ -1,8 +1,12 @@
 <!-- Defines the default metadata for .NET projects (prolog) -->
 <Project InitialTargets="TraceDirectoryBuildDefaultProps">
 
-  <Import Project="zou.props"             Condition="'$(ZouImported)' == ''" />
+  <!-- Define base properties -->
+  <Import Project="zou.props" Condition="'$(ZouImported)' == ''" />
+  <!-- Define TFMs constants -->
   <Import Project="TargetFramework.props" Condition="'$(TargetFrameworkImported)' == ''" />
+  <!-- Start the TFM babouchka -->
+  <Import Project="hook.zou.build.tfm.props" Condition="'$(ZouBuildTfmProps)' == ''"/>
 
   <PropertyGroup>
     <!-- Uncomment to trace build properties -->
