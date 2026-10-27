@@ -35,16 +35,37 @@
     <BrowserTargetFramework  Condition="'$(BrowserTargetFramework)'  == ''">$(CoreTargetFramework)-browser</BrowserTargetFramework>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <Net11Available Condition="$(NETCoreSdkVersion.StartsWith('11.'))">true</Net11Available>
+  </PropertyGroup>
+
+  <!-- MSBuild/Visual Studio: the running SDK is not necessarily the newest installed one, so look for an installed 11.0.* SDK folder. -->
+  <PropertyGroup Condition="'$(Net11Available)' != 'true'">
+    <_ZouDotNetRoot Condition="'$(DOTNET_ROOT)' != '' And Exists('$(DOTNET_ROOT)\sdk')">$(DOTNET_ROOT)</_ZouDotNetRoot>
+    <_ZouDotNetRoot Condition="'$(_ZouDotNetRoot)' == ''">$(ProgramW6432)\dotnet</_ZouDotNetRoot>
+    <_ZouDotNetRoot Condition="'$(_ZouDotNetRoot)' == '' Or !Exists('$(_ZouDotNetRoot)\sdk')">$(ProgramFiles)\dotnet</_ZouDotNetRoot>
+    <Net11Available Condition="Exists('$(_ZouDotNetRoot)\sdk') And $([System.IO.Directory]::GetDirectories('$(_ZouDotNetRoot)\sdk', '11.0.*').Length) &gt; 0">true</Net11Available>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Net11Available)' == 'true'">
+    <CoreTargetFrameworks   >$(CoreTargetFrameworks);net11.0</CoreTargetFrameworks>
+    <WindowsTargetFrameworks>$(WindowsTargetFrameworks);net11.0-windows</WindowsTargetFrameworks>
+    <BrowserTargetFrameworks>$(BrowserTargetFrameworks);net11.0-browser</BrowserTargetFrameworks>
+  </PropertyGroup>
+  
   <Target Name="TraceTargetFrameworkProps" Condition="'$(TfmDefDebug)' == 'true'">
     <Message Importance="high" Text="$(T0)$([MSBuild]::MakeRelative('$(BundleDir)', '$(MSBuildThisFileFullPath)')) ($(BundleRelativeProjectPath))$(NC)" />
 
-    <Message Importance="high" Text="_ZouTfmVer              = $(_ZouTfmVer)" />
-    <Message Importance="high" Text="_ZouTfmFull             = $(_ZouTfmFull)" />
-    <Message Importance="high" Text="BareTargetFramework     = $(BareTargetFramework)" />
+    <Message Importance="high" Text="NETCoreSdkVersion       = $(NETCoreSdkVersion)" />
+    <Message Importance="high" Text="Net11Available          = $(Net11Available)" />
+    <Message Importance="high" Text="_ZouDotNetRoot          = $(_ZouDotNetRoot)"      Condition="'$(_ZouDotNetRoot)' != ''" />
+    <Message Importance="high" Text="_ZouTfmVer              = $(_ZouTfmVer)"          Condition="'$(_ZouTfmVer)' != ''" />
+    <Message Importance="high" Text="_ZouTfmFull             = $(_ZouTfmFull)"         Condition="'$(_ZouTfmFull)' != ''" />
+    <Message Importance="high" Text="BareTargetFramework     = $(BareTargetFramework)" Condition="'$(BareTargetFramework)' != ''" />
     <Message Importance="high" Text="CoreTargetFramework     = $(CoreTargetFramework)" />
     <Message Importance="high" Text="FullTargetFramework     = $(FullTargetFramework)" />
     <Message Importance="high" Text="WindowsTargetFramework  = $(WindowsTargetFramework)" />
-    <Message Importance="high" Text="BareTargetFrameworks    = $(BareTargetFrameworks)" />
+    <Message Importance="high" Text="BareTargetFrameworks    = $(BareTargetFrameworks)" Condition="'$(BareTargetFrameworks)' != ''" />
     <Message Importance="high" Text="CoreTargetFrameworks    = $(CoreTargetFrameworks)" />
     <Message Importance="high" Text="WindowsTargetFrameworks = $(WindowsTargetFrameworks)" />
     <Message Importance="high" Text="BrowserTargetFrameworks = $(BrowserTargetFrameworks)" />

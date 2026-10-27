@@ -44,7 +44,6 @@
     <ZouDebug    Condition="'$(ZouDebug)'    == '' Or '$(MSBuildRestoreSessionId)' != ''">false</ZouDebug>
     <RedistDebug Condition="'$(RedistDebug)' == '' Or '$(MSBuildRestoreSessionId)' != ''">false</RedistDebug>
     
-    <NETSdkVersion>$([System.Text.RegularExpressions.Regex]::Match($(MSBuildToolsPath), '(?&lt;=dotnet[\\/]sdk[\\/])\d+\.\d+\.\d+(-.*)?'))</NETSdkVersion>
     <!-- Configuration sub-directory -->
     <ZouCfg>zou.cfg$(V)</ZouCfg>
     <!-- Enable ZouTrace and ZouTraceMSBuild if the command 'msbuild zou.props' is executed -->
@@ -223,6 +222,7 @@
     <Message Importance="high" Text="  MSBuildThisFileName            = $(MSBuildThisFileName)" />
     <Message Importance="high" Text="  MSBuildThisFileDirectoryNoRoot = $(MSBuildThisFileDirectoryNoRoot)" />
     <Message Importance="high" Text="  MSBuildStartupDirectory        = $(MSBuildStartupDirectory)" />
+    <Message Importance="high" Text="  NETCoreSdkVersion              = $(NETCoreSdkVersion)" />
     <Message Importance="high" Text="  ToolsVersion                   = $(ToolsVersion)" />
     <Message Importance="high" Text="  SDK35ToolsPath                 = $(SDK35ToolsPath)" />
     <Message Importance="high" Text="  SDK40ToolsPath                 = $(SDK40ToolsPath)" />
@@ -248,7 +248,6 @@
     <Message Importance="high" Text="  TargetFrameworks           = $(TargetFrameworks)" />
     <Message Importance="high" Text="  RuntimeIdentifiers         = $(RuntimeIdentifiers)" />
     <Message Importance="high" Text="+ Version                    = $(Version)" />
-    <Message Importance="high" Text="+ NETSdkVersion              = $(NETSdkVersion)" />
     <Message Importance="high" Text="+ BundleId                   = $(BundleId)" />
     <Message Importance="high" Text="+ BundleName                 = $(BundleName)" />
     <Message Importance="high" Text="+ BundleDir                  = $(BundleDir)" />
