@@ -28,7 +28,7 @@
     <_ZouMultiTargeting Condition="'$(_ZouMultiTargeting)' == '' And '$(MultiTargetingInp)' != ''">$(MultiTargetingInp)</_ZouMultiTargeting>
     <_ZouMultiTargeting Condition="'$(_ZouMultiTargeting)' == ''">false</_ZouMultiTargeting>
 
-    <_ZouUseLatestTfm Condition="'$(_ZouBareTargetFramework)' == '' And '$(_ZouBareTargetFrameworks)' == '' And '$(MultiTargetingInp)' == '' And '$(UseLatestTfm)' == 'true'">true</_ZouUseLatestTfm>
+    <_ZouUseLatestTfm Condition="'$(_ZouBareTargetFramework)' == '' And '$(_ZouBareTargetFrameworks)' == '' And '$(_ZouMultiTargeting)' != 'true' And '$(UseLatestTfm)' == 'true'">true</_ZouUseLatestTfm>
     <_ZouUseLatestTfm Condition="'$(_ZouUseLatestTfm)' == ''">false</_ZouUseLatestTfm>
 
     <TargetingMode Condition="'$(_ZouBareTargetFrameworks)' != ''">multi</TargetingMode>
