@@ -5,9 +5,18 @@
     <ErrorPoNoMessageId>The command "xgettext" did not find any message IDs in source files.</ErrorPoNoMessageId>
 
     <ErrorInvalidTfmIdCode>ZOU1001</ErrorInvalidTfmIdCode>
-    <ErrorInvalidTfmId>Project '$(MSBuildProjectFile)' does not support any compatible TFM among its declared TargetFrameworks</ErrorInvalidTfmId>
+    <!-- {0} = declared TargetFrameworks -->
+    <ErrorInvalidTfmId>Project '$(MSBuildProjectFile)' does not support any compatible TFM among its declared TargetFrameworks=({0})</ErrorInvalidTfmId>
 
     <WarnTfmOverrideIdCode>ZOU1002</WarnTfmOverrideIdCode>
+    <!-- {0} = final TargetFramework, {1} = TargetFramework resolved by zou -->
+    <WarnTfmOverrideId>TargetFramework was overridden to '{0}' after zou's own resolution ('{1}').%0AThis is most likely due to a &lt;TargetFramework&gt; set directly in the .csproj.%0AStart $(Brown)zou tfm migrate$(Yellow) to update the project to use zou's resolution.</WarnTfmOverrideId>
+
+    <ErrorInvalidTfmMinCode>ZOU1003</ErrorInvalidTfmMinCode>
+    <ErrorInvalidTfmMin>Project '$(MSBuildProjectFile)': CoreTargetFrameworkMin='$(CoreTargetFrameworkMin)' is not supported (expected a bare modern TFM such as 'net10.0')</ErrorInvalidTfmMin>
+
+    <ErrorNoTfmAboveMinCode>ZOU1004</ErrorNoTfmAboveMinCode>
+    <ErrorNoTfmAboveMin>Project '$(MSBuildProjectFile)': no target framework remains with CoreTargetFrameworkMin='$(CoreTargetFrameworkMin)' (CoreTargetFrameworks='$(CoreTargetFrameworks)')</ErrorNoTfmAboveMin>
   </PropertyGroup>
 
   <Target Name="TraceZouErrorsProps" Condition="'$(ZouErrorsDebug)' == 'true'">
@@ -17,6 +26,8 @@
     <Message Importance="high" Text="ErrorPoNoMessageId     = $(ErrorPoNoMessageId)" />
     <Message Importance="high" Text="ErrorInvalidTfmIdCode  = $(ErrorInvalidTfmIdCode)" />
     <Message Importance="high" Text="ErrorInvalidTfmId      = $(ErrorInvalidTfmId)" />
+    <Message Importance="high" Text="WarnTfmOverrideIdCode  = $(WarnTfmOverrideIdCode)" />
+    <Message Importance="high" Text="WarnTfmOverrideId      = $(WarnTfmOverrideId)" />
     <Message Importance="high" Text=" " />
   </Target>
 </Project>

@@ -1,4 +1,4 @@
-<Project InitialTargets="TraceTargetFrameworkProps">
+<Project InitialTargets="TraceTargetFrameworkProps;ZouValidateCoreTargetFrameworkMin">
 
   <PropertyGroup>
     <TargetFrameworkImported>true</TargetFrameworkImported>
@@ -52,24 +52,68 @@
     <WindowsTargetFrameworks>$(WindowsTargetFrameworks);net11.0-windows</WindowsTargetFrameworks>
     <BrowserTargetFrameworks>$(BrowserTargetFrameworks);net11.0-browser</BrowserTargetFrameworks>
   </PropertyGroup>
-  
+
+  <PropertyGroup Condition="'$(CoreTargetFrameworkMin)' != ''">
+    <_ZouCoreTargetFrameworkMinVersion>$([MSBuild]::GetTargetFrameworkVersion('$(CoreTargetFrameworkMin)', 1))</_ZouCoreTargetFrameworkMinVersion>
+  </PropertyGroup>
+
+  <!-- Property lists are evaluated before MSBuild items, so filter the framework versions defined above directly. -->
+  <PropertyGroup Condition="'$(CoreTargetFrameworkMin)' != '' And $([MSBuild]::GetTargetFrameworkVersion('net8.0', 1)) &lt; $(_ZouCoreTargetFrameworkMinVersion)">
+    <CoreTargetFrameworks>$([MSBuild]::Unescape($([System.Text.RegularExpressions.Regex]::Replace('$(CoreTargetFrameworks)', '(^|;)net8\.0(;|$)', '$1').Trim(';'))))</CoreTargetFrameworks>
+    <WindowsTargetFrameworks>$([MSBuild]::Unescape($([System.Text.RegularExpressions.Regex]::Replace('$(WindowsTargetFrameworks)', '(^|;)net8\.0-windows(;|$)', '$1').Trim(';'))))</WindowsTargetFrameworks>
+    <BrowserTargetFrameworks>$([MSBuild]::Unescape($([System.Text.RegularExpressions.Regex]::Replace('$(BrowserTargetFrameworks)', '(^|;)net8\.0-browser(;|$)', '$1').Trim(';'))))</BrowserTargetFrameworks>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(CoreTargetFrameworkMin)' != '' And $([MSBuild]::GetTargetFrameworkVersion('net10.0', 1)) &lt; $(_ZouCoreTargetFrameworkMinVersion)">
+    <CoreTargetFrameworks>$([MSBuild]::Unescape($([System.Text.RegularExpressions.Regex]::Replace('$(CoreTargetFrameworks)', '(^|;)net10\.0(;|$)', '$1').Trim(';'))))</CoreTargetFrameworks>
+    <WindowsTargetFrameworks>$([MSBuild]::Unescape($([System.Text.RegularExpressions.Regex]::Replace('$(WindowsTargetFrameworks)', '(^|;)net10\.0-windows(;|$)', '$1').Trim(';'))))</WindowsTargetFrameworks>
+    <BrowserTargetFrameworks>$([MSBuild]::Unescape($([System.Text.RegularExpressions.Regex]::Replace('$(BrowserTargetFrameworks)', '(^|;)net10\.0-browser(;|$)', '$1').Trim(';'))))</BrowserTargetFrameworks>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(CoreTargetFrameworkMin)' != '' And $([MSBuild]::GetTargetFrameworkVersion('net11.0', 1)) &lt; $(_ZouCoreTargetFrameworkMinVersion)">
+    <CoreTargetFrameworks>$([MSBuild]::Unescape($([System.Text.RegularExpressions.Regex]::Replace('$(CoreTargetFrameworks)', '(^|;)net11\.0(;|$)', '$1').Trim(';'))))</CoreTargetFrameworks>
+    <WindowsTargetFrameworks>$([MSBuild]::Unescape($([System.Text.RegularExpressions.Regex]::Replace('$(WindowsTargetFrameworks)', '(^|;)net11\.0-windows(;|$)', '$1').Trim(';'))))</WindowsTargetFrameworks>
+    <BrowserTargetFrameworks>$([MSBuild]::Unescape($([System.Text.RegularExpressions.Regex]::Replace('$(BrowserTargetFrameworks)', '(^|;)net11\.0-browser(;|$)', '$1').Trim(';'))))</BrowserTargetFrameworks>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(CoreTargetFrameworkMin)' != ''">
+    <_ZouFirstCoreTargetFramework>$([System.Text.RegularExpressions.Regex]::Replace('$(CoreTargetFrameworks)', '^([^;]+)(;.*)?$', '$1'))</_ZouFirstCoreTargetFramework>
+    <_ZouFirstWindowsTargetFramework>$([System.Text.RegularExpressions.Regex]::Replace('$(WindowsTargetFrameworks)', '^([^;]+)(;.*)?$', '$1'))</_ZouFirstWindowsTargetFramework>
+    <_ZouFirstBrowserTargetFramework>$([System.Text.RegularExpressions.Regex]::Replace('$(BrowserTargetFrameworks)', '^([^;]+)(;.*)?$', '$1'))</_ZouFirstBrowserTargetFramework>
+    <CoreTargetFramework Condition="'$(CoreTargetFramework)' != '' And $([MSBuild]::GetTargetFrameworkVersion('$(CoreTargetFramework)', 1)) &lt; $(_ZouCoreTargetFrameworkMinVersion)">$(_ZouFirstCoreTargetFramework)</CoreTargetFramework>
+    <WindowsTargetFramework Condition="'$(WindowsTargetFramework)' != '' And $([MSBuild]::GetTargetFrameworkVersion('$(WindowsTargetFramework)', 1)) &lt; $(_ZouCoreTargetFrameworkMinVersion)">$(_ZouFirstWindowsTargetFramework)</WindowsTargetFramework>
+    <BrowserTargetFramework Condition="'$(BrowserTargetFramework)' != '' And $([MSBuild]::GetTargetFrameworkVersion('$(BrowserTargetFramework)', 1)) &lt; $(_ZouCoreTargetFrameworkMinVersion)">$(_ZouFirstBrowserTargetFramework)</BrowserTargetFramework>
+  </PropertyGroup>
+
+  <!-- CoreTargetFrameworkMin must be a bare modern TFM (net5.0 or later) and must leave at least one Core framework. -->
+  <Target Name="ZouValidateCoreTargetFrameworkMin" Condition="'$(CoreTargetFrameworkMin)' != ''">
+    <PropertyGroup>
+      <_ZouTfmMinValid>$([System.Text.RegularExpressions.Regex]::IsMatch('$(CoreTargetFrameworkMin)', '^net[0-9]+\.[0-9]+$'))</_ZouTfmMinValid>
+      <_ZouTfmMinValid Condition="'$(_ZouTfmMinValid)' == 'True' And $([MSBuild]::VersionLessThan('$(_ZouCoreTargetFrameworkMinVersion)', '5.0'))">False</_ZouTfmMinValid>
+    </PropertyGroup>
+    <Error Condition="'$(_ZouTfmMinValid)' != 'True'" Code="$(ErrorInvalidTfmMinCode)" Text="$(ErrorInvalidTfmMin)" />
+    <Error Condition="'$(_ZouTfmMinValid)' == 'True' And '$(CoreTargetFrameworks)' == ''" Code="$(ErrorNoTfmAboveMinCode)" Text="$(ErrorNoTfmAboveMin)" />
+  </Target>
+
   <Target Name="TraceTargetFrameworkProps" Condition="'$(TfmDefDebug)' == 'true'">
+    <Message Importance="high" Text=" " />
     <Message Importance="high" Text="$(T0)$([MSBuild]::MakeRelative('$(BundleDir)', '$(MSBuildThisFileFullPath)')) ($(BundleRelativeProjectPath))$(NC)" />
 
     <Message Importance="high" Text="NETCoreSdkVersion       = $(NETCoreSdkVersion)" />
     <Message Importance="high" Text="Net11Available          = $(Net11Available)" />
-    <Message Importance="high" Text="_ZouDotNetRoot          = $(_ZouDotNetRoot)"      Condition="'$(_ZouDotNetRoot)' != ''" />
-    <Message Importance="high" Text="_ZouTfmVer              = $(_ZouTfmVer)"          Condition="'$(_ZouTfmVer)' != ''" />
-    <Message Importance="high" Text="_ZouTfmFull             = $(_ZouTfmFull)"         Condition="'$(_ZouTfmFull)' != ''" />
-    <Message Importance="high" Text="BareTargetFramework     = $(BareTargetFramework)" Condition="'$(BareTargetFramework)' != ''" />
+    <Message Importance="high" Text="CoreTargetFrameworkMin  = $(CoreTargetFrameworkMin)" Condition="'$(CoreTargetFrameworkMin)' != ''" />
+    <Message Importance="high" Text="_ZouDotNetRoot          = $(_ZouDotNetRoot)"         Condition="'$(_ZouDotNetRoot)' != ''" />
+    <Message Importance="high" Text="_ZouTfmVer              = $(_ZouTfmVer)"             Condition="'$(_ZouTfmVer)' != ''" />
+    <Message Importance="high" Text="_ZouTfmFull             = $(_ZouTfmFull)"            Condition="'$(_ZouTfmFull)' != ''" />
+    <Message Importance="high" Text="BareTargetFramework     = $(BareTargetFramework)"    Condition="'$(BareTargetFramework)' != ''" />
     <Message Importance="high" Text="CoreTargetFramework     = $(CoreTargetFramework)" />
     <Message Importance="high" Text="FullTargetFramework     = $(FullTargetFramework)" />
     <Message Importance="high" Text="WindowsTargetFramework  = $(WindowsTargetFramework)" />
-    <Message Importance="high" Text="BareTargetFrameworks    = $(BareTargetFrameworks)" Condition="'$(BareTargetFrameworks)' != ''" />
+    <Message Importance="high" Text="BrowserTargetFramework  = $(BrowserTargetFramework)" />
+    <Message Importance="high" Text="BareTargetFrameworks    = $(BareTargetFrameworks)"   Condition="'$(BareTargetFrameworks)' != ''" />
     <Message Importance="high" Text="CoreTargetFrameworks    = $(CoreTargetFrameworks)" />
     <Message Importance="high" Text="WindowsTargetFrameworks = $(WindowsTargetFrameworks)" />
     <Message Importance="high" Text="BrowserTargetFrameworks = $(BrowserTargetFrameworks)" />
     <Message Importance="high" Text="NetStdTargetFrameworks  = $(NetStdTargetFrameworks)" />
-    <Message Importance="high" Text=" " />
   </Target>
 </Project>

@@ -225,7 +225,7 @@
 
   <!-- Fail when single-target mode cannot resolve any declared framework. -->
   <Target Name="ZouValidateTargetFramework" Condition="'$(_ZouMultiTargeting)' != 'true' And '$(TargetFramework)' == '' And '$(TargetFrameworks)' != ''" BeforeTargets="Build;Restore">
-    <Error Text="$(ErrorInvalidTfmId)=($(TargetFrameworks))" Code="$(ErrorInvalidTfmIdCode)"/>
+    <Error Text="$([System.String]::Format('$(ErrorInvalidTfmId)', '$(TargetFrameworks)'))" Code="$(ErrorInvalidTfmIdCode)"/>
   </Target>
 
   <PropertyGroup>
@@ -241,12 +241,7 @@
   <Target Name="ZouWarnTfmOverride"
           Condition="'$(TargetFramework)' != '' And '$(TargetFramework)' != '$(TargetFrameworkOut)' And '$(ZouAllowLegacyTfmOverride)' != 'true'"
           BeforeTargets="Build;Restore">
-    <PropertyGroup>
-      <_WarnMsg1>TargetFramework was overridden to '$(TargetFramework)' after zou's own resolution ('$(TargetFrameworkOut)').</_WarnMsg1>
-      <_WarnMsg2>This is most likely due to a &lt;TargetFramework&gt; set directly in the .csproj.</_WarnMsg2>
-      <_WarnMsg3>Start $(Brown)zou tfm migrate$(Yellow) to update the project to use zou's resolution.</_WarnMsg3>
-    </PropertyGroup>
-    <Warning Text="'$(MSBuildProjectFile)': $(_WarnMsg1)%0A$(_WarnMsg2)%0A$(_WarnMsg3)" Code="$(WarnTfmOverrideIdCode)" />
+    <Warning Text="'$(MSBuildProjectFile)': $([System.String]::Format('$(WarnTfmOverrideId)', '$(TargetFramework)', '$(TargetFrameworkOut)'))" Code="$(WarnTfmOverrideIdCode)" />
   </Target>
 
   <Target Name="TraceTargetFrameworkBuildProps" Condition="'$(TfmDebug)' == 'true'" BeforeTargets="ZouValidateTargetFramework;ZouWarnTfmOverride">
