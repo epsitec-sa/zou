@@ -228,6 +228,12 @@
     <Error Text="$([System.String]::Format('$(ErrorInvalidTfmId)', '$(TargetFrameworks)'))" Code="$(ErrorInvalidTfmIdCode)"/>
   </Target>
 
+  <!-- The SDK only declares PickBestRid for inner builds, but SDKs such as Aspire.AppHost.Sdk
+       use it during the outer (multi-targeting) Restore. Declare it there too. -->
+  <UsingTask TaskName="Microsoft.NET.Build.Tasks.PickBestRid"
+             AssemblyFile="$(MicrosoftNETBuildTasksAssembly)"
+             Condition="'$(TargetFramework)' == '' And '$(TargetFrameworks)' != '' And '$(MicrosoftNETBuildTasksAssembly)' != ''" />
+
   <PropertyGroup>
     <TargetFrameworkOut>$(TargetFramework)</TargetFrameworkOut>
     <TargetFrameworksOut>$(TargetFrameworks)</TargetFrameworksOut>
