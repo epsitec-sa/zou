@@ -4,7 +4,7 @@
   <PropertyGroup>
     <ZouImported>true</ZouImported>
   </PropertyGroup>
-  
+
   <!-- System dependent -->
   <Choose>
     <When Condition="$([MSBuild]::IsOsPlatform(Windows))">
@@ -43,7 +43,7 @@
     <ZouTrace    Condition="'$(ZouTrace)'    == '' Or '$(MSBuildRestoreSessionId)' != ''">false</ZouTrace>
     <ZouDebug    Condition="'$(ZouDebug)'    == '' Or '$(MSBuildRestoreSessionId)' != ''">false</ZouDebug>
     <RedistDebug Condition="'$(RedistDebug)' == '' Or '$(MSBuildRestoreSessionId)' != ''">false</RedistDebug>
-    
+
     <!-- Configuration sub-directory -->
     <ZouCfg>zou.cfg$(V)</ZouCfg>
     <!-- Enable ZouTrace and ZouTraceMSBuild if the command 'msbuild zou.props' is executed -->
@@ -82,7 +82,7 @@
     <ZouBinzDir>$(ZouDir)binz$(V)</ZouBinzDir>
     <ZouBinzOsDir>$(ZouBinzDir)$(ZouOs)$(V)</ZouBinzOsDir>
   </PropertyGroup>
-  
+
   <PropertyGroup Condition="'$(BundleDir' == '' Or '$(ZouDir)' == ''">
     <ZouError>true</ZouError>
     <ZouTrace>true</ZouTrace>
@@ -113,21 +113,21 @@
   <PropertyGroup>
     <!-- project/zou.cfg/ -->
     <ZouProjectDir Condition="'$(ZouProjectDir)' == ''">$(MSBuildProjectDirectory)$(V)$(ZouCfg)</ZouProjectDir>
-    
+
     <BundleRelativeProjectDir>$([MSBuild]::MakeRelative('$(BundleDir)', '$(MSBuildProjectDirectory)'))</BundleRelativeProjectDir>
     <BundleRelativeProjectDir Condition="'$(BundleRelativeProjectDir)' == '.'" />
     <BundleRelativeProjectDir Condition="'$(BundleRelativeProjectDir)' != '.'">$([MSBuild]::EnsureTrailingSlash('$(BundleRelativeProjectDir)'))</BundleRelativeProjectDir>
 
     <BundleRelativeProjectName>$(BundleRelativeProjectDir)$(MSBuildProjectName)</BundleRelativeProjectName>
     <BundleRelativeProjectPath>$(BundleRelativeProjectDir)$(MSBuildProjectFile)</BundleRelativeProjectPath>
-    
+
     <ModuleRelativeProjectDir>$([MSBuild]::MakeRelative('$(ModuleDir)', '$(MSBuildProjectDirectory)'))</ModuleRelativeProjectDir>
     <ModuleRelativeProjectDir Condition="'$(ModuleRelativeProjectDir)' == '.'" />
     <ModuleRelativeProjectDir Condition="'$(ModuleRelativeProjectDir)' != '.'">$([MSBuild]::EnsureTrailingSlash('$(ModuleRelativeProjectDir)'))</ModuleRelativeProjectDir>
-    
+
     <ModuleRelativeProjectName>$(ModuleRelativeProjectDir)$(MSBuildProjectName)</ModuleRelativeProjectName>
     <ModuleRelativeProjectPath>$(ModuleRelativeProjectDir)$(MSBuildProjectFile)</ModuleRelativeProjectPath>
-    
+
     <ProjectId>$(BundleRelativeProjectName)</ProjectId>
   </PropertyGroup>
 
@@ -140,7 +140,7 @@
         <BundleRelativeSolutionDir>$([MSBuild]::MakeRelative($(BundleDir), $(SolutionDir)))</BundleRelativeSolutionDir>
         <BundleRelativeSolutionName>$([MSBuild]::MakeRelative($(BundleDir), $(SolutionDir)$(SolutionName)))</BundleRelativeSolutionName>
         <BundleRelativeSolutionPath>$([MSBuild]::MakeRelative($(BundleDir), $(SolutionPath)))</BundleRelativeSolutionPath>
-        
+
         <!-- Use the following property instead of SolutionDir when building a project without a solution (example: msbuild project.vcxproj) -->
         <SolutionOrProjectDir>$(SolutionDir)</SolutionOrProjectDir>
       </PropertyGroup>

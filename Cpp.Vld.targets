@@ -26,7 +26,7 @@
     <!-- VLD files should be copied to output directory only for applications -->
     <VLDImport Condition="'$(ConfigurationType)' == 'Application'">true</VLDImport>
   </PropertyGroup>
-  
+
   <!-- Update vld.ini -->
   <ItemGroup Condition="'$(VLDImport)' == 'true'">
     <ImportFile Include="$(VldIniPath)" />
@@ -41,15 +41,15 @@
     <NumericPlatform Condition="'$(Platform)'=='arm64'">64</NumericPlatform>
     <VldLibDir>$(NugetPackagesDir)epsitec-vld.$(VldVersion)\lib\native\address-model-$(NumericPlatform)\lib\</VldLibDir>
   </PropertyGroup>
-  
+
   <ItemGroup Condition="'$(VLDImport)' == 'true'">
     <ImportFile Include="$(VldLibDir)*.dll" />
     <ImportFile Include="$(VldLibDir)*.manifest" />
   </ItemGroup>
-  
+
   <!-- Import standard nuget VLD imports -->
   <Import Project="$(_VldTemplatePathPrefix).Imports.targets"/>
-  
+
   <Target Name="_VldCreateVldOnlyPackagesConfig"
           Inputs="$(_VldTemplatePathPrefix).packages.config"
           Outputs="$(_VldOnlyPackagesConfigFile)">
@@ -107,7 +107,7 @@
     <!--<Message Importance="high" Text="_VldVersionChanged = $(_VldVersionChanged)"/>
     <Message Importance="high" Text="_VldMergeChanged   = $(_VldMergeChanged)"/>
     <Message Importance="high" Text="_PackagesConfigChanged = $(_PackagesConfigChanged)"/>-->
-    
+
     <!-- Restore nuget packages if necessary... -->
     <Exec Condition="'$(_PackagesConfigChanged)' == 'true'"
           Command='"$(ZouBinzOsDir)nuget" restore "$(PackagesConfigFile)" -PackagesDirectory "$(NugetPackagesDir.TrimEnd(\/))"' />
