@@ -1,0 +1,32 @@
+<!--
+This property sheet resolves the 'VCToolsVersion'property.
+It is used to determine the version of the Visual C++ tools to use for building C++ projects.
+The property sheet checks if the 'VCToolsVersion' is not specified and if the 'PlatformToolset' is set to 'v143'.
+If both conditions are met, it attempts to locate the appropriate version of the Visual C++ tools installed
+on the system and sets the 'VCToolsVersion' property accordingly.
+-->
+<Project InitialTargets="TraceCppToolsVersion">
+
+  <PropertyGroup Condition="'$(VCToolsVersion)' == ''">
+    <_VSRoot Condition="'$(VSINSTALLDIR)' != ''">$(VSINSTALLDIR)</_VSRoot>
+    <_VSRoot Condition="'$(_VSRoot)' == ''">$(MSBuildToolsPath)\..\..\..\..\</_VSRoot>
+
+    <_MSVCToolsRoot>$([System.IO.Path]::GetFullPath($([System.IO.Path]::Combine('$(_VSRoot)', 'VC\Tools\MSVC'))))</_MSVCToolsRoot>
+    <_MSVCTools>$([System.IO.Directory]::GetDirectories('$(_MSVCToolsRoot)'))</_MSVCTools>
+
+    <!-- The latest available version of the Visual C++ tools supporting platform toolset v143 are 14.4*.* and 14.3*.*. -->
+    <_MSVCToolVersion                                        >$([System.Text.RegularExpressions.Regex]::Match('$(_MSVCTools)', '(?:^|[\\;])(14\.4[0-9]\.[0-9]+)(?=;|$)').Groups[1].Value)</_MSVCToolVersion>
+    <_MSVCToolVersion Condition="'$(_MSVCToolVersion)' == ''">$([System.Text.RegularExpressions.Regex]::Match('$(_MSVCTools)', '(?:^|[\\;])(14\.3[0-9]\.[0-9]+)(?=;|$)').Groups[1].Value)</_MSVCToolVersion>
+
+    <VCToolsVersion>$(_MSVCToolVersion)</VCToolsVersion>
+  </PropertyGroup>
+
+  <Target Name="TraceCppToolsVersion" Condition="'$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
+    <Message Importance="High" Text="_VSRoot           = $(_VSRoot)" />
+    <Message Importance="High" Text="_MSVCToolsRoot    = $(_MSVCToolsRoot)" />
+    <Message Importance="High" Text="_MSVCTools        = $(_MSVCTools)" />
+    <Message Importance="High" Text="_MSVCToolVersion  = $(_MSVCToolVersion)" />
+    <Message Importance="High" Text="VCToolsVersion    = $(VCToolsVersion)" />
+  </Target>
+
+</Project>
