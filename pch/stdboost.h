@@ -34,7 +34,7 @@
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
-#include <boost/process.hpp>
+#include <boost/process/v1.hpp>
 #include <boost/process/v1/windows.hpp>
 #include <boost/regex.hpp>
 #include <boost/signals2.hpp>

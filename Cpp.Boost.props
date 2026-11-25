@@ -4,14 +4,19 @@
     <PackagesConfigFile Condition="'$(PackagesConfigFile)' == ''">packages.config</PackagesConfigFile>
 
     <BoostToolset Condition="'$(BoostToolset)' == ''">$(PlatformToolset)</BoostToolset>
+    <BoostToolset Condition="'$(BoostToolset)' == 'v145'"   >vc145</BoostToolset>
     <BoostToolset Condition="'$(BoostToolset)' == 'v143'"   >vc143</BoostToolset>
     <BoostToolset Condition="'$(BoostToolset)' == 'v142'"   >vc142</BoostToolset>
     <BoostToolset Condition="'$(BoostToolset)' == 'v141'"   >vc141</BoostToolset>
     <BoostToolset Condition="'$(BoostToolset)' == 'v140'"   >vc140</BoostToolset>
     <BoostToolset Condition="'$(BoostToolset)' == 'v140_xp'">vc140</BoostToolset>
 
+    <BoostPackagePrefix Condition="'$(BoostToolset)' == 'vc143'">boost</BoostPackagePrefix>
+    <BoostPackagePrefix Condition="'$(BoostToolset)' != 'vc143'">libbitcoin-boost</BoostPackagePrefix>
+
     <BoostTargetSubdir Condition="$(BoostVersion.StartsWith(1.7))">build</BoostTargetSubdir>
     <BoostTargetSubdir Condition="$(BoostVersion.StartsWith(1.8))">build</BoostTargetSubdir>
+    <BoostTargetSubdir Condition="$(BoostVersion.StartsWith(1.9))">build</BoostTargetSubdir>
     <BoostTargetSubdir Condition="'$(BoostTargetSubdir)' == ''">build\native</BoostTargetSubdir>
 
     <_BoostPackagesConfigType Condition="'$(ConfigurationType)' == 'StaticLibrary'">Headers</_BoostPackagesConfigType>
@@ -19,7 +24,7 @@
     <_BoostPackagesConfigType Condition="'$(ConfigurationType)' == 'Application'">Libs</_BoostPackagesConfigType>
 
     <_BoostTemplatePathPrefix>$(ZouDir).Templates\nuget\Cpp.Boost.$(_BoostPackagesConfigType)</_BoostTemplatePathPrefix>
-    
+
     <_BoostOnlyPackagesConfigFile>$(IntDir)zou.boost.packages.config</_BoostOnlyPackagesConfigFile>
 
     <_PackagesConfigChanged>false</_PackagesConfigChanged>
@@ -38,6 +43,7 @@
     <Message Importance="high" Text="ConfigurationType            = $(ConfigurationType)" />
     <Message Importance="high" Text="BoostVersion                 = $(BoostVersion)" />
     <Message Importance="high" Text="BoostToolset                 = $(BoostToolset)" />
+    <Message Importance="high" Text="BoostPackagePrefix           = $(BoostPackagePrefix)" />
     <Message Importance="high" Text="BoostTargetSubdir            = $(BoostTargetSubdir)" />
     <Message Importance="high" Text="_BoostPackagesConfigType     = $(_BoostPackagesConfigType)" />
     <Message Importance="high" Text="_BoostTemplatePathPrefix     = $(_BoostTemplatePathPrefix)" />
