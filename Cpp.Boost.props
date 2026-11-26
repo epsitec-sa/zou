@@ -35,6 +35,29 @@
   <!-- Import standard nuget boost imports -->
   <Import Project="$(_BoostTemplatePathPrefix).Imports.targets"/>
 
+  <!-- Set SuppressBoostCodeAnalysis to false to retain analysis of external headers.
+       When enabled, /analyze:external- also applies to other headers marked external. -->
+  <PropertyGroup>
+    <SuppressBoostCodeAnalysis Condition="'$(SuppressBoostCodeAnalysis)' == ''">true</SuppressBoostCodeAnalysis>
+    <ExternalIncludePath Condition="'$(SuppressBoostCodeAnalysis)' == 'true'">$(NugetPackagesDir)$(BoostPackagePrefix).$(BoostVersion)\lib\native\include;$(ExternalIncludePath)</ExternalIncludePath>
+  </PropertyGroup>
+
+  <ItemDefinitionGroup Condition="'$(SuppressBoostCodeAnalysis)' == 'true'">
+    <ClCompile>
+      <AdditionalOptions>/external:I"$(NugetPackagesDir)$(BoostPackagePrefix).$(BoostVersion)\lib\native\include" %(AdditionalOptions)</AdditionalOptions>
+      <DisableAnalyzeExternal>true</DisableAnalyzeExternal>
+    </ClCompile>
+  </ItemDefinitionGroup>
+
+  <!-- Angle-bracket includes can also refer to project headers. -->
+  <Target Name="ZouBoostCodeAnalysisOptions" BeforeTargets="FixupCLCompileOptions" Condition="'$(SuppressBoostCodeAnalysis)' == 'true'">
+    <ItemGroup>
+      <ClCompile Condition="'%(ClCompile.EnablePREfast)' == 'true'">
+        <TreatAngleIncludeAsExternal>false</TreatAngleIncludeAsExternal>
+      </ClCompile>
+    </ItemGroup>
+  </Target>
+
   <Target Name="TraceCppBoostProps" Condition="'$(ZouDebug)' == 'true' Or '$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
     <Message Importance="high" Text="$(T0)$([MSBuild]::MakeRelative('$(BundleDir)', '$(MSBuildThisFileFullPath)')) ($(BundleRelativeProjectPath))$(NC)" />
 
