@@ -10,15 +10,17 @@ on the system and sets the 'VCToolsVersion' property accordingly.
   <PropertyGroup>
     <_VSRoot Condition="'$(VSINSTALLDIR)' != ''">$(VSINSTALLDIR)</_VSRoot>
     <_VSRoot Condition="'$(_VSRoot)' == ''">$(MSBuildToolsPath)\..\..\..\..\</_VSRoot>
-
     <_MSVCToolsRoot>$([System.IO.Path]::GetFullPath($([System.IO.Path]::Combine('$(_VSRoot)', 'VC\Tools\MSVC'))))</_MSVCToolsRoot>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="Exists('$(_MSVCToolsRoot)')">
     <_MSVCTools>$([System.IO.Directory]::GetDirectories('$(_MSVCToolsRoot)'))</_MSVCTools>
 
     <!-- The latest available version of the Visual C++ tools supporting platform toolset v143 are 14.4*.* and 14.3*.*. -->
     <_MSVCToolVersion                                        >$([System.Text.RegularExpressions.Regex]::Match('$(_MSVCTools)', '(?:^|[\\;])(14\.4[0-9]\.[0-9]+)(?=;|$)').Groups[1].Value)</_MSVCToolVersion>
     <_MSVCToolVersion Condition="'$(_MSVCToolVersion)' == ''">$([System.Text.RegularExpressions.Regex]::Match('$(_MSVCTools)', '(?:^|[\\;])(14\.3[0-9]\.[0-9]+)(?=;|$)').Groups[1].Value)</_MSVCToolVersion>
 
-    <VCToolsVersion>$(_MSVCToolVersion)</VCToolsVersion>
+    <VCToolsVersion Condition="'$(_MSVCToolVersion)' != ''">$(_MSVCToolVersion)</VCToolsVersion>
   </PropertyGroup>
 
   <Target Name="TraceCppToolsVersion" Condition="'$(MSBuildProjectFile)' == '$(MSBuildThisFile)'">
